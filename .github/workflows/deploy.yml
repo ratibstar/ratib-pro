@@ -16,45 +16,43 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy project files over SFTP
-        uses: pressidium/lftp-mirror-action@v1
+      - name: Deploy project files over FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          host: ${{ secrets.SFTP_HOST }}
-          user: ${{ secrets.SFTP_USERNAME }}
-          pass: ${{ secrets.SFTP_PASSWORD }}
+          server: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
           port: ${{ secrets.SFTP_PORT }}
-          localDir: "./"
-          remoteDir: ${{ secrets.SFTP_TARGET_DIR }}
-          reverse: true
-          options: >-
-            --verbose
-            --only-newer
-            --no-perms
-            --ignore-time
-            --exclude-glob ".git*"
-            --exclude-glob ".github"
-            --exclude-glob ".cursor*"
-            --exclude-glob ".vscode*"
-            --exclude-glob ".env"
-            --exclude-glob ".env.*"
-            --exclude-glob "env.ngenius.example"
-            --exclude-glob "*/config/ngenius.secrets.php"
-            --exclude-glob "*/node_modules/*"
-            --exclude-glob "*/vendor/*"
-            --exclude-glob "*/logs/*"
-            --exclude-glob "*/tmp/*"
-            --exclude-glob "*/cache/*"
-            --exclude-glob "*/api/uploads/*"
-            --exclude-glob "*/api/documents/*"
-            --exclude-glob "*/archive/*"
-            --exclude-glob "*/docs/*"
-            --exclude-glob "*/android/*"
-            --exclude-glob "*/ios/*"
-            --exclude-glob "*/mobile-app/*"
-            --exclude-glob "*.mp4"
-            --exclude-glob "*.bak"
-            --exclude-glob "*.backup"
-            --exclude-glob "*.log"
-            --exclude-glob "*.zip"
-            --exclude-glob "*.sql"
-            --exclude-glob "Designed/*"
+          protocol: ftps
+          security: strict
+          server-dir: /${{ secrets.SFTP_TARGET_DIR }}/
+          state-name: .ftp-deploy-sync-state.json
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/.cursor/**
+            **/.vscode/**
+            **/.env
+            **/.env.*
+            **/env.ngenius.example
+            **/config/ngenius.secrets.php
+            **/node_modules/**
+            **/vendor/**
+            **/logs/**
+            **/tmp/**
+            **/cache/**
+            **/api/uploads/**
+            **/api/documents/**
+            **/archive/**
+            **/docs/**
+            **/android/**
+            **/ios/**
+            **/mobile-app/**
+            **/*.mp4
+            **/*.bak
+            **/*.backup
+            **/*.log
+            **/*.zip
+            **/*.sql
+            Designed/**
