@@ -748,6 +748,9 @@ include '../includes/header.php';
 ?>
 
         <div class="dashboard-content">
+            <div style="margin: 10px 0 14px; padding: 10px 12px; border-radius: 8px; background: #22c55e; color: #0b1220; font-weight: 800; text-align: center;">
+                HELLO TEST - MAIN DASHBOARD
+            </div>
             <?php if (!empty($currentCountryName) || !empty($currentAgencyName)): ?>
             <div class="dashboard-context-bar">
                 <span class="dashboard-context-label">Country:</span>
