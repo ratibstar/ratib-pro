@@ -21,6 +21,7 @@ final class LogWorkflowExecutionEventListener
             'workflow_name' => $event->workflowName,
             'mode' => $event->mode,
             'actor' => $event->actor,
+            'sequence_number' => $event->sequenceNumber,
             'event_chain' => $event->eventChain,
             'timestamp' => $event->timestamp,
         ]);
@@ -33,6 +34,7 @@ final class LogWorkflowExecutionEventListener
             'workflow_name' => $event->workflowName,
             'mode' => $event->mode,
             'actor' => $event->actor,
+            'sequence_number' => $event->sequenceNumber,
             'event_chain' => $event->eventChain,
             'timestamp' => $event->timestamp,
         ]);
@@ -45,6 +47,7 @@ final class LogWorkflowExecutionEventListener
             'workflow_name' => $event->workflowName,
             'mode' => $event->mode,
             'actor' => $event->actor,
+            'sequence_number' => $event->sequenceNumber,
             'error' => $event->error,
             'event_chain' => $event->eventChain,
             'timestamp' => $event->timestamp,

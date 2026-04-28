@@ -22,6 +22,7 @@ use App\Listeners\HandleWorkerMovedListener;
 use App\Listeners\LogWorkflowExecutionEventListener;
 use App\Listeners\LogWorkerCreatedListener;
 use App\Listeners\NotifyViolationDetectedListener;
+use App\Listeners\WorkflowMetricsListener;
 use App\Repositories\EmployerRepository;
 use App\Repositories\EventLogRepository;
 use App\Repositories\NotificationRepository;
@@ -29,6 +30,7 @@ use App\Repositories\TrackingLogRepository;
 use App\Repositories\ViolationRepository;
 use App\Repositories\WorkerRepository;
 use App\Repositories\WorkflowRepository;
+use App\Repositories\WorkflowStateRepository;
 use App\Services\ComplianceService;
 use App\Services\NotificationService;
 use App\Services\TrackingService;
@@ -64,6 +66,9 @@ final class Application
         $container->singleton(NotificationRepositoryInterface::class, fn (Container $c) => new NotificationRepository($c->get(PDO::class)));
         $container->singleton(EventLogRepository::class, fn (Container $c) => new EventLogRepository($c->get(PDO::class)));
         $container->singleton(WorkflowRepository::class, fn (Container $c) => new WorkflowRepository($c->get(PDO::class)));
+        $container->singleton(WorkflowStateRepository::class, fn (Container $c) => new WorkflowStateRepository($c->get(PDO::class)));
+        $container->singleton(IdempotencyService::class, fn (Container $c) => new IdempotencyService($c->get(WorkflowRepository::class)));
+        $container->singleton(WorkflowMetrics::class, fn (Container $c) => new WorkflowMetrics($c->get(WorkflowRepository::class)));
 
         $container->singleton(NotificationService::class, fn (Container $c) => new NotificationService($c->get(NotificationRepositoryInterface::class)));
         $container->singleton(WorkerService::class, fn (Container $c) => new WorkerService(
@@ -83,9 +88,11 @@ final class Application
         $container->singleton(WorkflowService::class, fn (Container $c) => new WorkflowService(
             $c->get(WorkflowEngine::class),
             $c->get(WorkflowRepository::class),
+            $c->get(WorkflowStateRepository::class),
             $c->get(WorkerOnboardingWorkflow::class),
             $c->get(FrozenExecutionContext::class),
-            $c->get(EventDispatcher::class)
+            $c->get(EventDispatcher::class),
+            $c->get(IdempotencyService::class)
         ));
 
         $container->singleton(ValidateWorkerStep::class, fn () => new ValidateWorkerStep());
@@ -101,7 +108,10 @@ final class Application
             $c->get(StartTrackingStep::class),
             $c->get(SendNotificationStep::class)
         ));
-        $container->singleton(WorkflowEngine::class, fn (Container $c) => new WorkflowEngine($c->get(EventDispatcher::class)));
+        $container->singleton(WorkflowEngine::class, fn (Container $c) => new WorkflowEngine(
+            $c->get(EventDispatcher::class),
+            $c->get(WorkflowStateRepository::class)
+        ));
 
         $container->singleton(WorkerController::class, fn (Container $c) => new WorkerController($c->get(WorkerService::class)));
         $container->singleton(TrackingController::class, fn (Container $c) => new TrackingController(
@@ -118,6 +128,7 @@ final class Application
     {
         $events = $container->get(EventDispatcher::class);
         $workflowLogger = new LogWorkflowExecutionEventListener($container->get(EventLogRepository::class));
+        $metricsListener = new WorkflowMetricsListener($container->get(WorkflowMetrics::class));
 
         $events->listen(WorkerCreated::class, new LogWorkerCreatedListener($container->get(EventLogRepository::class)));
         $events->listen(WorkerMoved::class, new HandleWorkerMovedListener($container->get(EventLogRepository::class)));
@@ -128,6 +139,9 @@ final class Application
         $events->listen(WorkflowExecutionStarted::class, [$workflowLogger, 'onStarted']);
         $events->listen(WorkflowExecutionCompleted::class, [$workflowLogger, 'onCompleted']);
         $events->listen(WorkflowExecutionFailed::class, [$workflowLogger, 'onFailed']);
+        $events->listen(WorkflowExecutionStarted::class, [$metricsListener, 'onStarted']);
+        $events->listen(WorkflowExecutionCompleted::class, [$metricsListener, 'onCompleted']);
+        $events->listen(WorkflowExecutionFailed::class, [$metricsListener, 'onFailed']);
         // Step lifecycle events are emitted by engine and intentionally not re-dispatched from listeners.
         $events->listen(WorkflowStepLifecycle::class, static function (WorkflowStepLifecycle $event): void {
             // no-op by default; hooks can be attached without changing engine flow

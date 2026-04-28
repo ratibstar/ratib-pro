@@ -11,6 +11,7 @@ final class WorkflowExecutionFailed
         public readonly string $workflowName,
         public readonly string $mode,
         public readonly string $actor,
+        public readonly int $sequenceNumber,
         public readonly string $error,
         public readonly array $eventChain,
         public readonly string $timestamp
