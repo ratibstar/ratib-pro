@@ -600,6 +600,7 @@ body.agent-page .controls-bar,
 .add-btn { 
     background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%) !important;
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4), 0 2px 8px rgba(59, 130, 246, 0.2) !important;
+    display: none !important; /* TEST: hide Add New button to verify deployment */
 }
 
 .add-btn:hover:not(:disabled) {
