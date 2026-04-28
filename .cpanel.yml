@@ -1,0 +1,24 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/outratib/public_html
+    - /usr/bin/rsync -av --delete \
+      --exclude=".git/" \
+      --exclude=".github/" \
+      --exclude=".cursor/" \
+      --exclude=".vscode/" \
+      --exclude=".env" \
+      --exclude=".env.*" \
+      --exclude="config/ngenius.secrets.php" \
+      --exclude="node_modules/" \
+      --exclude="vendor/" \
+      --exclude="logs/" \
+      --exclude="tmp/" \
+      --exclude="cache/" \
+      --exclude="archive/" \
+      --exclude="docs/" \
+      --exclude="android/" \
+      --exclude="ios/" \
+      --exclude="mobile-app/" \
+      --exclude="Designed/" \
+      ./ "$DEPLOYPATH/"
