@@ -38,6 +38,9 @@ include '../includes/header.php';
     <div class="page-header">
         <h5>Agents Management</h5>
     </div>
+    <div style="margin: 10px 0 14px; padding: 10px 12px; border-radius: 8px; background: #ff3b30; color: #fff; font-weight: 700; text-align: center;">
+        LIVE TEST - RATIB PRO DEPLOY CHECK
+    </div>
 
     <div class="table-container">
         <!-- Stats Cards -->
