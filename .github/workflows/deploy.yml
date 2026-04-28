@@ -43,9 +43,9 @@ jobs:
           echo "cPanel API response:"
           echo "$RESPONSE"
 
-          STATUS="$(echo "$RESPONSE" | python3 -c "import json,sys; print(json.load(sys.stdin).get('result',{}).get('status',0))")"
-          LOG_PATH="$(echo "$RESPONSE" | python3 -c "import json,sys; print(json.load(sys.stdin).get('result',{}).get('data',{}).get('log_path',''))")"
-          REPO_ROOT="$(echo "$RESPONSE" | python3 -c "import json,sys; print(json.load(sys.stdin).get('result',{}).get('data',{}).get('repository_root',''))")"
+          STATUS="$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d); print(r.get('status', d.get('status',0)))")"
+          LOG_PATH="$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d); data=r.get('data', d.get('data',{})); print(data.get('log_path',''))")"
+          REPO_ROOT="$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d); data=r.get('data', d.get('data',{})); print(data.get('repository_root',''))")"
 
           echo "cPanel deploy status: $STATUS"
           echo "cPanel deploy repository_root: $REPO_ROOT"
