@@ -26,24 +26,25 @@ jobs:
           localDir: "./"
           remoteDir: ${{ secrets.SFTP_TARGET_DIR }}
           reverse: true
+          parallel: 3
+          restoreMtime: false
           options: >-
             --verbose
             --delete
-            --parallel=3
-            --exclude-glob .git*
-            --exclude-glob .github
-            --exclude-glob .cursor*
-            --exclude-glob .vscode*
-            --exclude-glob .env
-            --exclude-glob .env.*
-            --exclude-glob env.ngenius.example
-            --exclude-glob **/config/ngenius.secrets.php
-            --exclude-glob **/node_modules/**
-            --exclude-glob **/vendor/**
-            --exclude-glob **/logs/**
-            --exclude-glob **/tmp/**
-            --exclude-glob **/cache/**
-            --exclude-glob **/*.log
-            --exclude-glob **/*.zip
-            --exclude-glob **/*.sql
-            --exclude-glob Designed/**
+            --exclude-glob=.git*
+            --exclude-glob=.github/**
+            --exclude-glob=.cursor*
+            --exclude-glob=.vscode*
+            --exclude-glob=.env
+            --exclude-glob=.env.*
+            --exclude-glob=env.ngenius.example
+            --exclude-glob=config/ngenius.secrets.php
+            --exclude-glob=node_modules/**
+            --exclude-glob=vendor/**
+            --exclude-glob=logs/**
+            --exclude-glob=tmp/**
+            --exclude-glob=cache/**
+            --exclude-glob=*.log
+            --exclude-glob=*.zip
+            --exclude-glob=*.sql
+            --exclude-glob=Designed/**
