@@ -295,7 +295,7 @@ include '../includes/header.php';
                 </button>
                 <button id="aiWorkflowBtn" class="add-new-btn ai-workflow-btn" type="button" title="Run AI onboarding workflow">
                     <i class="fas fa-robot"></i>
-                    AI Workflow TEST
+                    AI Workflow
                 </button>
 
                 <!-- Selected count display -->
