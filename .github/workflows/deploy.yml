@@ -41,6 +41,26 @@ jobs:
             exit 1
           fi
 
+          CLEAN_BRANCH="$(printf '%s' "${{ github.ref_name }}" | tr -d '\r\n' | xargs)"
+          if [ -z "$CLEAN_BRANCH" ]; then
+            CLEAN_BRANCH="main"
+          fi
+
+          SYNC_RESPONSE="$(curl -fsSL --get \
+            -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
+            --data-urlencode "repository_root=$CLEAN_REPO_ROOT" \
+            --data-urlencode "branch=$CLEAN_BRANCH" \
+            "https://${{ secrets.CPANEL_HOST }}:2083/execute/VersionControl/update")"
+
+          echo "cPanel sync API response:"
+          echo "$SYNC_RESPONSE"
+
+          SYNC_STATUS="$(echo "$SYNC_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; print(r.get('status', d.get('status',0)))")"
+          if [ "$SYNC_STATUS" != "1" ]; then
+            echo "Repository sync API returned non-success status."
+            exit 1
+          fi
+
           RESPONSE="$(curl -fsSL --get \
             -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
             --data-urlencode "repository_root=$CLEAN_REPO_ROOT" \

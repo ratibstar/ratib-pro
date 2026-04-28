@@ -222,6 +222,9 @@ $pageTitle = 'Control Panel Dashboard';
                 </button>
                 <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard Overview</h2>
             </div>
+            <div style="margin:10px 0 14px;padding:10px 12px;border-radius:8px;background:#facc15;color:#111827;font-weight:800;text-align:center;">
+                HELLO TEST - CONTROL DASHBOARD
+            </div>
 
             <!-- EN: KPI cards controlled by role-based visibility switches. -->
             <!-- AR: بطاقات المؤشرات الرئيسية وتخضع لإعدادات إظهار حسب الصلاحيات. -->
