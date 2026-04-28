@@ -39,9 +39,12 @@ In GitHub repository:
 
 `Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`
 
-Create this key:
+Create these keys:
 
-- `CPANEL_DEPLOY_HOOK_URL` (the Deploy Hook URL from cPanel Git Version Control -> Manage -> Pull or Deploy)
+- `CPANEL_HOST` (example: `server.ratib.sa`)
+- `CPANEL_USER` (example: `outratib`)
+- `CPANEL_API_TOKEN` (cPanel API token from `Manage API Tokens`)
+- `CPANEL_REPO_ROOT` (example: `/home/outratib/repositories/ratib-pro`)
 
 ## 4) How deployment works
 
@@ -58,5 +61,6 @@ Then verify in GitHub -> `Actions`.
 ## 5) Notes
 
 - cPanel runs deployment using project `.cpanel.yml`.
+- Workflow calls cPanel UAPI `VersionControlDeployment::create` endpoint.
 - Keep `.cpanel.yml` valid YAML and committed to `main`.
 - Do not store production secrets in repository files.

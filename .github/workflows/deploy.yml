@@ -14,13 +14,28 @@ jobs:
   trigger-cpanel-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Validate deploy hook secret
+      - name: Validate cPanel API secrets
         run: |
-          if [ -z "${{ secrets.CPANEL_DEPLOY_HOOK_URL }}" ]; then
-            echo "Missing required secret: CPANEL_DEPLOY_HOOK_URL"
+          if [ -z "${{ secrets.CPANEL_HOST }}" ]; then
+            echo "Missing required secret: CPANEL_HOST"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CPANEL_USER }}" ]; then
+            echo "Missing required secret: CPANEL_USER"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CPANEL_API_TOKEN }}" ]; then
+            echo "Missing required secret: CPANEL_API_TOKEN"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CPANEL_REPO_ROOT }}" ]; then
+            echo "Missing required secret: CPANEL_REPO_ROOT"
             exit 1
           fi
 
-      - name: Trigger cPanel deploy hook
+      - name: Trigger cPanel Git deployment API
         run: |
-          curl -fsSL -X POST "${{ secrets.CPANEL_DEPLOY_HOOK_URL }}"
+          curl -fsSL --get \
+            --user "${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
+            --data-urlencode "repository_root=${{ secrets.CPANEL_REPO_ROOT }}" \
+            "https://${{ secrets.CPANEL_HOST }}:2083/execute/VersionControlDeployment/create"
