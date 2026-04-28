@@ -3,7 +3,7 @@
 This project is ready for automatic deployment using:
 
 - `.github/workflows/deploy.yml`
-- SFTP upload to `public_html`
+- cPanel Git Deploy Hook trigger from GitHub Actions
 - Safe exclusions for secrets, logs, caches, and heavy folders
 
 ## 1) Install Git on your Windows machine
@@ -33,19 +33,15 @@ git remote add origin https://github.com/<YOUR_USERNAME>/<YOUR_REPO>.git
 git push -u origin main
 ```
 
-## 3) Add required GitHub Secrets
+## 3) Add required GitHub Secret
 
 In GitHub repository:
 
 `Settings` -> `Secrets and variables` -> `Actions` -> `New repository secret`
 
-Create exactly these keys:
+Create this key:
 
-- `SFTP_HOST` (example: `out.ratib.sa` or server IP)
-- `SFTP_USERNAME` (cPanel username, example: `outratib`)
-- `SFTP_PASSWORD` (cPanel/FTP password)
-- `SFTP_PORT` (usually `22`)
-- `SFTP_TARGET_DIR` (`public_html`)
+- `CPANEL_DEPLOY_HOOK_URL` (the Deploy Hook URL from cPanel Git Version Control -> Manage -> Pull or Deploy)
 
 ## 4) How deployment works
 
@@ -61,7 +57,6 @@ Then verify in GitHub -> `Actions`.
 
 ## 5) Notes
 
-- `.env` and `config/ngenius.secrets.php` are excluded from deployment.
-- `vendor/` and `node_modules/` are excluded to keep deploy fast.
-- The workflow uses mirror with `--delete`, so remote files not in repo may be removed.
+- cPanel runs deployment using project `.cpanel.yml`.
+- Keep `.cpanel.yml` valid YAML and committed to `main`.
 - Do not store production secrets in repository files.

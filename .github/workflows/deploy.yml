@@ -4,55 +4,23 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 concurrency:
   group: production-deploy
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  trigger-cpanel-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Validate deploy hook secret
+        run: |
+          if [ -z "${{ secrets.CPANEL_DEPLOY_HOOK_URL }}" ]; then
+            echo "Missing required secret: CPANEL_DEPLOY_HOOK_URL"
+            exit 1
+          fi
 
-      - name: Deploy project files over FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.SFTP_HOST }}
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          port: ${{ secrets.SFTP_PORT }}
-          protocol: ftps
-          security: strict
-          server-dir: /${{ secrets.SFTP_TARGET_DIR }}/
-          state-name: .ftp-deploy-sync-state.json
-          dangerous-clean-slate: false
-          exclude: |
-            **/.git*
-            **/.github/**
-            **/.cursor/**
-            **/.vscode/**
-            **/.env
-            **/.env.*
-            **/env.ngenius.example
-            **/config/ngenius.secrets.php
-            **/node_modules/**
-            **/vendor/**
-            **/logs/**
-            **/tmp/**
-            **/cache/**
-            **/api/uploads/**
-            **/api/documents/**
-            **/archive/**
-            **/docs/**
-            **/android/**
-            **/ios/**
-            **/mobile-app/**
-            **/*.mp4
-            **/*.bak
-            **/*.backup
-            **/*.log
-            **/*.zip
-            **/*.sql
-            Designed/**
+      - name: Trigger cPanel deploy hook
+        run: |
+          curl -fsSL -X POST "${{ secrets.CPANEL_DEPLOY_HOOK_URL }}"
