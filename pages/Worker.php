@@ -97,7 +97,7 @@ include '../includes/header.php';
                 <div class="stat-info">
                     <div class="stat-value">
                         <span class="counter" id="totalWorkers">0</span> <!-- Counter for total workers -->
-                        <span class="stat-label">Total Workers</span> <!-- Label for total workers -->
+                        <span class="stat-label">Total Workers TEST LIVE</span> <!-- Temporary deploy test label -->
                     </div>
                     <div class="stat-trend">
                         <i class="fas fa-arrow-up trend-icon trend-up"></i> <!-- Trend icon -->
