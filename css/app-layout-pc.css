@@ -1,0 +1,65 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/app-layout-pc.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/app-layout-pc.css`.
+ */
+/**
+ * Ratib Pro — desktop layout (≥1025px): use full width beside the 240px sidebar.
+ * Scoped with body.ratib-app (see includes/header.php and pages/contact.php).
+ */
+
+@media (min-width: 1025px) {
+    html:has(#mainNav),
+    body.ratib-app {
+        max-width: none !important;
+    }
+
+    body.ratib-app .worker-management-container,
+    body.ratib-app .worker-management-container.main-container {
+        max-width: none !important;
+    }
+
+    /* Keep page-specific desktop widths; only remove hard caps. */
+    body.ratib-app .main-content {
+        max-width: none !important;
+    }
+
+    body.ratib-app .cases-container {
+        max-width: none !important;
+    }
+
+    body.ratib-app .subagent-container {
+        max-width: none !important;
+        width: 100% !important;
+    }
+
+    /* Dashboard: slightly larger card tiles on wide screens */
+    body.ratib-app .dashboard-content .system-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+    }
+
+    /* Do not force shell width globally: pages already set their own desktop layout. */
+
+    /* Help Center: use full width next to fixed help sidebar */
+    body.ratib-app .help-center-content {
+        max-width: none !important;
+    }
+
+    body.ratib-app .help-center-wrapper .top-bar-content {
+        max-width: none !important;
+    }
+
+    /* Reports: status cards use full row on wide screens */
+    body.ratib-app .reports-container .status-cards-grid {
+        width: 100% !important;
+    }
+
+    /* Agent / SubAgent-style stat rows: min width so labels stay readable */
+    body.ratib-app.agent-page .content-wrapper {
+        width: calc(100% - 240px) !important;
+        max-width: none !important;
+    }
+
+    body.ratib-app.agent-page .stats-wrapper .stat-card {
+        min-width: 140px !important;
+    }
+}

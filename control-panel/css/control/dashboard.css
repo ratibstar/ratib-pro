@@ -1,0 +1,256 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control/dashboard.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control/dashboard.css`.
+ */
+.dashboard-error-body {
+    font-family: system-ui, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.dashboard-error-box {
+    text-align: center;
+    padding: 2rem;
+    max-width: 400px;
+}
+
+.dashboard-error-title {
+    color: #e94560;
+    margin-bottom: 1rem;
+}
+
+.dashboard-error-text {
+    color: #a0a0a0;
+    margin-bottom: 1.5rem;
+}
+
+.dashboard-error-reload {
+    background: #e94560;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+.control-sidebar {
+    display: block !important;
+}
+
+.control-content .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.control-content .stat-card {
+    background: linear-gradient(145deg, rgba(22, 33, 62, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.control-content .stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--control-accent), var(--control-accent-hover));
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+.control-content .stat-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(102, 126, 234, 0.3);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(102, 126, 234, 0.1);
+}
+
+.control-content .stat-card:hover::before {
+    opacity: 1;
+}
+
+.control-content .stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 1.4rem;
+    color: #fff;
+}
+
+.stat-icon-countries { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.stat-icon-agencies { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.stat-icon-pending { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+.stat-icon-accounting { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+
+.control-content .stat-content h3 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+
+.control-content .stat-content p {
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.control-content .stat-subtitle {
+    font-size: 0.8rem;
+    color: var(--control-success);
+    display: block;
+    margin-top: 0.25rem;
+}
+
+.control-content .stat-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: gap 0.3s;
+}
+
+.control-content .stat-card.warning .stat-icon { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+.control-content .stat-card.warning .stat-content h3 { color: var(--control-warning); }
+
+.users-per-country-section {
+    margin: 2rem 0;
+    padding: 1.75rem;
+    background: linear-gradient(145deg, rgba(22, 33, 62, 0.4) 0%, rgba(15, 23, 42, 0.3) 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.users-per-country-section .section-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.users-per-country-section .section-header h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--control-text-light);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.users-per-country-section .section-header h3 i {
+    color: var(--control-accent);
+    opacity: 0.9;
+}
+
+.users-per-country-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.25rem;
+}
+
+.users-per-country-card {
+    background: linear-gradient(160deg, rgba(22, 33, 62, 0.85) 0%, rgba(15, 23, 42, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    color: inherit;
+    text-decoration: none;
+    padding: 1.25rem;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.users-per-country-card-clickable {
+    cursor: pointer;
+}
+
+.users-per-country-card::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--control-accent), transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+.users-per-country-card:hover {
+    border-color: rgba(102, 126, 234, 0.35);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.4);
+}
+
+.users-per-country-card:hover::after {
+    opacity: 1;
+}
+
+.users-per-country-card .country-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--control-text-light);
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.users-per-country-card .users-count {
+    font-size: 1.75rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, var(--control-accent) 0%, var(--control-accent-hover) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.users-per-country-card .users-label {
+    font-size: 0.8rem;
+    color: var(--control-muted);
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+}
+
+.users-per-country-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.users-per-country-links a {
+    color: var(--control-accent);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.users-per-country-links a:hover {
+    color: var(--control-accent-hover);
+}

@@ -1,0 +1,448 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control/agencies.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control/agencies.css`.
+ */
+/**
+ * Manage Agencies - styles
+ * PHP in PHP, JS in JS, CSS in CSS
+ */
+
+.agencies-table-card {
+    background: #16213e;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid #0f3460;
+}
+
+.agencies-controls-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.agencies-search-input {
+    background: #0f3460;
+    border: 1px solid #1a1a2e;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    width: 220px;
+}
+
+.agencies-search-input::placeholder {
+    color: #888;
+}
+
+.agencies-btn-control {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.9rem;
+    border-radius: 6px;
+}
+
+.agencies-btn-control.btn-primary {
+    background: #e94560;
+    border-color: #e94560;
+}
+
+.agencies-btn-control.btn-danger {
+    background: #c0392b;
+    border-color: #c0392b;
+}
+
+.agencies-btn-control.btn-inactive {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #fff;
+}
+
+.agencies-btn-control:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.agencies-table-scroll {
+    max-height: 280px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+.agencies-url-cell {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.agencies-pagination-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #0f3460;
+}
+
+.agencies-page-size select {
+    background: #0f3460;
+    border: 1px solid #1a1a2e;
+    color: #fff;
+    padding: 0.35rem 0.5rem;
+    border-radius: 4px;
+}
+
+.badge-active {
+    background: #27ae60;
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.badge-inactive {
+    background: #7f8c8d;
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+.badge-suspended {
+    background: #f59e0b;
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+/* Modals and action buttons - ensure clickable */
+#viewModal.modal,
+#editModal.modal,
+#alertModal.modal,
+#confirmModal.modal {
+    z-index: 1060 !important;
+}
+
+#editModal .modal-content,
+#editModal .modal-body .form-control,
+#editModal .modal-footer .btn,
+#editModal .modal-header .btn-close {
+    pointer-events: auto !important;
+}
+
+.action-btns .btn,
+.action-btns a {
+    pointer-events: auto !important;
+    cursor: pointer;
+}
+
+.agencies-controls-bar button:not(:disabled) {
+    pointer-events: auto !important;
+    cursor: pointer;
+}
+
+#agenciesBulkActions {
+    pointer-events: auto !important;
+}
+
+#agenciesBulkActions button {
+    pointer-events: auto !important;
+}
+
+.alert-agency-country-warn {
+    background: #3d2c29;
+    border-color: #e94560;
+    color: #ffc;
+}
+
+.alert-agency-renewal {
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid #f59e0b;
+    color: #fcd34d;
+}
+
+.agencies-select-country {
+    width: auto;
+    background: #0f3460;
+    color: #fff;
+    border-color: #1a1a2e;
+}
+
+.agencies-modal-content {
+    background: #16213e;
+    color: #eee;
+    border: 1px solid #0f3460;
+}
+
+/* Edit modal - dark mode form controls */
+.agencies-edit-modal .modal-header,
+.agencies-edit-modal .modal-footer {
+    background: #1a1a2e;
+    border-color: #0f3460;
+}
+
+.agencies-edit-modal .modal-body {
+    background: #16213e;
+    color: #eee;
+}
+
+.agencies-edit-modal .form-label {
+    color: #b8c5d6;
+}
+
+.agencies-edit-modal .form-control,
+.agencies-edit-modal .form-select {
+    background: #0f3460;
+    border: 1px solid #1a1a2e;
+    color: #fff;
+}
+
+.agencies-edit-modal .form-control::placeholder {
+    color: #888;
+}
+
+.agencies-edit-modal .form-control:focus,
+.agencies-edit-modal .form-select:focus {
+    background: #0f3460;
+    border-color: #e94560;
+    color: #fff;
+}
+
+.agencies-edit-modal .modal-footer .btn-secondary {
+    background: #1a1a2e;
+    border-color: #0f3460;
+    color: #eee;
+}
+
+.agencies-edit-modal .modal-footer .btn-primary {
+    background: #e94560;
+    border-color: #e94560;
+}
+
+/* View modal - dark mode read-only */
+.agencies-view-modal .modal-header,
+.agencies-view-modal .modal-footer {
+    background: #1a1a2e;
+    border-color: #0f3460;
+}
+
+.agencies-view-modal .modal-body,
+.agencies-view-body {
+    background: #16213e;
+    color: #eee;
+}
+
+.agencies-view-body .text-muted {
+    color: #8b9bb4 !important;
+}
+
+.agencies-view-body .row > .col-8 {
+    color: #eee;
+}
+
+.agencies-view-modal .modal-footer .btn-secondary {
+    background: #1a1a2e;
+    border-color: #0f3460;
+    color: #eee;
+}
+
+.agencies-view-modal .modal-footer .btn-outline-warning {
+    border-color: #f59e0b;
+    color: #f59e0b;
+}
+
+.agencies-view-modal .modal-footer .btn-outline-warning:hover {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fcd34d;
+}
+
+/* Row highlighting by status */
+tr.row-active {
+    background: rgba(39, 174, 96, 0.15) !important;
+}
+
+tr.row-active:hover td {
+    background: rgba(39, 174, 96, 0.25) !important;
+}
+
+tr.row-suspended {
+    background: rgba(245, 158, 11, 0.2) !important;
+}
+
+tr.row-suspended:hover td {
+    background: rgba(245, 158, 11, 0.3) !important;
+}
+
+tr.row-inactive {
+    background: rgba(231, 76, 60, 0.15) !important;
+}
+
+tr.row-inactive:hover td {
+    background: rgba(231, 76, 60, 0.25) !important;
+}
+
+/* Country cards - first view (select country to see agencies) */
+.agencies-country-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.agencies-country-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+    padding: 1.25rem;
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 12px;
+    color: #eee;
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.agencies-country-card:hover {
+    background: #0f3460;
+    border-color: #e94560;
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.agencies-country-card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.9;
+}
+
+.agencies-country-card-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-align: center;
+    margin-bottom: 0.35rem;
+}
+
+.agencies-country-card-count {
+    font-size: 0.85rem;
+    color: #8b9bb4;
+}
+
+.agencies-country-card:hover .agencies-country-card-count {
+    color: #b8c5d6;
+}
+
+/* Add new country card - same size, dashed border, plus icon */
+.agencies-country-card-add {
+    border-style: dashed;
+    background: rgba(26, 26, 46, 0.6);
+}
+
+.agencies-country-card-add .agencies-country-card-icon {
+    opacity: 0.8;
+}
+
+.agencies-country-card-add:hover {
+    background: rgba(15, 52, 96, 0.8);
+    border-color: #27ae60;
+    border-style: solid;
+}
+
+.agencies-country-card-add:hover .agencies-country-card-icon {
+    color: #27ae60;
+}
+
+/* Connection health + bulk audit dark widgets */
+.agencies-status-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.agencies-status-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    color: #e8eef8;
+    border-radius: 10px;
+    padding: 0.55rem 0.75rem;
+}
+
+.agencies-status-card span {
+    display: block;
+    font-size: 0.78rem;
+    color: #9fb0c8;
+    margin-bottom: 0.25rem;
+}
+
+.agencies-status-card strong {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.agencies-status-card-total strong { color: #93c5fd; }
+.agencies-status-card-active strong { color: #22c55e; }
+.agencies-status-card-suspended strong { color: #f59e0b; }
+.agencies-status-card-inactive strong { color: #ef4444; }
+
+.agencies-health-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    color: #e8eef8;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+}
+
+.agencies-health-card .text-muted {
+    color: #9fb0c8 !important;
+}
+
+.agencies-health-linked {
+    color: #22c55e;
+}
+
+.agencies-health-unlinked-bad {
+    color: #f59e0b;
+}
+
+.agencies-health-unlinked-good {
+    color: #22c55e;
+}
+
+.agencies-audit-card {
+    background: #1a1a2e;
+    border: 1px solid #0f3460;
+    border-radius: 10px;
+}
+
+.agencies-audit-body {
+    color: #e8eef8;
+}
+
+.agencies-audit-card .table {
+    color: #d9e6ff;
+    margin-bottom: 0;
+}
+
+.agencies-audit-card .table thead th {
+    background: #0f3460;
+    color: #cfe2ff;
+    border-color: #1f4f7c;
+}
+
+.agencies-audit-card .table td,
+.agencies-audit-card .table th {
+    border-color: #1f4f7c;
+}
+
+.agencies-audit-card .table tbody tr:hover td {
+    background: rgba(15, 52, 96, 0.35);
+}
+
+@media (max-width: 900px) {
+    .agencies-status-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

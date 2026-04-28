@@ -1,0 +1,12 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control/select-agency.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control/select-agency.css`.
+ */
+.agency-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.5rem; margin-top: 1rem; }
+.agency-card { background: var(--control-card); border: 1px solid var(--control-glass-border); border-radius: 12px; padding: 1.5rem; text-decoration: none; color: var(--control-text); display: block; transition: all 0.3s; }
+.agency-card:hover { border-color: var(--control-accent); transform: translateY(-4px); color: var(--control-text-light); text-decoration: none; }
+.agency-card h3 { font-size: 1.1rem; margin: 0 0 0.5rem 0; color: var(--control-text-light); }
+.agency-card .slug { color: var(--control-muted); font-size: 0.9rem; }
+.agency-card .url { color: var(--control-muted); font-size: 0.8rem; word-break: break-all; margin-top: 0.5rem; }
+.select-agency-back-wrap { margin-bottom: 1rem; }
+.select-agency-hint { margin-top: 0.75rem; color: var(--control-accent); font-size: 0.85rem; }

@@ -1,0 +1,48 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control/control-agencies.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control/control-agencies.css`.
+ */
+body { background: #1a1a2e; min-height: 100vh; color: #eee; }
+.control-header { padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid #0f3460; }
+.control-header h1 { font-size: 1.25rem; margin: 0; }
+.control-nav { display: flex; gap: 1rem; align-items: center; }
+.control-nav a { color: #aaa; text-decoration: none; }
+.control-nav a:hover { color: #fff; }
+.content { padding: 2rem; }
+.table-card { background: #16213e; border-radius: 12px; padding: 1.5rem; border: 1px solid #0f3460; }
+.controls-bar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1rem; }
+.search-input { background: #0f3460; border: 1px solid #1a1a2e; color: #fff; padding: 0.5rem 1rem; border-radius: 6px; width: 220px; }
+.search-input::placeholder { color: #888; }
+.btn-control { padding: 0.4rem 0.8rem; font-size: 0.9rem; border-radius: 6px; }
+.btn-control.btn-primary { background: #e94560; border-color: #e94560; }
+.btn-control.btn-danger { background: #c0392b; border-color: #c0392b; }
+.btn-control.btn-inactive { background: #ef4444; border-color: #ef4444; color: #fff; }
+.btn-control:disabled { opacity: 0.5; cursor: not-allowed; }
+table { width: 100%; font-size: 0.9rem; }
+table th { background: #0f3460; color: #aaa; padding: 0.6rem; text-align: left; font-weight: 600; }
+table td { padding: 0.6rem; border-bottom: 1px solid #0f3460; color: #fff !important; }
+table td a { color: #5dade2; }
+table tr:hover td { background: rgba(15,52,96,0.3); }
+.pagination-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #0f3460; }
+.pagination-info { color: #888; font-size: 0.9rem; }
+.pagination-btns { display: flex; gap: 0.5rem; align-items: center; }
+.pagination-btns button { padding: 0.35rem 0.7rem; background: #0f3460; border: 1px solid #1a1a2e; color: #fff; border-radius: 4px; cursor: pointer; }
+.pagination-btns button:hover:not(:disabled) { background: #1a4a7a; }
+.pagination-btns button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagination-btns a { padding: 0.35rem 0.7rem; background: #0f3460; border: 1px solid #1a1a2e; color: #fff; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 0.9rem; display: inline-block; }
+.pagination-btns a:hover:not(.disabled) { background: #1a4a7a; color: #fff; }
+.pagination-btns a.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+.table-scroll-wrapper { max-height: 280px; overflow-y: auto; overflow-x: auto; }
+.page-size select { background: #0f3460; border: 1px solid #1a1a2e; color: #fff; padding: 0.35rem 0.5rem; border-radius: 4px; }
+.action-btns { display: flex; gap: 0.2rem; flex-wrap: nowrap; flex-shrink: 0; }
+.action-btns .btn { padding: 0.15rem 0.3rem; font-size: 0.7rem; white-space: nowrap; }
+.modal-content { background: #16213e; color: #eee; border: 1px solid #0f3460; border-radius: 12px; }
+.modal-body .form-label { color: #aaa; }
+.modal-body .form-control { background: #0f3460; border-color: #1a1a2e; color: #fff; }
+.modal-body .form-control:focus { background: #0f3460; color: #fff; border-color: #e94560; }
+.badge-active { background: #27ae60; }
+.badge-inactive { background: #7f8c8d; }
+.url-cell { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agency-country-warn { background: #3d2c29; border-color: #e94560; color: #ffc; }
+.agency-country-select { width: auto; background: #0f3460; color: #fff; border-color: #1a1a2e; }
+.agencies-modal-dark { background: #16213e; color: #eee; border: 1px solid #0f3460; }

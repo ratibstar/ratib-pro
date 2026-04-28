@@ -1,0 +1,1160 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/worker/musaned.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/worker/musaned.css`.
+ */
+/* ========================================
+   MUSANED MODAL STYLES
+   ======================================== */
+
+/* Musaned Modal */
+#musanedModal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding-top: 20px !important;
+}
+
+#musanedModal.modal {
+    display: flex !important;
+}
+
+#musanedModal .modal-content {
+    background: #1a1a2e !important;
+    border-radius: 6px !important;
+    padding: 8px !important;
+    border: 1px solid #333 !important;
+    max-height: 95vh !important;
+    max-width: 1450px !important;
+    width: 95% !important;
+    overflow: visible !important;
+    margin-top: 0 !important;
+}
+
+#musanedModal .modal-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 4px !important;
+    padding-bottom: 3px !important;
+    border-bottom: 1px solid #333 !important;
+}
+
+#musanedModal .modal-header h2 {
+    color: #ffffff !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+}
+
+#musanedModal .close-modal {
+    background: none !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-size: 20px !important;
+    cursor: pointer !important;
+    padding: 3px !important;
+    border-radius: 50% !important;
+    transition: all 0.3s ease !important;
+}
+
+#musanedModal .close-modal:hover {
+    background: #333 !important;
+}
+
+/* Worker Info Section */
+.worker-info-section {
+    background: #222 !important;
+    border-radius: 6px !important;
+    padding: 3px !important;
+    margin-bottom: 4px !important;
+    border: 1px solid #333 !important;
+}
+
+.worker-info-section h3 {
+    color: #ffffff !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    margin: 0 0 3px 0 !important;
+}
+
+.info-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 3px !important;
+}
+
+.info-item {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+}
+
+.info-item label {
+    color: #cccccc !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+}
+
+.info-item span {
+    color: #ffffff !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+}
+
+/* 5-Column Layout for Musaned Form */
+.status-sections-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr !important;
+    gap: 3px !important;
+    margin-bottom: 6px !important;
+}
+
+.status-column {
+    background: #222 !important;
+    border-radius: 6px !important;
+    padding: 1px !important;
+    border: 1px solid #333 !important;
+}
+
+.column-title {
+    color: #ffffff !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    margin: 0 0 8px 0 !important;
+    padding-bottom: 4px !important;
+    border-bottom: 1px solid #333 !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+}
+
+/* Status Sections */
+.status-section {
+    background: #333 !important;
+    border-radius: 4px !important;
+    padding: 5px !important;
+    margin-bottom: 4px !important;
+    border: 1px solid #444 !important;
+}
+
+.status-section h3 {
+    color: #ffffff !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    margin: 0 0 5px 0 !important;
+    text-align: center !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.2px !important;
+}
+
+.status-options {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr 1fr !important;
+    gap: 5px !important;
+    justify-content: center !important;
+}
+
+.status-option {
+    display: flex !important;
+    align-items: center !important;
+    padding: 7px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    border: 1px solid #666 !important;
+    background: #444 !important;
+    font-size: 10px !important;
+    font-weight: 500 !important;
+    width: 60px !important;
+    height: 32px !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    position: relative !important;
+    color: #ccc !important;
+}
+
+/* Status-specific border colors and light backgrounds */
+.status-option.status-done {
+    border-color: #22c55e !important;
+    background: rgba(34, 197, 94, 0.1) !important;
+}
+
+.status-option.status-not-done {
+    border-color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.status-option.status-pending {
+    border-color: #94a3b8 !important;
+    background: rgba(148, 163, 184, 0.12) !important;
+}
+
+.status-option.status-issues {
+    border-color: #f59e0b !important;
+    background: rgba(245, 158, 11, 0.1) !important;
+}
+
+.status-option.status-canceled {
+    border-color: #6b7280 !important;
+    background: rgba(107, 114, 128, 0.1) !important;
+}
+
+.status-option:hover {
+    color: #fff !important;
+}
+
+.status-option input[type="radio"] {
+    margin: 0 !important;
+    accent-color: #667eea !important;
+    width: 24px !important;
+    height: 24px !important;
+    position: absolute !important;
+    opacity: 0 !important;
+}
+
+.status-option input[type="radio"]:checked + .status-label {
+    font-weight: 700 !important;
+}
+
+.status-option:has(input[type="radio"]:checked) {
+    background: #555 !important;
+    border-color: #667eea !important;
+    color: #ffffff !important;
+}
+
+.status-option .status-label {
+    font-size: 9px !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+}
+
+/* Issues Section */
+.issues-section {
+    margin-top: 8px !important;
+    padding: 8px !important;
+    background: #333 !important;
+    border-radius: 6px !important;
+    border: 1px solid #444 !important;
+}
+
+.issues-section label {
+    color: #cccccc !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    margin-bottom: 4px !important;
+    display: block !important;
+}
+
+.issues-section textarea {
+    width: 100% !important;
+    padding: 6px 8px !important;
+    background: #444 !important;
+    border: 1px solid #555 !important;
+    border-radius: 4px !important;
+    color: #ffffff !important;
+    font-size: 11px !important;
+    resize: vertical !important;
+    min-height: 60px !important;
+}
+
+.issues-section textarea:focus {
+    outline: none !important;
+    border-color: #667eea !important;
+}
+
+.issues-section textarea::placeholder {
+    color: #999999 !important;
+}
+
+/* Form Actions */
+#musanedModal .form-actions {
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+#musanedModal .btn-cancel, #musanedModal .btn-save {
+    padding: 10px 20px !important;
+    border: none !important;
+    border-radius: 0px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+#musanedModal .btn-cancel {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border: 1px solid #ef4444 !important;
+}
+
+#musanedModal .btn-cancel:hover {
+    background: #dc2626 !important;
+}
+
+#musanedModal .btn-save {
+    background: #667eea !important;
+    color: #ffffff !important;
+}
+
+#musanedModal .btn-save:hover {
+    background: #5a67d8 !important;
+}
+
+/* Status Colors - Only show when checked */
+.status-option.status-done:has(input[type="radio"]:checked) {
+    background: #22c55e !important;
+    border: 1px solid #22c55e !important;
+    color: #ffffff !important;
+}
+
+.status-option.status-done:hover {
+    background: rgba(34, 197, 94, 0.2) !important;
+    border-color: #16a34a !important;
+    color: #fff !important;
+}
+
+.status-option.status-not-done:has(input[type="radio"]:checked) {
+    background: #ef4444 !important;
+    border: 1px solid #ef4444 !important;
+    color: #ffffff !important;
+}
+
+.status-option.status-not-done:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+    border-color: #dc2626 !important;
+    color: #fff !important;
+}
+
+.status-option.status-issues:has(input[type="radio"]:checked) {
+    background: #f59e0b !important;
+    border: 1px solid #f59e0b !important;
+    color: #ffffff !important;
+}
+
+.status-option.status-issues:hover {
+    background: rgba(245, 158, 11, 0.2) !important;
+    border-color: #d97706 !important;
+    color: #fff !important;
+}
+
+.status-option.status-canceled:has(input[type="radio"]:checked) {
+    background: #6b7280 !important;
+    border: 1px solid #6b7280 !important;
+    color: #ffffff !important;
+}
+
+.status-option.status-canceled:hover {
+    background: rgba(107, 114, 128, 0.2) !important;
+    border-color: #4b5563 !important;
+    color: #fff !important;
+}
+
+/* Status Label Colors - Only show when checked */
+.status-option.status-done:has(input[type="radio"]:checked) .status-label {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.status-option.status-not-done:has(input[type="radio"]:checked) .status-label {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.status-option.status-issues:has(input[type="radio"]:checked) .status-label {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.status-option.status-canceled:has(input[type="radio"]:checked) .status-label {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+/* Custom Alert/Confirm Dialog */
+.custom-alert-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 4000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.custom-alert-backdrop.show {
+    opacity: 1;
+}
+
+.custom-alert-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.7);
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    padding: 0;
+    min-width: 400px;
+    max-width: 500px;
+    z-index: 4001;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+}
+
+.custom-alert-box.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.custom-alert-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    border-radius: 10px 10px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.custom-alert-header i {
+    color: #ffffff;
+    font-size: 24px;
+}
+
+.custom-alert-header span {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.custom-alert-body {
+    padding: 30px 25px;
+}
+
+.custom-alert-body p {
+    color: #ffffff;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0;
+    text-align: center;
+}
+
+.custom-alert-footer {
+    padding: 20px 25px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.custom-alert-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.custom-alert-btn.cancel-btn {
+    background: rgba(239, 68, 68, 0.9);
+    color: #ffffff;
+}
+
+.custom-alert-btn.cancel-btn:hover {
+    background: #ef4444;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+.custom-alert-btn.confirm-btn {
+    background: rgba(34, 197, 94, 0.9);
+    color: #ffffff;
+}
+
+.custom-alert-btn.confirm-btn:hover {
+    background: #22c55e;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+}
+
+/* Issues Popup Modal - Appears in front of main modal */
+.issues-backdrop-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 3000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.issues-backdrop-modal.show {
+    opacity: 1;
+}
+
+.issues-popup-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: #1a1a2e;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    padding: 0;
+    min-width: 500px;
+    max-width: 600px;
+    width: 90%;
+    z-index: 3001;
+    opacity: 0;
+    transition: all 0.2s ease;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.issues-popup-modal.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.issues-popup-modal .issues-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 15px 20px;
+    border-radius: 6px 6px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.issues-popup-modal .issues-title {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.issues-popup-modal .issues-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #ffffff;
+    font-size: 24px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.issues-popup-modal .issues-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.issues-popup-modal .issues-body {
+    padding: 20px;
+}
+
+.issues-popup-modal .issues-body textarea {
+    width: 100%;
+    padding: 12px;
+    background: #2a2a3e;
+    border: 2px solid #444;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 150px;
+    transition: border-color 0.2s ease;
+}
+
+.issues-popup-modal .issues-body textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.issues-popup-modal .issues-body textarea::placeholder {
+    color: #999;
+}
+
+.issues-popup-modal .issues-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.issues-popup-modal .issues-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.issues-popup-modal .issues-btn.cancel {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.issues-popup-modal .issues-btn.cancel:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.issues-popup-modal .issues-btn.save {
+    background: #667eea;
+    color: #ffffff;
+}
+
+.issues-popup-modal .issues-btn.save:hover {
+    background: #5a67d8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* ========================================
+   MUSANED BUTTON STYLES
+   ======================================== */
+
+/* Base Musaned Button Styles */
+.musaned-btn {
+    background-color: #48bb78 !important;
+    color: white !important;
+    width: 70px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    font-size: 8px !important;
+    padding: 3px 5px !important;
+}
+
+.musaned-btn:hover {
+    background-color: #38a169 !important;
+}
+
+.musaned-btn span {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+}
+
+/* Tablet (769px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .musaned-btn {
+        min-width: 70px !important;
+        min-height: 24px !important;
+        padding: 3px 8px !important;
+        font-size: 8px !important;
+    }
+}
+
+/* Mobile (481px - 768px) */
+@media (max-width: 768px) and (min-width: 481px) {
+    .musaned-btn {
+        width: 60px !important;
+        font-size: 7px !important;
+        padding: 3px 6px !important;
+    }
+    
+    .musaned-btn span {
+        font-size: 7px !important;
+    }
+}
+
+/* Small Mobile (max-width: 480px) */
+@media (max-width: 480px) {
+    .musaned-btn {
+        min-width: 60px !important;
+        min-height: 20px !important;
+        padding: 2px 6px !important;
+        font-size: 7px !important;
+    }
+}
+
+/* Touch-friendly styles (max-width: 1024px) */
+@media (max-width: 1024px) {
+    .musaned-btn {
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        -webkit-tap-highlight-color: rgba(255, 255, 255, 0.1) !important;
+    }
+}
+
+/* ========================================
+   MUSANED MODAL RESPONSIVE STYLES
+   ======================================== */
+
+/* Tablet Landscape (769px - 1024px) */
+@media (max-width: 1024px) and (min-width: 769px) {
+    #musanedModal {
+        padding: 10px !important;
+        align-items: flex-start !important;
+        overflow-y: auto !important;
+    }
+    
+    #musanedModal .modal-content {
+        width: 98% !important;
+        max-width: 98% !important;
+        padding: 6px !important;
+        max-height: 98vh !important;
+        overflow-y: auto !important;
+    }
+    
+    #musanedModal .modal-header h2 {
+        font-size: 14px !important;
+    }
+    
+    .close-modal {
+        font-size: 16px !important;
+        padding: 2px !important;
+    }
+    
+    .worker-info-section {
+        padding: 4px !important;
+    }
+    
+    .worker-info-section h3 {
+        font-size: 12px !important;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 4px !important;
+    }
+    
+    .info-item label {
+        font-size: 9px !important;
+    }
+    
+    .info-item span {
+        font-size: 10px !important;
+    }
+    
+    /* Change 5-column grid to 2 columns */
+    .status-sections-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 4px !important;
+    }
+    
+    .column-title {
+        font-size: 10px !important;
+        padding-bottom: 3px !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .status-section {
+        padding: 4px !important;
+        margin-bottom: 3px !important;
+    }
+    
+    .status-section h3 {
+        font-size: 9px !important;
+        margin-bottom: 3px !important;
+    }
+    
+    .status-options {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 3px !important;
+    }
+    
+    .status-option {
+        width: 100% !important;
+        height: 28px !important;
+        padding: 4px !important;
+        font-size: 8px !important;
+    }
+    
+    .status-option .status-label {
+        font-size: 7px !important;
+    }
+    
+    .issues-section {
+        padding: 6px !important;
+        margin-top: 6px !important;
+    }
+    
+    .issues-section label {
+        font-size: 9px !important;
+    }
+    
+    .issues-section textarea {
+        padding: 4px 6px !important;
+        font-size: 9px !important;
+        min-height: 50px !important;
+    }
+    
+    #musanedModal .form-actions {
+        gap: 6px !important;
+        margin-top: 6px !important;
+        padding-top: 6px !important;
+    }
+    
+    #musanedModal .btn-cancel,
+    #musanedModal .btn-save {
+        padding: 6px 12px !important;
+        font-size: 11px !important;
+        gap: 4px !important;
+    }
+}
+
+/* Tablet Portrait (481px - 768px) */
+@media (max-width: 768px) and (min-width: 481px) {
+    #musanedModal {
+        padding: 5px !important;
+        align-items: flex-start !important;
+        overflow-y: auto !important;
+    }
+    
+    #musanedModal .modal-content {
+        width: 99% !important;
+        max-width: 99% !important;
+        padding: 4px !important;
+        max-height: 99vh !important;
+        overflow-y: auto !important;
+    }
+    
+    #musanedModal .modal-header {
+        margin-bottom: 3px !important;
+        padding-bottom: 2px !important;
+    }
+    
+    #musanedModal .modal-header h2 {
+        font-size: 12px !important;
+    }
+    
+    .close-modal {
+        font-size: 14px !important;
+        padding: 2px !important;
+    }
+    
+    .worker-info-section {
+        padding: 3px !important;
+        margin-bottom: 3px !important;
+    }
+    
+    .worker-info-section h3 {
+        font-size: 10px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 3px !important;
+    }
+    
+    .info-item label {
+        font-size: 8px !important;
+    }
+    
+    .info-item span {
+        font-size: 9px !important;
+    }
+    
+    /* Change to single column layout */
+    .status-sections-grid {
+        grid-template-columns: 1fr !important;
+        gap: 3px !important;
+    }
+    
+    .column-title {
+        font-size: 9px !important;
+        padding-bottom: 2px !important;
+        margin-bottom: 3px !important;
+    }
+    
+    .status-section {
+        padding: 3px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .status-section h3 {
+        font-size: 8px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .status-options {
+        grid-template-columns: 1fr 1fr 1fr 1fr !important;
+        gap: 2px !important;
+    }
+    
+    .status-option {
+        width: 100% !important;
+        height: 24px !important;
+        padding: 3px !important;
+        font-size: 7px !important;
+    }
+    
+    .status-option .status-label {
+        font-size: 6px !important;
+    }
+    
+    .issues-section {
+        padding: 4px !important;
+        margin-top: 4px !important;
+    }
+    
+    .issues-section label {
+        font-size: 8px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .issues-section textarea {
+        padding: 3px 4px !important;
+        font-size: 8px !important;
+        min-height: 40px !important;
+    }
+    
+    #musanedModal .form-actions {
+        gap: 4px !important;
+        margin-top: 4px !important;
+        padding-top: 4px !important;
+        flex-wrap: wrap !important;
+    }
+    
+    #musanedModal .btn-cancel,
+    #musanedModal .btn-save {
+        padding: 5px 10px !important;
+        font-size: 10px !important;
+        gap: 3px !important;
+        flex: 1 1 calc(50% - 2px) !important;
+    }
+}
+
+/* Mobile (max-width: 480px) */
+@media (max-width: 480px) {
+    #musanedModal {
+        padding: 2px !important;
+        align-items: flex-start !important;
+        overflow-y: auto !important;
+    }
+    
+    #musanedModal .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 3px !important;
+        max-height: 100vh !important;
+        overflow-y: auto !important;
+        border-radius: 0 !important;
+    }
+    
+    #musanedModal .modal-header {
+        margin-bottom: 2px !important;
+        padding-bottom: 2px !important;
+    }
+    
+    #musanedModal .modal-header h2 {
+        font-size: 11px !important;
+    }
+    
+    .close-modal {
+        font-size: 12px !important;
+        padding: 1px !important;
+    }
+    
+    .worker-info-section {
+        padding: 2px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .worker-info-section h3 {
+        font-size: 9px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr !important;
+        gap: 2px !important;
+    }
+    
+    .info-item label {
+        font-size: 7px !important;
+    }
+    
+    .info-item span {
+        font-size: 8px !important;
+    }
+    
+    /* Single column layout */
+    .status-sections-grid {
+        grid-template-columns: 1fr !important;
+        gap: 2px !important;
+    }
+    
+    .column-title {
+        font-size: 8px !important;
+        padding-bottom: 2px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .status-section {
+        padding: 2px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .status-section h3 {
+        font-size: 7px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .status-options {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 2px !important;
+    }
+    
+    .status-option {
+        width: 100% !important;
+        height: 22px !important;
+        padding: 2px !important;
+        font-size: 6px !important;
+    }
+    
+    .status-option .status-label {
+        font-size: 5px !important;
+    }
+    
+    .issues-section {
+        padding: 3px !important;
+        margin-top: 3px !important;
+    }
+    
+    .issues-section label {
+        font-size: 7px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .issues-section textarea {
+        padding: 2px 3px !important;
+        font-size: 7px !important;
+        min-height: 35px !important;
+    }
+    
+    #musanedModal .form-actions {
+        gap: 3px !important;
+        margin-top: 3px !important;
+        padding-top: 3px !important;
+        flex-direction: column !important;
+    }
+    
+    #musanedModal .btn-cancel,
+    #musanedModal .btn-save {
+        padding: 4px 8px !important;
+        font-size: 9px !important;
+        gap: 2px !important;
+        width: 100% !important;
+    }
+    
+    /* Custom alert responsive */
+    .custom-alert-box {
+        min-width: 90% !important;
+        max-width: 95% !important;
+    }
+    
+    .custom-alert-header {
+        padding: 12px !important;
+    }
+    
+    .custom-alert-header span {
+        font-size: 14px !important;
+    }
+    
+    .custom-alert-body {
+        padding: 15px 12px !important;
+    }
+    
+    .custom-alert-body p {
+        font-size: 12px !important;
+    }
+    
+    .custom-alert-footer {
+        padding: 12px !important;
+        flex-direction: column !important;
+    }
+    
+    .custom-alert-btn {
+        padding: 8px 16px !important;
+        font-size: 12px !important;
+        width: 100% !important;
+    }
+    
+    /* Issues popup responsive */
+    .issues-popup-modal {
+        min-width: 95% !important;
+        max-width: 98% !important;
+        width: 95% !important;
+    }
+    
+    .issues-popup-modal .issues-header {
+        padding: 10px 12px !important;
+    }
+    
+    .issues-popup-modal .issues-title {
+        font-size: 12px !important;
+    }
+    
+    .issues-popup-modal .issues-close {
+        font-size: 18px !important;
+        width: 24px !important;
+        height: 24px !important;
+    }
+    
+    .issues-popup-modal .issues-body {
+        padding: 12px !important;
+    }
+    
+    .issues-popup-modal .issues-body textarea {
+        padding: 8px !important;
+        font-size: 11px !important;
+        min-height: 100px !important;
+    }
+    
+    .issues-popup-modal .issues-footer {
+        padding: 10px 12px !important;
+        flex-direction: column !important;
+    }
+    
+    .issues-popup-modal .issues-btn {
+        padding: 8px 16px !important;
+        font-size: 11px !important;
+        width: 100% !important;
+    }
+}

@@ -1,0 +1,310 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/contextual-help.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/contextual-help.css`.
+ */
+/* ===========================================
+   CONTEXTUAL HELP SYSTEM - CSS
+   Clickable Explanations for System Features
+   =========================================== */
+
+/* Help Icon */
+.help-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+    color: #3b82f6;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+    vertical-align: middle;
+}
+
+.help-icon:hover {
+    color: #2563eb;
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.help-icon i {
+    pointer-events: none;
+}
+
+/* Explanation Overlay */
+.contextual-help-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.contextual-help-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.contextual-help-modal {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-radius: 16px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+}
+
+.contextual-help-overlay.active .contextual-help-modal {
+    transform: scale(1);
+}
+
+.contextual-help-image,
+.contextual-help-steps,
+.contextual-help-tips,
+.contextual-help-important {
+    display: none;
+}
+
+.contextual-help-image.contextual-help-visible,
+.contextual-help-steps.contextual-help-visible,
+.contextual-help-tips.contextual-help-visible,
+.contextual-help-important.contextual-help-visible {
+    display: block;
+}
+
+body.contextual-help-open {
+    overflow: hidden !important;
+}
+
+/* Header */
+.contextual-help-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.contextual-help-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.contextual-help-title i {
+    color: #3b82f6;
+}
+
+.contextual-help-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+}
+
+.contextual-help-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    transform: rotate(90deg);
+}
+
+/* Body */
+.contextual-help-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+    color: #e2e8f0;
+    line-height: 1.7;
+}
+
+.contextual-help-image {
+    margin-bottom: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contextual-help-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-height: 300px;
+    object-fit: contain;
+    background: rgba(15, 23, 42, 0.3);
+}
+
+.contextual-help-content {
+    margin-bottom: 20px;
+}
+
+.contextual-help-content p {
+    margin: 0 0 16px 0;
+    font-size: 1rem;
+    color: #cbd5e1;
+}
+
+.contextual-help-steps,
+.contextual-help-tips,
+.contextual-help-important {
+    margin-top: 24px;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 12px;
+    border-left: 3px solid #3b82f6;
+}
+
+.contextual-help-steps h4,
+.contextual-help-tips h4,
+.contextual-help-important h4 {
+    margin: 0 0 12px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.contextual-help-steps ol,
+.contextual-help-tips ul,
+.contextual-help-important ul {
+    margin: 0;
+    padding-left: 24px;
+    color: #cbd5e1;
+}
+
+.contextual-help-steps li,
+.contextual-help-tips li,
+.contextual-help-important li {
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.contextual-help-tips {
+    border-left-color: #10b981;
+}
+
+.contextual-help-important {
+    border-left-color: #f59e0b;
+}
+
+.contextual-help-important h4 i {
+    color: #f59e0b;
+}
+
+.contextual-help-tips h4 i {
+    color: #10b981;
+}
+
+/* Footer */
+.contextual-help-footer {
+    padding: 16px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: flex-end;
+    background: rgba(15, 23, 42, 0.3);
+}
+
+.btn-help-more {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-help-more:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-help-more:active {
+    transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .contextual-help-modal {
+        max-width: 95%;
+        max-height: 95vh;
+        margin: 10px;
+    }
+    
+    .contextual-help-header {
+        padding: 16px 20px;
+    }
+    
+    .contextual-help-title {
+        font-size: 1.25rem;
+    }
+    
+    .contextual-help-body {
+        padding: 20px;
+    }
+    
+    .contextual-help-footer {
+        padding: 12px 20px;
+    }
+    
+    .btn-help-more {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Scrollbar styling for explanation body */
+.contextual-help-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.contextual-help-body::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.3);
+    border-radius: 4px;
+}
+
+.contextual-help-body::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 4px;
+}
+
+.contextual-help-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.5);
+}

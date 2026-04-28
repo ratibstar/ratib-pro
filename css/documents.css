@@ -1,0 +1,216 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/documents.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/documents.css`.
+ */
+/* Document Viewer Styles - Extracted from dashboard.css */
+
+/* Documents List */
+.documents-list {
+    background: #1a1a1a;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #404040;
+}
+
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #404040;
+}
+
+.list-header h3 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 16px;
+}
+
+.documents-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.document-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 15px;
+    background: #2d2d2d;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #404040;
+}
+
+.document-info {
+    flex: 1;
+}
+
+.document-info h4 {
+    color: #ffffff;
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+
+.document-info p {
+    color: #cccccc;
+    margin: 4px 0;
+    font-size: 12px;
+}
+
+.document-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 15px;
+}
+
+.loading-spinner,
+.no-documents,
+.error-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+}
+
+.loading-spinner i,
+.no-documents i,
+.error-message i {
+    font-size: 24px;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Document Viewer Modal Styles */
+.document-viewer {
+    background: #1a1a1a;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #404040;
+}
+
+.document-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #404040;
+}
+
+.document-header h3 {
+    color: #ffffff;
+    margin: 0 0 10px 0;
+    font-size: 18px;
+}
+
+.document-header p {
+    color: #cccccc;
+    margin: 5px 0;
+    font-size: 13px;
+}
+
+.document-preview {
+    background: #2d2d2d;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #404040;
+}
+
+.no-preview {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+}
+
+.no-preview i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    display: block;
+    color: #667eea;
+}
+
+.no-preview p {
+    margin: 10px 0;
+    font-size: 16px;
+}
+
+.no-preview .btn {
+    margin-top: 15px;
+}
+
+/* Mobile responsive for document viewer */
+@media (max-width: 768px) {
+    .document-viewer {
+        padding: 15px;
+    }
+    
+    .document-header h3 {
+        font-size: 16px;
+    }
+    
+    .document-header p {
+        font-size: 12px;
+    }
+    
+    .document-preview {
+        padding: 10px;
+    }
+    
+    .no-preview {
+        padding: 30px 15px;
+    }
+    
+    .no-preview i {
+        font-size: 36px;
+    }
+    
+    .no-preview p {
+        font-size: 14px;
+    }
+    
+    .document-item {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .document-actions {
+        margin-left: 0;
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 480px) {
+    .document-viewer {
+        padding: 12px;
+    }
+    
+    .document-header h3 {
+        font-size: 14px;
+    }
+    
+    .document-header p {
+        font-size: 11px;
+    }
+    
+    .no-preview {
+        padding: 20px 10px;
+    }
+    
+    .no-preview i {
+        font-size: 28px;
+    }
+    
+    .no-preview p {
+        font-size: 12px;
+    }
+    
+    .document-item {
+        padding: 10px;
+    }
+    
+    .document-info h4 {
+        font-size: 13px;
+    }
+    
+    .document-info p {
+        font-size: 11px;
+    }
+}

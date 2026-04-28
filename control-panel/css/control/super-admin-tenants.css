@@ -1,0 +1,19 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control/super-admin-tenants.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control/super-admin-tenants.css`.
+ */
+.countries-login-section { margin: 2rem 0; padding: 1.75rem; background: linear-gradient(145deg, rgba(22, 33, 62, 0.4) 0%, rgba(15, 23, 42, 0.3) 100%); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.06); }
+.countries-login-section .section-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.countries-login-section .section-header h3 { font-size: 1.25rem; font-weight: 700; color: var(--control-text-light); margin: 0; display: flex; align-items: center; gap: 0.6rem; }
+.countries-login-section .section-header h3 i { color: var(--control-accent); opacity: 0.9; }
+.countries-login-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem; }
+.country-login-card { background: linear-gradient(160deg, rgba(22, 33, 62, 0.85) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 1.25rem; transition: all 0.35s; display: flex; flex-direction: column; gap: 0.75rem; position: relative; overflow: hidden; }
+.country-login-card:hover { border-color: rgba(102, 126, 234, 0.35); transform: translateY(-4px); box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.4); }
+.country-login-card .country-name { font-weight: 700; font-size: 1rem; color: var(--control-text-light); line-height: 1.3; }
+.country-login-card .users-count { font-size: 1.5rem; font-weight: 800; color: var(--control-accent); }
+.country-login-card .users-label { font-size: 0.8rem; color: var(--control-muted); }
+.country-login-card .btn-login { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--control-accent); color: #fff !important; border-radius: 8px; font-size: 0.9rem; font-weight: 600; text-decoration: none; transition: all 0.3s; width: fit-content; }
+.country-login-card .btn-login:hover { background: var(--control-accent-hover); color: #fff !important; transform: translateX(4px); }
+.country-login-card .btn-agencies { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--control-accent); text-decoration: none; }
+.country-login-card .btn-agencies:hover { color: var(--control-accent-hover); }
+.loading-state { color: var(--control-muted); padding: 2rem; text-align: center; }

@@ -1,0 +1,14 @@
+[
+    {
+        "decision_id": "arch-20260424094141-4c61f59d",
+        "timestamp": "2026-04-24T09:41:41+00:00",
+        "reason": "seed",
+        "context": {
+            "source": "test"
+        },
+        "expected_outcome": {
+            "change": "none"
+        },
+        "actual_outcome": null
+    }
+]

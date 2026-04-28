@@ -1,0 +1,1553 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/worker/documents.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/worker/documents.css`.
+ */
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+/* Documents modal specific */
+#documentsModal.modal {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    visibility: hidden;
+}
+
+#documentsModal.modal.show {
+    display: flex !important;
+    opacity: 1;
+    transform: scale(1);
+    visibility: visible;
+}
+
+#documentsModal .modal-content {
+    width: 95%;
+    max-width: 1200px;
+    height: auto;
+    max-height: 95vh;
+    margin: auto;
+    background: #1a1a1a;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    position: relative;
+}
+
+/* Modal body - no scrolling */
+#documentsModal .modal-body {
+    flex: 1;
+    overflow: visible;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Document viewer modal */
+#documentViewerModal {
+    z-index: 2001 !important; /* In front of files modal */
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+}
+
+#documentViewerModal.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+#documentViewerModal .modal-content {
+    width: 90%;
+    max-width: 1050px;
+    height: 90%;
+    max-height: 90vh;
+    margin: auto;
+    background: #1a1a1a;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+#documentViewerModal .modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    min-height: 60px;
+}
+
+#documentViewerModal .modal-header h2 {
+    color: #fff;
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+#documentViewerModal .close-btn {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+#documentViewerModal .close-btn:hover {
+    color: #fff;
+    background: #333;
+}
+
+#documentViewerModal .modal-body {
+    flex: 1;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#documentViewerModal .document-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+#documentViewerModal #documentFrame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #fff;
+    overflow: hidden;
+    object-fit: contain;
+    min-height: 400px;
+}
+
+/* Ensure iframe content fits without scrolling */
+#documentViewerModal #documentFrame {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.modern-documents-modal {
+    max-width: 1200px;
+    width: 95%;
+    max-height: 95vh;
+    height: auto;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* Modal body within modern-documents-modal - no scrolling */
+.modern-documents-modal .modal-body {
+    flex: 1;
+    overflow: visible;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.modern-documents-modal .modal-header {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+    box-shadow: 0 6px 15px rgba(102, 126, 234, 0.3);
+}
+
+.header-text h2 {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.header-text p {
+    color: #a0aec0;
+    font-size: 12px;
+    margin: 3px 0 0 0;
+}
+
+.close-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #ffffff;
+    font-size: 20px;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+/* Progress Overview */
+.progress-overview {
+    background: rgba(255, 255, 255, 0.05);
+    margin: 6px 12px;
+    padding: 6px;
+    border-radius: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 6px;
+    gap: 8px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    line-height: 1.2;
+}
+
+.stat-label {
+    display: block;
+    font-size: 8px;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 1px;
+    line-height: 1.2;
+}
+
+.progress-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 6px rgba(102, 126, 234, 0.5);
+}
+
+.progress-percentage {
+    font-size: 10px;
+    font-weight: 600;
+    color: #ffffff;
+    min-width: 30px;
+}
+
+/* Documents Grid */
+.documents-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 0 15px 12px;
+    overflow: visible;
+    max-height: none;
+}
+
+/* Document Cards */
+.document-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    min-height: 140px;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.document-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+.document-card:hover::before {
+    opacity: 1;
+    height: 5px;
+}
+
+.document-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(102, 126, 234, 0.3);
+    border-color: rgba(102, 126, 234, 0.4);
+}
+
+.card-header {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.document-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 13px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.document-icon.identity {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.document-icon.passport {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.document-icon.police {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.document-icon.medical {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.document-icon.visa {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+}
+
+.document-icon.ticket {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+
+.document-info {
+    flex: 1;
+}
+
+.document-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.document-info h3 {
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 0 2px 0;
+    line-height: 1.3;
+}
+
+.document-info p {
+    color: #a0aec0;
+    font-size: 9px;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.status-badge {
+    flex-shrink: 0;
+}
+
+.status-badge select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #ffffff;
+    padding: 5px 10px;
+    font-size: 10px;
+    min-height: 26px;
+    height: 26px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 85px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.status-badge select:focus {
+    border-color: rgba(102, 126, 234, 0.5);
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.status-badge select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.status-badge select option {
+    background: #2d3748;
+    color: #ffffff;
+}
+
+/* Card Content */
+.card-content {
+    padding: 10px 12px;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.input-group {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 5px;
+    flex-shrink: 0;
+}
+
+.input-group input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 6px;
+    color: #ffffff;
+    padding: 5px 10px;
+    font-size: 11px;
+    min-height: 28px;
+    height: 28px;
+    transition: all 0.3s ease;
+}
+
+.input-group input:focus {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(102, 126, 234, 0.5);
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.input-group input::placeholder {
+    color: #a0aec0;
+}
+
+.file-section {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+    margin-top: auto;
+    flex-wrap: wrap;
+}
+
+.file-input {
+    display: none;
+}
+
+.file-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    padding: 5px 10px;
+    font-size: 10px;
+    min-height: 26px;
+    height: 26px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.4);
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+}
+
+.file-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.file-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.file-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.file-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.current-file {
+    flex: 1;
+    color: #a0aec0;
+    font-size: 9px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    min-height: 26px;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.current-file .no-file {
+    color: #718096;
+    font-style: italic;
+}
+
+.current-file .file-name {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.current-file .view-btn {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    border: none;
+    border-radius: 3px;
+    color: white;
+    padding: 3px 6px;
+    font-size: 8px;
+    cursor: pointer;
+    margin-left: 6px;
+    transition: all 0.3s ease;
+}
+
+.current-file .view-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 3px 10px rgba(79, 172, 254, 0.3);
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.btn-cancel, .btn-save {
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    min-height: 32px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: none;
+}
+
+.btn-cancel {
+    background: rgba(255, 255, 255, 0.1);
+    color: #a0aec0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .modern-documents-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+    }
+    
+    .documents-grid {
+        grid-template-columns: 1fr !important;
+        padding: 0 8px 10px !important;
+        gap: 8px !important;
+    }
+    
+    .document-card {
+        min-height: auto !important;
+    }
+    
+    .card-header {
+        padding: 8px 10px !important;
+    }
+    
+    .document-icon {
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 12px !important;
+    }
+    
+    .document-info h3 {
+        font-size: 12px !important;
+    }
+    
+    .document-info p {
+        font-size: 9px !important;
+    }
+    
+    .status-badge select {
+        padding: 6px 8px !important;
+        font-size: 11px !important;
+        min-height: 32px !important;
+        height: 32px !important;
+        width: 80px !important;
+    }
+    
+    .card-content {
+        padding: 8px 10px !important;
+    }
+    
+    .progress-stats {
+        flex-direction: row !important;
+        gap: 8px !important;
+        flex-wrap: wrap !important;
+    }
+    
+    .stat-number {
+        font-size: 16px !important;
+    }
+    
+    .stat-label {
+        font-size: 9px !important;
+    }
+    
+    .progress-percentage {
+        font-size: 10px !important;
+    }
+    
+    .input-group {
+        flex-direction: column !important;
+        gap: 6px !important;
+    }
+    
+    .input-group input {
+        padding: 8px 10px !important;
+        font-size: 14px !important;
+        min-height: 36px !important;
+        height: 36px !important;
+    }
+    
+    .file-section {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 6px !important;
+    }
+    
+    .file-btn {
+        padding: 8px 12px !important;
+        font-size: 11px !important;
+        min-height: 36px !important;
+        height: 36px !important;
+        width: 100% !important;
+        justify-content: center !important;
+    }
+    
+    .current-file {
+        padding: 8px 10px !important;
+        font-size: 10px !important;
+        min-height: 36px !important;
+    }
+    
+    .form-actions {
+        flex-direction: column !important;
+        gap: 10px !important;
+        padding: 15px !important;
+    }
+    
+    .btn-cancel, .btn-save {
+        padding: 12px 24px !important;
+        font-size: 16px !important;
+        min-height: 44px !important;
+        height: 44px !important;
+        width: 100% !important;
+        justify-content: center !important;
+    }
+    
+    .view-files-btn {
+        padding: 12px 20px !important;
+        font-size: 14px !important;
+        min-height: 44px !important;
+        height: 44px !important;
+        width: 100% !important;
+        justify-content: center !important;
+    }
+}
+
+/* Extra Small Mobile (max-width: 480px) */
+@media (max-width: 480px) {
+    .modern-documents-modal {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+    }
+    
+    .modern-documents-modal .modal-header {
+        padding: 8px 10px !important;
+    }
+    
+    .header-text h2 {
+        font-size: 14px !important;
+    }
+    
+    .header-text p {
+        font-size: 9px !important;
+    }
+    
+    .progress-overview {
+        margin: 6px 8px !important;
+        padding: 6px !important;
+    }
+    
+    .documents-grid {
+        padding: 0 8px 10px !important;
+        gap: 6px !important;
+    }
+    
+    .card-header {
+        padding: 6px 8px !important;
+        flex-wrap: wrap !important;
+        gap: 5px !important;
+    }
+    
+    .document-icon {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 10px !important;
+    }
+    
+    .document-info h3 {
+        font-size: 11px !important;
+    }
+    
+    .document-info p {
+        font-size: 8px !important;
+    }
+    
+    .status-badge {
+        width: 100% !important;
+    }
+    
+    .status-badge select {
+        width: 100% !important;
+        padding: 6px 8px !important;
+        font-size: 11px !important;
+        min-height: 32px !important;
+        height: 32px !important;
+    }
+    
+    .card-content {
+        padding: 6px 8px !important;
+    }
+    
+    .input-group input {
+        padding: 6px 8px !important;
+        font-size: 14px !important;
+        min-height: 32px !important;
+        height: 32px !important;
+    }
+    
+    .file-btn {
+        padding: 6px 10px !important;
+        font-size: 10px !important;
+        min-height: 32px !important;
+        height: 32px !important;
+    }
+    
+    .current-file {
+        padding: 6px 8px !important;
+        font-size: 9px !important;
+        min-height: 32px !important;
+    }
+    
+    .form-actions {
+        padding: 10px !important;
+        gap: 6px !important;
+    }
+    
+    .btn-cancel, .btn-save {
+        padding: 10px 16px !important;
+        font-size: 13px !important;
+        min-height: 38px !important;
+        height: 38px !important;
+    }
+}
+
+/* Status Colors */
+.status-badge select[value="approved"] {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: #1a202c;
+}
+
+.status-badge select[value="rejected"] {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: #ffffff;
+}
+
+.status-badge select[value="pending"] {
+    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    color: #1a202c;
+}
+
+/* Available files section */
+.available-files-section {
+    margin-top: 8px;
+}
+
+.available-files-header {
+    font-size: 10px;
+    color: #4a90e2;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.available-files-list {
+    max-height: 120px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.available-file-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 9px;
+}
+
+.available-file-item:hover {
+    background: rgba(74, 144, 226, 0.1);
+}
+
+.available-file-item:last-child {
+    border-bottom: none;
+}
+
+.available-file-item i {
+    color: #4a90e2;
+    font-size: 8px;
+}
+
+.available-file-item .file-name {
+    flex: 1;
+    color: #e0e0e0;
+    word-break: break-all;
+}
+
+.view-btn-small {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 2px 4px;
+    border-radius: 2px;
+    font-size: 7px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.view-btn-small:hover {
+    background: #357abd;
+}
+
+/* Modern Files modal styles */
+.files-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s ease;
+}
+
+.files-modal.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* @keyframes fadeIn removed - handled by animations.css */
+
+/* Modern modal content */
+.modern-modal-content {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 20px;
+    width: 95%;
+    max-width: 800px;
+    max-height: 85vh;
+    overflow: hidden;
+    box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    /* Animation removed - handled by animations.css */
+}
+
+/* @keyframes slideIn removed - handled by animations.css */ 
+
+/* Modern modal header */
+.modern-modal-header {
+    padding: 25px 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+.modern-modal-header .header-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.modern-modal-header .header-text h3 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.modern-modal-header .header-text p {
+    color: #a0aec0;
+    margin: 5px 0 0 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.modern-close-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: auto;
+}
+
+.modern-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.files-modal-header h3 {
+    color: #fff;
+    margin: 0;
+    font-size: 18px;
+}
+
+.close-files-modal {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.close-files-modal:hover {
+    background: #444;
+}
+
+/* Header Actions Styles */
+.header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn-select-all, .btn-delete-all {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+}
+
+.btn-select-all:hover {
+    background: #4CAF50;
+}
+
+.btn-delete-all:hover {
+    background: #f44336;
+}
+
+/* File Checkbox Styles */
+.file-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+}
+
+.file-select-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #6366f1;
+}
+
+/* File Card with Checkbox Layout */
+.file-card {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: #2a2a2a;
+    border-radius: 12px;
+    border: 1px solid #404040;
+    transition: all 0.2s;
+    margin-bottom: 12px;
+}
+
+.file-card:hover {
+    background: #333;
+    border-color: #6366f1;
+    transform: translateY(-2px);
+}
+
+.file-card:has(.file-select-checkbox:checked) {
+    background: #1e3a8a;
+    border-color: #3b82f6;
+}
+
+/* File Icon */
+.file-icon {
+    margin-right: 15px;
+    color: #6366f1;
+    font-size: 24px;
+}
+
+/* File Info */
+.file-info {
+    flex: 1;
+    margin-right: 15px;
+}
+
+.file-name {
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.file-type {
+    color: #9ca3af;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Modern modal body */
+.modern-modal-body {
+    padding: 30px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.files-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 10px 0;
+}
+
+/* Modern file cards */
+.modern-file-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    position: relative;
+    overflow: hidden;
+}
+
+.modern-file-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modern-file-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(102, 126, 234, 0.3);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modern-file-card:hover::before {
+    opacity: 1;
+}
+
+.modern-file-card .file-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.modern-file-card .file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.modern-file-card .file-name {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.modern-file-card .file-type {
+    color: #a0aec0;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Modern action buttons */
+.modern-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.action-btn:hover::before {
+    left: 100%;
+}
+
+.action-btn.view-btn {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+}
+
+.action-btn.view-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(66, 153, 225, 0.4);
+}
+
+.action-btn.print-btn {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+}
+
+.action-btn.print-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+}
+
+.action-btn.delete-btn {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
+}
+
+.action-btn.delete-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid #333;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    transition: all 0.2s;
+    background: #2a2a2a;
+}
+
+.file-item:hover {
+    background: #3a3a3a;
+    border-color: #4a90e2;
+}
+
+.file-item i {
+    color: #4a90e2;
+    font-size: 16px;
+}
+
+.file-item .file-name {
+    flex: 1;
+    color: #e0e0e0;
+    font-size: 14px;
+    word-break: break-all;
+}
+
+.file-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.file-item .view-btn {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.file-item .view-btn:hover {
+    background: #357abd;
+}
+
+.file-item .print-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.file-item .print-btn:hover {
+    background: #218838;
+}
+
+.file-item .delete-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.file-item .delete-btn:hover {
+    background: #c82333;
+}
+
+/* View files button */
+.view-files-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 5px;
+    color: white;
+    padding: 10px 16px;
+    font-size: 14px;
+    min-height: 40px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+}
+
+.view-files-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Status Wrapper and Indicators */
+.status-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.status-wrapper:hover {
+    background: rgba(255, 255, 255, 0.06);
+    transform: translateY(-1px);
+}
+
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.status-text {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: lowercase;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+/* Pending - Orange */
+.status-indicator.status-pending {
+    background: #ff9800;
+    box-shadow: 0 0 8px rgba(255, 152, 0, 0.5);
+}
+
+.status-text.status-pending {
+    color: #ffb74d;
+}
+
+/* OK - Green */
+.status-indicator.status-ok {
+    background: #4caf50;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+}
+
+.status-text.status-ok {
+    color: #81c784;
+}
+
+/* NOT OK - Red */
+.status-indicator.status-not_ok {
+    background: #f44336;
+    box-shadow: 0 0 8px rgba(244, 67, 54, 0.5);
+}
+
+.status-text.status-not_ok {
+    color: #e57373;
+}
+
+/* Ensure status-wrapper is visible in doc-group */
+.section.documents .doc-group .status-wrapper {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important;
+    min-width: 80px !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
+    order: 999 !important;
+}
+
+/* Lifecycle and compact-size overrides removed to restore previous Ratib Pro styling. */
+
+

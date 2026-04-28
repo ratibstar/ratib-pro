@@ -1,0 +1,10 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control/home.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control/home.css`.
+ */
+.home-register-body {
+    font-family: sans-serif;
+    padding: 2rem;
+    max-width: 500px;
+    margin: 0 auto;
+}

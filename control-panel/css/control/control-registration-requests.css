@@ -1,0 +1,104 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control/control-registration-requests.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control/control-registration-requests.css`.
+ */
+#registrationRequestsContent { color: #eee; }
+#registrationRequestsContent { font-family: Inter, "Segoe UI", Arial, sans-serif; }
+#registrationRequestsContent .req-table-card { background: #16213e; border-radius: 12px; padding: 1.25rem; border: 1px solid #0f3460; }
+#registrationRequestsContent .req-status-cards { display: grid; grid-template-columns: repeat(8, minmax(100px, 1fr)); gap: 0.55rem; margin-bottom: 1rem; }
+#registrationRequestsContent .req-status-card { background: #0f3460; border: 1px solid #214b7b; border-radius: 10px; padding: 0.55rem 0.65rem; }
+#registrationRequestsContent .req-status-card .k { font-size: 0.72rem; color: #c0c8d4; line-height: 1.1; }
+#registrationRequestsContent .req-status-card .v { font-size: 1.05rem; font-weight: 700; color: #fff; line-height: 1.2; margin-top: 0.2rem; }
+#registrationRequestsContent .req-status-card.pending { border-color: #f39c12; }
+#registrationRequestsContent .req-status-card.approved { border-color: #27ae60; }
+#registrationRequestsContent .req-status-card.rejected { border-color: #e74c3c; }
+#registrationRequestsContent .req-status-card.paid { border-color: #16a34a; }
+#registrationRequestsContent .req-status-card.unpaid { border-color: #d97706; }
+#registrationRequestsContent .req-status-card.active { border-color: #22c55e; }
+#registrationRequestsContent .req-status-card.inactive { border-color: #ef4444; }
+#registrationRequestsContent .req-reg-link-box { background: #0f3460; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+#registrationRequestsContent .req-reg-link-input { flex: 1; min-width: 220px; background: #1a1a2e; border: 1px solid #333; color: #fff; padding: 0.4rem 0.8rem; border-radius: 4px; }
+#registrationRequestsContent .req-quick-filters { margin-bottom: 0.7rem; }
+#registrationRequestsContent .req-controls-bar { display: flex; flex-wrap: wrap; gap: 0.55rem; align-items: center; margin-bottom: 0.8rem; }
+#registrationRequestsContent .req-controls-bar .form-control,
+#registrationRequestsContent .req-controls-bar .form-select { min-height: 36px; }
+#registrationRequestsContent .req-ctrl-input { background: #0f3460 !important; color: #fff !important; border: 1px solid #1a1a2e; }
+#registrationRequestsContent .req-table { margin-bottom: 0; }
+#registrationRequestsContent .req-table th { background: #0f3460; color: #d6e0f1; border-color: #214b7b; font-size: 0.8rem; }
+#registrationRequestsContent .req-table td { border-color: #1f3e66; color: #fff; }
+#registrationRequestsContent .req-col-clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#registrationRequestsContent .req-col-actions { min-width: 260px; }
+#registrationRequestsContent .req-bulk-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.5rem 0 0.75rem; }
+#registrationRequestsContent .req-row-color-key { font-size: 0.83rem; color: #b8c6df; margin-bottom: 0.6rem; }
+#registrationRequestsContent .req-en-date-block { display: inline-block; min-width: 92px; }
+#registrationRequestsContent .control-header { padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid #0f3460; }
+#registrationRequestsContent .control-nav { display: flex; gap: 1rem; align-items: center; }
+#registrationRequestsContent .control-nav a { color: #aaa; text-decoration: none; }
+#registrationRequestsContent .control-nav a:hover { color: #fff; }
+#registrationRequestsContent .content { padding: 2rem; }
+#registrationRequestsContent .table-card { background: #16213e; border-radius: 12px; padding: 1.5rem; border: 1px solid #0f3460; }
+#registrationRequestsContent .controls-bar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1rem; }
+.btn-control { padding: 0.4rem 0.8rem; font-size: 0.9rem; border-radius: 6px; }
+.req-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 0.5rem; border: 1px solid #0f3460; border-radius: 8px; }
+.req-table-wrap table { width: 100%; min-width: 900px; font-size: 0.9rem; background: #16213e; table-layout: fixed !important; }
+.req-table-wrap th { background: #0f3460; color: #aaa; padding: 0.5rem 0.6rem; text-align: left; white-space: nowrap !important; }
+.req-table-wrap td { padding: 0.5rem 0.6rem; border-bottom: 1px solid #0f3460; color: #fff !important; vertical-align: middle !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; line-height: 1.3 !important; }
+.req-table-wrap td.td-agency { max-width: 110px !important; width: 110px !important; }
+.req-table-wrap td.td-siteurl { max-width: 130px !important; width: 130px !important; }
+.req-table-wrap td.td-notes { max-width: 90px !important; width: 90px !important; }
+.req-table-wrap td.action-btns { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; width: auto !important; max-width: none !important; }
+.req-table-wrap td a { color: #5dade2 !important; }
+#registrationRequestsContent table td a { color: #5dade2; }
+#registrationRequestsContent .action-btns { display: flex; gap: 0.3rem; white-space: normal; overflow: visible; }
+#registrationRequestsContent .action-btns .btn { padding: 0.2rem 0.5rem; font-size: 0.8rem; }
+.req-modal-dark .req-modal-content { background: #16213e; color: #eee; border: 1px solid #0f3460; }
+.req-modal-dark .modal-body .form-label { color: #aaa; }
+.req-modal-dark .modal-body .form-control { background: #0f3460; border-color: #1a1a2e; color: #fff; }
+.badge-pending { background: #f39c12; }
+.badge-approved { background: #27ae60; }
+.badge-rejected { background: #e74c3c; }
+.reg-link-box { background: #0f3460; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.reg-link-box input { flex: 1; min-width: 200px; background: #1a1a2e; border: 1px solid #333; color: #fff; padding: 0.4rem 0.8rem; border-radius: 4px; }
+.ctrl-input { background: #0f3460 !important; color: #fff !important; border: 1px solid #1a1a2e; }
+.pending-alert-banner { background: #f39c12; color: #1a1a2e; padding: 0.6rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; font-weight: 600; }
+.pending-alert-banner .pending-alert-text { display: flex; align-items: center; }
+
+.req-width-auto { width: auto; }
+.req-reg-link-input { flex: 1; min-width: 200px; }
+#registrationRequestsContent .req-search-input { width: 180px; }
+#registrationRequestsContent .req-plan-select { width: 100px; }
+#registrationRequestsContent .req-status-select { width: 150px; }
+#registrationRequestsContent .req-date-filter { width: 122px; min-width: 122px; max-width: 122px; }
+#registrationRequestsContent .req-amount-input { width: 94px; min-width: 94px; max-width: 94px; }
+#registrationRequestsContent .req-limit-select { width: 4.35rem; }
+.req-table-fixed { table-layout: fixed; }
+.req-col-w50 { width: 50px; }
+.req-col-w70 { width: 70px; }
+.req-col-w80 { width: 80px; }
+.req-col-w85 { width: 85px; }
+.req-col-w90 { width: 90px; }
+.req-col-w100 { width: 100px; }
+.req-col-w110 { width: 110px; }
+.req-col-w120 { width: 120px; }
+.req-col-w130 { width: 130px; }
+.req-modal-dark { background: #16213e; color: #eee; border: 1px solid #0f3460; }
+.req-modal-header { border-bottom: 1px solid #0f3460; }
+.req-modal-footer { border-top: 1px solid #0f3460; }
+.req-view-table { font-size: 0.95rem; color: #eee; }
+.req-cell-label { width: 140px; }
+.req-pre-wrap { white-space: pre-wrap; }
+.req-divider-top { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.35rem; }
+.req-input-dark { background: #0f3460; color: #fff; border-color: #1a1a2e; }
+.req-hr { border-color: #0f3460; }
+.req-created-agency-ro { height: auto; min-height: 38px; }
+
+@media (max-width: 1400px) {
+    #registrationRequestsContent .req-status-cards { grid-template-columns: repeat(4, minmax(100px, 1fr)); }
+}
+
+@media (max-width: 900px) {
+    #registrationRequestsContent .req-status-cards { grid-template-columns: repeat(2, minmax(100px, 1fr)); }
+    #registrationRequestsContent .req-col-actions { min-width: 180px; }
+    #registrationRequestsContent .req-date-filter,
+    #registrationRequestsContent .req-amount-input { width: 100px; min-width: 100px; max-width: 100px; }
+}

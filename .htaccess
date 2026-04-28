@@ -1,0 +1,74 @@
+RewriteEngine On
+
+# Designed storefront: handled only by pages/designed-launcher.php (absolute redirect + HTML fallback). No rewrite — some hosts 500 on this rule.
+
+# Designed app: serve real files; then force ALL /Designed… to public/index.php (even if a Designed/ folder exists on disk)
+RewriteCond %{REQUEST_URI} ^/Designed/public/ [NC]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+RewriteCond %{REQUEST_URI} ^/Designed(?:/|$) [NC]
+RewriteRule ^.*$ public/index.php [L,QSA]
+
+# Country-specific login: /bangladesh/login, /kenya/login, etc. → /pages/login.php?country_slug=X
+RewriteRule ^([a-z0-9_-]+)/login/?$ /pages/login.php?country_slug=$1 [L,QSA]
+
+# Country root: /bangladesh, /kenya, etc. → country dashboard route
+RewriteCond %{REQUEST_URI} !^/(control-panel|pages|api|public|Designed|js|css|assets|tap-payments)(/|$) [NC]
+RewriteRule ^([a-z0-9_-]+)/?$ /pages/dashboard.php?country_slug=$1 [L,QSA]
+
+# Country-prefixed Ratib pages: /philippines/pages/dashboard.php → /pages/dashboard.php?country_slug=philippines (QSA keeps control=, agency_id=)
+# Must NOT match /control-panel/pages/... — "control-panel" was captured as a fake country_slug and looped with the /pages/control/ → control-panel redirect.
+RewriteCond %{REQUEST_URI} !^/control-panel/ [NC]
+RewriteRule ^([a-z0-9_-]+)/pages/(.+\.php)$ /pages/$2?country_slug=$1 [L,QSA]
+
+# Old control panel URLs → new control-panel folder (so bookmarks/links still work)
+RewriteCond %{REQUEST_URI} ^/pages/control/ [NC]
+RewriteRule ^pages/control/(.*)$ /control-panel/pages/control/$1 [R=302,L,QSA]
+
+# Favicon - serve via PHP to prevent 404
+RewriteRule ^favicon\.ico$ favicon.php [L]
+
+# Admin tenant creation page (extensionless URL)
+RewriteRule ^admin/create-tenant/?$ /admin/create-tenant.php [L,QSA]
+# Admin tenants dashboard (extensionless URL)
+RewriteRule ^admin/tenants/?$ /admin/tenants.php [L,QSA]
+# Government Control (control panel module)
+RewriteRule ^admin/government/?$ /admin/government.php [L,QSA]
+# Government tracking read-only dashboard
+RewriteRule ^admin/government-tracking/?$ /admin/government-tracking.php [L,QSA]
+
+# Auto-detect: Works for both subdomain root and /reports/ subdirectory
+# If files are in /public_html/reports/, uncomment next line:
+# RewriteBase /reports/
+
+# Directory index - tells Apache which file to serve
+DirectoryIndex public/index.php index.php
+
+# Allow access to public directory files directly
+RewriteCond %{REQUEST_URI} ^/public/ [OR]
+RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ [NC]
+RewriteRule ^ - [L]
+
+# Redirect all other requests to public/index.php except existing files/directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ public/index.php [QSA,L]
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# php_value / php_flag in .htaccess breaks PHP-FPM, LiteSpeed LSAPI, and many cPanel PHP handlers → HTTP 500 for EVERY PHP hit.
+# Use cPanel → MultiPHP INI Editor (or .user.ini) for upload_max_filesize, max_execution_time, etc.
+# <IfModule mod_php8.c>
+#     php_value upload_max_filesize 10M
+#     php_value post_max_size 10M
+#     php_value max_execution_time 300
+#     php_value max_input_time 300
+# </IfModule>
+
+# PHP version is controlled by cPanel → MultiPHP Manager (use 8.1+ for Designed).
+# Do not add AddHandler application/x-httpd-ea-php74 here — it forces PHP 7.4 and overrides MultiPHP.

@@ -1,0 +1,975 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/animation.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/animation.css`.
+ */
+/* ============================================
+   PROFESSIONAL ANIMATIONS - SMOOTH MOVEMENTS
+   Changeable Colors - Full Page Coverage
+   Cards, Forms, Backgrounds, Tables, Buttons
+   ============================================ */
+
+/* ============================================
+   KEYFRAME ANIMATIONS - SMOOTH PROFESSIONAL
+   ============================================ */
+
+@keyframes smoothColorWave {
+    0% { 
+        background-position: 0% 50%;
+        filter: hue-rotate(0deg);
+    }
+    50% { 
+        background-position: 100% 50%;
+        filter: hue-rotate(10deg);
+    }
+    100% { 
+        background-position: 0% 50%;
+        filter: hue-rotate(0deg);
+    }
+}
+
+@keyframes smoothGradientFlow {
+    0% {
+        background-position: 0% 0%;
+    }
+    50% {
+        background-position: 100% 100%;
+    }
+    100% {
+        background-position: 0% 0%;
+    }
+}
+
+@keyframes smoothGlow {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.4),
+                    0 0 30px rgba(168, 85, 247, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(99, 102, 241, 0.6),
+                    0 0 50px rgba(168, 85, 247, 0.5);
+    }
+}
+
+@keyframes smoothSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) translateZ(-30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) translateZ(0) scale(1);
+    }
+}
+
+@keyframes smoothFloat {
+    0%, 100% {
+        transform: translateY(0) translateZ(0);
+    }
+    50% {
+        transform: translateY(-5px) translateZ(5px);
+    }
+}
+
+@keyframes smoothPulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.9;
+        transform: scale(0.98);
+    }
+}
+
+/* ============================================
+   GLOBAL - PROFESSIONAL BACKGROUND COLORS
+   ============================================ */
+
+* {
+    box-sizing: border-box !important;
+}
+
+html,
+body {
+    background: linear-gradient(135deg, 
+        rgba(15, 23, 42, 0.98) 0%,
+        rgba(30, 41, 59, 0.98) 25%,
+        rgba(51, 65, 85, 0.98) 50%,
+        rgba(30, 41, 59, 0.98) 75%,
+        rgba(15, 23, 42, 0.98) 100%) !important;
+    background-size: 400% 400% !important;
+    animation: smoothGradientFlow 30s ease infinite !important;
+    background-color: #0f172a !important;
+    perspective: 1200px !important;
+}
+
+body *,
+body *::before,
+body *::after {
+    background-color: transparent !important;
+}
+
+/* ============================================
+   PAGE BACKGROUNDS - SMOOTH COLOR WAVES
+   ============================================ */
+
+.content-wrapper,
+.wrapper,
+.main-content,
+.container,
+.container-fluid,
+section,
+main,
+article {
+    background: linear-gradient(135deg,
+        rgba(30, 41, 59, 0.4) 0%,
+        rgba(51, 65, 85, 0.45) 25%,
+        rgba(30, 41, 59, 0.4) 50%,
+        rgba(51, 65, 85, 0.45) 75%,
+        rgba(30, 41, 59, 0.4) 100%) !important;
+    background-size: 300% 300% !important;
+    animation: smoothGradientFlow 25s ease infinite, smoothSlideIn 0.8s ease-out !important;
+    background-color: transparent !important;
+    transition: all 0.3s ease !important;
+}
+
+.row,
+.col,
+[class*="col-"] {
+    background-color: transparent !important;
+    transition: all 0.3s ease !important;
+}
+
+/* ============================================
+   CARDS - SMOOTH PROFESSIONAL COLORS
+   ============================================ */
+
+.card,
+[class*="card"] {
+    background: linear-gradient(135deg,
+        rgba(30, 41, 59, 0.7) 0%,
+        rgba(51, 65, 85, 0.75) 20%,
+        rgba(30, 41, 59, 0.7) 40%,
+        rgba(51, 65, 85, 0.75) 60%,
+        rgba(30, 41, 59, 0.7) 80%,
+        rgba(51, 65, 85, 0.75) 100%) !important;
+    background-size: 200% 200% !important;
+    animation: smoothGradientFlow 20s ease infinite, smoothFloat 6s ease-in-out infinite !important;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    transform-style: preserve-3d !important;
+    backface-visibility: hidden !important;
+    border-color: rgba(99, 102, 241, 0.3) !important;
+    background-color: transparent !important;
+}
+
+.card:hover,
+[class*="card"]:hover {
+    transform: translateY(-6px) translateZ(15px) scale(1.02) rotateX(2deg) rotateY(-2deg) !important;
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.3) 0%,
+        rgba(168, 85, 247, 0.35) 20%,
+        rgba(20, 184, 166, 0.3) 40%,
+        rgba(16, 185, 129, 0.35) 60%,
+        rgba(99, 102, 241, 0.3) 80%,
+        rgba(168, 85, 247, 0.35) 100%) !important;
+    background-size: 150% 150% !important;
+    animation: smoothColorWave 3s ease infinite, smoothGlow 2s ease infinite !important;
+    box-shadow: 0 15px 40px rgba(99, 102, 241, 0.3),
+                0 10px 30px rgba(168, 85, 247, 0.25),
+                0 5px 20px rgba(20, 184, 166, 0.2),
+                0 0 0 2px rgba(168, 85, 247, 0.4) !important;
+    border-color: rgba(168, 85, 247, 0.6) !important;
+}
+
+.card-header,
+[class*="card-header"] {
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.3) 0%,
+        rgba(168, 85, 247, 0.35) 50%,
+        rgba(20, 184, 166, 0.3) 100%) !important;
+    background-size: 200% 100% !important;
+    animation: smoothColorWave 8s ease infinite !important;
+    background-color: transparent !important;
+    border-bottom-color: rgba(168, 85, 247, 0.4) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+    transition: all 0.3s ease !important;
+}
+
+.card-body,
+.card-footer {
+    background-color: transparent !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    transition: all 0.3s ease !important;
+}
+
+/* ============================================
+   FORMS - SMOOTH PROFESSIONAL COLORS
+   ============================================ */
+
+.form-control,
+.form-select,
+input:not([type="button"]):not([type="submit"]):not([type="reset"]),
+textarea,
+select {
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    transform-style: preserve-3d !important;
+    background: linear-gradient(135deg,
+        rgba(30, 41, 59, 0.9) 0%,
+        rgba(51, 65, 85, 0.95) 100%) !important;
+    border-color: rgba(99, 102, 241, 0.4) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    background-color: transparent !important;
+}
+
+.form-control:hover,
+.form-select:hover,
+input:hover,
+textarea:hover,
+select:hover {
+    background: linear-gradient(135deg,
+        rgba(30, 41, 59, 0.95) 0%,
+        rgba(51, 65, 85, 1) 100%) !important;
+    border-color: rgba(99, 102, 241, 0.6) !important;
+    transform: translateY(-1px) translateZ(3px) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+input:focus,
+textarea:focus,
+select:focus {
+    transform: translateY(-2px) translateZ(6px) scale(1.01) rotateX(1deg) !important;
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.25) 0%,
+        rgba(168, 85, 247, 0.3) 33%,
+        rgba(20, 184, 166, 0.25) 66%,
+        rgba(99, 102, 241, 0.25) 100%) !important;
+    background-size: 200% 200% !important;
+    animation: smoothColorWave 4s ease infinite !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2),
+                0 5px 20px rgba(168, 85, 247, 0.3),
+                inset 0 0 10px rgba(168, 85, 247, 0.1) !important;
+    border-color: rgba(168, 85, 247, 0.7) !important;
+    outline: none !important;
+}
+
+.form-control::placeholder,
+.form-select::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: rgba(200, 200, 255, 0.5) !important;
+    transition: color 0.3s ease !important;
+}
+
+.form-control:focus::placeholder,
+.form-select:focus::placeholder,
+input:focus::placeholder,
+textarea:focus::placeholder {
+    color: rgba(200, 200, 255, 0.3) !important;
+}
+
+.input-group-text {
+    background: linear-gradient(135deg,
+        rgba(30, 41, 59, 0.9) 0%,
+        rgba(51, 65, 85, 0.95) 100%) !important;
+    border-color: rgba(99, 102, 241, 0.4) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    background-color: transparent !important;
+    transition: all 0.3s ease !important;
+}
+
+.input-group:hover .input-group-text {
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.15) 0%,
+        rgba(168, 85, 247, 0.2) 100%) !important;
+    border-color: rgba(99, 102, 241, 0.6) !important;
+    transform: translateY(-1px) translateZ(3px) !important;
+}
+
+/* ============================================
+   BUTTONS - SMOOTH PROFESSIONAL COLORS
+   ============================================ */
+
+button,
+.btn,
+input[type="button"],
+input[type="submit"],
+a[class*="btn"] {
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    transform-style: preserve-3d !important;
+    backface-visibility: hidden !important;
+    background-color: transparent !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4338ca 0%, #6366f1 100%) !important;
+    border-color: #818cf8 !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.btn-primary:hover {
+    transform: translateY(-4px) translateZ(12px) scale(1.05) rotateX(2deg) rotateY(-2deg) !important;
+    background: linear-gradient(135deg, 
+        #4338ca 0%, #6366f1 25%, #a855f7 50%, #14b8a6 75%, #4338ca 100%) !important;
+    background-size: 200% 200% !important;
+    animation: smoothColorWave 2.5s ease infinite, smoothGlow 2s ease infinite !important;
+    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4),
+                0 5px 20px rgba(168, 85, 247, 0.3),
+                inset 0 0 15px rgba(99, 102, 241, 0.15) !important;
+    border-color: #a855f7 !important;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+    border-color: #10b981 !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.btn-success:hover {
+    transform: translateY(-4px) translateZ(12px) scale(1.05) rotateX(-2deg) rotateY(2deg) !important;
+    background: linear-gradient(135deg,
+        #065f46 0%, #10b981 25%, #14b8a6 50%, #0891b2 75%, #065f46 100%) !important;
+    background-size: 200% 200% !important;
+    animation: smoothColorWave 2.5s ease infinite, smoothGlow 2s ease infinite !important;
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4),
+                0 5px 20px rgba(20, 184, 166, 0.3),
+                inset 0 0 15px rgba(16, 185, 129, 0.15) !important;
+    border-color: #14b8a6 !important;
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%) !important;
+    border-color: #a855f7 !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.btn-info:hover {
+    transform: translateY(-4px) translateZ(12px) scale(1.05) rotateX(2deg) rotateY(2deg) !important;
+    background: linear-gradient(135deg,
+        #581c87 0%, #a855f7 25%, #14b8a6 50%, #06b6d4 75%, #581c87 100%) !important;
+    background-size: 200% 200% !important;
+    animation: smoothColorWave 2.5s ease infinite, smoothGlow 2s ease infinite !important;
+    box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4),
+                0 5px 20px rgba(20, 184, 166, 0.3),
+                inset 0 0 15px rgba(168, 85, 247, 0.15) !important;
+    border-color: #14b8a6 !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-success:hover,
+.btn-outline-info:hover {
+    transform: translateY(-4px) translateZ(10px) scale(1.04) rotateX(2deg) rotateY(-2deg) !important;
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.25) 0%,
+        rgba(168, 85, 247, 0.3) 50%,
+        rgba(20, 184, 166, 0.25) 100%) !important;
+    background-size: 200% 200% !important;
+    animation: smoothColorWave 3s ease infinite !important;
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3),
+                0 0 0 2px rgba(168, 85, 247, 0.4) !important;
+    border-color: rgba(168, 85, 247, 0.6) !important;
+}
+
+.btn-secondary,
+.btn:hover:not(.btn-primary):not(.btn-success):not(.btn-info):not(.btn-outline-primary):not(.btn-outline-success):not(.btn-outline-info) {
+    background: linear-gradient(135deg,
+        rgba(168, 85, 247, 0.5) 0%,
+        rgba(20, 184, 166, 0.55) 50%,
+        rgba(168, 85, 247, 0.5) 100%) !important;
+    border-color: rgba(168, 85, 247, 0.5) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.btn-secondary:hover,
+.btn:hover:not(.btn-primary):not(.btn-success):not(.btn-info):not(.btn-outline-primary):not(.btn-outline-success):not(.btn-outline-info):hover {
+    transform: translateY(-3px) translateZ(8px) scale(1.03) rotateX(1deg) rotateY(-1deg) !important;
+    background-size: 200% 200% !important;
+    animation: smoothColorWave 2.5s ease infinite !important;
+    box-shadow: 0 8px 20px rgba(168, 85, 247, 0.4),
+                0 4px 15px rgba(20, 184, 166, 0.3) !important;
+}
+
+/* ============================================
+   TABLES - SMOOTH PROFESSIONAL COLORS
+   ============================================ */
+
+table,
+.table,
+.table-dark,
+[class*="table"] {
+    background-color: transparent !important;
+    border-color: rgba(99, 102, 241, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+table thead th,
+.table thead th,
+.table-dark thead th,
+table th,
+.table th {
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.4) 0%,
+        rgba(168, 85, 247, 0.45) 25%,
+        rgba(20, 184, 166, 0.4) 50%,
+        rgba(16, 185, 129, 0.45) 75%,
+        rgba(99, 102, 241, 0.4) 100%) !important;
+    background-size: 200% 100% !important;
+    animation: smoothColorWave 6s ease infinite !important;
+    background-color: transparent !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+    border-color: rgba(168, 85, 247, 0.5) !important;
+    transition: all 0.3s ease !important;
+}
+
+table tbody tr,
+.table tbody tr,
+.table-dark tbody tr,
+table tr,
+.table tr,
+body table tbody tr,
+body .table tbody tr,
+body .table-dark tbody tr,
+body table tr,
+body .table tr,
+#contactsTable tbody tr,
+#notificationsTable tbody tr,
+body #contactsTable tbody tr,
+body #notificationsTable tbody tr {
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    transform-style: preserve-3d !important;
+    background: linear-gradient(90deg,
+        rgba(99, 102, 241, 0.4) 0%,
+        rgba(168, 85, 247, 0.45) 20%,
+        rgba(20, 184, 166, 0.4) 40%,
+        rgba(16, 185, 129, 0.45) 60%,
+        rgba(6, 182, 212, 0.4) 80%,
+        rgba(99, 102, 241, 0.4) 100%) !important;
+    background-size: 300% 100% !important;
+    animation: smoothColorWave 8s ease infinite !important;
+    background-color: transparent !important;
+    background-image: linear-gradient(90deg,
+        rgba(99, 102, 241, 0.4) 0%,
+        rgba(168, 85, 247, 0.45) 20%,
+        rgba(20, 184, 166, 0.4) 40%,
+        rgba(16, 185, 129, 0.45) 60%,
+        rgba(6, 182, 212, 0.4) 80%,
+        rgba(99, 102, 241, 0.4) 100%) !important;
+}
+
+table tbody tr:nth-child(even),
+.table tbody tr:nth-child(even),
+.table-dark tbody tr:nth-child(even),
+table tr:nth-child(even),
+.table tr:nth-child(even),
+body table tbody tr:nth-child(even),
+body .table tbody tr:nth-child(even),
+body .table-dark tbody tr:nth-child(even),
+body table tr:nth-child(even),
+body .table tr:nth-child(even),
+#contactsTable tbody tr:nth-child(even),
+#notificationsTable tbody tr:nth-child(even),
+body #contactsTable tbody tr:nth-child(even),
+body #notificationsTable tbody tr:nth-child(even) {
+    background: linear-gradient(90deg,
+        rgba(16, 185, 129, 0.4) 0%,
+        rgba(20, 184, 166, 0.45) 20%,
+        rgba(99, 102, 241, 0.4) 40%,
+        rgba(168, 85, 247, 0.45) 60%,
+        rgba(6, 182, 212, 0.4) 80%,
+        rgba(16, 185, 129, 0.4) 100%) !important;
+    background-size: 300% 100% !important;
+    animation: smoothColorWave 10s ease infinite !important;
+    background-color: transparent !important;
+    background-image: linear-gradient(90deg,
+        rgba(16, 185, 129, 0.4) 0%,
+        rgba(20, 184, 166, 0.45) 20%,
+        rgba(99, 102, 241, 0.4) 40%,
+        rgba(168, 85, 247, 0.45) 60%,
+        rgba(6, 182, 212, 0.4) 80%,
+        rgba(16, 185, 129, 0.4) 100%) !important;
+}
+
+table tbody tr:hover,
+.table tbody tr:hover,
+.table-dark tbody tr:hover,
+table tr:hover,
+.table tr:hover {
+    transform: translateX(8px) translateY(0) translateZ(10px) scale(1.01) rotateX(1deg) rotateY(-3deg) !important;
+    background: linear-gradient(90deg,
+        rgba(99, 102, 241, 0.4) 0%,
+        rgba(168, 85, 247, 0.45) 20%,
+        rgba(20, 184, 166, 0.4) 40%,
+        rgba(16, 185, 129, 0.45) 60%,
+        rgba(6, 182, 212, 0.4) 80%,
+        rgba(99, 102, 241, 0.4) 100%) !important;
+    background-size: 200% 100% !important;
+    animation: smoothColorWave 3s ease infinite !important;
+    box-shadow: -8px 0 25px rgba(99, 102, 241, 0.3),
+                -4px 0 15px rgba(168, 85, 247, 0.25),
+                0 4px 15px rgba(20, 184, 166, 0.25) !important;
+    border-left: 3px solid rgba(168, 85, 247, 0.6) !important;
+    cursor: pointer !important;
+}
+
+table td,
+.table td,
+.table-dark td,
+body table td,
+body .table td,
+body .table-dark td,
+#contactsTable td,
+#notificationsTable td,
+body #contactsTable td,
+body #notificationsTable td {
+    background-color: transparent !important;
+    background-image: none !important;
+    border-color: rgba(99, 102, 241, 0.25) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    transition: all 0.3s ease !important;
+}
+
+/* CRITICAL OVERRIDE - Force colors on ALL table rows */
+body .table-dark tbody tr,
+body #contactsTable tbody tr,
+body #notificationsTable tbody tr {
+    background-color: transparent !important;
+    background-image: linear-gradient(90deg,
+        rgba(99, 102, 241, 0.3) 0%,
+        rgba(168, 85, 247, 0.35) 20%,
+        rgba(20, 184, 166, 0.3) 40%,
+        rgba(16, 185, 129, 0.35) 60%,
+        rgba(6, 182, 212, 0.3) 80%,
+        rgba(99, 102, 241, 0.3) 100%) !important;
+    background-size: 300% 100% !important;
+    animation: smoothColorWave 8s ease infinite !important;
+}
+
+body .table-dark tbody tr:nth-child(even),
+body #contactsTable tbody tr:nth-child(even),
+body #notificationsTable tbody tr:nth-child(even) {
+    background-color: transparent !important;
+    background-image: linear-gradient(90deg,
+        rgba(16, 185, 129, 0.3) 0%,
+        rgba(20, 184, 166, 0.35) 20%,
+        rgba(99, 102, 241, 0.3) 40%,
+        rgba(168, 85, 247, 0.35) 60%,
+        rgba(6, 182, 212, 0.3) 80%,
+        rgba(16, 185, 129, 0.3) 100%) !important;
+    background-size: 300% 100% !important;
+    animation: smoothColorWave 10s ease infinite !important;
+}
+
+/* ============================================
+   MODALS - SMOOTH PROFESSIONAL
+   ============================================ */
+
+.modal-content {
+    background: linear-gradient(135deg,
+        rgba(15, 23, 42, 0.98) 0%,
+        rgba(30, 41, 59, 0.98) 50%,
+        rgba(15, 23, 42, 0.98) 100%) !important;
+    border-color: rgba(168, 85, 247, 0.5) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    background-color: transparent !important;
+    transition: all 0.3s ease !important;
+}
+
+.modal.show .modal-content {
+    animation: smoothSlideIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    transform-style: preserve-3d !important;
+}
+
+.modal-header {
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.35) 0%,
+        rgba(168, 85, 247, 0.4) 50%,
+        rgba(20, 184, 166, 0.35) 100%) !important;
+    background-size: 200% 100% !important;
+    animation: smoothColorWave 8s ease infinite !important;
+    background-color: transparent !important;
+    border-bottom-color: rgba(168, 85, 247, 0.4) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+    transition: all 0.3s ease !important;
+}
+
+.modal-body,
+.modal-footer {
+    background-color: transparent !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    transition: all 0.3s ease !important;
+}
+
+/* ============================================
+   DROPDOWNS - SMOOTH PROFESSIONAL
+   ============================================ */
+
+.dropdown-menu {
+    background: linear-gradient(135deg,
+        rgba(15, 23, 42, 0.98) 0%,
+        rgba(30, 41, 59, 0.98) 100%) !important;
+    border-color: rgba(168, 85, 247, 0.5) !important;
+    background-color: transparent !important;
+    transition: all 0.3s ease !important;
+}
+
+.dropdown-item {
+    background-color: transparent !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    transition: all 0.3s ease !important;
+}
+
+.dropdown-item:hover {
+    background: linear-gradient(90deg,
+        rgba(99, 102, 241, 0.3) 0%,
+        rgba(168, 85, 247, 0.35) 50%,
+        rgba(20, 184, 166, 0.3) 100%) !important;
+    background-color: transparent !important;
+    transform: translateX(4px) translateZ(4px) scale(1.01) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* ============================================
+   PAGINATION - SMOOTH PROFESSIONAL
+   ============================================ */
+
+.pagination .page-link {
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.25) 0%,
+        rgba(168, 85, 247, 0.3) 100%) !important;
+    background-color: transparent !important;
+    border-color: rgba(168, 85, 247, 0.4) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    transition: all 0.3s ease !important;
+}
+
+.pagination .page-link:hover {
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.4) 0%,
+        rgba(168, 85, 247, 0.45) 100%) !important;
+    background-color: transparent !important;
+    transform: translateY(-2px) translateZ(5px) scale(1.05) rotateZ(2deg) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg,
+        rgba(20, 184, 166, 0.55) 0%,
+        rgba(168, 85, 247, 0.6) 100%) !important;
+    background-color: transparent !important;
+    border-color: rgba(20, 184, 166, 0.7) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* ============================================
+   BADGES & TAGS - SMOOTH PROFESSIONAL
+   ============================================ */
+
+.badge,
+.tag {
+    background: linear-gradient(135deg,
+        rgba(168, 85, 247, 0.65) 0%,
+        rgba(20, 184, 166, 0.7) 100%) !important;
+    background-color: transparent !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    transform-style: preserve-3d !important;
+}
+
+.badge:hover,
+.tag:hover {
+    transform: translateY(-2px) translateZ(5px) scale(1.08) rotateX(3deg) rotateY(3deg) rotateZ(3deg) !important;
+    box-shadow: 0 5px 15px rgba(168, 85, 247, 0.3),
+                0 2px 10px rgba(20, 184, 166, 0.25) !important;
+}
+
+/* ============================================
+   ALERTS - SMOOTH PROFESSIONAL
+   ============================================ */
+
+.alert {
+    background-color: transparent !important;
+    border-color: rgba(168, 85, 247, 0.4) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    transition: all 0.3s ease !important;
+}
+
+.alert-success {
+    background: linear-gradient(135deg,
+        rgba(16, 185, 129, 0.2) 0%,
+        rgba(6, 182, 212, 0.25) 100%) !important;
+    background-color: transparent !important;
+    border-color: rgba(16, 185, 129, 0.5) !important;
+}
+
+.alert-info {
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.25) 0%,
+        rgba(168, 85, 247, 0.3) 100%) !important;
+    background-color: transparent !important;
+    border-color: rgba(99, 102, 241, 0.5) !important;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg,
+        rgba(245, 158, 11, 0.2) 0%,
+        rgba(251, 191, 36, 0.25) 100%) !important;
+    background-color: transparent !important;
+    border-color: rgba(245, 158, 11, 0.5) !important;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg,
+        rgba(249, 115, 22, 0.2) 0%,
+        rgba(245, 158, 11, 0.25) 100%) !important;
+    background-color: transparent !important;
+    border-color: rgba(249, 115, 22, 0.5) !important;
+}
+
+/* ============================================
+   NAVBAR - SMOOTH PROFESSIONAL
+   ============================================ */
+
+.navbar,
+nav,
+[class*="navbar"]:not([class*="pagination"]):not([class*="breadcrumb"]) {
+    background: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.25) 0%,
+        rgba(168, 85, 247, 0.3) 50%,
+        rgba(20, 184, 166, 0.25) 100%) !important;
+    background-size: 200% 100% !important;
+    animation: smoothColorWave 12s ease infinite !important;
+    background-color: transparent !important;
+    border-color: rgba(168, 85, 247, 0.4) !important;
+    transition: all 0.3s ease !important;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+    transition: all 0.3s ease !important;
+}
+
+.nav-link:hover {
+    color: rgba(168, 85, 247, 1) !important;
+    transform: translateY(-1px) translateZ(3px) scale(1.02) !important;
+}
+
+/* ============================================
+   LIST GROUPS - SMOOTH PROFESSIONAL
+   ============================================ */
+
+.list-group-item {
+    background: linear-gradient(90deg,
+        rgba(99, 102, 241, 0.15) 0%,
+        rgba(168, 85, 247, 0.18) 50%,
+        rgba(20, 184, 166, 0.15) 100%) !important;
+    background-color: transparent !important;
+    border-color: rgba(168, 85, 247, 0.3) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    transition: all 0.3s ease !important;
+}
+
+.list-group-item:hover {
+    background: linear-gradient(90deg,
+        rgba(99, 102, 241, 0.25) 0%,
+        rgba(168, 85, 247, 0.3) 50%,
+        rgba(20, 184, 166, 0.25) 100%) !important;
+    transform: translateX(4px) translateZ(3px) scale(1.01) !important;
+}
+
+.list-group-item.active {
+    background: linear-gradient(90deg,
+        rgba(168, 85, 247, 0.45) 0%,
+        rgba(20, 184, 166, 0.5) 50%,
+        rgba(168, 85, 247, 0.45) 100%) !important;
+    border-color: rgba(168, 85, 247, 0.6) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* ============================================
+   PROGRESS BARS - SMOOTH PROFESSIONAL
+   ============================================ */
+
+.progress {
+    background-color: rgba(30, 41, 59, 0.8) !important;
+    border-color: rgba(168, 85, 247, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg,
+        rgba(99, 102, 241, 0.85) 0%,
+        rgba(168, 85, 247, 0.9) 50%,
+        rgba(20, 184, 166, 0.85) 100%) !important;
+    background-size: 200% 100% !important;
+    animation: smoothColorWave 3s ease infinite !important;
+    background-color: transparent !important;
+    transition: all 0.3s ease !important;
+}
+
+/* ============================================
+   UTILITY OVERRIDES - NO LIGHT COLORS
+   ============================================ */
+
+.bg-white,
+.bg-light,
+[class*="bg-white"],
+[class*="bg-light"] {
+    background: linear-gradient(135deg,
+        rgba(30, 41, 59, 0.4) 0%,
+        rgba(51, 65, 85, 0.45) 50%,
+        rgba(30, 41, 59, 0.4) 100%) !important;
+}
+
+.text-white,
+[class*="text-white"] {
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* ============================================
+   FINAL OVERRIDES - FULL COVERAGE
+   ============================================ */
+
+div,
+section,
+main,
+article,
+aside,
+header,
+footer {
+    background-color: transparent !important;
+    transition: all 0.3s ease !important;
+}
+
+/* ============================================
+   ULTIMATE OVERRIDES - FORCE COLORS EVERYWHERE
+   ============================================ */
+
+/* Override contact.css dark backgrounds - MAXIMUM SPECIFICITY */
+body .table-dark,
+body #contactsTable,
+body #notificationsTable,
+body table.table-dark,
+body table#contactsTable,
+body table#notificationsTable {
+    background-color: transparent !important;
+    background-image: none !important;
+}
+
+body .table-dark th,
+body .table-dark thead th,
+body #contactsTable thead th,
+body #notificationsTable thead th,
+body table.table-dark th,
+body table#contactsTable thead th {
+    background-color: transparent !important;
+    background-image: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.45) 0%,
+        rgba(168, 85, 247, 0.5) 25%,
+        rgba(20, 184, 166, 0.45) 50%,
+        rgba(16, 185, 129, 0.5) 75%,
+        rgba(99, 102, 241, 0.45) 100%) !important;
+    background-size: 200% 100% !important;
+    animation: smoothColorWave 6s ease infinite !important;
+    border-color: rgba(168, 85, 247, 0.5) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Force colors on ALL table rows - override contact.css */
+body .table-dark tbody tr,
+body #contactsTable tbody tr,
+body #notificationsTable tbody tr,
+body table.table-dark tbody tr,
+body table#contactsTable tbody tr {
+    background-color: transparent !important;
+    background-image: linear-gradient(90deg,
+        rgba(99, 102, 241, 0.45) 0%,
+        rgba(168, 85, 247, 0.5) 20%,
+        rgba(20, 184, 166, 0.45) 40%,
+        rgba(16, 185, 129, 0.5) 60%,
+        rgba(6, 182, 212, 0.45) 80%,
+        rgba(99, 102, 241, 0.45) 100%) !important;
+    background-size: 300% 100% !important;
+    animation: smoothColorWave 8s ease infinite !important;
+}
+
+body .table-dark tbody tr:nth-child(even),
+body #contactsTable tbody tr:nth-child(even),
+body #notificationsTable tbody tr:nth-child(even),
+body table.table-dark tbody tr:nth-child(even),
+body table#contactsTable tbody tr:nth-child(even) {
+    background-color: transparent !important;
+    background-image: linear-gradient(90deg,
+        rgba(16, 185, 129, 0.45) 0%,
+        rgba(20, 184, 166, 0.5) 20%,
+        rgba(99, 102, 241, 0.45) 40%,
+        rgba(168, 85, 247, 0.5) 60%,
+        rgba(6, 182, 212, 0.45) 80%,
+        rgba(16, 185, 129, 0.45) 100%) !important;
+    background-size: 300% 100% !important;
+    animation: smoothColorWave 10s ease infinite !important;
+}
+
+/* Ensure table cells don't override row colors */
+body .table-dark tbody tr td,
+body #contactsTable tbody tr td,
+body #notificationsTable tbody tr td,
+body table.table-dark tbody tr td,
+body table#contactsTable tbody tr td {
+    background-color: transparent !important;
+    background-image: none !important;
+}
+
+/* ============================================
+   ABSOLUTE FINAL OVERRIDES - MAXIMUM FORCE
+   ============================================ */
+
+/* Force visible colors on ALL table rows - override EVERYTHING */
+html body table tbody tr,
+html body .table tbody tr,
+html body .table-dark tbody tr,
+html body #contactsTable tbody tr,
+html body #notificationsTable tbody tr {
+    background-color: transparent !important;
+    background-image: linear-gradient(90deg,
+        rgba(99, 102, 241, 0.5) 0%,
+        rgba(168, 85, 247, 0.55) 20%,
+        rgba(20, 184, 166, 0.5) 40%,
+        rgba(16, 185, 129, 0.55) 60%,
+        rgba(6, 182, 212, 0.5) 80%,
+        rgba(99, 102, 241, 0.5) 100%) !important;
+    background-size: 300% 100% !important;
+    animation: smoothColorWave 8s ease infinite !important;
+}
+
+html body table tbody tr:nth-child(even),
+html body .table tbody tr:nth-child(even),
+html body .table-dark tbody tr:nth-child(even),
+html body #contactsTable tbody tr:nth-child(even),
+html body #notificationsTable tbody tr:nth-child(even) {
+    background-color: transparent !important;
+    background-image: linear-gradient(90deg,
+        rgba(16, 185, 129, 0.5) 0%,
+        rgba(20, 184, 166, 0.55) 20%,
+        rgba(99, 102, 241, 0.5) 40%,
+        rgba(168, 85, 247, 0.55) 60%,
+        rgba(6, 182, 212, 0.5) 80%,
+        rgba(16, 185, 129, 0.5) 100%) !important;
+    background-size: 300% 100% !important;
+    animation: smoothColorWave 10s ease infinite !important;
+}
+
+html body .table-dark th,
+html body #contactsTable thead th,
+html body #notificationsTable thead th {
+    background-color: transparent !important;
+    background-image: linear-gradient(135deg,
+        rgba(99, 102, 241, 0.5) 0%,
+        rgba(168, 85, 247, 0.55) 25%,
+        rgba(20, 184, 166, 0.5) 50%,
+        rgba(16, 185, 129, 0.55) 75%,
+        rgba(99, 102, 241, 0.5) 100%) !important;
+    background-size: 200% 100% !important;
+    animation: smoothColorWave 6s ease infinite !important;
+    border-color: rgba(168, 85, 247, 0.5) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}

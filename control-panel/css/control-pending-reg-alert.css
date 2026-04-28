@@ -1,0 +1,94 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control-pending-reg-alert.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control-pending-reg-alert.css`.
+ */
+/* Control Panel: Pending registration popup alert */
+
+@keyframes pulseAlert {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 68, 68, 0.6), 0 0 40px rgba(255, 107, 53, 0.4); border-color: #ff4444; }
+  50% { box-shadow: 0 0 30px rgba(255, 68, 68, 0.9), 0 0 60px rgba(255, 107, 53, 0.6); border-color: #ff6b35; }
+}
+
+@keyframes shakeAlert {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+#pendingRegAlertOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 99999;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+#pendingRegAlertOverlay.pending-reg-alert-visible {
+  display: flex;
+}
+
+#pendingRegAlertBox {
+  background: linear-gradient(135deg, #1a0000 0%, #2d0000 50%, #1a0000 100%);
+  color: #fff;
+  border: 3px solid #ff4444;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 450px;
+  margin: 1rem;
+  animation: pulseAlert 2s ease-in-out infinite, shakeAlert 0.5s ease-in-out;
+  box-shadow: 0 0 30px rgba(255, 68, 68, 0.8), 0 0 60px rgba(255, 107, 53, 0.5);
+}
+
+#pendingRegAlertBox .pending-reg-alert-title {
+  font-size: 1.3rem;
+  margin-bottom: 1.2rem;
+  font-weight: bold;
+  color: #ff6b35;
+  text-shadow: 0 0 10px rgba(255, 107, 53, 0.8);
+}
+
+#pendingRegAlertBox .pending-reg-alert-bell {
+  color: #ff4444;
+  margin-right: 0.5rem;
+  filter: drop-shadow(0 0 8px rgba(255, 68, 68, 0.9));
+}
+
+#pendingRegAlertBox .pending-reg-alert-title strong {
+  color: #ff6b35;
+}
+
+#pendingRegAlertMessage {
+  margin-bottom: 1.5rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #fff;
+}
+
+#pendingRegAlertNum {
+  font-weight: bold;
+  color: #ff6b35;
+  font-size: 1.2em;
+  text-shadow: 0 0 8px rgba(255, 107, 53, 0.8);
+}
+
+.pending-reg-alert-actions {
+  text-align: right;
+}
+
+.pending-reg-alert-btn-requests {
+  background: #ff4444;
+  border-color: #ff6b35;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(255, 68, 68, 0.4);
+}
+
+.pending-reg-alert-btn-ok {
+  background: #ff6b35;
+  border-color: #ff4444;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+}

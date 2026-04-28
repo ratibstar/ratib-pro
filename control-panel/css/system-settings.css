@@ -1,0 +1,22 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/system-settings.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/system-settings.css`.
+ */
+/* Minimal system-settings styles for control panel */
+.content-wrapper { padding: 1rem; }
+.system-settings-direct-wrap { max-width: 100%; }
+
+/* Control Panel Settings page */
+.control-settings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+.control-settings-card { background: var(--control-card); border: 1px solid var(--control-glass-border); border-radius: 12px; padding: 1.5rem; transition: all 0.3s; }
+.control-settings-card:hover { border-color: var(--control-accent); box-shadow: 0 4px 20px rgba(107, 33, 168, 0.15); }
+.control-settings-card h3 { color: var(--control-text); font-size: 1.1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+.control-settings-card p { color: var(--control-muted); font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.5; }
+.control-settings-card .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; border: none; cursor: pointer; }
+.control-settings-card .btn-primary { background: var(--control-accent); color: #fff; }
+.control-settings-card .btn-primary:hover { background: var(--control-accent-hover); color: #fff; }
+.control-settings-card .btn-secondary { background: rgba(255,255,255,0.1); color: var(--control-text); }
+.control-settings-card .btn-secondary:hover { background: rgba(255,255,255,0.2); color: var(--control-text); }
+.control-settings-intro { color: var(--control-muted); margin-bottom: 2rem; padding: 1rem; background: rgba(15, 52, 96, 0.3); border-radius: 8px; border-left: 4px solid var(--control-accent); }
+.control-settings-ratib-program { border-left-color: #0d9488; background: rgba(13, 148, 136, 0.15); margin-bottom: 1rem; }
+.control-settings-footer-note { color: var(--control-muted); font-size: 0.9rem; margin-top: 1.5rem; }

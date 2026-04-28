@@ -1,0 +1,25 @@
+{
+  "appId": "com.tracking.app",
+  "appName": "TrackingApp",
+  "webDir": "mobile-app",
+  "server": {
+    "cleartext": true
+  },
+  "android": {
+    "webContentsDebuggingEnabled": false,
+    "useLegacyBridge": true
+  },
+  "ios": {
+    "contentInset": "automatic"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "launchAutoHide": true,
+      "backgroundColor": "#0f172a",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP",
+      "iosSpinnerStyle": "none"
+    }
+  }
+}

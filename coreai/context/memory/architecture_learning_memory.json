@@ -1,0 +1,36 @@
+{
+    "updated_at": "2026-04-24T08:25:28+00:00",
+    "decision_history": [
+        {
+            "timestamp": "2026-04-24T08:25:28+00:00",
+            "group_id": "bootstrap-seed",
+            "risk_category": "medium",
+            "semantic_risk_score": 52,
+            "prediction_accuracy_score": 78,
+            "execution_ok": true,
+            "rolled_back": false,
+            "operations": [
+                {
+                    "operation": "update"
+                }
+            ],
+            "semantic_risk_factors": {
+                "business_logic_sensitivity": 10
+            }
+        }
+    ],
+    "pattern_outcomes": {
+        "op:update|risk:medium": {
+            "attempts": 1,
+            "success": 1,
+            "failure": 0,
+            "success_rate": 100
+        }
+    },
+    "stable_patterns": [],
+    "risky_patterns": [],
+    "explanation": {
+        "en": "Self-learning architecture memory tracks decisions, outcomes, and pattern stability over time.",
+        "ar": "ذاكرة معمارية ذاتية التعلم تتتبع القرارات والنتائج واستقرار الأنماط عبر الزمن."
+    }
+}

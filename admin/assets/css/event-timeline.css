@@ -1,0 +1,36 @@
+/*
+ * EN: Defines system administration/observability module behavior in `admin/assets/css/event-timeline.css`.
+ * AR: يحدد سلوك وحدة إدارة النظام والمراقبة في `admin/assets/css/event-timeline.css`.
+ */
+body { margin: 0; font-family: Arial, sans-serif; background: #0b1220; color: #e5e7eb; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+.card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+input, select, button { background: #0b1220; color: #e5e7eb; border: 1px solid #334155; border-radius: 8px; padding: 8px; }
+button { cursor: pointer; }
+.req-bundle { border: 1px solid #1e293b; border-radius: 10px; margin-bottom: 10px; background: #0f172a; }
+.req-bundle > summary {
+    cursor: pointer; padding: 10px 12px; font-weight: 600; list-style: none;
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+}
+.req-bundle > summary::-webkit-details-marker { display: none; }
+.req-bundle[open] > summary { border-bottom: 1px solid #1e293b; }
+.bundle-inner { padding: 8px 10px 12px; }
+.timeline-item { border-left: 4px solid #334155; padding: 8px 10px; margin-bottom: 8px; background: #0b1220; border-radius: 8px; }
+.timeline-item.lvl-info { border-left-color: #16a34a; }
+.timeline-item.lvl-warn { border-left-color: #eab308; }
+.timeline-item.lvl-error { border-left-color: #dc2626; }
+.timeline-item.lvl-critical { border-left-color: #7f1d1d; background: #2b0a0a; }
+.timeline-item.anomaly { outline: 1px solid #f97316; box-shadow: 0 0 12px rgba(249, 115, 22, 0.25); }
+.meta { color: #93c5fd; font-size: 12px; margin-bottom: 4px; display: flex; gap: 10px; flex-wrap: wrap; }
+code { background: #020617; border: 1px solid #334155; border-radius: 4px; padding: 1px 4px; }
+.muted { color: #94a3b8; font-size: 12px; }
+.trace { max-height: 320px; overflow: auto; }
+.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #1e293b; color: #cbd5e1; }
+.stream-status { font-size: 12px; color: #22c55e; }
+.stream-status.off { color: #94a3b8; }
+.etl-header-row { justify-content: space-between; }
+.etl-title { margin: 0; }
+.etl-link { color: #93c5fd; }
+.etl-chain { margin-bottom: 8px; font-size: 11px; word-break: break-all; }
+.etl-trace-title { margin-top: 0; }

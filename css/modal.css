@@ -1,0 +1,202 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/modal.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/modal.css`.
+ */
+/* ========================================
+   GENERAL MODAL STYLES
+   ======================================== */
+
+/* Modal Overlay - Full screen backdrop */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    overflow: hidden;
+}
+
+/* Prevent body scroll when modal is open */
+html.modal-open,
+body.modal-open {
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+}
+
+/* Modal Content Container */
+.modal-content {
+    background: #2d2d2d;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 1100px;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Modal Header */
+.modal-header {
+    background: #1a1a1a;
+    padding: 8px 12px;
+    border-bottom: 1px solid #404040;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.modal-header h2 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Close Button */
+.close {
+    color: #888;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+}
+
+.close:hover {
+    color: #ffffff;
+}
+
+/* Modal Body - Scrollable content area */
+.modal-body {
+    padding: 10px;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Modal Actions - Footer buttons */
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #404040;
+    flex-shrink: 0;
+}
+
+/* ========================================
+   MODAL STATE MANAGEMENT
+   ======================================== */
+
+/* Modal should be hidden by default */
+#addVisaModal {
+    display: none;
+}
+
+/* Edit modal should have high z-index to appear above table */
+#editVisaModal {
+    z-index: 100000 !important;
+    position: fixed !important;
+}
+
+/* Only show modal when it has the 'show' class */
+#addVisaModal.show {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 999999 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    pointer-events: auto !important;
+}
+
+#addVisaModal.show .modal-content {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 1000000 !important;
+    position: relative !important;
+    margin: 2% auto !important;
+    background: #2d2d2d !important;
+    border-radius: 12px !important;
+    width: 100% !important;
+    max-width: 1100px !important;
+    height: auto !important;
+    max-height: 90vh !important;
+    overflow: visible !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+/* Tablet and below */
+@media (max-width: 768px) {
+    .modal-content {
+        width: 98%;
+        margin: 1% auto;
+        max-height: 95vh;
+    }
+    
+    .modal-header {
+        padding: 12px 15px;
+    }
+    
+    .modal-header h2 {
+        font-size: 16px;
+    }
+    
+    .modal-body {
+        padding: 15px;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
+    }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+    .modal-content {
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+        max-height: 100vh;
+    }
+    
+    .modal-header {
+        padding: 10px 12px;
+    }
+    
+    .modal-body {
+        padding: 12px;
+    }
+}

@@ -1,0 +1,19 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/control-accounting.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/control-accounting.css`.
+ */
+/**
+ * Shared tweaks for control-style embeds (e.g. HR iframe) and legacy ctrl-acc-* helpers.
+ */
+.ctrl-acc-hidden {
+ display: none !important;
+}
+
+.ctrl-wide-widget {
+    grid-column: 1 / -1;
+}
+
+.control-embedded-accounting .accounting-container,
+.control-embedded-hr .main-content {
+    max-width: 100%;
+}

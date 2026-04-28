@@ -1,0 +1,1566 @@
+{
+    "generated_at": "2026-04-24T09:43:02+00:00",
+    "root": ".",
+    "summary": {
+        "file_count": 21,
+        "semantic_edge_count": 36,
+        "function_symbol_count": 112,
+        "class_symbol_count": 2,
+        "flow_hint_count": 3
+    },
+    "nodes": [
+        {
+            "path": "agent\/README.md",
+            "language": "markdown",
+            "file_tag": "HELPER",
+            "classes": [],
+            "functions": [],
+            "calls": [],
+            "api_flows": [],
+            "data_flows": []
+        },
+        {
+            "path": "ai\/engine.php",
+            "language": "php",
+            "file_tag": "CORE_LOGIC",
+            "classes": [
+                {
+                    "name": "Engine",
+                    "kind": "class",
+                    "intent": "execution_engine"
+                }
+            ],
+            "functions": [
+                {
+                    "name": "status",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                }
+            ],
+            "calls": [
+                "declare",
+                "status"
+            ],
+            "api_flows": [],
+            "data_flows": []
+        },
+        {
+            "path": "backend\/README.md",
+            "language": "markdown",
+            "file_tag": "HELPER",
+            "classes": [],
+            "functions": [],
+            "calls": [],
+            "api_flows": [],
+            "data_flows": []
+        },
+        {
+            "path": "context\/memory\/architecture_decision_history.json",
+            "language": "json",
+            "file_tag": "CONFIG",
+            "classes": [],
+            "functions": [],
+            "calls": [],
+            "api_flows": [],
+            "data_flows": []
+        },
+        {
+            "path": "context\/memory\/architecture_learning_memory.json",
+            "language": "json",
+            "file_tag": "CONFIG",
+            "classes": [],
+            "functions": [],
+            "calls": [],
+            "api_flows": [],
+            "data_flows": []
+        },
+        {
+            "path": "context\/memory\/project_intelligence.json",
+            "language": "json",
+            "file_tag": "CONFIG",
+            "classes": [],
+            "functions": [],
+            "calls": [],
+            "api_flows": [],
+            "data_flows": []
+        },
+        {
+            "path": "context\/README.md",
+            "language": "markdown",
+            "file_tag": "HELPER",
+            "classes": [],
+            "functions": [],
+            "calls": [],
+            "api_flows": [],
+            "data_flows": []
+        },
+        {
+            "path": "css\/styles.css",
+            "language": "css",
+            "file_tag": "UI_LAYER",
+            "classes": [],
+            "functions": [],
+            "calls": [
+                "var",
+                "calc",
+                "rgba",
+                "brightness",
+                "media"
+            ],
+            "api_flows": [],
+            "data_flows": []
+        },
+        {
+            "path": "frontend\/README.md",
+            "language": "markdown",
+            "file_tag": "UI_LAYER",
+            "classes": [],
+            "functions": [],
+            "calls": [],
+            "api_flows": [],
+            "data_flows": []
+        },
+        {
+            "path": "index.php",
+            "language": "php",
+            "file_tag": "CORE_LOGIC",
+            "classes": [],
+            "functions": [],
+            "calls": [
+                "declare"
+            ],
+            "api_flows": [],
+            "data_flows": []
+        },
+        {
+            "path": "js\/app.js",
+            "language": "javascript",
+            "file_tag": "UI_LAYER",
+            "classes": [],
+            "functions": [
+                {
+                    "name": "reply",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "getActiveFile",
+                    "semantic_role": "data_read",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "renderFileNav",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "setActiveFile",
+                    "semantic_role": "data_write",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "saveCurrentFile",
+                    "semantic_role": "data_write",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "updateSaveStatus",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "appendMessage",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "normalizeRole",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "clearActionPanel",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "stripJsonFences",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "parseActionPlan",
+                    "semantic_role": "analysis",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "classifyOperation",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "toBackendOperation",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "computeRiskLevel",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "riskLevelFromScore",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "escapeHtml",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "renderExecutionPlanPreview",
+                    "semantic_role": "analysis",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "renderActionPanel",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "executeApprovedActions",
+                    "semantic_role": "execution",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "buildExecutionPlan",
+                    "semantic_role": "analysis",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "rebuildCombinedHistory",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "renderCombinedHistory",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "persistSessionLayer",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "addToSessionMemory",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "loadPersistentMemory",
+                    "semantic_role": "data_read",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "restoreSessionLayer",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "getSelectedCode",
+                    "semantic_role": "data_read",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "setChatBusy",
+                    "semantic_role": "data_write",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "streamAIReply",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "initializeMemory",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                }
+            ],
+            "calls": [
+                "getElementById",
+                "runCoreAI",
+                "reply",
+                "getActiveFile",
+                "find",
+                "renderFileNav",
+                "forEach",
+                "createElement",
+                "add",
+                "addEventListener",
+                "setActiveFile",
+                "appendChild",
+                "updateSaveStatus",
+                "saveCurrentFile",
+                "appendMessage",
+                "normalizeRole",
+                "clearActionPanel",
+                "stripJsonFences",
+                "trim",
+                "startsWith",
+                "replace",
+                "parseActionPlan",
+                "parse",
+                "isArray",
+                "includes",
+                "filter",
+                "map",
+                "isFinite",
+                "String",
+                "classifyOperation",
+                "toLowerCase",
+                "toBackendOperation",
+                "computeRiskLevel",
+                "some",
+                "riskLevelFromScore",
+                "Number",
+                "escapeHtml",
+                "renderExecutionPlanPreview",
+                "join",
+                "slice",
+                "min",
+                "UI",
+                "renderActionPanel",
+                "Plan",
+                "toUpperCase",
+                "querySelectorAll",
+                "getAttribute",
+                "keys",
+                "buildExecutionPlan",
+                "executeApprovedActions",
+                "remove",
+                "fetch",
+                "stringify",
+                "now",
+                "json",
+                "Error",
+                "flatMap",
+                "push",
+                "addToSessionMemory",
+                "rebuildCombinedHistory",
+                "renderCombinedHistory",
+                "persistSessionLayer",
+                "setItem",
+                "loadPersistentMemory",
+                "restoreSessionLayer",
+                "getItem",
+                "getSelectedCode",
+                "setChatBusy",
+                "streamAIReply",
+                "text",
+                "getReader",
+                "TextDecoder",
+                "read",
+                "decode",
+                "plan",
+                "focus",
+                "preventDefault",
+                "initializeMemory"
+            ],
+            "api_flows": [
+                {
+                    "endpoint": "php\/execute.php",
+                    "flow_type": "internal_api_call"
+                },
+                {
+                    "endpoint": "php\/plan.php",
+                    "flow_type": "internal_api_call"
+                },
+                {
+                    "endpoint": "php\/memory.php",
+                    "flow_type": "internal_api_call"
+                },
+                {
+                    "endpoint": "php\/ai.php",
+                    "flow_type": "internal_api_call"
+                }
+            ],
+            "data_flows": [
+                "browser_storage",
+                "network_io"
+            ]
+        },
+        {
+            "path": "js\/coreai-tab.js",
+            "language": "javascript",
+            "file_tag": "UI_LAYER",
+            "classes": [],
+            "functions": [
+                {
+                    "name": "findNavbarHost",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                },
+                {
+                    "name": "injectCoreAITab",
+                    "semantic_role": "general_logic",
+                    "tag": "UI_LAYER"
+                }
+            ],
+            "calls": [
+                "findNavbarHost",
+                "querySelector",
+                "once",
+                "injectCoreAITab",
+                "getElementById",
+                "createElement",
+                "addEventListener",
+                "open",
+                "toLowerCase",
+                "appendChild",
+                "MutationObserver",
+                "observe"
+            ],
+            "api_flows": [],
+            "data_flows": []
+        },
+        {
+            "path": "php\/ai.php",
+            "language": "php",
+            "file_tag": "API_LAYER",
+            "classes": [],
+            "functions": [],
+            "calls": [
+                "declare",
+                "header",
+                "http_response_code",
+                "file_get_contents",
+                "json_decode",
+                "is_array",
+                "trim",
+                "array_slice",
+                "foreach",
+                "coreai_read_persistent_history",
+                "array_map",
+                "array_merge",
+                "coreai_analyze_intent",
+                "coreai_reasoning_strategy_for_type",
+                "coreai_build_reasoned_memory_context",
+                "coreai_decide_action_mode",
+                "coreai_build_graph_context",
+                "coreai_load_project_intelligence_memory",
+                "config",
+                "coreai_env",
+                "rtrim",
+                "mb_strlen",
+                "mb_substr",
+                "implode",
+                "content",
+                "code",
+                "json_encode",
+                "summary",
+                "coreai_action_response_schema",
+                "curl_init",
+                "ini_set",
+                "ob_get_level",
+                "ob_end_flush",
+                "ob_implicit_flush",
+                "curl_setopt_array",
+                "use",
+                "preg_split",
+                "strlen",
+                "strpos",
+                "substr",
+                "flush",
+                "coreai_append_persistent_message",
+                "curl_exec",
+                "curl_error",
+                "curl_getinfo",
+                "curl_close",
+                "headers_sent"
+            ],
+            "api_flows": [
+                {
+                    "endpoint": "[self-endpoint]",
+                    "flow_type": "api_handler"
+                }
+            ],
+            "data_flows": [
+                "file_read",
+                "json_transform",
+                "http_input",
+                "network_io"
+            ]
+        },
+        {
+            "path": "php\/architecture_decision.php",
+            "language": "php",
+            "file_tag": "CORE_LOGIC",
+            "classes": [],
+            "functions": [],
+            "calls": [
+                "declare",
+                "header",
+                "http_response_code",
+                "json_encode",
+                "file_get_contents",
+                "trim",
+                "json_decode",
+                "is_array",
+                "coreai_load_project_intelligence_memory",
+                "coreai_run_architectural_decision_engine",
+                "coreai_store_architecture_decision"
+            ],
+            "api_flows": [
+                {
+                    "endpoint": "[self-endpoint]",
+                    "flow_type": "api_handler"
+                }
+            ],
+            "data_flows": [
+                "file_read",
+                "json_transform",
+                "http_input"
+            ]
+        },
+        {
+            "path": "php\/bootstrap.php",
+            "language": "php",
+            "file_tag": "HELPER",
+            "classes": [],
+            "functions": [
+                {
+                    "name": "coreai_env",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_memory_file_path",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_read_persistent_history",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_write_persistent_history",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_append_persistent_message",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_extract_keywords",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_summarize_old_history",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_select_relevant_memories",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_build_intelligent_memory_context",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_analyze_intent",
+                    "semantic_role": "analysis",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "coreai_reasoning_strategy_for_type",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_build_reasoned_memory_context",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_decide_action_mode",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_action_response_schema",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_execution_log_path",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_log_execution",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_resolve_safe_path",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_validate_approved_actions",
+                    "semantic_role": "validation",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "coreai_execute_approved_actions",
+                    "semantic_role": "execution",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "coreai_validate_action_groups",
+                    "semantic_role": "validation",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "coreai_execute_action_group",
+                    "semantic_role": "execution",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "coreai_execute_action_groups",
+                    "semantic_role": "execution",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "coreai_execution_plan_path",
+                    "semantic_role": "analysis",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "coreai_semantic_graph_path",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_load_semantic_graph",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_analyze_graph_impact",
+                    "semantic_role": "analysis",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "coreai_calculate_group_risk_score",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_calculate_semantic_risk_score",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_predict_semantic_system_state",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_prediction_validation_path",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_collect_actual_system_state",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_validate_prediction_accuracy",
+                    "semantic_role": "validation",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "coreai_store_prediction_validation",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_architecture_learning_memory_path",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_load_architecture_learning_memory",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_save_architecture_learning_memory",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_update_architecture_learning_memory",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_get_adaptive_risk_weights",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_predict_cascade_impact",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_build_execution_plan",
+                    "semantic_role": "analysis",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "coreai_project_graph_path",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_load_project_graph",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_match_graph_file_path",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_build_graph_context",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_project_intelligence_path",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_latest_source_mtime",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_refresh_graph_artifacts_if_stale",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_build_dependency_hierarchy",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_extract_critical_paths",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_build_module_intelligence_map",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_build_dependency_tree",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_build_project_intelligence_memory",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_load_project_intelligence_memory",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_run_architectural_decision_engine",
+                    "semantic_role": "execution",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "coreai_architecture_decision_history_path",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_load_architecture_decision_history",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_save_architecture_decision_history",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_store_architecture_decision",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_update_architecture_decision_actual_outcome",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_evolution_timeline_path",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_load_evolution_timeline",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_save_evolution_timeline",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_extract_architecture_snapshot",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                },
+                {
+                    "name": "coreai_append_evolution_timeline_entry",
+                    "semantic_role": "general_logic",
+                    "tag": "HELPER"
+                }
+            ],
+            "calls": [
+                "declare",
+                "date_default_timezone_set",
+                "coreai_env",
+                "getenv",
+                "coreai_memory_file_path",
+                "dirname",
+                "coreai_read_persistent_history",
+                "is_file",
+                "file_get_contents",
+                "json_decode",
+                "is_array",
+                "foreach",
+                "trim",
+                "gmdate",
+                "coreai_write_persistent_history",
+                "is_dir",
+                "mkdir",
+                "json_encode",
+                "file_put_contents",
+                "coreai_append_persistent_message",
+                "coreai_extract_keywords",
+                "mb_strtolower",
+                "preg_split",
+                "array_fill_keys",
+                "mb_strlen",
+                "array_keys",
+                "coreai_summarize_old_history",
+                "preg_replace",
+                "mb_substr",
+                "array_slice",
+                "implode",
+                "coreai_select_relevant_memories",
+                "max",
+                "count",
+                "usort",
+                "fn",
+                "array_map",
+                "coreai_build_intelligent_memory_context",
+                "coreai_analyze_intent",
+                "mb_strpos",
+                "preg_match",
+                "b",
+                "elseif",
+                "array_values",
+                "array_unique",
+                "coreai_reasoning_strategy_for_type",
+                "coreai_build_reasoned_memory_context",
+                "coreai_decide_action_mode",
+                "coreai_action_response_schema",
+                "coreai_execution_log_path",
+                "coreai_log_execution",
+                "sprintf",
+                "coreai_resolve_safe_path",
+                "realpath",
+                "strpos",
+                "str_replace",
+                "str_starts_with",
+                "explode",
+                "coreai_validate_approved_actions",
+                "strtolower",
+                "in_array",
+                "coreai_execute_approved_actions",
+                "RuntimeException",
+                "unlink",
+                "getMessage",
+                "coreai_validate_action_groups",
+                "coreai_execute_action_group",
+                "rank",
+                "coreai_execute_action_groups",
+                "coreai_execution_plan_path",
+                "coreai_semantic_graph_path",
+                "coreai_load_semantic_graph",
+                "coreai_analyze_graph_impact",
+                "array_filter",
+                "array_shift",
+                "array_merge",
+                "coreai_calculate_group_risk_score",
+                "min",
+                "coreai_calculate_semantic_risk_score",
+                "coreai_get_adaptive_risk_weights",
+                "strtoupper",
+                "str_contains",
+                "str_ends_with",
+                "round",
+                "coreai_predict_semantic_system_state",
+                "unset",
+                "score",
+                "coreai_prediction_validation_path",
+                "coreai_collect_actual_system_state",
+                "coreai_load_project_graph",
+                "coreai_predict_cascade_impact",
+                "coreai_validate_prediction_accuracy",
+                "array_intersect",
+                "abs",
+                "array_diff",
+                "coreai_store_prediction_validation",
+                "coreai_architecture_learning_memory_path",
+                "coreai_load_architecture_learning_memory",
+                "coreai_save_architecture_learning_memory",
+                "coreai_update_architecture_learning_memory",
+                "is_string",
+                "use",
+                "dfs",
+                "chains",
+                "coreai_build_execution_plan",
+                "match",
+                "coreai_project_graph_path",
+                "coreai_match_graph_file_path",
+                "basename",
+                "coreai_build_graph_context",
+                "scorePath",
+                "rankAndLimit",
+                "coreai_project_intelligence_path",
+                "coreai_latest_source_mtime",
+                "time",
+                "RecursiveIteratorIterator",
+                "RecursiveDirectoryIterator",
+                "isFile",
+                "getPathname",
+                "getMTime",
+                "coreai_refresh_graph_artifacts_if_stale",
+                "filemtime",
+                "shell_exec",
+                "coreai_build_dependency_hierarchy",
+                "asort",
+                "ksort",
+                "coreai_extract_critical_paths",
+                "coreai_build_module_intelligence_map",
+                "coreai_build_dependency_tree",
+                "coreai_build_project_intelligence_memory",
+                "coreai_load_project_intelligence_memory",
+                "coreai_run_architectural_decision_engine",
+                "profile",
+                "model",
+                "coreai_architecture_decision_history_path",
+                "coreai_load_architecture_decision_history",
+                "coreai_save_architecture_decision_history",
+                "decision",
+                "coreai_store_architecture_decision",
+                "bin2hex",
+                "random_bytes",
+                "coreai_update_architecture_decision_actual_outcome",
+                "coreai_evolution_timeline_path",
+                "coreai_load_evolution_timeline",
+                "coreai_save_evolution_timeline",
+                "coreai_extract_architecture_snapshot",
+                "entry",
+                "coreai_append_evolution_timeline_entry"
+            ],
+            "api_flows": [],
+            "data_flows": [
+                "file_read",
+                "file_write",
+                "json_transform"
+            ]
+        },
+        {
+            "path": "php\/execute.php",
+            "language": "php",
+            "file_tag": "API_LAYER",
+            "classes": [],
+            "functions": [],
+            "calls": [
+                "declare",
+                "header",
+                "http_response_code",
+                "json_encode",
+                "file_get_contents",
+                "trim",
+                "json_decode",
+                "is_array",
+                "coreai_validate_action_groups",
+                "coreai_build_execution_plan",
+                "foreach",
+                "coreai_load_project_intelligence_memory",
+                "coreai_execute_action_groups",
+                "coreai_build_project_intelligence_memory",
+                "array_values",
+                "array_unique",
+                "coreai_collect_actual_system_state",
+                "coreai_validate_prediction_accuracy",
+                "coreai_store_prediction_validation",
+                "gmdate",
+                "coreai_update_architecture_learning_memory",
+                "unset",
+                "coreai_update_architecture_decision_actual_outcome",
+                "coreai_append_evolution_timeline_entry"
+            ],
+            "api_flows": [
+                {
+                    "endpoint": "[self-endpoint]",
+                    "flow_type": "api_handler"
+                }
+            ],
+            "data_flows": [
+                "file_read",
+                "json_transform",
+                "http_input"
+            ]
+        },
+        {
+            "path": "php\/memory.php",
+            "language": "php",
+            "file_tag": "API_LAYER",
+            "classes": [],
+            "functions": [],
+            "calls": [
+                "declare",
+                "header",
+                "http_response_code",
+                "json_encode",
+                "coreai_read_persistent_history"
+            ],
+            "api_flows": [
+                {
+                    "endpoint": "[self-endpoint]",
+                    "flow_type": "api_handler"
+                }
+            ],
+            "data_flows": [
+                "json_transform",
+                "http_input"
+            ]
+        },
+        {
+            "path": "php\/plan.php",
+            "language": "php",
+            "file_tag": "API_LAYER",
+            "classes": [],
+            "functions": [],
+            "calls": [
+                "declare",
+                "endpoint",
+                "header",
+                "http_response_code",
+                "json_encode",
+                "file_get_contents",
+                "trim",
+                "json_decode",
+                "is_array",
+                "coreai_validate_action_groups",
+                "coreai_build_execution_plan"
+            ],
+            "api_flows": [
+                {
+                    "endpoint": "[self-endpoint]",
+                    "flow_type": "api_handler"
+                }
+            ],
+            "data_flows": [
+                "file_read",
+                "json_transform",
+                "http_input"
+            ]
+        },
+        {
+            "path": "php\/project_graph.php",
+            "language": "php",
+            "file_tag": "CORE_LOGIC",
+            "classes": [],
+            "functions": [
+                {
+                    "name": "rel_path",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "detect_language",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "extract_imports",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "extract_function_definitions",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "extract_function_calls",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "extract_api_connections",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "resolve_local_import",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                }
+            ],
+            "calls": [
+                "declare",
+                "realpath",
+                "dirname",
+                "fwrite",
+                "exit",
+                "rel_path",
+                "str_replace",
+                "str_starts_with",
+                "substr",
+                "strlen",
+                "detect_language",
+                "strtolower",
+                "pathinfo",
+                "match",
+                "extract_imports",
+                "b",
+                "foreach",
+                "preg_match_all",
+                "is_array",
+                "trim",
+                "elseif",
+                "array_values",
+                "array_unique",
+                "array_filter",
+                "fn",
+                "extract_function_definitions",
+                "array_merge",
+                "extract_function_calls",
+                "array_fill_keys",
+                "connections",
+                "API",
+                "extract_api_connections",
+                "resolve_local_import",
+                "preg_match",
+                "ltrim",
+                "is_file",
+                "RecursiveIteratorIterator",
+                "RecursiveDirectoryIterator",
+                "isFile",
+                "getPathname",
+                "file_get_contents",
+                "gmdate",
+                "count",
+                "json_encode",
+                "file_put_contents",
+                "header"
+            ],
+            "api_flows": [],
+            "data_flows": [
+                "file_read",
+                "file_write",
+                "json_transform"
+            ]
+        },
+        {
+            "path": "php\/semantic_graph.php",
+            "language": "php",
+            "file_tag": "CORE_LOGIC",
+            "classes": [
+                {
+                    "name": "symbols",
+                    "kind": "class",
+                    "intent": "general"
+                }
+            ],
+            "functions": [
+                {
+                    "name": "sg_rel_path",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "sg_detect_language",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "sg_tag_file",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "sg_extract_classes",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "sg_extract_functions",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "sg_extract_calls",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "sg_extract_api_flows",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                },
+                {
+                    "name": "sg_extract_data_flows",
+                    "semantic_role": "general_logic",
+                    "tag": "CORE_LOGIC"
+                }
+            ],
+            "calls": [
+                "declare",
+                "graph",
+                "realpath",
+                "dirname",
+                "fwrite",
+                "exit",
+                "sg_rel_path",
+                "str_replace",
+                "str_starts_with",
+                "substr",
+                "strlen",
+                "sg_detect_language",
+                "strtolower",
+                "pathinfo",
+                "match",
+                "sg_tag_file",
+                "str_contains",
+                "str_ends_with",
+                "sg_extract_classes",
+                "preg_match_all",
+                "b",
+                "foreach",
+                "elseif",
+                "sg_extract_functions",
+                "array_merge",
+                "array_values",
+                "array_unique",
+                "in_array",
+                "sg_extract_calls",
+                "array_fill_keys",
+                "sg_extract_api_flows",
+                "trim",
+                "preg_match",
+                "signals",
+                "sg_extract_data_flows",
+                "_",
+                "RecursiveIteratorIterator",
+                "RecursiveDirectoryIterator",
+                "isFile",
+                "getPathname",
+                "file_get_contents",
+                "ltrim",
+                "gmdate",
+                "count",
+                "json_encode",
+                "file_put_contents",
+                "header"
+            ],
+            "api_flows": [],
+            "data_flows": [
+                "file_read",
+                "file_write",
+                "json_transform",
+                "http_input",
+                "browser_storage",
+                "network_io"
+            ]
+        },
+        {
+            "path": "README.md",
+            "language": "markdown",
+            "file_tag": "HELPER",
+            "classes": [],
+            "functions": [],
+            "calls": [],
+            "api_flows": [],
+            "data_flows": []
+        }
+    ],
+    "semantic_edges": [
+        {
+            "from": "js\/app.js",
+            "to": "php\/execute.php",
+            "type": "api_flow",
+            "reason": "internal endpoint connection"
+        },
+        {
+            "from": "js\/app.js",
+            "to": "php\/plan.php",
+            "type": "api_flow",
+            "reason": "internal endpoint connection"
+        },
+        {
+            "from": "js\/app.js",
+            "to": "php\/memory.php",
+            "type": "api_flow",
+            "reason": "internal endpoint connection"
+        },
+        {
+            "from": "js\/app.js",
+            "to": "php\/ai.php",
+            "type": "api_flow",
+            "reason": "internal endpoint connection"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_read_persistent_history"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_analyze_intent"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_reasoning_strategy_for_type"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_build_reasoned_memory_context"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_decide_action_mode"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_build_graph_context"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_load_project_intelligence_memory"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_env"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_action_response_schema"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_append_persistent_message"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "[self-endpoint]",
+            "type": "api_flow_external",
+            "reason": "api_handler"
+        },
+        {
+            "from": "php\/architecture_decision.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_load_project_intelligence_memory"
+        },
+        {
+            "from": "php\/architecture_decision.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_run_architectural_decision_engine"
+        },
+        {
+            "from": "php\/architecture_decision.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_store_architecture_decision"
+        },
+        {
+            "from": "php\/architecture_decision.php",
+            "to": "[self-endpoint]",
+            "type": "api_flow_external",
+            "reason": "api_handler"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_validate_action_groups"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_build_execution_plan"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_load_project_intelligence_memory"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_execute_action_groups"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_build_project_intelligence_memory"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_collect_actual_system_state"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_validate_prediction_accuracy"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_store_prediction_validation"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_update_architecture_learning_memory"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_update_architecture_decision_actual_outcome"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_append_evolution_timeline_entry"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "[self-endpoint]",
+            "type": "api_flow_external",
+            "reason": "api_handler"
+        },
+        {
+            "from": "php\/memory.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_read_persistent_history"
+        },
+        {
+            "from": "php\/memory.php",
+            "to": "[self-endpoint]",
+            "type": "api_flow_external",
+            "reason": "api_handler"
+        },
+        {
+            "from": "php\/plan.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_validate_action_groups"
+        },
+        {
+            "from": "php\/plan.php",
+            "to": "php\/bootstrap.php",
+            "type": "logic_flow",
+            "reason": "calls function coreai_build_execution_plan"
+        },
+        {
+            "from": "php\/plan.php",
+            "to": "[self-endpoint]",
+            "type": "api_flow_external",
+            "reason": "api_handler"
+        }
+    ],
+    "flow_hints": [
+        {
+            "file": "js\/app.js",
+            "flow": "client_state_to_api",
+            "description": "Uses browser memory and communicates with API."
+        },
+        {
+            "file": "php\/semantic_graph.php",
+            "flow": "request_to_storage",
+            "description": "Handles request input then writes to filesystem."
+        },
+        {
+            "file": "php\/semantic_graph.php",
+            "flow": "client_state_to_api",
+            "description": "Uses browser memory and communicates with API."
+        }
+    ]
+}

@@ -1,0 +1,300 @@
+<?php
+/**
+ * EN: Handles API endpoint/business logic in `api/core/module-permissions.php`.
+ * AR: يدير منطق واجهات API والعمليات الخلفية في `api/core/module-permissions.php`.
+ */
+return [
+    'agents' => [
+        'view' => 'view_agents',
+        'get' => 'view_agents',
+        'stats' => 'view_agents',
+        'create' => 'add_agent',
+        'add' => 'add_agent',
+        'update' => 'edit_agent',
+        'bulk_update' => 'edit_agent',
+        'delete' => 'delete_agent',
+        'bulk_delete' => 'delete_agent'
+    ],
+    'subagents' => [
+        'view' => 'view_subagents',
+        'get' => 'view_subagents',
+        'stats' => 'view_subagents',
+        'create' => 'add_subagent',
+        'add' => 'add_subagent',
+        'update' => 'edit_subagent',
+        'bulk_update' => 'edit_subagent',
+        'delete' => 'delete_subagent',
+        'bulk_delete' => 'delete_subagent'
+    ],
+    'workers' => [
+        'view' => 'view_workers',
+        'get' => 'view_workers',
+        'stats' => 'view_workers',
+        'create' => 'add_worker',
+        'add' => 'add_worker',
+        'update' => 'edit_worker',
+        'bulk-update' => 'bulk_edit_workers',
+        'bulk_update' => 'bulk_edit_workers',
+        'bulk-edit' => 'bulk_edit_workers',
+        'delete' => 'delete_worker',
+        'bulk-delete' => 'delete_worker',
+        'bulk_delete' => 'delete_worker',
+        'musaned' => 'manage_musaned',
+        'documents' => 'view_worker_documents',
+        'view_documents' => 'view_worker_documents'
+    ],
+    'partnerships' => [
+        'view' => ['view_partner_agencies', 'view_workers'],
+        'list' => ['view_partner_agencies', 'view_workers'],
+        'get' => ['view_partner_agencies', 'view_workers'],
+        'create' => ['add_partner_agency', 'add_worker'],
+        'add' => ['add_partner_agency', 'add_worker'],
+        'update' => ['edit_partner_agency', 'edit_worker'],
+        'edit' => ['edit_partner_agency', 'edit_worker'],
+        'delete' => ['delete_partner_agency', 'delete_worker'],
+    ],
+    'deployments' => [
+        'view' => ['view_partner_agencies', 'view_workers'],
+        'list' => ['view_partner_agencies', 'view_workers'],
+        'get' => ['view_partner_agencies', 'view_workers'],
+        'create' => ['edit_partner_agency', 'edit_worker'],
+        'add' => ['edit_partner_agency', 'edit_worker'],
+        'update' => ['edit_partner_agency', 'edit_worker'],
+        'edit' => ['edit_partner_agency', 'edit_worker'],
+        'update_status' => ['edit_partner_agency', 'edit_worker'],
+        // Allow either: full delete_worker, or edit_worker (same as create/update deployment)
+        'delete' => ['delete_partner_agency', 'delete_worker', 'edit_worker'],
+    ],
+    'cases' => [
+        'view' => 'view_cases',
+        'get' => 'view_cases',
+        'stats' => 'view_cases',
+        'create' => 'add_case',
+        'add' => 'add_case',
+        'update' => 'edit_case',
+        'bulk-update' => 'edit_case',
+        'bulk_update' => 'edit_case',
+        'delete' => 'delete_case',
+        'bulk-delete' => 'delete_case',
+        'bulk_delete' => 'delete_case'
+    ],
+    'hr' => [
+        'view' => 'view_hr_dashboard',
+        'get' => 'view_employees',
+        'list' => 'view_employees',
+        'stats' => 'view_hr_dashboard',
+        'create' => 'add_employee',
+        'add' => 'add_employee',
+        'update' => 'edit_employee',
+        'edit' => 'edit_employee',
+        'delete' => 'delete_employee',
+        'bulk_update' => 'edit_employee',
+        'bulk_delete' => 'delete_employee'
+    ],
+    'employees' => [
+        'view' => 'view_employees',
+        'get' => 'view_employees',
+        'list' => 'view_employees',
+        'stats' => 'view_employees',
+        'create' => 'add_employee',
+        'add' => 'add_employee',
+        'update' => 'edit_employee',
+        'edit' => 'edit_employee',
+        'delete' => 'delete_employee',
+        'bulk_update' => 'edit_employee',
+        'bulk_delete' => 'delete_employee'
+    ],
+    // Accounting Module Permissions
+    'accounts' => [
+        'view' => 'view_chart_accounts',
+        'get' => 'view_chart_accounts',
+        'list' => 'view_chart_accounts',
+        'create' => ['add_account', 'view_chart_accounts'],
+        'add' => ['add_account', 'view_chart_accounts'],
+        'update' => 'edit_account',
+        'edit' => 'edit_account',
+        'delete' => 'delete_account',
+        'import' => 'import_chart_accounts'
+    ],
+    'chart-of-accounts' => [
+        'view' => 'view_chart_accounts',
+        'get' => 'view_chart_accounts',
+        'list' => 'view_chart_accounts',
+        'create' => ['add_account', 'view_chart_accounts'],
+        'add' => ['add_account', 'view_chart_accounts'],
+        'update' => 'edit_account',
+        'edit' => 'edit_account',
+        'delete' => 'delete_account',
+        'import' => 'import_chart_accounts'
+    ],
+    'journal-entries' => [
+        'view' => 'view_journal_entries',
+        'get' => 'view_journal_entries',
+        'list' => 'view_journal_entries',
+        'create' => ['add_journal_entry', 'view_journal_entries'],
+        'add' => ['add_journal_entry', 'view_journal_entries'],
+        'update' => 'edit_journal_entry',
+        'edit' => 'edit_journal_entry',
+        'delete' => 'delete_journal_entry',
+        'approve' => 'approve_journal_entry',
+        'print' => 'print_journal_entry'
+    ],
+    'payment-vouchers' => [
+        'view' => 'view_payment_vouchers',
+        'get' => 'view_payment_vouchers',
+        'list' => 'view_payment_vouchers',
+        'create' => 'add_payment_voucher',
+        'add' => 'add_payment_voucher',
+        'update' => 'edit_payment_voucher',
+        'edit' => 'edit_payment_voucher',
+        'delete' => 'delete_payment_voucher',
+        'approve' => 'approve_payment_voucher',
+        'print' => 'print_payment_voucher'
+    ],
+    'receipt-vouchers' => [
+        'view' => 'view_receipt_vouchers',
+        'get' => 'view_receipt_vouchers',
+        'list' => 'view_receipt_vouchers',
+        'create' => 'add_receipt_voucher',
+        'add' => 'add_receipt_voucher',
+        'update' => 'edit_receipt_voucher',
+        'edit' => 'edit_receipt_voucher',
+        'delete' => 'delete_receipt_voucher',
+        'approve' => 'approve_receipt_voucher',
+        'print' => 'print_receipt_voucher'
+    ],
+    'receivables' => [
+        'view' => 'view_receivables',
+        'get' => 'view_receivables',
+        'list' => 'view_receivables',
+        'create' => 'add_receivable',
+        'add' => 'add_receivable',
+        'update' => 'edit_receivable',
+        'edit' => 'edit_receivable',
+        'delete' => 'delete_receivable',
+        'approve' => 'approve_receivable'
+    ],
+    'payables' => [
+        'view' => 'view_payables',
+        'get' => 'view_payables',
+        'list' => 'view_payables',
+        'create' => 'add_payable',
+        'add' => 'add_payable',
+        'update' => 'edit_payable',
+        'edit' => 'edit_payable',
+        'delete' => 'delete_payable',
+        'approve' => 'approve_payable'
+    ],
+    'invoices' => [
+        'view' => 'view_receivables',
+        'get' => 'view_receivables',
+        'list' => 'view_receivables',
+        'create' => 'add_receivable',
+        'add' => 'add_receivable',
+        'update' => 'edit_receivable',
+        'edit' => 'edit_receivable',
+        'delete' => 'delete_receivable'
+    ],
+    'bills' => [
+        'view' => 'view_payables',
+        'get' => 'view_payables',
+        'list' => 'view_payables',
+        'create' => 'add_payable',
+        'add' => 'add_payable',
+        'update' => 'edit_payable',
+        'edit' => 'edit_payable',
+        'delete' => 'delete_payable'
+    ],
+    'bank_guarantees' => [
+        'view' => ['view_bank_accounts', 'view_chart_accounts'],
+        'get' => ['view_bank_accounts', 'view_chart_accounts'],
+        'list' => ['view_bank_accounts', 'view_chart_accounts'],
+        'create' => ['add_bank_account', 'view_bank_accounts', 'view_chart_accounts'],
+        'add' => ['add_bank_account', 'view_bank_accounts', 'view_chart_accounts'],
+        'update' => ['edit_bank_account', 'view_bank_accounts', 'view_chart_accounts'],
+        'edit' => ['edit_bank_account', 'view_bank_accounts', 'view_chart_accounts'],
+        'delete' => ['delete_bank_account', 'view_bank_accounts', 'view_chart_accounts']
+    ],
+    'bank-accounts' => [
+        'view' => 'view_bank_accounts',
+        'get' => 'view_bank_accounts',
+        'list' => 'view_bank_accounts',
+        'create' => 'add_bank_account',
+        'add' => 'add_bank_account',
+        'update' => 'edit_bank_account',
+        'edit' => 'edit_bank_account',
+        'reconcile' => 'bank_reconciliation'
+    ],
+    'bank-transactions' => [
+        'view' => 'view_bank_transactions',
+        'get' => 'view_bank_transactions',
+        'list' => 'view_bank_transactions',
+        'create' => 'add_bank_transaction',
+        'add' => 'add_bank_transaction',
+        'update' => 'edit_bank_transaction',
+        'edit' => 'edit_bank_transaction',
+        'delete' => 'delete_bank_transaction'
+    ],
+    'expenses' => [
+        'view' => 'view_expenses',
+        'get' => 'view_expenses',
+        'list' => 'view_expenses',
+        'create' => 'add_expense',
+        'add' => 'add_expense',
+        'update' => 'edit_expense',
+        'edit' => 'edit_expense',
+        'delete' => 'delete_expense',
+        'approve' => 'approve_expense'
+    ],
+    // Contact Management Module Permissions
+    'contacts' => [
+        'view' => 'view_contacts',
+        'get' => 'view_contacts',
+        'list' => 'view_contacts',
+        'stats' => 'view_contacts',
+        'create' => 'add_contact',
+        'add' => 'add_contact',
+        'update' => 'edit_contact',
+        'edit' => 'edit_contact',
+        'delete' => 'delete_contact',
+        'bulk_update' => 'edit_contact',
+        'bulk_delete' => 'delete_contact',
+        'view_details' => 'view_contact_details',
+        'manage_communications' => 'manage_contact_communications',
+        'export' => 'export_contacts',
+        'import' => 'import_contacts'
+    ],
+    // Communications Module Permissions
+    'communications' => [
+        'view' => 'view_messages',
+        'get' => 'view_messages',
+        'list' => 'view_messages',
+        'stats' => 'view_messages',
+        'create' => 'send_message',
+        'add' => 'send_message',
+        'send' => 'send_message',
+        'update' => 'send_message',
+        'edit' => 'send_message',
+        'delete' => 'delete_message',
+        'bulk_update' => 'send_message',
+        'bulk_delete' => 'delete_message',
+        'view_received' => 'view_received_messages',
+        'reply' => 'reply_to_message'
+    ],
+    // Notifications Module Permissions
+    'notifications' => [
+        'view' => 'view_notifications',
+        'get' => 'view_notifications',
+        'list' => 'view_notifications',
+        'stats' => 'view_notifications',
+        'create' => 'create_notification',
+        'add' => 'create_notification',
+        'update' => 'manage_notifications',
+        'edit' => 'manage_notifications',
+        'delete' => 'delete_notification',
+        'bulk_update' => 'manage_notifications',
+        'bulk_delete' => 'delete_notification',
+        'manage' => 'manage_notifications'
+    ],
+];
+

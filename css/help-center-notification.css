@@ -1,0 +1,81 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/help-center-notification.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/help-center-notification.css`.
+ */
+/* Help Center Notification - no inline styles */
+.help-center-notification {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 99999;
+    max-width: 420px;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transform: translateX(100%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.help-center-notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+.help-center-notification-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+}
+.help-center-notification-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #ffffff;
+}
+.help-center-notification-content {
+    flex: 1;
+    min-width: 0;
+}
+.help-center-notification-title {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+}
+.help-center-notification-text {
+    margin: 0;
+    font-size: 13px;
+    color: #cbd5e1;
+}
+.help-center-notification-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+.help-center-notification-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+}
+.help-center-notification-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+}

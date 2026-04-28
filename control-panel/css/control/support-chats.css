@@ -1,0 +1,17 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control/support-chats.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control/support-chats.css`.
+ */
+.support-chats-wrap {
+    width: 100%;
+    min-height: calc(100vh - 200px);
+    border: 0;
+    overflow: auto;
+}
+
+.support-chats-frame {
+    width: 100%;
+    min-height: 800px;
+    border: 0;
+    background: transparent;
+}

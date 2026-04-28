@@ -1,0 +1,331 @@
+/*
+ * EN: Defines system administration/observability module behavior in `admin/dashboard/assets/dashboard.css`.
+ * AR: يحدد سلوك وحدة إدارة النظام والمراقبة في `admin/dashboard/assets/dashboard.css`.
+ */
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    background: #f3f6fb;
+    color: #111827;
+}
+
+.dashboard-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+}
+
+.sidebar {
+    background: #0f172a;
+    color: #cbd5e1;
+    padding: 22px 14px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.brand {
+    color: #e2e8f0;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 16px;
+    padding: 0 10px;
+}
+
+.nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.nav-link {
+    color: #94a3b8;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: #f8fafc;
+    background: #1e293b;
+}
+
+.main {
+    padding: 18px;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.topbar h1 {
+    margin: 0;
+    font-size: 28px;
+}
+
+.topbar p {
+    margin: 6px 0 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.switch-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid #dbe2ee;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+.btn {
+    display: inline-block;
+    border: 1px solid #cfd8e8;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-weight: 600;
+    text-decoration: none;
+    color: #0f172a;
+    background: #fff;
+    cursor: pointer;
+}
+
+.btn-primary {
+    color: #fff;
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+.alert {
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+}
+
+.panel {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+.panel h2 {
+    margin: 0 0 12px;
+    font-size: 18px;
+}
+
+.panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filters input,
+.filters select {
+    border: 1px solid #dbe2ee;
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: #fff;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.card {
+    border-radius: 12px;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+}
+
+.card span {
+    display: block;
+    font-size: 12px;
+    color: #475569;
+    margin-bottom: 8px;
+}
+
+.card strong {
+    font-size: 24px;
+}
+
+.status-safe { background: #ecfdf5; color: #14532d; }
+.status-danger { background: #fef2f2; color: #7f1d1d; }
+.status-warning { background: #fffbeb; color: #78350f; }
+.status-system { background: #eff6ff; color: #1e3a8a; }
+
+.badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 4px 8px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    text-align: left;
+    font-size: 13px;
+    padding: 10px;
+    border-bottom: 1px solid #eef2f7;
+    vertical-align: top;
+}
+
+th {
+    background: #f8fafc;
+    color: #475569;
+}
+
+.muted {
+    color: #64748b;
+}
+
+.mono {
+    font-family: Consolas, "Courier New", monospace;
+    word-break: break-word;
+}
+
+.data-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.data-grid > div {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+.data-grid label {
+    display: block;
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.setting-list {
+    display: grid;
+    gap: 8px;
+    max-width: 560px;
+}
+
+.setting-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 42px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: not-allowed;
+    inset: 0;
+    background-color: #cbd5e1;
+    border-radius: 999px;
+    transition: 0.2s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    top: 3px;
+    background-color: white;
+    border-radius: 50%;
+    transition: 0.2s;
+}
+
+.switch input:checked + .slider {
+    background-color: #2563eb;
+}
+
+.switch input:checked + .slider:before {
+    transform: translateX(18px);
+}
+
+@media (max-width: 1180px) {
+    .card-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 960px) {
+    .dashboard-shell { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .nav { flex-direction: row; flex-wrap: wrap; }
+    .main { padding: 12px; }
+    .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .data-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 640px) {
+    .card-grid,
+    .data-grid {
+        grid-template-columns: 1fr;
+    }
+}
+

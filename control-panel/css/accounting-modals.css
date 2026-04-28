@@ -1,0 +1,185 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/accounting-modals.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/accounting-modals.css`.
+ */
+.cp-acc-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:10000;align-items:center;justify-content:center;padding:1rem;}
+.cp-acc-modal.is-open{display:flex !important;}
+/* URL hash fallback: e.g. accounting.php#costModal — must win over display:none */
+.cp-acc-modal:target{display:flex !important;}
+/* Form modals (opened from inside another modal) must stack above list modals */
+#chartAccountFormModal.is-open,#costCenterFormModal.is-open,#bankGuaranteeFormModal.is-open,#cpAccGenericFormModal.is-open,#cpAccReceiptJournalModal.is-open,#cpAccExpenseFormModal.is-open,#newJournalModal.is-open{z-index:10100;}
+#cpAccSupportPaymentFormModal.is-open{z-index:10150;}
+#ledgerJournalEditModal.is-open{z-index:10150;}
+.cp-acc-modal-content{background:var(--bg-secondary,#1e293b);border:1px solid var(--border-color,#334155);border-radius:12px;max-width:95vw;max-height:90vh;width:1100px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 25px 50px rgba(0,0,0,0.5);pointer-events:auto;}
+.cp-acc-modal-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border-color);flex-shrink:0;}
+.cp-acc-modal-header h2{margin:0;font-size:1.25rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:8px;}
+.cp-acc-modal-header .cp-acc-modal-actions{display:flex;gap:8px;}
+.cp-acc-modal-header .btn{padding:6px 12px;font-size:0.875rem;}
+.cp-acc-modal-body{padding:16px;overflow-y:auto;flex:1;}
+.cp-acc-summary-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:16px;}
+.cp-acc-summary-card{padding:10px 12px;border-radius:8px;background:rgba(51,65,85,0.5);border:1px solid var(--border-color);text-align:center;}
+.cp-acc-summary-card .num{font-size:1.25rem;font-weight:700;color:var(--text-primary);}
+.cp-acc-summary-card .lbl{font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;}
+.cp-acc-filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;}
+.cp-acc-filters label{font-size:0.8rem;color:var(--text-muted);margin-right:4px;}
+.cp-acc-filters input,.cp-acc-filters select{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);border-radius:6px;padding:6px 10px;font-size:0.875rem;}
+.cp-acc-modal input[type="date"]{direction:ltr;unicode-bidi:isolate;}
+.cp-acc-modal[lang="en"] input[type="date"].cp-acc-date-en{font-variant-numeric:tabular-nums;}
+/* English-only dates: text fields + Flatpickr (avoids OS/browser Arabic native date picker) */
+input.cp-acc-fp-en{direction:ltr;unicode-bidi:isolate;font-variant-numeric:tabular-nums;max-width:11rem;}
+.cp-acc-filters input.cp-acc-fp-en{max-width:none;}
+#approvalJournalViewModal.is-open{z-index:10050;}
+.cp-acc-filters input.cp-acc-w180{min-width:180px;}
+.cp-acc-filters input.cp-acc-w200{min-width:200px;}
+.cp-acc-summary-card.cp-acc-card-purple{border-left:4px solid #8b5cf6;}
+.cp-acc-summary-card.cp-acc-card-green{border-left:4px solid #10b981;}
+.cp-acc-summary-card.cp-acc-card-amber{border-left:4px solid #f59e0b;}
+.cp-acc-summary-card.cp-acc-card-blue{border-left:4px solid #3b82f6;}
+.cp-acc-summary-card.cp-acc-card-red{border-left:4px solid #ef4444;}
+.cp-acc-summary-card.cp-acc-card-teal{border-left:4px solid #14b8a6;}
+.cp-acc-report-status-card.cp-acc-card-purple{border-left-color:#8b5cf6;}
+.cp-acc-report-status-card.cp-acc-card-green{border-left-color:#10b981;}
+.cp-acc-report-status-card.cp-acc-card-amber{border-left-color:#f59e0b;}
+.cp-acc-report-status-card.cp-acc-card-blue{border-left-color:#3b82f6;}
+.cp-acc-report-status-card.cp-acc-card-red{border-left-color:#ef4444;}
+.cp-acc-report-status-card.cp-acc-card-teal{border-left-color:#14b8a6;}
+.cp-acc-modal-content.cp-acc-modal-sm{max-width:480px;}
+.cp-acc-modal-content.cp-acc-modal-md{max-width:1000px;}
+.cp-acc-modal-content.cp-acc-modal-900{max-width:900px;}
+.cp-acc-modal-content.cp-acc-modal-lg{max-width:1200px;}
+.cp-acc-form-dark .form-control,.cp-acc-form-dark .form-select,.cp-acc-form-dark .form-control-sm,.cp-acc-form-dark .form-select-sm{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);}
+/* Reject reason modal - force dark dropdown/select styling */
+#approvalRejectReasonModal .cp-acc-modal-content{background:var(--bg-secondary,#1e293b);border-color:var(--border-color,#334155);}
+#approvalRejectReasonModal .cp-acc-modal-body{background:var(--bg-secondary,#1e293b);color:var(--text-primary,#f1f5f9);}
+#approvalRejectReasonModal .form-select,
+#approvalRejectReasonModal .form-select-sm{
+    background-color:var(--bg-tertiary,#334155);
+    color:var(--text-primary,#f1f5f9);
+    border:1px solid var(--border-color,#475569);
+}
+#approvalRejectReasonModal .form-select:focus,
+#approvalRejectReasonModal .form-select-sm:focus{
+    background-color:var(--bg-tertiary,#334155);
+    color:var(--text-primary,#f1f5f9);
+    border-color:#3b82f6;
+    box-shadow:0 0 0 2px rgba(59,130,246,0.25);
+}
+#approvalRejectReasonModal select option{
+    background-color:#0f172a;
+    color:#e2e8f0;
+}
+#approvalRejectReasonModal select option:checked{
+    background:linear-gradient(0deg,#1d4ed8,#1d4ed8);
+    color:#ffffff;
+}
+#ledgerJournalEditModal .form-check-input{background-color:var(--bg-tertiary,#334155);border-color:var(--border-color,#475569);}
+#ledgerJournalEditModal .form-check-input:checked{background-color:#3b82f6;border-color:#3b82f6;}
+#newJournalModal .form-check-input,#cpAccReceiptJournalModal .form-check-input,#cpAccExpenseFormModal .form-check-input{background-color:var(--bg-tertiary,#334155);border-color:var(--border-color,#475569);}
+#newJournalModal .form-check-input:checked,#cpAccReceiptJournalModal .form-check-input:checked,#cpAccExpenseFormModal .form-check-input:checked{background-color:#3b82f6;border-color:#3b82f6;}
+.cp-acc-new-je-fp,.cp-acc-rc-je-fp,.cp-acc-ex-je-fp{direction:ltr;unicode-bidi:isolate;max-width:14rem;font-variant-numeric:tabular-nums;}
+#newJournalModal .cp-acc-new-je-fp.form-control,#newJournalModal .cp-acc-new-je-fp.form-control:focus,#cpAccReceiptJournalModal .cp-acc-rc-je-fp.form-control,#cpAccReceiptJournalModal .cp-acc-rc-je-fp.form-control:focus,#cpAccExpenseFormModal .cp-acc-ex-je-fp.form-control,#cpAccExpenseFormModal .cp-acc-ex-je-fp.form-control:focus{background-color:var(--bg-tertiary,#334155)!important;color:var(--text-primary,#f1f5f9)!important;border-color:var(--border-light,#475569)!important;box-shadow:none;}
+#newJournalModal .cp-acc-new-je-fp.form-control::placeholder,#cpAccReceiptJournalModal .cp-acc-rc-je-fp.form-control::placeholder,#cpAccExpenseFormModal .cp-acc-ex-je-fp.form-control::placeholder{color:var(--text-muted,#94a3b8)!important;opacity:1;}
+.cp-acc-unbalanced-warning{background:rgba(234,179,8,0.2);border:1px solid rgba(234,179,8,0.5);}
+.cp-acc-btn-gradient-purple{background:linear-gradient(135deg,#8b5cf6,#7c3aed);border:none;color:#fff;}
+.cp-acc-btn-gradient-purple:hover{background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;}
+.cp-acc-table-wrap{overflow-x:auto;border:1px solid var(--border-color);border-radius:8px;}
+.cp-acc-table{width:100%;border-collapse:collapse;font-size:0.8rem;}
+.cp-acc-table th{background:rgba(51,65,85,0.8);color:var(--text-muted);padding:8px 10px;text-align:left;}
+.cp-acc-table th.cp-acc-th-col-checkbox{width:40px;}
+.cp-acc-table th.cp-acc-th-col-action{width:48px;}
+.cp-acc-table td{padding:8px 10px;border-bottom:1px solid var(--border-color);color:var(--text-primary);}
+.cp-acc-empty{text-align:center;padding:40px 20px;color:var(--text-muted);}
+.cp-acc-empty i{font-size:3rem;opacity:0.4;display:block;margin-bottom:8px;}
+.cp-acc-pagination{display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px;}
+.cp-acc-pagination .info{font-size:0.8rem;color:var(--text-muted);}
+.cp-acc-bulk{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.cp-acc-close{cursor:pointer;padding:4px;color:var(--text-muted);}
+.cp-acc-close:hover{color:var(--text-primary);}
+/* Chart Account Add/Edit form modal – dark mode */
+#chartAccountFormModal .cp-acc-modal-content{max-width:480px;background:#1e293b;border-color:#334155;}
+#chartAccountFormModal .cp-acc-modal-header{border-bottom-color:#334155;}
+#chartAccountFormModal .cp-acc-modal-header h2{color:#f1f5f9;}
+#chartAccountFormModal .cp-acc-modal-body{background:#1e293b;color:#f1f5f9;}
+#chartAccountFormModal .form-label{color:#cbd5e1;}
+#chartAccountFormModal .form-control,#chartAccountFormModal .form-select{background:#334155;color:#f1f5f9;border:1px solid #475569;border-radius:6px;}
+#chartAccountFormModal .form-control::placeholder{color:#94a3b8;}
+#chartAccountFormModal .form-control:focus,#chartAccountFormModal .form-select:focus{background:#334155;color:#f1f5f9;border-color:#3b82f6;outline:none;box-shadow:0 0 0 2px rgba(59,130,246,0.25);}
+#chartAccountFormModal .form-check-input{background-color:#334155;border-color:#475569;}
+#chartAccountFormModal .form-check-input:checked{background-color:#3b82f6;border-color:#3b82f6;}
+#chartAccountFormModal .form-check-label{color:#cbd5e1;}
+#chartAccountFormModal .btn-secondary{background:#475569;border-color:#475569;color:#e2e8f0;}
+#chartAccountFormModal .btn-secondary:hover{background:#64748b;border-color:#64748b;color:#fff;}
+#chartAccountFormModal .btn-primary{background:#3b82f6;border-color:#3b82f6;color:#fff;}
+#chartAccountFormModal .btn-primary:hover{background:#2563eb;border-color:#2563eb;color:#fff;}
+#chartAccountFormModal .text-danger{color:#f87171;}
+/* Cost Center / Bank Guarantee / Generic form modals – same dark style */
+#costCenterFormModal .cp-acc-modal-content,#bankGuaranteeFormModal .cp-acc-modal-content,#cpAccGenericFormModal .cp-acc-modal-content{background:#1e293b;border-color:#334155;}
+#costCenterFormModal .cp-acc-modal-header h2,#bankGuaranteeFormModal .cp-acc-modal-header h2,#cpAccGenericFormModal .cp-acc-modal-header h2{color:#f1f5f9;}
+#costCenterFormModal .cp-acc-modal-body,#bankGuaranteeFormModal .cp-acc-modal-body,#cpAccGenericFormModal .cp-acc-modal-body{background:#1e293b;color:#f1f5f9;}
+#costCenterFormModal .form-label,#bankGuaranteeFormModal .form-label,#cpAccGenericFormModal .form-label{color:#cbd5e1;}
+#costCenterFormModal .form-check-label,#bankGuaranteeFormModal .form-check-label,#cpAccGenericFormModal .form-check-label{color:#cbd5e1;}
+#costCenterFormModal .text-danger,#bankGuaranteeFormModal .text-danger,#cpAccGenericFormModal .text-danger{color:#f87171;}
+/* Financial Reports modal – summary + card grid */
+.cp-acc-report-summary-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+.cp-acc-report-summary-card{padding:10px 14px;border-radius:8px;background:rgba(51,65,85,0.6);border:1px solid var(--border-color,#334155);min-width:120px;}
+.cp-acc-report-summary-card .num{font-size:1.35rem;font-weight:700;color:var(--text-primary,#f1f5f9);}
+.cp-acc-report-summary-card .lbl{font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px;}
+.cp-acc-report-summary-card .sublbl{font-size:0.7rem;color:#10b981;line-height:1.4;}
+.cp-acc-report-filters{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px;}
+.cp-acc-report-filters label{font-size:0.8rem;color:var(--text-muted);margin-right:4px;}
+.cp-acc-report-filters input,.cp-acc-report-filters select{background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border-color);border-radius:6px;padding:6px 10px;font-size:0.875rem;}
+.cp-acc-report-cards-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+@media (max-width:1200px){.cp-acc-report-cards-grid{grid-template-columns:repeat(3,1fr);}}
+@media (max-width:768px){.cp-acc-report-cards-grid{grid-template-columns:repeat(2,1fr);}}
+.cp-acc-report-card{background:rgba(51,65,85,0.5);border:1px solid var(--border-color);border-radius:8px;padding:14px;cursor:pointer;transition:all 0.2s ease;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:120px;}
+.cp-acc-report-card:hover{background:rgba(59,130,246,0.15);border-color:#3b82f6;}
+.cp-acc-report-card .icon{width:40px;height:40px;border-radius:8px;background:rgba(59,130,246,0.2);color:#7dd3fc;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:8px;}
+.cp-acc-report-card .title{font-size:0.9rem;font-weight:600;color:var(--text-primary);margin-bottom:4px;line-height:1.2;}
+.cp-acc-report-card .desc{font-size:0.75rem;color:var(--text-muted);line-height:1.3;}
+.cp-acc-report-card[data-report-id]{cursor:pointer;}
+.cp-acc-report-panel{display:none;padding:0;}
+.cp-acc-report-panel.active{display:block;}
+/* Ratib Pro style: report period, actions, status cards, filters, table totals, pagination */
+.cp-acc-report-panel .report-period{font-size:0.9rem;color:var(--text-muted,#94a3b8);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.cp-acc-report-panel .report-period i{opacity:0.8;}
+.cp-acc-report-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
+.cp-acc-report-actions .btn{font-size:0.8rem;padding:6px 10px;}
+.cp-acc-report-status-cards{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+.cp-acc-report-status-card{padding:10px 14px;border-radius:8px;min-width:100px;border:1px solid var(--border-color,#334155);border-left-width:4px;background:rgba(30,41,59,0.8);box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+.cp-acc-report-status-card .val{font-weight:700;font-size:1.05rem;color:var(--text-primary,#f1f5f9);display:block;line-height:1.3;}
+.cp-acc-report-status-card .lbl{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.02em;color:var(--text-muted,#94a3b8);margin-top:2px;}
+.cp-acc-report-filters-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px;padding:12px 14px;background:rgba(30,41,59,0.6);border-radius:8px;border:1px solid var(--border-color,#334155);}
+.cp-acc-report-filters-bar label{font-size:0.75rem;color:var(--text-muted,#94a3b8);margin-right:4px;font-weight:500;}
+.cp-acc-report-filters-bar input,.cp-acc-report-filters-bar select{background:var(--bg-tertiary,#334155);color:var(--text-primary,#f1f5f9);border:1px solid var(--border-color,#475569);border-radius:6px;padding:6px 10px;font-size:0.8rem;min-width:100px;}
+.cp-acc-report-filters-bar input:focus,.cp-acc-report-filters-bar select:focus{outline:none;border-color:#3b82f6;}
+.cp-acc-report-filters-bar .btn-apply-filters{background:linear-gradient(135deg,#3b82f6 0%,#8b5cf6 100%);border:none;color:#fff;font-weight:600;}
+.cp-acc-report-filters-bar .btn-apply-filters:hover{background:linear-gradient(135deg,#2563eb 0%,#7c3aed 100%);color:#fff;}
+.cp-acc-report-filters-bar .btn-clear-report{color:var(--text-muted);border-color:var(--border-color);}
+.cp-acc-report-filters-bar .btn-clear-report:hover{background:rgba(239,68,68,0.15);border-color:#ef4444;color:#ef4444;}
+.cp-acc-report-pagination{display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:10px;font-size:0.8rem;color:var(--text-muted,#94a3b8);}
+.cp-acc-report-pagination .nav{display:flex;gap:4px;align-items:center;}
+.cp-acc-report-pagination .nav .btn{min-width:32px;}
+.cp-acc-report-pagination .nav .btn.active{background:#3b82f6;border-color:#3b82f6;color:#fff;}
+.cp-acc-table thead th{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;padding:10px 12px;}
+.cp-acc-table thead th i{opacity:0.7;margin-left:4px;}
+.cp-acc-table tbody tr:hover{background:rgba(51,65,85,0.3);}
+.cp-acc-table tfoot .report-totals-row{font-weight:700;background:rgba(51,65,85,0.7);color:var(--text-primary,#f1f5f9);}
+.cp-acc-table tfoot td{border-top:2px solid var(--border-color,#475569);padding:10px 12px;}
+.cp-acc-table .text-success{color:#10b981;}
+.cp-acc-table .text-danger{color:#ef4444;}
+.cp-acc-report-panel .cp-acc-table-wrap{border-radius:8px;overflow:hidden;border:1px solid var(--border-color,#334155);}
+.cp-acc-report-panel .cp-acc-empty small{display:block;margin-top:6px;font-size:0.85em;}
+.cp-acc-report-panel .cp-acc-table tbody tr.bg-dark{background:rgba(51,65,85,0.9);}
+.cp-acc-report-panel .cp-acc-table tbody tr.bg-dark td{padding:8px 12px;font-weight:600;}
+/* Print: show only report viewer content */
+@media print {
+    body * { visibility: hidden; }
+    #reportViewerModal.is-open,
+    #reportViewerModal.is-open * { visibility: visible; }
+    #reportViewerModal.is-open { position: absolute; inset: 0; background: #fff; display: flex !important; }
+    #reportViewerModal.is-open .cp-acc-modal-content { max-height: none; box-shadow: none; border: 1px solid #ccc; }
+    #reportViewerModal.is-open .cp-acc-close { display: none; }
+    #reportViewerModal.is-open .cp-acc-modal-actions .btn { color: #000; border-color: #999; }
+}
+.cp-acc-report-toast{position:fixed;bottom:20px;right:20px;background:var(--bg-secondary,#1e293b);border:1px solid var(--border-color);border-radius:8px;padding:10px 16px;font-size:0.875rem;z-index:10001;box-shadow:0 4px 12px rgba(0,0,0,0.4);animation:cpAccFadeIn 0.2s ease;}
+@keyframes cpAccFadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}

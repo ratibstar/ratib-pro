@@ -1,0 +1,15 @@
+# Environment variables - NEVER COMMIT
+.env
+
+# Transaction logs
+logs/
+*.log
+
+# PHP
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

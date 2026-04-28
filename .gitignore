@@ -1,0 +1,38 @@
+# N-Genius / local secrets (never commit)
+.env
+config/ngenius.secrets.php
+
+# Environment variants
+.env.*
+!.env.example
+!.env.ngenius.example
+
+# Dependencies/build artifacts
+node_modules/
+vendor/
+dist/
+build/
+
+# Logs, cache, temp
+logs/
+*.log
+tmp/
+temp/
+cache/
+*.cache
+
+# Archives and dumps
+*.zip
+*.tar
+*.gz
+*.sql
+*.sqlite
+
+# Editor/system files
+.cursor/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Keep Designed folder out of repo operations by default
+Designed/

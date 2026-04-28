@@ -1,0 +1,25 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control/login-control.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control/login-control.css`.
+ */
+body.cp-login-page { background: #0a0a0f !important; }
+body.cp-login-page .hyperdimensional-container { background: linear-gradient(135deg, #0a0a0f 0%, #0f0f1a 40%, #0d0d18 70%, #050510 100%) !important; }
+.cp-bg-word { position: absolute; font-size: clamp(2rem, 6vw, 4.5rem); font-weight: 900; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.15em; pointer-events: none; user-select: none; animation: cpFloat 25s infinite linear, cpGlow 6s ease-in-out infinite alternate; opacity: 0.85; text-shadow: 0 0 40px currentColor; }
+.cp-bg-word:nth-child(1) { top: 4%; color: rgba(244, 244, 245, 0.28); animation-duration: 26s; animation-delay: 0s; }
+.cp-bg-word:nth-child(2) { top: 20%; color: rgba(139, 154, 255, 0.35); animation-duration: 28s; animation-delay: -4s; }
+.cp-bg-word:nth-child(3) { top: 36%; color: rgba(0, 230, 255, 0.32); animation-duration: 32s; animation-delay: -10s; animation-direction: reverse; }
+.cp-bg-word:nth-child(4) { top: 52%; color: rgba(46, 213, 115, 0.32); animation-duration: 30s; animation-delay: -16s; }
+.cp-bg-word:nth-child(5) { top: 68%; color: rgba(255, 184, 77, 0.3); animation-duration: 26s; animation-delay: -22s; animation-direction: reverse; }
+.cp-bg-word:nth-child(6) { top: 84%; color: rgba(236, 72, 153, 0.32); animation-duration: 34s; animation-delay: -28s; }
+@keyframes cpFloat {
+    0% { transform: translateX(-100%) translateY(0) rotate(-3deg); opacity: 0.3; }
+    15% { opacity: 0.85; }
+    50% { transform: translateX(50vw) translateY(-20px) rotate(2deg); opacity: 0.9; }
+    85% { opacity: 0.85; }
+    100% { transform: translateX(200%) translateY(0) rotate(-3deg); opacity: 0.3; }
+}
+@keyframes cpGlow {
+    0% { text-shadow: 0 0 20px currentColor; filter: brightness(0.9); }
+    50% { text-shadow: 0 0 55px currentColor; filter: brightness(1.15); }
+    100% { text-shadow: 0 0 28px currentColor; filter: brightness(1); }
+}

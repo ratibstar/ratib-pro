@@ -1,0 +1,152 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/dashboard-profile-popup.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/dashboard-profile-popup.css`.
+ */
+/* Profile Popup Modal Styles */
+.dashboard-modal {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.dashboard-modal.modal-hidden {
+    display: none;
+    opacity: 0;
+}
+
+.dashboard-modal-content {
+    background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3a 100%);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px 24px;
+    border-bottom: 2px solid #8b5cf6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.dashboard-modal-header h2 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.dashboard-modal-header .modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #ffffff;
+    font-size: 24px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.dashboard-modal-header .modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.dashboard-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.profile-popup-table {
+    width: 100%;
+}
+
+.profile-popup-table .modern-table {
+    width: 100%;
+    margin-bottom: 20px;
+    border-collapse: collapse;
+}
+
+.profile-popup-table .modern-table th {
+    background: rgba(102, 126, 234, 0.1);
+    color: #e0e0e0;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.profile-popup-table .modern-table td {
+    padding: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+}
+
+.profile-popup-info {
+    margin-top: 20px;
+    padding: 16px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.profile-popup-info p {
+    margin: 8px 0;
+    color: #e0e0e0;
+    font-size: 14px;
+}
+
+.profile-popup-info strong {
+    color: #ffffff;
+}
+
+.profile-popup-actions {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.profile-popup-actions .modern-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.loading-state, .error-state {
+    text-align: center;
+    padding: 40px;
+    color: #e0e0e0;
+}
+
+.loading-state i, .error-state i {
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+.error-state {
+    color: #ef4444;
+}

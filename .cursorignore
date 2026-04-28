@@ -1,0 +1,5 @@
+# Large files that cause OOM - exclude from Cursor indexing
+js/accounting/professional.js
+js/accounting/professional.js.backup
+js/accounting/professional.js.backup-split
+js/accounting/professional.js.new

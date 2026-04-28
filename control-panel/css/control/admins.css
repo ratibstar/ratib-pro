@@ -1,0 +1,214 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control/admins.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control/admins.css`.
+ */
+/**
+ * Control Panel – Admins page (modals, permissions UI, alert/confirm)
+ */
+
+/* Permissions modal */
+.perm-modal-content {
+    background: var(--bg-secondary, #1e293b);
+    border-color: var(--border-color, #334155);
+}
+.perm-modal-content .modal-header {
+    border-bottom-color: var(--border-color, #334155);
+}
+.perm-modal-content .modal-footer {
+    border-top-color: var(--border-color, #334155);
+}
+.perm-banner {
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+}
+.perm-banner-info {
+    background: rgba(59, 130, 246, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    color: #93c5fd;
+}
+.perm-banner-total {
+    background: rgba(51, 65, 85, 0.8);
+    border: 1px solid var(--border-color, #334155);
+    color: var(--text-muted, #94a3b8);
+}
+.perm-groups-container {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+.perm-group {
+    margin-bottom: 20px;
+    padding: 12px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid var(--border-color, #334155);
+    border-radius: 8px;
+}
+.perm-group-title {
+    font-weight: 600;
+    color: var(--text-primary, #f1f5f9);
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+.perm-group-actions {
+    margin-bottom: 10px;
+}
+.perm-group-actions .btn {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+}
+.perm-group-perms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.perm-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+}
+.perm-chip.perm-off {
+    background: rgba(236, 72, 153, 0.25);
+    border-color: rgba(236, 72, 153, 0.6);
+    color: #f9a8d4;
+}
+.perm-chip.perm-on {
+    background: rgba(16, 185, 129, 0.25);
+    border-color: rgba(16, 185, 129, 0.6);
+    color: #6ee7b7;
+}
+.perm-chip:hover {
+    opacity: 0.9;
+}
+.perm-modal-footer .btn {
+    font-size: 0.9rem;
+}
+#permissionsModal .modal-body {
+    pointer-events: auto;
+}
+#permissionsModal .perm-groups-container {
+    pointer-events: auto;
+}
+#permissionsModal .perm-chip {
+    pointer-events: auto;
+    cursor: pointer;
+}
+#permissionsModal .perm-group-actions .btn {
+    pointer-events: auto;
+}
+
+/* Modals moved to body – above Bootstrap backdrop */
+#editModal.modal,
+#alertModal.modal,
+#confirmModal.modal,
+#permissionsModal.modal {
+    z-index: 1060;
+}
+#editModal.modal.show,
+#alertModal.modal.show,
+#confirmModal.modal.show,
+#permissionsModal.modal.show {
+    z-index: 1060;
+}
+body > .modal-backdrop {
+    z-index: 1050;
+    opacity: 0.35;
+}
+#alertModal .modal-content {
+    pointer-events: auto;
+}
+#alertModal .modal-header {
+    pointer-events: auto;
+}
+#alertModal #alertModalOk,
+#alertModal #alertModalCancel,
+#alertModal #alertModalClose {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* Alert & confirm modals – dark mode */
+.control-alert-modal,
+.control-confirm-modal {
+    background: var(--control-card, #16213e);
+    border: 1px solid var(--control-glass-border, rgba(255, 255, 255, 0.1));
+    color: var(--control-text, #e5e7eb);
+}
+.control-alert-modal .modal-header,
+.control-confirm-modal .modal-header {
+    border-bottom-color: var(--control-glass-border, rgba(255, 255, 255, 0.1));
+}
+.control-alert-modal .modal-body,
+.control-confirm-modal .modal-body {
+    color: var(--control-text, #e5e7eb);
+}
+.control-alert-modal .modal-footer,
+.control-confirm-modal .modal-footer {
+    border-top-color: var(--control-glass-border, rgba(255, 255, 255, 0.1));
+}
+.control-alert-modal .btn-close,
+.control-confirm-modal .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Edit/Add admin modal in dark mode (modal is moved to body by JS) */
+#editModal .modal-content {
+    background: #16213e !important;
+    color: var(--control-text, #e5e7eb);
+    border: 1px solid var(--control-glass-border, rgba(255, 255, 255, 0.12));
+}
+#editModal .modal-header {
+    border-bottom: 1px solid var(--control-glass-border, rgba(255, 255, 255, 0.12));
+}
+#editModal .modal-footer {
+    border-top: 1px solid var(--control-glass-border, rgba(255, 255, 255, 0.12));
+}
+#editModal .form-label,
+#editModal .form-hint {
+    color: var(--control-muted, #94a3b8);
+}
+#editModal .form-control {
+    background: rgba(15, 52, 96, 0.5);
+    border-color: var(--control-glass-border, rgba(255, 255, 255, 0.12));
+    color: var(--control-text, #e5e7eb);
+}
+#editModal .form-control:focus {
+    background: rgba(15, 52, 96, 0.7);
+    border-color: var(--control-accent, #0f3460);
+    color: var(--control-text, #e5e7eb);
+}
+#editModal .modal-content,
+#editModal .modal-body .form-control,
+#editModal .modal-footer .btn,
+#editModal .modal-header .btn-close {
+    pointer-events: auto !important;
+}
+
+/* Delete buttons: improve visibility in dark UI */
+#btnBulkDelete {
+    color: #fff !important;
+}
+.action-btns .btn-delete {
+    color: #ff6b6b !important;
+    border-color: #ff6b6b !important;
+}
+.action-btns .btn-delete:hover,
+.action-btns .btn-delete:focus {
+    color: #fff !important;
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+.action-btns .btn,
+.action-btns a,
+#btnBulkDelete:not(:disabled) {
+    pointer-events: auto !important;
+    cursor: pointer;
+}

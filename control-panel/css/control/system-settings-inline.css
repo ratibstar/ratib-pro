@@ -1,0 +1,27 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control/system-settings-inline.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control/system-settings-inline.css`.
+ */
+.control-sidebar {
+    display: block !important;
+}
+
+.control-content-inline {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+}
+
+.control-content-inline .content-header {
+    flex-shrink: 0;
+}
+
+.system-settings-inline-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem;
+    background: var(--control-bg);
+}

@@ -1,0 +1,51 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/accounting/input-states.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/accounting/input-states.css`.
+ */
+/**
+ * Input State Classes - Replace inline styles
+ * No inline styles - all styles in this file
+ */
+
+/* Input enabled state */
+.input-enabled,
+.field-enabled {
+    pointer-events: auto !important;
+    cursor: text !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+}
+
+/* Input disabled/readonly state */
+.input-disabled,
+.field-disabled {
+    pointer-events: none !important;
+    cursor: default !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+/* Input focus state */
+.input-focused {
+    outline: 2px solid #8b5cf6 !important;
+}
+
+/* Type field readonly state */
+.type-field-readonly {
+    pointer-events: none !important;
+    background-color: #1e293b !important;
+}
+
+/* Type field editable state */
+.type-field-editable {
+    pointer-events: auto !important;
+    background-color: transparent !important;
+}
+
+/* General Ledger modal visible state */
+.general-ledger-modal-visible {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+

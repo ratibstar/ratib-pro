@@ -1,0 +1,14 @@
+# Log files (contain transaction IDs - do not commit)
+logs/
+*.log
+
+# Environment (contains secrets)
+.env
+.env.local
+
+# Test/debug files (delete in production)
+test-config.php
+
+# Config file (contains secret key - protect in production)
+# Uncomment if you want to exclude config.php from git:
+# config.php

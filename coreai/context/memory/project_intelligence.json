@@ -1,0 +1,505 @@
+{
+    "generated_at": "2026-04-24T09:43:02+00:00",
+    "metadata": {
+        "source_mtime": 1777023776,
+        "project_graph_mtime": 1777023782,
+        "semantic_graph_mtime": 1777023782
+    },
+    "architecture_structure": {
+        "layers": [
+            "frontend",
+            "backend",
+            "php",
+            "ai",
+            "context",
+            "agent"
+        ],
+        "language_distribution": {
+            "markdown": 5,
+            "php": 10,
+            "json": 4,
+            "css": 1,
+            "javascript": 2
+        },
+        "edge_overview": {
+            "total_edges": 33,
+            "api_edges": 4,
+            "function_usage_edges": 27
+        },
+        "dependency_hierarchy": [
+            {
+                "level": 0,
+                "modules": [
+                    "agent\/README.md",
+                    "ai\/engine.php",
+                    "backend\/README.md",
+                    "context\/memory\/architecture_decision_history.json",
+                    "context\/memory\/architecture_learning_memory.json",
+                    "context\/memory\/project_intelligence.json",
+                    "context\/README.md",
+                    "css\/styles.css",
+                    "frontend\/README.md",
+                    "index.php",
+                    "js\/coreai-tab.js",
+                    "php\/architecture_decision.php",
+                    "php\/project_graph.php",
+                    "php\/semantic_graph.php",
+                    "README.md",
+                    "semantic_graph.json"
+                ]
+            },
+            {
+                "level": 1,
+                "modules": [
+                    "js\/app.js",
+                    "php\/ai.php",
+                    "php\/execute.php",
+                    "php\/memory.php",
+                    "php\/plan.php"
+                ]
+            },
+            {
+                "level": 3,
+                "modules": [
+                    "php\/bootstrap.php"
+                ]
+            }
+        ]
+    },
+    "modules": {
+        "agent\/README.md": {
+            "semantic_role": "HELPER",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        },
+        "ai\/engine.php": {
+            "semantic_role": "CORE_LOGIC",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        },
+        "backend\/README.md": {
+            "semantic_role": "HELPER",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        },
+        "context\/memory\/architecture_decision_history.json": {
+            "semantic_role": "CONFIG",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        },
+        "context\/memory\/architecture_learning_memory.json": {
+            "semantic_role": "CONFIG",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        },
+        "context\/memory\/project_intelligence.json": {
+            "semantic_role": "CONFIG",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        },
+        "context\/README.md": {
+            "semantic_role": "HELPER",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        },
+        "css\/styles.css": {
+            "semantic_role": "UI_LAYER",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        },
+        "frontend\/README.md": {
+            "semantic_role": "UI_LAYER",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        },
+        "index.php": {
+            "semantic_role": "CORE_LOGIC",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": [
+                "js\/app.js"
+            ]
+        },
+        "js\/app.js": {
+            "semantic_role": "UI_LAYER",
+            "critical_path": true,
+            "severity_level": "high",
+            "dependency_level": 1,
+            "depends_on": [
+                "php\/execute.php",
+                "php\/plan.php",
+                "php\/memory.php",
+                "php\/ai.php"
+            ]
+        },
+        "js\/coreai-tab.js": {
+            "semantic_role": "UI_LAYER",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        },
+        "php\/ai.php": {
+            "semantic_role": "API_LAYER",
+            "critical_path": true,
+            "severity_level": "high",
+            "dependency_level": 1,
+            "depends_on": [
+                "php\/bootstrap.php",
+                "https:\/\/api.openai.com\/v1"
+            ]
+        },
+        "php\/architecture_decision.php": {
+            "semantic_role": "API_LAYER",
+            "critical_path": true,
+            "severity_level": "high",
+            "dependency_level": 0,
+            "depends_on": [
+                "php\/bootstrap.php"
+            ]
+        },
+        "php\/bootstrap.php": {
+            "semantic_role": "DATA_LAYER",
+            "critical_path": true,
+            "severity_level": "high",
+            "dependency_level": 3,
+            "depends_on": []
+        },
+        "php\/execute.php": {
+            "semantic_role": "API_LAYER",
+            "critical_path": true,
+            "severity_level": "high",
+            "dependency_level": 1,
+            "depends_on": [
+                "php\/bootstrap.php"
+            ]
+        },
+        "php\/memory.php": {
+            "semantic_role": "API_LAYER",
+            "critical_path": true,
+            "severity_level": "high",
+            "dependency_level": 1,
+            "depends_on": [
+                "php\/bootstrap.php"
+            ]
+        },
+        "php\/plan.php": {
+            "semantic_role": "API_LAYER",
+            "critical_path": true,
+            "severity_level": "high",
+            "dependency_level": 1,
+            "depends_on": [
+                "php\/bootstrap.php"
+            ]
+        },
+        "php\/project_graph.php": {
+            "semantic_role": "DATA_LAYER",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        },
+        "php\/semantic_graph.php": {
+            "semantic_role": "DATA_LAYER",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        },
+        "README.md": {
+            "semantic_role": "HELPER",
+            "critical_path": false,
+            "severity_level": "low",
+            "dependency_level": 0,
+            "depends_on": []
+        }
+    },
+    "semantic_module_roles": {
+        "agent\/README.md": "HELPER",
+        "ai\/engine.php": "CORE_LOGIC",
+        "backend\/README.md": "HELPER",
+        "context\/memory\/architecture_decision_history.json": "CONFIG",
+        "context\/memory\/architecture_learning_memory.json": "CONFIG",
+        "context\/memory\/project_intelligence.json": "CONFIG",
+        "context\/README.md": "HELPER",
+        "css\/styles.css": "UI_LAYER",
+        "frontend\/README.md": "UI_LAYER",
+        "index.php": "CORE_LOGIC",
+        "js\/app.js": "UI_LAYER",
+        "js\/coreai-tab.js": "UI_LAYER",
+        "php\/ai.php": "API_LAYER",
+        "php\/architecture_decision.php": "CORE_LOGIC",
+        "php\/bootstrap.php": "HELPER",
+        "php\/execute.php": "API_LAYER",
+        "php\/memory.php": "API_LAYER",
+        "php\/plan.php": "API_LAYER",
+        "php\/project_graph.php": "CORE_LOGIC",
+        "php\/semantic_graph.php": "CORE_LOGIC",
+        "README.md": "HELPER"
+    },
+    "critical_paths": [
+        {
+            "from": "js\/app.js",
+            "to": "php\/execute.php",
+            "reason": "internal endpoint connection"
+        },
+        {
+            "from": "js\/app.js",
+            "to": "php\/plan.php",
+            "reason": "internal endpoint connection"
+        },
+        {
+            "from": "js\/app.js",
+            "to": "php\/memory.php",
+            "reason": "internal endpoint connection"
+        },
+        {
+            "from": "js\/app.js",
+            "to": "php\/ai.php",
+            "reason": "internal endpoint connection"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_read_persistent_history"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_analyze_intent"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_reasoning_strategy_for_type"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_build_reasoned_memory_context"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_decide_action_mode"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_build_graph_context"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_load_project_intelligence_memory"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_env"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_action_response_schema"
+        },
+        {
+            "from": "php\/ai.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_append_persistent_message"
+        },
+        {
+            "from": "php\/architecture_decision.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_load_project_intelligence_memory"
+        },
+        {
+            "from": "php\/architecture_decision.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_run_architectural_decision_engine"
+        },
+        {
+            "from": "php\/architecture_decision.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_store_architecture_decision"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_validate_action_groups"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_build_execution_plan"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_load_project_intelligence_memory"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_execute_action_groups"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_build_project_intelligence_memory"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_collect_actual_system_state"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_validate_prediction_accuracy"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_store_prediction_validation"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_update_architecture_learning_memory"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_update_architecture_decision_actual_outcome"
+        },
+        {
+            "from": "php\/execute.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_append_evolution_timeline_entry"
+        },
+        {
+            "from": "php\/memory.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_read_persistent_history"
+        },
+        {
+            "from": "php\/plan.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_validate_action_groups"
+        },
+        {
+            "from": "php\/plan.php",
+            "to": "php\/bootstrap.php",
+            "reason": "calls function coreai_build_execution_plan"
+        }
+    ],
+    "system_dependency_hierarchy": [
+        {
+            "level": 0,
+            "modules": [
+                "agent\/README.md",
+                "ai\/engine.php",
+                "backend\/README.md",
+                "context\/memory\/architecture_decision_history.json",
+                "context\/memory\/architecture_learning_memory.json",
+                "context\/memory\/project_intelligence.json",
+                "context\/README.md",
+                "css\/styles.css",
+                "frontend\/README.md",
+                "index.php",
+                "js\/coreai-tab.js",
+                "php\/architecture_decision.php",
+                "php\/project_graph.php",
+                "php\/semantic_graph.php",
+                "README.md",
+                "semantic_graph.json"
+            ]
+        },
+        {
+            "level": 1,
+            "modules": [
+                "js\/app.js",
+                "php\/ai.php",
+                "php\/execute.php",
+                "php\/memory.php",
+                "php\/plan.php"
+            ]
+        },
+        {
+            "level": 3,
+            "modules": [
+                "php\/bootstrap.php"
+            ]
+        }
+    ],
+    "dependency_tree": {
+        "index.php": [
+            "js\/app.js"
+        ],
+        "js\/app.js": [
+            "php\/execute.php",
+            "php\/plan.php",
+            "php\/memory.php",
+            "php\/ai.php"
+        ],
+        "php\/ai.php": [
+            "php\/bootstrap.php",
+            "https:\/\/api.openai.com\/v1"
+        ],
+        "php\/architecture_decision.php": [
+            "php\/bootstrap.php"
+        ],
+        "php\/execute.php": [
+            "php\/bootstrap.php"
+        ],
+        "php\/memory.php": [
+            "php\/bootstrap.php"
+        ],
+        "php\/plan.php": [
+            "php\/bootstrap.php"
+        ]
+    },
+    "system_patterns": {
+        "api_flow_count": 9,
+        "dominant_data_flows": {
+            "browser_storage": 2,
+            "network_io": 3,
+            "file_read": 7,
+            "json_transform": 8,
+            "http_input": 6,
+            "file_write": 3
+        },
+        "execution_engine_present": true,
+        "graph_analysis_present": true
+    },
+    "repeated_design_patterns": {
+        "api_oriented_files": 6,
+        "execution_safety_patterns": 5,
+        "memory_persistence_patterns": 3,
+        "graph_driven_patterns": 22
+    },
+    "explanation": {
+        "en": "This system builds a semantic understanding of the project by assigning roles to modules, identifying critical execution paths, and constructing a full dependency hierarchy. It ensures the AI understands not just files, but system architecture meaning.",
+        "ar": "هذا النظام يبني فهما دلاليا للمشروع من خلال تحديد دور كل وحدة، وتحديد المسارات الحرجة في التنفيذ، وبناء هرمية الاعتماديات بين الملفات، مما يجعل الذكاء الاصطناعي يفهم بنية النظام وليس فقط الملفات."
+    }
+}

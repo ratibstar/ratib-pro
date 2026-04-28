@@ -1,0 +1,58 @@
+/*
+ * EN: Defines control-panel module behavior and admin-country operations in `control-panel/css/control/country-users.css`.
+ * AR: يحدد سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/css/control/country-users.css`.
+ */
+.country-select-section { margin-bottom: 1.5rem; }
+.status-cards { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 0.65rem; margin-bottom: 1rem; }
+.status-card { border-radius: 10px; padding: 0.55rem 0.8rem; border: 1px solid rgba(255,255,255,0.1); background: rgba(15,52,96,0.36); }
+.status-card span { display: block; font-size: 0.78rem; color: var(--control-muted); margin-bottom: 0.2rem; }
+.status-card strong { font-size: 1.1rem; font-weight: 700; }
+.status-card.total strong { color: #93c5fd; }
+.status-card.users strong { color: #22c55e; }
+.status-card.with-users strong { color: #f59e0b; }
+.status-card.empty strong { color: #ef4444; }
+@media (max-width: 900px) { .status-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .status-cards { grid-template-columns: 1fr; } }
+.country-select-section label { font-weight: 600; margin-right: 0.5rem; display: none; }
+.country-select-section select { min-width: 220px; padding: 0.5rem 1rem; display: none; }
+.country-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 0.75rem; }
+.country-card { position: relative; border-radius: 12px; padding: 0.9rem 1rem; background: radial-gradient(circle at top left, rgba(88,101,242,0.25), rgba(10,14,33,0.95)); border: 1px solid rgba(255,255,255,0.08); color: var(--control-text-light); cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.35); transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, background 0.16s ease; text-align: left; }
+.country-card:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,0.45); border-color: rgba(88,101,242,0.8); }
+.country-card.active { border-color: var(--control-accent); box-shadow: 0 0 0 1px rgba(88,101,242,0.7), 0 16px 40px rgba(0,0,0,0.5); }
+.country-card-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem; }
+.country-card-title i { opacity: 0.9; font-size: 0.95rem; }
+.country-card-meta { display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: var(--control-muted); }
+.country-card-count { font-weight: 500; color: var(--control-accent); }
+.country-card-badge { padding: 0.1rem 0.45rem; border-radius: 999px; background: rgba(15,185,177,0.15); color: #5ef0e6; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.users-table-section { margin-top: 0; padding: 1.25rem 1.5rem 1.5rem; background: rgba(30,64,175,0.08); border-radius: 18px; border: 1px solid rgba(191,219,254,0.9); box-shadow: 0 26px 70px rgba(15,23,42,0.85); }
+.users-table-section h4 { margin-bottom: 1rem; color: var(--control-text-light); }
+.users-table-section .table { color: var(--control-text-light); background-color: transparent; }
+.users-table-section .table thead { background: linear-gradient(90deg, rgba(30,64,175,0.95), rgba(56,189,248,0.95)); }
+.users-table-section .table thead th { border-color: rgba(191,219,254,0.8); color: #f9fafb; font-weight: 600; }
+.users-table-section .table tbody tr { background: rgba(15,23,42,0.96); }
+.users-table-section .table tbody tr:nth-child(even) { background: rgba(30,64,175,0.25); }
+.users-table-section .table td { border-color: rgba(51,65,85,0.9); vertical-align: middle; }
+.country-users-col-check { width: 36px; }
+.users-table-section .table-hover tbody tr:hover { background: rgba(59,130,246,0.85); }
+.users-table-section .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+.users-bulk-bar { padding: 0.5rem 0.25rem 0.25rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+.users-bulk-bar .form-check { margin-bottom: 0; color: var(--control-muted); font-size: 0.85rem; }
+.empty-state { padding: 2rem; text-align: center; color: var(--control-muted); }
+.loading-state { padding: 2rem; text-align: center; color: var(--control-muted); }
+#usersTableModal { z-index: 1060 !important; }
+#usersTableModal .modal-dialog { z-index: 1061; margin-top: 3.5rem; }
+.modal-backdrop.show { z-index: 1059; pointer-events: none; background-color: rgba(15,23,42,0.85); backdrop-filter: blur(3px); }
+#userModal.country-users-modal { z-index: 1070 !important; }
+#userModal.country-users-modal .modal-dialog { z-index: 1071; }
+#userModal.country-users-modal .modal-backdrop { z-index: 1069 !important; }
+.country-users-modal-content { background: radial-gradient(circle at top, rgba(129,140,248,0.9), rgba(15,23,42,0.96)); border: 1px solid rgba(219,234,254,0.95); box-shadow: 0 32px 80px rgba(15,23,42,0.95); }
+#usersTableModal .modal-header,
+#userModal .modal-header { border-bottom: 1px solid rgba(148,163,184,0.35); background: linear-gradient(90deg, rgba(15,23,42,0.9), rgba(30,64,175,0.9)); color: var(--control-text-light); }
+#usersTableModal .modal-footer,
+#userModal .modal-footer { border-top: 1px solid rgba(148,163,184,0.25); }
+#userModal .form-control,
+#userModal .form-select { background-color: rgba(15,23,42,0.95); border-color: rgba(75,85,99,0.9); color: var(--control-text-light); }
+#userModal .form-control:focus,
+#userModal .form-select:focus { border-color: rgba(56,189,248,0.9); box-shadow: 0 0 0 1px rgba(56,189,248,0.6); }
+.country-users-intro { margin-bottom: 1.5rem; padding: 1rem; background: rgba(15,52,96,0.3); border-radius: 8px; border-left: 4px solid var(--control-accent); color: var(--control-muted); }
+.country-users-helper-icon { opacity: 0.5; }

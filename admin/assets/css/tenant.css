@@ -1,0 +1,30 @@
+/*
+ * EN: Defines system administration/observability module behavior in `admin/assets/css/tenant.css`.
+ * AR: يحدد سلوك وحدة إدارة النظام والمراقبة في `admin/assets/css/tenant.css`.
+ */
+body { font-family: Arial, sans-serif; margin: 0; background: #f5f7fb; color: #111827; }
+.container { max-width: 1050px; margin: 28px auto; padding: 0 16px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+h1 { margin: 0; font-size: 28px; }
+.actions { display: flex; gap: 8px; }
+.btn { display: inline-block; padding: 9px 12px; border-radius: 8px; text-decoration: none; border: 1px solid #d1d5db; background: #fff; color: #111827; font-weight: 600; cursor: pointer; }
+.btn.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+.error { margin-bottom: 12px; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 10px 12px; border-radius: 8px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; }
+.row strong { display: inline-block; min-width: 130px; }
+.badge { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.badge-active { background: #dcfce7; color: #166534; }
+.badge-provisioning { background: #fef3c7; color: #92400e; }
+.badge-failed { background: #fee2e2; color: #991b1b; }
+.badge-suspended { background: #e5e7eb; color: #374151; }
+.badge-default { background: #e5e7eb; color: #374151; }
+.health-ok { color: #166534; font-weight: 700; }
+.health-fail { color: #991b1b; font-weight: 700; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 13px; vertical-align: top; }
+th { background: #f8fafc; color: #374151; font-weight: 700; }
+.muted { color: #6b7280; }
+@media (max-width: 800px) {
+    .grid { grid-template-columns: 1fr; }
+}

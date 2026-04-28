@@ -1,0 +1,930 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/notifications.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/notifications.css`.
+ */
+/* ========================================
+   NOTIFICATIONS MANAGEMENT PAGE CSS
+   ======================================== */
+
+/* Notifications Table Styling */
+.notifications-table-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Notifications Table Column Widths */
+#notificationsTable td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Allow content wrapping in verbose columns only */
+#notificationsTable td:nth-child(8),
+#notificationsTable td:nth-child(9) {
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Specific column widths for notifications table */
+#notificationsTable th.col-id,
+#notificationsTable td:nth-child(1) {
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+}
+
+#notificationsTable td:nth-child(2),
+#notificationsTable th:nth-child(2) {
+  width: 130px;
+  min-width: 130px;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#notificationsTable th.col-type,
+#notificationsTable td:nth-child(3) {
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#notificationsTable td:nth-child(4),
+#notificationsTable th:nth-child(4) {
+  width: 150px;
+  min-width: 150px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#notificationsTable th.col-status,
+#notificationsTable td:nth-child(5) {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+
+#notificationsTable td:nth-child(6),
+#notificationsTable th:nth-child(6) {
+  width: 70px;
+  min-width: 70px;
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#notificationsTable td:nth-child(7),
+#notificationsTable th:nth-child(7) {
+  width: 70px;
+  min-width: 70px;
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#notificationsTable th.col-sent-date,
+#notificationsTable td:nth-child(8) {
+  width: 130px;
+  min-width: 130px;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#notificationsTable th.col-read-date,
+#notificationsTable td:nth-child(9) {
+  width: 130px;
+  min-width: 130px;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#notificationsTable th.col-checkbox,
+#notificationsTable td:nth-child(10) {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+}
+
+#notificationsTable th.col-actions,
+#notificationsTable td:nth-child(11) {
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
+}
+
+/* Role Broadcast Modal Styling */
+.role-broadcast-modal .modal-content {
+  border-radius: 18px;
+}
+
+.role-broadcast-modal .modal-body {
+  padding-top: 1.75rem;
+}
+
+.role-broadcast-groups {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.role-broadcast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.35rem 0.75rem;
+}
+
+.role-broadcast-grid .form-check {
+  padding: 0.35rem 0.25rem;
+  margin-bottom: 0;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.role-broadcast-grid .form-check-input,
+.role-broadcast-grid .form-check-label {
+  cursor: pointer;
+}
+
+.role-broadcast-message {
+  min-height: 240px;
+  resize: vertical;
+}
+
+/* ========================================
+   MOBILE RESPONSIVE DESIGN
+   ======================================== */
+
+/* Mobile: Decrease all widths to minimum for better mobile experience */
+@media (max-width: 768px) {
+  .notifications-table-scroll {
+    max-height: 300px;
+  }
+
+  /* Column Widths - Minimum sizes for mobile */
+  #notificationsTable th.col-id,
+  #notificationsTable td:nth-child(1) {
+    width: 35px !important;
+    min-width: 35px !important;
+    max-width: 35px !important;
+  }
+
+  #notificationsTable td:nth-child(2),
+  #notificationsTable th:nth-child(2) {
+    width: 75px !important;
+    min-width: 75px !important;
+    max-width: 75px !important;
+  }
+
+  #notificationsTable th.col-type,
+  #notificationsTable td:nth-child(3) {
+    width: 55px !important;
+    min-width: 55px !important;
+    max-width: 55px !important;
+  }
+
+  #notificationsTable td:nth-child(4),
+  #notificationsTable th:nth-child(4) {
+    width: 85px !important;
+    min-width: 85px !important;
+    max-width: 85px !important;
+  }
+
+  #notificationsTable th.col-status,
+  #notificationsTable td:nth-child(5) {
+    width: 45px !important;
+    min-width: 45px !important;
+    max-width: 45px !important;
+  }
+
+  #notificationsTable td:nth-child(6),
+  #notificationsTable th:nth-child(6),
+  #notificationsTable td:nth-child(7),
+  #notificationsTable th:nth-child(7) {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+  }
+
+  #notificationsTable th.col-sent-date,
+  #notificationsTable td:nth-child(8),
+  #notificationsTable th.col-read-date,
+  #notificationsTable td:nth-child(9) {
+    width: 70px !important;
+    min-width: 70px !important;
+    max-width: 70px !important;
+  }
+
+  #notificationsTable th.col-checkbox,
+  #notificationsTable td:nth-child(10) {
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+  }
+
+  #notificationsTable th.col-actions,
+  #notificationsTable td:nth-child(11) {
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+  }
+
+  /* Buttons - Minimum widths for mobile */
+  #notificationsTable .btn,
+  #notificationsTable .btn-sm,
+  #notificationsTable .action-btn,
+  #notificationsTable button {
+    padding: 2px 3px !important;
+    font-size: 0.6rem !important;
+    min-width: 26px !important;
+    max-width: 32px !important;
+    height: 22px !important;
+    line-height: 1.1 !important;
+  }
+
+  #notificationsTable .btn i,
+  #notificationsTable .btn-sm i,
+  #notificationsTable .action-btn i {
+    font-size: 0.65rem !important;
+  }
+
+  /* Status Badges - Minimum widths */
+  #notificationsTable .badge,
+  #notificationsTable .status-badge,
+  #notificationsTable [class*="badge"] {
+    padding: 1px 3px !important;
+    font-size: 0.55rem !important;
+    min-width: 35px !important;
+    max-width: 55px !important;
+    height: 16px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Cards - Reduced padding */
+  .card {
+    padding: 6px !important;
+  }
+
+  .card-header {
+    padding: 8px 10px !important;
+  }
+
+  .card-body {
+    padding: 8px 10px !important;
+  }
+
+  /* Summary Stat Cards - Force horizontal layout on mobile, minimum widths */
+  /* Target only the row containing stat cards (first row with 4 col-md-3 children) */
+  .row.mb-2:first-of-type {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 4px !important;
+    margin-bottom: 8px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* Force stat cards to stay horizontal on mobile - each takes 25% minus gap */
+  .row.mb-2:first-of-type > .col-md-3 {
+    flex: 0 0 calc(25% - 3px) !important;
+    max-width: calc(25% - 3px) !important;
+    min-width: calc(25% - 3px) !important;
+    width: calc(25% - 3px) !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    display: block !important;
+  }
+
+  .card.bg-primary,
+  .card.bg-success,
+  .card.bg-warning,
+  .card.bg-danger {
+    padding: 4px 6px !important;
+    margin-bottom: 0 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 45px !important;
+    max-height: 50px !important;
+  }
+
+  .card-body.py-1 {
+    padding: 3px 4px !important;
+  }
+
+  .card-body .card-title {
+    font-size: 0.6rem !important;
+    margin-bottom: 1px !important;
+    white-space: nowrap !important;
+    line-height: 1.1 !important;
+  }
+
+  .card-body h6 {
+    font-size: 0.85rem !important;
+    margin-bottom: 0 !important;
+    white-space: nowrap !important;
+    line-height: 1.1 !important;
+  }
+
+  .card-body i {
+    font-size: 0.9rem !important;
+  }
+
+  /* Top Action Buttons - Reduced sizes on mobile */
+  .btn-group[data-action] .btn,
+  .btn[data-action] {
+    padding: 4px 8px !important;
+    font-size: 0.7rem !important;
+    min-width: auto !important;
+    height: 28px !important;
+    line-height: 1.2 !important;
+  }
+
+  .btn-group[data-action] .btn i,
+  .btn[data-action] i {
+    font-size: 0.75rem !important;
+    margin-right: 3px !important;
+  }
+
+  /* Filter Section Buttons - Compact on mobile */
+  .btn[data-action="filter-notifications"],
+  .btn[data-action="bulk-mark-read"],
+  .btn[data-action="bulk-mark-unread"],
+  .btn[data-action="bulk-delete"],
+  .btn[data-action="select-all"] {
+    padding: 3px 6px !important;
+    font-size: 0.65rem !important;
+    min-width: auto !important;
+    height: 26px !important;
+  }
+
+  /* Pagination Buttons - Smaller on mobile */
+  .btn-group[data-action="go-first-page"],
+  .btn-group[data-action="go-previous-page"],
+  .btn-group[data-action="go-next-page"],
+  .btn-group[data-action="go-last-page"],
+  .btn[data-action^="go-"] {
+    padding: 3px 6px !important;
+    font-size: 0.7rem !important;
+    min-width: 28px !important;
+    height: 26px !important;
+  }
+
+  /* Role Broadcast Grid - Compact on mobile */
+  .role-broadcast-grid {
+    grid-template-columns: repeat(auto-fit, minmax(115px, 1fr)) !important;
+    gap: 0.2rem 0.35rem !important;
+  }
+
+  .role-broadcast-grid .form-check {
+    padding: 0.2rem 0.15rem !important;
+  }
+}
+
+/* Very Small Mobile Devices */
+@media (max-width: 480px) {
+  #notificationsTable th.col-id,
+  #notificationsTable td:nth-child(1) {
+    width: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+  }
+
+  #notificationsTable td:nth-child(2),
+  #notificationsTable th:nth-child(2) {
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+  }
+
+  #notificationsTable th.col-type,
+  #notificationsTable td:nth-child(3) {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+  }
+
+  #notificationsTable td:nth-child(4),
+  #notificationsTable th:nth-child(4) {
+    width: 75px !important;
+    min-width: 75px !important;
+    max-width: 75px !important;
+  }
+
+  #notificationsTable th.col-status,
+  #notificationsTable td:nth-child(5) {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+  }
+
+  #notificationsTable td:nth-child(6),
+  #notificationsTable th:nth-child(6),
+  #notificationsTable td:nth-child(7),
+  #notificationsTable th:nth-child(7) {
+    width: 35px !important;
+    min-width: 35px !important;
+    max-width: 35px !important;
+  }
+
+  #notificationsTable th.col-sent-date,
+  #notificationsTable td:nth-child(8),
+  #notificationsTable th.col-read-date,
+  #notificationsTable td:nth-child(9) {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+  }
+
+  #notificationsTable th.col-checkbox,
+  #notificationsTable td:nth-child(10) {
+    width: 25px !important;
+    min-width: 25px !important;
+    max-width: 25px !important;
+  }
+
+  #notificationsTable th.col-actions,
+  #notificationsTable td:nth-child(11) {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+  }
+
+  #notificationsTable .btn,
+  #notificationsTable .btn-sm,
+  #notificationsTable .action-btn,
+  #notificationsTable button {
+    padding: 1px 2px !important;
+    font-size: 0.55rem !important;
+    min-width: 24px !important;
+    max-width: 28px !important;
+    height: 20px !important;
+  }
+
+  #notificationsTable .badge,
+  #notificationsTable .status-badge {
+    padding: 1px 2px !important;
+    font-size: 0.5rem !important;
+    min-width: 30px !important;
+    max-width: 50px !important;
+    height: 14px !important;
+  }
+
+  .role-broadcast-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)) !important;
+    gap: 0.15rem 0.3rem !important;
+  }
+
+  /* Summary Stat Cards - Even smaller on very small mobile, stay horizontal */
+  .row.mb-2:first-of-type {
+    gap: 3px !important;
+  }
+
+  .row.mb-2:first-of-type > .col-md-3 {
+    flex: 0 0 calc(25% - 2.25px) !important;
+    max-width: calc(25% - 2.25px) !important;
+    min-width: calc(25% - 2.25px) !important;
+    width: calc(25% - 2.25px) !important;
+    padding-left: 1px !important;
+    padding-right: 1px !important;
+  }
+
+  .card.bg-primary,
+  .card.bg-success,
+  .card.bg-warning,
+  .card.bg-danger {
+    padding: 4px 5px !important;
+  }
+
+  .card-body.py-1 {
+    padding: 4px 5px !important;
+  }
+
+  .card-body .card-title {
+    font-size: 0.6rem !important;
+  }
+
+  .card-body h6 {
+    font-size: 0.85rem !important;
+  }
+
+  .card-body i {
+    font-size: 0.9rem !important;
+  }
+
+  /* Top Action Buttons - Even smaller */
+  .btn-group[data-action] .btn,
+  .btn[data-action] {
+    padding: 3px 6px !important;
+    font-size: 0.65rem !important;
+    height: 26px !important;
+  }
+
+  /* Filter Section - Stack vertically on very small screens */
+  .col-md-2,
+  .col-md-3,
+  .col-md-1 {
+    margin-bottom: 6px !important;
+  }
+
+  /* Pagination - Even more compact */
+  .btn[data-action^="go-"] {
+    padding: 2px 4px !important;
+    font-size: 0.65rem !important;
+    min-width: 24px !important;
+    height: 24px !important;
+  }
+}
+
+/* ========================================
+   GLOBAL FIXES - Pagination Horizontal
+   ======================================== */
+
+/* Ensure ALL buttons always stay horizontal */
+.card-header .d-flex.justify-content-center,
+.card-footer .d-flex.justify-content-center,
+.card-footer .d-flex.align-items-center,
+.d-flex.justify-content-center.mt-1,
+.d-flex.justify-content-between,
+.d-flex.align-items-center {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+}
+
+.card-header .btn-group,
+.card-footer .btn-group,
+.btn-group.btn-group-sm,
+.btn-group,
+.btn-group[data-action],
+.btn-group[data-action="go-first-page"],
+.btn-group[data-action="go-previous-page"],
+.btn-group[data-action="go-next-page"],
+.btn-group[data-action="go-last-page"] {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  display: flex !important;
+}
+
+/* All buttons inline */
+.btn-group .btn,
+.btn-group .btn-sm,
+.btn-group[data-action] .btn,
+.btn-group .btn[data-action^="go-"] {
+  width: auto !important;
+  flex: 0 0 auto !important;
+  margin: 0 0.25rem !important;
+  display: inline-flex !important;
+}
+
+/* Force pagination page numbers horizontal */
+#contactsPageNumbers,
+#contactsPageNumbersBottom,
+#commPageNumbers,
+#pageInfo,
+#bottomPageInfo,
+.btn-group#contactsPageNumbers,
+.btn-group#contactsPageNumbersBottom,
+.btn-group#commPageNumbers {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+}
+
+/* Override mobile styles to keep pagination horizontal */
+@media (max-width: 768px) {
+  .btn-group.btn-group-sm,
+  .btn-group[data-action^="go-"],
+  #contactsPageNumbers,
+  #contactsPageNumbersBottom,
+  #commPageNumbers,
+  #pageInfo,
+  #bottomPageInfo {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    display: flex !important;
+  }
+
+  .btn-group .btn[data-action^="go-"],
+  .btn-group .btn-sm[data-action^="go-"] {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    margin: 0 0.25rem !important;
+    display: inline-flex !important;
+  }
+
+  .d-flex.justify-content-between,
+  .d-flex.justify-content-center {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+  }
+}
+
+/* Ensure pagination buttons are always clickable */
+.btn[data-action^="go-"],
+.btn-group .btn[data-action^="go-"],
+.modern-pagination-btn[data-action^="go-"],
+button[data-action^="go-"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  position: relative !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  touch-action: manipulation !important;
+}
+
+/* Ensure button groups don't block clicks */
+.btn-group[style*="flex-direction"],
+.btn-group.btn-group-sm {
+  pointer-events: auto !important;
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+/* Prevent any overlay from blocking buttons */
+.card-header,
+.card-footer,
+.d-flex.justify-content-center,
+.d-flex.justify-content-between {
+  pointer-events: auto !important;
+  z-index: 1 !important;
+}
+
+/* Status Cards - Smaller globally */
+.row.mb-2:first-of-type .card.bg-primary,
+.row.mb-2:first-of-type .card.bg-success,
+.row.mb-2:first-of-type .card.bg-warning,
+.row.mb-2:first-of-type .card.bg-danger {
+  padding: 4px 6px !important;
+  min-height: 40px !important;
+  max-height: 45px !important;
+}
+
+.row.mb-2:first-of-type .card-body.py-1 {
+  padding: 2px 4px !important;
+}
+
+.row.mb-2:first-of-type .card-body .card-title {
+  font-size: 0.55rem !important;
+  margin-bottom: 0 !important;
+  line-height: 1 !important;
+}
+
+.row.mb-2:first-of-type .card-body h6 {
+  font-size: 0.8rem !important;
+  line-height: 1 !important;
+}
+
+.row.mb-2:first-of-type .card-body i {
+  font-size: 0.85rem !important;
+}
+
+/* ========================================
+   COMPREHENSIVE MOBILE RESPONSIVENESS
+   ======================================== */
+
+/* Mobile: Stack header buttons vertically */
+@media (max-width: 768px) {
+  /* Page Header - Stack buttons */
+  .row.mb-2:first-child .d-flex,
+  .modern-page-header .d-flex {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+
+  .row.mb-2:first-child .btn-group,
+  .modern-page-header .btn-group,
+  .modern-header-actions {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: 0.25rem !important;
+  }
+
+  .row.mb-2:first-child .btn,
+  .modern-page-header .btn,
+  .modern-header-actions .btn {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    margin: 0.25rem !important;
+  }
+
+  /* Statistics Cards - Much smaller and compact */
+  .row.mb-2:first-of-type,
+  .modern-stats-grid {
+    flex-direction: row !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+  }
+
+  .row.mb-2:first-of-type .col-md-3,
+  .modern-stats-grid .col-md-3 {
+    flex: 1 1 calc(50% - 0.125rem) !important;
+    max-width: calc(50% - 0.125rem) !important;
+    padding: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  /* Make cards much smaller */
+  .row.mb-2:first-of-type .card {
+    padding: 4px 6px !important;
+    min-height: 40px !important;
+    max-height: 45px !important;
+  }
+
+  .row.mb-2:first-of-type .card-body {
+    padding: 2px 4px !important;
+  }
+
+  .row.mb-2:first-of-type .card-body .card-title {
+    font-size: 0.55rem !important;
+    margin-bottom: 0 !important;
+    line-height: 1 !important;
+  }
+
+  .row.mb-2:first-of-type .card-body h6 {
+    font-size: 0.8rem !important;
+    line-height: 1 !important;
+  }
+
+  .row.mb-2:first-of-type .card-body i {
+    font-size: 0.85rem !important;
+  }
+
+  /* Pagination - Force horizontal layout */
+  .card-header .d-flex.justify-content-center,
+  .card-footer .d-flex.justify-content-center,
+  .modern-pagination {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    justify-content: center !important;
+  }
+
+  .card-header .btn-group,
+  .card-footer .btn-group,
+  .modern-pagination .btn-group {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    width: auto !important;
+  }
+
+  .card-header .btn-group .btn,
+  .card-footer .btn-group .btn,
+  .modern-pagination-btn {
+    width: auto !important;
+    margin: 0 0.25rem !important;
+    flex: 0 0 auto !important;
+  }
+
+  /* Filter Bar - Stack all controls vertically */
+  .row.mb-2:not(:first-of-type) .row,
+  .modern-filter-bar .row {
+    flex-direction: column !important;
+  }
+
+  .row.mb-2:not(:first-of-type) [class*="col-"],
+  .modern-filter-bar [class*="col-"] {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    padding: 0.5rem 0 !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .row.mb-2:not(:first-of-type) .btn-group,
+  .modern-filter-bar .btn-group {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: 0.25rem !important;
+  }
+
+  .row.mb-2:not(:first-of-type) .btn-group .btn,
+  .modern-filter-bar .btn-group .btn {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    margin: 0.25rem !important;
+  }
+
+  /* Table - Horizontal scroll on mobile */
+  .notifications-table-scroll,
+  .modern-table-wrapper,
+  .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+    width: 100% !important;
+  }
+
+  #notificationsTable,
+  .modern-table {
+    min-width: 800px !important;
+    width: auto !important;
+  }
+
+  /* Table Header - Compact */
+  .card-header .d-flex,
+  .modern-table-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Pagination - Keep horizontal on mobile */
+  .card-footer .d-flex,
+  .modern-pagination {
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+    padding: 0.5rem !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+  }
+
+  .btn-group.btn-group-sm {
+    flex-wrap: nowrap !important;
+    width: auto !important;
+    flex-direction: row !important;
+  }
+
+  .btn-group .btn[data-action^="go-"],
+  .modern-pagination-btn {
+    min-width: 36px !important;
+    height: 36px !important;
+    font-size: 0.75rem !important;
+    flex: 0 0 auto !important;
+  }
+}
+
+/* Very Small Mobile Devices */
+@media (max-width: 480px) {
+  /* Even more compact */
+  h4.modern-page-title,
+  .modern-page-title {
+    font-size: 1.25rem !important;
+  }
+
+  .card-body h6.modern-stat-value,
+  .modern-stat-value {
+    font-size: 1.75rem !important;
+  }
+
+  .btn,
+  .modern-btn {
+    padding: 0.5rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  .form-control,
+  .form-select,
+  .modern-input,
+  .modern-select {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+    padding: 0.5rem !important;
+  }
+
+  /* Table - Even more compact */
+  .table th,
+  .table td,
+  .modern-table th,
+  .modern-table td {
+    padding: 0.5rem 0.25rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Toolbar / pagination (moved from inline styles in notifications.php) */
+.notif-toolbar-bulk-group {
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+}
+.notif-pagination-outer {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  pointer-events: auto !important;
+}
+.notif-pagination-group {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  pointer-events: auto !important;
+}
+.notif-page-btn {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}

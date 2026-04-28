@@ -1,0 +1,278 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/worker/modern-alerts.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/worker/modern-alerts.css`.
+ */
+/* ========================================
+   MODERN CONFIRMATION ALERTS
+   Beautiful, animated alert system
+   ======================================== */
+
+.modern-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modern-alert-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modern-alert-container {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    max-width: 480px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.85) translateY(-20px);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+}
+
+.modern-alert-overlay.show .modern-alert-container {
+    transform: scale(1) translateY(0);
+}
+
+.modern-alert-header {
+    padding: 24px 24px 16px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.modern-alert-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.modern-alert-icon.warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.modern-alert-icon.info {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196f3;
+}
+
+.modern-alert-icon.success {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+}
+
+.modern-alert-icon.danger {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+}
+
+.modern-alert-title {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    flex: 1;
+}
+
+.modern-alert-body {
+    padding: 20px 24px;
+}
+
+.modern-alert-message {
+    color: #e0e0e0;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.modern-alert-footer {
+    padding: 16px 24px 24px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modern-alert-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 100px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.modern-alert-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.modern-alert-btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.modern-alert-btn:active {
+    transform: scale(0.98);
+}
+
+.modern-alert-btn-cancel {
+    background: #424242;
+    color: #ffffff;
+}
+
+.modern-alert-btn-cancel:hover {
+    background: #525252;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.modern-alert-btn-confirm {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+}
+
+.modern-alert-btn-confirm:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
+.modern-alert-btn-save {
+    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    color: #ffffff;
+}
+
+.modern-alert-btn-save:hover {
+    background: linear-gradient(135deg, #45a049 0%, #4caf50 100%);
+    box-shadow: 0 4px 16px rgba(76, 175, 80, 0.4);
+}
+
+.modern-alert-btn-danger {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+    color: #ffffff;
+}
+
+.modern-alert-btn-danger:hover {
+    background: linear-gradient(135deg, #d32f2f 0%, #f44336 100%);
+    box-shadow: 0 4px 16px rgba(244, 67, 54, 0.4);
+}
+
+/* Close button */
+.modern-alert-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    color: #ffffff;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 1;
+}
+
+.modern-alert-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .modern-alert-container {
+        max-width: 95%;
+        margin: 20px;
+    }
+    
+    .modern-alert-header {
+        padding: 20px 20px 12px 20px;
+    }
+    
+    .modern-alert-title {
+        font-size: 18px;
+    }
+    
+    .modern-alert-body {
+        padding: 16px 20px;
+    }
+    
+    .modern-alert-message {
+        font-size: 14px;
+    }
+    
+    .modern-alert-footer {
+        padding: 12px 20px 20px 20px;
+        flex-direction: column-reverse;
+    }
+    
+    .modern-alert-btn {
+        width: 100%;
+        min-width: auto;
+    }
+}
+
+/* Animation keyframes */
+@keyframes alertSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.85) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes alertSlideOut {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.85) translateY(-20px);
+    }
+}
+
+.modern-alert-container.animating-out {
+    animation: alertSlideOut 0.2s ease forwards;
+}

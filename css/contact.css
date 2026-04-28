@@ -1,0 +1,2605 @@
+/*
+ * EN: Defines visual styling and layout rules in `css/contact.css`.
+ * AR: يحدد قواعد التنسيق البصري وتخطيط الواجهة في `css/contact.css`.
+ */
+/**
+ * Contact Management Styles with Explanations
+ *
+ * This CSS file styles the Contact Management interface to look modern, compact, and
+ * professional, emphasizing a dark theme and usability. Each section and class is
+ * commented to explain its purpose and why certain CSS choices were made.
+ */
+
+/* ----------------
+   Layout & Theme
+   ---------------- */
+/* The main content area uses a dark background and padding for readability. */
+.content-wrapper {
+  background: #1a1a1a; /* Very dark background for entire app */
+  min-height: 100vh; /* Ensure minimum full viewport height */
+  padding: 20px; /* Comfortable padding for content separation */
+  position: relative; /* For animated background overlay */
+  overflow: hidden; /* Hide overflow from animated background */
+}
+
+/* Desktop: Account for fixed navbar (240px width) */
+@media (min-width: 769px) {
+  .content-wrapper {
+    margin-left: 240px !important;
+    width: calc(100% - 240px) !important;
+    max-width: calc(100% - 240px) !important;
+  }
+}
+
+/* Mobile/Tablet: Remove margin when navbar is overlay */
+@media (max-width: 768px) {
+  .content-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Background - Static dark theme (animations removed) */
+.content-wrapper::before,
+.content-wrapper::after {
+  display: none;
+}
+
+/* Ensure content is above background */
+.content-wrapper > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Header Section - Employer-Customer Communications (animations removed) */
+.container-fluid .row:first-child {
+  position: relative;
+  z-index: 2;
+  padding: 15px 20px;
+  border-radius: 12px;
+  background: rgba(45, 45, 45, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.container-fluid .row:first-child::before {
+  display: none;
+}
+
+/* Title Text (animations removed) */
+.container-fluid .row:first-child h5 {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* Cards (animations removed) */
+.card {
+  position: relative;
+  background: #2d2d2d;
+  border: 1px solid #444;
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.card::before,
+.card-header::after {
+  display: none;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+/* Buttons - Remove all animation pseudo-elements */
+.btn-primary::before,
+.btn-success::before,
+.btn-info::before,
+.btn::before,
+.btn-outline-primary::before,
+.btn-outline-success::before,
+.btn-outline-info::before,
+.btn-outline-warning::before,
+.btn-outline-danger::before,
+.btn-outline-secondary::before,
+.pagination .page-link::before,
+.btn-group .btn[data-action^="go-"]::before,
+.btn-group .btn[data-action="load-"]::before {
+  display: none;
+}
+
+/* Icon in Header (animations removed) */
+.container-fluid .row:first-child h5 i {
+  display: inline-block;
+  color: #6366f1;
+}
+
+/* Table row animations removed - all animation code cleaned up */
+
+/* Card headers are strongly separated with a darker background. */
+.card-header {
+  background: linear-gradient(135deg, #333, #2d2d2d);
+  border-bottom: 1px solid #444;
+  border-radius: 12px 12px 0 0;
+  padding: 20px;
+}
+
+/* The inner card body is padded for comfortable content display. */
+.card-body {
+  padding: 20px;
+}
+
+/* ----------------
+   Tables & Data
+   ---------------- */
+/* Consistent dark theme for tables */
+.table-dark {
+  background-color: #2d2d2d; /* Table matches card background */
+  color: #fff;
+}
+
+/* Table headers stand out with extra boldness and darker tone */
+.table-dark th {
+  background-color: #333;
+  border-color: #444;
+  color: #ecf0f1;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
+}
+
+.table-dark td {
+  border-color: #444;
+  vertical-align: middle;
+  padding: 12px 8px;
+}
+
+/* Base table row transition - enhanced with animations above - REMOVED DUPLICATE */
+/* Animations are handled by the comprehensive rules above */
+
+/* -----------------------
+   Forms & Inputs
+   ----------------------- */
+/* Unified dark input look, rounded edges. */
+.form-control {
+  background-color: #2c3e50; /* Blue-leaning dark for inputs */
+  border: 1px solid #7f8c8d; /* Soft border for visibility */
+  color: #ecf0f1; /* Light input text */
+  border-radius: 4px;
+}
+
+/* Focused input: blue border and glow for accessibility. */
+.form-control:focus {
+  background-color: #2c3e50;
+  border-color: #3498db; /* Brighter blue accent for focus */
+  color: #ecf0f1;
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+/* Dropdowns have same dark style as text inputs. */
+.form-select {
+  background-color: #2c3e50;
+  border: 1px solid #7f8c8d;
+  color: #ecf0f1;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ecf0f1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px 12px;
+}
+
+.form-select:hover {
+  border-color: #3498db;
+  background-color: #34495e;
+}
+
+.form-select:focus {
+  background-color: #2c3e50;
+  border-color: #3498db;
+  color: #ecf0f1;
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.form-select option {
+  background-color: #2c3e50;
+  color: #ecf0f1;
+  padding: 8px;
+}
+
+.form-select option:hover {
+  background-color: #3498db;
+  color: #07111f;
+}
+
+/* Enhanced search bar for contact filters. */
+#searchInput {
+  background-color: #2c3e50;
+  border: 1px solid #7f8c8d;
+  color: #ecf0f1;
+  transition: all 0.3s ease;
+}
+#searchInput:focus {
+  background-color: #2c3e50;
+  border-color: #3498db;
+  color: #ecf0f1;
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+/* Form labels styled to be visible on dark backgrounds. */
+.form-label {
+  color: #ecf0f1;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+/* -------------------
+   Buttons & Actions
+   ------------------- */
+/* General button style: small radius, bold text, animated transitions */
+.btn {
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+/* Bulk action buttons within button groups: smaller and compact for tables */
+.btn-group .btn {
+  padding: 2px 6px !important;
+  font-size: 0.75rem !important;
+  border-radius: 0;
+  margin: 0 1px;
+  transition: all 0.2s ease;
+}
+.btn-group .btn:first-child {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+.btn-group .btn:last-child {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+.btn-group .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Primary button: bright blue; hover gets darker for tactile feel */
+.btn-primary {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+.btn-primary:hover {
+  background-color: #2980b9;
+  border-color: #2980b9;
+}
+
+/* Outline variations for neutral or less-prominent actions */
+.btn-outline-primary {
+  color: #3498db;
+  border-color: #3498db;
+}
+.btn-outline-primary:hover {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+
+.btn-outline-info {
+  color: #17a2b8;
+  border-color: #17a2b8;
+}
+.btn-outline-info:hover {
+  background-color: #17a2b8;
+  border-color: #17a2b8;
+}
+
+.btn-outline-success {
+  color: #28a745;
+  border-color: #28a745;
+}
+.btn-outline-success:hover {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.btn-outline-danger {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+.btn-outline-danger:hover {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-outline-secondary {
+  color: #6c757d;
+  border-color: #6c757d;
+}
+.btn-outline-secondary:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+/* -----------------
+   Badges & Labels
+   ----------------- */
+/* Small colored labels for status or other highlights */
+.badge {
+  font-size: 0.75em;
+  padding: 0.375rem 0.5rem;
+  border-radius: 4px;
+}
+.bg-success {
+  background-color: #28a745 !important;
+}
+.bg-warning {
+  background-color: #ffc107 !important;
+  color: #000 !important;
+}
+.bg-secondary {
+  background-color: #6c757d !important;
+}
+.bg-primary {
+  background-color: #007bff !important;
+}
+.bg-info {
+  background-color: #17a2b8 !important;
+}
+.bg-dark {
+  background-color: #343a40 !important;
+}
+
+/* --------------
+   Modals
+   -------------- */
+/* Dark, slightly padded modal style */
+.modal-content {
+  background-color: #2d2d2d;
+  border: 1px solid #444;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.modal-header {
+  border-bottom: 1px solid #444;
+  background: linear-gradient(135deg, #333, #2d2d2d);
+  border-radius: 12px 12px 0 0;
+  padding: 20px;
+}
+.modal-body {
+  padding: 25px;
+}
+.modal-footer {
+  border-top: 1px solid #444;
+  background: linear-gradient(135deg, #2d2d2d, #333);
+  border-radius: 0 0 12px 12px;
+  padding: 20px;
+}
+/* White-tinted close icon for visibility on dark */
+.btn-close-white {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* ------------------
+   Pagination Styles
+   ------------------ */
+.pagination .page-link {
+  background-color: #2d2d2d;
+  border: 1px solid #444;
+  color: #ecf0f1;
+  transition: all 0.3s ease;
+  margin: 0 2px;
+  border-radius: 4px;
+}
+.pagination .page-link:hover {
+  background-color: #3a3a3a;
+  border-color: #444;
+  color: #ecf0f1;
+  transform: translateY(-1px);
+}
+.pagination .page-item.active .page-link {
+  background-color: #1f6fb3;
+  border-color: #1f6fb3;
+  color: #f8fafc;
+}
+.pagination .page-item.disabled .page-link {
+  background-color: #2d2d2d;
+  border-color: #444;
+  color: #9da5b1;
+  opacity: 0.6;
+}
+
+/* ------------------
+   Input Group Borders
+   ------------------ */
+/* Remove double borders between adjacent controls and buttons while keeping theme. */
+.input-group .form-control {
+  border-right: none;
+  background-color: #2c3e50;
+  border-color: #7f8c8d;
+  color: #ecf0f1;
+}
+.input-group .btn {
+  border-left: none;
+  background-color: #34495e;
+  border-color: #7f8c8d;
+  color: #ecf0f1;
+  transition: all 0.3s ease;
+}
+.input-group .btn:hover {
+  background-color: #1f6fb3;
+  border-color: #1f6fb3;
+  color: #f8fafc;
+}
+
+/* ---------------------
+   Notification Styling
+   --------------------- */
+/* Notification pop-ups for success or error feedback. */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 15px 25px;
+  border-radius: 8px;
+  background: #34495e;
+  color: #ecf0f1;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  border-left: 4px solid #3498db;
+  max-width: 400px;
+  word-wrap: break-word;
+}
+.notification.success {
+  border-left-color: #28a745;
+  background: #2d5a2d;
+}
+.notification.error {
+  border-left-color: #dc3545;
+  background: #5a2d2d;
+}
+.notification i {
+  margin-right: 10px;
+  font-size: 1.1em;
+}
+.notification.fade-out {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Notification animations removed */
+
+/* --------------------------
+   UI Loading/Error/States
+   -------------------------- */
+/* Ensure pagination buttons are always clickable */
+.btn[data-action^="go-"],
+.btn-group .btn[data-action^="go-"],
+button[data-action^="go-"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  position: relative !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  touch-action: manipulation !important;
+}
+
+/* Ensure button groups don't block clicks */
+.btn-group[style*="flex-direction"],
+.btn-group.btn-group-sm {
+  pointer-events: auto !important;
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+/* Prevent any overlay from blocking buttons */
+.card-header,
+.card-footer,
+.d-flex.justify-content-center,
+.d-flex.justify-content-between {
+  pointer-events: auto !important;
+  z-index: 1 !important;
+}
+
+/* Disabled (loading) buttons should look faded and unclickable */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.form-control:disabled {
+  background-color: #495057;
+  opacity: 0.6;
+}
+/* Inputs marked invalid show a red border for errors. */
+.form-control.is-invalid {
+  border-color: #dc3545;
+}
+.invalid-feedback {
+  color: #dc3545;
+  font-size: 0.875em;
+  margin-top: 0.25rem;
+}
+
+/* ------------------------
+   Responsive Design
+   ------------------------ */
+/* Adjust padding and font size for smaller screens. */
+@media (max-width: 768px) {
+  .content-wrapper {
+    padding: 15px;
+  }
+  .card-body {
+    padding: 15px;
+  }
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+  .btn-group .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  .notification {
+    right: 10px;
+    left: 10px;
+    top: 10px;
+  }
+}
+@media (max-width: 576px) {
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+  .btn-group {
+    flex-direction: column;
+  }
+  .btn-group .btn {
+    margin-bottom: 2px;
+  }
+}
+
+/* ------------------
+   Animations
+   ------------------ */
+/* Form error styling (animation removed) */
+.form-error {
+  border-color: #dc3545 !important;
+}
+
+/* --------------
+   Scrollbars
+   -------------- */
+/* Custom narrow, dark scrollbar for webkit browsers. */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* --------------------------
+   Datalist & Helper Text
+   -------------------------- */
+/* Datalist dropdown styled dark. */
+datalist {
+  background-color: #2d2d2d;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #ecf0f1;
+}
+/* Form help text: lighter color, small font. */
+.form-text {
+  color: #bdc3c7;
+  font-size: 0.875em;
+  margin-top: 0.25rem;
+}
+
+/* --------------------------
+   Communication Timeline
+   -------------------------- */
+/* Timeline item boxes for recent contact. */
+.communication-item {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  margin-bottom: 15px;
+}
+.communication-item:hover {
+  background: #333;
+  border-color: #555;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+.communication-item .badge {
+  font-size: 0.75em;
+  margin-right: 5px;
+}
+/* Color helpers for icons/text in timeline. */
+.text-primary {
+  color: #3498db !important;
+}
+.text-success {
+  color: #28a745 !important;
+}
+
+/* Priority badges (e.g., warning, info, danger) */
+.badge.bg-secondary {
+  background-color: #6c757d !important;
+}
+.badge.bg-info {
+  background-color: #17a2b8 !important;
+}
+.badge.bg-warning {
+  background-color: #ffc107 !important;
+  color: #000 !important;
+}
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+.badge.bg-success {
+  background-color: #28a745 !important;
+}
+
+/* ========================================
+   MOBILE RESPONSIVE DESIGN
+   ======================================== */
+
+/* Mobile: Decrease all widths to minimum for Contact, Communications pages */
+@media (max-width: 768px) {
+  /* Communication Timeline Items */
+  .communication-item {
+    margin-bottom: 10px;
+    padding: 12px !important;
+  }
+
+  .communication-item .d-flex {
+    flex-direction: column;
+  }
+
+  .communication-item .text-end {
+    text-align: left !important;
+    margin-top: 10px;
+  }
+
+  /* ========================================
+       CONTACT TABLE - Mobile Width Reductions
+       ======================================== */
+  #contactsTable th.col-id,
+  #contactsTable td:nth-child(1) {
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+  }
+
+  #contactsTable td:nth-child(2),
+  #contactsTable th:nth-child(2) {
+    width: 75px !important;
+    min-width: 75px !important;
+    max-width: 75px !important;
+  }
+
+  #contactsTable td:nth-child(3),
+  #contactsTable th:nth-child(3) {
+    width: 110px !important;
+    min-width: 110px !important;
+    max-width: 110px !important;
+  }
+
+  #contactsTable td:nth-child(4),
+  #contactsTable th:nth-child(4) {
+    width: 85px !important;
+    min-width: 85px !important;
+    max-width: 85px !important;
+  }
+
+  #contactsTable td:nth-child(5),
+  #contactsTable th:nth-child(5) {
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+  }
+
+  #contactsTable td:nth-child(6),
+  #contactsTable th:nth-child(6) {
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+  }
+
+  #contactsTable td:nth-child(7),
+  #contactsTable th:nth-child(7) {
+    width: 55px !important;
+    min-width: 55px !important;
+    max-width: 55px !important;
+  }
+
+  #contactsTable td:nth-child(8),
+  #contactsTable th:nth-child(8) {
+    width: 45px !important;
+    min-width: 45px !important;
+    max-width: 45px !important;
+  }
+
+  #contactsTable td:nth-child(9),
+  #contactsTable th:nth-child(9) {
+    width: 85px !important;
+    min-width: 85px !important;
+    max-width: 85px !important;
+  }
+
+  #contactsTable td:nth-child(10),
+  #contactsTable th:nth-child(10) {
+    width: 22px !important;
+    min-width: 22px !important;
+    max-width: 22px !important;
+  }
+
+  #contactsTable th.col-checkbox,
+  #contactsTable td:nth-child(11) {
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+  }
+
+  #contactsTable th.col-actions,
+  #contactsTable td:nth-child(12) {
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+  }
+
+  /* Contact Table Buttons - Minimum widths */
+  #contactsTable .btn,
+  #contactsTable .btn-sm,
+  #contactsTable .action-btn,
+  #contactsTable button,
+  .contacts-scroll .table .btn {
+    padding: 2px 3px !important;
+    font-size: 0.6rem !important;
+    min-width: 26px !important;
+    max-width: 32px !important;
+    height: 22px !important;
+    line-height: 1.1 !important;
+  }
+
+  #contactsTable .btn i,
+  #contactsTable .btn-sm i,
+  #contactsTable .action-btn i {
+    font-size: 0.65rem !important;
+  }
+
+  /* Contact Table Status Badges - Minimum widths */
+  #contactsTable .badge,
+  #contactsTable .status-badge,
+  .contacts-scroll .table .badge {
+    padding: 1px 3px !important;
+    font-size: 0.55rem !important;
+    min-width: 35px !important;
+    max-width: 55px !important;
+    height: 16px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.2 !important;
+  }
+
+  /* ========================================
+       COMMUNICATIONS TABLE - Mobile Width Reductions
+       ======================================== */
+  .communications-table-scroll table th:nth-child(1),
+  .communications-table-scroll table td:nth-child(1) {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(2),
+  .communications-table-scroll table td:nth-child(2) {
+    width: 75px !important;
+    min-width: 75px !important;
+    max-width: 75px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(3),
+  .communications-table-scroll table td:nth-child(3) {
+    width: 55px !important;
+    min-width: 55px !important;
+    max-width: 55px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(4),
+  .communications-table-scroll table td:nth-child(4) {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(5),
+  .communications-table-scroll table td:nth-child(5) {
+    width: 45px !important;
+    min-width: 45px !important;
+    max-width: 45px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(6),
+  .communications-table-scroll table td:nth-child(6) {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(7),
+  .communications-table-scroll table td:nth-child(7) {
+    width: 45px !important;
+    min-width: 45px !important;
+    max-width: 45px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(8),
+  .communications-table-scroll table td:nth-child(8) {
+    width: 75px !important;
+    min-width: 75px !important;
+    max-width: 75px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(9),
+  .communications-table-scroll table td:nth-child(9) {
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(10),
+  .communications-table-scroll table td:nth-child(10) {
+    width: 85px !important;
+    min-width: 85px !important;
+    max-width: 85px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(11),
+  .communications-table-scroll table td:nth-child(11) {
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(12),
+  .communications-table-scroll table td:nth-child(12) {
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+  }
+
+  /* Communications Table Buttons - Minimum widths */
+  .communications-table-scroll table .btn,
+  .communications-table-scroll table .btn-sm,
+  .communications-table-scroll table .action-btn,
+  .communications-table-scroll table button {
+    padding: 2px 3px !important;
+    font-size: 0.6rem !important;
+    min-width: 26px !important;
+    max-width: 32px !important;
+    height: 22px !important;
+    line-height: 1.1 !important;
+  }
+
+  .communications-table-scroll table .btn i,
+  .communications-table-scroll table .btn-sm i {
+    font-size: 0.65rem !important;
+  }
+
+  /* Communications Table Status Badges & Chips - Minimum widths */
+  .communications-table-scroll table .badge,
+  .communications-table-scroll table .status-badge,
+  .communications-table-scroll table .comm-chip,
+  .comm-chip {
+    padding: 1px 3px !important;
+    font-size: 0.55rem !important;
+    min-width: 32px !important;
+    max-width: 50px !important;
+    height: 16px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.2 !important;
+  }
+
+  /* ========================================
+       CARDS - Reduced Padding on Mobile
+       ======================================== */
+  .card {
+    padding: 6px !important;
+  }
+
+  .card-header {
+    padding: 8px 10px !important;
+  }
+
+  .card-body {
+    padding: 8px 10px !important;
+  }
+
+  .card-footer {
+    padding: 6px 10px !important;
+  }
+
+  .status-card {
+    padding: 8px !important;
+    margin-bottom: 8px !important;
+  }
+}
+
+/* Very Small Mobile Devices (480px and below) */
+@media (max-width: 480px) {
+  /* Contact Table - Even smaller on tiny screens */
+  #contactsTable th.col-id,
+  #contactsTable td:nth-child(1) {
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+  }
+
+  #contactsTable td:nth-child(2),
+  #contactsTable th:nth-child(2) {
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+  }
+
+  #contactsTable td:nth-child(3),
+  #contactsTable th:nth-child(3) {
+    width: 95px !important;
+    min-width: 95px !important;
+    max-width: 95px !important;
+  }
+
+  #contactsTable td:nth-child(4),
+  #contactsTable th:nth-child(4) {
+    width: 75px !important;
+    min-width: 75px !important;
+    max-width: 75px !important;
+  }
+
+  #contactsTable td:nth-child(5),
+  #contactsTable th:nth-child(5),
+  #contactsTable td:nth-child(6),
+  #contactsTable th:nth-child(6) {
+    width: 55px !important;
+    min-width: 55px !important;
+    max-width: 55px !important;
+  }
+
+  #contactsTable td:nth-child(7),
+  #contactsTable th:nth-child(7) {
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+  }
+
+  #contactsTable td:nth-child(8),
+  #contactsTable th:nth-child(8) {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+  }
+
+  #contactsTable td:nth-child(9),
+  #contactsTable th:nth-child(9) {
+    width: 75px !important;
+    min-width: 75px !important;
+    max-width: 75px !important;
+  }
+
+  #contactsTable td:nth-child(10),
+  #contactsTable th:nth-child(10) {
+    width: 20px !important;
+    min-width: 20px !important;
+    max-width: 20px !important;
+  }
+
+  #contactsTable th.col-checkbox,
+  #contactsTable td:nth-child(11) {
+    width: 25px !important;
+    min-width: 25px !important;
+    max-width: 25px !important;
+  }
+
+  #contactsTable th.col-actions,
+  #contactsTable td:nth-child(12) {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+  }
+
+  #contactsTable .btn,
+  #contactsTable .btn-sm,
+  #contactsTable .action-btn {
+    padding: 1px 2px !important;
+    font-size: 0.55rem !important;
+    min-width: 24px !important;
+    max-width: 28px !important;
+    height: 20px !important;
+  }
+
+  #contactsTable .badge,
+  #contactsTable .status-badge {
+    padding: 1px 2px !important;
+    font-size: 0.5rem !important;
+    min-width: 30px !important;
+    max-width: 50px !important;
+    height: 14px !important;
+  }
+
+  /* Communications Table - Even smaller */
+  .communications-table-scroll table th:nth-child(1),
+  .communications-table-scroll table td:nth-child(1) {
+    width: 35px !important;
+    min-width: 35px !important;
+    max-width: 35px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(2),
+  .communications-table-scroll table td:nth-child(2) {
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(3),
+  .communications-table-scroll table td:nth-child(3) {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(4),
+  .communications-table-scroll table td:nth-child(4),
+  .communications-table-scroll table th:nth-child(5),
+  .communications-table-scroll table td:nth-child(5),
+  .communications-table-scroll table th:nth-child(6),
+  .communications-table-scroll table td:nth-child(6),
+  .communications-table-scroll table th:nth-child(7),
+  .communications-table-scroll table td:nth-child(7) {
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(8),
+  .communications-table-scroll table td:nth-child(8) {
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(9),
+  .communications-table-scroll table td:nth-child(9) {
+    width: 55px !important;
+    min-width: 55px !important;
+    max-width: 55px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(10),
+  .communications-table-scroll table td:nth-child(10) {
+    width: 75px !important;
+    min-width: 75px !important;
+    max-width: 75px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(11),
+  .communications-table-scroll table td:nth-child(11) {
+    width: 25px !important;
+    min-width: 25px !important;
+    max-width: 25px !important;
+  }
+
+  .communications-table-scroll table th:nth-child(12),
+  .communications-table-scroll table td:nth-child(12) {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+  }
+
+  .communications-table-scroll table .btn,
+  .communications-table-scroll table .btn-sm,
+  .communications-table-scroll table .action-btn {
+    padding: 1px 2px !important;
+    font-size: 0.55rem !important;
+    min-width: 24px !important;
+    max-width: 28px !important;
+    height: 20px !important;
+  }
+
+  .communications-table-scroll table .badge,
+  .communications-table-scroll table .status-badge,
+  .communications-table-scroll table .comm-chip {
+    padding: 1px 2px !important;
+    font-size: 0.5rem !important;
+    min-width: 30px !important;
+    max-width: 50px !important;
+    height: 14px !important;
+  }
+
+  .card {
+    padding: 4px !important;
+  }
+
+  .card-header {
+    padding: 6px 8px !important;
+  }
+
+  .card-body {
+    padding: 6px 8px !important;
+  }
+}
+
+/* Match form field focus style in communication modal. */
+.form-control:focus,
+.form-select:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+  background-color: #2c3e50;
+  color: #ecf0f1;
+}
+/* Communication modal body scrollable, for long forms. */
+#communicationModal .modal-body {
+  padding: 0.5rem 0.75rem;
+  max-height: calc(95vh - 120px);
+  overflow-y: auto;
+}
+#communicationModal .modal-header {
+  padding: 0.25rem 0.75rem;
+}
+#communicationModal .modal-footer {
+  padding: 0.25rem 0.75rem;
+}
+#communicationModal .modal-dialog {
+  max-height: 95vh;
+  margin: 0.25rem auto;
+}
+#communicationModal .modal-content {
+  max-height: 95vh;
+  display: flex;
+  flex-direction: column;
+}
+#communicationModal .form-control,
+#communicationModal .form-select {
+  background-color: #2c3e50;
+  border: 1px solid #7f8c8d;
+  color: #f8fafc !important;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  height: auto;
+  min-height: 32px;
+}
+#communicationModal .form-control:focus,
+#communicationModal .form-select:focus {
+  background-color: #2c3e50;
+  border-color: #3498db;
+  color: #ecf0f1;
+  box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+#communicationModal .form-select-sm,
+#communicationModal .form-control-sm {
+  padding: 0.25rem 0.375rem;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  min-height: 28px;
+}
+
+/* Modern colorful field styles - each field with different light modern color */
+#communicationModal #commContactType {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.15) 0%,
+    rgba(79, 70, 229, 0.25) 100%
+  );
+  border-color: rgba(99, 102, 241, 0.4);
+}
+#communicationModal #commContactType:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.25) 0%,
+    rgba(79, 70, 229, 0.35) 100%
+  );
+  border-color: rgba(99, 102, 241, 0.6);
+}
+#communicationModal #commContactType:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.3) 0%,
+    rgba(79, 70, 229, 0.4) 100%
+  );
+  border-color: rgba(99, 102, 241, 0.8);
+  box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.3);
+}
+
+#communicationModal #commContact {
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.15) 0%,
+    rgba(5, 150, 105, 0.25) 100%
+  );
+  border-color: rgba(16, 185, 129, 0.4);
+}
+#communicationModal #commContact:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.25) 0%,
+    rgba(5, 150, 105, 0.35) 100%
+  );
+  border-color: rgba(16, 185, 129, 0.6);
+}
+#communicationModal #commContact:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.3) 0%,
+    rgba(5, 150, 105, 0.4) 100%
+  );
+  border-color: rgba(16, 185, 129, 0.8);
+  box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.3);
+}
+
+#communicationModal #commCountry {
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.15) 0%,
+    rgba(147, 51, 234, 0.25) 100%
+  );
+  border-color: rgba(168, 85, 247, 0.4);
+}
+#communicationModal #commCountry:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.25) 0%,
+    rgba(147, 51, 234, 0.35) 100%
+  );
+  border-color: rgba(168, 85, 247, 0.6);
+}
+#communicationModal #commCountry:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.3) 0%,
+    rgba(147, 51, 234, 0.4) 100%
+  );
+  border-color: rgba(168, 85, 247, 0.8);
+  box-shadow: 0 0 0 0.2rem rgba(168, 85, 247, 0.3);
+}
+
+#communicationModal #commCity {
+  background: linear-gradient(
+    135deg,
+    rgba(251, 146, 60, 0.15) 0%,
+    rgba(249, 115, 22, 0.25) 100%
+  );
+  border-color: rgba(251, 146, 60, 0.4);
+}
+#communicationModal #commCity:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(251, 146, 60, 0.25) 0%,
+    rgba(249, 115, 22, 0.35) 100%
+  );
+  border-color: rgba(251, 146, 60, 0.6);
+}
+#communicationModal #commCity:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(251, 146, 60, 0.3) 0%,
+    rgba(249, 115, 22, 0.4) 100%
+  );
+  border-color: rgba(251, 146, 60, 0.8);
+  box-shadow: 0 0 0 0.2rem rgba(251, 146, 60, 0.3);
+}
+
+#communicationModal #commType {
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.15) 0%,
+    rgba(8, 145, 178, 0.25) 100%
+  );
+  border-color: rgba(6, 182, 212, 0.4);
+}
+#communicationModal #commType:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.25) 0%,
+    rgba(8, 145, 178, 0.35) 100%
+  );
+  border-color: rgba(6, 182, 212, 0.6);
+}
+#communicationModal #commType:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.3) 0%,
+    rgba(8, 145, 178, 0.4) 100%
+  );
+  border-color: rgba(6, 182, 212, 0.8);
+  box-shadow: 0 0 0 0.2rem rgba(6, 182, 212, 0.3);
+}
+
+#communicationModal #commDirection {
+  background: linear-gradient(
+    135deg,
+    rgba(20, 184, 166, 0.15) 0%,
+    rgba(6, 182, 212, 0.25) 100%
+  );
+  border-color: rgba(20, 184, 166, 0.4);
+}
+#communicationModal #commDirection:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(20, 184, 166, 0.25) 0%,
+    rgba(6, 182, 212, 0.35) 100%
+  );
+  border-color: rgba(20, 184, 166, 0.6);
+}
+#communicationModal #commDirection:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(20, 184, 166, 0.3) 0%,
+    rgba(6, 182, 212, 0.4) 100%
+  );
+  border-color: rgba(20, 184, 166, 0.8);
+  box-shadow: 0 0 0 0.2rem rgba(20, 184, 166, 0.3);
+}
+
+#communicationModal #commPriority {
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.15) 0%,
+    rgba(220, 38, 38, 0.25) 100%
+  );
+  border-color: rgba(239, 68, 68, 0.4);
+}
+#communicationModal #commPriority:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.25) 0%,
+    rgba(220, 38, 38, 0.35) 100%
+  );
+  border-color: rgba(239, 68, 68, 0.6);
+}
+#communicationModal #commPriority:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.3) 0%,
+    rgba(220, 38, 38, 0.4) 100%
+  );
+  border-color: rgba(239, 68, 68, 0.8);
+  box-shadow: 0 0 0 0.2rem rgba(239, 68, 68, 0.3);
+}
+
+#communicationModal #commSubject {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.15) 0%,
+    rgba(37, 99, 235, 0.25) 100%
+  );
+  border-color: rgba(59, 130, 246, 0.4);
+}
+#communicationModal #commSubject:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.25) 0%,
+    rgba(37, 99, 235, 0.35) 100%
+  );
+  border-color: rgba(59, 130, 246, 0.6);
+}
+#communicationModal #commSubject:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.3) 0%,
+    rgba(37, 99, 235, 0.4) 100%
+  );
+  border-color: rgba(59, 130, 246, 0.8);
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.3);
+}
+
+#communicationModal #commMessage {
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.15) 0%,
+    rgba(124, 58, 237, 0.25) 100%
+  );
+  border-color: rgba(139, 92, 246, 0.4);
+}
+#communicationModal #commMessage:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.25) 0%,
+    rgba(124, 58, 237, 0.35) 100%
+  );
+  border-color: rgba(139, 92, 246, 0.6);
+}
+#communicationModal #commMessage:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.3) 0%,
+    rgba(124, 58, 237, 0.4) 100%
+  );
+  border-color: rgba(139, 92, 246, 0.8);
+  box-shadow: 0 0 0 0.2rem rgba(139, 92, 246, 0.3);
+}
+
+#communicationModal #commOutcome {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.15) 0%,
+    rgba(217, 119, 6, 0.25) 100%
+  );
+  border-color: rgba(245, 158, 11, 0.4);
+}
+#communicationModal #commOutcome:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.25) 0%,
+    rgba(217, 119, 6, 0.35) 100%
+  );
+  border-color: rgba(245, 158, 11, 0.6);
+}
+#communicationModal #commOutcome:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.3) 0%,
+    rgba(217, 119, 6, 0.4) 100%
+  );
+  border-color: rgba(245, 158, 11, 0.8);
+  box-shadow: 0 0 0 0.2rem rgba(245, 158, 11, 0.3);
+}
+
+#communicationModal #commNextAction {
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.15) 0%,
+    rgba(22, 163, 74, 0.25) 100%
+  );
+  border-color: rgba(34, 197, 94, 0.4);
+}
+#communicationModal #commNextAction:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.25) 0%,
+    rgba(22, 163, 74, 0.35) 100%
+  );
+  border-color: rgba(34, 197, 94, 0.6);
+}
+#communicationModal #commNextAction:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.3) 0%,
+    rgba(22, 163, 74, 0.4) 100%
+  );
+  border-color: rgba(34, 197, 94, 0.8);
+  box-shadow: 0 0 0 0.2rem rgba(34, 197, 94, 0.3);
+}
+
+#communicationModal #commFollowUpDate {
+  background: linear-gradient(
+    135deg,
+    rgba(249, 115, 22, 0.15) 0%,
+    rgba(234, 88, 12, 0.25) 100%
+  );
+  border-color: rgba(249, 115, 22, 0.4);
+}
+#communicationModal #commFollowUpDate:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(249, 115, 22, 0.25) 0%,
+    rgba(234, 88, 12, 0.35) 100%
+  );
+  border-color: rgba(249, 115, 22, 0.6);
+}
+#communicationModal #commFollowUpDate:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(249, 115, 22, 0.3) 0%,
+    rgba(234, 88, 12, 0.4) 100%
+  );
+  border-color: rgba(249, 115, 22, 0.8);
+  box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.3);
+}
+
+#communicationModal #commSubjectCustom,
+#communicationModal #commMessageCustom,
+#communicationModal #commNextActionCustom {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.2) 0%,
+    rgba(79, 70, 229, 0.3) 100%
+  );
+  border-color: rgba(99, 102, 241, 0.5);
+}
+#communicationModal #commSubjectCustom:hover,
+#communicationModal #commMessageCustom:hover,
+#communicationModal #commNextActionCustom:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.3) 0%,
+    rgba(79, 70, 229, 0.4) 100%
+  );
+  border-color: rgba(99, 102, 241, 0.7);
+}
+#communicationModal #commSubjectCustom:focus,
+#communicationModal #commMessageCustom:focus,
+#communicationModal #commNextActionCustom:focus {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.35) 0%,
+    rgba(79, 70, 229, 0.45) 100%
+  );
+  border-color: rgba(99, 102, 241, 0.9);
+  box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.3);
+}
+
+/* Loading spinner state for timelines. */
+#communicationsTimeline .loading {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+}
+#communicationsTimeline .loading i {
+  font-size: 2rem;
+  /* Loading spinner animation removed */
+}
+
+/* --------------
+   Modal Sizing & Spacing
+   -------------- */
+.modal-dialog {
+  max-width: 600px;
+}
+
+/* --------
+   Placeholder Enhancements
+   -------- */
+/* For clever placeholder guidance inside inputs */
+.form-control::placeholder,
+.form-select::placeholder {
+  color: #6c757d;
+  opacity: 1;
+  font-style: italic;
+}
+.form-control:focus::placeholder,
+.form-select:focus::placeholder {
+  color: #adb5bd;
+  opacity: 0.7;
+}
+
+/* --------------
+   Compact Form Spacing
+   -------------- */
+.mb-3 {
+  margin-bottom: 1rem !important;
+}
+
+/* --------------
+   Modal Display Overrides for Contact Modal
+   -------------- */
+#contactModal {
+  display: none !important;
+}
+#contactModal.show {
+  display: block !important;
+}
+#contactModal .modal-dialog {
+  max-width: 500px;
+  max-height: 90vh;
+  margin: 0.5rem auto;
+}
+
+/* Remove bottom margin from inputs for a condensed form. */
+.form-control,
+.form-select {
+  margin-bottom: 0;
+}
+.row {
+  margin-bottom: 0.5rem;
+}
+.communication-form .row {
+  margin-bottom: 0.25rem;
+}
+.communication-form .communication-field-margin {
+  margin-bottom: 0.5rem;
+}
+.communication-label {
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+/* Professionally styled placeholder for main fields. */
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="tel"]::placeholder,
+textarea::placeholder {
+  color: #6c757d;
+  font-size: 0.9em;
+  opacity: 0.8;
+}
+input[type="text"]:focus::placeholder,
+input[type="email"]:focus::placeholder,
+input[type="tel"]:focus::placeholder,
+textarea:focus::placeholder {
+  color: #adb5bd;
+  opacity: 0.5;
+}
+
+/* --------------
+   Page Compactness
+   -------------- */
+/* Makes the page tighter without shrinking font for readability. */
+.container-fluid {
+  padding: 5px !important;
+}
+.card-footer {
+  padding: 6px 12px !important;
+}
+.table th,
+.table td {
+  padding: 4px 6px !important;
+  font-size: 0.85rem;
+}
+
+/* Table cells: stop text from leaking onto multiple lines by default, except for special columns. */
+#contactsTable td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Allow content wrapping in verbose columns only. */
+#contactsTable td:nth-child(10) {
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* --------------
+   Button Group Gap & Padding Refinement
+   -------------- */
+.btn-group {
+  gap: 2px;
+}
+
+/* --------------
+   Utility Margin/Padding Classes
+   -------------- */
+.py-1 {
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+}
+.mb-1 {
+  margin-bottom: 0.125rem !important;
+}
+.mb-2 {
+  margin-bottom: 0.25rem !important;
+}
+.mt-1 {
+  margin-top: 0.125rem !important;
+}
+
+/* --------------
+   Scrollable Sections
+   -------------- */
+.communications-scroll {
+  max-height: 150px;
+  overflow-y: auto;
+}
+.contacts-scroll {
+  max-height: 270px;
+  overflow-y: auto;
+}
+
+/* 
+   Sticky headers for data tables:
+   Thead is pinned for scrolling through long lists while keeping context.
+*/
+.contacts-scroll .table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #343a40 !important;
+  border-bottom: 2px solid #495057 !important;
+}
+
+/* --------------
+   Table Column Widths
+   -------------- */
+/* Set fixed widths for columns to avoid layout shift and keep compact. */
+.contacts-scroll .table th:nth-child(1),
+.contacts-scroll .table td:nth-child(1) {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+.contacts-scroll .table th:nth-child(9),
+.contacts-scroll .table td:nth-child(9) {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
+}
+.contacts-scroll .table th:nth-child(10),
+.contacts-scroll .table td:nth-child(10) {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+}
+
+/* Specific IDs for the main contacts table, to fit each field type. */
+#contactsTable th.col-id,
+#contactsTable td:nth-child(1) {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
+}
+#contactsTable td:nth-child(2),
+#contactsTable th:nth-child(2) {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#contactsTable td:nth-child(3),
+#contactsTable th:nth-child(3) {
+  width: 180px;
+  min-width: 180px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#contactsTable td:nth-child(4),
+#contactsTable th:nth-child(4) {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+}
+#contactsTable td:nth-child(5),
+#contactsTable th:nth-child(5) {
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#contactsTable td:nth-child(6),
+#contactsTable th:nth-child(6) {
+  width: 100px;
+  min-width: 100px;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#contactsTable td:nth-child(7),
+#contactsTable th:nth-child(7) {
+  width: 90px;
+  min-width: 90px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#contactsTable td:nth-child(8),
+#contactsTable th:nth-child(8) {
+  width: 70px;
+  min-width: 70px;
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#contactsTable td:nth-child(9),
+#contactsTable th:nth-child(9) {
+  width: 140px;
+  min-width: 140px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#contactsTable td:nth-child(10),
+#contactsTable th:nth-child(10) {
+  width: 30px;
+  min-width: 30px;
+  max-width: 30px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#contactsTable th.col-checkbox,
+#contactsTable td:nth-child(11) {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+}
+#contactsTable th.col-actions,
+#contactsTable td:nth-child(12) {
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
+}
+
+/* Notifications table styles moved to css/notifications.css */
+
+/* -------------------------
+   Miscellaneous (Contact Form Visuals)
+   ------------------------- */
+/* Hide fields for existing contacts (used via JS swaps). */
+.existing-contact-fields {
+  display: none;
+}
+/* Alternate communication item look. */
+.communication-item-dark {
+  background: #2a2a2a;
+  border-color: #444 !important;
+}
+/* Show new contact fields by default. */
+.new-contact-fields {
+  display: block;
+}
+
+/* 
+   Reduce modal padding for contact form for higher data density
+*/
+#contactModal .modal-header {
+  padding: 0.5rem 0.75rem;
+}
+#contactModal .modal-footer {
+  padding: 0.5rem 0.75rem;
+}
+#contactModal .modal-content {
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+#contactModal .modal-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0.5rem;
+}
+
+/* 
+   Even more compact new-contact fields section.
+*/
+.new-contact-fields .row {
+  margin-bottom: 0.125rem;
+}
+.new-contact-fields .mb-1 {
+  margin-bottom: 0.0625rem !important;
+}
+.new-contact-fields .form-control-sm,
+.new-contact-fields .form-select-sm {
+  padding: 0.0625rem 0.125rem;
+  font-size: 0.75rem;
+  line-height: 1.1;
+  height: auto;
+}
+.new-contact-fields textarea.form-control-sm {
+  min-height: 40px;
+  padding: 0.0625rem 0.125rem;
+}
+.new-contact-fields .mb-2 {
+  margin-bottom: 0.25rem !important;
+}
+.new-contact-fields .col-md-6,
+.new-contact-fields .col-12 {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+.form-label-sm {
+  font-size: 0.7rem;
+  margin-bottom: 0.0625rem;
+  line-height: 1;
+}
+
+/* 
+   Special visibility for filter/search controls
+   (forces poorly behaving Bootstrap layouts to stay visible)
+*/
+.contacts-search-group {
+  width: 250px;
+  display: flex !important;
+  visibility: visible !important;
+}
+.contacts-filter-select,
+.contacts-per-page-select {
+  width: auto;
+  display: block !important;
+  visibility: visible !important;
+}
+/* Always show the header row for filtering/searching */
+.d-flex.justify-content-between.align-items-center {
+  display: flex !important;
+  visibility: visible !important;
+}
+
+/* --------------------------
+   Communications Filter Styles
+   -------------------------- */
+.filter-search-width {
+  width: 200px;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+.filter-dropdown-width {
+  width: 140px;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+.filter-clear-width {
+  width: auto;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+.filter-actions {
+  flex-shrink: 0;
+}
+
+/* Mobile Responsive - Filter Section */
+@media (max-width: 768px) {
+  /* Filter container - allow wrapping */
+  .d-flex.align-items-center.flex-wrap {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    align-items: center !important;
+  }
+
+  /* Filter inputs and dropdowns - responsive widths */
+  .filter-search-width {
+    width: calc(100% - 8px) !important;
+    min-width: 100% !important;
+    margin-right: 0 !important;
+    margin-bottom: 4px !important;
+  }
+
+  .filter-dropdown-width {
+    width: calc(50% - 4px) !important;
+    min-width: calc(50% - 4px) !important;
+    margin-right: 4px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .filter-dropdown-width:nth-child(2n) {
+    margin-right: 0 !important;
+  }
+
+  .filter-clear-width {
+    width: auto !important;
+    margin-right: 4px !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* Filter actions - keep buttons horizontal */
+  .filter-actions {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    margin-top: 4px !important;
+    justify-content: flex-start !important;
+  }
+
+  .filter-actions .btn {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+    padding: 4px 8px !important;
+    font-size: 0.7rem !important;
+    white-space: nowrap !important;
+  }
+
+  .filter-actions .btn i {
+    margin-right: 4px !important;
+  }
+
+  /* Card body padding - compact */
+  .card-body.py-2 {
+    padding: 8px !important;
+  }
+}
+.checkbox-col-width {
+  width: 40px;
+}
+.subject-cell-truncate {
+  max-width: 200px;
+}
+
+/* Navigation logo sizing - MOVED TO nav.css */
+
+/* --------------------------
+   Communications Table Scroll
+   -------------------------- */
+.communications-table-scroll {
+  max-height: calc(100vh - 450px);
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+  width: 100%;
+}
+
+.communications-table-scroll table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.communications-table-scroll table thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #333;
+}
+
+.communications-table-scroll table thead th {
+  background-color: #333;
+  border-bottom: 2px solid #444;
+  padding: 12px 8px;
+  font-weight: 600;
+}
+
+/* --------------------------
+   Communications Table Column Widths & Text Truncation
+   -------------------------- */
+/* ID Column (1) */
+.communications-table-scroll table th:nth-child(1),
+.communications-table-scroll table td:nth-child(1) {
+  width: 70px;
+  min-width: 70px;
+  max-width: 70px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Contact Column (2) */
+.communications-table-scroll table th:nth-child(2),
+.communications-table-scroll table td:nth-child(2) {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Country Column (3) */
+.communications-table-scroll table th:nth-child(3),
+.communications-table-scroll table td:nth-child(3) {
+  width: 90px;
+  min-width: 90px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* City Column (4) */
+.communications-table-scroll table th:nth-child(4),
+.communications-table-scroll table td:nth-child(4) {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Type Column (5) */
+.communications-table-scroll table th:nth-child(5),
+.communications-table-scroll table td:nth-child(5) {
+  width: 75px;
+  min-width: 75px;
+  max-width: 75px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Direction Column (6) */
+.communications-table-scroll table th:nth-child(6),
+.communications-table-scroll table td:nth-child(6) {
+  width: 85px;
+  min-width: 85px;
+  max-width: 85px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Priority Column (7) */
+.communications-table-scroll table th:nth-child(7),
+.communications-table-scroll table td:nth-child(7) {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Subject Column (8) */
+.communications-table-scroll table th:nth-child(8),
+.communications-table-scroll table td:nth-child(8) {
+  width: 120px;
+  min-width: 120px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Outcome Column (9) */
+.communications-table-scroll table th:nth-child(9),
+.communications-table-scroll table td:nth-child(9) {
+  width: 100px;
+  min-width: 100px;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Date/Time Column (10) */
+.communications-table-scroll table th:nth-child(10),
+.communications-table-scroll table td:nth-child(10) {
+  width: 130px;
+  min-width: 130px;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Checkbox Column (11) */
+.communications-table-scroll table th:nth-child(11),
+.communications-table-scroll table td:nth-child(11) {
+  width: 35px;
+  min-width: 35px;
+  max-width: 35px;
+  text-align: center;
+}
+
+/* Actions Column (12) */
+.communications-table-scroll table th:nth-child(12),
+.communications-table-scroll table td:nth-child(12) {
+  width: 110px;
+  min-width: 110px;
+  max-width: 110px;
+  text-align: center;
+}
+
+.communications-table-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.communications-table-scroll::-webkit-scrollbar-track {
+  background: #2d2d2d;
+  border-radius: 4px;
+}
+
+.communications-table-scroll::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+.communications-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Communications detail modal */
+#viewCommunicationModal .modal-dialog {
+  max-width: 720px;
+}
+
+.comm-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.comm-detail__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0.2rem 0.5rem;
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.25),
+    rgba(15, 23, 42, 0.9)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.comm-detail__label {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: #9db8ff;
+  margin: 0;
+}
+
+.comm-detail__header h5 {
+  margin: 0.35rem 0;
+  font-size: 0.8rem;
+  color: #f8fafc;
+}
+
+.comm-detail__meta {
+  margin: 0;
+  color: #a5b4fc;
+  font-size: 0.7rem;
+}
+
+.comm-detail__chips {
+  display: flex;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.comm-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.comm-chip--low {
+  background: #065f46;
+  color: #d1fae5;
+}
+.comm-chip--medium {
+  background: #1e3a8a;
+  color: #dbeafe;
+}
+.comm-chip--high {
+  background: #92400e;
+  color: #fff6db;
+}
+.comm-chip--urgent {
+  background: #7f1d1d;
+  color: #fee2e2;
+}
+.comm-chip--default {
+  background: #334155;
+  color: #e2e8f0;
+}
+.comm-chip--accent {
+  background: #312e81;
+  color: #e0e7ff;
+}
+.comm-chip--outline {
+  background: transparent;
+  border-style: dashed;
+  color: #f8fafc;
+}
+
+.comm-detail__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.2rem;
+}
+
+.comm-tile {
+  background: #141b2d;
+  border-radius: 6px;
+  padding: 0.2rem;
+  border: 1px solid rgba(226, 232, 240, 0.1);
+}
+
+.comm-tile span {
+  display: block;
+  text-transform: uppercase;
+  font-size: 0.6rem;
+  color: #9fb4d6;
+  letter-spacing: 0.05em;
+}
+
+.comm-tile p {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.comm-section {
+  background: #1f2937;
+  border-radius: 14px;
+  padding: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.comm-section h6 {
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.8rem;
+  color: #c7d2fe;
+}
+
+.comm-section p {
+  margin: 0;
+  color: #e5e7eb;
+  line-height: 1.5;
+}
+
+.comm-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+
+.comm-info div {
+  background: #0f172a;
+  border-radius: 6px;
+  padding: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.comm-info span {
+  display: block;
+  text-transform: uppercase;
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+
+.comm-info p {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.print-communication {
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.print-communication h6 {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  margin-bottom: 0.2rem;
+  color: #0f172a;
+}
+
+.print-communication p {
+  line-height: 1.35;
+  margin-bottom: 0.3rem;
+}
+
+.print-communication .comm-chip {
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Role Broadcast Modal styles moved to css/notifications.css */
+
+/* ========================================
+   GLOBAL - ALL BUTTONS HORIZONTAL
+   ======================================== */
+
+/* Ensure ALL buttons stay horizontal */
+.btn-group,
+.btn-group.btn-group-sm,
+.btn-group[data-action],
+.btn-group[data-action="go-first-page"],
+.btn-group[data-action="go-previous-page"],
+.btn-group[data-action="go-next-page"],
+.btn-group[data-action="go-last-page"] {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 0.25rem !important;
+  display: flex !important;
+}
+
+.btn-group .btn,
+.btn-group .btn-sm,
+.btn-group .btn[data-action^="go-"] {
+  width: auto !important;
+  flex: 0 0 auto !important;
+  margin: 0 0.25rem !important;
+  display: inline-flex !important;
+}
+
+.d-flex.justify-content-between,
+.d-flex.justify-content-center,
+.d-flex.align-items-center {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+}
+
+/* Force pagination containers horizontal */
+#contactsPageNumbers,
+#contactsPageNumbersBottom,
+#commPageNumbers,
+.btn-group#contactsPageNumbers,
+.btn-group#contactsPageNumbersBottom,
+.btn-group#commPageNumbers {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  display: inline-flex !important;
+}
+
+/* Force all pagination buttons horizontal - override any mobile styles */
+@media (max-width: 768px) {
+  .btn-group.btn-group-sm,
+  .btn-group[data-action^="go-"],
+  #contactsPageNumbers,
+  #contactsPageNumbersBottom,
+  #commPageNumbers {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    display: flex !important;
+  }
+
+  .btn-group .btn[data-action^="go-"],
+  .btn-group .btn-sm[data-action^="go-"] {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    margin: 0 0.25rem !important;
+    display: inline-flex !important;
+  }
+
+  .d-flex.justify-content-between,
+  .d-flex.justify-content-center {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+  }
+}
+
+/* ========================================
+   MOBILE RESPONSIVENESS - CONTACT PAGE
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Header - Buttons horizontal */
+  .container-fluid .row:first-child .d-flex,
+  .row.mb-1 .d-flex {
+    flex-direction: row !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+  }
+
+  .container-fluid .row:first-child .btn-group,
+  .row.mb-1 .btn-group {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    width: auto !important;
+    gap: 0.25rem !important;
+  }
+
+  .container-fluid .row:first-child .btn,
+  .row.mb-1 .btn {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    margin: 0.25rem !important;
+  }
+
+  /* Table - Horizontal scroll */
+  .contacts-scroll,
+  .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+  }
+
+  #contactsTable {
+    min-width: 900px !important;
+    width: auto !important;
+  }
+
+  /* Card Header Actions - Horizontal */
+  .card-header .btn-group {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    width: auto !important;
+    margin-top: 0 !important;
+    gap: 0.25rem !important;
+  }
+
+  .card-header .btn-group .btn {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    margin: 0.25rem !important;
+  }
+
+  /* Search and Filter Row - Stack */
+  .card-header .d-flex {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .card-header .input-group {
+    width: 100% !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  /* Pagination - Horizontal */
+  .card-header .btn-group.btn-group-sm,
+  .card-footer .btn-group {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    width: auto !important;
+    gap: 0.25rem !important;
+  }
+
+  .card-header .btn-group .btn,
+  .card-footer .btn-group .btn {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    margin: 0.25rem !important;
+    min-width: auto !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-control,
+  .form-select {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem 0.25rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+/* Header / toolbar & pagination (moved from inline styles in contact.php) */
+.contact-btn-group-wrap,
+.contact-page-controls {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+}
+
+.contact-page-num-group {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  pointer-events: auto !important;
+}
+
+.contact-page-nav-btn {
+  pointer-events: auto !important;
+}
+
+.contact-pagination-row {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.contact-pagination-inner {
+  flex-shrink: 0;
+}
+
+/* Communications page — filter toolbar row (wrap on small screens) */
+.comms-filter-actions {
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+}
