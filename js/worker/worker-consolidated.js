@@ -4266,6 +4266,61 @@ window.saveWorker = async function(event) {
         window.isSavingWorker = false;
         return;
     }
+
+    // Prevent noisy failed requests by validating key workflow fields client-side first.
+    const stageKey = String(workerData.current_stage || '').trim().toLowerCase();
+    const requiredByStage = {
+        identity: ['identity_number', 'identity_date'],
+        passport: ['passport_number', 'passport_date'],
+        police: ['police_number', 'police_date'],
+        medical: ['medical_number', 'medical_date'],
+        technical_training: ['training_certificate_number', 'training_certificate_date'],
+        contract: ['contract_duration'],
+        government: ['government_registration_number'],
+        work_permit: ['work_permit_number'],
+        visa: ['visa_number', 'visa_date'],
+        predeparture_training: ['predeparture_training_completed'],
+        ticket: ['ticket_number', 'ticket_date'],
+        travel: ['travel_date']
+    };
+    const fieldLabels = {
+        identity_number: 'Identity Number',
+        identity_date: 'Identity Date',
+        passport_number: 'Passport Number',
+        passport_date: 'Passport Date',
+        police_number: 'Police Number',
+        police_date: 'Police Date',
+        medical_number: 'Medical Number',
+        medical_date: 'Medical Date',
+        training_certificate_number: 'Training Certificate Number',
+        training_certificate_date: 'Training Certificate Date',
+        contract_duration: 'Contract Duration',
+        government_registration_number: 'Government Registration Number',
+        work_permit_number: 'Work Permit Number',
+        visa_number: 'Visa Number',
+        visa_date: 'Visa Date',
+        ticket_number: 'Ticket Number',
+        ticket_date: 'Ticket Date',
+        travel_date: 'Travel Date'
+    };
+    const stageRequiredFields = requiredByStage[stageKey] || [];
+    if (stageRequiredFields.length > 0) {
+        const missingFields = stageRequiredFields.filter((field) => {
+            const value = workerData[field];
+            return value === undefined || value === null || String(value).trim() === '';
+        });
+        if (missingFields.length > 0) {
+            const labels = missingFields.map((field) => fieldLabels[field] || field.replace(/_/g, ' '));
+            SimpleAlert.show(
+                'Missing Required Fields',
+                `Missing required fields (${labels.length}): ${labels.join(', ')}`,
+                'warning',
+                { notification: true }
+            );
+            window.isSavingWorker = false;
+            return;
+        }
+    }
     
     try {
         const isEdit = workerData.id && workerData.id.trim() !== '';
