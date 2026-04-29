@@ -26,6 +26,11 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
         }
         $apiBase = control_control_api_base_url();
     }
+    // Public Ratib root for shared assets (css/js at site root, not /control-panel).
+    $ratibPublic = function_exists('control_ratib_pro_public_base_url')
+        ? control_ratib_pro_public_base_url()
+        : preg_replace('#/control-panel$#', '', $fullBase);
+    $ratibPublic = rtrim((string) $ratibPublic, '/');
     ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -36,7 +41,7 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo asset('css/control/system.css'); ?>?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars(rtrim($fullBase, '/') . '/css/global-ai-action.css?v=' . time(), ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($ratibPublic . '/css/global-ai-action.css?v=' . time(), ENT_QUOTES, 'UTF-8'); ?>">
     <?php foreach ($additionalCSS as $css):
         $css = (string)$css;
         $cssAbs = (bool)preg_match('#^https?://#i', $css);
@@ -100,7 +105,7 @@ function endControlLayout($additionalJS = []) {
     <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/system.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/header-support-alerts.js'); ?>?v=<?php echo time(); ?>"></script>
-    <script src="<?php echo htmlspecialchars(rtrim($fullBase, '/') . '/js/utils/global-ai-action.js?v=' . time(), ENT_QUOTES, 'UTF-8'); ?>"></script>
+    <script src="<?php echo htmlspecialchars(rtrim((string) (function_exists('control_ratib_pro_public_base_url') ? control_ratib_pro_public_base_url() : preg_replace('#/control-panel$#', '', $fullBase)), '/') . '/js/utils/global-ai-action.js?v=' . time(), ENT_QUOTES, 'UTF-8'); ?>"></script>
     <?php foreach ((array)$additionalJS as $js):
         $js = (string)$js;
         $jsAbs = (bool)preg_match('#^https?://#i', $js);
