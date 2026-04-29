@@ -3,7 +3,5 @@ deployment:
   tasks:
     - "/bin/bash -lc 'if command -v rsync >/dev/null 2>&1; then rsync -a --delete --exclude=.git/ ./ /home/outratib/public_html/; else (tar --exclude=.git -cf - .) | (cd /home/outratib/public_html && tar -xf -); fi'"
     - "/bin/bash -lc 'find /home/outratib/public_html -type d -exec chmod 755 {} \\; && find /home/outratib/public_html -name .htaccess -type f -exec chmod 644 {} \\; && [ -f /home/outratib/public_html/.htaccess ] && chmod 644 /home/outratib/public_html/.htaccess || true'"
-    - "/bin/bash -lc 'printf \"commit=%s\ntime=%s\n\" \"$(git rev-parse --short HEAD 2>/dev/null || echo unknown)\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" > /home/outratib/public_html/deploy-marker.txt'"
     - "/bin/bash -lc 'if [ -d /home/outratib/out.ratib.sa ]; then if command -v rsync >/dev/null 2>&1; then rsync -a --delete --exclude=.git/ ./ /home/outratib/out.ratib.sa/; else (tar --exclude=.git -cf - .) | (cd /home/outratib/out.ratib.sa && tar -xf -); fi; fi'"
     - "/bin/bash -lc 'if [ -d /home/outratib/out.ratib.sa ]; then find /home/outratib/out.ratib.sa -type d -exec chmod 755 {} \\; && find /home/outratib/out.ratib.sa -name .htaccess -type f -exec chmod 644 {} \\; && [ -f /home/outratib/out.ratib.sa/.htaccess ] && chmod 644 /home/outratib/out.ratib.sa/.htaccess || true; fi'"
-    - "/bin/bash -lc 'if [ -d /home/outratib/out.ratib.sa ]; then printf \"commit=%s\ntime=%s\n\" \"$(git rev-parse --short HEAD 2>/dev/null || echo unknown)\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" > /home/outratib/out.ratib.sa/deploy-marker.txt; fi'"
