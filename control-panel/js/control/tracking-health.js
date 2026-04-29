@@ -53,9 +53,12 @@
             var workerLabel = r.worker_name || r.formatted_id || ('#' + r.worker_id);
             var status = String(r.status || '').toLowerCase();
             var badgeClass = status === 'active' ? 'bg-success' : (status === 'inactive' ? 'bg-warning text-dark' : 'bg-danger');
+            var ident = (r.worker_identity != null && String(r.worker_identity).trim() !== '')
+                ? String(r.worker_identity)
+                : '—';
             return '<tr>' +
                 '<td>' + esc(workerLabel) + '</td>' +
-                '<td>' + esc(r.worker_identity || '') + '</td>' +
+                '<td>' + esc(ident) + '</td>' +
                 '<td>' + esc(r.device_id || '') + '</td>' +
                 '<td>' + esc(r.tenant_id || '') + '</td>' +
                 '<td>' + esc(r.agency_name || r.agency_id || '') + '</td>' +
@@ -68,7 +71,14 @@
     function loadHealth() {
         if (refreshBtn) refreshBtn.disabled = true;
         fetch(apiBase + '/worker-tracking.php?action=health', { credentials: 'same-origin' })
-            .then(function (r) { return r.json(); })
+            .then(function (r) {
+                if (!r.ok) {
+                    return r.text().then(function (t) {
+                        throw new Error('HTTP ' + r.status + (t ? ': ' + t.substring(0, 120) : ''));
+                    });
+                }
+                return r.json();
+            })
             .then(function (res) {
                 if (!res.success || !res.data) {
                     throw new Error(res.message || 'Load failed');

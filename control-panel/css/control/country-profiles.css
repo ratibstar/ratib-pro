@@ -1,0 +1,64 @@
+/**
+ * Country Profiles — dark theme aligned with Government Control / tracking pages.
+ */
+#country-profiles-page {
+    color: #e2e8f0;
+}
+
+#country-profiles-page .text-muted {
+    color: rgba(203, 213, 225, 0.75) !important;
+}
+
+#country-profiles-page .gov-card .card-title,
+#country-profiles-page .gov-card h5,
+#country-profiles-page .gov-card h6 {
+    color: #f5f3ff;
+}
+
+#country-profiles-page .gov-form .form-control,
+#country-profiles-page .gov-form textarea {
+    background: rgba(15, 15, 25, 0.88);
+    border-color: rgba(196, 181, 253, 0.28);
+    color: #f1f5f9;
+}
+
+#country-profiles-page .gov-form .form-control::placeholder,
+#country-profiles-page .gov-form textarea::placeholder {
+    color: #94a3b8;
+}
+
+#country-profiles-page .cp-effective-preview {
+    background: rgba(15, 23, 42, 0.92) !important;
+    border: 1px solid rgba(148, 163, 184, 0.35) !important;
+    border-radius: 8px;
+    color: #e2e8f0 !important;
+}
+
+#country-profiles-page .cp-effective-preview .cp-preview-title {
+    color: #c4b5fd;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+#country-profiles-page .cp-effective-preview .cp-preview-line {
+    color: #e2e8f0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    margin-bottom: 0.25rem;
+}
+
+#country-profiles-page .cp-effective-preview .cp-preview-req {
+    word-break: break-word;
+    color: #cbd5e1;
+}
+
+#country-profiles-page .btn-outline-secondary {
+    border-color: rgba(148, 163, 184, 0.45);
+    color: #e2e8f0;
+}
+
+#country-profiles-page .btn-outline-secondary:hover {
+    background: rgba(148, 163, 184, 0.15);
+    border-color: rgba(196, 181, 253, 0.5);
+    color: #fff;
+}

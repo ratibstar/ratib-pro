@@ -51,7 +51,14 @@
     function apiGet(action) {
         var url = apiBase + '/country-profiles.php';
         if (action) url += '?action=' + encodeURIComponent(action);
-        return fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); });
+        return fetch(url, { credentials: 'same-origin' }).then(function (r) {
+            if (!r.ok) {
+                return r.text().then(function (t) {
+                    throw new Error('HTTP ' + r.status);
+                });
+            }
+            return r.json();
+        });
     }
     function apiSave(body) {
         return fetch(apiBase + '/country-profiles.php', {
@@ -66,44 +73,77 @@
         d.textContent = s == null ? '' : String(s);
         return d.innerHTML;
     }
-    function buildPreview(effective) {
-        var labels = (effective && effective.labels) || {};
-        var req = (effective && effective.requirements) || [];
+    function mergeEffectiveForDisplay(slug, previewMap, map) {
+        var d = defaults[slug] || { labels: {}, requirements: [] };
+        var fromPreview = previewMap && previewMap[slug];
+        var fromStore = map && map[slug];
+        var labels = Object.assign({}, d.labels || {}, (fromStore && fromStore.labels) || {}, (fromPreview && fromPreview.labels) || {});
+        var req = [];
+        if (fromPreview && Array.isArray(fromPreview.requirements) && fromPreview.requirements.length) {
+            req = fromPreview.requirements.slice();
+        } else if (fromStore && Array.isArray(fromStore.requirements) && fromStore.requirements.length) {
+            req = fromStore.requirements.slice();
+        } else {
+            req = (d.requirements || []).slice();
+        }
+        return { labels: labels, requirements: req };
+    }
+
+    function buildPreviewMerged(slug, previewMap, map) {
+        var eff = mergeEffectiveForDisplay(slug, previewMap, map);
+        var labels = eff.labels || {};
+        var req = eff.requirements || [];
+        var reqText = req.length ? req.join(', ') : '(built-in default requirement list for this country)';
         return '<div class="col-12 mt-2">' +
-            '<div class="border rounded p-2 bg-dark bg-opacity-10">' +
-            '<div class="small text-muted mb-1">Effective preview (read-only, exactly worker form behavior)</div>' +
-            '<div class="small"><strong>Labels:</strong> government=' + esc(labels.government || '') + ', workPermit=' + esc(labels.workPermit || '') + ', contract=' + esc(labels.contract || '') + ', travel=' + esc(labels.travel || '') + '</div>' +
-            '<div class="small mt-1"><strong>Requirements:</strong> ' + esc(req.join(', ')) + '</div>' +
+            '<div class="cp-effective-preview p-3">' +
+            '<div class="cp-preview-title">Effective preview (read-only — same labels + requirement keys as worker form)</div>' +
+            '<div class="cp-preview-line"><strong>Government</strong> — ' + esc(labels.government || '') + '</div>' +
+            '<div class="cp-preview-line"><strong>Work permit</strong> — ' + esc(labels.workPermit || '') + '</div>' +
+            '<div class="cp-preview-line"><strong>Contract</strong> — ' + esc(labels.contract || '') + '</div>' +
+            '<div class="cp-preview-line"><strong>Travel</strong> — ' + esc(labels.travel || '') + '</div>' +
+            '<div class="cp-preview-line mt-2"><strong>Required fields</strong></div>' +
+            '<div class="cp-preview-req">' + esc(reqText) + '</div>' +
             '</div></div>';
     }
 
-    function buildCard(slug, cfgData, effective) {
+    function buildCard(slug, map, previewMap) {
+        var cfgData = (map && map[slug]) ? map[slug] : defaults[slug];
         var chips = availableRequirementFields.map(function (f) {
-            return '<button type="button" class="btn btn-outline-secondary btn-sm cp-chip me-1 mb-1" data-slug="' + esc(slug) + '" data-field="' + esc(f) + '">' + esc(f) + '</button>';
+            return '<button type="button" class="btn btn-outline-secondary btn-sm cp-chip me-1 mb-1" name="cp-chip-' + esc(slug) + '-' + esc(f) + '" data-slug="' + esc(slug) + '" data-field="' + esc(f) + '">' + esc(f) + '</button>';
         }).join('');
+        var idGov = 'cp-' + slug + '-label-government';
+        var idWp = 'cp-' + slug + '-label-workPermit';
+        var idCt = 'cp-' + slug + '-label-contract';
+        var idTr = 'cp-' + slug + '-label-travel';
+        var idReq = 'cp-' + slug + '-requirements';
         return '<div class="card gov-card"><div class="card-body">' +
             '<div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">' +
                 '<h6 class="mb-0 text-uppercase">' + esc(slug) + '</h6>' +
                 '<div>' +
-                    '<button class="btn btn-sm btn-outline-light cp-load-default me-1" data-slug="' + esc(slug) + '">Import Defaults</button>' +
-                    '<button class="btn btn-sm btn-primary cp-save" data-slug="' + esc(slug) + '">Save</button>' +
+                    '<button type="button" class="btn btn-sm btn-outline-light cp-load-default me-1" name="cp-load-default-' + esc(slug) + '" data-slug="' + esc(slug) + '">Import Defaults</button>' +
+                    '<button type="button" class="btn btn-sm btn-primary cp-save" name="cp-save-' + esc(slug) + '" data-slug="' + esc(slug) + '">Save</button>' +
                 '</div>' +
             '</div>' +
-            '<div class="row g-2">' +
-            '<div class="col-md-3"><input class="form-control form-control-sm cp-label" data-slug="' + esc(slug) + '" data-key="government" value="' + esc((cfgData.labels || {}).government || '') + '" placeholder="Government label"></div>' +
-            '<div class="col-md-3"><input class="form-control form-control-sm cp-label" data-slug="' + esc(slug) + '" data-key="workPermit" value="' + esc((cfgData.labels || {}).workPermit || '') + '" placeholder="Work Permit label"></div>' +
-            '<div class="col-md-3"><input class="form-control form-control-sm cp-label" data-slug="' + esc(slug) + '" data-key="contract" value="' + esc((cfgData.labels || {}).contract || '') + '" placeholder="Contract label"></div>' +
-            '<div class="col-md-3"><input class="form-control form-control-sm cp-label" data-slug="' + esc(slug) + '" data-key="travel" value="' + esc((cfgData.labels || {}).travel || '') + '" placeholder="Travel label"></div>' +
-            '<div class="col-12"><textarea class="form-control form-control-sm cp-req" data-slug="' + esc(slug) + '" rows="2" placeholder="Comma-separated required fields">' + esc((cfgData.requirements || []).join(', ')) + '</textarea></div>' +
-            '<div class="col-12"><div class="small text-muted mb-1">Requirement field picker:</div>' + chips + '</div>' +
-            buildPreview(effective) +
+            '<div class="row g-2 gov-form">' +
+            '<div class="col-md-3"><label class="form-label visually-hidden" for="' + idGov + '">Government label</label>' +
+            '<input type="text" class="form-control form-control-sm cp-label" id="' + idGov + '" name="cp-label-' + esc(slug) + '-government" autocomplete="off" data-slug="' + esc(slug) + '" data-key="government" value="' + esc((cfgData.labels || {}).government || '') + '" placeholder="Government label"></div>' +
+            '<div class="col-md-3"><label class="form-label visually-hidden" for="' + idWp + '">Work permit label</label>' +
+            '<input type="text" class="form-control form-control-sm cp-label" id="' + idWp + '" name="cp-label-' + esc(slug) + '-workPermit" autocomplete="off" data-slug="' + esc(slug) + '" data-key="workPermit" value="' + esc((cfgData.labels || {}).workPermit || '') + '" placeholder="Work Permit label"></div>' +
+            '<div class="col-md-3"><label class="form-label visually-hidden" for="' + idCt + '">Contract label</label>' +
+            '<input type="text" class="form-control form-control-sm cp-label" id="' + idCt + '" name="cp-label-' + esc(slug) + '-contract" autocomplete="off" data-slug="' + esc(slug) + '" data-key="contract" value="' + esc((cfgData.labels || {}).contract || '') + '" placeholder="Contract label"></div>' +
+            '<div class="col-md-3"><label class="form-label visually-hidden" for="' + idTr + '">Travel label</label>' +
+            '<input type="text" class="form-control form-control-sm cp-label" id="' + idTr + '" name="cp-label-' + esc(slug) + '-travel" autocomplete="off" data-slug="' + esc(slug) + '" data-key="travel" value="' + esc((cfgData.labels || {}).travel || '') + '" placeholder="Travel label"></div>' +
+            '<div class="col-12"><label class="form-label small text-muted" for="' + idReq + '">Comma-separated required field keys</label>' +
+            '<textarea class="form-control form-control-sm cp-req" id="' + idReq + '" name="cp-req-' + esc(slug) + '" rows="3" spellcheck="false" data-slug="' + esc(slug) + '" placeholder="e.g. full_name, gender, agent_id">' + esc((cfgData.requirements || []).join(', ')) + '</textarea></div>' +
+            '<div class="col-12"><div class="small text-muted mb-1">Requirement field picker</div>' + chips + '</div>' +
+            buildPreviewMerged(slug, previewMap, map) +
             '</div></div></div>';
     }
 
     function render(map, previewMap) {
         var html = '';
         Object.keys(defaults).forEach(function (slug) {
-            html += buildCard(slug, map[slug] || defaults[slug], (previewMap && previewMap[slug]) || map[slug] || defaults[slug]);
+            html += buildCard(slug, map, previewMap || {});
         });
         wrap.innerHTML = html;
     }

@@ -12,17 +12,14 @@ if (empty($_SESSION['control_logged_in'])) {
 requireControlPermission(CONTROL_PERM_GOVERNMENT, 'view_control_government', 'gov_admin', CONTROL_PERM_ADMINS);
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
-startControlLayout('Tracking Health', ['css/control/tracking-health.css'], []);
+startControlLayout('Tracking Health', ['css/control/government.css', 'css/control/tracking-health.css'], []);
 ?>
 <div id="tracking-health-page">
-    <div class="card gov-card mb-3">
-        <div class="card-body">
+    <div class="card gov-card mb-3 tracking-health-intro">
+        <div class="card-body py-3">
             <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <div>
-                    <h5 class="card-title mb-1">Tracking Health</h5>
-                    <p class="text-muted mb-0">Live operational status for onboarding, sessions, devices, and alerts.</p>
-                </div>
-                <button type="button" class="btn btn-sm btn-outline-primary" id="trackingHealthRefreshBtn">Refresh</button>
+                <p class="mb-0 tracking-health-lead">Live operational status for onboarding, sessions, devices, and alerts.</p>
+                <button type="button" class="btn btn-sm btn-outline-light" id="trackingHealthRefreshBtn">Refresh</button>
             </div>
         </div>
     </div>

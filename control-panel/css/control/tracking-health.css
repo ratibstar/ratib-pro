@@ -1,3 +1,17 @@
+#tracking-health-page {
+    color: #e2e8f0;
+}
+
+#tracking-health-page .text-muted {
+    color: rgba(203, 213, 225, 0.8) !important;
+}
+
+.tracking-health-intro .tracking-health-lead {
+    color: #cbd5e1;
+    font-size: 0.95rem;
+    max-width: 48rem;
+}
+
 .tracking-health-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -14,6 +28,7 @@
 .tracking-health-card .label {
     font-size: 12px;
     opacity: 0.85;
+    color: #cbd5e1;
 }
 
 .tracking-health-card .value {
@@ -21,6 +36,11 @@
     font-size: 22px;
     font-weight: 700;
     line-height: 1.1;
+    color: #f8fafc;
+}
+
+.tracking-health-card.tone-base {
+    border-color: rgba(129, 140, 248, 0.35);
 }
 
 .tracking-health-card.tone-ok {
@@ -33,4 +53,16 @@
 
 .tracking-health-card.tone-danger {
     border-color: rgba(239, 68, 68, 0.45);
+}
+
+#tracking-health-page #trackingHealthFlash.alert-success {
+    background: rgba(22, 101, 52, 0.35);
+    border-color: rgba(34, 197, 94, 0.45);
+    color: #bbf7d0;
+}
+
+#tracking-health-page #trackingHealthFlash.alert-danger {
+    background: rgba(127, 29, 29, 0.35);
+    border-color: rgba(248, 113, 113, 0.45);
+    color: #fecaca;
 }
