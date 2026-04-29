@@ -71,16 +71,16 @@ function tracking_extract_token(): string
 
 function tracking_event_recent(PDO $controlPdo, string $eventType, int $workerId, int $minutes): bool
 {
+    $minutes = max(1, (int) $minutes);
     $sql = "SELECT id FROM system_events
             WHERE event_type = :et
               AND metadata LIKE :metaLike
-              AND created_at >= DATE_SUB(NOW(), INTERVAL :mins MINUTE)
+              AND created_at >= DATE_SUB(NOW(), INTERVAL {$minutes} MINUTE)
             ORDER BY id DESC
             LIMIT 1";
     $st = $controlPdo->prepare($sql);
     $st->bindValue(':et', $eventType);
     $st->bindValue(':metaLike', '%"worker_id":' . $workerId . '%');
-    $st->bindValue(':mins', max(1, $minutes), PDO::PARAM_INT);
     $st->execute();
     return (bool) $st->fetchColumn();
 }
@@ -533,18 +533,16 @@ try {
                  (worker_id, tenant_id, lat, lng, accuracy, speed, status, battery, source, recorded_at, created_at)
                  SELECT worker_id, tenant_id, lat, lng, accuracy, speed, status, battery, source, recorded_at, created_at
                  FROM worker_locations
-                 WHERE recorded_at < DATE_SUB(NOW(), INTERVAL :d DAY)
+                 WHERE recorded_at < DATE_SUB(NOW(), INTERVAL {$archiveDays} DAY)
                  ORDER BY id ASC
                  LIMIT 3000"
             );
-            $copy->bindValue(':d', $archiveDays, PDO::PARAM_INT);
             $copy->execute();
             $del = $controlPdo->prepare(
                 "DELETE FROM worker_locations
-                 WHERE recorded_at < DATE_SUB(NOW(), INTERVAL :d DAY)
+                 WHERE recorded_at < DATE_SUB(NOW(), INTERVAL {$archiveDays} DAY)
                  LIMIT 3000"
             );
-            $del->bindValue(':d', $archiveDays, PDO::PARAM_INT);
             $del->execute();
         }
 
