@@ -286,6 +286,22 @@ const EXPORT_HTML_CSS = `
     `;
 
 document.addEventListener('DOMContentLoaded', function() {
+    function getCountryProfile() {
+        if (typeof window.RATIB_COUNTRY_PROFILE === 'string' && window.RATIB_COUNTRY_PROFILE.trim()) {
+            return window.RATIB_COUNTRY_PROFILE.trim().toLowerCase();
+        }
+        const config = document.getElementById('app-config');
+        const text = [
+            config?.getAttribute('data-country-name'),
+            config?.getAttribute('data-country-code')
+        ].map(value => String(value || '').toLowerCase()).join(' ');
+        if (text.includes('indonesia') || text.includes('indonesian') || /\bidn?\b/.test(text)) return 'indonesia';
+        if (text.includes('bangladesh') || /\bbd\b/.test(text)) return 'bangladesh';
+        if (text.includes('sri lanka') || text.includes('srilanka') || /\blk\b/.test(text)) return 'sri_lanka';
+        if (text.includes('kenya') || /\bke\b/.test(text)) return 'kenya';
+        return 'default';
+    }
+
     function getWorkflowStages() {
         const rows = document.querySelectorAll('#workerForm [data-workflow-stage]');
         const unique = [];
@@ -297,12 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function isIndonesiaProgramContext() {
-        const config = document.getElementById('app-config');
-        const text = [
-            config?.getAttribute('data-country-name'),
-            config?.getAttribute('data-country-code')
-        ].map(value => String(value || '').toLowerCase()).join(' ');
-        return text.includes('indonesia') || text.includes('indonesian') || /\bidn?\b/.test(text);
+        return getCountryProfile() === 'indonesia';
     }
 
     function updateIndonesiaComplianceVisibility() {
@@ -322,6 +333,184 @@ document.addEventListener('DOMContentLoaded', function() {
                 'option[value="training_certificate"]'
             ).forEach(el => el.remove());
         }
+    }
+
+    function applyCountrySpecificWorkerLabels() {
+        const profile = getCountryProfile();
+        const labelsByProfile = {
+            indonesia: {
+                government: 'Government Approval',
+                workPermit: 'Exit Permit',
+                contract: 'Signed Contract',
+                travel: 'Travel Readiness'
+            },
+            bangladesh: {
+                government: 'BMET Registration',
+                workPermit: 'Work Permit',
+                contract: 'Overseas Contract',
+                travel: 'Travel Clearance'
+            },
+            sri_lanka: {
+                government: 'SLBFE Registration',
+                workPermit: 'Work Permit',
+                contract: 'Employment Contract',
+                travel: 'Departure Clearance'
+            },
+            kenya: {
+                government: 'NITA Registration',
+                workPermit: 'Work Permit',
+                contract: 'Employment Contract',
+                travel: 'Travel Clearance'
+            },
+            default: {
+                government: 'Government Registration',
+                workPermit: 'Work Permit',
+                contract: 'Contract',
+                travel: 'Travel & Departure'
+            }
+        };
+        const labelsOverride = window.RATIB_COUNTRY_PROFILE_CONFIG && window.RATIB_COUNTRY_PROFILE_CONFIG.labels
+            ? window.RATIB_COUNTRY_PROFILE_CONFIG.labels
+            : null;
+        const labels = labelsOverride || labelsByProfile[profile] || labelsByProfile.default;
+        const labelTargets = [
+            ['.doc-row.country-compliance[data-workflow-stage="government"] .form-label', labels.government],
+            ['.doc-row.country-compliance[data-workflow-stage="work_permit"] .form-label', labels.workPermit],
+            ['.doc-row.contract-compliance[data-workflow-stage="contract"] .form-label', labels.contract],
+            ['.doc-row.contract-compliance[data-workflow-stage="travel"] .form-label', labels.travel]
+        ];
+        labelTargets.forEach(function (entry) {
+            document.querySelectorAll(entry[0]).forEach(function (el) {
+                el.textContent = entry[1];
+            });
+        });
+    }
+
+    function getCountrySpecificRequirements(profile) {
+        if (window.RATIB_COUNTRY_PROFILE_CONFIG
+            && Array.isArray(window.RATIB_COUNTRY_PROFILE_CONFIG.requirements)
+            && window.RATIB_COUNTRY_PROFILE_CONFIG.requirements.length > 0) {
+            return window.RATIB_COUNTRY_PROFILE_CONFIG.requirements.map(function (x) { return String(x || '').trim(); }).filter(Boolean);
+        }
+        const common = [
+            'full_name',
+            'gender',
+            'agent_id',
+            'identity_number',
+            'passport_number',
+            'police_number',
+            'medical_number',
+            'visa_number',
+            'ticket_number'
+        ];
+        const byCountry = {
+            indonesia: [
+                'training_certificate_number',
+                'contract_signed_number',
+                'insurance_number',
+                'exit_permit_number',
+                'approval_reference_id'
+            ],
+            bangladesh: [
+                'government_registration_number',
+                'work_permit_number',
+                'insurance_policy_number',
+                'salary',
+                'contract_duration',
+                'flight_ticket_number',
+                'predeparture_training_completed',
+                'contract_verified'
+            ],
+            sri_lanka: [
+                'government_registration_number',
+                'work_permit_number',
+                'insurance_policy_number',
+                'salary',
+                'contract_duration',
+                'flight_ticket_number',
+                'predeparture_training_completed',
+                'contract_verified'
+            ],
+            kenya: [
+                'government_registration_number',
+                'work_permit_number',
+                'insurance_policy_number',
+                'salary',
+                'contract_duration',
+                'flight_ticket_number',
+                'predeparture_training_completed',
+                'contract_verified'
+            ],
+            default: [
+                'government_registration_number',
+                'work_permit_number'
+            ]
+        };
+        return common.concat(byCountry[profile] || byCountry.default);
+    }
+
+    function applyCountrySpecificRequirements() {
+        const profile = getCountryProfile();
+        const requiredNames = getCountrySpecificRequirements(profile);
+        const allCandidates = document.querySelectorAll('#workerForm [name]');
+        allCandidates.forEach(function (el) {
+            const name = String(el.getAttribute('name') || '').trim();
+            if (!name) return;
+            // Preserve explicit required in markup for core fields.
+            if (el.hasAttribute('data-base-required')) return;
+            if (el.hasAttribute('required')) {
+                el.setAttribute('data-base-required', '1');
+            }
+        });
+        allCandidates.forEach(function (el) {
+            const name = String(el.getAttribute('name') || '').trim();
+            if (!name) return;
+            const isBaseRequired = el.getAttribute('data-base-required') === '1';
+            const shouldRequire = requiredNames.includes(name) || isBaseRequired;
+            if (shouldRequire) {
+                el.setAttribute('required', 'required');
+            } else {
+                el.removeAttribute('required');
+            }
+        });
+    }
+
+    function mountCountryRequirementsPanel() {
+        const form = document.getElementById('workerForm');
+        if (!form) return;
+        if (form.querySelector('#countryRequirementsPanel')) return;
+        const panel = document.createElement('div');
+        panel.id = 'countryRequirementsPanel';
+        panel.className = 'alert alert-info mb-3';
+        panel.innerHTML = '<strong>Country Requirements</strong><div id="countryRequirementsList" class="small mt-2"></div>';
+        const content = form.querySelector('.form-content');
+        if (content) {
+            form.insertBefore(panel, content);
+        } else {
+            form.prepend(panel);
+        }
+    }
+
+    function updateCountryRequirementsPanelLive() {
+        const form = document.getElementById('workerForm');
+        if (!form) return;
+        const listEl = document.getElementById('countryRequirementsList');
+        if (!listEl) return;
+        const profile = getCountryProfile();
+        const req = getCountrySpecificRequirements(profile);
+        const missing = [];
+        req.forEach(function (name) {
+            const el = form.querySelector('[name="' + name + '"]');
+            if (!el) return;
+            const val = (el.value || '').toString().trim();
+            if (!val) missing.push(name);
+        });
+        const doneCount = Math.max(0, req.length - missing.length);
+        listEl.innerHTML =
+            '<div><span class="badge bg-primary">Profile: ' + profile + '</span> ' +
+            '<span class="badge bg-success ms-1">Done: ' + doneCount + '/' + req.length + '</span> ' +
+            '<span class="badge bg-danger ms-1">Missing: ' + missing.length + '</span></div>' +
+            (missing.length ? ('<div class="mt-1">Missing fields: ' + missing.join(', ') + '</div>') : '<div class="mt-1 text-success">All required country fields are completed.</div>');
     }
 
     window.updateIndonesiaComplianceVisibility = updateIndonesiaComplianceVisibility;
@@ -401,6 +590,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (fill) fill.style.width = `${progress}%`;
         if (text) text.textContent = `${progress}%`;
     }
+
+    applyCountrySpecificWorkerLabels();
+    applyCountrySpecificRequirements();
+    mountCountryRequirementsPanel();
+    updateCountryRequirementsPanelLive();
 
     // Function to setup custom job title dropdown
     function setupCustomJobTitleDropdown() {
@@ -724,6 +918,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }, true);
+
+        // Keep country requirement panel live with any value changes.
+        workerForm.addEventListener('input', function () {
+            updateCountryRequirementsPanelLive();
+        });
+        workerForm.addEventListener('change', function () {
+            updateCountryRequirementsPanelLive();
+        });
     }
     
     // Function to actually close the form (called after confirmation)

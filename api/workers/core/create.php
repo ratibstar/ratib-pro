@@ -29,6 +29,7 @@ require_once $responsePath;
 require_once __DIR__ . '/../../core/api-permission-helper.php';
 require_once __DIR__ . '/../indonesia-compliance-helper.php';
 require_once __DIR__ . '/../workflow-engine.php';
+require_once __DIR__ . '/country-profile-enforcement.php';
 
 // EN: Permission gate: only users with worker-create access can proceed.
 // AR: بوابة صلاحيات: يسمح فقط لمن يملك صلاحية إنشاء العمال بالمتابعة.
@@ -87,6 +88,9 @@ try {
     if (empty($data['nationality'])) {
         $data['nationality'] = 'Not specified';
     }
+
+    // Enforce country profile requirements on backend (not UI only).
+    ratib_enforce_country_requirements($data, null);
 
     $isIndonesiaWorker = ratib_worker_is_indonesia_payload([
         'country' => (string)($data['country'] ?? ''),
@@ -324,6 +328,23 @@ try {
         throw $e;
     }
 
+} catch (CountryProfileValidationException $e) {
+    error_log('Worker create country profile validation: ' . $e->getMessage());
+    ob_clean();
+    if (function_exists('sendResponse')) {
+        sendResponse([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 422);
+    } else {
+        http_response_code(422);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+        exit;
+    }
 } catch (Exception $e) {
     error_log('Error in create.php: ' . $e->getMessage());
     error_log('Stack trace: ' . $e->getTraceAsString());

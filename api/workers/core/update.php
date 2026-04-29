@@ -26,6 +26,7 @@ if (!file_exists($responsePath)) {
 require_once $responsePath;
 require_once __DIR__ . '/../indonesia-compliance-helper.php';
 require_once __DIR__ . '/../workflow-engine.php';
+require_once __DIR__ . '/country-profile-enforcement.php';
 
 // EN: Main update workflow with validation, normalization, persistence, and history logging.
 // AR: مسار التحديث الرئيسي: تحقق، توحيد بيانات، حفظ، وتسجيل تاريخ التغيير.
@@ -73,6 +74,9 @@ try {
     if (!$oldWorker) {
         throw new Exception('Worker not found');
     }
+
+    // Enforce country profile requirements against merged old+new payload.
+    ratib_enforce_country_requirements($data, $oldWorker);
 
     $mergedWorkerContext = array_merge($oldWorker, [
         'country' => (string)($data['country'] ?? ($oldWorker['country'] ?? '')),
@@ -200,10 +204,6 @@ try {
             } else {
                 $params[] = $value;
             }
-        } else if ($field === 'status' && isset($workerColumnLookup['status'])) {
-            // If status field is missing from data, add it with default value
-            $updateFields[] = "status = ?";
-            $params[] = 'pending';
         }
     }
 
@@ -266,6 +266,23 @@ try {
         'data' => $worker
     ]);
 
+} catch (CountryProfileValidationException $e) {
+    error_log("Worker update country profile validation: " . $e->getMessage());
+    ob_clean();
+    if (function_exists('sendResponse')) {
+        sendResponse([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 422);
+    } else {
+        http_response_code(422);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => $e->getMessage()
+        ]);
+        exit;
+    }
 } catch (Exception $e) {
     error_log("Worker update error: " . $e->getMessage());
     error_log('Stack trace: ' . $e->getTraceAsString());

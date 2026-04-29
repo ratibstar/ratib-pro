@@ -19,7 +19,7 @@ startControlLayout('Worker Mobile Onboarding', ['css/control/tracking-onboarding
     <div class="card gov-card">
         <div class="card-body">
             <div class="row g-2">
-                <div class="col-md-3"><input id="onbWorkerId" class="form-control form-control-sm" type="text" placeholder="Worker ID (e.g. 2 or W0002)"></div>
+                <div class="col-md-3"><input id="onbWorkerId" class="form-control form-control-sm" type="text" placeholder="Worker ID / code / name (e.g. 2, W0002, Ahmed)"></div>
                 <div class="col-md-3"><input id="onbTenantId" class="form-control form-control-sm" type="number" placeholder="Tenant ID (optional)"></div>
                 <div class="col-md-3"><input id="onbDeviceId" class="form-control form-control-sm" type="text" placeholder="Device ID (optional)"></div>
                 <div class="col-md-3"><input id="onbIdentity" class="form-control form-control-sm" type="text" placeholder="Identity (optional)"></div>

@@ -113,8 +113,9 @@
         if (!tableBody) return;
         tableBody.innerHTML = latestRows.map(function (row) {
             var s = normalizedStatus(row);
+            var workerLabel = row.worker_name || row.formatted_id || ('#' + row.worker_id);
             return '<tr>' +
-                '<td>#' + esc(row.worker_id) + '</td>' +
+                '<td>' + esc(workerLabel) + '</td>' +
                 '<td>' + esc(row.worker_identity || '') + '</td>' +
                 '<td>' + esc(row.tenant_id) + '</td>' +
                 '<td>' + esc(row.agency_name || row.agency_id || '') + '</td>' +
@@ -177,7 +178,7 @@
                 weight: 2
             }).addTo(map);
             marker.bindPopup(
-                '<strong>Worker #' + esc(row.worker_id) + '</strong><br>' +
+                '<strong>Worker: ' + esc(row.worker_name || row.formatted_id || ('#' + row.worker_id)) + '</strong><br>' +
                 'Identity: ' + esc(row.worker_identity || '-') + '<br>' +
                 'Tenant: ' + esc(row.tenant_id) + '<br>' +
                 'Agency: ' + esc(row.agency_name || row.agency_id || '') + '<br>' +

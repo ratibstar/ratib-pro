@@ -57,6 +57,64 @@ function control_tracking_resolve_worker_ids_by_search(string $search, int $limi
     return $ids;
 }
 
+function control_tracking_enrich_rows_with_worker_info(array $rows): array
+{
+    if ($rows === []) {
+        return $rows;
+    }
+    $conn = $GLOBALS['conn'] ?? null;
+    if (!($conn instanceof mysqli)) {
+        return $rows;
+    }
+    $ids = [];
+    foreach ($rows as $row) {
+        $wid = (int) ($row['worker_id'] ?? 0);
+        if ($wid > 0) {
+            $ids[$wid] = true;
+        }
+    }
+    if ($ids === []) {
+        return $rows;
+    }
+    $idList = array_keys($ids);
+    $idSql = implode(',', array_map('intval', $idList));
+    if ($idSql === '') {
+        return $rows;
+    }
+    $meta = [];
+    $q = $conn->query(
+        "SELECT id, worker_name, formatted_id, country
+         FROM workers
+         WHERE status != 'deleted' AND id IN ({$idSql})"
+    );
+    if ($q) {
+        while ($r = $q->fetch_assoc()) {
+            $wid = (int) ($r['id'] ?? 0);
+            if ($wid > 0) {
+                $meta[$wid] = [
+                    'worker_name' => (string) ($r['worker_name'] ?? ''),
+                    'formatted_id' => (string) ($r['formatted_id'] ?? ''),
+                    'worker_country' => (string) ($r['country'] ?? ''),
+                ];
+            }
+        }
+    }
+    foreach ($rows as &$row) {
+        $wid = (int) ($row['worker_id'] ?? 0);
+        if ($wid > 0 && isset($meta[$wid])) {
+            $row['worker_name'] = $meta[$wid]['worker_name'];
+            $row['formatted_id'] = $meta[$wid]['formatted_id'];
+            $row['worker_country'] = $meta[$wid]['worker_country'];
+        } else {
+            $row['worker_name'] = $row['worker_name'] ?? '';
+            $row['formatted_id'] = $row['formatted_id'] ?? '';
+            $row['worker_country'] = $row['worker_country'] ?? '';
+        }
+    }
+    unset($row);
+    return $rows;
+}
+
 if (empty($_SESSION['control_logged_in'])) {
     control_tracking_json(['success' => false, 'message' => 'Unauthorized'], 401);
 }
@@ -150,7 +208,9 @@ try {
                 LIMIT {$limit}";
         $st = $controlPdo->prepare($sql);
         $st->execute($params);
-        control_tracking_json(['success' => true, 'data' => $st->fetchAll(PDO::FETCH_ASSOC)]);
+        $rows = $st->fetchAll(PDO::FETCH_ASSOC);
+        $rows = control_tracking_enrich_rows_with_worker_info($rows);
+        control_tracking_json(['success' => true, 'data' => $rows]);
     }
 
     if ($action === 'alerts') {
@@ -259,6 +319,84 @@ try {
         $ins->bindValue(':created_by', isset($_SESSION['control_user_id']) ? (int) $_SESSION['control_user_id'] : null, isset($_SESSION['control_user_id']) ? PDO::PARAM_INT : PDO::PARAM_NULL);
         $ins->execute();
         control_tracking_json(['success' => true, 'message' => 'Geofence created', 'data' => ['id' => (int) $controlPdo->lastInsertId()]]);
+    }
+
+    if ($action === 'health') {
+        $summary = [
+            'sessions_total' => 0,
+            'sessions_active' => 0,
+            'sessions_inactive' => 0,
+            'sessions_lost' => 0,
+            'devices_total' => 0,
+            'devices_active' => 0,
+            'devices_seen_24h' => 0,
+            'locations_24h' => 0,
+            'sos_24h' => 0,
+            'anomalies_24h' => 0,
+        ];
+        $row = $controlPdo->query(
+            "SELECT
+                COUNT(*) AS sessions_total,
+                SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS sessions_active,
+                SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) AS sessions_inactive,
+                SUM(CASE WHEN status = 'lost' THEN 1 ELSE 0 END) AS sessions_lost
+             FROM worker_tracking_sessions"
+        )->fetch(PDO::FETCH_ASSOC);
+        if (is_array($row)) {
+            foreach ($summary as $k => $v) {
+                if (isset($row[$k])) $summary[$k] = (int) $row[$k];
+            }
+        }
+        $rowDev = $controlPdo->query(
+            "SELECT
+                COUNT(*) AS devices_total,
+                SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS devices_active,
+                SUM(CASE WHEN last_seen >= DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 ELSE 0 END) AS devices_seen_24h
+             FROM worker_tracking_devices"
+        )->fetch(PDO::FETCH_ASSOC);
+        if (is_array($rowDev)) {
+            $summary['devices_total'] = (int) ($rowDev['devices_total'] ?? 0);
+            $summary['devices_active'] = (int) ($rowDev['devices_active'] ?? 0);
+            $summary['devices_seen_24h'] = (int) ($rowDev['devices_seen_24h'] ?? 0);
+        }
+        $summary['locations_24h'] = (int) ($controlPdo->query(
+            "SELECT COUNT(*) FROM worker_locations WHERE recorded_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
+        )->fetchColumn() ?: 0);
+        $summary['sos_24h'] = (int) ($controlPdo->query(
+            "SELECT COUNT(*) FROM system_events WHERE event_type = 'WORKER_SOS' AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
+        )->fetchColumn() ?: 0);
+        $summary['anomalies_24h'] = (int) ($controlPdo->query(
+            "SELECT COUNT(*) FROM system_events
+             WHERE event_type IN ('WORKER_ANOMALY','WORKER_FAKE_GPS','WORKER_GPS_SPOOF_DETECTED','WORKER_GPS_SPOOF_CONFIRMED')
+               AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
+        )->fetchColumn() ?: 0);
+
+        $latestSql = "SELECT s.worker_id, s.tenant_id, s.last_seen, s.status,
+                             s.last_lat AS lat, s.last_lng AS lng, s.last_speed AS speed, s.last_battery AS battery,
+                             d.worker_identity, d.device_id,
+                             ca.id AS agency_id, ca.name AS agency_name
+                      FROM worker_tracking_sessions s
+                      LEFT JOIN control_agencies ca ON ca.tenant_id = s.tenant_id
+                      LEFT JOIN (
+                          SELECT worker_id, tenant_id, MAX(id) AS latest_device_id
+                          FROM worker_tracking_devices
+                          WHERE is_active = 1
+                          GROUP BY worker_id, tenant_id
+                      ) dlast ON dlast.worker_id = s.worker_id AND dlast.tenant_id = s.tenant_id
+                      LEFT JOIN worker_tracking_devices d ON d.id = dlast.latest_device_id
+                      ORDER BY s.last_seen DESC
+                      LIMIT 120";
+        $stLatest = $controlPdo->query($latestSql);
+        $latestRows = $stLatest ? $stLatest->fetchAll(PDO::FETCH_ASSOC) : [];
+        $latestRows = control_tracking_enrich_rows_with_worker_info($latestRows);
+
+        control_tracking_json([
+            'success' => true,
+            'data' => [
+                'summary' => $summary,
+                'latest' => $latestRows,
+            ],
+        ]);
     }
 
     control_tracking_json(['success' => false, 'message' => 'Unknown action'], 404);

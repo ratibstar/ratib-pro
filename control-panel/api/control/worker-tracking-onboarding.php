@@ -215,6 +215,134 @@ function onboard_worker_exists_current_db(int $workerId, string $workerCode): ?i
     }
 }
 
+function onboard_resolve_worker_id_by_text_current_db(string $text): ?int
+{
+    $q = trim((string) $text);
+    if ($q === '') {
+        return null;
+    }
+    $like = '%' . $q . '%';
+    $mysqli = $GLOBALS['conn'] ?? null;
+    if ($mysqli instanceof mysqli) {
+        try {
+            $st = $mysqli->prepare(
+                "SELECT id
+                 FROM workers
+                 WHERE status != 'deleted'
+                   AND (worker_name LIKE ? OR formatted_id LIKE ? OR CAST(id AS CHAR) = ?)
+                 ORDER BY id DESC
+                 LIMIT 1"
+            );
+            if ($st) {
+                $st->bind_param('sss', $like, $like, $q);
+                $st->execute();
+                $row = $st->get_result()->fetch_assoc();
+                $st->close();
+                if (!empty($row['id'])) {
+                    return (int) $row['id'];
+                }
+            }
+        } catch (Throwable $e) {
+            // Continue to PDO fallback.
+        }
+    }
+    try {
+        if (!class_exists('Database') || !method_exists('Database', 'getInstance')) {
+            return null;
+        }
+        $appPdo = Database::getInstance()->getConnection();
+        if (!$appPdo instanceof PDO) {
+            return null;
+        }
+        $st = $appPdo->prepare(
+            "SELECT id
+             FROM workers
+             WHERE status != 'deleted'
+               AND (worker_name LIKE :like OR formatted_id LIKE :like OR CAST(id AS CHAR) = :idstr)
+             ORDER BY id DESC
+             LIMIT 1"
+        );
+        $st->bindValue(':like', $like);
+        $st->bindValue(':idstr', $q);
+        $st->execute();
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        return $row ? (int) ($row['id'] ?? 0) : null;
+    } catch (Throwable $e) {
+        return null;
+    }
+}
+
+function onboard_resolve_tenant_and_worker_by_text(PDO $controlPdo, string $text): ?array
+{
+    $q = trim((string) $text);
+    if ($q === '') {
+        return null;
+    }
+    $like = '%' . $q . '%';
+    $st = $controlPdo->prepare(
+        "SELECT id, tenant_id, db_host, db_port, db_user, db_pass, db_name
+         FROM control_agencies
+         WHERE is_active = 1
+           AND tenant_id IS NOT NULL
+           AND tenant_id > 0
+           AND db_name IS NOT NULL
+           AND db_name <> ''
+         ORDER BY id ASC
+         LIMIT 300"
+    );
+    $st->execute();
+    $agencies = $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    foreach ($agencies as $a) {
+        $dbHost = trim((string) ($a['db_host'] ?? ''));
+        $dbPort = (int) ($a['db_port'] ?? 3306);
+        $dbUser = (string) ($a['db_user'] ?? '');
+        $dbPass = (string) ($a['db_pass'] ?? '');
+        $dbName = trim((string) ($a['db_name'] ?? ''));
+        if ($dbName === '') {
+            continue;
+        }
+        if ($dbHost === '') {
+            $dbHost = defined('DB_HOST') ? DB_HOST : 'localhost';
+        }
+        try {
+            $pdo = new PDO(
+                sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $dbHost, $dbPort > 0 ? $dbPort : 3306, $dbName),
+                $dbUser !== '' ? $dbUser : (defined('DB_USER') ? DB_USER : ''),
+                $dbPass !== '' ? $dbPass : (defined('DB_PASS') ? DB_PASS : ''),
+                [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES => false,
+                    PDO::ATTR_TIMEOUT => 2,
+                ]
+            );
+            $w = $pdo->prepare(
+                "SELECT id
+                 FROM workers
+                 WHERE status != 'deleted'
+                   AND (worker_name LIKE :like OR formatted_id LIKE :like OR CAST(id AS CHAR) = :idstr)
+                 ORDER BY id DESC
+                 LIMIT 1"
+            );
+            $w->bindValue(':like', $like);
+            $w->bindValue(':idstr', $q);
+            $w->execute();
+            $found = $w->fetch(PDO::FETCH_ASSOC);
+            if ($found) {
+                return [
+                    'tenant_id' => (int) ($a['tenant_id'] ?? 0),
+                    'agency_id' => (int) ($a['id'] ?? 0),
+                    'db_name' => $dbName,
+                    'worker_id' => (int) ($found['id'] ?? 0),
+                ];
+            }
+        } catch (Throwable $e) {
+            continue;
+        }
+    }
+    return null;
+}
+
 if (empty($_SESSION['control_logged_in'])) {
     onboard_json(['success' => false, 'message' => 'Unauthorized'], 401);
 }
@@ -238,9 +366,6 @@ try {
     $workerRaw = (string) ($payload['worker_id'] ?? '');
     $workerId = onboard_normalize_worker_id($workerRaw);
     $workerCode = onboard_worker_formatted_code($workerRaw);
-    if ($workerId <= 0) {
-        onboard_json(['success' => false, 'message' => 'worker_id required (accepts numeric ID or code like W0002)'], 422);
-    }
 
     $tenantId = isset($payload['tenant_id']) ? (int) $payload['tenant_id'] : 0;
     $controlPdo = getControlDB();
@@ -256,7 +381,7 @@ try {
             $tenantId = (int) ($row['tenant_id'] ?? 0);
         }
     }
-    if ($tenantId <= 0) {
+    if ($workerId > 0 && $tenantId <= 0) {
         $auto = onboard_resolve_tenant_by_worker($controlPdo, $workerId, $workerCode);
         if (is_array($auto) && (int) ($auto['tenant_id'] ?? 0) > 0) {
             $tenantId = (int) $auto['tenant_id'];
@@ -264,6 +389,25 @@ try {
                 $workerId = (int) $auto['worker_id'];
             }
         }
+    }
+    if ($workerId <= 0) {
+        $resolvedCurrentByText = onboard_resolve_worker_id_by_text_current_db($workerRaw);
+        if ($resolvedCurrentByText !== null && $resolvedCurrentByText > 0) {
+            $workerId = (int) $resolvedCurrentByText;
+            $workerCode = onboard_worker_formatted_code((string) $workerId);
+        } else {
+            $autoByText = onboard_resolve_tenant_and_worker_by_text($controlPdo, $workerRaw);
+            if (is_array($autoByText) && (int) ($autoByText['worker_id'] ?? 0) > 0) {
+                $workerId = (int) $autoByText['worker_id'];
+                $workerCode = onboard_worker_formatted_code((string) $workerId);
+                if ($tenantId <= 0 && (int) ($autoByText['tenant_id'] ?? 0) > 0) {
+                    $tenantId = (int) $autoByText['tenant_id'];
+                }
+            }
+        }
+    }
+    if ($workerId <= 0) {
+        onboard_json(['success' => false, 'message' => 'worker_id required (accepts ID, code like W0002, or worker name)'], 422);
     }
     if ($tenantId <= 0) {
         $tenantId = onboard_resolve_tenant_fallback($controlPdo);

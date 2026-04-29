@@ -52,6 +52,39 @@ $programCountryText = strtolower(implode(' ', [
 $isIndonesiaProgram = strpos($programCountryText, 'indonesia') !== false
     || preg_match('/\bidn?\b/', $programCountryText) === 1;
 
+$countryNameLower = strtolower((string) ($_SESSION['country_name'] ?? (defined('COUNTRY_NAME') ? COUNTRY_NAME : '')));
+$countryCodeLower = strtolower((string) ($_SESSION['country_code'] ?? (defined('COUNTRY_CODE') ? COUNTRY_CODE : '')));
+$countrySlug = 'default';
+if (strpos($countryNameLower, 'indonesia') !== false || preg_match('/\bidn?\b/', $countryCodeLower) === 1) {
+    $countrySlug = 'indonesia';
+} elseif (strpos($countryNameLower, 'bangladesh') !== false || preg_match('/\bbd\b/', $countryCodeLower) === 1) {
+    $countrySlug = 'bangladesh';
+} elseif (strpos($countryNameLower, 'sri lanka') !== false || strpos($countryNameLower, 'srilanka') !== false || preg_match('/\blk\b/', $countryCodeLower) === 1) {
+    $countrySlug = 'sri_lanka';
+} elseif (strpos($countryNameLower, 'kenya') !== false || preg_match('/\bke\b/', $countryCodeLower) === 1) {
+    $countrySlug = 'kenya';
+}
+$countryProfileConfig = null;
+$ctrlConn = $GLOBALS['control_conn'] ?? null;
+if ($ctrlConn instanceof mysqli) {
+    $tblCheck = $ctrlConn->query("SHOW TABLES LIKE 'control_country_profiles'");
+    if ($tblCheck && $tblCheck->num_rows > 0) {
+        $stProfile = $ctrlConn->prepare("SELECT labels_json, requirements_json FROM control_country_profiles WHERE country_slug = ? LIMIT 1");
+        if ($stProfile) {
+            $stProfile->bind_param('s', $countrySlug);
+            $stProfile->execute();
+            $rowProfile = $stProfile->get_result()->fetch_assoc();
+            $stProfile->close();
+            if (is_array($rowProfile)) {
+                $countryProfileConfig = [
+                    'labels' => json_decode((string) ($rowProfile['labels_json'] ?? '{}'), true) ?: new stdClass(),
+                    'requirements' => json_decode((string) ($rowProfile['requirements_json'] ?? '[]'), true) ?: [],
+                ];
+            }
+        }
+    }
+}
+
 // CSS files configuration - Only the main CSS file with aggressive cache-busting
 $cacheBuster = time();
 $forceCache = rand(1000, 9999);
@@ -79,6 +112,8 @@ include '../includes/header.php';
 <!-- Force cache clear on page load -->
 <script src="<?php echo asset('js/utils/cache-clear.js'); ?>?v=<?php echo $cacheBuster; ?>"></script>
 <script>window.RATIB_IS_INDONESIA_PROGRAM = <?php echo $isIndonesiaProgram ? 'true' : 'false'; ?>;</script>
+<script>window.RATIB_COUNTRY_PROFILE = <?php echo json_encode($countrySlug, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;</script>
+<script>window.RATIB_COUNTRY_PROFILE_CONFIG = <?php echo json_encode($countryProfileConfig, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;</script>
 
 <!-- Main container for the content of the page -->
 <div class="main-container worker-management-container">

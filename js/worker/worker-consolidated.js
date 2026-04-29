@@ -882,6 +882,9 @@ class WorkerTable {
     }
 
     isIndonesiaProgramContext() {
+        if (typeof window.RATIB_COUNTRY_PROFILE === 'string' && window.RATIB_COUNTRY_PROFILE.trim()) {
+            return window.RATIB_COUNTRY_PROFILE.trim().toLowerCase() === 'indonesia';
+        }
         if (typeof window.RATIB_IS_INDONESIA_PROGRAM === 'boolean') {
             return window.RATIB_IS_INDONESIA_PROGRAM;
         }

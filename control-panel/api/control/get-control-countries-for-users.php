@@ -30,7 +30,7 @@ if (!$ctrl) {
     exit;
 }
 
-// Get control_countries - for Control Panel Users form, always show ALL countries so admins can assign any country to any user
+// Get control_countries - scoped by country permissions unless user has full select-country/global access.
 $chk = $ctrl->query("SHOW TABLES LIKE 'control_countries'");
 if (!$chk || $chk->num_rows === 0) {
     echo json_encode(['success' => true, 'countries' => []]);
@@ -42,7 +42,16 @@ $countryWhere = ($hasActive && $hasActive->num_rows > 0) ? "is_active = 1" : "1=
 $hasSort = $ctrl->query("SHOW COLUMNS FROM control_countries LIKE 'sort_order'");
 $orderBy = ($hasSort && $hasSort->num_rows > 0) ? "ORDER BY sort_order ASC, name ASC" : "ORDER BY name ASC";
 
-$stmt = $ctrl->query("SELECT id, name FROM control_countries WHERE $countryWhere $orderBy");
+$allowedCountryIds = getAllowedCountryIds($ctrl);
+$countryScopeSql = '';
+if (is_array($allowedCountryIds)) {
+    if (count($allowedCountryIds) === 0) {
+        echo json_encode(['success' => true, 'countries' => []]);
+        exit;
+    }
+    $countryScopeSql = ' AND id IN (' . implode(',', array_map('intval', $allowedCountryIds)) . ')';
+}
+$stmt = $ctrl->query("SELECT id, name FROM control_countries WHERE $countryWhere $countryScopeSql $orderBy");
 $controlCountries = [];
 if ($stmt) {
     while ($row = $stmt->fetch_assoc()) {

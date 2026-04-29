@@ -72,6 +72,14 @@ $ratibUrl = defined('RATIB_PRO_URL') ? RATIB_PRO_URL : null;
         </a>
     </div>
 
+    <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings,manage_control_roles">
+        <h3><i class="fas fa-sliders"></i> Country Profiles</h3>
+        <p>Edit country-specific worker labels and required fields without touching code.</p>
+        <a href="<?php echo pageUrl('control/country-profiles.php'); ?>?control=1" class="btn btn-primary">
+            <i class="fas fa-pen-to-square"></i> Manage Profiles
+        </a>
+    </div>
+
     <div class="control-settings-card" data-permission="control_agencies,view_control_agencies">
         <h3><i class="fas fa-building"></i> Agencies</h3>
         <p>Manage agencies (Ratib Program instances). Each agency has its own database and site URL.</p>
