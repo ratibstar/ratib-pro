@@ -71,6 +71,7 @@
             agency_id: (document.getElementById('trackingFilterAgency') || {}).value || '',
             country: (document.getElementById('trackingFilterCountry') || {}).value || '',
             status: (document.getElementById('trackingFilterStatus') || {}).value || '',
+            q: (document.getElementById('trackingFilterSearch') || {}).value || '',
             limit: 500
         };
     }
@@ -114,13 +115,14 @@
             var s = normalizedStatus(row);
             return '<tr>' +
                 '<td>#' + esc(row.worker_id) + '</td>' +
+                '<td>' + esc(row.worker_identity || '') + '</td>' +
                 '<td>' + esc(row.tenant_id) + '</td>' +
                 '<td>' + esc(row.agency_name || row.agency_id || '') + '</td>' +
                 '<td>' + esc(row.last_seen || '') + '</td>' +
                 '<td>' + esc(row.battery == null ? '' : row.battery) + '</td>' +
                 '<td><span class="badge" style="background:' + statusColor(s) + ';color:#fff;">' + esc(s) + '</span></td>' +
             '</tr>';
-        }).join('') || '<tr><td colspan="6" class="text-muted">No workers found</td></tr>';
+        }).join('') || '<tr><td colspan="7" class="text-muted">No workers found</td></tr>';
     }
 
     function threatColor(level) {
@@ -176,6 +178,7 @@
             }).addTo(map);
             marker.bindPopup(
                 '<strong>Worker #' + esc(row.worker_id) + '</strong><br>' +
+                'Identity: ' + esc(row.worker_identity || '-') + '<br>' +
                 'Tenant: ' + esc(row.tenant_id) + '<br>' +
                 'Agency: ' + esc(row.agency_name || row.agency_id || '') + '<br>' +
                 'Last seen: ' + esc(row.last_seen || '') + '<br>' +

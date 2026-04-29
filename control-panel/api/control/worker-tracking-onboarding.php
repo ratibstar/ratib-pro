@@ -288,6 +288,9 @@ try {
     }
 
     $deviceId = trim((string) ($payload['device_id'] ?? ''));
+    $identity = trim((string) ($payload['identity'] ?? ''));
+    $password = trim((string) ($payload['password'] ?? ''));
+    $passwordHash = $password !== '' ? password_hash($password, PASSWORD_DEFAULT) : null;
     if ($deviceId === '') {
         $deviceId = 'dev-' . bin2hex(random_bytes(8));
     }
@@ -299,14 +302,23 @@ try {
     ratibEnsureWorkerTrackingSchema($controlPdo);
     $st2 = $controlPdo->prepare(
         "INSERT INTO worker_tracking_devices
-         (worker_id, tenant_id, device_id, api_token, is_active, last_seen, created_at, updated_at)
-         VALUES (?, ?, ?, ?, 1, NOW(), NOW(), NOW())
+         (worker_id, tenant_id, device_id, worker_identity, worker_password_hash, api_token, is_active, last_seen, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), NOW(), NOW())
          ON DUPLICATE KEY UPDATE
+            worker_identity = VALUES(worker_identity),
+            worker_password_hash = COALESCE(VALUES(worker_password_hash), worker_password_hash),
             api_token = VALUES(api_token),
             is_active = 1,
             updated_at = NOW()"
     );
-    $st2->execute([$workerId, $tenantId, $deviceId, $token]);
+    $st2->execute([
+        $workerId,
+        $tenantId,
+        $deviceId,
+        $identity !== '' ? $identity : null,
+        $passwordHash,
+        $token,
+    ]);
 
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = (string) ($_SERVER['HTTP_HOST'] ?? '');

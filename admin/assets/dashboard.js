@@ -94,6 +94,7 @@
     var liveSourceStats = { gov: 0, core: 0, coreRaw: 0, legacy: 0, sessions: 0 };
     var workerProfileCache = {};
     var workerProfileInFlight = {};
+    var serverSearchTimer = null;
     window.SOCDashboardControls = {
         setPlatform: function () {},
         toggleFocus: function () {}
@@ -226,6 +227,8 @@
             agencyName: String(worker.agencyName || worker.agency_name || ''),
             sessionStatus: String(worker.sessionStatus || worker.session_status || worker.status || ''),
             locationStatus: String(worker.locationStatus || worker.location_status || ''),
+            identity: String(worker.identity || worker.worker_identity || ''),
+            deviceId: String(worker.deviceId || worker.device_id || ''),
             speed: Number(worker.speed || worker.last_speed || 0) || 0,
             battery: Number(worker.battery || worker.last_battery || 0) || 0,
             source: String(worker.source || worker.last_source || ''),
@@ -296,6 +299,8 @@
             source: worker.source,
             agency_id: worker.agency_id || info.agency_id || 0,
             agency_name: worker.agency_name || info.agency_name || '',
+            worker_identity: worker.worker_identity || '',
+            device_id: worker.device_id || '',
             worker_country: info.worker_country || info.country || '',
             formatted_id: info.formatted_id || '',
             quality: quality,
@@ -400,12 +405,14 @@
         liveFetchAttempted = true;
         var base = getControlApiBase();
         var mainApiBase = getMainApiBase();
-        var latestUrl = base + '/worker-tracking.php?action=latest&limit=200';
+        var searchQ = String((state.ui && state.ui.search) || '').trim();
+        var searchQs = searchQ ? ('&q=' + encodeURIComponent(searchQ)) : '';
+        var latestUrl = base + '/worker-tracking.php?action=latest&limit=200' + searchQs;
         var alertsUrl = base + '/worker-tracking.php?action=alerts&limit=60';
         var trackingLookupUrl = base + '/government.php?action=tracking';
         var workersCoreUrl = buildWorkersCoreUrl(mainApiBase);
         var workersCoreRawUrl = buildWorkersCoreRawUrl(mainApiBase);
-        var workersGovUrl = base + '/government.php?action=workers';
+        var workersGovUrl = base + '/government.php?action=workers' + (searchQ ? ('&q=' + encodeURIComponent(searchQ)) : '');
         var workersListUrl = mainApiBase + '/workers/get.php?limit=300&page=1';
 
         Promise.all([
@@ -704,7 +711,7 @@
             if (state.ui.filter !== 'ALL' && w.quality !== state.ui.filter) return false;
             if (state.ui.platform !== 'ALL' && String(w.platform || '').toLowerCase() !== state.ui.platform.toLowerCase()) return false;
             if (!q) return true;
-            var hay = (w.name + ' ' + w.id).toLowerCase();
+            var hay = (w.name + ' ' + w.id + ' ' + (w.formattedId || '') + ' ' + (w.identity || '') + ' ' + (w.deviceId || '') + ' ' + String(w.rawWorkerId || '')).toLowerCase();
             return hay.indexOf(q) !== -1;
         });
     }
@@ -874,6 +881,8 @@
             '<div class="box"><div class="small">Country</div><strong>' + escapeHtml(worker.country || '-') + '</strong></div>' +
             '<div class="box"><div class="small">Platform</div><strong>' + escapeHtml((worker.platform || 'unknown').toUpperCase()) + '</strong></div>' +
             '<div class="box"><div class="small">Session status</div><strong>' + escapeHtml(worker.sessionStatus || '-') + '</strong></div>' +
+            '<div class="box"><div class="small">Identity</div><strong>' + escapeHtml(worker.identity || '-') + '</strong></div>' +
+            '<div class="box"><div class="small">Device ID</div><strong>' + escapeHtml(worker.deviceId || '-') + '</strong></div>' +
             '<div class="box"><div class="small">Last update</div><strong>' + formatAgo(worker.lastUpdateTs) + '</strong></div>' +
             '<div class="box"><div class="small">Speed</div><strong>' + escapeHtml(worker.speed ? String(worker.speed) : '-') + '</strong></div>' +
             '<div class="box"><div class="small">Battery</div><strong>' + escapeHtml(worker.battery ? String(worker.battery) + '%' : '-') + '</strong></div>' +
@@ -918,6 +927,10 @@
         dom.search.addEventListener('input', function () {
             state.ui.search = dom.search.value || '';
             scheduleRender();
+            if (serverSearchTimer) clearTimeout(serverSearchTimer);
+            serverSearchTimer = setTimeout(function () {
+                refreshLoop();
+            }, 250);
         });
         dom.filter.addEventListener('change', function () {
             state.ui.filter = dom.filter.value || 'ALL';

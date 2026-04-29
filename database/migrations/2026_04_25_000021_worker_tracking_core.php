@@ -80,6 +80,8 @@ return new class extends Migration
                 `worker_id` INT NOT NULL,
                 `tenant_id` INT NOT NULL,
                 `device_id` VARCHAR(191) NOT NULL,
+                `worker_identity` VARCHAR(191) NULL,
+                `worker_password_hash` VARCHAR(255) NULL,
                 `api_token` VARCHAR(255) NULL,
                 `is_active` TINYINT(1) NOT NULL DEFAULT 1,
                 `last_seen` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,

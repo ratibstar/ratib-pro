@@ -22,6 +22,10 @@ startControlLayout('Worker Mobile Onboarding', ['css/control/tracking-onboarding
                 <div class="col-md-3"><input id="onbWorkerId" class="form-control form-control-sm" type="text" placeholder="Worker ID (e.g. 2 or W0002)"></div>
                 <div class="col-md-3"><input id="onbTenantId" class="form-control form-control-sm" type="number" placeholder="Tenant ID (optional)"></div>
                 <div class="col-md-3"><input id="onbDeviceId" class="form-control form-control-sm" type="text" placeholder="Device ID (optional)"></div>
+                <div class="col-md-3"><input id="onbIdentity" class="form-control form-control-sm" type="text" placeholder="Identity (optional)"></div>
+            </div>
+            <div class="row g-2 mt-1">
+                <div class="col-md-3"><input id="onbPassword" class="form-control form-control-sm" type="password" placeholder="Password (optional)"></div>
                 <div class="col-md-3"><button id="onbGenerateBtn" type="button" class="btn btn-sm btn-primary">Generate QR</button></div>
             </div>
             <div id="onbQr" class="onb-qr mt-2"></div>

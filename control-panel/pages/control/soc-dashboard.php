@@ -36,7 +36,7 @@ startControlLayout('SOC Dashboard', [
             <p class="sub">Frontend-only monitoring · local telemetry driven</p>
         </div>
         <div class="head-controls">
-            <input id="workerSearch" class="input" type="search" placeholder="Search worker by name/id">
+            <input id="workerSearch" class="input" type="search" placeholder="Search worker by name/id/identity/device">
             <select id="statusFilter" class="input">
                 <option value="ALL">All status</option>
                 <option value="GOOD">GOOD</option>

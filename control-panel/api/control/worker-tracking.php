@@ -16,6 +16,47 @@ function control_tracking_json(array $payload, int $code = 200): void
     exit;
 }
 
+function control_tracking_resolve_worker_ids_by_search(string $search, int $limit = 300): array
+{
+    $search = trim($search);
+    if ($search === '') {
+        return [];
+    }
+    $conn = $GLOBALS['conn'] ?? null;
+    if (!($conn instanceof mysqli)) {
+        return [];
+    }
+    $stmt = $conn->prepare(
+        "SELECT id
+         FROM workers
+         WHERE status != 'deleted'
+           AND (
+             worker_name LIKE ?
+             OR formatted_id LIKE ?
+             OR CAST(id AS CHAR) LIKE ?
+           )
+         ORDER BY id DESC
+         LIMIT ?"
+    );
+    if (!$stmt) {
+        return [];
+    }
+    $like = '%' . $search . '%';
+    $safeLimit = max(1, min(1000, $limit));
+    $stmt->bind_param('sssi', $like, $like, $like, $safeLimit);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $ids = [];
+    while ($row = $res ? $res->fetch_assoc() : null) {
+        $id = (int) ($row['id'] ?? 0);
+        if ($id > 0) {
+            $ids[] = $id;
+        }
+    }
+    $stmt->close();
+    return $ids;
+}
+
 if (empty($_SESSION['control_logged_in'])) {
     control_tracking_json(['success' => false, 'message' => 'Unauthorized'], 401);
 }
@@ -43,8 +84,16 @@ try {
     $agencyId = isset($_GET['agency_id']) ? (int) $_GET['agency_id'] : 0;
     $countryId = isset($_GET['country']) ? (int) $_GET['country'] : 0;
     $status = trim((string) ($_GET['status'] ?? ''));
+    $search = trim((string) ($_GET['q'] ?? ''));
 
-    $joins = " LEFT JOIN control_agencies ca ON ca.tenant_id = s.tenant_id ";
+    $joins = " LEFT JOIN control_agencies ca ON ca.tenant_id = s.tenant_id
+               LEFT JOIN (
+                   SELECT d.worker_id, d.tenant_id, MAX(d.id) AS latest_device_id
+                   FROM worker_tracking_devices d
+                   WHERE d.is_active = 1
+                   GROUP BY d.worker_id, d.tenant_id
+               ) dlast ON dlast.worker_id = s.worker_id AND dlast.tenant_id = s.tenant_id
+               LEFT JOIN worker_tracking_devices d ON d.id = dlast.latest_device_id ";
     $where = ["1=1"];
     $params = [];
     if ($tenantId > 0) {
@@ -63,10 +112,29 @@ try {
         $where[] = 's.status = ?';
         $params[] = $status;
     }
+    if ($search !== '') {
+        $workerIdsByName = control_tracking_resolve_worker_ids_by_search($search);
+        $searchWhere = "(CAST(s.worker_id AS CHAR) LIKE ? OR CAST(s.tenant_id AS CHAR) LIKE ? OR ca.name LIKE ? OR COALESCE(d.worker_identity, '') LIKE ? OR COALESCE(d.device_id, '') LIKE ?)";
+        if ($workerIdsByName !== []) {
+            $inMarks = implode(',', array_fill(0, count($workerIdsByName), '?'));
+            $searchWhere .= " OR s.worker_id IN ({$inMarks})";
+        }
+        $where[] = '(' . $searchWhere . ')';
+        $like = '%' . $search . '%';
+        $params[] = $like;
+        $params[] = $like;
+        $params[] = $like;
+        $params[] = $like;
+        $params[] = $like;
+        foreach ($workerIdsByName as $wid) {
+            $params[] = (int) $wid;
+        }
+    }
 
     if ($action === 'latest') {
         $sql = "SELECT s.worker_id, s.tenant_id, s.last_seen, s.status,
                        s.last_lat AS lat, s.last_lng AS lng, s.last_speed AS speed, s.last_battery AS battery, s.last_source AS source,
+                       d.worker_identity, d.device_id,
                        (
                            SELECT wl.status
                            FROM worker_locations wl

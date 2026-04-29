@@ -9,6 +9,8 @@
     var workerIdEl = document.getElementById('onbWorkerId');
     var tenantIdEl = document.getElementById('onbTenantId');
     var deviceIdEl = document.getElementById('onbDeviceId');
+    var identityEl = document.getElementById('onbIdentity');
+    var passwordEl = document.getElementById('onbPassword');
     var generateBtn = document.getElementById('onbGenerateBtn');
     var qrWrap = document.getElementById('onbQr');
     var flashEl = document.getElementById('onbFlash');
@@ -70,6 +72,8 @@
         var workerRaw = ((workerIdEl && workerIdEl.value) || '').trim();
         var tenantId = parseInt((tenantIdEl && tenantIdEl.value) || '0', 10);
         var deviceId = (deviceIdEl && deviceIdEl.value) ? String(deviceIdEl.value).trim() : '';
+        var identity = (identityEl && identityEl.value) ? String(identityEl.value).trim() : '';
+        var password = (passwordEl && passwordEl.value) ? String(passwordEl.value).trim() : '';
         if (!workerRaw) {
             flash('worker_id required', false);
             return;
@@ -82,7 +86,9 @@
             body: JSON.stringify({
                 worker_id: workerRaw,
                 tenant_id: tenantId || undefined,
-                device_id: deviceId || undefined
+                device_id: deviceId || undefined,
+                identity: identity || undefined,
+                password: password || undefined
             })
         })
         .then(function (r) { return r.json(); })

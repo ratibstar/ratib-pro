@@ -86,16 +86,18 @@
     function loadInspections() {
         var c = document.getElementById('inspFilterCountry');
         var a = document.getElementById('inspFilterAgency');
+        var s = document.getElementById('inspFilterSearch');
         var qp = {};
         if (c && c.value.trim()) qp.country = c.value.trim();
         if (a && a.value) qp.agency_id = a.value;
+        if (s && s.value.trim()) qp.q = s.value.trim();
         api('inspections', null, qp)
             .then(function (res) {
                 var tb = tbody('tableInspections');
                 if (!tb) return;
                 tb.innerHTML = (res.data || []).map(function (row) {
-                    return '<tr><td>' + row.id + '</td><td>' + escapeHtml(row.worker_name || ('#' + row.worker_id)) + '</td><td>' + escapeHtml(row.inspection_date || '') + '</td><td>' + escapeHtml(row.inspector_name || '') + '</td><td><span class="badge bg-secondary gov-badge">' + escapeHtml(row.status || '') + '</span></td><td>' + escapeHtml(String(row.agency_id != null ? row.agency_id : '')) + '</td><td>' + escapeHtml((row.notes || '').substring(0, 80)) + '</td></tr>';
-                }).join('') || '<tr><td colspan="7" class="text-muted">No records</td></tr>';
+                    return '<tr><td>' + row.id + '</td><td>' + escapeHtml(row.worker_name || ('#' + row.worker_id)) + '</td><td>' + escapeHtml(row.inspection_date || '') + '</td><td>' + escapeHtml(row.inspector_name || '') + '</td><td>' + escapeHtml(row.inspector_identity || '') + '</td><td><span class="badge bg-secondary gov-badge">' + escapeHtml(row.status || '') + '</span></td><td>' + escapeHtml(String(row.agency_id != null ? row.agency_id : '')) + '</td><td>' + escapeHtml((row.notes || '').substring(0, 80)) + '</td></tr>';
+                }).join('') || '<tr><td colspan="8" class="text-muted">No records</td></tr>';
             })
             .catch(function (e) {
                 flash(e.message || 'Load failed', false);

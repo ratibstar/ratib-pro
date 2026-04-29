@@ -83,6 +83,8 @@ function ratibEnsureWorkerTrackingSchema(PDO $conn): void
             `worker_id` INT NOT NULL,
             `tenant_id` INT NOT NULL,
             `device_id` VARCHAR(191) NOT NULL,
+            `worker_identity` VARCHAR(191) NULL,
+            `worker_password_hash` VARCHAR(255) NULL,
             `api_token` VARCHAR(255) NULL,
             `is_active` TINYINT(1) NOT NULL DEFAULT 1,
             `last_seen` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
@@ -94,6 +96,16 @@ function ratibEnsureWorkerTrackingSchema(PDO $conn): void
             KEY `idx_tracking_device_token` (`api_token`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
+    try {
+        $conn->exec("ALTER TABLE `worker_tracking_devices` ADD COLUMN `worker_identity` VARCHAR(191) NULL AFTER `device_id`");
+    } catch (Throwable $e) {
+        // Ignore if already exists.
+    }
+    try {
+        $conn->exec("ALTER TABLE `worker_tracking_devices` ADD COLUMN `worker_password_hash` VARCHAR(255) NULL AFTER `worker_identity`");
+    } catch (Throwable $e) {
+        // Ignore if already exists.
+    }
 
     $conn->exec(
         "CREATE TABLE IF NOT EXISTS `worker_geofences` (

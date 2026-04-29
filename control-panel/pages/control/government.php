@@ -104,6 +104,9 @@ startControlLayout('Government Control', $additionalCSS, []);
                         <div class="col-md-2">
                             <input type="number" class="form-control form-control-sm" id="inspFilterAgency" placeholder="Agency ID">
                         </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control form-control-sm" id="inspFilterSearch" placeholder="Search worker/identity/inspector">
+                        </div>
                         <div class="col-md-2">
                             <button type="button" class="btn btn-sm btn-outline-primary" id="inspApplyFilter">Apply</button>
                         </div>
@@ -113,6 +116,8 @@ startControlLayout('Government Control', $additionalCSS, []);
                         <div class="col-md-2"><input class="form-control form-control-sm" name="worker_id" type="number" required placeholder="Worker ID"></div>
                         <div class="col-md-2"><input class="form-control form-control-sm" name="agency_id" type="number" placeholder="Agency ID"></div>
                         <div class="col-md-2"><input class="form-control form-control-sm" name="inspector_name" required placeholder="Inspector"></div>
+                        <div class="col-md-2"><input class="form-control form-control-sm" name="identity" placeholder="Identity"></div>
+                        <div class="col-md-2"><input class="form-control form-control-sm" name="password" type="password" placeholder="Password"></div>
                         <div class="col-md-2"><input class="form-control form-control-sm" name="inspection_date" type="date" required></div>
                         <div class="col-md-2">
                             <select class="form-select form-select-sm" name="status">
@@ -127,7 +132,7 @@ startControlLayout('Government Control', $additionalCSS, []);
                     <?php endif; ?>
                     <div class="table-responsive">
                         <table class="table table-sm table-striped gov-table" id="tableInspections">
-                            <thead><tr><th>ID</th><th>Worker</th><th>Date</th><th>Inspector</th><th>Status</th><th>Agency</th><th>Notes</th></tr></thead>
+                            <thead><tr><th>ID</th><th>Worker</th><th>Date</th><th>Inspector</th><th>Identity</th><th>Status</th><th>Agency</th><th>Notes</th></tr></thead>
                             <tbody></tbody>
                         </table>
                     </div>

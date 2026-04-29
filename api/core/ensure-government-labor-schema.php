@@ -17,6 +17,8 @@ function ratibEnsureGovernmentLaborSchema(PDO $conn): void
             `worker_id` INT NOT NULL,
             `agency_id` INT DEFAULT NULL,
             `inspector_name` VARCHAR(255) NOT NULL,
+            `inspector_identity` VARCHAR(255) DEFAULT NULL,
+            `inspector_password_hash` VARCHAR(255) DEFAULT NULL,
             `inspection_date` DATE NOT NULL,
             `status` ENUM('pending','passed','failed') NOT NULL DEFAULT 'pending',
             `notes` TEXT NULL,
@@ -28,6 +30,16 @@ function ratibEnsureGovernmentLaborSchema(PDO $conn): void
             KEY `idx_gov_insp_date` (`inspection_date`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
+    try {
+        $conn->exec("ALTER TABLE `gov_inspections` ADD COLUMN `inspector_identity` VARCHAR(255) DEFAULT NULL AFTER `inspector_name`");
+    } catch (Throwable $e) {
+        // Ignore if column already exists.
+    }
+    try {
+        $conn->exec("ALTER TABLE `gov_inspections` ADD COLUMN `inspector_password_hash` VARCHAR(255) DEFAULT NULL AFTER `inspector_identity`");
+    } catch (Throwable $e) {
+        // Ignore if column already exists.
+    }
 
     $conn->exec(
         "CREATE TABLE IF NOT EXISTS `gov_violations` (

@@ -47,6 +47,9 @@ startControlLayout('Tracking Map', [
                 <button type="button" class="btn btn-sm btn-primary" id="trackingApplyFilters">Apply</button>
             </div>
             <div class="col-md-2">
+                <input class="form-control form-control-sm" id="trackingFilterSearch" type="text" placeholder="Search worker/identity/device">
+            </div>
+            <div class="col-md-2">
                 <label class="form-check mt-2">
                     <input class="form-check-input" type="checkbox" id="trackingCriticalOnly">
                     <span class="form-check-label">Critical only</span>
@@ -89,6 +92,7 @@ startControlLayout('Tracking Map', [
                         <thead>
                             <tr>
                                 <th>Worker</th>
+                                <th>Identity</th>
                                 <th>Tenant</th>
                                 <th>Agency</th>
                                 <th>Last seen</th>
