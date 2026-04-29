@@ -944,29 +944,39 @@ if (!function_exists('ratib_workflow_apply_on_save')) {
             throw new Exception('Current stage definition missing in workflow');
         }
 
-        $fieldErrors = ratib_workflow_validate_stage_fields_config($currentStageDef, $workerLike);
-        if (!empty($fieldErrors)) {
-            throw new Exception('Workflow field validation failed: ' . implode(', ', $fieldErrors));
-        }
+        $hasExplicitStageUpdate = array_key_exists('current_stage', $payload) || array_key_exists('stage_completed', $payload);
+        $forceTransition = !empty($payload['_workflow_force_transition']);
+        $shouldProgressWorkflow = $hasExplicitStageUpdate || $forceTransition;
 
-        if ($enforce) {
-            $blocked = ratib_workflow_validate_stage_rules($pdo, $workflowId, $currentStage, $workerLike, $stageCompleted);
-            if (!empty($blocked)) {
-                throw new Exception('Workflow stage requirements not met: ' . implode(', ', $blocked));
+        if ($shouldProgressWorkflow) {
+            $fieldErrors = ratib_workflow_validate_stage_fields_config($currentStageDef, $workerLike);
+            if (!empty($fieldErrors)) {
+                throw new Exception('Workflow field validation failed: ' . implode(', ', $fieldErrors));
             }
-            $requiredFields = $currentStageDef['required_fields'] ?? [];
-            foreach ($requiredFields as $field) {
-                $val = $payload[$field] ?? ($existingWorker[$field] ?? null);
-                if ($val === null || $val === '') {
-                    throw new Exception("Current stage requires field: {$field}");
+
+            if ($enforce) {
+                $blocked = ratib_workflow_validate_stage_rules($pdo, $workflowId, $currentStage, $workerLike, $stageCompleted);
+                if (!empty($blocked)) {
+                    throw new Exception('Workflow stage requirements not met: ' . implode(', ', $blocked));
+                }
+                $requiredFields = $currentStageDef['required_fields'] ?? [];
+                foreach ($requiredFields as $field) {
+                    $val = $payload[$field] ?? ($existingWorker[$field] ?? null);
+                    if ($val === null || $val === '') {
+                        throw new Exception("Current stage requires field: {$field}");
+                    }
                 }
             }
         }
 
         $previousStage = (string)($existingWorker['current_stage'] ?? $currentStage);
-        $stageCompleted[$currentStage] = true;
-        $currentIndex = array_search($currentStage, $stageKeys, true);
-        $nextStage = $stageKeys[min($currentIndex + 1, count($stageKeys) - 1)];
+        if ($shouldProgressWorkflow) {
+            $stageCompleted[$currentStage] = true;
+            $currentIndex = array_search($currentStage, $stageKeys, true);
+            $nextStage = $stageKeys[min($currentIndex + 1, count($stageKeys) - 1)];
+        } else {
+            $nextStage = $previousStage !== '' ? $previousStage : $currentStage;
+        }
         $payload['workflow_id'] = $workflowId;
         $payload['workflow_version_id'] = $activeVersionId;
         $payload['current_stage'] = $nextStage;
@@ -974,7 +984,7 @@ if (!function_exists('ratib_workflow_apply_on_save')) {
         $payload['_workflow_recommendation'] = $recommendation;
         $payload['_workflow_stage_from'] = $previousStage;
         $payload['_workflow_stage_to'] = $nextStage;
-        $payload['_workflow_transition_needed'] = ($previousStage !== $nextStage);
+        $payload['_workflow_transition_needed'] = ($shouldProgressWorkflow && $previousStage !== $nextStage);
         $payload['_workflow_resolved_id'] = $workflowId;
 
         if (!empty($existingWorker['id'])) {
