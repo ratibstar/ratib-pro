@@ -4,7 +4,7 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/workers/utils/status.php`.
  */
 require_once __DIR__ . '/../../core/Database.php';
-require_once '../../utils/response.php';
+require_once __DIR__ . '/../../utils/response.php';
 
 try {
     $data = json_decode(file_get_contents('php://input'), true);

@@ -4,7 +4,7 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/workers/upload-document.php`.
  */
 require_once __DIR__ . '/../core/Database.php';
-require_once '../../utils/response.php';
+require_once __DIR__ . '/../utils/response.php';
 
 // Enable error logging
 error_log("====== UPLOAD-DOCUMENT.PHP START ======");

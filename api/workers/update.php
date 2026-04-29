@@ -4,7 +4,7 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/workers/update.php`.
  */
 require_once __DIR__ . '/../../core/Database.php';
-require_once '../../utils/response.php';
+require_once __DIR__ . '/../utils/response.php';
 
 try {
     if (empty($_FILES['document']) || empty($_POST['id']) || empty($_POST['document_type'])) {

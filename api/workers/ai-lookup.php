@@ -10,9 +10,23 @@ header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/ApiResponse.php';
 require_once __DIR__ . '/../core/api-permission-helper.php';
+require_once __DIR__ . '/../../control-panel/includes/control-permissions.php';
 
 try {
-    enforceApiPermission('workers', 'get');
+    try {
+        enforceApiPermission('workers', 'get');
+    } catch (Throwable $authError) {
+        $hasControlAccess = !empty($_SESSION['control_logged_in'])
+            && (
+                hasControlPermission(CONTROL_PERM_GOVERNMENT)
+                || hasControlPermission('manage_control_government')
+                || hasControlPermission('gov_admin')
+                || hasControlPermission(CONTROL_PERM_ADMINS)
+            );
+        if (!$hasControlAccess) {
+            throw $authError;
+        }
+    }
 
     $passportRaw = trim((string) ($_GET['passport_number'] ?? ''));
     $identityRaw = trim((string) ($_GET['identity_number'] ?? ''));
@@ -113,6 +127,11 @@ try {
     ], 'Worker context loaded.');
 } catch (Throwable $e) {
     error_log('AI lookup error: ' . $e->getMessage());
-    echo ApiResponse::error('AI worker lookup failed: ' . $e->getMessage(), 500);
+    $msg = $e->getMessage();
+    $isAuthError = stripos($msg, 'access denied') !== false
+        || stripos($msg, 'permission') !== false
+        || stripos($msg, 'unauthorized') !== false;
+    $status = $isAuthError ? 403 : 500;
+    echo ApiResponse::error('AI worker lookup failed: ' . $msg, $status);
 }
 

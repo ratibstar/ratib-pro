@@ -4,7 +4,7 @@
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/workers/bulk-update-status.php`.
  */
 require_once __DIR__ . '/../core/Database.php';
-require_once '../../utils/response.php';
+require_once __DIR__ . '/../utils/response.php';
 require_once __DIR__ . '/../core/api-permission-helper.php';
 
 // Enforce permission for bulk updating workers

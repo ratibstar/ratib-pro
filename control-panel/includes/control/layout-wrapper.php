@@ -15,6 +15,11 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
     $additionalCSS = is_array($additionalCSS) ? $additionalCSS : [];
     $additionalJS = is_array($additionalJS) ? $additionalJS : [];
     if (!isset($ctrl)) $ctrl = $GLOBALS['control_conn'] ?? null;
+    if (!function_exists('control_request_origin_base')) {
+        require_once __DIR__ . '/request-url.php';
+    }
+    $fullBase = control_request_origin_base();
+
     if (!isset($apiBase)) {
         if (!function_exists('control_control_api_base_url')) {
             require_once __DIR__ . '/request-url.php';
@@ -44,10 +49,6 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
 <body class="control-system-body control-layout-no-header">
     <div id="control-config" data-api-base="<?php echo htmlspecialchars($apiBase); ?>"></div>
     <?php
-    if (!function_exists('control_request_origin_base')) {
-        require_once __DIR__ . '/request-url.php';
-    }
-    $fullBase = control_request_origin_base();
     $coreAiUrl = rtrim($fullBase, '/') . '/coreai/index.php';
     // Main Ratib Pro JSON API lives at site /api, not /control-panel/api
     $ratibPublic = function_exists('control_ratib_pro_public_base_url') ? control_ratib_pro_public_base_url() : $fullBase;
@@ -87,6 +88,10 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
 }
 
 function endControlLayout($additionalJS = []) {
+    if (!function_exists('control_request_origin_base')) {
+        require_once __DIR__ . '/request-url.php';
+    }
+    $fullBase = control_request_origin_base();
     ?>
             </div>
         </main>

@@ -51,6 +51,17 @@
         };
     }
 
+    async function parseJsonResponse(response) {
+        const text = await response.text();
+        let parsed = null;
+        try {
+            parsed = text ? JSON.parse(text) : {};
+        } catch (error) {
+            parsed = null;
+        }
+        return { text, parsed };
+    }
+
     function buildPayloadFromModal(fields) {
         const identity = onlyDigits(fields.identity?.value || '');
         const passport = onlyDigits(fields.passport?.value || '');
@@ -227,13 +238,16 @@
                     const query = new URLSearchParams();
                     if (identity) query.set('identity_number', identity);
                     if (passport) query.set('passport_number', passport);
-                    const response = await fetch(`${urls.apiBase}/workers/ai-lookup.php?${query.toString()}`, {
+                    const lookupUrl = `${urls.apiBase}/workers/ai-lookup.php?${query.toString()}`;
+                    const response = await fetch(lookupUrl, {
                         method: 'GET',
                         headers: { 'Accept': 'application/json' }
                     });
-                    const result = await response.json();
+                    const payload = await parseJsonResponse(response);
+                    const result = payload.parsed;
                     if (!response.ok || !result.success || !result.data || !result.data.worker) {
-                        throw new Error(result.message || 'Worker not found.');
+                        const hint = result && result.message ? result.message : `${response.status} ${response.statusText}`;
+                        throw new Error(`Worker lookup failed: ${hint}`);
                     }
                     state.selectedWorker = result.data.worker;
                     renderLookupResult(lookupResult, result.data, urls.publicBase);
@@ -258,6 +272,10 @@
                 const urls = getRuntimeUrls(button);
                 const payload = payloadOverride || buildPayloadFromModal(fields);
                 const hasWorkerId = Number.isFinite(Number(payload.worker_id)) && Number(payload.worker_id) > 0;
+                const workflowUrls = [
+                    `${urls.publicBase}/workflows/worker-onboarding`,
+                    `${urls.publicBase}/public/workflows/worker-onboarding/index.php`
+                ];
 
                 if (!runBtn) return;
                 runBtn.disabled = true;
@@ -269,34 +287,31 @@
                     let workflowError = '';
 
                     if (hasWorkerId) {
-                        const trackingResponse = await fetch(`${urls.controlApiPath}/worker-tracking-onboarding.php`, {
+                        const trackingUrl = `${urls.controlApiPath}/worker-tracking-onboarding.php`;
+                        const trackingResponse = await fetch(trackingUrl, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                             body: JSON.stringify(payload)
                         });
-                        const trackingText = await trackingResponse.text();
-                        try {
-                            trackingResult = trackingText ? JSON.parse(trackingText) : {};
-                        } catch (parseError) {
-                            trackingResult = {};
-                        }
+                        const trackingPayload = await parseJsonResponse(trackingResponse);
+                        trackingResult = trackingPayload.parsed || {};
                         if (!trackingResponse.ok || !trackingResult.success) {
                             trackingError = trackingResult.message || `${trackingResponse.status} ${trackingResponse.statusText}` || 'Tracking onboarding failed.';
                         }
                     }
 
-                    const workflowResponse = await fetch(`${urls.publicBase}/workflows/worker-onboarding`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const workflowText = await workflowResponse.text();
-                    try {
-                        workflowResult = workflowText ? JSON.parse(workflowText) : {};
-                    } catch (parseError) {
-                        workflowResult = {};
-                    }
-                    if (!workflowResponse.ok || !workflowResult.success) {
+                    for (const workflowUrl of workflowUrls) {
+                        const workflowResponse = await fetch(workflowUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const workflowPayload = await parseJsonResponse(workflowResponse);
+                        workflowResult = workflowPayload.parsed || {};
+                        if (workflowResponse.ok && workflowResult.success) {
+                            workflowError = '';
+                            break;
+                        }
                         workflowError = workflowResult.message || `${workflowResponse.status} ${workflowResponse.statusText}` || 'Workflow onboarding failed.';
                     }
 

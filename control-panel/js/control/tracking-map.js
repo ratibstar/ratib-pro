@@ -7,6 +7,10 @@
     var cfg = document.getElementById('control-config');
     var apiBase = (cfg && cfg.getAttribute('data-api-base')) || '';
     apiBase = apiBase.replace(/\/$/, '');
+    var appCfg = document.getElementById('app-config');
+    var publicApiBase = (appCfg && appCfg.getAttribute('data-api-base')) || '';
+    publicApiBase = publicApiBase.replace(/\/$/, '');
+    var publicBase = publicApiBase ? publicApiBase.replace(/\/api$/i, '') : (window.location.origin || '');
     if (!apiBase || !window.L) return;
 
     var map = L.map('trackingMapCanvas').setView([20.5937, 78.9629], 4);
@@ -263,7 +267,7 @@
         if (fromVal) qp.set('from', fromVal);
         if (toVal) qp.set('to', toVal);
         qp.set('limit', '5000');
-        fetch(((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/worker-tracking/history.php?' + qp.toString(), { credentials: 'same-origin' })
+        fetch(publicBase + '/api/worker-tracking/history.php?' + qp.toString(), { credentials: 'same-origin' })
             .then(function (r) { return r.json(); })
             .then(function (res) {
                 if (!res.success || !res.data || !Array.isArray(res.data.path)) {
@@ -317,7 +321,7 @@
             'WORKER_THREAT_CRITICAL',
             'WORKER_RESPONSE_ACTION'
         ].join(',');
-        var src = new EventSource((window.location.origin || '') + '/admin/events-stream.php?event_types=' + encodeURIComponent(evTypes));
+        var src = new EventSource(publicBase + '/admin/events-stream.php?event_types=' + encodeURIComponent(evTypes));
         src.onmessage = function (e) {
             try {
                 var ev = JSON.parse(e.data);

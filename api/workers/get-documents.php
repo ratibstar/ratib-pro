@@ -7,12 +7,12 @@ require_once __DIR__ . '/../core/api-permission-helper.php';
 enforceApiPermission('workers', 'documents');
 
 require_once __DIR__ . '/../core/Database.php';
-require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/../utils/response.php';
 
 try {
-    // Accept both 'id' and 'id' parameters
-    $workerId = isset($_GET['id']) ? (int)$_GET['id'] : 
-                (isset($_GET['id']) ? (int)$_GET['id'] : null);
+    // Accept both `id` and `worker_id` for compatibility.
+    $workerId = isset($_GET['id']) ? (int)$_GET['id'] :
+                (isset($_GET['worker_id']) ? (int)$_GET['worker_id'] : null);
     
     if (!$workerId) {
         throw new Exception('Worker ID is required');

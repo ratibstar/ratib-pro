@@ -143,7 +143,7 @@ if (!$isSuper && !$isGov) {
   }
 
   function load() {
-    fetch('api/tracking/government.php?action=latest&' + params(), {credentials:'same-origin'})
+    fetch('./api/tracking/government.php?action=latest&' + params(), {credentials:'same-origin'})
       .then(r => r.json())
       .then(j => {
         if (!j.success) return;
@@ -211,7 +211,7 @@ if (!$isSuper && !$isGov) {
   }
 
   function loadAlerts() {
-    fetch('api/tracking/government.php?action=alerts&limit=40', {credentials:'same-origin'})
+    fetch('./api/tracking/government.php?action=alerts&limit=40', {credentials:'same-origin'})
       .then(r => r.json())
       .then(j => {
         if (!j.success) return;
