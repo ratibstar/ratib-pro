@@ -4331,7 +4331,15 @@ window.saveWorker = async function(event) {
             }
         } else {
             const errorText = await response.text();
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            let backendMessage = '';
+            try {
+                const parsed = JSON.parse(errorText);
+                backendMessage = parsed && parsed.message ? String(parsed.message) : '';
+            } catch (parseError) {
+                backendMessage = String(errorText || '').trim();
+            }
+            const details = backendMessage ? ` - ${backendMessage}` : '';
+            throw new Error(`HTTP ${response.status}: ${response.statusText}${details}`);
         }
     } catch (error) {
         SimpleAlert.show('Error', 'Error saving worker: ' + error.message, 'danger', { notification: true });
