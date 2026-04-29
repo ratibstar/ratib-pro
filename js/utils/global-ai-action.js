@@ -20,21 +20,27 @@
     }
 
     function buildPayloadFromModal(fields) {
+        const workerIdText = (fields.workerId?.value || '').trim();
         const fullName = (fields.fullName?.value || '').trim();
         const passport = (fields.passport?.value || '').trim();
         const employerIdText = (fields.employer?.value || '').trim();
         const notifyTo = (fields.email?.value || '').trim();
 
-        if (!fullName || !passport) {
-            throw new Error('Full Name and Passport Number are required.');
+        if (!workerIdText && (!fullName || !passport)) {
+            throw new Error('Worker ID or (Full Name + Passport Number) is required.');
         }
 
+        const workerId = Number(workerIdText);
         const worker = { name: fullName, passport_number: passport };
+        if (workerIdText && Number.isFinite(workerId) && workerId > 0) {
+            worker.worker_id = workerId;
+        }
         if (employerIdText && Number.isFinite(Number(employerIdText))) {
             worker.employer_id = Number(employerIdText);
         }
 
         return {
+            worker_id: worker.worker_id || undefined,
             worker: worker,
             tracking: {
                 latitude: 24.7136,
@@ -54,6 +60,7 @@
         const cancelBtn = document.getElementById('globalAiCancelBtn');
         const runBtn = document.getElementById('globalAiRunBtn');
         const fields = {
+            workerId: document.getElementById('globalAiWorkerId'),
             fullName: document.getElementById('globalAiFullName'),
             passport: document.getElementById('globalAiPassport'),
             employer: document.getElementById('globalAiEmployerId'),
@@ -63,6 +70,7 @@
         const api = {
             open: function (prefill) {
                 if (prefill && typeof prefill === 'object') {
+                    if (fields.workerId) fields.workerId.value = prefill.workerId || '';
                     if (fields.fullName) fields.fullName.value = prefill.fullName || '';
                     if (fields.passport) fields.passport.value = prefill.passportNumber || '';
                     if (fields.employer) fields.employer.value = prefill.employerId || '';
@@ -78,29 +86,47 @@
             },
             submit: async function (payloadOverride) {
                 const baseUrl = button.getAttribute('data-base-url') || '';
-                const endpoint = `${baseUrl}/workflows/worker-onboarding`;
                 const payload = payloadOverride || buildPayloadFromModal(fields);
+                const hasWorkerId = Number.isFinite(Number(payload.worker_id)) && Number(payload.worker_id) > 0;
+                const endpoints = hasWorkerId
+                    ? [
+                        `${baseUrl}/api/control/worker-tracking-onboarding.php`,
+                        `${baseUrl}/workflows/worker-onboarding`
+                    ]
+                    : [`${baseUrl}/workflows/worker-onboarding`];
 
                 if (!runBtn) return;
                 runBtn.disabled = true;
                 runBtn.textContent = 'Running...';
                 try {
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-                    if (!response.ok || !result.success) {
-                        throw new Error(result.message || 'Failed to execute AI workflow.');
+                    let lastErrorMessage = 'Failed to execute AI workflow.';
+                    for (const endpoint of endpoints) {
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const responseText = await response.text();
+                        let result = {};
+                        try {
+                            result = responseText ? JSON.parse(responseText) : {};
+                        } catch (parseError) {
+                            result = {};
+                        }
+                        if (!response.ok || !result.success) {
+                            lastErrorMessage = result.message || `${response.status} ${response.statusText}` || lastErrorMessage;
+                            continue;
+                        }
+                        const workflowId = result?.workflow_id || result?.data?.worker_id;
+                        notify(workflowId ? `AI workflow completed (ID: ${workflowId}).` : 'AI workflow completed.', 'success');
+                        api.close();
+                        return result;
                     }
-                    const workflowId = result?.workflow_id;
-                    notify(workflowId ? `AI workflow completed (ID: ${workflowId}).` : 'AI workflow completed.', 'success');
-                    api.close();
-                    return result;
+                    notify(lastErrorMessage, 'warning');
+                    return null;
                 } catch (error) {
-                    notify(error.message || 'AI workflow failed.', 'error');
-                    throw error;
+                    notify(error.message || 'AI workflow failed.', 'warning');
+                    return null;
                 } finally {
                     runBtn.disabled = false;
                     runBtn.textContent = 'Run AI Workflow';

@@ -29,6 +29,9 @@ final class GlobalAIButton
             <button id="globalAiModalClose" type="button" class="global-ai-modal-close" aria-label="Close AI modal">&times;</button>
         </div>
         <div class="global-ai-modal-body">
+            <label class="global-ai-label" for="globalAiWorkerId">Worker ID (recommended)</label>
+            <input id="globalAiWorkerId" class="global-ai-input" type="number" min="1" placeholder="e.g. 12">
+
             <label class="global-ai-label" for="globalAiFullName">Full Name</label>
             <input id="globalAiFullName" class="global-ai-input" type="text" placeholder="Worker full name">
 
