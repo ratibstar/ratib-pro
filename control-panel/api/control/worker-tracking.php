@@ -36,45 +36,136 @@ function control_tracking_query_count(PDO $pdo, string $sql): int
     return (int) ($val ?: 0);
 }
 
+/**
+ * mysqli that has the Ratib Pro `workers` table (agency program DB).
+ * Control panel often sets $GLOBALS['conn'] to control_panel DB only — no `workers` there.
+ */
+function control_tracking_workers_mysqli(): ?mysqli
+{
+    static $computed = false;
+    static $mysqli = null;
+    if ($computed) {
+        return $mysqli;
+    }
+    $computed = true;
+    $mysqli = null;
+
+    $workersTableExists = static function (?mysqli $m): bool {
+        if (!($m instanceof mysqli)) {
+            return false;
+        }
+        try {
+            $r = $m->query("SHOW TABLES LIKE 'workers'");
+            return $r && $r->num_rows > 0;
+        } catch (Throwable $e) {
+            return false;
+        }
+    };
+
+    $conn = $GLOBALS['conn'] ?? null;
+    if ($conn instanceof mysqli && $workersTableExists($conn)) {
+        $mysqli = $conn;
+        return $mysqli;
+    }
+
+    $control = $GLOBALS['control_conn'] ?? null;
+    $agencyId = isset($_SESSION['control_agency_id']) ? (int) $_SESSION['control_agency_id'] : 0;
+    if (!($control instanceof mysqli) || $agencyId <= 0) {
+        return null;
+    }
+    try {
+        $st = $control->prepare(
+            "SELECT db_host, db_port, db_user, db_pass, db_name
+             FROM control_agencies
+             WHERE id = ? AND is_active = 1 AND COALESCE(is_suspended, 0) = 0
+             LIMIT 1"
+        );
+        if (!$st) {
+            return null;
+        }
+        $st->bind_param('i', $agencyId);
+        $st->execute();
+        $res = $st->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $st->close();
+        if (!is_array($row) || ($row['db_name'] ?? '') === '') {
+            return null;
+        }
+        $port = (int) ($row['db_port'] ?? 3306);
+        $m = @new mysqli(
+            (string) $row['db_host'],
+            (string) $row['db_user'],
+            (string) $row['db_pass'],
+            (string) $row['db_name'],
+            $port
+        );
+        if ($m->connect_errno !== 0) {
+            return null;
+        }
+        $m->set_charset('utf8mb4');
+        if (!$workersTableExists($m)) {
+            $m->close();
+            return null;
+        }
+        $mysqli = $m;
+        register_shutdown_function(static function () use ($m): void {
+            try {
+                $m->close();
+            } catch (Throwable $e) {
+                // ignore
+            }
+        });
+    } catch (Throwable $e) {
+        error_log('control_tracking_workers_mysqli: ' . $e->getMessage());
+    }
+
+    return $mysqli;
+}
+
 function control_tracking_resolve_worker_ids_by_search(string $search, int $limit = 300): array
 {
     $search = trim($search);
     if ($search === '') {
         return [];
     }
-    $conn = $GLOBALS['conn'] ?? null;
+    $conn = control_tracking_workers_mysqli();
     if (!($conn instanceof mysqli)) {
         return [];
     }
-    $stmt = $conn->prepare(
-        "SELECT id
-         FROM workers
-         WHERE status != 'deleted'
-           AND (
-             worker_name LIKE ?
-             OR formatted_id LIKE ?
-             OR CAST(id AS CHAR) LIKE ?
-           )
-         ORDER BY id DESC
-         LIMIT ?"
-    );
-    if (!$stmt) {
+    try {
+        $stmt = $conn->prepare(
+            "SELECT id
+             FROM workers
+             WHERE status != 'deleted'
+               AND (
+                 worker_name LIKE ?
+                 OR formatted_id LIKE ?
+                 OR CAST(id AS CHAR) LIKE ?
+               )
+             ORDER BY id DESC
+             LIMIT ?"
+        );
+        if (!$stmt) {
+            return [];
+        }
+        $like = '%' . $search . '%';
+        $safeLimit = max(1, min(1000, $limit));
+        $stmt->bind_param('sssi', $like, $like, $like, $safeLimit);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $ids = [];
+        while ($row = $res ? $res->fetch_assoc() : null) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+        $stmt->close();
+        return $ids;
+    } catch (Throwable $e) {
+        error_log('control_tracking_resolve_worker_ids_by_search: ' . $e->getMessage());
         return [];
     }
-    $like = '%' . $search . '%';
-    $safeLimit = max(1, min(1000, $limit));
-    $stmt->bind_param('sssi', $like, $like, $like, $safeLimit);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $ids = [];
-    while ($row = $res ? $res->fetch_assoc() : null) {
-        $id = (int) ($row['id'] ?? 0);
-        if ($id > 0) {
-            $ids[] = $id;
-        }
-    }
-    $stmt->close();
-    return $ids;
 }
 
 function control_tracking_enrich_rows_with_worker_info(array $rows): array
@@ -82,7 +173,7 @@ function control_tracking_enrich_rows_with_worker_info(array $rows): array
     if ($rows === []) {
         return $rows;
     }
-    $conn = $GLOBALS['conn'] ?? null;
+    $conn = control_tracking_workers_mysqli();
     if (!($conn instanceof mysqli)) {
         return $rows;
     }
@@ -101,38 +192,43 @@ function control_tracking_enrich_rows_with_worker_info(array $rows): array
     if ($idSql === '') {
         return $rows;
     }
-    $meta = [];
-    $q = $conn->query(
-        "SELECT id, worker_name, formatted_id, country
-         FROM workers
-         WHERE status != 'deleted' AND id IN ({$idSql})"
-    );
-    if ($q) {
-        while ($r = $q->fetch_assoc()) {
-            $wid = (int) ($r['id'] ?? 0);
-            if ($wid > 0) {
-                $meta[$wid] = [
-                    'worker_name' => (string) ($r['worker_name'] ?? ''),
-                    'formatted_id' => (string) ($r['formatted_id'] ?? ''),
-                    'worker_country' => (string) ($r['country'] ?? ''),
-                ];
+    try {
+        $meta = [];
+        $q = $conn->query(
+            "SELECT id, worker_name, formatted_id, country
+             FROM workers
+             WHERE status != 'deleted' AND id IN ({$idSql})"
+        );
+        if ($q) {
+            while ($r = $q->fetch_assoc()) {
+                $wid = (int) ($r['id'] ?? 0);
+                if ($wid > 0) {
+                    $meta[$wid] = [
+                        'worker_name' => (string) ($r['worker_name'] ?? ''),
+                        'formatted_id' => (string) ($r['formatted_id'] ?? ''),
+                        'worker_country' => (string) ($r['country'] ?? ''),
+                    ];
+                }
             }
         }
-    }
-    foreach ($rows as &$row) {
-        $wid = (int) ($row['worker_id'] ?? 0);
-        if ($wid > 0 && isset($meta[$wid])) {
-            $row['worker_name'] = $meta[$wid]['worker_name'];
-            $row['formatted_id'] = $meta[$wid]['formatted_id'];
-            $row['worker_country'] = $meta[$wid]['worker_country'];
-        } else {
-            $row['worker_name'] = $row['worker_name'] ?? '';
-            $row['formatted_id'] = $row['formatted_id'] ?? '';
-            $row['worker_country'] = $row['worker_country'] ?? '';
+        foreach ($rows as &$row) {
+            $wid = (int) ($row['worker_id'] ?? 0);
+            if ($wid > 0 && isset($meta[$wid])) {
+                $row['worker_name'] = $meta[$wid]['worker_name'];
+                $row['formatted_id'] = $meta[$wid]['formatted_id'];
+                $row['worker_country'] = $meta[$wid]['worker_country'];
+            } else {
+                $row['worker_name'] = $row['worker_name'] ?? '';
+                $row['formatted_id'] = $row['formatted_id'] ?? '';
+                $row['worker_country'] = $row['worker_country'] ?? '';
+            }
         }
+        unset($row);
+        return $rows;
+    } catch (Throwable $e) {
+        error_log('control_tracking_enrich_rows_with_worker_info: ' . $e->getMessage());
+        return $rows;
     }
-    unset($row);
-    return $rows;
 }
 
 if (empty($_SESSION['control_logged_in'])) {
