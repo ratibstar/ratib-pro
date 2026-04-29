@@ -50,6 +50,8 @@ $companyName = \App\Services\CompanyProfileService::resolveCompanyName(
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <?php $chatWidgetCssPath = __DIR__ . '/../css/chat-widget.css'; $chatWidgetCssV = is_file($chatWidgetCssPath) ? filemtime($chatWidgetCssPath) : time(); ?>
     <link rel="stylesheet" href="<?php echo asset('css/chat-widget.css'); ?>?v=<?php echo (int) $chatWidgetCssV; ?>">
+    <?php $globalAiCssPath = __DIR__ . '/../css/global-ai-action.css'; $globalAiCssV = is_file($globalAiCssPath) ? filemtime($globalAiCssPath) : time(); ?>
+    <link rel="stylesheet" href="<?php echo asset('css/global-ai-action.css'); ?>?v=<?php echo (int) $globalAiCssV; ?>">
     
     <!-- Page specific CSS -->
     <?php if (isset($pageCss)): ?>

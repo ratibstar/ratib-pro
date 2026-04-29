@@ -1,0 +1,202 @@
+.global-ai-action-btn {
+    position: fixed;
+    top: 12px;
+    right: 14px;
+    z-index: 1201;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #14b8a6 0%, #0ea5e9 100%);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 10px 24px rgba(14, 165, 233, 0.32);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.global-ai-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px rgba(14, 165, 233, 0.4);
+}
+
+.global-ai-action-btn i {
+    font-size: 13px;
+}
+
+@media (max-width: 1024px) {
+    .global-ai-action-btn {
+        top: 10px;
+        right: 10px;
+        padding: 9px 12px;
+        font-size: 11px;
+    }
+}
+
+.global-ai-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+}
+
+.global-ai-modal.show {
+    display: flex;
+}
+
+.global-ai-modal-card {
+    width: min(92vw, 430px);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: linear-gradient(180deg, #111827 0%, #0b1220 100%);
+    box-shadow: 0 20px 44px rgba(0, 0, 0, 0.45);
+    color: #e5e7eb;
+}
+
+.global-ai-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.global-ai-modal-head h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.global-ai-modal-close {
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.global-ai-modal-body {
+    padding: 14px 16px;
+}
+
+.global-ai-label {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: #cbd5e1;
+}
+
+.global-ai-input {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.85);
+    color: #f8fafc;
+    font-size: 13px;
+}
+
+.global-ai-input:focus {
+    outline: none;
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+
+.global-ai-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px 16px;
+}
+
+.global-ai-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.global-ai-btn-cancel {
+    background: rgba(100, 116, 139, 0.3);
+    color: #e2e8f0;
+}
+
+.global-ai-btn-run {
+    background: linear-gradient(135deg, #14b8a6 0%, #0ea5e9 100%);
+    color: #fff;
+}
+
+.global-ai-lookup-result {
+    margin-top: 8px;
+}
+
+.global-ai-result-card {
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.65);
+    padding: 10px;
+}
+
+.global-ai-result-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #e2e8f0;
+    margin-bottom: 6px;
+}
+
+.global-ai-result-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12px;
+    color: #cbd5e1;
+    margin-bottom: 4px;
+}
+
+.global-ai-result-row strong {
+    color: #f8fafc;
+    font-weight: 700;
+}
+
+.global-ai-result-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    margin: 8px 0;
+}
+
+.global-ai-result-links a {
+    display: inline-block;
+    text-align: center;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 8px;
+    border-radius: 7px;
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    color: #bae6fd;
+}
+
+.global-ai-result-links a:hover {
+    border-color: rgba(56, 189, 248, 0.9);
+    color: #e0f2fe;
+}
+
+.global-ai-result-sub {
+    font-size: 11px;
+    color: #cbd5e1;
+    margin-top: 5px;
+    word-break: break-word;
+}
