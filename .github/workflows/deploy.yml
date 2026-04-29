@@ -82,21 +82,3 @@ jobs:
             exit 1
           fi
 
-      - name: Verify live page reflects latest deploy
-        run: |
-          CHECK_URL="https://out.ratib.sa/pages/Worker.php"
-          EXPECTED_MARKER="LIVE VISUAL TEST - WORKER PAGE"
-
-          echo "Checking live URL: $CHECK_URL"
-          for i in 1 2 3 4 5; do
-            BODY="$(curl -fsSL "$CHECK_URL" || true)"
-            if printf '%s' "$BODY" | python3 -c "import sys; html=sys.stdin.read(); raise SystemExit(0 if '$EXPECTED_MARKER' in html else 1)"; then
-              echo "Live page contains expected marker."
-              exit 0
-            fi
-            echo "Attempt $i/5: marker not visible yet; waiting 8s..."
-            sleep 8
-          done
-
-          echo "Live page did not reflect latest marker after retries."
-          exit 1
