@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: production-deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   trigger-cpanel-deploy:
@@ -81,4 +81,43 @@ jobs:
             echo "Deployment API returned non-success status."
             exit 1
           fi
+
+          DEPLOY_ID="$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; data=(r.get('data', d.get('data',{})) or {}); print(data.get('deploy_id',''))")"
+          if [ -z "$DEPLOY_ID" ]; then
+            echo "No deploy_id returned; skipping deploy completion polling."
+            exit 0
+          fi
+
+          echo "Polling deployment completion for deploy_id: $DEPLOY_ID"
+          ATTEMPTS=36
+          SLEEP_SECONDS=5
+          for i in $(seq 1 $ATTEMPTS); do
+            RETRIEVE_RESPONSE="$(curl -fsSL --get \
+              -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
+              --data-urlencode "repository_root=$CLEAN_REPO_ROOT" \
+              --data-urlencode "deploy_id=$DEPLOY_ID" \
+              "https://${{ secrets.CPANEL_HOST }}:2083/execute/VersionControlDeployment/retrieve")"
+
+            DEPLOY_COMPLETE="$(echo "$RETRIEVE_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; data=(r.get('data', d.get('data',{})) or {}); flags=[data.get('is_complete'), data.get('complete'), data.get('completed')]; print(1 if any(v in (1, True, '1', 'true', 'True') for v in flags) else 0)")"
+            DEPLOY_EXIT_CODE="$(echo "$RETRIEVE_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; data=(r.get('data', d.get('data',{})) or {}); v=data.get('exit_code'); print('' if v is None else v)")"
+            DEPLOY_LOG_PATH="$(echo "$RETRIEVE_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; data=(r.get('data', d.get('data',{})) or {}); print(data.get('log_path',''))")"
+
+            echo "Attempt $i/$ATTEMPTS: complete=$DEPLOY_COMPLETE exit_code=${DEPLOY_EXIT_CODE:-pending} log_path=$DEPLOY_LOG_PATH"
+
+            if [ "$DEPLOY_COMPLETE" = "1" ]; then
+              if [ -n "$DEPLOY_EXIT_CODE" ] && [ "$DEPLOY_EXIT_CODE" != "0" ]; then
+                echo "cPanel deploy task finished with non-zero exit code: $DEPLOY_EXIT_CODE"
+                echo "Retrieve response:"
+                echo "$RETRIEVE_RESPONSE"
+                exit 1
+              fi
+              echo "cPanel deploy task completed successfully."
+              exit 0
+            fi
+
+            sleep "$SLEEP_SECONDS"
+          done
+
+          echo "Timed out waiting for deployment completion."
+          exit 1
 
