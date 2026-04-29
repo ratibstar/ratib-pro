@@ -33,8 +33,26 @@ jobs:
             exit 1
           fi
 
+      - name: Trigger cPanel Deploy Hook (fast path)
+        run: |
+          HOOK_URL="$(printf '%s' "${{ secrets.CPANEL_DEPLOY_HOOK_URL }}" | tr -d '\r\n' | xargs)"
+          if [ -z "$HOOK_URL" ]; then
+            echo "CPANEL_DEPLOY_HOOK_URL not set, falling back to UAPI deployment path."
+            exit 0
+          fi
+
+          echo "Triggering cPanel deploy hook..."
+          curl -fsSL --retry 3 --retry-delay 2 "$HOOK_URL" >/dev/null
+          echo "Deploy hook triggered successfully."
+
       - name: Trigger cPanel Git deployment API
         run: |
+          HOOK_URL="$(printf '%s' "${{ secrets.CPANEL_DEPLOY_HOOK_URL }}" | tr -d '\r\n' | xargs)"
+          if [ -n "$HOOK_URL" ]; then
+            echo "Deploy hook configured; skipping UAPI fallback path."
+            exit 0
+          fi
+
           CLEAN_REPO_ROOT="$(printf '%s' "${{ secrets.CPANEL_REPO_ROOT }}" | tr -d '\r\n' | xargs)"
           if [ -z "$CLEAN_REPO_ROOT" ]; then
             echo "CPANEL_REPO_ROOT is empty after trimming whitespace."
