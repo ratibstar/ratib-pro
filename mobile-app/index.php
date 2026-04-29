@@ -101,3 +101,4 @@ $appJsVersion = @filemtime(__DIR__ . '/assets/js/app.js') ?: time();
     <script src="assets/js/app.js?v=<?php echo (int) $appJsVersion; ?>"></script>
 </body>
 </html>
+

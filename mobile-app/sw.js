@@ -77,3 +77,4 @@ async function flushQueue() {
     clients.map((client) => client.postMessage({ type: 'SW_SYNC_REQUEST' }))
   );
 }
+
