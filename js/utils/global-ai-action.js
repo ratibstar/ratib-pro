@@ -23,9 +23,22 @@
         window.alert(message);
     }
 
+    function onlyDigits(value) {
+        return String(value || '').replace(/\D+/g, '');
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function buildPayloadFromModal(fields) {
-        const identity = (fields.identity?.value || '').trim();
-        const passport = (fields.passport?.value || '').trim();
+        const identity = onlyDigits(fields.identity?.value || '');
+        const passport = onlyDigits(fields.passport?.value || '');
         const notifyTo = (fields.email?.value || '').trim();
 
         if (!identity && !passport) {
@@ -56,27 +69,57 @@
         };
     }
 
-    function renderLookupResult(container, result) {
+    function renderLookupResult(container, result, baseUrl) {
         if (!container) return;
         if (!result || !result.worker) {
             container.innerHTML = '';
             return;
         }
         const worker = result.worker;
-        const workerName = worker.worker_name || worker.full_name || 'Unknown';
-        const workerId = worker.id || '-';
-        const identity = worker.identity_number || '-';
-        const passport = worker.passport_number || '-';
+        const workerName = escapeHtml(worker.worker_name || worker.full_name || 'Unknown');
+        const workerId = escapeHtml(worker.id || '-');
+        const identity = escapeHtml(worker.identity_number || '-');
+        const passport = escapeHtml(worker.passport_number || '-');
         const casesCount = Number(result.cases_count || 0);
         const ordersCount = Number(result.orders_count || 0);
+        const cases = Array.isArray(result.cases) ? result.cases : [];
+        const orders = Array.isArray(result.orders) ? result.orders : [];
+        const caseLinks = cases.slice(0, 3).map((item) => {
+            const caseId = Number(item.id || 0);
+            const label = escapeHtml(item.case_number || `Case #${caseId}`);
+            if (caseId > 0) {
+                return `<a href="${baseUrl}/pages/cases/cases-table.php?view=${caseId}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+            }
+            return `<span>${label}</span>`;
+        }).join(' | ');
+        const orderLabels = orders.slice(0, 3).map((item) => {
+            const orderId = Number(item.id || 0);
+            return orderId > 0 ? `#${orderId}` : '-';
+        }).join(' | ');
+
+        const workerDetailsUrl = `${baseUrl}/pages/Worker.php?view=${encodeURIComponent(String(workerId))}`;
+        const casesUrl = `${baseUrl}/pages/cases/cases-table.php`;
+        const trackingMapUrl = `${baseUrl}/control-panel/pages/control/tracking-map.php?control=1`;
+        const onboardingUrl = `${baseUrl}/control-panel/pages/control/tracking-onboarding.php?control=1`;
 
         container.innerHTML = [
-            '<div class="global-ai-label" style="margin-top:6px;">Worker Details</div>',
-            `<div><strong>ID:</strong> ${workerId}</div>`,
-            `<div><strong>Name:</strong> ${workerName}</div>`,
-            `<div><strong>Identity:</strong> ${identity}</div>`,
-            `<div><strong>Passport:</strong> ${passport}</div>`,
-            `<div><strong>Cases:</strong> ${casesCount} | <strong>Orders:</strong> ${ordersCount}</div>`
+            '<div class="global-ai-result-card">',
+            '  <div class="global-ai-result-title">Worker Details</div>',
+            `  <div class="global-ai-result-row"><span>ID</span><strong>${workerId}</strong></div>`,
+            `  <div class="global-ai-result-row"><span>Name</span><strong>${workerName}</strong></div>`,
+            `  <div class="global-ai-result-row"><span>Identity</span><strong>${identity}</strong></div>`,
+            `  <div class="global-ai-result-row"><span>Passport</span><strong>${passport}</strong></div>`,
+            `  <div class="global-ai-result-row"><span>Cases</span><strong>${casesCount}</strong></div>`,
+            `  <div class="global-ai-result-row"><span>Orders</span><strong>${ordersCount}</strong></div>`,
+            '  <div class="global-ai-result-links">',
+            `    <a href="${workerDetailsUrl}" target="_blank" rel="noopener noreferrer">Open Worker</a>`,
+            `    <a href="${casesUrl}" target="_blank" rel="noopener noreferrer">Open Cases</a>`,
+            `    <a href="${trackingMapUrl}" target="_blank" rel="noopener noreferrer">Tracking Map</a>`,
+            `    <a href="${onboardingUrl}" target="_blank" rel="noopener noreferrer">Mobile Onboarding</a>`,
+            '  </div>',
+            caseLinks ? `  <div class="global-ai-result-sub"><strong>Latest Cases:</strong> ${caseLinks}</div>` : '',
+            orderLabels ? `  <div class="global-ai-result-sub"><strong>Latest Orders:</strong> ${orderLabels}</div>` : '',
+            '</div>'
         ].join('');
     }
 
@@ -99,11 +142,11 @@
         const api = {
             open: function (prefill) {
                 state.selectedWorker = null;
-                renderLookupResult(lookupResult, null);
+                renderLookupResult(lookupResult, null, '');
                 if (runBtn) runBtn.disabled = true;
                 if (prefill && typeof prefill === 'object') {
-                    if (fields.identity) fields.identity.value = prefill.identityNumber || '';
-                    if (fields.passport) fields.passport.value = prefill.passportNumber || '';
+                    if (fields.identity) fields.identity.value = onlyDigits(prefill.identityNumber || '');
+                    if (fields.passport) fields.passport.value = onlyDigits(prefill.passportNumber || '');
                     if (fields.email) fields.email.value = prefill.notifyTo || '';
                 }
                 modal.classList.add('show');
@@ -116,8 +159,10 @@
             },
             lookupWorker: async function () {
                 const baseUrl = button.getAttribute('data-base-url') || '';
-                const identity = (fields.identity?.value || '').trim();
-                const passport = (fields.passport?.value || '').trim();
+                const identity = onlyDigits(fields.identity?.value || '');
+                const passport = onlyDigits(fields.passport?.value || '');
+                if (fields.identity) fields.identity.value = identity;
+                if (fields.passport) fields.passport.value = passport;
                 if (!identity && !passport) {
                     notify('Enter passport number or identity number first.', 'warning');
                     return null;
@@ -139,13 +184,13 @@
                         throw new Error(result.message || 'Worker not found.');
                     }
                     state.selectedWorker = result.data.worker;
-                    renderLookupResult(lookupResult, result.data);
+                    renderLookupResult(lookupResult, result.data, baseUrl);
                     if (runBtn) runBtn.disabled = false;
                     notify('Worker found. You can run AI workflow now.', 'success');
                     return result.data;
                 } catch (error) {
                     state.selectedWorker = null;
-                    renderLookupResult(lookupResult, null);
+                    renderLookupResult(lookupResult, null, baseUrl);
                     if (runBtn) runBtn.disabled = true;
                     notify(error.message || 'Worker search failed.', 'warning');
                     return null;
@@ -213,6 +258,16 @@
         });
         if (closeBtn) closeBtn.addEventListener('click', api.close);
         if (cancelBtn) cancelBtn.addEventListener('click', api.close);
+        if (fields.identity) {
+            fields.identity.addEventListener('input', function () {
+                fields.identity.value = onlyDigits(fields.identity.value);
+            });
+        }
+        if (fields.passport) {
+            fields.passport.addEventListener('input', function () {
+                fields.passport.value = onlyDigits(fields.passport.value);
+            });
+        }
         if (searchBtn) {
             searchBtn.addEventListener('click', async function () {
                 await api.lookupWorker();

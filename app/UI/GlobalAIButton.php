@@ -30,10 +30,10 @@ final class GlobalAIButton
         </div>
         <div class="global-ai-modal-body">
             <label class="global-ai-label" for="globalAiIdentity">Identity Number</label>
-            <input id="globalAiIdentity" class="global-ai-input" type="text" placeholder="Identity number">
+            <input id="globalAiIdentity" class="global-ai-input" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Identity number">
 
             <label class="global-ai-label" for="globalAiPassport">Passport Number</label>
-            <input id="globalAiPassport" class="global-ai-input" type="text" placeholder="Passport number">
+            <input id="globalAiPassport" class="global-ai-input" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Passport number">
 
             <button id="globalAiSearchBtn" type="button" class="global-ai-btn global-ai-btn-cancel">Search Worker</button>
 

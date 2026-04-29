@@ -8,6 +8,8 @@
  * Usage: require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
  *        startControlLayout($pageTitle, $additionalCSS, $additionalJS);
  */
+require_once __DIR__ . '/../../../app/UI/GlobalAIButton.php';
+
 function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $additionalJS = []) {
     global $apiBase, $ctrl;
     $additionalCSS = is_array($additionalCSS) ? $additionalCSS : [];
@@ -19,7 +21,6 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
         }
         $apiBase = control_control_api_base_url();
     }
-    $coreAiUrl = rtrim($fullBase, '/') . '/coreai/index.php';
     ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -46,6 +47,7 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
         require_once __DIR__ . '/request-url.php';
     }
     $fullBase = control_request_origin_base();
+    $coreAiUrl = rtrim($fullBase, '/') . '/coreai/index.php';
     // Main Ratib Pro JSON API lives at site /api, not /control-panel/api
     $ratibPublic = function_exists('control_ratib_pro_public_base_url') ? control_ratib_pro_public_base_url() : $fullBase;
     $ratibApiBase = rtrim($ratibPublic !== '' ? $ratibPublic : $fullBase, '/') . '/api';
@@ -78,6 +80,7 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
                     </div>
                 </div>
             </div>
+            <?php echo \App\UI\GlobalAIButton::render($fullBase); ?>
             <div class="module-content">
 <?php
 }
@@ -91,6 +94,7 @@ function endControlLayout($additionalJS = []) {
     <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/system.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/header-support-alerts.js'); ?>?v=<?php echo time(); ?>"></script>
+    <script src="<?php echo asset('js/utils/global-ai-action.js'); ?>?v=<?php echo time(); ?>"></script>
     <?php foreach ((array)$additionalJS as $js):
         $js = (string)$js;
         $jsAbs = (bool)preg_match('#^https?://#i', $js);

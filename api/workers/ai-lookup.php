@@ -16,8 +16,8 @@ try {
 
     $passportRaw = trim((string) ($_GET['passport_number'] ?? ''));
     $identityRaw = trim((string) ($_GET['identity_number'] ?? ''));
-    $passport = $passportRaw !== '' ? substr($passportRaw, 0, 120) : '';
-    $identity = $identityRaw !== '' ? substr($identityRaw, 0, 120) : '';
+    $passport = preg_replace('/\D+/', '', substr($passportRaw, 0, 120)) ?? '';
+    $identity = preg_replace('/\D+/', '', substr($identityRaw, 0, 120)) ?? '';
 
     if ($passport === '' && $identity === '') {
         echo ApiResponse::error('Passport number or identity number is required.', 422);
