@@ -17,9 +17,25 @@
 }
 
 .gov-tabs .nav-link.active {
-    color: #1a1a2e;
-    background: #e8e4f5;
-    border-color: #c4b5fd;
+    color: #f5f3ff;
+    background: rgba(99, 102, 241, 0.38);
+    border-color: rgba(196, 181, 253, 0.55);
+    border-bottom-color: transparent;
+}
+
+.gov-tabs {
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.gov-readonly-link {
+    border-color: rgba(226, 232, 240, 0.55) !important;
+    color: #f1f5f9 !important;
+}
+
+.gov-readonly-link:hover {
+    background: rgba(241, 245, 249, 0.12) !important;
+    color: #fff !important;
+    border-color: rgba(241, 245, 249, 0.75) !important;
 }
 
 .gov-card {
@@ -84,6 +100,41 @@
     color: #f8fafc;
     border-color: #60a5fa;
     box-shadow: 0 0 0 0.18rem rgba(96, 165, 250, 0.25);
+}
+
+#gov-labor-page input:-webkit-autofill,
+#gov-labor-page input:-webkit-autofill:hover,
+#gov-labor-page input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px rgba(15, 15, 25, 0.96) inset !important;
+    -webkit-text-fill-color: #f1f5f9 !important;
+    caret-color: #f1f5f9;
+    border-color: rgba(196, 181, 253, 0.28) !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+#gov-labor-page .gov-form .form-control,
+#gov-labor-page .gov-form .form-select {
+    min-height: calc(1.5em + 0.5rem + 2px);
+}
+
+#gov-labor-page .gov-intro.text-muted {
+    color: rgba(203, 213, 225, 0.88) !important;
+}
+
+/* Inspection status badges (set in JS) */
+.gov-badge.gov-status-passed {
+    background-color: rgba(22, 163, 74, 0.95) !important;
+    color: #fff;
+}
+
+.gov-badge.gov-status-failed {
+    background-color: rgba(220, 38, 38, 0.95) !important;
+    color: #fff;
+}
+
+.gov-badge.gov-status-pending {
+    background-color: rgba(100, 116, 139, 0.95) !important;
+    color: #f8fafc;
 }
 
 .gov-dashboard-widget {

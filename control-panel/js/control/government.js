@@ -83,6 +83,13 @@
         return t ? t.querySelector('tbody') : null;
     }
 
+    function inspectionStatusBadgeClass(status) {
+        var s = String(status || '').toLowerCase();
+        if (s === 'passed') return 'gov-status-passed';
+        if (s === 'failed') return 'gov-status-failed';
+        return 'gov-status-pending';
+    }
+
     function loadInspections() {
         var c = document.getElementById('inspFilterCountry');
         var a = document.getElementById('inspFilterAgency');
@@ -96,7 +103,8 @@
                 var tb = tbody('tableInspections');
                 if (!tb) return;
                 tb.innerHTML = (res.data || []).map(function (row) {
-                    return '<tr><td>' + row.id + '</td><td>' + escapeHtml(row.worker_name || ('#' + row.worker_id)) + '</td><td>' + escapeHtml(row.inspection_date || '') + '</td><td>' + escapeHtml(row.inspector_name || '') + '</td><td>' + escapeHtml(row.inspector_identity || '') + '</td><td><span class="badge bg-secondary gov-badge">' + escapeHtml(row.status || '') + '</span></td><td>' + escapeHtml(String(row.agency_id != null ? row.agency_id : '')) + '</td><td>' + escapeHtml((row.notes || '').substring(0, 80)) + '</td></tr>';
+                    var stClass = inspectionStatusBadgeClass(row.status);
+                    return '<tr><td>' + row.id + '</td><td>' + escapeHtml(row.worker_name || ('#' + row.worker_id)) + '</td><td>' + escapeHtml(row.inspection_date || '') + '</td><td>' + escapeHtml(row.inspector_name || '') + '</td><td>' + escapeHtml(row.inspector_identity || '') + '</td><td><span class="badge gov-badge ' + stClass + '">' + escapeHtml(row.status || '') + '</span></td><td>' + escapeHtml(String(row.agency_id != null ? row.agency_id : '')) + '</td><td>' + escapeHtml((row.notes || '').substring(0, 80)) + '</td></tr>';
                 }).join('') || '<tr><td colspan="8" class="text-muted">No records</td></tr>';
             })
             .catch(function (e) {

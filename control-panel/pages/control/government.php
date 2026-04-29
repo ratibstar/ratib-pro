@@ -42,7 +42,7 @@ startControlLayout('Government Control', $additionalCSS, []);
         <a class="btn btn-sm btn-outline-info" href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-map.php'), ENT_QUOTES, 'UTF-8'); ?>">
             <i class="fas fa-map-location-dot me-1"></i>Open Live Tracking Map
         </a>
-        <a class="btn btn-sm btn-outline-secondary" href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '') . '/admin/government-tracking.php', ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
+        <a class="btn btn-sm btn-outline-light gov-readonly-link" href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '') . '/admin/government-tracking.php', ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
             <i class="fas fa-landmark me-1"></i>Government Read-only View
         </a>
     </div>
@@ -97,23 +97,26 @@ startControlLayout('Government Control', $additionalCSS, []);
             <div class="card gov-card mb-3">
                 <div class="card-body">
                     <h5 class="card-title">Inspections</h5>
-                    <div class="row g-2 mb-3">
+                    <div class="row g-2 mb-3 gov-form align-items-end">
                         <div class="col-md-3">
-                            <input type="text" class="form-control form-control-sm" id="inspFilterCountry" placeholder="Country filter">
+                            <label class="form-label visually-hidden" for="inspFilterCountry">Country filter</label>
+                            <input type="text" class="form-control form-control-sm" id="inspFilterCountry" name="insp_filter_country" autocomplete="off" placeholder="Country filter">
                         </div>
                         <div class="col-md-2">
-                            <input type="number" class="form-control form-control-sm" id="inspFilterAgency" placeholder="Agency ID">
+                            <label class="form-label visually-hidden" for="inspFilterAgency">Agency ID</label>
+                            <input type="number" class="form-control form-control-sm" id="inspFilterAgency" name="insp_filter_agency" placeholder="Agency ID">
                         </div>
                         <div class="col-md-4">
-                            <input type="text" class="form-control form-control-sm" id="inspFilterSearch" placeholder="Search worker/identity/inspector">
+                            <label class="form-label visually-hidden" for="inspFilterSearch">Search inspections</label>
+                            <input type="text" class="form-control form-control-sm" id="inspFilterSearch" name="insp_filter_search" autocomplete="off" placeholder="Search worker/identity/inspector">
                         </div>
                         <div class="col-md-2">
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="inspApplyFilter">Apply</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary w-100" id="inspApplyFilter">Apply</button>
                         </div>
                     </div>
                     <?php if ($canManageGov): ?>
-                    <form id="formInspection" class="row g-2 mb-3 gov-form">
-                        <div class="col-md-2"><input class="form-control form-control-sm" name="worker_id" type="number" required placeholder="Worker ID"></div>
+                    <form id="formInspection" class="row g-2 mb-3 gov-form align-items-end">
+                        <div class="col-md-2"><input class="form-control form-control-sm" name="worker_id" type="number" required autocomplete="off" placeholder="Worker ID"></div>
                         <div class="col-md-2"><input class="form-control form-control-sm" name="agency_id" type="number" placeholder="Agency ID"></div>
                         <div class="col-md-2"><input class="form-control form-control-sm" name="inspector_name" required placeholder="Inspector"></div>
                         <div class="col-md-2"><input class="form-control form-control-sm" name="identity" placeholder="Identity"></div>

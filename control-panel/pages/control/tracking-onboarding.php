@@ -12,21 +12,38 @@ if (empty($_SESSION['control_logged_in'])) {
 requireControlPermission(CONTROL_PERM_GOVERNMENT, 'manage_control_government', 'gov_admin', CONTROL_PERM_ADMINS);
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
-startControlLayout('Worker Mobile Onboarding', ['css/control/tracking-onboarding.css'], []);
+startControlLayout('Worker Mobile Onboarding', ['css/control/government.css', 'css/control/tracking-onboarding.css'], []);
 ?>
 <div id="tracking-onboarding-page">
-    <p class="text-muted">Generate QR credentials for worker mobile app onboarding.</p>
+    <p class="text-muted tracking-onb-lead">Generate QR credentials for worker mobile app onboarding.</p>
     <div class="card gov-card">
         <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-3"><input id="onbWorkerId" class="form-control form-control-sm" type="text" placeholder="Worker ID / code / name (e.g. 2, W0002, Ahmed)"></div>
-                <div class="col-md-3"><input id="onbTenantId" class="form-control form-control-sm" type="number" placeholder="Tenant ID (optional)"></div>
-                <div class="col-md-3"><input id="onbDeviceId" class="form-control form-control-sm" type="text" placeholder="Device ID (optional)"></div>
-                <div class="col-md-3"><input id="onbIdentity" class="form-control form-control-sm" type="text" placeholder="Identity (optional)"></div>
+            <div class="row g-2 align-items-end gov-form">
+                <div class="col-md-3">
+                    <label class="form-label visually-hidden" for="onbWorkerId">Worker ID or name</label>
+                    <input id="onbWorkerId" name="onb_worker_id" class="form-control form-control-sm" type="text" autocomplete="off" placeholder="Worker ID / code / name (e.g. 2, W0002, Ahmed)">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label visually-hidden" for="onbTenantId">Tenant ID</label>
+                    <input id="onbTenantId" name="onb_tenant_id" class="form-control form-control-sm" type="number" placeholder="Tenant ID (optional)">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label visually-hidden" for="onbDeviceId">Device ID</label>
+                    <input id="onbDeviceId" name="onb_device_id" class="form-control form-control-sm" type="text" autocomplete="off" placeholder="Device ID (optional)">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label visually-hidden" for="onbIdentity">Identity</label>
+                    <input id="onbIdentity" name="onb_identity" class="form-control form-control-sm" type="text" autocomplete="off" placeholder="Identity (optional)">
+                </div>
             </div>
-            <div class="row g-2 mt-1">
-                <div class="col-md-3"><input id="onbPassword" class="form-control form-control-sm" type="password" placeholder="Password (optional)"></div>
-                <div class="col-md-3"><button id="onbGenerateBtn" type="button" class="btn btn-sm btn-primary">Generate QR</button></div>
+            <div class="row g-2 mt-2 align-items-end gov-form">
+                <div class="col-md-3">
+                    <label class="form-label visually-hidden" for="onbPassword">Password</label>
+                    <input id="onbPassword" name="onb_password" class="form-control form-control-sm" type="password" autocomplete="new-password" placeholder="Password (optional)">
+                </div>
+                <div class="col-md-3">
+                    <button id="onbGenerateBtn" type="button" class="btn btn-sm btn-primary w-100">Generate QR</button>
+                </div>
             </div>
             <div id="onbQr" class="onb-qr mt-2"></div>
         </div>
