@@ -36,6 +36,20 @@
             .replace(/'/g, '&#39;');
     }
 
+    function getRuntimeUrls(button) {
+        const appConfig = document.getElementById('app-config');
+        const buttonBase = (button?.getAttribute('data-base-url') || '').replace(/\/+$/, '');
+        const apiBase = (appConfig?.getAttribute('data-api-base') || `${buttonBase}/api`).replace(/\/+$/, '');
+        const controlApiPath = (appConfig?.getAttribute('data-control-api-path') || `${buttonBase}/api/control`).replace(/\/+$/, '');
+        const publicBase = apiBase.replace(/\/api$/i, '').replace(/\/+$/, '');
+        return {
+            buttonBase,
+            apiBase,
+            controlApiPath,
+            publicBase
+        };
+    }
+
     function buildPayloadFromModal(fields) {
         const identity = onlyDigits(fields.identity?.value || '');
         const passport = onlyDigits(fields.passport?.value || '');
@@ -158,7 +172,7 @@
                 modal.setAttribute('aria-hidden', 'true');
             },
             lookupWorker: async function () {
-                const baseUrl = button.getAttribute('data-base-url') || '';
+                const urls = getRuntimeUrls(button);
                 const identity = onlyDigits(fields.identity?.value || '');
                 const passport = onlyDigits(fields.passport?.value || '');
                 if (fields.identity) fields.identity.value = identity;
@@ -175,7 +189,7 @@
                     const query = new URLSearchParams();
                     if (identity) query.set('identity_number', identity);
                     if (passport) query.set('passport_number', passport);
-                    const response = await fetch(`${baseUrl}/api/workers/ai-lookup.php?${query.toString()}`, {
+                    const response = await fetch(`${urls.apiBase}/workers/ai-lookup.php?${query.toString()}`, {
                         method: 'GET',
                         headers: { 'Accept': 'application/json' }
                     });
@@ -184,13 +198,13 @@
                         throw new Error(result.message || 'Worker not found.');
                     }
                     state.selectedWorker = result.data.worker;
-                    renderLookupResult(lookupResult, result.data, baseUrl);
+                    renderLookupResult(lookupResult, result.data, urls.publicBase);
                     if (runBtn) runBtn.disabled = false;
                     notify('Worker found. You can run AI workflow now.', 'success');
                     return result.data;
                 } catch (error) {
                     state.selectedWorker = null;
-                    renderLookupResult(lookupResult, null, baseUrl);
+                    renderLookupResult(lookupResult, null, urls.publicBase);
                     if (runBtn) runBtn.disabled = true;
                     notify(error.message || 'Worker search failed.', 'warning');
                     return null;
@@ -202,15 +216,15 @@
                 }
             },
             submit: async function (payloadOverride) {
-                const baseUrl = button.getAttribute('data-base-url') || '';
+                const urls = getRuntimeUrls(button);
                 const payload = payloadOverride || buildPayloadFromModal(fields);
                 const hasWorkerId = Number.isFinite(Number(payload.worker_id)) && Number(payload.worker_id) > 0;
                 const endpoints = hasWorkerId
                     ? [
-                        `${baseUrl}/api/control/worker-tracking-onboarding.php`,
-                        `${baseUrl}/workflows/worker-onboarding`
+                        `${urls.controlApiPath}/worker-tracking-onboarding.php`,
+                        `${urls.publicBase}/workflows/worker-onboarding`
                     ]
-                    : [`${baseUrl}/workflows/worker-onboarding`];
+                    : [`${urls.publicBase}/workflows/worker-onboarding`];
 
                 if (!runBtn) return;
                 runBtn.disabled = true;
