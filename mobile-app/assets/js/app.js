@@ -749,7 +749,6 @@
             el.logBox.textContent = line + '\n' + el.logBox.textContent;
             el.logBox.textContent = el.logBox.textContent.slice(0, 7000);
         }
-        console.log('[WorkerMobile]', msg);
     }
 
     function loadConfig() {
