@@ -1675,7 +1675,6 @@ include '../includes/header.php';
 <!-- Countries and cities are now loaded dynamically from System Settings via API -->
 <!-- DEPRECATED: countries-cities.js is no longer used - removed to prevent hardcoded data -->
 
-
 <!-- Closing alert handler for worker forms - DISABLED: Now using UniversalClosingAlerts -->
 <!-- <script src="<?php echo asset('js/worker/closing-alert-handler.js'); ?>?v=<?php echo $cacheBuster; ?>"></script> -->
 
