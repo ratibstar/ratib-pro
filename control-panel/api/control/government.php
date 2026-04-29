@@ -208,7 +208,9 @@ if ($method === 'GET' && $action === 'inspections') {
     $country = trim((string) ($_GET['country'] ?? ''));
     $agencyId = isset($_GET['agency_id']) ? (int) $_GET['agency_id'] : 0;
     $search = trim((string) ($_GET['q'] ?? ''));
-    $sql = "SELECT i.id, i.worker_id, i.agency_id, i.inspector_name, i.inspector_identity, i.inspection_date, i.status, i.notes, i.created_at";
+    $sql = "SELECT i.id, i.worker_id, i.agency_id, i.inspector_name, i.inspector_identity,
+            (i.inspector_password_hash IS NOT NULL AND TRIM(i.inspector_password_hash) <> '') AS inspector_password_set,
+            i.inspection_date, i.status, i.notes, i.created_at";
     if ($hasWorkersTable) {
         $sql .= ", w.worker_name, w.country AS worker_country, w.formatted_id
             FROM gov_inspections i
@@ -391,7 +393,12 @@ if ($method === 'POST' && $action === 'inspection') {
         $notes !== '' ? $notes : null,
     ]);
     $id = (int) $pdo->lastInsertId();
-    $r = $pdo->prepare('SELECT * FROM gov_inspections WHERE id = ?');
+    $r = $pdo->prepare(
+        "SELECT id, worker_id, agency_id, inspector_name, inspector_identity,
+         (inspector_password_hash IS NOT NULL AND TRIM(inspector_password_hash) <> '') AS inspector_password_set,
+         inspection_date, status, notes, created_at
+         FROM gov_inspections WHERE id = ?"
+    );
     $r->execute([$id]);
     gov_json_out(['success' => true, 'data' => $r->fetch(PDO::FETCH_ASSOC)], 201);
 }
@@ -521,14 +528,32 @@ if ($method === 'POST' && $action === 'seed_demo') {
             "INSERT INTO gov_inspections (worker_id, agency_id, inspector_name, inspector_identity, inspector_password_hash, inspection_date, status, notes)
              VALUES (?,?,?,?,?,?,?,?)"
         );
-        $ins1->execute([$w1, null, 'Inspector Demo A', null, null, $lastWeek, 'failed', 'Demo failed inspection']);
+        $ins1->execute([
+            $w1,
+            null,
+            'Inspector Demo A',
+            'INS-DEMO-A',
+            password_hash('demo-inspector-a', PASSWORD_DEFAULT),
+            $lastWeek,
+            'failed',
+            'Demo failed inspection',
+        ]);
         $failedInspectionId = (int) $pdo->lastInsertId();
 
         $ins2 = $pdo->prepare(
             "INSERT INTO gov_inspections (worker_id, agency_id, inspector_name, inspector_identity, inspector_password_hash, inspection_date, status, notes)
              VALUES (?,?,?,?,?,?,?,?)"
         );
-        $ins2->execute([$w2, null, 'Inspector Demo B', null, null, $today, 'passed', 'Demo passed inspection']);
+        $ins2->execute([
+            $w2,
+            null,
+            'Inspector Demo B',
+            'INS-DEMO-B',
+            null,
+            $today,
+            'passed',
+            'Demo passed inspection',
+        ]);
 
         $vio = $pdo->prepare(
             "INSERT INTO gov_violations (worker_id, agency_id, inspection_id, type, severity, description, action_taken)

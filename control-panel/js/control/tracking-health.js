@@ -52,7 +52,7 @@
         tableBody.innerHTML = (rows || []).map(function (r) {
             var workerLabel = r.worker_name || r.formatted_id || ('#' + r.worker_id);
             var status = String(r.status || '').toLowerCase();
-            var badgeClass = status === 'active' ? 'bg-success' : (status === 'inactive' ? 'bg-warning text-dark' : 'bg-danger');
+            var badgeClass = status === 'active' ? 'bg-success' : (status === 'inactive' ? 'badge-status-inactive' : 'bg-danger');
             var ident = (r.worker_identity != null && String(r.worker_identity).trim() !== '')
                 ? String(r.worker_identity)
                 : '—';

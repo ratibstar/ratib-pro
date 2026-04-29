@@ -449,9 +449,24 @@ document.addEventListener('DOMContentLoaded', function() {
         return common.concat(byCountry[profile] || byCountry.default);
     }
 
+    function expandCountryRequirementNames(requiredNames) {
+        const set = new Set();
+        (requiredNames || []).forEach(function (n) {
+            const k = String(n || '').trim();
+            if (!k || k === 'password') return;
+            if (k === 'identity') {
+                set.add('identity_number');
+                return;
+            }
+            set.add(k);
+        });
+        return set;
+    }
+
     function applyCountrySpecificRequirements() {
         const profile = getCountryProfile();
         const requiredNames = getCountrySpecificRequirements(profile);
+        const expanded = expandCountryRequirementNames(requiredNames);
         const allCandidates = document.querySelectorAll('#workerForm [name]');
         allCandidates.forEach(function (el) {
             const name = String(el.getAttribute('name') || '').trim();
@@ -466,7 +481,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const name = String(el.getAttribute('name') || '').trim();
             if (!name) return;
             const isBaseRequired = el.getAttribute('data-base-required') === '1';
-            const shouldRequire = requiredNames.includes(name) || isBaseRequired;
+            const shouldRequire = expanded.has(name) || isBaseRequired;
             if (shouldRequire) {
                 el.setAttribute('required', 'required');
             } else {
@@ -497,20 +512,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const listEl = document.getElementById('countryRequirementsList');
         if (!listEl) return;
         const profile = getCountryProfile();
-        const req = getCountrySpecificRequirements(profile);
+        const reqAll = getCountrySpecificRequirements(profile);
+        const pwdRequired = reqAll.indexOf('password') !== -1;
+        const req = reqAll.filter(function (k) { return k !== 'password'; });
         const missing = [];
         req.forEach(function (name) {
-            const el = form.querySelector('[name="' + name + '"]');
+            const domName = name === 'identity' ? 'identity_number' : name;
+            const el = form.querySelector('[name="' + domName + '"]');
             if (!el) return;
             const val = (el.value || '').toString().trim();
-            if (!val) missing.push(name);
+            if (!val) missing.push(name === 'identity' ? 'identity (identity_number)' : name);
         });
         const doneCount = Math.max(0, req.length - missing.length);
+        const pwdLine = pwdRequired
+            ? '<div class="small text-muted mt-1"><strong>password</strong> is configured via mobile onboarding / tracking device (not on this form).</div>'
+            : '';
         listEl.innerHTML =
             '<div><span class="badge bg-primary">Profile: ' + profile + '</span> ' +
             '<span class="badge bg-success ms-1">Done: ' + doneCount + '/' + req.length + '</span> ' +
             '<span class="badge bg-danger ms-1">Missing: ' + missing.length + '</span></div>' +
-            (missing.length ? ('<div class="mt-1">Missing fields: ' + missing.join(', ') + '</div>') : '<div class="mt-1 text-success">All required country fields are completed.</div>');
+            pwdLine +
+            (missing.length ? ('<div class="mt-1">Missing fields: ' + missing.join(', ') + '</div>') : '<div class="mt-1 text-success">All required country fields on this form are completed.</div>');
     }
 
     window.updateIndonesiaComplianceVisibility = updateIndonesiaComplianceVisibility;

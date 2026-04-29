@@ -156,6 +156,24 @@ $controlCenterUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/admin/co
             <li><a href="<?php echo htmlspecialchars($designedAppUrl); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item" data-permission="control_designed_site,view_control_designed_site"><i class="fas fa-palette"></i><span>Designed site</span></a></li>
             <?php endif; ?>
             <li class="sidebar-section"><span class="section-label">Business Modules</span></li>
+            <?php
+            $countryProgramPerms = 'control_government,view_control_government,gov_admin,control_admins';
+            if (isset($ctrl) && $ctrl) {
+                try {
+                    $chkCp = $ctrl->query("SHOW TABLES LIKE 'control_countries'");
+                    if ($chkCp && $chkCp->num_rows > 0) {
+                        $rcp = $ctrl->query('SELECT slug FROM control_countries WHERE is_active = 1');
+                        if ($rcp) {
+                            while ($crow = $rcp->fetch_assoc()) {
+                                $countryProgramPerms .= ',country_' . $crow['slug'];
+                            }
+                            $rcp->close();
+                        }
+                    }
+                } catch (Throwable $e) { /* ignore */ }
+            }
+            ?>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/country-program.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'country-program.php') ? 'active' : ''; ?>" data-permission="<?php echo htmlspecialchars($countryProgramPerms); ?>"><i class="fas fa-flag"></i><span>Country program</span></a></li>
             <li><a href="<?php echo pageUrl('control/accounting.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'accounting.php') ? 'active' : ''; ?>" data-permission="control_accounting,view_control_accounting"><i class="fas fa-calculator"></i><span>Accounting</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/hr.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'hr.php') ? 'active' : ''; ?>" data-permission="control_hr,view_control_hr"><i class="fas fa-user-tie"></i><span>HR Center</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/government.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'government.php') ? 'active' : ''; ?>" data-permission="control_government,view_control_government,gov_admin"><i class="fas fa-shield-halved"></i><span>Government Control</span></a></li>

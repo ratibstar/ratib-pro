@@ -141,6 +141,7 @@ function control_tracking_resolve_worker_ids_by_search(string $search, int $limi
                  worker_name LIKE ?
                  OR formatted_id LIKE ?
                  OR CAST(id AS CHAR) LIKE ?
+                 OR COALESCE(identity_number, '') LIKE ?
                )
              ORDER BY id DESC
              LIMIT ?"
@@ -150,7 +151,7 @@ function control_tracking_resolve_worker_ids_by_search(string $search, int $limi
         }
         $like = '%' . $search . '%';
         $safeLimit = max(1, min(1000, $limit));
-        $stmt->bind_param('sssi', $like, $like, $like, $safeLimit);
+        $stmt->bind_param('ssssi', $like, $like, $like, $like, $safeLimit);
         $stmt->execute();
         $res = $stmt->get_result();
         $ids = [];
@@ -195,7 +196,7 @@ function control_tracking_enrich_rows_with_worker_info(array $rows): array
     try {
         $meta = [];
         $q = $conn->query(
-            "SELECT id, worker_name, formatted_id, country
+            "SELECT id, worker_name, formatted_id, country, identity_number
              FROM workers
              WHERE status != 'deleted' AND id IN ({$idSql})"
         );
@@ -207,6 +208,7 @@ function control_tracking_enrich_rows_with_worker_info(array $rows): array
                         'worker_name' => (string) ($r['worker_name'] ?? ''),
                         'formatted_id' => (string) ($r['formatted_id'] ?? ''),
                         'worker_country' => (string) ($r['country'] ?? ''),
+                        'identity_number' => trim((string) ($r['identity_number'] ?? '')),
                     ];
                 }
             }
@@ -221,6 +223,10 @@ function control_tracking_enrich_rows_with_worker_info(array $rows): array
                 $row['worker_name'] = $row['worker_name'] ?? '';
                 $row['formatted_id'] = $row['formatted_id'] ?? '';
                 $row['worker_country'] = $row['worker_country'] ?? '';
+            }
+            $devIdent = trim((string) ($row['worker_identity'] ?? ''));
+            if ($devIdent === '' && $wid > 0 && isset($meta[$wid]['identity_number']) && $meta[$wid]['identity_number'] !== '') {
+                $row['worker_identity'] = $meta[$wid]['identity_number'];
             }
         }
         unset($row);
@@ -247,6 +253,8 @@ $canManage = hasControlPermission(CONTROL_PERM_GOVERNMENT)
     || hasControlPermission('gov_admin')
     || hasControlPermission(CONTROL_PERM_ADMINS);
 
+require_once __DIR__ . '/../../includes/control/country-program-scope.php';
+
 try {
     $controlPdo = getControlDB();
     ratibEnsureWorkerTrackingSchema($controlPdo);
@@ -259,6 +267,32 @@ try {
     $countryId = isset($_GET['country']) ? (int) $_GET['country'] : 0;
     $status = trim((string) ($_GET['status'] ?? ''));
     $search = trim((string) ($_GET['q'] ?? ''));
+
+    $ctrlMysqli = $GLOBALS['control_conn'] ?? null;
+    $scopeCountryIds = control_country_program_allowed_country_ids($ctrlMysqli instanceof mysqli ? $ctrlMysqli : null);
+    /** @var list<int>|null $countryScopeIn */
+    $countryScopeIn = null;
+    if ($scopeCountryIds !== null) {
+        if ($scopeCountryIds === []) {
+            control_tracking_json(['success' => false, 'message' => 'No country access for this account'], 403);
+        }
+        if (count($scopeCountryIds) === 1) {
+            $countryId = (int) $scopeCountryIds[0];
+        } else {
+            $pick = isset($_GET['country']) ? (int) $_GET['country'] : 0;
+            if ($pick > 0 && in_array($pick, $scopeCountryIds, true)) {
+                $countryId = $pick;
+            } else {
+                $sessC = isset($_SESSION['control_country_id']) ? (int) $_SESSION['control_country_id'] : 0;
+                if ($sessC > 0 && in_array($sessC, $scopeCountryIds, true)) {
+                    $countryId = $sessC;
+                }
+            }
+            if ($countryId <= 0) {
+                $countryScopeIn = $scopeCountryIds;
+            }
+        }
+    }
 
     $joins = " LEFT JOIN control_agencies ca ON ca.tenant_id = s.tenant_id
                LEFT JOIN (
@@ -281,6 +315,12 @@ try {
     if ($countryId > 0) {
         $where[] = 'ca.country_id = ?';
         $params[] = $countryId;
+    } elseif (is_array($countryScopeIn) && $countryScopeIn !== []) {
+        $marks = implode(',', array_fill(0, count($countryScopeIn), '?'));
+        $where[] = 'ca.country_id IN (' . $marks . ')';
+        foreach ($countryScopeIn as $cid) {
+            $params[] = (int) $cid;
+        }
     }
     if ($status !== '' && in_array($status, ['active', 'inactive', 'lost'], true)) {
         $where[] = 's.status = ?';
@@ -490,6 +530,13 @@ try {
                AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
         );
 
+        $scopeCaSql = '';
+        if ($countryId > 0) {
+            $scopeCaSql = ' AND ca.country_id = ' . (int) $countryId;
+        } elseif (is_array($countryScopeIn) && $countryScopeIn !== []) {
+            $scopeCaSql = ' AND ca.country_id IN (' . implode(',', array_map('intval', $countryScopeIn)) . ')';
+        }
+
         $latestSql = "SELECT s.worker_id, s.tenant_id, s.last_seen, s.status,
                              s.last_lat AS lat, s.last_lng AS lng, s.last_speed AS speed, s.last_battery AS battery,
                              d.worker_identity, d.device_id,
@@ -503,6 +550,7 @@ try {
                           GROUP BY worker_id, tenant_id
                       ) dlast ON dlast.worker_id = s.worker_id AND dlast.tenant_id = s.tenant_id
                       LEFT JOIN worker_tracking_devices d ON d.id = dlast.latest_device_id
+                      WHERE 1=1{$scopeCaSql}
                       ORDER BY s.last_seen DESC
                       LIMIT 120";
         $stLatest = $controlPdo->query($latestSql);

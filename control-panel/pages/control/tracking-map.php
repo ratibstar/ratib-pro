@@ -19,6 +19,7 @@ $canManageGov = hasControlPermission(CONTROL_PERM_GOVERNMENT)
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('Tracking Map', [
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+    'css/control/government.css',
     'css/control/tracking-map.css',
 ], []);
 ?>

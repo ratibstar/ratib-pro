@@ -908,6 +908,17 @@
         }, 100);
     }
 
+    /** Consistent 24h clock for status rows (avoids mixed Arabic/English from system locale). */
+    function formatClockTime(ts) {
+        if (!ts) return '-';
+        return new Date(ts).toLocaleTimeString('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+    }
+
     function syncUi() {
         var m = getMetrics();
         if (el.cfgApiUrl) el.cfgApiUrl.value = cfg.api_url || '';
@@ -923,8 +934,8 @@
             el.cfgStatus.style.borderColor = isConfigReady() ? '#166534' : '#7f1d1d';
         }
 
-        if (el.lastSentAt) el.lastSentAt.textContent = lastSentTs ? new Date(lastSentTs).toLocaleTimeString() : '-';
-        if (el.lastSyncAt) el.lastSyncAt.textContent = state.lastSyncTs ? new Date(state.lastSyncTs).toLocaleTimeString() : '-';
+        if (el.lastSentAt) el.lastSentAt.textContent = lastSentTs ? formatClockTime(lastSentTs) : '-';
+        if (el.lastSyncAt) el.lastSyncAt.textContent = state.lastSyncTs ? formatClockTime(state.lastSyncTs) : '-';
         if (el.batteryLevel) el.batteryLevel.textContent = m.batteryLevel == null ? 'N/A' : (Math.round(m.batteryLevel) + '%');
         if (el.trackingState) {
             el.trackingState.textContent = state.isTracking ? 'ON' : 'OFF';
@@ -2210,7 +2221,10 @@
             return;
         }
         var secs = Math.max(0, Math.floor((m.realGpsAgeMs || 0) / 1000));
-        el.lastUpdateAgo.textContent = secs + ' sec ago';
+        var label = secs >= 3600
+            ? (Math.floor(secs / 3600) + ' hr ago')
+            : (secs >= 180 ? (Math.floor(secs / 60) + ' min ago') : (secs + ' sec ago'));
+        el.lastUpdateAgo.textContent = label;
         el.lastUpdateAgo.className = secs > 120 ? 'bad' : (secs > 60 ? 'warn' : 'fresh');
     }
 

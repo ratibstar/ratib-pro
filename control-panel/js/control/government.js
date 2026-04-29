@@ -90,6 +90,15 @@
         return 'gov-status-pending';
     }
 
+    function inspectionPasswordSetCell(row) {
+        var v = row.inspector_password_set;
+        var on = v === true || v === 1 || v === '1';
+        if (on) {
+            return '<span class="badge bg-success gov-badge" title="Password stored (hashed)">Yes</span>';
+        }
+        return '<span class="badge bg-secondary gov-badge" title="No password on file">No</span>';
+    }
+
     function loadInspections() {
         var c = document.getElementById('inspFilterCountry');
         var a = document.getElementById('inspFilterAgency');
@@ -104,8 +113,8 @@
                 if (!tb) return;
                 tb.innerHTML = (res.data || []).map(function (row) {
                     var stClass = inspectionStatusBadgeClass(row.status);
-                    return '<tr><td>' + row.id + '</td><td>' + escapeHtml(row.worker_name || ('#' + row.worker_id)) + '</td><td>' + escapeHtml(row.inspection_date || '') + '</td><td>' + escapeHtml(row.inspector_name || '') + '</td><td>' + escapeHtml(row.inspector_identity || '') + '</td><td><span class="badge gov-badge ' + stClass + '">' + escapeHtml(row.status || '') + '</span></td><td>' + escapeHtml(String(row.agency_id != null ? row.agency_id : '')) + '</td><td>' + escapeHtml((row.notes || '').substring(0, 80)) + '</td></tr>';
-                }).join('') || '<tr><td colspan="8" class="text-muted">No records</td></tr>';
+                    return '<tr><td>' + row.id + '</td><td>' + escapeHtml(row.worker_name || ('#' + row.worker_id)) + '</td><td>' + escapeHtml(row.inspection_date || '') + '</td><td>' + escapeHtml(row.inspector_name || '') + '</td><td>' + escapeHtml(row.inspector_identity || '') + '</td><td>' + inspectionPasswordSetCell(row) + '</td><td><span class="badge gov-badge ' + stClass + '">' + escapeHtml(row.status || '') + '</span></td><td>' + escapeHtml(String(row.agency_id != null ? row.agency_id : '')) + '</td><td>' + escapeHtml((row.notes || '').substring(0, 80)) + '</td></tr>';
+                }).join('') || '<tr><td colspan="9" class="text-muted">No records</td></tr>';
             })
             .catch(function (e) {
                 flash(e.message || 'Load failed', false);

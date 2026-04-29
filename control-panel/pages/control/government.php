@@ -115,27 +115,58 @@ startControlLayout('Government Control', $additionalCSS, []);
                         </div>
                     </div>
                     <?php if ($canManageGov): ?>
-                    <form id="formInspection" class="row g-2 mb-3 gov-form align-items-end">
-                        <div class="col-md-2"><input class="form-control form-control-sm" name="worker_id" type="number" required autocomplete="off" placeholder="Worker ID"></div>
-                        <div class="col-md-2"><input class="form-control form-control-sm" name="agency_id" type="number" placeholder="Agency ID"></div>
-                        <div class="col-md-2"><input class="form-control form-control-sm" name="inspector_name" required placeholder="Inspector"></div>
-                        <div class="col-md-2"><input class="form-control form-control-sm" name="identity" placeholder="Identity"></div>
-                        <div class="col-md-2"><input class="form-control form-control-sm" name="password" type="password" placeholder="Password"></div>
-                        <div class="col-md-2"><input class="form-control form-control-sm" name="inspection_date" type="date" required></div>
-                        <div class="col-md-2">
-                            <select class="form-select form-select-sm" name="status">
-                                <option value="pending">pending</option>
-                                <option value="passed">passed</option>
-                                <option value="failed">failed</option>
-                            </select>
+                    <form id="formInspection" class="mb-3 gov-form">
+                        <div class="small text-uppercase text-muted mb-1">Inspection target</div>
+                        <div class="row g-2 mb-2 align-items-end">
+                            <div class="col-md-2">
+                                <label class="form-label small mb-0" for="inspWorkerId">Worker ID</label>
+                                <input id="inspWorkerId" class="form-control form-control-sm" name="worker_id" type="number" required autocomplete="off" placeholder="Worker ID">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-0" for="inspAgencyId">Agency ID</label>
+                                <input id="inspAgencyId" class="form-control form-control-sm" name="agency_id" type="number" placeholder="Optional">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-0" for="inspInspectorName">Inspector</label>
+                                <input id="inspInspectorName" class="form-control form-control-sm" name="inspector_name" required autocomplete="off" placeholder="Inspector name">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-0" for="inspDate">Inspection date</label>
+                                <input id="inspDate" class="form-control form-control-sm" name="inspection_date" type="date" required>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small mb-0" for="inspStatus">Status</label>
+                                <select id="inspStatus" class="form-select form-select-sm" name="status">
+                                    <option value="pending">pending</option>
+                                    <option value="passed">passed</option>
+                                    <option value="failed">failed</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="col-md-12"><input class="form-control form-control-sm" name="notes" placeholder="Notes"></div>
-                        <div class="col-12"><button type="submit" class="btn btn-primary btn-sm">Create inspection</button></div>
+                        <div class="small text-uppercase text-muted mb-1">Inspector identity &amp; password</div>
+                        <p class="small text-muted mb-2">Identity is stored in plain text for display; password is hashed on the server and never shown in the table.</p>
+                        <div class="row g-2 mb-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small mb-0" for="inspIdentity">Identity</label>
+                                <input id="inspIdentity" class="form-control form-control-sm" name="identity" type="text" autocomplete="off" placeholder="Inspector / credential identity">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small mb-0" for="inspPassword">Password</label>
+                                <input id="inspPassword" class="form-control form-control-sm" name="password" type="password" autocomplete="new-password" placeholder="Optional — stored hashed only">
+                            </div>
+                        </div>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-12">
+                                <label class="form-label small mb-0" for="inspNotes">Notes</label>
+                                <input id="inspNotes" class="form-control form-control-sm" name="notes" autocomplete="off" placeholder="Notes">
+                            </div>
+                            <div class="col-12 mt-1"><button type="submit" class="btn btn-primary btn-sm">Create inspection</button></div>
+                        </div>
                     </form>
                     <?php endif; ?>
                     <div class="table-responsive">
                         <table class="table table-sm table-striped gov-table" id="tableInspections">
-                            <thead><tr><th>ID</th><th>Worker</th><th>Date</th><th>Inspector</th><th>Identity</th><th>Status</th><th>Agency</th><th>Notes</th></tr></thead>
+                            <thead><tr><th>ID</th><th>Worker</th><th>Date</th><th>Inspector</th><th>Identity</th><th>Password saved</th><th>Status</th><th>Agency</th><th>Notes</th></tr></thead>
                             <tbody></tbody>
                         </table>
                     </div>
