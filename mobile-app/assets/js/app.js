@@ -1492,12 +1492,20 @@
     async function pingServer() {
         var endpoints = ['/health', '/version', '/version.php'];
         var base = (cfg.api_url || '').replace(/\/worker-tracking\/?$/, '');
-        for (var i = 0; i < endpoints.length; i += 1) {
+        var candidates = [];
+        var hasApiSuffix = /\/api\/?$/i.test(base);
+        for (var e = 0; e < endpoints.length; e += 1) {
+            candidates.push(base + endpoints[e]);
+            if (!hasApiSuffix) {
+                candidates.push(base.replace(/\/$/, '') + '/api' + endpoints[e]);
+            }
+        }
+        for (var i = 0; i < candidates.length; i += 1) {
             var start = Date.now();
             try {
                 var ctrl = new AbortController();
                 var timer = setTimeout(function () { ctrl.abort(); }, 4500);
-                var res = await fetch(base + endpoints[i], { method: 'GET', cache: 'no-store', signal: ctrl.signal });
+                var res = await fetch(candidates[i], { method: 'GET', cache: 'no-store', signal: ctrl.signal });
                 clearTimeout(timer);
                 if (!res.ok) continue;
                 var ms = Date.now() - start;

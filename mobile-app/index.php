@@ -96,6 +96,6 @@ declare(strict_types=1);
     </main>
 
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="assets/js/app.js?v=17"></script>
+    <script src="assets/js/app.js?v=18"></script>
 </body>
 </html>
