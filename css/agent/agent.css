@@ -152,8 +152,7 @@ body {
     .page-header h5 {
         padding-left: 0 !important;
         margin-left: 0 !important;
-        color: #ffd54f !important;
-        text-shadow: 0 0 10px rgba(255, 213, 79, 0.7) !important;
+        color: var(--text-white) !important;
     }
     
     .stats-wrapper {
