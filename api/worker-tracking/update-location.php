@@ -359,46 +359,63 @@ try {
         // 2) Geofence intelligence
         // 3) Escape prediction
         // 4) Threat fusion
-        $spoofAdv = AntiSpoofAdvancedEngine::evaluate($controlPdo, $workerId, $tenantId, $latest, $networkType);
-        if (((int) ($spoofAdv['spoof_score'] ?? 0)) >= 80) {
-            $latest['status'] = 'alert';
-            $controlPdo->prepare(
-                "UPDATE worker_locations
-                 SET status = 'alert'
-                 WHERE tenant_id = ? AND worker_id = ? AND recorded_at = ?"
-            )->execute([$tenantId, $workerId, $latest['recorded_at']]);
-            $controlPdo->prepare(
-                "UPDATE worker_tracking_sessions
-                 SET status = 'lost', updated_at = NOW()
-                 WHERE worker_id = ? AND tenant_id = ?"
-            )->execute([$workerId, $tenantId]);
-        }
+        //
+        // Fail-safe: intelligence errors must not block core location sync.
+        $spoofAdv = ['spoof_score' => 0];
+        $geo = ['status' => 'none', 'outside' => [], 'details' => []];
+        $escape = ['risk_score' => 0, 'escape_risk_level' => 'normal'];
+        $threatFusion = ['final_threat_score' => 0, 'threat_level' => 'NORMAL'];
+        $responseAction = ['action_type' => 'NONE', 'priority' => 'LOW', 'auto_focus_map' => false];
+        try {
+            $spoofAdv = AntiSpoofAdvancedEngine::evaluate($controlPdo, $workerId, $tenantId, $latest, $networkType);
+            if (((int) ($spoofAdv['spoof_score'] ?? 0)) >= 80) {
+                $latest['status'] = 'alert';
+                $controlPdo->prepare(
+                    "UPDATE worker_locations
+                     SET status = 'alert'
+                     WHERE tenant_id = ? AND worker_id = ? AND recorded_at = ?"
+                )->execute([$tenantId, $workerId, $latest['recorded_at']]);
+                $controlPdo->prepare(
+                    "UPDATE worker_tracking_sessions
+                     SET status = 'lost', updated_at = NOW()
+                     WHERE worker_id = ? AND tenant_id = ?"
+                )->execute([$workerId, $tenantId]);
+            }
 
-        $geo = GeofenceEngine::evaluateLocation($controlPdo, $workerId, $tenantId, $agencyId, (float) $latest['lat'], (float) $latest['lng']);
-        if (($geo['status'] ?? '') === 'outside') {
-            $latest['status'] = 'alert';
-            $controlPdo->prepare(
-                "UPDATE worker_locations
-                 SET status = 'alert'
-                 WHERE tenant_id = ? AND worker_id = ? AND recorded_at = ?"
-            )->execute([$tenantId, $workerId, $latest['recorded_at']]);
-            $controlPdo->prepare(
-                "UPDATE worker_tracking_sessions
-                 SET status = 'lost', updated_at = NOW()
-                 WHERE worker_id = ? AND tenant_id = ?"
-            )->execute([$workerId, $tenantId]);
-        }
+            $geo = GeofenceEngine::evaluateLocation($controlPdo, $workerId, $tenantId, $agencyId, (float) $latest['lat'], (float) $latest['lng']);
+            if (($geo['status'] ?? '') === 'outside') {
+                $latest['status'] = 'alert';
+                $controlPdo->prepare(
+                    "UPDATE worker_locations
+                     SET status = 'alert'
+                     WHERE tenant_id = ? AND worker_id = ? AND recorded_at = ?"
+                )->execute([$tenantId, $workerId, $latest['recorded_at']]);
+                $controlPdo->prepare(
+                    "UPDATE worker_tracking_sessions
+                     SET status = 'lost', updated_at = NOW()
+                     WHERE worker_id = ? AND tenant_id = ?"
+                )->execute([$workerId, $tenantId]);
+            }
 
-        $escape = WorkerEscapePredictionEngine::evaluate($controlPdo, $workerId, $tenantId, $latest);
-        $threatFusion = WorkerThreatFusionEngine::evaluate(
-            $controlPdo,
-            $workerId,
-            $tenantId,
-            (string) $latest['recorded_at'],
-            $escape,
-            $spoofAdv,
-            $geo
-        );
+            $escape = WorkerEscapePredictionEngine::evaluate($controlPdo, $workerId, $tenantId, $latest);
+            $threatFusion = WorkerThreatFusionEngine::evaluate(
+                $controlPdo,
+                $workerId,
+                $tenantId,
+                (string) $latest['recorded_at'],
+                $escape,
+                $spoofAdv,
+                $geo
+            );
+        } catch (Throwable $intelEx) {
+            emitEvent('WORKER_INTELLIGENCE_ERROR', 'warn', 'Location stored but intelligence engine failed', [
+                'worker_id' => $workerId,
+                'tenant_id' => $tenantId,
+                'source' => 'worker_tracking',
+                'error' => $intelEx->getMessage(),
+                'request_id' => getRequestId(),
+            ]);
+        }
         $geoHasBreachPattern = false;
         if (isset($geo['details']) && is_array($geo['details'])) {
             foreach ($geo['details'] as $d) {
@@ -408,15 +425,25 @@ try {
                 }
             }
         }
-        $responseAction = WorkerResponseOrchestrator::evaluate(
-            $controlPdo,
-            $workerId,
-            $tenantId,
-            (string) $latest['recorded_at'],
-            (int) ($threatFusion['final_threat_score'] ?? 0),
-            (string) ($threatFusion['threat_level'] ?? 'NORMAL'),
-            ['geofence_breach_pattern' => $geoHasBreachPattern]
-        );
+        try {
+            $responseAction = WorkerResponseOrchestrator::evaluate(
+                $controlPdo,
+                $workerId,
+                $tenantId,
+                (string) $latest['recorded_at'],
+                (int) ($threatFusion['final_threat_score'] ?? 0),
+                (string) ($threatFusion['threat_level'] ?? 'NORMAL'),
+                ['geofence_breach_pattern' => $geoHasBreachPattern]
+            );
+        } catch (Throwable $orchestratorEx) {
+            emitEvent('WORKER_RESPONSE_ORCHESTRATOR_ERROR', 'warn', 'Response orchestrator failed', [
+                'worker_id' => $workerId,
+                'tenant_id' => $tenantId,
+                'source' => 'worker_tracking',
+                'error' => $orchestratorEx->getMessage(),
+                'request_id' => getRequestId(),
+            ]);
+        }
 
         // Offline / idle / anomaly checks (single-source events in system_events).
         $offlineRows = $controlPdo->prepare(
