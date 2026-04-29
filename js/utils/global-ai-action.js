@@ -219,42 +219,69 @@
                 const urls = getRuntimeUrls(button);
                 const payload = payloadOverride || buildPayloadFromModal(fields);
                 const hasWorkerId = Number.isFinite(Number(payload.worker_id)) && Number(payload.worker_id) > 0;
-                const endpoints = hasWorkerId
-                    ? [
-                        `${urls.controlApiPath}/worker-tracking-onboarding.php`,
-                        `${urls.publicBase}/workflows/worker-onboarding`
-                    ]
-                    : [`${urls.publicBase}/workflows/worker-onboarding`];
 
                 if (!runBtn) return;
                 runBtn.disabled = true;
                 runBtn.textContent = 'Running...';
                 try {
-                    let lastErrorMessage = 'Failed to execute AI workflow.';
-                    for (const endpoint of endpoints) {
-                        const response = await fetch(endpoint, {
+                    let trackingResult = null;
+                    let workflowResult = null;
+                    let trackingError = '';
+                    let workflowError = '';
+
+                    if (hasWorkerId) {
+                        const trackingResponse = await fetch(`${urls.controlApiPath}/worker-tracking-onboarding.php`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                             body: JSON.stringify(payload)
                         });
-                        const responseText = await response.text();
-                        let result = {};
+                        const trackingText = await trackingResponse.text();
                         try {
-                            result = responseText ? JSON.parse(responseText) : {};
+                            trackingResult = trackingText ? JSON.parse(trackingText) : {};
                         } catch (parseError) {
-                            result = {};
+                            trackingResult = {};
                         }
-                        if (!response.ok || !result.success) {
-                            lastErrorMessage = result.message || `${response.status} ${response.statusText}` || lastErrorMessage;
-                            continue;
+                        if (!trackingResponse.ok || !trackingResult.success) {
+                            trackingError = trackingResult.message || `${trackingResponse.status} ${trackingResponse.statusText}` || 'Tracking onboarding failed.';
                         }
-                        const workflowId = result?.workflow_id || result?.data?.worker_id;
-                        notify(workflowId ? `AI workflow completed (ID: ${workflowId}).` : 'AI workflow completed.', 'success');
-                        api.close();
-                        return result;
                     }
-                    notify(lastErrorMessage, 'warning');
-                    return null;
+
+                    const workflowResponse = await fetch(`${urls.publicBase}/workflows/worker-onboarding`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const workflowText = await workflowResponse.text();
+                    try {
+                        workflowResult = workflowText ? JSON.parse(workflowText) : {};
+                    } catch (parseError) {
+                        workflowResult = {};
+                    }
+                    if (!workflowResponse.ok || !workflowResult.success) {
+                        workflowError = workflowResult.message || `${workflowResponse.status} ${workflowResponse.statusText}` || 'Workflow onboarding failed.';
+                    }
+
+                    if (workflowError) {
+                        const combined = trackingError ? `Tracking: ${trackingError} | Workflow: ${workflowError}` : workflowError;
+                        notify(combined, 'warning');
+                        return null;
+                    }
+
+                    if (trackingError) {
+                        notify(`Worker onboarding completed, but tracking setup failed: ${trackingError}`, 'warning');
+                    } else if (hasWorkerId) {
+                        notify('AI workflow + tracking onboarding completed successfully.', 'success');
+                    } else {
+                        const workflowId = workflowResult?.workflow_id || workflowResult?.data?.worker_id;
+                        notify(workflowId ? `AI workflow completed (ID: ${workflowId}).` : 'AI workflow completed.', 'success');
+                    }
+
+                    api.close();
+                    return {
+                        success: true,
+                        tracking: trackingResult,
+                        workflow: workflowResult
+                    };
                 } catch (error) {
                     notify(error.message || 'AI workflow failed.', 'warning');
                     return null;
