@@ -2,4 +2,6 @@
 deployment:
   tasks:
     - "/usr/bin/rsync -a --delete --exclude='.git/' ./ /home/outratib/public_html/"
+    - "/bin/bash -lc 'printf \"commit=%s\ntime=%s\n\" \"$(git rev-parse --short HEAD 2>/dev/null || echo unknown)\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" > /home/outratib/public_html/deploy-marker.txt'"
     - "/bin/bash -lc 'if [ -d /home/outratib/out.ratib.sa ]; then /usr/bin/rsync -a --delete --exclude=.git/ ./ /home/outratib/out.ratib.sa/; fi'"
+    - "/bin/bash -lc 'if [ -d /home/outratib/out.ratib.sa ]; then printf \"commit=%s\ntime=%s\n\" \"$(git rev-parse --short HEAD 2>/dev/null || echo unknown)\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" > /home/outratib/out.ratib.sa/deploy-marker.txt; fi'"
