@@ -811,6 +811,36 @@ if (!function_exists('ratib_workflow_validate_stage_fields_config')) {
     }
 }
 
+if (!function_exists('ratib_workflow_field_label')) {
+    function ratib_workflow_field_label(string $fieldKey): string
+    {
+        $labels = [
+            'identity_number' => 'Identity Number',
+            'identity_date' => 'Identity Date',
+            'passport_number' => 'Passport Number',
+            'passport_date' => 'Passport Date',
+            'police_number' => 'Police Number',
+            'police_date' => 'Police Date',
+            'medical_number' => 'Medical Number',
+            'medical_date' => 'Medical Date',
+            'training_certificate_number' => 'Training Certificate Number',
+            'training_certificate_date' => 'Training Certificate Date',
+            'contract_duration' => 'Contract Duration',
+            'government_registration_number' => 'Government Registration Number',
+            'work_permit_number' => 'Work Permit Number',
+            'visa_number' => 'Visa Number',
+            'visa_date' => 'Visa Date',
+            'ticket_number' => 'Ticket Number',
+            'ticket_date' => 'Ticket Date',
+            'travel_date' => 'Travel Date',
+        ];
+        if (isset($labels[$fieldKey])) {
+            return $labels[$fieldKey];
+        }
+        return ucwords(str_replace('_', ' ', trim($fieldKey)));
+    }
+}
+
 if (!function_exists('ratib_workflow_compute_document_statuses')) {
     function ratib_workflow_compute_document_statuses(PDO $pdo, int $workflowId, array &$payload, array $workerLike): void
     {
@@ -949,22 +979,24 @@ if (!function_exists('ratib_workflow_apply_on_save')) {
         $shouldProgressWorkflow = $hasExplicitStageUpdate || $forceTransition;
 
         if ($shouldProgressWorkflow) {
-            $fieldErrors = ratib_workflow_validate_stage_fields_config($currentStageDef, $workerLike);
-            if (!empty($fieldErrors)) {
-                throw new Exception('Workflow field validation failed: ' . implode(', ', $fieldErrors));
+            // Only enforce important stage-required fields during progression.
+            $requiredFields = is_array($currentStageDef['required_fields'] ?? null) ? $currentStageDef['required_fields'] : [];
+            $missingRequired = [];
+            foreach ($requiredFields as $field) {
+                $val = $payload[$field] ?? ($existingWorker[$field] ?? null);
+                if ($val === null || $val === '') {
+                    $missingRequired[] = (string)$field;
+                }
+            }
+            if (!empty($missingRequired)) {
+                $missingLabels = array_map('ratib_workflow_field_label', array_values(array_unique($missingRequired)));
+                throw new Exception('Missing required fields (' . count($missingLabels) . '): ' . implode(', ', $missingLabels));
             }
 
             if ($enforce) {
                 $blocked = ratib_workflow_validate_stage_rules($pdo, $workflowId, $currentStage, $workerLike, $stageCompleted);
                 if (!empty($blocked)) {
-                    throw new Exception('Workflow stage requirements not met: ' . implode(', ', $blocked));
-                }
-                $requiredFields = $currentStageDef['required_fields'] ?? [];
-                foreach ($requiredFields as $field) {
-                    $val = $payload[$field] ?? ($existingWorker[$field] ?? null);
-                    if ($val === null || $val === '') {
-                        throw new Exception("Current stage requires field: {$field}");
-                    }
+                    throw new Exception('Workflow stage requirements not met');
                 }
             }
         }

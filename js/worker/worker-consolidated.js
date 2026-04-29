@@ -4342,7 +4342,16 @@ window.saveWorker = async function(event) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}${details}`);
         }
     } catch (error) {
-        SimpleAlert.show('Error', 'Error saving worker: ' + error.message, 'danger', { notification: true });
+        const rawMessage = String((error && error.message) || '');
+        const missingPrefix = 'Missing required fields';
+        if (rawMessage.includes(missingPrefix)) {
+            const cleaned = rawMessage.includes(' - ')
+                ? rawMessage.split(' - ').pop()
+                : rawMessage;
+            SimpleAlert.show('Missing Required Fields', cleaned, 'warning', { notification: true });
+        } else {
+            SimpleAlert.show('Error', 'Error saving worker: ' + rawMessage, 'danger', { notification: true });
+        }
     } finally {
         // Reset the flag
         window.isSavingWorker = false;
