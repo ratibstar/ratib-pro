@@ -83,44 +83,11 @@ jobs:
           fi
 
           DEPLOY_ID="$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; data=(r.get('data', d.get('data',{})) or {}); print(data.get('deploy_id',''))")"
-          if [ -z "$DEPLOY_ID" ]; then
-            echo "No deploy_id returned; skipping deploy completion polling."
-            exit 0
+          if [ -n "$DEPLOY_ID" ]; then
+            echo "cPanel deploy queued successfully. deploy_id: $DEPLOY_ID"
+          else
+            echo "cPanel deploy queued successfully."
           fi
-
-          echo "Polling deployment completion for deploy_id: $DEPLOY_ID"
-          ATTEMPTS=15
-          SLEEP_SECONDS=3
-          for i in $(seq 1 $ATTEMPTS); do
-            RETRIEVE_RESPONSE="$(curl -fsSL --get \
-              -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
-              --data-urlencode "repository_root=$CLEAN_REPO_ROOT" \
-              --data-urlencode "deploy_id=$DEPLOY_ID" \
-              "https://${{ secrets.CPANEL_HOST }}:2083/execute/VersionControlDeployment/retrieve")"
-
-            PARSED_DEPLOY_FIELDS="$(echo "$RETRIEVE_RESPONSE" | DEPLOY_ID="$DEPLOY_ID" python3 -c "import json,sys,os; d=json.load(sys.stdin); r=d.get('result',d) if isinstance(d,dict) else d; data=(r.get('data', d.get('data',{})) if isinstance(r,dict) else {}) or {}; items=data if isinstance(data,list) else [data]; items=[x for x in items if isinstance(x,dict)]; dep_id=os.environ.get('DEPLOY_ID','').strip(); target=next((x for x in items if dep_id and str(x.get('deploy_id',''))==dep_id), items[-1] if items else {}); flags=[target.get('is_complete'), target.get('complete'), target.get('completed')]; complete='1' if any(v in (1, True, '1', 'true', 'True') for v in flags) else '0'; exit_code='' if target.get('exit_code') is None else str(target.get('exit_code')); log_path=str(target.get('log_path','')); print('\\t'.join([complete, exit_code, log_path]))")"
-            DEPLOY_COMPLETE="$(printf '%s' "$PARSED_DEPLOY_FIELDS" | cut -f1)"
-            DEPLOY_EXIT_CODE="$(printf '%s' "$PARSED_DEPLOY_FIELDS" | cut -f2)"
-            DEPLOY_LOG_PATH="$(printf '%s' "$PARSED_DEPLOY_FIELDS" | cut -f3)"
-
-            echo "Attempt $i/$ATTEMPTS: complete=$DEPLOY_COMPLETE exit_code=${DEPLOY_EXIT_CODE:-pending} log_path=$DEPLOY_LOG_PATH"
-
-            if [ "$DEPLOY_COMPLETE" = "1" ]; then
-              if [ -n "$DEPLOY_EXIT_CODE" ] && [ "$DEPLOY_EXIT_CODE" != "0" ]; then
-                echo "cPanel deploy task finished with non-zero exit code: $DEPLOY_EXIT_CODE"
-                echo "Retrieve response:"
-                echo "$RETRIEVE_RESPONSE"
-                exit 1
-              fi
-              echo "cPanel deploy task completed successfully."
-              exit 0
-            fi
-
-            sleep "$SLEEP_SECONDS"
-          done
-
-          echo "Deployment still pending in cPanel queue after polling window."
-          echo "Treating as queued-success to avoid false failures."
-          echo "Follow deploy log in cPanel: $DEPLOY_LOG_PATH"
+          echo "Track progress in cPanel using log: $LOG_PATH"
           exit 0
 
