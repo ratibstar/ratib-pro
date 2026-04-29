@@ -1490,7 +1490,7 @@
     }
 
     async function pingServer() {
-        var endpoints = ['/api/health', '/api/version', '/api/version.php'];
+        var endpoints = ['/health', '/version', '/version.php'];
         var base = (cfg.api_url || '').replace(/\/worker-tracking\/?$/, '');
         for (var i = 0; i < endpoints.length; i += 1) {
             var start = Date.now();
