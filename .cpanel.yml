@@ -2,3 +2,4 @@
 deployment:
   tasks:
     - "/usr/bin/rsync -a --delete --exclude='.git/' ./ /home/outratib/public_html/"
+    - "/bin/bash -lc 'if [ -d /home/outratib/out.ratib.sa ]; then /usr/bin/rsync -a --delete --exclude=.git/ ./ /home/outratib/out.ratib.sa/; fi'"
