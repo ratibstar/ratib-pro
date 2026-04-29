@@ -1134,7 +1134,6 @@
         }
 
         window.addEventListener('beforeinstallprompt', function (e) {
-            e.preventDefault();
             deferredInstallPrompt = e;
             if (el.btnInstallApp) el.btnInstallApp.classList.remove('hidden');
         });
