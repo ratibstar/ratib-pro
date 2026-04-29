@@ -14,7 +14,6 @@
     var flushTimer = null;
     var lastPoint = null;
     var lastSentTs = state.lastSentTs || 0;
-    var deferredInstallPrompt = null;
     var isSending = false;
     var netStatus = { label: '🔴 Offline', color: '#ef4444', quality: 'offline' };
     var healthTimer = null;
@@ -1116,12 +1115,7 @@
         }
         if (el.btnInstallApp) {
             el.btnInstallApp.addEventListener('click', function () {
-                if (!deferredInstallPrompt) return;
-                deferredInstallPrompt.prompt();
-                deferredInstallPrompt.userChoice.finally(function () {
-                    deferredInstallPrompt = null;
-                    el.btnInstallApp.classList.add('hidden');
-                });
+                showMicroFeedback('Use browser menu to install this app');
             });
         }
         if (el.btnDismissInstall) {
@@ -1132,11 +1126,6 @@
                 } catch (e) {}
             });
         }
-
-        window.addEventListener('beforeinstallprompt', function (e) {
-            deferredInstallPrompt = e;
-            if (el.btnInstallApp) el.btnInstallApp.classList.remove('hidden');
-        });
 
         window.addEventListener('online', function () {
             updateNetState();
