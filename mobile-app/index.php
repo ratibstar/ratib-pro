@@ -1,5 +1,7 @@
 <?php
 declare(strict_types=1);
+$appCssVersion = @filemtime(__DIR__ . '/assets/css/app.css') ?: time();
+$appJsVersion = @filemtime(__DIR__ . '/assets/js/app.js') ?: time();
 ?><!doctype html>
 <html lang="en">
 <head>
@@ -9,7 +11,7 @@ declare(strict_types=1);
     <meta name="theme-color" content="#0f172a">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="/mobile-app/assets/icons/icon-192.svg">
-    <link rel="stylesheet" href="assets/css/app.css?v=1">
+    <link rel="stylesheet" href="assets/css/app.css?v=<?php echo (int) $appCssVersion; ?>">
 </head>
 <body>
     <main class="app">
@@ -96,6 +98,6 @@ declare(strict_types=1);
     </main>
 
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="assets/js/app.js?v=18"></script>
+    <script src="assets/js/app.js?v=<?php echo (int) $appJsVersion; ?>"></script>
 </body>
 </html>

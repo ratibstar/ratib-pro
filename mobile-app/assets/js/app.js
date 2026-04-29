@@ -1490,37 +1490,16 @@
     }
 
     async function pingServer() {
-        var endpoints = ['/health', '/version', '/version.php'];
-        var base = (cfg.api_url || '').replace(/\/worker-tracking\/?$/, '');
-        var candidates = [];
-        var hasApiSuffix = /\/api\/?$/i.test(base);
-        for (var e = 0; e < endpoints.length; e += 1) {
-            candidates.push(base + endpoints[e]);
-            if (!hasApiSuffix) {
-                candidates.push(base.replace(/\/$/, '') + '/api' + endpoints[e]);
-            }
+        // Avoid noisy 404 probes in production variants; track reachability by browser network state.
+        if (!navigator.onLine) {
+            return { label: '🔴 Offline', color: '#ef4444', quality: 'offline' };
         }
-        for (var i = 0; i < candidates.length; i += 1) {
-            var start = Date.now();
-            try {
-                var ctrl = new AbortController();
-                var timer = setTimeout(function () { ctrl.abort(); }, 4500);
-                var res = await fetch(candidates[i], { method: 'GET', cache: 'no-store', signal: ctrl.signal });
-                clearTimeout(timer);
-                if (!res.ok) continue;
-                var ms = Date.now() - start;
-                if (ms < 700) return { label: '🟢 Server OK', color: '#22c55e', quality: 'ok' };
-                return { label: '🟡 Slow', color: '#f59e0b', quality: 'slow' };
-            } catch (e) {
-                // try next endpoint
-            }
-        }
-        return { label: '🔴 Offline', color: '#ef4444', quality: 'offline' };
+        return { label: '🟢 Online', color: '#22c55e', quality: 'ok' };
     }
 
     function registerServiceWorker() {
         if (!('serviceWorker' in navigator)) return;
-        navigator.serviceWorker.register('/mobile-app/sw.js')
+        navigator.serviceWorker.register('/mobile-app/sw.js?v=16')
             .then(function () {
                 log('Service worker registered.');
                 scheduleBackgroundSync();

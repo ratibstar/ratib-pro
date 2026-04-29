@@ -1,4 +1,4 @@
-const CACHE_NAME = 'worker-tracker-v16';
+const CACHE_NAME = 'worker-tracker-v17';
 const APP_SHELL = [
   '/mobile-app/index.php',
   '/mobile-app/index.html',
