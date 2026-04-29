@@ -16,6 +16,26 @@ function control_tracking_json(array $payload, int $code = 200): void
     exit;
 }
 
+function control_tracking_query_row(PDO $pdo, string $sql): array
+{
+    $st = $pdo->query($sql);
+    if (!$st) {
+        return [];
+    }
+    $row = $st->fetch(PDO::FETCH_ASSOC);
+    return is_array($row) ? $row : [];
+}
+
+function control_tracking_query_count(PDO $pdo, string $sql): int
+{
+    $st = $pdo->query($sql);
+    if (!$st) {
+        return 0;
+    }
+    $val = $st->fetchColumn();
+    return (int) ($val ?: 0);
+}
+
 function control_tracking_resolve_worker_ids_by_search(string $search, int $limit = 300): array
 {
     $search = trim($search);
@@ -334,42 +354,45 @@ try {
             'sos_24h' => 0,
             'anomalies_24h' => 0,
         ];
-        $row = $controlPdo->query(
+        $row = control_tracking_query_row($controlPdo,
             "SELECT
                 COUNT(*) AS sessions_total,
                 SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS sessions_active,
                 SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) AS sessions_inactive,
                 SUM(CASE WHEN status = 'lost' THEN 1 ELSE 0 END) AS sessions_lost
              FROM worker_tracking_sessions"
-        )->fetch(PDO::FETCH_ASSOC);
+        );
         if (is_array($row)) {
             foreach ($summary as $k => $v) {
                 if (isset($row[$k])) $summary[$k] = (int) $row[$k];
             }
         }
-        $rowDev = $controlPdo->query(
+        $rowDev = control_tracking_query_row($controlPdo,
             "SELECT
                 COUNT(*) AS devices_total,
                 SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS devices_active,
                 SUM(CASE WHEN last_seen >= DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 ELSE 0 END) AS devices_seen_24h
              FROM worker_tracking_devices"
-        )->fetch(PDO::FETCH_ASSOC);
+        );
         if (is_array($rowDev)) {
             $summary['devices_total'] = (int) ($rowDev['devices_total'] ?? 0);
             $summary['devices_active'] = (int) ($rowDev['devices_active'] ?? 0);
             $summary['devices_seen_24h'] = (int) ($rowDev['devices_seen_24h'] ?? 0);
         }
-        $summary['locations_24h'] = (int) ($controlPdo->query(
+        $summary['locations_24h'] = control_tracking_query_count(
+            $controlPdo,
             "SELECT COUNT(*) FROM worker_locations WHERE recorded_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
-        )->fetchColumn() ?: 0);
-        $summary['sos_24h'] = (int) ($controlPdo->query(
+        );
+        $summary['sos_24h'] = control_tracking_query_count(
+            $controlPdo,
             "SELECT COUNT(*) FROM system_events WHERE event_type = 'WORKER_SOS' AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
-        )->fetchColumn() ?: 0);
-        $summary['anomalies_24h'] = (int) ($controlPdo->query(
+        );
+        $summary['anomalies_24h'] = control_tracking_query_count(
+            $controlPdo,
             "SELECT COUNT(*) FROM system_events
              WHERE event_type IN ('WORKER_ANOMALY','WORKER_FAKE_GPS','WORKER_GPS_SPOOF_DETECTED','WORKER_GPS_SPOOF_CONFIRMED')
                AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
-        )->fetchColumn() ?: 0);
+        );
 
         $latestSql = "SELECT s.worker_id, s.tenant_id, s.last_seen, s.status,
                              s.last_lat AS lat, s.last_lng AS lng, s.last_speed AS speed, s.last_battery AS battery,
