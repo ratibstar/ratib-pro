@@ -1,8 +1,9 @@
-const CACHE_NAME = 'worker-tracker-v17';
+const CACHE_NAME = 'worker-tracker-v18';
 const APP_SHELL = [
   '/mobile-app/index.php',
   '/mobile-app/index.html',
   '/mobile-app/assets/css/app.css?v=1',
+  '/mobile-app/assets/js/html5-qrcode.min.js',
   '/mobile-app/assets/js/app.js?v=18',
   '/mobile-app/manifest.json',
   '/mobile-app/assets/icons/icon-192.svg',

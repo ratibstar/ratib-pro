@@ -2,6 +2,7 @@
 declare(strict_types=1);
 $appCssVersion = @filemtime(__DIR__ . '/assets/css/app.css') ?: time();
 $appJsVersion = @filemtime(__DIR__ . '/assets/js/app.js') ?: time();
+$qrJsVersion = @filemtime(__DIR__ . '/assets/js/html5-qrcode.min.js') ?: time();
 ?><!doctype html>
 <html lang="en">
 <head>
@@ -97,7 +98,7 @@ $appJsVersion = @filemtime(__DIR__ . '/assets/js/app.js') ?: time();
 
     </main>
 
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="assets/js/html5-qrcode.min.js?v=<?php echo (int) $qrJsVersion; ?>"></script>
     <script src="assets/js/app.js?v=<?php echo (int) $appJsVersion; ?>"></script>
 </body>
 </html>
