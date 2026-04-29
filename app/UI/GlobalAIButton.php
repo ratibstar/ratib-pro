@@ -38,6 +38,7 @@ final class GlobalAIButton
             <button id="globalAiSearchBtn" type="button" class="global-ai-btn global-ai-btn-cancel">Search Worker</button>
 
             <div id="globalAiLookupResult" class="global-ai-lookup-result" aria-live="polite"></div>
+            <div id="globalAiExecutionResult" class="global-ai-execution-result" aria-live="polite"></div>
 
             <label class="global-ai-label" for="globalAiEmail">Notification Email (optional)</label>
             <input id="globalAiEmail" class="global-ai-input" type="email" placeholder="ops@gov.local">

@@ -4,7 +4,8 @@
  */
 (function () {
     const state = {
-        selectedWorker: null
+        selectedWorker: null,
+        executionPayload: null
     };
 
     function onReady(callback) {
@@ -137,6 +138,41 @@
         ].join('');
     }
 
+    function renderExecutionResult(container, data) {
+        if (!container) return;
+        if (!data) {
+            state.executionPayload = null;
+            container.innerHTML = '';
+            return;
+        }
+        state.executionPayload = data;
+        const trackingOk = Boolean(data.tracking_ok);
+        const workflowOk = Boolean(data.workflow_ok);
+        const workflowId = escapeHtml(data.workflow_id || '-');
+        const workerId = escapeHtml(data.worker_id || '-');
+        const tenantId = escapeHtml(data.tenant_id || '-');
+        const deviceId = escapeHtml(data.device_id || '-');
+        const trackingMessage = escapeHtml(data.tracking_message || '');
+        const workflowMessage = escapeHtml(data.workflow_message || '');
+
+        container.innerHTML = [
+            '<div class="global-ai-exec-card">',
+            '  <div class="global-ai-exec-title">Execution Result</div>',
+            `  <div class="global-ai-result-row"><span>Workflow</span><strong>${workflowOk ? 'OK' : 'Failed'}</strong></div>`,
+            `  <div class="global-ai-result-row"><span>Tracking</span><strong>${trackingOk ? 'OK' : 'Failed'}</strong></div>`,
+            `  <div class="global-ai-result-row"><span>Workflow ID</span><strong>${workflowId}</strong></div>`,
+            `  <div class="global-ai-result-row"><span>Worker ID</span><strong>${workerId}</strong></div>`,
+            `  <div class="global-ai-result-row"><span>Tenant ID</span><strong>${tenantId}</strong></div>`,
+            `  <div class="global-ai-result-row"><span>Device ID</span><strong>${deviceId}</strong></div>`,
+            trackingMessage ? `  <div class="global-ai-result-sub"><strong>Tracking:</strong> ${trackingMessage}</div>` : '',
+            workflowMessage ? `  <div class="global-ai-result-sub"><strong>Workflow:</strong> ${workflowMessage}</div>` : '',
+            '  <div class="global-ai-result-actions">',
+            '    <button type="button" id="globalAiCopyResultBtn" class="global-ai-btn global-ai-btn-cancel">Copy Result JSON</button>',
+            '  </div>',
+            '</div>'
+        ].join('');
+    }
+
     onReady(function () {
         const button = document.getElementById('globalAiActionBtn');
         const modal = document.getElementById('globalAiModal');
@@ -147,6 +183,7 @@
         const searchBtn = document.getElementById('globalAiSearchBtn');
         const runBtn = document.getElementById('globalAiRunBtn');
         const lookupResult = document.getElementById('globalAiLookupResult');
+        const executionResult = document.getElementById('globalAiExecutionResult');
         const fields = {
             identity: document.getElementById('globalAiIdentity'),
             passport: document.getElementById('globalAiPassport'),
@@ -157,6 +194,7 @@
             open: function (prefill) {
                 state.selectedWorker = null;
                 renderLookupResult(lookupResult, null, '');
+                renderExecutionResult(executionResult, null);
                 if (runBtn) runBtn.disabled = true;
                 if (prefill && typeof prefill === 'object') {
                     if (fields.identity) fields.identity.value = onlyDigits(prefill.identityNumber || '');
@@ -199,6 +237,7 @@
                     }
                     state.selectedWorker = result.data.worker;
                     renderLookupResult(lookupResult, result.data, urls.publicBase);
+                    renderExecutionResult(executionResult, null);
                     if (runBtn) runBtn.disabled = false;
                     notify('Worker found. You can run AI workflow now.', 'success');
                     return result.data;
@@ -264,6 +303,16 @@
                     if (workflowError) {
                         const combined = trackingError ? `Tracking: ${trackingError} | Workflow: ${workflowError}` : workflowError;
                         notify(combined, 'warning');
+                        renderExecutionResult(executionResult, {
+                            tracking_ok: !trackingError,
+                            workflow_ok: false,
+                            workflow_id: '',
+                            worker_id: payload.worker_id || '',
+                            tenant_id: trackingResult?.data?.tenant_id || '',
+                            device_id: trackingResult?.data?.device_id || '',
+                            tracking_message: trackingError,
+                            workflow_message: workflowError
+                        });
                         return null;
                     }
 
@@ -276,7 +325,16 @@
                         notify(workflowId ? `AI workflow completed (ID: ${workflowId}).` : 'AI workflow completed.', 'success');
                     }
 
-                    api.close();
+                    renderExecutionResult(executionResult, {
+                        tracking_ok: !trackingError,
+                        workflow_ok: true,
+                        workflow_id: workflowResult?.workflow_id || '',
+                        worker_id: workflowResult?.worker_id || trackingResult?.data?.worker_id || payload.worker_id || '',
+                        tenant_id: trackingResult?.data?.tenant_id || '',
+                        device_id: trackingResult?.data?.device_id || '',
+                        tracking_message: trackingError || 'Tracking onboarding completed.',
+                        workflow_message: 'Worker onboarding workflow completed.'
+                    });
                     return {
                         success: true,
                         tracking: trackingResult,
@@ -320,6 +378,23 @@
                     await api.submit();
                 } catch (error) {
                     // handled by submit()
+                }
+            });
+        }
+        if (executionResult) {
+            executionResult.addEventListener('click', async function (event) {
+                const copyBtn = event.target.closest('#globalAiCopyResultBtn');
+                if (!copyBtn) return;
+                if (!state.executionPayload) {
+                    notify('No execution result to copy yet.', 'warning');
+                    return;
+                }
+                try {
+                    const text = JSON.stringify(state.executionPayload, null, 2);
+                    await navigator.clipboard.writeText(text);
+                    notify('Execution result copied.', 'success');
+                } catch (copyError) {
+                    notify('Copy failed. Please copy manually.', 'warning');
                 }
             });
         }
