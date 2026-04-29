@@ -83,7 +83,7 @@ include '../includes/header.php';
 <!-- Main container for the content of the page -->
 <div class="main-container worker-management-container">
     <div style="margin:10px 0 14px;padding:10px 12px;border-radius:8px;background:#ef4444;color:#ffffff;font-weight:800;text-align:center;">
-        LIVE VISUAL TEST - WORKER PAGE
+        LIVE VISUAL TEST 2026-04-29 09:29 - WORKER PAGE
     </div>
     <!-- Container for the table displaying workers -->
     <div class="table-container">
