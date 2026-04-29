@@ -2,6 +2,8 @@
 deployment:
   tasks:
     - "/bin/bash -lc '(tar --exclude=.git -cf - .) | (cd /home/outratib/public_html && tar -xf -)'"
+    - "/bin/bash -lc 'find /home/outratib/public_html -type d -exec chmod 755 {} \\; && find /home/outratib/public_html -type f -exec chmod 644 {} \\; && [ -f /home/outratib/public_html/.htaccess ] && chmod 644 /home/outratib/public_html/.htaccess || true'"
     - "/bin/bash -lc 'printf \"commit=%s\ntime=%s\n\" \"$(git rev-parse --short HEAD 2>/dev/null || echo unknown)\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" > /home/outratib/public_html/deploy-marker.txt'"
     - "/bin/bash -lc 'if [ -d /home/outratib/out.ratib.sa ]; then (tar --exclude=.git -cf - .) | (cd /home/outratib/out.ratib.sa && tar -xf -); fi'"
+    - "/bin/bash -lc 'if [ -d /home/outratib/out.ratib.sa ]; then find /home/outratib/out.ratib.sa -type d -exec chmod 755 {} \\; && find /home/outratib/out.ratib.sa -type f -exec chmod 644 {} \\; && [ -f /home/outratib/out.ratib.sa/.htaccess ] && chmod 644 /home/outratib/out.ratib.sa/.htaccess || true; fi'"
     - "/bin/bash -lc 'if [ -d /home/outratib/out.ratib.sa ]; then printf \"commit=%s\ntime=%s\n\" \"$(git rev-parse --short HEAD 2>/dev/null || echo unknown)\" \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" > /home/outratib/out.ratib.sa/deploy-marker.txt; fi'"
