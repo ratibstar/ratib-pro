@@ -37,6 +37,42 @@ function control_tracking_query_count(PDO $pdo, string $sql): int
 }
 
 /**
+ * Distinct tenant IDs for control_agencies rows in the given countries (control DB).
+ *
+ * @param list<int> $countryIds
+ * @return list<int>
+ */
+function control_tracking_tenant_ids_for_countries(PDO $controlPdo, array $countryIds): array
+{
+    $clean = [];
+    foreach ($countryIds as $cid) {
+        $id = (int) $cid;
+        if ($id > 0) {
+            $clean[] = $id;
+        }
+    }
+    $countryIds = array_values(array_unique($clean));
+    if ($countryIds === []) {
+        return [];
+    }
+    $marks = implode(',', $countryIds);
+    $sql = "SELECT DISTINCT tenant_id FROM control_agencies WHERE tenant_id IS NOT NULL AND tenant_id > 0 AND country_id IN ({$marks})";
+    $st = $controlPdo->query($sql);
+    if (!$st) {
+        return [];
+    }
+    $out = [];
+    while ($r = $st->fetch(PDO::FETCH_ASSOC)) {
+        $t = (int) ($r['tenant_id'] ?? 0);
+        if ($t > 0) {
+            $out[] = $t;
+        }
+    }
+
+    return array_values(array_unique($out));
+}
+
+/**
  * mysqli that has the Ratib Pro `workers` table (agency program DB).
  * Control panel often sets $GLOBALS['conn'] to control_panel DB only — no `workers` there.
  */
@@ -294,6 +330,21 @@ try {
         }
     }
 
+    $scopeCountryIdList = null;
+    if ($scopeCountryIds !== null) {
+        if ($countryId > 0) {
+            $scopeCountryIdList = [$countryId];
+        } elseif (is_array($countryScopeIn) && $countryScopeIn !== []) {
+            $scopeCountryIdList = $countryScopeIn;
+        } else {
+            $scopeCountryIdList = [];
+        }
+    }
+    $scopeTenantIds = null;
+    if (is_array($scopeCountryIdList)) {
+        $scopeTenantIds = control_tracking_tenant_ids_for_countries($controlPdo, $scopeCountryIdList);
+    }
+
     $joins = " LEFT JOIN control_agencies ca ON ca.tenant_id = s.tenant_id
                LEFT JOIN (
                    SELECT d.worker_id, d.tenant_id, MAX(d.id) AS latest_device_id
@@ -370,10 +421,19 @@ try {
     }
 
     if ($action === 'alerts') {
+        if (is_array($scopeTenantIds)) {
+            if ($scopeTenantIds === []) {
+                control_tracking_json(['success' => true, 'data' => []]);
+            }
+            $tMarks = implode(',', array_map('intval', $scopeTenantIds));
+            $tenantFilter = " AND tenant_id IS NOT NULL AND tenant_id IN ({$tMarks})";
+        } else {
+            $tenantFilter = '';
+        }
         $sql = "SELECT id, event_type, level, tenant_id, message, metadata, created_at
                 FROM system_events
                 WHERE (event_type IN ('WORKER_OFFLINE','WORKER_IDLE_ALERT','WORKER_ANOMALY','WORKER_SOS','WORKER_FAKE_GPS','WORKER_GPS_SPOOF_DETECTED','WORKER_SPOOF_SUSPECTED','WORKER_GPS_SPOOF_CONFIRMED','WORKER_ESCAPE_RISK','WORKER_ESCAPE_HIGH_RISK','WORKER_GEOFENCE_EXIT','WORKER_GEOFENCE_ENTER','WORKER_GEOFENCE_BREACH_PATTERN','WORKER_THREAT_ELEVATED','WORKER_THREAT_HIGH','WORKER_THREAT_CRITICAL','WORKER_RESPONSE_ACTION')
-                       OR event_type LIKE 'WORKER_%')
+                       OR event_type LIKE 'WORKER_%'){$tenantFilter}
                 ORDER BY id DESC
                 LIMIT {$limit}";
         $st = $controlPdo->query($sql);
@@ -408,9 +468,24 @@ try {
         if ($workerId <= 0) {
             control_tracking_json(['success' => false, 'message' => 'worker_id required'], 422);
         }
+        if (is_array($scopeTenantIds)) {
+            if ($scopeTenantIds === []) {
+                control_tracking_json(['success' => false, 'message' => 'No tenants in your country scope'], 403);
+            }
+            if ($tenantId > 0 && !in_array($tenantId, $scopeTenantIds, true)) {
+                control_tracking_json(['success' => false, 'message' => 'tenant_id outside your country scope'], 403);
+            }
+            $ph = implode(',', array_fill(0, count($scopeTenantIds), '?'));
+            $verifySql = "SELECT 1 FROM worker_tracking_sessions WHERE worker_id = ? AND tenant_id IN ({$ph}) LIMIT 1";
+            $vSt = $controlPdo->prepare($verifySql);
+            $vSt->execute(array_merge([$workerId], $scopeTenantIds));
+            if (!$vSt->fetchColumn()) {
+                control_tracking_json(['success' => false, 'message' => 'Worker not in your country scope'], 403);
+            }
+        }
         $sql = "SELECT id, worker_id, tenant_id, lat, lng, accuracy, speed, status, battery, source, recorded_at
                 FROM worker_locations
-                WHERE worker_id = ?" . ($tenantId > 0 ? " AND tenant_id = ?" : "") . "
+                WHERE worker_id = ?" . ($tenantId > 0 ? " AND tenant_id = ?" : '') . "
                 ORDER BY recorded_at DESC, id DESC
                 LIMIT {$limit}";
         $st = $controlPdo->prepare($sql);
@@ -419,10 +494,27 @@ try {
         } else {
             $st->execute([$workerId]);
         }
-        control_tracking_json(['success' => true, 'data' => $st->fetchAll(PDO::FETCH_ASSOC)]);
+        $histRows = $st->fetchAll(PDO::FETCH_ASSOC);
+        if (is_array($scopeTenantIds) && $scopeTenantIds !== []) {
+            $allowedSet = array_fill_keys($scopeTenantIds, true);
+            $histRows = array_values(array_filter($histRows, static function (array $r) use ($allowedSet): bool {
+                $t = (int) ($r['tenant_id'] ?? 0);
+
+                return $t > 0 && isset($allowedSet[$t]);
+            }));
+        }
+        control_tracking_json(['success' => true, 'data' => $histRows]);
     }
 
     if ($action === 'geofences') {
+        $scopeGeoSql = '';
+        if (is_array($scopeCountryIdList) && $scopeCountryIdList !== []) {
+            $cm = implode(',', array_map('intval', $scopeCountryIdList));
+            $scopeGeoSql = " AND (
+                EXISTS (SELECT 1 FROM control_agencies ca WHERE ca.id = g.agency_id AND ca.country_id IN ({$cm}))
+                OR EXISTS (SELECT 1 FROM control_agencies ca WHERE ca.tenant_id = g.tenant_id AND COALESCE(g.tenant_id, 0) > 0 AND ca.country_id IN ({$cm}))
+            )";
+        }
         $sql = "SELECT g.id, g.tenant_id, g.agency_id, g.name, g.center_lat, g.center_lng, g.radius_m, g.is_active, g.created_at,
                        COALESCE(SUM(CASE WHEN s.is_inside = 0 THEN 1 ELSE 0 END), 0) AS outside_count,
                        COALESCE(SUM(CASE WHEN s.is_inside = 1 THEN 1 ELSE 0 END), 0) AS inside_count
@@ -431,6 +523,7 @@ try {
                 WHERE g.is_active = 1
                   AND (:tenant_id_filter = 0 OR g.tenant_id = :tenant_id_value OR g.tenant_id IS NULL)
                   AND (:agency_id_filter = 0 OR g.agency_id = :agency_id_value OR g.agency_id IS NULL)
+                  {$scopeGeoSql}
                 GROUP BY g.id, g.tenant_id, g.agency_id, g.name, g.center_lat, g.center_lng, g.radius_m, g.is_active, g.created_at
                 ORDER BY g.id DESC
                 LIMIT {$limit}";
@@ -461,6 +554,25 @@ try {
         if ($name === '' || $lat < -90 || $lat > 90 || $lng < -180 || $lng > 180 || $radius < 20 || $radius > 500000) {
             control_tracking_json(['success' => false, 'message' => 'Invalid geofence payload'], 422);
         }
+        if (is_array($scopeCountryIdList) && $scopeCountryIdList !== []) {
+            $resolvedCid = 0;
+            if ($gAgency > 0) {
+                $ar = control_tracking_query_row(
+                    $controlPdo,
+                    'SELECT country_id FROM control_agencies WHERE id = ' . (int) $gAgency . ' LIMIT 1'
+                );
+                $resolvedCid = (int) ($ar['country_id'] ?? 0);
+            } elseif ($gTenant > 0) {
+                $ar = control_tracking_query_row(
+                    $controlPdo,
+                    'SELECT country_id FROM control_agencies WHERE tenant_id = ' . (int) $gTenant . ' LIMIT 1'
+                );
+                $resolvedCid = (int) ($ar['country_id'] ?? 0);
+            }
+            if ($resolvedCid <= 0 || !in_array($resolvedCid, $scopeCountryIdList, true)) {
+                control_tracking_json(['success' => false, 'message' => 'Geofence must target an agency/tenant in your allowed countries'], 403);
+            }
+        }
         $ins = $controlPdo->prepare(
             "INSERT INTO worker_geofences
              (tenant_id, agency_id, name, center_lat, center_lng, radius_m, is_active, created_by, created_at, updated_at)
@@ -490,45 +602,106 @@ try {
             'sos_24h' => 0,
             'anomalies_24h' => 0,
         ];
-        $row = control_tracking_query_row($controlPdo,
-            "SELECT
-                COUNT(*) AS sessions_total,
-                SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS sessions_active,
-                SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) AS sessions_inactive,
-                SUM(CASE WHEN status = 'lost' THEN 1 ELSE 0 END) AS sessions_lost
-             FROM worker_tracking_sessions"
-        );
-        if (is_array($row)) {
-            foreach ($summary as $k => $v) {
-                if (isset($row[$k])) $summary[$k] = (int) $row[$k];
+        $scopedHealth = is_array($scopeCountryIdList) && $scopeCountryIdList !== [];
+        $cmHealth = $scopedHealth ? implode(',', array_map('intval', $scopeCountryIdList)) : '';
+        if (!$scopedHealth) {
+            $row = control_tracking_query_row($controlPdo,
+                "SELECT
+                    COUNT(*) AS sessions_total,
+                    SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS sessions_active,
+                    SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) AS sessions_inactive,
+                    SUM(CASE WHEN status = 'lost' THEN 1 ELSE 0 END) AS sessions_lost
+                 FROM worker_tracking_sessions"
+            );
+            if (is_array($row)) {
+                foreach ($summary as $k => $v) {
+                    if (isset($row[$k])) {
+                        $summary[$k] = (int) $row[$k];
+                    }
+                }
+            }
+            $rowDev = control_tracking_query_row($controlPdo,
+                "SELECT
+                    COUNT(*) AS devices_total,
+                    SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS devices_active,
+                    SUM(CASE WHEN last_seen >= DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 ELSE 0 END) AS devices_seen_24h
+                 FROM worker_tracking_devices"
+            );
+            if (is_array($rowDev)) {
+                $summary['devices_total'] = (int) ($rowDev['devices_total'] ?? 0);
+                $summary['devices_active'] = (int) ($rowDev['devices_active'] ?? 0);
+                $summary['devices_seen_24h'] = (int) ($rowDev['devices_seen_24h'] ?? 0);
+            }
+            $summary['locations_24h'] = control_tracking_query_count(
+                $controlPdo,
+                "SELECT COUNT(*) FROM worker_locations WHERE recorded_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
+            );
+            $summary['sos_24h'] = control_tracking_query_count(
+                $controlPdo,
+                "SELECT COUNT(*) FROM system_events WHERE event_type = 'WORKER_SOS' AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
+            );
+            $summary['anomalies_24h'] = control_tracking_query_count(
+                $controlPdo,
+                "SELECT COUNT(*) FROM system_events
+                 WHERE event_type IN ('WORKER_ANOMALY','WORKER_FAKE_GPS','WORKER_GPS_SPOOF_DETECTED','WORKER_GPS_SPOOF_CONFIRMED')
+                   AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
+            );
+        } else {
+            $row = control_tracking_query_row($controlPdo,
+                "SELECT
+                    COUNT(*) AS sessions_total,
+                    SUM(CASE WHEN s.status = 'active' THEN 1 ELSE 0 END) AS sessions_active,
+                    SUM(CASE WHEN s.status = 'inactive' THEN 1 ELSE 0 END) AS sessions_inactive,
+                    SUM(CASE WHEN s.status = 'lost' THEN 1 ELSE 0 END) AS sessions_lost
+                 FROM worker_tracking_sessions s
+                 INNER JOIN control_agencies ca ON ca.tenant_id = s.tenant_id
+                 WHERE ca.country_id IN ({$cmHealth})"
+            );
+            if (is_array($row)) {
+                foreach (['sessions_total', 'sessions_active', 'sessions_inactive', 'sessions_lost'] as $sk) {
+                    if (isset($row[$sk])) {
+                        $summary[$sk] = (int) $row[$sk];
+                    }
+                }
+            }
+            $rowDev = control_tracking_query_row($controlPdo,
+                "SELECT
+                    COUNT(*) AS devices_total,
+                    SUM(CASE WHEN d.is_active = 1 THEN 1 ELSE 0 END) AS devices_active,
+                    SUM(CASE WHEN d.last_seen >= DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 ELSE 0 END) AS devices_seen_24h
+                 FROM worker_tracking_devices d
+                 INNER JOIN control_agencies ca ON ca.tenant_id = d.tenant_id
+                 WHERE ca.country_id IN ({$cmHealth})"
+            );
+            if (is_array($rowDev)) {
+                $summary['devices_total'] = (int) ($rowDev['devices_total'] ?? 0);
+                $summary['devices_active'] = (int) ($rowDev['devices_active'] ?? 0);
+                $summary['devices_seen_24h'] = (int) ($rowDev['devices_seen_24h'] ?? 0);
+            }
+            $summary['locations_24h'] = control_tracking_query_count(
+                $controlPdo,
+                "SELECT COUNT(*) FROM worker_locations wl
+                 INNER JOIN control_agencies ca ON ca.tenant_id = wl.tenant_id
+                 WHERE wl.recorded_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                   AND ca.country_id IN ({$cmHealth})"
+            );
+            if (is_array($scopeTenantIds) && $scopeTenantIds !== []) {
+                $tm = implode(',', array_map('intval', $scopeTenantIds));
+                $summary['sos_24h'] = control_tracking_query_count(
+                    $controlPdo,
+                    "SELECT COUNT(*) FROM system_events WHERE event_type = 'WORKER_SOS'
+                     AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                     AND tenant_id IS NOT NULL AND tenant_id IN ({$tm})"
+                );
+                $summary['anomalies_24h'] = control_tracking_query_count(
+                    $controlPdo,
+                    "SELECT COUNT(*) FROM system_events
+                     WHERE event_type IN ('WORKER_ANOMALY','WORKER_FAKE_GPS','WORKER_GPS_SPOOF_DETECTED','WORKER_GPS_SPOOF_CONFIRMED')
+                       AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+                       AND tenant_id IS NOT NULL AND tenant_id IN ({$tm})"
+                );
             }
         }
-        $rowDev = control_tracking_query_row($controlPdo,
-            "SELECT
-                COUNT(*) AS devices_total,
-                SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS devices_active,
-                SUM(CASE WHEN last_seen >= DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 ELSE 0 END) AS devices_seen_24h
-             FROM worker_tracking_devices"
-        );
-        if (is_array($rowDev)) {
-            $summary['devices_total'] = (int) ($rowDev['devices_total'] ?? 0);
-            $summary['devices_active'] = (int) ($rowDev['devices_active'] ?? 0);
-            $summary['devices_seen_24h'] = (int) ($rowDev['devices_seen_24h'] ?? 0);
-        }
-        $summary['locations_24h'] = control_tracking_query_count(
-            $controlPdo,
-            "SELECT COUNT(*) FROM worker_locations WHERE recorded_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
-        );
-        $summary['sos_24h'] = control_tracking_query_count(
-            $controlPdo,
-            "SELECT COUNT(*) FROM system_events WHERE event_type = 'WORKER_SOS' AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
-        );
-        $summary['anomalies_24h'] = control_tracking_query_count(
-            $controlPdo,
-            "SELECT COUNT(*) FROM system_events
-             WHERE event_type IN ('WORKER_ANOMALY','WORKER_FAKE_GPS','WORKER_GPS_SPOOF_DETECTED','WORKER_GPS_SPOOF_CONFIRMED')
-               AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)"
-        );
 
         $scopeCaSql = '';
         if ($countryId > 0) {
