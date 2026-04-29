@@ -29,17 +29,15 @@ final class GlobalAIButton
             <button id="globalAiModalClose" type="button" class="global-ai-modal-close" aria-label="Close AI modal">&times;</button>
         </div>
         <div class="global-ai-modal-body">
-            <label class="global-ai-label" for="globalAiWorkerId">Worker ID (recommended)</label>
-            <input id="globalAiWorkerId" class="global-ai-input" type="number" min="1" placeholder="e.g. 12">
-
-            <label class="global-ai-label" for="globalAiFullName">Full Name</label>
-            <input id="globalAiFullName" class="global-ai-input" type="text" placeholder="Worker full name">
+            <label class="global-ai-label" for="globalAiIdentity">Identity Number</label>
+            <input id="globalAiIdentity" class="global-ai-input" type="text" placeholder="Identity number">
 
             <label class="global-ai-label" for="globalAiPassport">Passport Number</label>
             <input id="globalAiPassport" class="global-ai-input" type="text" placeholder="Passport number">
 
-            <label class="global-ai-label" for="globalAiEmployerId">Employer ID (optional)</label>
-            <input id="globalAiEmployerId" class="global-ai-input" type="number" min="1" placeholder="Employer ID">
+            <button id="globalAiSearchBtn" type="button" class="global-ai-btn global-ai-btn-cancel">Search Worker</button>
+
+            <div id="globalAiLookupResult" class="global-ai-lookup-result" aria-live="polite"></div>
 
             <label class="global-ai-label" for="globalAiEmail">Notification Email (optional)</label>
             <input id="globalAiEmail" class="global-ai-input" type="email" placeholder="ops@gov.local">

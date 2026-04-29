@@ -498,10 +498,8 @@ class WorkerTable {
             aiWorkflowBtn.addEventListener('click', () => {
                 const form = document.getElementById('workerForm');
                 const prefill = {
-                    workerId: (form?.querySelector('[name="id"]')?.value || '').trim(),
-                    fullName: (form?.querySelector('[name="full_name"]')?.value || '').trim(),
+                    identityNumber: (form?.querySelector('[name="identity_number"]')?.value || '').trim(),
                     passportNumber: (form?.querySelector('[name="passport_number"]')?.value || '').trim(),
-                    employerId: (form?.querySelector('[name="employer_id"]')?.value || '').trim(),
                     notifyTo: (form?.querySelector('[name="email"]')?.value || '').trim()
                 };
                 if (window.GlobalAIAction && typeof window.GlobalAIAction.open === 'function') {
