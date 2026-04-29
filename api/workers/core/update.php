@@ -42,6 +42,9 @@ try {
     $conn = $db->getConnection();
     ratib_indonesia_compliance_ensure_schema($conn);
     ratib_workflow_ensure_schema($conn);
+    $describeStmt = $conn->query("DESCRIBE workers");
+    $workerColumns = $describeStmt->fetchAll(PDO::FETCH_COLUMN);
+    $workerColumnLookup = array_fill_keys($workerColumns, true);
     
     // Check and update status column ENUM if needed to include 'inactive' and 'suspended'
     // This ensures the database accepts all status values we're trying to save
@@ -141,6 +144,9 @@ try {
         'contract_deployment_verification_status', 'contract_deployment_verification_file',
         'workflow_id', 'workflow_version_id', 'current_stage', 'stage_completed'
     ];
+    $allowedFields = array_values(array_filter($allowedFields, function ($field) use ($workerColumnLookup) {
+        return isset($workerColumnLookup[$field]);
+    }));
 
     foreach ($allowedFields as $field) {
         // Map frontend field names to database field names
@@ -194,7 +200,7 @@ try {
             } else {
                 $params[] = $value;
             }
-        } else if ($field === 'status') {
+        } else if ($field === 'status' && isset($workerColumnLookup['status'])) {
             // If status field is missing from data, add it with default value
             $updateFields[] = "status = ?";
             $params[] = 'pending';
@@ -204,9 +210,15 @@ try {
     // EN: Always stamp modification time for reliable audit trails.
     // AR: تحديث وقت التعديل دائماً لضمان تتبع دقيق في سجلات المراجعة.
     // Always update the updated_at timestamp
-    $updateFields[] = "updated_at = NOW()";
-    if (array_key_exists('status_stage', $data)) {
+    if (isset($workerColumnLookup['updated_at'])) {
+        $updateFields[] = "updated_at = NOW()";
+    }
+    if (array_key_exists('status_stage', $data) && isset($workerColumnLookup['status_stage_updated_at'])) {
         $updateFields[] = "status_stage_updated_at = NOW()";
+    }
+
+    if (empty($updateFields)) {
+        throw new Exception('No valid fields to update');
     }
 
     // Add id to params
