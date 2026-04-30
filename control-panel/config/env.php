@@ -18,6 +18,15 @@ define('DB_USER', $e('CONTROL_DB_USER', 'outratib_out'));
 define('DB_PASS', $e('CONTROL_DB_PASS', '9s%BpMr1]dfb'));
 define('CONTROL_PANEL_DB_NAME', $e('CONTROL_PANEL_DB_NAME', 'outratib_control_panel_db'));
 define('DB_NAME', $e('CONTROL_DB_NAME', CONTROL_PANEL_DB_NAME));
+// Aliases used by newer services/scripts.
+define('DB_DATABASE', $e('DB_DATABASE', DB_NAME));
+define('DB_USERNAME', $e('DB_USERNAME', DB_USER));
+define('DB_PASSWORD', $e('DB_PASSWORD', DB_PASS));
+// Security/readiness keys (allow env override; keep safe defaults for setup checks).
+define('EXTERNAL_API_TOKEN', $e('EXTERNAL_API_TOKEN', ''));
+define('WEBHOOK_SIGNING_SECRET', $e('WEBHOOK_SIGNING_SECRET', ''));
+define('SEC_RATE_LIMIT_IP_MAX', (int) $e('SEC_RATE_LIMIT_IP_MAX', '120'));
+define('REQUEST_SIGNING_SECRET', $e('REQUEST_SIGNING_SECRET', ''));
 /** Ratib Pro / N-Genius orders DB (usually outratib_out). Used to fill registration list from ngenius_reg_orders. */
 define('RATIB_PRO_DB_NAME', $e('RATIB_PRO_DB_NAME', 'outratib_out'));
 define('SITE_URL', $e('CONTROL_SITE_URL', 'https://out.ratib.sa'));

@@ -20,7 +20,8 @@ final class EventDispatcher
 
     public function event(object $event): void
     {
-        $eventClass = $event::class;
+        // Compatibility with environments that disallow dynamic ::class usage.
+        $eventClass = get_class($event);
         $this->activeDispatches[$eventClass] = ($this->activeDispatches[$eventClass] ?? 0) + 1;
         if ($this->activeDispatches[$eventClass] > 10) {
             // Hard stop to avoid recursive dispatch loops.
