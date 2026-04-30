@@ -30,6 +30,14 @@ if (!function_exists('str_ends_with')) {
     }
 }
 
+// Ratib Pro requires PHP 8.2+ in production.
+if (PHP_VERSION_ID < 80200) {
+    http_response_code(503);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'Ratib Pro requires PHP 8.2 or higher. Current version: ' . PHP_VERSION;
+    exit;
+}
+
 /**
  * Main Configuration File
  * Each link/site uses its own data via config/env/{host}.php — no conflict.
