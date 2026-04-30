@@ -7,11 +7,11 @@ if (!defined('APP_NAME')) {
     require_once __DIR__ . '/config.php';
 }
 $globalAiButtonPath = __DIR__ . '/../app/UI/GlobalAIButton.php';
-if (is_file($globalAiButtonPath)) {
+if (PHP_VERSION_ID >= 70000 && is_file($globalAiButtonPath)) {
     require_once $globalAiButtonPath;
 }
 $companyProfileServicePath = __DIR__ . '/../app/Services/CompanyProfileService.php';
-if (is_file($companyProfileServicePath)) {
+if (PHP_VERSION_ID >= 70100 && is_file($companyProfileServicePath)) {
     require_once $companyProfileServicePath;
 }
 
