@@ -19,7 +19,7 @@ final class Container
         $this->bindings[$id] = $factory;
     }
 
-    public function get(string $id): mixed
+    public function get(string $id)
     {
         if (array_key_exists($id, $this->instances)) {
             return $this->instances[$id];

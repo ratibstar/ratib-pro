@@ -4,15 +4,26 @@ declare(strict_types=1);
 $root = dirname(__DIR__);
 require_once __DIR__ . '/bootstrap.php';
 
+$isLegacyPhp = PHP_VERSION_ID < 80000;
+$testFiles = [];
+if (!$isLegacyPhp) {
+    $testFiles = [
+        ...glob(__DIR__ . '/Unit/*Test.php') ?: [],
+        ...glob(__DIR__ . '/Workflow/*Test.php') ?: [],
+    ];
+}
 $testFiles = [
-    ...glob(__DIR__ . '/Unit/*Test.php') ?: [],
-    ...glob(__DIR__ . '/Workflow/*Test.php') ?: [],
+    ...$testFiles,
     ...glob(__DIR__ . '/Integration/*Test.php') ?: [],
 ];
 sort($testFiles);
 
 $results = ['passed' => 0, 'failed' => 0, 'skipped' => 0];
 $failures = [];
+
+if ($isLegacyPhp) {
+    echo "[SKIP] Unit and Workflow suites require PHP 8+\n";
+}
 
 foreach ($testFiles as $file) {
     $tests = require $file;

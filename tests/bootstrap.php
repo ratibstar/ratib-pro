@@ -8,6 +8,13 @@ $root = dirname(__DIR__);
 require_once $root . '/app/Core/Autoloader.php';
 Autoloader::register($root . DIRECTORY_SEPARATOR . 'app');
 
+if (!function_exists('str_contains')) {
+    function str_contains($haystack, $needle)
+    {
+        return $needle !== '' && strpos((string) $haystack, (string) $needle) !== false;
+    }
+}
+
 final class TestSkippedException extends RuntimeException
 {
 }
