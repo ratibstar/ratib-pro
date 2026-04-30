@@ -3,7 +3,7 @@
  * EN: Handles configuration/runtime setup behavior in `config/env/load.php`.
  * AR: يدير سلوك إعدادات النظام وتهيئة التشغيل في `config/env/load.php`.
  */
-/**
+/**   
  * Environment loader: each link/site gets its own database and settings.
  * No conflict — everyone has their own data.
  * Ratib Pro only — no control panel on this codebase.
