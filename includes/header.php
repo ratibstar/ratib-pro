@@ -6,18 +6,28 @@
 if (!defined('APP_NAME')) {
     require_once __DIR__ . '/config.php';
 }
-require_once __DIR__ . '/../app/UI/GlobalAIButton.php';
-require_once __DIR__ . '/../app/Services/CompanyProfileService.php';
+$globalAiButtonPath = __DIR__ . '/../app/UI/GlobalAIButton.php';
+if (is_file($globalAiButtonPath)) {
+    require_once $globalAiButtonPath;
+}
+$companyProfileServicePath = __DIR__ . '/../app/Services/CompanyProfileService.php';
+if (is_file($companyProfileServicePath)) {
+    require_once $companyProfileServicePath;
+}
 
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(dirname(__FILE__)));
 }
 
-$companyName = \App\Services\CompanyProfileService::resolveCompanyName(
-    $GLOBALS['conn'] ?? null,
-    $conn ?? null,
-    defined('APP_NAME') ? (string) APP_NAME : ''
-);
+$fallbackCompanyName = defined('APP_NAME') ? (string) APP_NAME : '';
+$companyName = $fallbackCompanyName;
+if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\Services\CompanyProfileService', 'resolveCompanyName')) {
+    $companyName = \App\Services\CompanyProfileService::resolveCompanyName(
+        $GLOBALS['conn'] ?? null,
+        $conn ?? null,
+        $fallbackCompanyName
+    );
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -219,7 +229,9 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
         </div>
     </nav>
 
+    <?php if (class_exists('\App\UI\GlobalAIButton') && method_exists('\App\UI\GlobalAIButton', 'render')): ?>
     <?php echo \App\UI\GlobalAIButton::render(getBaseUrl()); ?>
+    <?php endif; ?>
     
     <!-- Notification badge loading is handled by header-config.js -->
     
