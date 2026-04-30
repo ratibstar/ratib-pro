@@ -39,7 +39,13 @@ if ($dbHost === '' || $dbPort === '' || $dbName === '' || $dbUser === '') {
         require_once $legacyConfig;
         $dbHost = $dbHost !== '' ? $dbHost : (defined('DB_HOST') ? (string) DB_HOST : '');
         $dbPort = $dbPort !== '' ? $dbPort : (defined('DB_PORT') ? (string) DB_PORT : '3306');
-        $dbName = $dbName !== '' ? $dbName : (defined('DB_NAME') ? (string) DB_NAME : '');
+        if ($dbName === '') {
+            if (defined('RATIB_PRO_DB_NAME') && (string) RATIB_PRO_DB_NAME !== '') {
+                $dbName = (string) RATIB_PRO_DB_NAME;
+            } elseif (defined('DB_NAME')) {
+                $dbName = (string) DB_NAME;
+            }
+        }
         $dbUser = $dbUser !== '' ? $dbUser : (defined('DB_USER') ? (string) DB_USER : '');
         $dbPass = $dbPass !== '' ? $dbPass : (defined('DB_PASS') ? (string) DB_PASS : '');
     }
