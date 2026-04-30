@@ -52,5 +52,19 @@ if ($multiTenantEnabled) {
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/Auth.php';
 require_once __DIR__ . '/BaseModel.php';
+require_once __DIR__ . '/../app/Core/ErrorTracker.php';
+
+if (class_exists(\App\Core\ErrorTracker::class)) {
+    \App\Core\ErrorTracker::register(static function () {
+        if (class_exists('Database')) {
+            try {
+                return Database::getInstance()->getConnection();
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+        return null;
+    });
+}
 
 define('CORE_BOOTSTRAP_LOADED', true);

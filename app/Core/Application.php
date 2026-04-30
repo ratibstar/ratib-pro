@@ -97,6 +97,8 @@ final class Application
         $container->singleton(LoginAuditRepository::class, fn (Container $c) => new LoginAuditRepository($c->get(PDO::class)));
         $container->singleton(IdempotencyService::class, fn (Container $c) => new IdempotencyService($c->get(WorkflowRepository::class)));
         $container->singleton(WorkflowMetrics::class, fn (Container $c) => new WorkflowMetrics($c->get(WorkflowRepository::class)));
+        $container->singleton(SystemHealth::class, fn (Container $c) => new SystemHealth($c->get(PDO::class)));
+        $container->singleton(SystemAlertService::class, fn () => new SystemAlertService());
         $container->singleton(AuthorizationService::class, fn (Container $c) => new AuthorizationService($c->get(PDO::class)));
         $container->singleton(AlertService::class, fn (Container $c) => new AlertService($c->get(AlertRepository::class)));
         $container->singleton(WebhookService::class, fn (Container $c) => new WebhookService($c->get(WebhookRepository::class)));

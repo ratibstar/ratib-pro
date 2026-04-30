@@ -4,6 +4,7 @@ declare(strict_types=1);
 use App\Controllers\Http\WorkflowController;
 use App\Core\Application;
 use App\Core\Autoloader;
+use App\Core\ErrorTracker;
 use App\Middleware\AccessMiddleware;
 use App\Middleware\SecurityMiddleware;
 
@@ -20,8 +21,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 
 $projectRoot = dirname(__DIR__, 3);
 Autoloader::register($projectRoot . DIRECTORY_SEPARATOR . 'app');
+require_once $projectRoot . '/app/Core/ErrorTracker.php';
 
 $config = require $projectRoot . '/config/worker_tracking.php';
+ErrorTracker::register(static fn () => \App\Core\Database::connect($config['db']));
 $container = Application::boot($config);
 $rawBody = (string) file_get_contents('php://input');
 $payload = json_decode($rawBody, true) ?? [];

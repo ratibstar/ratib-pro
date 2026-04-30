@@ -7,6 +7,8 @@ use App\Controllers\Http\WorkflowController;
 use App\Controllers\Http\WorkflowTimelineController;
 use App\Controllers\Http\MetricsController;
 use App\Core\Container;
+use App\Core\SystemAlertService;
+use App\Core\SystemHealth;
 use App\Middleware\AccessMiddleware;
 use App\Middleware\SecurityMiddleware;
 
@@ -71,6 +73,19 @@ return static function (Container $container): array {
             function (array $safePayload) use ($container, $security, $access): array {
                 $security->enforce($access->resolveCurrentUser(), 'metrics.failure_rates.view', '');
                 return $container->get(MetricsController::class)->failureRates();
+            }
+        ),
+        'GET /system/health' => fn (array $payload) => $access->handle(
+            $access->resolveCurrentUser(),
+            'metrics.system_health.view',
+            $payload,
+            function (array $safePayload) use ($container, $security, $access): array {
+                $security->enforce($access->resolveCurrentUser(), 'metrics.system_health.view', '');
+                $snapshot = $container->get(SystemHealth::class)->snapshot();
+                $alerts = $container->get(SystemAlertService::class)->evaluate($snapshot);
+                $container->get(SystemAlertService::class)->dispatchFailSafe($alerts);
+                $snapshot['alerts'] = $alerts;
+                return $snapshot;
             }
         ),
     ];

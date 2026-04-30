@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use App\Core\Application;
 use App\Core\Autoloader;
+use App\Core\ErrorTracker;
 use App\Middleware\ExternalApiMiddleware;
 
 header('Content-Type: application/json; charset=UTF-8');
@@ -17,7 +18,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
 
 $projectRoot = dirname(__DIR__, 2);
 Autoloader::register($projectRoot . DIRECTORY_SEPARATOR . 'app');
+require_once $projectRoot . '/app/Core/ErrorTracker.php';
 $config = require $projectRoot . '/config/worker_tracking.php';
+ErrorTracker::register(static fn () => \App\Core\Database::connect($config['db']));
 $container = Application::boot($config);
 
 /** @var ExternalApiMiddleware $externalApi */

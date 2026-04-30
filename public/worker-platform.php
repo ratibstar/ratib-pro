@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use App\Core\Application;
 use App\Core\Autoloader;
+use App\Core\ErrorTracker;
 use App\Core\EventDispatcher;
 
 header('Content-Type: application/json; charset=utf-8');
@@ -13,8 +14,10 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 $projectRoot = dirname(__DIR__);
 Autoloader::register($projectRoot . DIRECTORY_SEPARATOR . 'app');
 require_once $projectRoot . '/app/Core/helpers.php';
+require_once $projectRoot . '/app/Core/ErrorTracker.php';
 
 $config = require $projectRoot . '/config/worker_tracking.php';
+ErrorTracker::register(static fn () => \App\Core\Database::connect($config['db']));
 $container = Application::boot($config);
 $GLOBALS['worker_platform_event_dispatcher'] = $container->get(EventDispatcher::class);
 $routesFactory = require $projectRoot . '/routes/worker_platform.php';
@@ -47,6 +50,9 @@ if (strtoupper($method) === 'GET' && $path === '/metrics/workflow-stats') {
 }
 if (strtoupper($method) === 'GET' && $path === '/metrics/failure-rates') {
     $routeKey = 'GET /metrics/failure-rates';
+}
+if (strtoupper($method) === 'GET' && $path === '/system/health') {
+    $routeKey = 'GET /system/health';
 }
 
 try {
