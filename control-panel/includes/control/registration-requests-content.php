@@ -19,7 +19,7 @@ $publicSiteRoot = (defined('SITE_URL') && is_string(SITE_URL) && SITE_URL !== ''
     : ($host !== '' ? $scheme . '://' . $host . preg_replace('#/control-panel$#', '', $basePath, 1) : '');
 $registerProUrl = ($publicSiteRoot !== '' ? $publicSiteRoot : $baseUrl) . '/pages/home.php?open=register&plan=gold&years=1';
 
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $countries = [];
 $chk = @$ctrl->query("SHOW TABLES LIKE 'control_countries'");
 if ($chk && $chk->num_rows > 0) {

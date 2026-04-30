@@ -42,7 +42,7 @@ $countryWhere = ($hasActive && $hasActive->num_rows > 0) ? "is_active = 1" : "1=
 $hasSort = $ctrl->query("SHOW COLUMNS FROM control_countries LIKE 'sort_order'");
 $orderBy = ($hasSort && $hasSort->num_rows > 0) ? "ORDER BY sort_order ASC, name ASC" : "ORDER BY name ASC";
 
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $countryScopeSql = '';
 if (is_array($allowedCountryIds)) {
     if (count($allowedCountryIds) === 0) {

@@ -18,7 +18,7 @@ if (empty($_SESSION['control_csrf_token']) || !is_string($_SESSION['control_csrf
 }
 $controlCsrfToken = (string) $_SESSION['control_csrf_token'];
 
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $countryId = isset($_GET['country_id']) && ctype_digit($_GET['country_id']) ? (int)$_GET['country_id'] : 0;
 $tab = isset($_GET['tab']) ? $_GET['tab'] : 'dashboard';
 

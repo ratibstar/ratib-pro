@@ -188,7 +188,7 @@ if (!$chk) {
     jsonOut(['success' => false, 'message' => 'control_agencies table not found']);
 }
 
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 
 // Check if country_id column exists
 $hasCountryId = false;

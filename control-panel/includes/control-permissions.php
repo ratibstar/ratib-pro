@@ -99,6 +99,71 @@ function getAllowedCountryIds($ctrl) {
     return $ids;
 }
 
+/**
+ * Country IDs for control-panel lists, filters, and country dropdowns.
+ *
+ * - null: show all active countries (no workspace pin, or invalid session id).
+ * - non-empty array: single-country or multi-country scope — no mixing outside this set in one view.
+ * - empty array: no country access.
+ *
+ * Full-access admins (`getAllowedCountryIds` === null): when `control_country_id` is set in session,
+ * returns only that country so dashboards/lists do not overlap other countries. Switch country in the
+ * panel to change workspace. Without a session country, returns null (global overview until you pick one).
+ *
+ * Country_* operators: same session pin when the session country is within their allowed slugs;
+ * otherwise all allowed slug IDs until they set a valid session country.
+ *
+ * @return list<int>|null
+ */
+function getControlPanelCountryScopeIds(?mysqli $ctrl): ?array {
+    if (empty($_SESSION['control_logged_in'])) {
+        return [];
+    }
+    $sess = isset($_SESSION['control_country_id']) ? (int) $_SESSION['control_country_id'] : 0;
+
+    $allowed = getAllowedCountryIds($ctrl);
+    if ($allowed === null) {
+        if ($sess > 0 && $ctrl instanceof mysqli) {
+            $st = $ctrl->prepare('SELECT id FROM control_countries WHERE id = ? AND is_active = 1 LIMIT 1');
+            if ($st) {
+                $st->bind_param('i', $sess);
+                $st->execute();
+                $res = $st->get_result();
+                $ok = $res && $res->num_rows > 0;
+                $st->close();
+                if ($ok) {
+                    return [$sess];
+                }
+            }
+        }
+
+        return null;
+    }
+    if ($allowed === []) {
+        return [];
+    }
+    if ($sess > 0 && in_array($sess, $allowed, true)) {
+        return [$sess];
+    }
+
+    return $allowed;
+}
+
+/**
+ * True if assigning this control_admins.country_id is allowed for the current operator.
+ */
+function controlPanelAdminCountryIdAllowed(?mysqli $ctrl, ?int $countryId): bool {
+    if ($countryId === null || $countryId <= 0) {
+        return true;
+    }
+    $allowed = getAllowedCountryIds($ctrl);
+    if ($allowed === null) {
+        return true;
+    }
+
+    return in_array($countryId, $allowed, true);
+}
+
 function getAllowedCountrySlugs() {
     if (empty($_SESSION['control_logged_in'])) return [];
     $perms = $_SESSION['control_permissions'] ?? null;

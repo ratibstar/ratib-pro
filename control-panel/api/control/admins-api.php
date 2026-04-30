@@ -58,6 +58,8 @@ if ($ccAdm && $ccAdm->num_rows > 0) {
     $hasAdminCountryCol = true;
 }
 
+$scopeIds = getControlPanelCountryScopeIds($ctrl);
+
 $method = $_SERVER['REQUEST_METHOD'];
 $rawInput = json_decode(file_get_contents('php://input'), true) ?: $_POST;
 
@@ -88,6 +90,18 @@ if ($method === 'POST' && (($rawInput['action'] ?? '') === 'update')) {
         if ($rawC !== null && $rawC !== '' && (int) $rawC > 0) {
             $countryIdVal = (int) $rawC;
         }
+    }
+
+    if ($hasAdminCountryCol && $scopeIds !== null) {
+        $chkAdm = $ctrl->query('SELECT country_id FROM control_admins WHERE id = ' . (int) $id . ' LIMIT 1');
+        $admRow = $chkAdm ? $chkAdm->fetch_assoc() : null;
+        $curCid = (int) ($admRow['country_id'] ?? 0);
+        if ($scopeIds === [] || (!empty($scopeIds) && $curCid > 0 && !in_array($curCid, $scopeIds, true))) {
+            jsonOut(['success' => false, 'message' => 'Access denied']);
+        }
+    }
+    if ($hasAdminCountryCol && $countryIdVal !== null && !controlPanelAdminCountryIdAllowed($ctrl, $countryIdVal)) {
+        jsonOut(['success' => false, 'message' => 'Country not allowed for your account']);
     }
 
     if ($password !== '') {
@@ -163,6 +177,24 @@ if ($method === 'POST' && (($rawInput['action'] ?? '') === 'delete')) {
     $ids = array_filter(array_map('intval', $ids));
     if (empty($ids)) jsonOut(['success' => false, 'message' => 'No valid IDs']);
 
+    if ($hasAdminCountryCol && $scopeIds !== null) {
+        if ($scopeIds === []) {
+            jsonOut(['success' => false, 'message' => 'Access denied']);
+        }
+        $inList = implode(',', array_map('intval', $ids));
+        $scopeIn = implode(',', array_map('intval', $scopeIds));
+        $resF = $ctrl->query("SELECT id FROM control_admins WHERE id IN ($inList) AND country_id IN ($scopeIn)");
+        $ids = [];
+        if ($resF) {
+            while ($rw = $resF->fetch_assoc()) {
+                $ids[] = (int) ($rw['id'] ?? 0);
+            }
+        }
+        if ($ids === []) {
+            jsonOut(['success' => false, 'message' => 'Access denied']);
+        }
+    }
+
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
     $types = str_repeat('i', count($ids));
     $stmt = $ctrl->prepare("DELETE FROM control_admins WHERE id IN ($placeholders)");
@@ -183,13 +215,21 @@ if ($method === 'GET') {
     $search = trim($_GET['search'] ?? '');
     $offset = ($page - 1) * $limit;
 
-    $where = '';
+    $whereParts = [];
     if ($search !== '') {
         $esc = $ctrl->real_escape_string($search);
-        $where = $hasAdminCountryCol
-            ? " WHERE a.username LIKE '%{$esc}%' OR a.full_name LIKE '%{$esc}%'"
-            : " WHERE username LIKE '%{$esc}%' OR full_name LIKE '%{$esc}%'";
+        $whereParts[] = $hasAdminCountryCol
+            ? "(a.username LIKE '%{$esc}%' OR a.full_name LIKE '%{$esc}%')"
+            : "(username LIKE '%{$esc}%' OR full_name LIKE '%{$esc}%')";
     }
+    if ($hasAdminCountryCol && $scopeIds !== null) {
+        if ($scopeIds === []) {
+            $whereParts[] = '1=0';
+        } else {
+            $whereParts[] = 'a.country_id IN (' . implode(',', array_map('intval', $scopeIds)) . ')';
+        }
+    }
+    $where = $whereParts ? ' WHERE ' . implode(' AND ', $whereParts) : '';
 
     $countSql = $hasAdminCountryCol
         ? 'SELECT COUNT(*) as total FROM control_admins a' . $where
@@ -247,6 +287,9 @@ if ($method === 'POST') {
             $newCountryId = (int) $rawC;
         }
     }
+    if ($hasAdminCountryCol && $newCountryId !== null && !controlPanelAdminCountryIdAllowed($ctrl, $newCountryId)) {
+        jsonOut(['success' => false, 'message' => 'Country not allowed for your account']);
+    }
     if ($hasAdminCountryCol) {
         if ($newCountryId !== null) {
             $stmt = $ctrl->prepare('INSERT INTO control_admins (username, password, full_name, is_active, country_id) VALUES (?, ?, ?, ?, ?)');
@@ -300,6 +343,18 @@ if ($method === 'PUT') {
         if ($rawC !== null && $rawC !== '' && (int) $rawC > 0) {
             $countryIdVal = (int) $rawC;
         }
+    }
+
+    if ($hasAdminCountryCol && $scopeIds !== null) {
+        $chkAdm = $ctrl->query('SELECT country_id FROM control_admins WHERE id = ' . (int) $id . ' LIMIT 1');
+        $admRow = $chkAdm ? $chkAdm->fetch_assoc() : null;
+        $curCid = (int) ($admRow['country_id'] ?? 0);
+        if ($scopeIds === [] || (!empty($scopeIds) && $curCid > 0 && !in_array($curCid, $scopeIds, true))) {
+            jsonOut(['success' => false, 'message' => 'Access denied']);
+        }
+    }
+    if ($hasAdminCountryCol && $countryIdVal !== null && !controlPanelAdminCountryIdAllowed($ctrl, $countryIdVal)) {
+        jsonOut(['success' => false, 'message' => 'Country not allowed for your account']);
     }
 
     if ($password !== '') {
@@ -379,6 +434,24 @@ if ($method === 'DELETE') {
 
     $ids = array_filter(array_map('intval', $ids));
     if (empty($ids)) jsonOut(['success' => false, 'message' => 'No valid IDs']);
+
+    if ($hasAdminCountryCol && $scopeIds !== null) {
+        if ($scopeIds === []) {
+            jsonOut(['success' => false, 'message' => 'Access denied']);
+        }
+        $inList = implode(',', array_map('intval', $ids));
+        $scopeIn = implode(',', array_map('intval', $scopeIds));
+        $resF = $ctrl->query("SELECT id FROM control_admins WHERE id IN ($inList) AND country_id IN ($scopeIn)");
+        $ids = [];
+        if ($resF) {
+            while ($rw = $resF->fetch_assoc()) {
+                $ids[] = (int) ($rw['id'] ?? 0);
+            }
+        }
+        if ($ids === []) {
+            jsonOut(['success' => false, 'message' => 'Access denied']);
+        }
+    }
 
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
     $types = str_repeat('i', count($ids));

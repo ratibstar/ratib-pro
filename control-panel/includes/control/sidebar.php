@@ -106,7 +106,7 @@ $controlCenterUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/admin/co
                     if ($chkChats && $chkChats->num_rows > 0 && $chkMsgs && $chkMsgs->num_rows > 0) {
                         $countryScope = '';
                         $hasCountryCol = $ctrl->query("SHOW COLUMNS FROM control_support_chats LIKE 'country_id'")->num_rows > 0;
-                        $allowedIds = function_exists('getAllowedCountryIds') ? getAllowedCountryIds($ctrl) : null;
+                        $allowedIds = function_exists('getControlPanelCountryScopeIds') ? getControlPanelCountryScopeIds($ctrl) : null;
                         $controlUsername = strtolower(trim((string)($_SESSION['control_username'] ?? '')));
                         $isAdminUser = ($controlUsername === 'admin');
                         $sessionCountryId = isset($_SESSION['control_country_id']) ? (int)$_SESSION['control_country_id'] : 0;

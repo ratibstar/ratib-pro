@@ -34,7 +34,7 @@ $apiBase = $baseUrl . '/api/control';
 
 // EN: Server-side filtering/pagination for countries table with access scoping.
 // AR: تنفيذ الفلترة والترقيم على الخادم لجدول الدول ضمن نطاق الصلاحيات.
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 // Server-side data load
 $page = max(1, (int)($_GET['page'] ?? 1));
 $limit = max(5, min(100, (int)($_GET['limit'] ?? 10)));

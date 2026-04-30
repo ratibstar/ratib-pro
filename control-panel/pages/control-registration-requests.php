@@ -35,7 +35,7 @@ $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
 $apiBase = $baseUrl . '/api/control';
 $registerProUrl = $baseUrl . '/pages/home.php?open=register&plan=gold&years=1';
 
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $countries = [];
 $chk = @$ctrl->query("SHOW TABLES LIKE 'control_countries'");
 if ($chk && $chk->num_rows > 0) {

@@ -35,7 +35,7 @@ if (!$chk || $chk->num_rows === 0) {
     exit('Chart of accounts table not found');
 }
 
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 
 $countryId = isset($_GET['country_id']) && ctype_digit((string) $_GET['country_id']) ? (int) $_GET['country_id'] : 0;
 $agencyId = isset($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id']) ? (int) $_GET['agency_id'] : 0;

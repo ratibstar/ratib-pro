@@ -42,7 +42,7 @@ if (!$chk || $chk->num_rows === 0) {
     exit('Table not found');
 }
 
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $countryId = isset($_GET['country_id']) && ctype_digit($_GET['country_id']) ? (int)$_GET['country_id'] : 0;
 $scope = isset($_GET['scope']) ? strtolower(trim((string)$_GET['scope'])) : 'collected';
 if ($scope !== 'recognized') {

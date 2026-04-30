@@ -49,20 +49,14 @@ $chk2 = $ctrl->query("SHOW TABLES LIKE 'control_support_chat_messages'");
 if (!$chk2 || $chk2->num_rows === 0) jsonOut(['success' => false, 'message' => 'Support chats not configured']);
 
 $hasCountryCol = $ctrl->query("SHOW COLUMNS FROM control_support_chats LIKE 'country_id'")->num_rows > 0;
-$allowedCountryIds = getAllowedCountryIds($ctrl); // null = all countries by permission model
+// Lists/chats follow session-pinned scope for country_* operators (see getControlPanelCountryScopeIds).
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $controlUsername = strtolower(trim((string)($_SESSION['control_username'] ?? '')));
 $isAdminUser = ($controlUsername === 'admin');
-$sessionCountryId = isset($_SESSION['control_country_id']) ? (int)$_SESSION['control_country_id'] : 0;
 
-// Hard rule: only "admin" can see all countries.
-// Non-admin users are restricted to selected country or explicit country permissions.
-if (!$isAdminUser) {
-    if ($sessionCountryId > 0) {
-        $allowedCountryIds = [$sessionCountryId];
-    } elseif ($allowedCountryIds === null) {
-        // Non-admin without explicit country scope should not get global visibility.
-        $allowedCountryIds = [];
-    }
+// Non-admin users never get global visibility unless they have country slug scope rows or admin bypass above.
+if (!$isAdminUser && $allowedCountryIds === null) {
+    $allowedCountryIds = [];
 }
 $countryScopeMode = ($hasCountryCol && $allowedCountryIds !== null) ? 'restricted' : 'all';
 $canViewUnscopedChats = ($countryScopeMode === 'all');

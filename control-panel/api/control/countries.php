@@ -51,7 +51,7 @@ if (!$chk || $chk->num_rows === 0) {
     jsonOut(['success' => false, 'message' => 'control_countries table not found. Run migration SQL.']);
 }
 
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 
 $method = $_SERVER['REQUEST_METHOD'];
 

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/control-permissions.php';
+require_once __DIR__ . '/../../includes/control/country-program-scope.php';
 require_once dirname(__DIR__, 3) . '/api/core/ensure-worker-tracking-schema.php';
 require_once dirname(__DIR__, 3) . '/admin/core/EventBus.php';
 
@@ -72,6 +73,134 @@ function control_tracking_tenant_ids_for_countries(PDO $controlPdo, array $count
     return array_values(array_unique($out));
 }
 
+function control_tracking_workers_table_exists(?mysqli $m): bool
+{
+    if (!($m instanceof mysqli)) {
+        return false;
+    }
+    try {
+        $r = $m->query("SHOW TABLES LIKE 'workers'");
+        return $r && $r->num_rows > 0;
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
+/**
+ * Open mysqli for one control_agencies row (tenant program DB with `workers`).
+ */
+function control_tracking_open_program_mysqli_from_agency_row(?array $row): ?mysqli
+{
+    if (!is_array($row) || ($row['db_name'] ?? '') === '') {
+        return null;
+    }
+    $port = (int) ($row['db_port'] ?? 3306);
+    $m = @new mysqli(
+        (string) $row['db_host'],
+        (string) $row['db_user'],
+        (string) $row['db_pass'],
+        (string) $row['db_name'],
+        $port
+    );
+    if ($m->connect_errno !== 0) {
+        return null;
+    }
+    $m->set_charset('utf8mb4');
+    if (!control_tracking_workers_table_exists($m)) {
+        $m->close();
+        return null;
+    }
+    register_shutdown_function(static function () use ($m): void {
+        try {
+            $m->close();
+        } catch (Throwable $e) {
+            // ignore
+        }
+    });
+
+    return $m;
+}
+
+/**
+ * Cached mysqli for tenant's program DB (correct DB when several agencies share a country).
+ */
+function control_tracking_agency_mysqli_for_tenant(mysqli $control, int $tenantId): ?mysqli
+{
+    static $cache = [];
+    if ($tenantId <= 0) {
+        return null;
+    }
+    if (array_key_exists($tenantId, $cache)) {
+        return $cache[$tenantId];
+    }
+    $cache[$tenantId] = null;
+    try {
+        $st = $control->prepare(
+            "SELECT db_host, db_port, db_user, db_pass, db_name
+             FROM control_agencies
+             WHERE tenant_id = ? AND tenant_id IS NOT NULL AND tenant_id > 0
+               AND is_active = 1 AND COALESCE(is_suspended, 0) = 0
+             LIMIT 1"
+        );
+        if (!$st) {
+            return null;
+        }
+        $st->bind_param('i', $tenantId);
+        $st->execute();
+        $res = $st->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $st->close();
+        $m = control_tracking_open_program_mysqli_from_agency_row(is_array($row) ? $row : null);
+        $cache[$tenantId] = $m;
+
+        return $m;
+    } catch (Throwable $e) {
+        error_log('control_tracking_agency_mysqli_for_tenant: ' . $e->getMessage());
+
+        return null;
+    }
+}
+
+/**
+ * First active agency program DB for a country (fallback when tenant_id is unknown).
+ */
+function control_tracking_agency_mysqli_for_country(mysqli $control, int $countryId): ?mysqli
+{
+    static $cache = [];
+    if ($countryId <= 0) {
+        return null;
+    }
+    if (array_key_exists($countryId, $cache)) {
+        return $cache[$countryId];
+    }
+    $cache[$countryId] = null;
+    try {
+        $st = $control->prepare(
+            "SELECT db_host, db_port, db_user, db_pass, db_name
+             FROM control_agencies
+             WHERE country_id = ? AND is_active = 1 AND COALESCE(is_suspended, 0) = 0
+             ORDER BY id ASC
+             LIMIT 1"
+        );
+        if (!$st) {
+            return null;
+        }
+        $st->bind_param('i', $countryId);
+        $st->execute();
+        $res = $st->get_result();
+        $row = $res ? $res->fetch_assoc() : null;
+        $st->close();
+        $m = control_tracking_open_program_mysqli_from_agency_row(is_array($row) ? $row : null);
+        $cache[$countryId] = $m;
+
+        return $m;
+    } catch (Throwable $e) {
+        error_log('control_tracking_agency_mysqli_for_country: ' . $e->getMessage());
+
+        return null;
+    }
+}
+
 /**
  * mysqli that has the Ratib Pro `workers` table (agency program DB).
  * Control panel often sets $GLOBALS['conn'] to control_panel DB only — no `workers` there.
@@ -86,88 +215,67 @@ function control_tracking_workers_mysqli(): ?mysqli
     $computed = true;
     $mysqli = null;
 
-    $workersTableExists = static function (?mysqli $m): bool {
-        if (!($m instanceof mysqli)) {
-            return false;
-        }
-        try {
-            $r = $m->query("SHOW TABLES LIKE 'workers'");
-            return $r && $r->num_rows > 0;
-        } catch (Throwable $e) {
-            return false;
-        }
-    };
-
     $conn = $GLOBALS['conn'] ?? null;
-    if ($conn instanceof mysqli && $workersTableExists($conn)) {
+    if ($conn instanceof mysqli && control_tracking_workers_table_exists($conn)) {
         $mysqli = $conn;
+
         return $mysqli;
     }
 
     $control = $GLOBALS['control_conn'] ?? null;
     $agencyId = isset($_SESSION['control_agency_id']) ? (int) $_SESSION['control_agency_id'] : 0;
-    if (!($control instanceof mysqli) || $agencyId <= 0) {
-        return null;
-    }
-    try {
-        $st = $control->prepare(
-            "SELECT db_host, db_port, db_user, db_pass, db_name
-             FROM control_agencies
-             WHERE id = ? AND is_active = 1 AND COALESCE(is_suspended, 0) = 0
-             LIMIT 1"
-        );
-        if (!$st) {
-            return null;
-        }
-        $st->bind_param('i', $agencyId);
-        $st->execute();
-        $res = $st->get_result();
-        $row = $res ? $res->fetch_assoc() : null;
-        $st->close();
-        if (!is_array($row) || ($row['db_name'] ?? '') === '') {
-            return null;
-        }
-        $port = (int) ($row['db_port'] ?? 3306);
-        $m = @new mysqli(
-            (string) $row['db_host'],
-            (string) $row['db_user'],
-            (string) $row['db_pass'],
-            (string) $row['db_name'],
-            $port
-        );
-        if ($m->connect_errno !== 0) {
-            return null;
-        }
-        $m->set_charset('utf8mb4');
-        if (!$workersTableExists($m)) {
-            $m->close();
-            return null;
-        }
-        $mysqli = $m;
-        register_shutdown_function(static function () use ($m): void {
-            try {
-                $m->close();
-            } catch (Throwable $e) {
-                // ignore
+    if ($control instanceof mysqli && $agencyId > 0) {
+        try {
+            $st = $control->prepare(
+                "SELECT db_host, db_port, db_user, db_pass, db_name
+                 FROM control_agencies
+                 WHERE id = ? AND is_active = 1 AND COALESCE(is_suspended, 0) = 0
+                 LIMIT 1"
+            );
+            if ($st) {
+                $st->bind_param('i', $agencyId);
+                $st->execute();
+                $res = $st->get_result();
+                $row = $res ? $res->fetch_assoc() : null;
+                $st->close();
+                $m = control_tracking_open_program_mysqli_from_agency_row(is_array($row) ? $row : null);
+                if ($m instanceof mysqli) {
+                    $mysqli = $m;
+
+                    return $mysqli;
+                }
             }
-        });
-    } catch (Throwable $e) {
-        error_log('control_tracking_workers_mysqli: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            error_log('control_tracking_workers_mysqli: ' . $e->getMessage());
+        }
+    }
+
+    if ($control instanceof mysqli) {
+        $allowed = control_country_program_allowed_country_ids($control);
+        if ($allowed !== null && count($allowed) === 1) {
+            $m = control_tracking_agency_mysqli_for_country($control, (int) $allowed[0]);
+            if ($m instanceof mysqli) {
+                $mysqli = $m;
+
+                return $mysqli;
+            }
+        }
+        $sessC = isset($_SESSION['control_country_id']) ? (int) $_SESSION['control_country_id'] : 0;
+        if ($sessC > 0 && ($allowed === null || in_array($sessC, $allowed, true))) {
+            $m = control_tracking_agency_mysqli_for_country($control, $sessC);
+            if ($m instanceof mysqli) {
+                $mysqli = $m;
+
+                return $mysqli;
+            }
+        }
     }
 
     return $mysqli;
 }
 
-function control_tracking_resolve_worker_ids_by_search(string $search, int $limit = 300): array
+function control_tracking_run_worker_name_search_on_mysqli(mysqli $conn, string $search, int $limit): array
 {
-    $search = trim($search);
-    if ($search === '') {
-        return [];
-    }
-    $conn = control_tracking_workers_mysqli();
-    if (!($conn instanceof mysqli)) {
-        return [];
-    }
     try {
         $stmt = $conn->prepare(
             "SELECT id
@@ -198,11 +306,139 @@ function control_tracking_resolve_worker_ids_by_search(string $search, int $limi
             }
         }
         $stmt->close();
+
         return $ids;
     } catch (Throwable $e) {
-        error_log('control_tracking_resolve_worker_ids_by_search: ' . $e->getMessage());
+        error_log('control_tracking_run_worker_name_search_on_mysqli: ' . $e->getMessage());
+
         return [];
     }
+}
+
+/**
+ * Which tenant program DBs to search for name/ID matches. null = single DB via control_tracking_workers_mysqli()
+ * resolved to one tenant using DATABASE() vs control_agencies.db_name.
+ *
+ * @return list<int>|null
+ */
+function control_tracking_worker_search_tenant_ids(
+    PDO $controlPdo,
+    ?array $scopeCountryIds,
+    ?array $scopeTenantIds,
+    int $countryId,
+    int $tenantId
+): ?array {
+    if ($tenantId > 0) {
+        if (is_array($scopeTenantIds) && $scopeTenantIds !== [] && !in_array($tenantId, $scopeTenantIds, true)) {
+            return [];
+        }
+
+        return [$tenantId];
+    }
+    if ($countryId > 0) {
+        $ids = control_tracking_tenant_ids_for_countries($controlPdo, [$countryId]);
+        if (is_array($scopeTenantIds) && $scopeTenantIds !== []) {
+            return array_values(array_intersect($ids, $scopeTenantIds));
+        }
+
+        return $ids;
+    }
+    if (is_array($scopeTenantIds) && $scopeTenantIds !== []) {
+        return $scopeTenantIds;
+    }
+    if ($scopeCountryIds === null) {
+        return null;
+    }
+
+    return [];
+}
+
+/**
+ * Per-tenant worker id lists for search OR — avoids merging numeric ids across different program DBs.
+ *
+ * @return list<array{tenant_id: int, worker_ids: list<int>}>
+ */
+function control_tracking_resolve_worker_search_groups(
+    string $search,
+    int $limit,
+    PDO $controlPdo,
+    ?mysqli $controlMysqli,
+    ?array $scopeCountryIds,
+    ?array $scopeTenantIds,
+    int $countryId,
+    int $tenantId
+): array {
+    $search = trim($search);
+    if ($search === '' || !($controlMysqli instanceof mysqli)) {
+        return [];
+    }
+    $tenantIdsToScan = control_tracking_worker_search_tenant_ids(
+        $controlPdo,
+        $scopeCountryIds,
+        $scopeTenantIds,
+        $countryId,
+        $tenantId
+    );
+    if ($tenantIdsToScan === []) {
+        return [];
+    }
+    $safeLimit = max(1, min(1000, $limit));
+
+    if ($tenantIdsToScan === null) {
+        $conn = control_tracking_workers_mysqli();
+        if (!($conn instanceof mysqli)) {
+            return [];
+        }
+        $ids = control_tracking_run_worker_name_search_on_mysqli($conn, $search, $safeLimit);
+        if ($ids === []) {
+            return [];
+        }
+        $dbName = '';
+        $dbRow = $conn->query('SELECT DATABASE() AS dbn');
+        if ($dbRow) {
+            $dr = $dbRow->fetch_assoc();
+            $dbName = (string) ($dr['dbn'] ?? '');
+        }
+        $tid = 0;
+        if ($dbName !== '') {
+            $st = $controlMysqli->prepare(
+                'SELECT tenant_id FROM control_agencies WHERE db_name = ? AND tenant_id IS NOT NULL AND tenant_id > 0 LIMIT 1'
+            );
+            if ($st) {
+                $st->bind_param('s', $dbName);
+                $st->execute();
+                $res = $st->get_result();
+                $tr = $res ? $res->fetch_assoc() : null;
+                $st->close();
+                $tid = (int) ($tr['tenant_id'] ?? 0);
+            }
+        }
+        if ($tid <= 0) {
+            return [];
+        }
+
+        return [['tenant_id' => $tid, 'worker_ids' => $ids]];
+    }
+
+    $n = max(1, count($tenantIdsToScan));
+    $perTenant = max(1, (int) ceil($safeLimit / $n));
+    $out = [];
+    foreach ($tenantIdsToScan as $scanTid) {
+        $scanTid = (int) $scanTid;
+        if ($scanTid <= 0) {
+            continue;
+        }
+        $prog = control_tracking_agency_mysqli_for_tenant($controlMysqli, $scanTid);
+        if (!($prog instanceof mysqli)) {
+            continue;
+        }
+        $ids = control_tracking_run_worker_name_search_on_mysqli($prog, $search, $perTenant);
+        if ($ids !== []) {
+            $out[] = ['tenant_id' => $scanTid, 'worker_ids' => $ids];
+        }
+    }
+
+    return $out;
 }
 
 function control_tracking_enrich_rows_with_worker_info(array $rows): array
@@ -210,67 +446,87 @@ function control_tracking_enrich_rows_with_worker_info(array $rows): array
     if ($rows === []) {
         return $rows;
     }
-    $conn = control_tracking_workers_mysqli();
-    if (!($conn instanceof mysqli)) {
-        return $rows;
+    $control = $GLOBALS['control_conn'] ?? null;
+
+    $groups = [];
+    foreach ($rows as $idx => $row) {
+        $tid = (int) ($row['tenant_id'] ?? 0);
+        $groups[$tid][] = $idx;
     }
-    $ids = [];
-    foreach ($rows as $row) {
-        $wid = (int) ($row['worker_id'] ?? 0);
-        if ($wid > 0) {
-            $ids[$wid] = true;
+
+    foreach ($groups as $tenantKey => $indices) {
+        $conn = null;
+        if ($control instanceof mysqli && $tenantKey > 0) {
+            $conn = control_tracking_agency_mysqli_for_tenant($control, $tenantKey);
         }
-    }
-    if ($ids === []) {
-        return $rows;
-    }
-    $idList = array_keys($ids);
-    $idSql = implode(',', array_map('intval', $idList));
-    if ($idSql === '') {
-        return $rows;
-    }
-    try {
-        $meta = [];
-        $q = $conn->query(
-            "SELECT id, worker_name, formatted_id, country, identity_number
-             FROM workers
-             WHERE status != 'deleted' AND id IN ({$idSql})"
-        );
-        if ($q) {
-            while ($r = $q->fetch_assoc()) {
-                $wid = (int) ($r['id'] ?? 0);
-                if ($wid > 0) {
-                    $meta[$wid] = [
-                        'worker_name' => (string) ($r['worker_name'] ?? ''),
-                        'formatted_id' => (string) ($r['formatted_id'] ?? ''),
-                        'worker_country' => (string) ($r['country'] ?? ''),
-                        'identity_number' => trim((string) ($r['identity_number'] ?? '')),
-                    ];
+        if (!($conn instanceof mysqli)) {
+            $conn = control_tracking_workers_mysqli();
+        }
+        if (!($conn instanceof mysqli)) {
+            foreach ($indices as $idx) {
+                $rows[$idx]['worker_name'] = $rows[$idx]['worker_name'] ?? '';
+                $rows[$idx]['formatted_id'] = $rows[$idx]['formatted_id'] ?? '';
+                $rows[$idx]['worker_country'] = $rows[$idx]['worker_country'] ?? '';
+            }
+
+            continue;
+        }
+        $ids = [];
+        foreach ($indices as $idx) {
+            $wid = (int) ($rows[$idx]['worker_id'] ?? 0);
+            if ($wid > 0) {
+                $ids[$wid] = true;
+            }
+        }
+        if ($ids === []) {
+            continue;
+        }
+        $idSql = implode(',', array_map('intval', array_keys($ids)));
+        if ($idSql === '') {
+            continue;
+        }
+        try {
+            $meta = [];
+            $q = $conn->query(
+                "SELECT id, worker_name, formatted_id, country, identity_number
+                 FROM workers
+                 WHERE status != 'deleted' AND id IN ({$idSql})"
+            );
+            if ($q) {
+                while ($r = $q->fetch_assoc()) {
+                    $wid = (int) ($r['id'] ?? 0);
+                    if ($wid > 0) {
+                        $meta[$wid] = [
+                            'worker_name' => (string) ($r['worker_name'] ?? ''),
+                            'formatted_id' => (string) ($r['formatted_id'] ?? ''),
+                            'worker_country' => (string) ($r['country'] ?? ''),
+                            'identity_number' => trim((string) ($r['identity_number'] ?? '')),
+                        ];
+                    }
                 }
             }
-        }
-        foreach ($rows as &$row) {
-            $wid = (int) ($row['worker_id'] ?? 0);
-            if ($wid > 0 && isset($meta[$wid])) {
-                $row['worker_name'] = $meta[$wid]['worker_name'];
-                $row['formatted_id'] = $meta[$wid]['formatted_id'];
-                $row['worker_country'] = $meta[$wid]['worker_country'];
-            } else {
-                $row['worker_name'] = $row['worker_name'] ?? '';
-                $row['formatted_id'] = $row['formatted_id'] ?? '';
-                $row['worker_country'] = $row['worker_country'] ?? '';
+            foreach ($indices as $idx) {
+                $wid = (int) ($rows[$idx]['worker_id'] ?? 0);
+                if ($wid > 0 && isset($meta[$wid])) {
+                    $rows[$idx]['worker_name'] = $meta[$wid]['worker_name'];
+                    $rows[$idx]['formatted_id'] = $meta[$wid]['formatted_id'];
+                    $rows[$idx]['worker_country'] = $meta[$wid]['worker_country'];
+                } else {
+                    $rows[$idx]['worker_name'] = $rows[$idx]['worker_name'] ?? '';
+                    $rows[$idx]['formatted_id'] = $rows[$idx]['formatted_id'] ?? '';
+                    $rows[$idx]['worker_country'] = $rows[$idx]['worker_country'] ?? '';
+                }
+                $devIdent = trim((string) ($rows[$idx]['worker_identity'] ?? ''));
+                if ($devIdent === '' && $wid > 0 && isset($meta[$wid]['identity_number']) && $meta[$wid]['identity_number'] !== '') {
+                    $rows[$idx]['worker_identity'] = $meta[$wid]['identity_number'];
+                }
             }
-            $devIdent = trim((string) ($row['worker_identity'] ?? ''));
-            if ($devIdent === '' && $wid > 0 && isset($meta[$wid]['identity_number']) && $meta[$wid]['identity_number'] !== '') {
-                $row['worker_identity'] = $meta[$wid]['identity_number'];
-            }
+        } catch (Throwable $e) {
+            error_log('control_tracking_enrich_rows_with_worker_info: ' . $e->getMessage());
         }
-        unset($row);
-        return $rows;
-    } catch (Throwable $e) {
-        error_log('control_tracking_enrich_rows_with_worker_info: ' . $e->getMessage());
-        return $rows;
     }
+
+    return $rows;
 }
 
 if (empty($_SESSION['control_logged_in'])) {
@@ -289,8 +545,6 @@ $canManage = hasControlPermission(CONTROL_PERM_GOVERNMENT)
     || hasControlPermission('gov_admin')
     || hasControlPermission(CONTROL_PERM_ADMINS);
 
-require_once __DIR__ . '/../../includes/control/country-program-scope.php';
-
 try {
     $controlPdo = getControlDB();
     ratibEnsureWorkerTrackingSchema($controlPdo);
@@ -305,7 +559,7 @@ try {
     $search = trim((string) ($_GET['q'] ?? ''));
 
     $ctrlMysqli = $GLOBALS['control_conn'] ?? null;
-    $scopeCountryIds = control_country_program_allowed_country_ids($ctrlMysqli instanceof mysqli ? $ctrlMysqli : null);
+    $scopeCountryIds = control_country_program_effective_scope_country_ids($ctrlMysqli instanceof mysqli ? $ctrlMysqli : null);
     /** @var list<int>|null $countryScopeIn */
     $countryScopeIn = null;
     if ($scopeCountryIds !== null) {
@@ -378,11 +632,32 @@ try {
         $params[] = $status;
     }
     if ($search !== '') {
-        $workerIdsByName = control_tracking_resolve_worker_ids_by_search($search);
+        $searchGroups = control_tracking_resolve_worker_search_groups(
+            $search,
+            300,
+            $controlPdo,
+            $ctrlMysqli instanceof mysqli ? $ctrlMysqli : null,
+            $scopeCountryIds,
+            $scopeTenantIds,
+            $countryId,
+            $tenantId
+        );
         $searchWhere = "(CAST(s.worker_id AS CHAR) LIKE ? OR CAST(s.tenant_id AS CHAR) LIKE ? OR ca.name LIKE ? OR COALESCE(d.worker_identity, '') LIKE ? OR COALESCE(d.device_id, '') LIKE ?)";
-        if ($workerIdsByName !== []) {
-            $inMarks = implode(',', array_fill(0, count($workerIdsByName), '?'));
-            $searchWhere .= " OR s.worker_id IN ({$inMarks})";
+        if ($searchGroups !== []) {
+            $parts = [];
+            foreach ($searchGroups as $sg) {
+                $wids = array_map('intval', $sg['worker_ids'] ?? []);
+                $wids = array_values(array_filter($wids, static fn (int $x): bool => $x > 0));
+                $tid = (int) ($sg['tenant_id'] ?? 0);
+                if ($tid <= 0 || $wids === []) {
+                    continue;
+                }
+                $inMarks = implode(',', array_fill(0, count($wids), '?'));
+                $parts[] = "(s.tenant_id = ? AND s.worker_id IN ({$inMarks}))";
+            }
+            if ($parts !== []) {
+                $searchWhere .= ' OR (' . implode(' OR ', $parts) . ')';
+            }
         }
         $where[] = '(' . $searchWhere . ')';
         $like = '%' . $search . '%';
@@ -391,8 +666,17 @@ try {
         $params[] = $like;
         $params[] = $like;
         $params[] = $like;
-        foreach ($workerIdsByName as $wid) {
-            $params[] = (int) $wid;
+        foreach ($searchGroups as $sg) {
+            $wids = array_map('intval', $sg['worker_ids'] ?? []);
+            $wids = array_values(array_filter($wids, static fn (int $x): bool => $x > 0));
+            $tid = (int) ($sg['tenant_id'] ?? 0);
+            if ($tid <= 0 || $wids === []) {
+                continue;
+            }
+            $params[] = $tid;
+            foreach ($wids as $wid) {
+                $params[] = $wid;
+            }
         }
     }
 
@@ -713,7 +997,7 @@ try {
         $latestSql = "SELECT s.worker_id, s.tenant_id, s.last_seen, s.status,
                              s.last_lat AS lat, s.last_lng AS lng, s.last_speed AS speed, s.last_battery AS battery,
                              d.worker_identity, d.device_id,
-                             ca.id AS agency_id, ca.name AS agency_name
+                             ca.id AS agency_id, ca.name AS agency_name, ca.country_id
                       FROM worker_tracking_sessions s
                       LEFT JOIN control_agencies ca ON ca.tenant_id = s.tenant_id
                       LEFT JOIN (

@@ -47,7 +47,7 @@ if (!$chkCountries || $chkCountries->num_rows === 0) {
 $chkAgencies = $ctrl->query("SHOW TABLES LIKE 'control_agencies'");
 // Still return countries even if control_agencies is missing (show "Add agencies" in UI)
 
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $countryWhere = "1=1";
 $chkActive = $ctrl->query("SHOW COLUMNS FROM control_countries LIKE 'is_active'");
 if ($chkActive && $chkActive->num_rows > 0) {

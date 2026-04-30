@@ -23,6 +23,8 @@ if (!$ctrl) {
     die('Control panel database unavailable.');
 }
 
+$scopeIds = getControlPanelCountryScopeIds($ctrl);
+
 $path = $_SERVER['REQUEST_URI'] ?? '';
 $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
@@ -47,7 +49,13 @@ $countriesForSelect = [];
 try {
     $chkCt = $ctrl->query("SHOW TABLES LIKE 'control_countries'");
     if ($chkCt && $chkCt->num_rows > 0) {
-        $rc = $ctrl->query("SELECT id, name FROM control_countries WHERE is_active = 1 ORDER BY sort_order ASC, name ASC");
+        $countrySql = "SELECT id, name FROM control_countries WHERE is_active = 1 ORDER BY sort_order ASC, name ASC";
+        if ($scopeIds !== null && !empty($scopeIds)) {
+            $countrySql = "SELECT id, name FROM control_countries WHERE id IN (" . implode(',', array_map('intval', $scopeIds)) . ") AND is_active = 1 ORDER BY sort_order ASC, name ASC";
+        } elseif ($scopeIds === []) {
+            $countrySql = "SELECT id, name FROM control_countries WHERE 1=0";
+        }
+        $rc = $ctrl->query($countrySql);
         if ($rc) {
             while ($row = $rc->fetch_assoc()) {
                 $countriesForSelect[] = $row;
@@ -61,7 +69,18 @@ try {
     if ($chk && $chk->num_rows > 0) {
         $esc = $search !== '' ? $ctrl->real_escape_string($search) : '';
         if ($hasAdminCountryCol) {
-            $where = $search !== '' ? " WHERE a.username LIKE '%{$esc}%' OR a.full_name LIKE '%{$esc}%'" : '';
+            $parts = [];
+            if ($search !== '') {
+                $parts[] = "(a.username LIKE '%{$esc}%' OR a.full_name LIKE '%{$esc}%')";
+            }
+            if ($scopeIds !== null) {
+                if ($scopeIds === []) {
+                    $parts[] = '1=0';
+                } else {
+                    $parts[] = 'a.country_id IN (' . implode(',', array_map('intval', $scopeIds)) . ')';
+                }
+            }
+            $where = $parts ? ' WHERE ' . implode(' AND ', $parts) : '';
             $totalAdmins = (int)($ctrl->query("SELECT COUNT(*) as c FROM control_admins a" . $where)->fetch_assoc()['c'] ?? 0);
             $sql = "SELECT a.id, a.username, a.full_name, a.is_active, a.created_at, a.country_id, c.name AS country_name FROM control_admins a LEFT JOIN control_countries c ON c.id = a.country_id"
                 . $where . " ORDER BY a.id DESC LIMIT " . (int)$limit . " OFFSET " . (int)$offset;

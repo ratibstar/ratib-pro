@@ -88,7 +88,7 @@ if (!$chk || $chk->num_rows === 0) {
     jsonOut(['success' => false, 'message' => 'Run config/control_accounting.sql and control_accounting_full.sql first']);
 }
 
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 
 /**
  * Next journal reference for General Ledger manual entries: GL-00001 (5-digit global sequence).

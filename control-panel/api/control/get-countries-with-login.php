@@ -31,7 +31,7 @@ if (!$ctrl) {
     exit;
 }
 
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $countryWhere = "c.is_active = 1";
 if ($allowedCountryIds === []) {
     $countryWhere .= " AND 1=0";

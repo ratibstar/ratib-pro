@@ -60,7 +60,7 @@ $countryUsersUrlWithControl = $controlPagesBase . '/country-users.php?control=1'
 // EN: Build scoped statistics according to allowed countries for current operator.
 // AR: تجهيز الإحصاءات ضمن نطاق الدول المسموح بها للمستخدم الحالي.
 // Get statistics - filter by user's allowed countries when they have country-specific access
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $stats = [
     'countries' => 0,
     'agencies' => 0,

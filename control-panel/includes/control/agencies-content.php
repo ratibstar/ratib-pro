@@ -86,7 +86,7 @@ if (!function_exists('agency_open_site_url_is_different_host')) {
 
 // EN: Load country scope and list data according to permission constraints and active filters.
 // AR: تحميل نطاق الدول وقائمة الوكالات حسب صلاحيات المستخدم والفلاتر الحالية.
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+$allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $countries = [];
 $countryMap = [];
 $countrySlugMap = [];

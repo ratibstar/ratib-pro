@@ -41,6 +41,55 @@ function control_country_program_allowed_country_ids(?mysqli $ctrl): ?array
 }
 
 /**
+ * Country IDs for worker tracking / government data: no cross-country mixing when a workspace is set.
+ *
+ * - Full-access (`control_select_country`): null = all countries only when no `control_country_id` in session;
+ *   when session has a valid active country, returns that single id.
+ * - Slug-scoped: same as `control_country_program_allowed_country_ids` with optional session pin to one country.
+ *
+ * @return list<int>|null
+ */
+function control_country_program_effective_scope_country_ids(?mysqli $ctrl): ?array
+{
+    if (empty($_SESSION['control_logged_in'])) {
+        return [];
+    }
+    $sess = isset($_SESSION['control_country_id']) ? (int) $_SESSION['control_country_id'] : 0;
+
+    if (control_country_program_can_operate_all_countries()) {
+        if ($sess <= 0 || !($ctrl instanceof mysqli)) {
+            return null;
+        }
+        $st = $ctrl->prepare('SELECT id FROM control_countries WHERE id = ? AND is_active = 1 LIMIT 1');
+        if ($st) {
+            $st->bind_param('i', $sess);
+            $st->execute();
+            $res = $st->get_result();
+            $ok = $res && $res->num_rows > 0;
+            $st->close();
+            if ($ok) {
+                return [$sess];
+            }
+        }
+
+        return null;
+    }
+
+    $base = control_country_program_allowed_country_ids($ctrl);
+    if (!is_array($base)) {
+        return [];
+    }
+    if ($base === []) {
+        return [];
+    }
+    if ($sess > 0 && in_array($sess, $base, true)) {
+        return [$sess];
+    }
+
+    return $base;
+}
+
+/**
  * Allowed profile slugs for the current operator; null = all registry + templates.
  *
  * @return list<string>|null
