@@ -1719,4 +1719,4 @@ if (!file_exists($footerPath)) {
 } else {
     include $footerPath;
 }
-?>
+?> 
