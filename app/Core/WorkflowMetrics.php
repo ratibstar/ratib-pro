@@ -15,6 +15,10 @@ final class WorkflowMetrics
     private int $activeWorkflows = 0;
     private float $avgExecutionTime = 0.0;
     private int $totalExecutionTime = 0;
+    /** @var array<string, array{started:int,completed:int,failed:int}> */
+    private array $perWorkflowType = [];
+    /** @var array<int, array{started:int,completed:int,failed:int}> */
+    private array $perCountry = [];
 
     public function __construct(private readonly WorkflowRepository $workflowRepository)
     {
@@ -27,6 +31,7 @@ final class WorkflowMetrics
         $this->startedAt[$workflowId] = microtime(true);
         try {
             $this->workflowRepository->incrementMetricsTotals();
+            $this->incrementDimensions($workflowId, 'started');
         } catch (\Throwable) {
             // metrics are best-effort and must not affect workflow execution
         }
@@ -43,6 +48,7 @@ final class WorkflowMetrics
             : 0.0;
         try {
             $this->workflowRepository->incrementMetricsSuccess($durationMs);
+            $this->incrementDimensions($workflowId, 'completed');
         } catch (\Throwable) {
             // metrics are best-effort and must not affect workflow execution
         }
@@ -55,8 +61,47 @@ final class WorkflowMetrics
         $this->activeWorkflows = max(0, $this->activeWorkflows - 1);
         try {
             $this->workflowRepository->incrementMetricsFailure($durationMs);
+            $this->incrementDimensions($workflowId, 'failed');
         } catch (\Throwable) {
             // metrics are best-effort and must not affect workflow execution
+        }
+    }
+
+    /** @return array<string, mixed> */
+    public function snapshot(): array
+    {
+        return [
+            'global' => [
+                'total_started' => $this->totalStarted,
+                'total_completed' => $this->totalCompleted,
+                'total_failed' => $this->totalFailed,
+                'active_workflows' => $this->activeWorkflows,
+                'avg_execution_time_ms' => (int) round($this->avgExecutionTime),
+            ],
+            'per_workflow_type' => $this->perWorkflowType,
+            'per_country' => $this->perCountry,
+        ];
+    }
+
+    private function incrementDimensions(int $workflowId, string $bucket): void
+    {
+        $dims = $this->workflowRepository->findDimensionsById($workflowId);
+        if (!is_array($dims)) {
+            return;
+        }
+        $wName = trim((string) ($dims['workflow_name'] ?? ''));
+        if ($wName !== '') {
+            if (!isset($this->perWorkflowType[$wName])) {
+                $this->perWorkflowType[$wName] = ['started' => 0, 'completed' => 0, 'failed' => 0];
+            }
+            $this->perWorkflowType[$wName][$bucket]++;
+        }
+        $countryId = (int) ($dims['country_id'] ?? 0);
+        if ($countryId > 0) {
+            if (!isset($this->perCountry[$countryId])) {
+                $this->perCountry[$countryId] = ['started' => 0, 'completed' => 0, 'failed' => 0];
+            }
+            $this->perCountry[$countryId][$bucket]++;
         }
     }
 

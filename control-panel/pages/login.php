@@ -12,6 +12,36 @@ $success_message = isset($_GET['message']) && $_GET['message'] === 'logged_out' 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $db = $GLOBALS['control_conn'] ?? $GLOBALS['conn'] ?? null;
+    $ipAddress = trim((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+    $auditLogin = static function (?int $userId, string $username, bool $success) use ($db, $ipAddress): void {
+        try {
+            if (!($db instanceof mysqli)) {
+                return;
+            }
+            $chk = $db->query("SHOW TABLES LIKE 'user_login_audit'");
+            if (!$chk || $chk->num_rows === 0) {
+                return;
+            }
+            $sql = "INSERT INTO user_login_audit (user_id, username, success, ip_address, created_at) VALUES (?, ?, ?, ?, NOW())";
+            $st = $db->prepare($sql);
+            if (!$st) {
+                return;
+            }
+            $uname = trim($username);
+            $succ = $success ? 1 : 0;
+            if ($userId === null || $userId <= 0) {
+                $uid = null;
+                $st->bind_param('isis', $uid, $uname, $succ, $ipAddress);
+            } else {
+                $uid = (int) $userId;
+                $st->bind_param('isis', $uid, $uname, $succ, $ipAddress);
+            }
+            $st->execute();
+            $st->close();
+        } catch (Throwable $e) {
+            // ignore logging failures
+        }
+    };
     if ($db === null) {
         $error = 'Control panel database unavailable.';
     } else {
@@ -47,8 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $statusOk = isset($user['is_active']) ? !empty($user['is_active']) : true;
             if (!$statusOk) {
                 $error = 'Account is inactive. Please contact administrator.';
+                $auditLogin($controlUserId > 0 ? $controlUserId : null, $username, false);
             } elseif (!password_verify($password, $user['password'])) {
                 $error = 'Invalid password.';
+                $auditLogin($controlUserId > 0 ? $controlUserId : null, $username, false);
             } else {
                 $_SESSION['control_logged_in'] = true;
                 $_SESSION['control_user_id'] = $controlUserId;
@@ -99,12 +131,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 } catch (Throwable $e) { /* use default */ }
                 $_SESSION['control_permissions'] = $userPerms;
+                $auditLogin($controlUserId, $username, true);
                 header('Location: ' . pageUrl('control/dashboard.php'));
                 exit;
             }
         }
         if (empty($error)) {
             $error = 'Invalid username or password.';
+            $auditLogin(null, $username, false);
         }
     }
 }

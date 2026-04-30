@@ -154,6 +154,23 @@ final class WorkflowRepository extends BaseModel
         return $row;
     }
 
+    public function findDetailedById(int $workflowId): ?array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT id, name, status, failed_step, context_json, created_at, updated_at
+             FROM workflows
+             WHERE id = :id
+             LIMIT 1'
+        );
+        $stmt->execute([':id' => $workflowId]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            return null;
+        }
+        $row['context_json'] = json_decode((string) ($row['context_json'] ?? '{}'), true) ?? [];
+        return $row;
+    }
+
     public function incrementMetricsTotals(): void
     {
         $stmt = $this->db->prepare(
@@ -192,5 +209,26 @@ final class WorkflowRepository extends BaseModel
              WHERE id = 1'
         );
         $stmt->execute();
+    }
+
+    /** @return array{workflow_name:string,country_id:int}|null */
+    public function findDimensionsById(int $workflowId): ?array
+    {
+        $stmt = $this->db->prepare('SELECT name, context_json FROM workflows WHERE id = :id LIMIT 1');
+        $stmt->execute([':id' => $workflowId]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            return null;
+        }
+        $ctx = json_decode((string) ($row['context_json'] ?? '{}'), true);
+        $countryId = 0;
+        if (is_array($ctx)) {
+            $countryId = (int) ($ctx['country_id'] ?? $ctx['control_country_id'] ?? 0);
+        }
+
+        return [
+            'workflow_name' => (string) ($row['name'] ?? ''),
+            'country_id' => $countryId,
+        ];
     }
 }

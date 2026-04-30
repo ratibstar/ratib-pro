@@ -6,6 +6,9 @@ use App\Core\Autoloader;
 use App\Core\EventDispatcher;
 
 header('Content-Type: application/json; charset=utf-8');
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 
 $projectRoot = dirname(__DIR__);
 Autoloader::register($projectRoot . DIRECTORY_SEPARATOR . 'app');
@@ -25,7 +28,26 @@ if ($scriptName !== '' && str_starts_with($path, $scriptName)) {
 }
 $path = $path === '' ? '/' : $path;
 $routeKey = sprintf('%s %s', strtoupper($method), $path);
-$payload = json_decode((string) file_get_contents('php://input'), true) ?? [];
+$rawBody = (string) file_get_contents('php://input');
+$payload = json_decode($rawBody, true) ?? [];
+if (!is_array($payload)) {
+    $payload = [];
+}
+$payload['__raw_body'] = $rawBody;
+
+if (strtoupper($method) === 'GET' && preg_match('#^/workflows/(\d+)/timeline$#', $path, $m)) {
+    $routeKey = 'GET /workflows/{id}/timeline';
+    $payload['_route_params'] = ['id' => (int) $m[1]];
+}
+if (strtoupper($method) === 'GET' && $path === '/metrics/system-health') {
+    $routeKey = 'GET /metrics/system-health';
+}
+if (strtoupper($method) === 'GET' && $path === '/metrics/workflow-stats') {
+    $routeKey = 'GET /metrics/workflow-stats';
+}
+if (strtoupper($method) === 'GET' && $path === '/metrics/failure-rates') {
+    $routeKey = 'GET /metrics/failure-rates';
+}
 
 try {
     if (!isset($routes[$routeKey])) {
@@ -37,7 +59,11 @@ try {
     $result = $routes[$routeKey]($payload);
     echo json_encode(['success' => true, 'result' => $result], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 } catch (Throwable $exception) {
-    http_response_code(422);
+    $status = (int) $exception->getCode();
+    if (!in_array($status, [401, 403], true)) {
+        $status = 422;
+    }
+    http_response_code($status);
     echo json_encode([
         'success' => false,
         'message' => $exception->getMessage(),

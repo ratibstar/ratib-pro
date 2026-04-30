@@ -24,4 +24,33 @@ final class EventLogRepository extends BaseModel
     {
         throw new \BadMethodCallException("EventLogRepository is write-only. Unsupported method: {$name}");
     }
+
+    /** @return list<array<string, mixed>> */
+    public function listByWorkflowId(int $workflowId): array
+    {
+        if ($workflowId <= 0) {
+            return [];
+        }
+        $sql = "SELECT id, event_name, payload, created_at
+                FROM events_log
+                WHERE JSON_EXTRACT(payload, '$.workflow_id') = :workflow_id
+                   OR payload LIKE :like_workflow
+                ORDER BY id ASC";
+        $st = $this->db->prepare($sql);
+        $st->execute([
+            ':workflow_id' => $workflowId,
+            ':like_workflow' => '%"workflow_id":' . $workflowId . '%',
+        ]);
+        $rows = $st->fetchAll();
+        if (!is_array($rows)) {
+            return [];
+        }
+        foreach ($rows as &$row) {
+            $decoded = json_decode((string) ($row['payload'] ?? '{}'), true);
+            $row['payload'] = is_array($decoded) ? $decoded : [];
+        }
+        unset($row);
+
+        return $rows;
+    }
 }
