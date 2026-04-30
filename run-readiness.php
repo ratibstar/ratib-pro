@@ -33,6 +33,9 @@ echo "PWD: " . getcwd() . "\n";
 echo "scripts exists: " . (is_dir('scripts') ? 'yes' : 'no') . "\n";
 echo "tests exists: " . (is_dir('tests') ? 'yes' : 'no') . "\n\n";
 echo "disable_functions: " . (string) ini_get('disable_functions') . "\n\n";
+$isLegacyPhp = PHP_VERSION_ID < 80000;
+echo "php_version: " . PHP_VERSION . "\n";
+echo "legacy_php_mode: " . ($isLegacyPhp ? 'yes' : 'no') . "\n\n";
 
 putenv('EXTERNAL_API_TOKEN=placeholder');
 putenv('WEBHOOK_SIGNING_SECRET=placeholder');
@@ -130,24 +133,37 @@ if ($missingTables !== []) {
 }
 
 echo "\n== health-check ==\n";
-try {
-    require_once $project . '/app/Core/Autoloader.php';
-    \App\Core\Autoloader::register($project . DIRECTORY_SEPARATOR . 'app');
-    $config = require $project . '/config/worker_tracking.php';
-    $container = \App\Core\Application::boot($config);
-    $health = $container->get(\App\Core\SystemHealth::class)->snapshot();
-    echo 'status: ' . (string) ($health['status'] ?? 'unknown') . "\n";
-    echo json_encode($health, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
-} catch (Throwable $e) {
-    echo 'health-check error: ' . $e->getMessage() . "\n";
+if ($isLegacyPhp) {
+    echo "SKIPPED: Full health-check requires PHP 8+ runtime.\n";
+    echo "Fallback status: degraded (setup/database checks are valid).\n";
+} else {
+    try {
+        require_once $project . '/app/Core/Autoloader.php';
+        \App\Core\Autoloader::register($project . DIRECTORY_SEPARATOR . 'app');
+        $config = require $project . '/config/worker_tracking.php';
+        $container = \App\Core\Application::boot($config);
+        $health = $container->get(\App\Core\SystemHealth::class)->snapshot();
+        echo 'status: ' . (string) ($health['status'] ?? 'unknown') . "\n";
+        echo json_encode($health, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } catch (Throwable $e) {
+        echo 'health-check error: ' . $e->getMessage() . "\n";
+    }
 }
 
 echo "\n== tests ==\n";
 try {
     require_once $project . '/tests/bootstrap.php';
+    $testFiles = [];
+    if (!$isLegacyPhp) {
+        $testFiles = [
+            ...glob($project . '/tests/Unit/*Test.php') ?: [],
+            ...glob($project . '/tests/Workflow/*Test.php') ?: [],
+        ];
+    } else {
+        echo "[SKIP] Unit and Workflow suites require PHP 8+\n";
+    }
     $testFiles = [
-        ...glob($project . '/tests/Unit/*Test.php') ?: [],
-        ...glob($project . '/tests/Workflow/*Test.php') ?: [],
+        ...$testFiles,
         ...glob($project . '/tests/Integration/*Test.php') ?: [],
     ];
     sort($testFiles);
