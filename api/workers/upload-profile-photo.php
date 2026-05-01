@@ -36,13 +36,21 @@ try {
         $ext = 'jpg';
     }
 
-    $targetDir = __DIR__ . '/../../uploads/workers/' . $workerId . '/profile/';
-    if (!is_dir($targetDir) && !@mkdir($targetDir, 0777, true) && !is_dir($targetDir)) {
-        throw new Exception('Failed to create profile photo directory');
+    // Use existing worker document folders to avoid mkdir permission issues on hosting.
+    $candidateDirs = [
+        __DIR__ . '/../../uploads/workers/' . $workerId . '/documents/identity/',
+        __DIR__ . '/../../uploads/workers/' . $workerId . '/documents/passport/',
+        __DIR__ . '/../../uploads/workers/' . $workerId . '/documents/',
+    ];
+    $targetDir = '';
+    foreach ($candidateDirs as $dir) {
+        if (is_dir($dir) && is_writable($dir)) {
+            $targetDir = $dir;
+            break;
+        }
     }
-
-    if (!is_writable($targetDir)) {
-        @chmod($targetDir, 0777);
+    if ($targetDir === '') {
+        throw new Exception('No writable worker upload directory found. Upload identity/passport once, then retry photo.');
     }
 
     $fileName = 'photo_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
@@ -58,7 +66,14 @@ try {
         throw new Exception('Failed to store uploaded profile photo');
     }
 
-    $publicPath = '/uploads/workers/' . $workerId . '/profile/' . $fileName;
+    // Build public URL matching chosen existing directory.
+    if (strpos($targetDir, '/documents/identity/') !== false || strpos($targetDir, '\\documents\\identity\\') !== false) {
+        $publicPath = '/uploads/workers/' . $workerId . '/documents/identity/' . $fileName;
+    } elseif (strpos($targetDir, '/documents/passport/') !== false || strpos($targetDir, '\\documents\\passport\\') !== false) {
+        $publicPath = '/uploads/workers/' . $workerId . '/documents/passport/' . $fileName;
+    } else {
+        $publicPath = '/uploads/workers/' . $workerId . '/documents/' . $fileName;
+    }
 
     $db = Database::getInstance();
     $conn = $db->getConnection();
