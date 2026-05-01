@@ -3149,6 +3149,8 @@ function ensureEmptyCvModal() {
             #emptyCvSheet .line{padding:2px 0;border-bottom:1px solid #c2d6e6;font-size:14px;line-height:1.25}
             #emptyCvSheet .pair{display:grid;grid-template-columns:120px 1fr;gap:6px}
             #emptyCvSheet .pair .k{font-weight:700}
+            #emptyCvSheet .left, #emptyCvSheet .left .line, #emptyCvSheet .left .line span{color:#1d2a3a !important}
+            #emptyCvSheet .cv-value[contenteditable="true"]{outline:none;display:inline-block;min-width:40px}
             #emptyCvSheet ul{margin:6px 0 0 20px;padding:0}
             #emptyCvSheet li{margin:4px 0;font-size:14px;line-height:1.25}
             #emptyCvSheet .note{color:#4d6478;font-size:12px;margin-top:16px}
@@ -3257,24 +3259,24 @@ function buildEmptyCvHtml(worker) {
                 <aside class="left">
                     <div class="photo"><img id="emptyCvPhotoPreview" src="${photoUrl ? esc(photoUrl) : ''}" alt="photo" style="${photoUrl ? 'max-width:100%;max-height:100%;display:block' : 'display:none'}"><span id="emptyCvPhotoPlaceholder" style="${photoUrl ? 'display:none' : 'display:block'}">PHOTO</span></div>
                     <div class="side-title">CONTACT INFO</div>
-                    <div class="line editable pair" contenteditable="true"><span class="k">Phone</span><span data-field="phone">${phone}</span></div>
-                    <div class="line editable pair" contenteditable="true"><span class="k">Email</span><span data-field="email">${email}</span></div>
-                    <div class="line editable pair" contenteditable="true"><span class="k">Address</span><span data-field="address">${address}</span></div>
+                    <div class="line pair"><span class="k">Phone</span><span class="cv-value editable" contenteditable="true" data-field="phone">${phone}</span></div>
+                    <div class="line pair"><span class="k">Email</span><span class="cv-value editable" contenteditable="true" data-field="email">${email}</span></div>
+                    <div class="line pair"><span class="k">Address</span><span class="cv-value editable" contenteditable="true" data-field="address">${address}</span></div>
                     <div class="side-title">Personal Details</div>
-                    <div class="line editable pair" contenteditable="true"><span class="k">Date of Birth</span><span data-field="date_of_birth">${dob}</span></div>
-                    <div class="line editable pair" contenteditable="true"><span class="k">Place of Birth</span><span data-field="place_of_birth">${placeOfBirth}</span></div>
-                    <div class="line editable pair" contenteditable="true"><span class="k">Nationality</span><span data-field="nationality">${nationality}</span></div>
+                    <div class="line pair"><span class="k">Date of Birth</span><span class="cv-value editable" contenteditable="true" data-field="date_of_birth">${dob}</span></div>
+                    <div class="line pair"><span class="k">Place of Birth</span><span class="cv-value editable" contenteditable="true" data-field="place_of_birth">${placeOfBirth}</span></div>
+                    <div class="line pair"><span class="k">Nationality</span><span class="cv-value editable" contenteditable="true" data-field="nationality">${nationality}</span></div>
                     <div class="line pair"><span class="k">Gender</span><span>${markMissing(gender)}</span></div>
                     <div class="line pair"><span class="k">Age</span><span>${markMissing(age)}</span></div>
-                    <div class="line editable pair" contenteditable="true"><span class="k">Marital Status</span><span data-field="marital_status">${maritalStatus}</span></div>
-                    <div class="line editable pair" contenteditable="true"><span class="k">Passport</span><span data-field="passport_number">${passport}</span></div>
-                    <div class="line editable pair" contenteditable="true"><span class="k">Identity</span><span data-field="identity_number">${identity}</span></div>
-                    <div class="line editable pair" contenteditable="true"><span class="k">Language</span><span data-field="language">${language}</span></div>
-                    <div class="line editable pair" contenteditable="true"><span class="k">Lang. Level</span><span data-field="language_level">${languageLevel}</span></div>
+                    <div class="line pair"><span class="k">Marital Status</span><span class="cv-value editable" contenteditable="true" data-field="marital_status">${maritalStatus}</span></div>
+                    <div class="line pair"><span class="k">Passport</span><span class="cv-value editable" contenteditable="true" data-field="passport_number">${passport}</span></div>
+                    <div class="line pair"><span class="k">Identity</span><span class="cv-value editable" contenteditable="true" data-field="identity_number">${identity}</span></div>
+                    <div class="line pair"><span class="k">Language</span><span class="cv-value editable" contenteditable="true" data-field="language">${language}</span></div>
+                    <div class="line pair"><span class="k">Lang. Level</span><span class="cv-value editable" contenteditable="true" data-field="language_level">${languageLevel}</span></div>
                     <div class="line pair"><span class="k">City</span><span>${markMissing(city)}</span></div>
                     <div class="line pair"><span class="k">Country</span><span>${markMissing(country)}</span></div>
                     <div class="side-title">Education</div>
-                    <div class="line editable" contenteditable="true"><span data-field="education_level">${educationLevel}</span></div>
+                    <div class="line"><span class="cv-value editable" contenteditable="true" data-field="education_level">${educationLevel}</span></div>
                 </aside>
                 <main class="right">
                     <div class="main-title">Summary</div>
