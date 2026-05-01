@@ -157,7 +157,7 @@ if (!function_exists('ratib_country_profile_effective')) {
 }
 
 if (!function_exists('ratib_country_profile_value_for_field')) {
-    function ratib_country_profile_value_for_field(string $field, array $payload, ?array $existing): mixed
+    function ratib_country_profile_value_for_field(string $field, array $payload, ?array $existing)
     {
         if (array_key_exists($field, $payload)) return $payload[$field];
         if ($field === 'full_name') {
