@@ -745,197 +745,179 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
             ]);
             exit;
         }
-        $safeMsg = htmlspecialchars($publicMsg, ENT_QUOTES, 'UTF-8');
-        $safeReason = htmlspecialchars($reasonCode, ENT_QUOTES, 'UTF-8');
         $showSuspendedActions = ($reasonCode === 'AGENCY_SUSPENDED');
+        $safeReasonCode = htmlspecialchars($reasonCode, ENT_QUOTES, 'UTF-8');
+        $safeMessage = htmlspecialchars($publicMsg, ENT_QUOTES, 'UTF-8');
         $currentHost = (string)($_SERVER['HTTP_HOST'] ?? '');
         $agencyLabel = trim((string)($_GET['agency'] ?? ''));
         $agencyIdLabel = trim((string)($_GET['agency_id'] ?? ''));
         $agencyDescriptor = $agencyLabel !== '' ? $agencyLabel : ('Agency #' . ($agencyIdLabel !== '' ? $agencyIdLabel : 'Unknown'));
-        $subjectBase = 'Agency support - ' . $agencyDescriptor;
-        $subjectRenew = rawurlencode($subjectBase . ' - Renewal request');
-        $subjectContact = rawurlencode($subjectBase . ' - Contact request');
+        $safeAgencyDescriptor = htmlspecialchars($agencyDescriptor, ENT_QUOTES, 'UTF-8');
         $supportEmail = 'support@ratib.sa';
+        $subjectBase = 'Agency support - ' . $agencyDescriptor;
         $renewHref = '/admin/control-center.php';
-        $contactHref = 'mailto:' . $supportEmail . '?subject=' . $subjectContact;
-        $weekButtonsHtml = '';
+        $requestExtensionHref = 'mailto:' . $supportEmail
+            . '?subject=' . rawurlencode($subjectBase . ' - Extension request')
+            . '&body=' . rawurlencode("Hello Support,\n\nPlease review extension availability for " . $agencyDescriptor . ".\n\nHost: " . $currentHost . "\nReason code: " . $reasonCode . "\n\nThank you.");
+        $contactHref = 'mailto:' . $supportEmail . '?subject=' . rawurlencode($subjectBase . ' - Contact request');
+        $reasonLabelMap = [
+            'AGENCY_SUSPENDED' => 'Non-payment',
+            'AGENCY_INACTIVE' => 'Agency inactive',
+            'AGENCY_SITE_URL_MISMATCH' => 'Site URL mismatch',
+            'AGENCY_SITE_URL_MISSING' => 'Missing Site URL',
+            'AGENCY_MAPPING_MISSING' => 'Agency mapping missing',
+            'DB_CONFIG_INVALID' => 'Database configuration issue',
+            'DB_CONNECT_FAILED' => 'Database connectivity issue',
+            'CONTROL_TABLE_MISSING' => 'Control table missing',
+        ];
+        $reasonLabel = $reasonLabelMap[$reasonCode] ?? 'Access policy restriction';
+        $safeReasonLabel = htmlspecialchars($reasonLabel, ENT_QUOTES, 'UTF-8');
+        $suspendedSinceInput = trim((string)($_GET['suspended_since'] ?? ''));
+        $suspendedSinceTs = $suspendedSinceInput !== '' ? strtotime($suspendedSinceInput) : false;
+        if ($suspendedSinceTs === false) {
+            $suspendedSinceTs = time();
+        }
+        $suspendedSinceText = date('d M Y', $suspendedSinceTs);
+        $safeSuspendedSince = htmlspecialchars($suspendedSinceText, ENT_QUOTES, 'UTF-8');
+        $graceDaysRaw = isset($_GET['grace_days_left']) ? (int)$_GET['grace_days_left'] : 0;
+        $gracePeriodText = $graceDaysRaw > 0 ? ($graceDaysRaw . ' days left') : 'Expired';
+        $safeGracePeriod = htmlspecialchars($gracePeriodText, ENT_QUOTES, 'UTF-8');
+        $safeRenewHref = htmlspecialchars($renewHref, ENT_QUOTES, 'UTF-8');
+        $safeRequestExtensionHref = htmlspecialchars($requestExtensionHref, ENT_QUOTES, 'UTF-8');
+        $safeContactHref = htmlspecialchars($contactHref, ENT_QUOTES, 'UTF-8');
+
+        $weekPillsHtml = '';
         if ($showSuspendedActions) {
             for ($i = 1; $i <= 4; $i++) {
+                $weekLabel = 'Request ' . $i . ' week' . ($i > 1 ? 's' : '');
                 $weekText = $i . ' week' . ($i > 1 ? 's' : '');
-                $subjectExtend = rawurlencode($subjectBase . ' - Extension request (' . $weekText . ')');
-                $bodyExtend = rawurlencode("Hello Support,\n\nPlease grant an extension request for " . $weekText . " for " . $agencyDescriptor . ".\n\nHost: " . $currentHost . "\nReason code: " . $reasonCode . "\n\nThank you.");
-                $weekButtonsHtml .= '<a class="btn btn-secondary btn-small" href="mailto:' . $supportEmail . '?subject=' . $subjectExtend . '&body=' . $bodyExtend . '">Request ' . htmlspecialchars($weekText, ENT_QUOTES, 'UTF-8') . '</a>';
+                $weekHref = 'mailto:' . $supportEmail
+                    . '?subject=' . rawurlencode($subjectBase . ' - Extension request (' . $weekText . ')')
+                    . '&body=' . rawurlencode("Hello Support,\n\nPlease grant an extension request for " . $weekText . " for " . $agencyDescriptor . ".\n\nHost: " . $currentHost . "\nReason code: " . $reasonCode . "\n\nThank you.");
+                $weekPillsHtml .= '<a data-loading-btn href="' . htmlspecialchars($weekHref, ENT_QUOTES, 'UTF-8') . '" class="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">' . htmlspecialchars($weekLabel, ENT_QUOTES, 'UTF-8') . '</a>';
             }
         }
-        $reasonHtml = $isControlContext ? ('<p class="reason">Reason: <code>' . $safeReason . '</code></p>') : '';
-        $suspendedActionsHtml = '';
-        if ($showSuspendedActions) {
-            $suspendedActionsHtml = '
-                <div class="actions">
-                    <a class="btn btn-primary" href="' . htmlspecialchars($renewHref, ENT_QUOTES, 'UTF-8') . '">Renew / Mark as Paid</a>
-                    <a class="btn btn-secondary" href="' . htmlspecialchars($contactHref, ENT_QUOTES, 'UTF-8') . '">Contact Us</a>
-                </div>
-                <div class="extension-wrap">
-                    <p class="extension-title">Need more time? Send an extension request example:</p>
-                    <div class="week-grid">' . $weekButtonsHtml . '</div>
-                </div>
-            ';
-        } else {
-            $suspendedActionsHtml = '
-                <div class="actions">
-                    <a class="btn btn-secondary" href="' . htmlspecialchars($contactHref, ENT_QUOTES, 'UTF-8') . '">Contact Us</a>
-                </div>
-            ';
-        }
-        echo '<!doctype html>
+
+        $reasonCodeRow = $isControlContext
+            ? '<div class="flex items-center justify-between gap-4 border-b border-slate-200 py-3"><span class="text-slate-500">Reason code</span><span class="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">' . $safeReasonCode . '</span></div>'
+            : '';
+
+        echo <<<HTML
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Agency Access Notice</title>
+<title>Agency Access Suspended</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <style>
-    :root {
-        --bg: #f4f7fb;
-        --card: #ffffff;
-        --text: #10213a;
-        --muted: #5f6b7a;
-        --primary: #1b66ff;
-        --primary-hover: #1452cf;
-        --border: #dbe4f1;
-        --danger: #d3455b;
-    }
-    * { box-sizing: border-box; }
-    body {
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        font-family: Arial, sans-serif;
-        background: radial-gradient(circle at top, #ffffff, var(--bg));
-        color: var(--text);
-        padding: 24px;
-    }
-    .card {
-        width: min(840px, 100%);
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        box-shadow: 0 10px 30px rgba(16, 33, 58, 0.08);
-        overflow: hidden;
-    }
-    .card-head {
-        padding: 18px 22px;
-        border-bottom: 1px solid var(--border);
-        background: #f8fbff;
-    }
-    .badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 999px;
-        background: #ffe7eb;
-        color: var(--danger);
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: .3px;
-        text-transform: uppercase;
-    }
-    .title {
-        margin: 10px 0 0;
-        font-size: 24px;
-        line-height: 1.3;
-    }
-    .content {
-        padding: 20px 22px 22px;
-    }
-    .message {
-        margin: 0 0 12px;
-        color: var(--text);
-        font-size: 16px;
-        line-height: 1.6;
-    }
-    .reason {
-        margin: 0 0 18px;
-        color: var(--muted);
-        font-size: 14px;
-    }
-    code {
-        background: #eef3ff;
-        border: 1px solid #dfe8ff;
-        border-radius: 6px;
-        padding: 2px 7px;
-    }
-    .actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 16px;
-    }
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid transparent;
-        text-decoration: none;
-        font-size: 14px;
-        font-weight: 700;
-        transition: .18s ease;
-    }
-    .btn-primary {
-        background: var(--primary);
-        color: #fff;
-    }
-    .btn-primary:hover {
-        background: var(--primary-hover);
-    }
-    .btn-secondary {
-        background: #fff;
-        color: var(--text);
-        border-color: var(--border);
-    }
-    .btn-secondary:hover {
-        border-color: #b7c8e6;
-        background: #f8fbff;
-    }
-    .btn-small {
-        padding: 8px 12px;
-        font-size: 13px;
-    }
-    .extension-wrap {
-        border-top: 1px dashed var(--border);
-        padding-top: 14px;
-    }
-    .extension-title {
-        margin: 0 0 10px;
-        color: var(--muted);
-        font-size: 13px;
-    }
-    .week-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 10px;
-    }
-    @media (max-width: 560px) {
-        .title { font-size: 20px; }
-        .message { font-size: 15px; }
-    }
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-card-in { animation: cardIn .35s ease-out both; }
 </style>
 </head>
-<body>
-    <main class="card">
-        <header class="card-head">
-            <span class="badge">Access Restricted</span>
-            <h1 class="title">Agency Access Notice</h1>
-        </header>
-        <section class="content">
-            <p class="message">' . $safeMsg . '</p>
-            ' . $reasonHtml . '
-            ' . $suspendedActionsHtml . '
-        </section>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-slate-100 to-slate-200 text-slate-800 antialiased">
+  <div class="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
+    <main class="animate-card-in w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-400/20">
+      <header class="border-b border-slate-200 bg-white/95 px-6 py-5 sm:px-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-3">
+            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/30">
+              <span class="text-lg font-bold">R</span>
+            </div>
+            <div>
+              <p class="text-sm font-semibold tracking-wide text-slate-500">RATIB Workforce System</p>
+              <p class="text-sm text-slate-500">Government Workforce Operations</p>
+            </div>
+          </div>
+          <span class="inline-flex w-fit items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-rose-700">Access Restricted</span>
+        </div>
+      </header>
+
+      <section class="px-6 py-7 sm:px-8 sm:py-8">
+        <div class="mb-6 flex items-start gap-4">
+          <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+            <svg viewBox="0 0 24 24" fill="none" class="h-9 w-9" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.7L2.8 17a2 2 0 001.7 3h15a2 2 0 001.7-3L13.7 3.7a2 2 0 00-3.4 0z" />
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Agency Access Suspended</h1>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">This agency has been temporarily suspended due to non-payment. You can reactivate instantly or request an extension.</p>
+            <p class="mt-2 text-sm text-slate-500">Agency: {$safeAgencyDescriptor}</p>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+          <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Current Status</h2>
+          <div class="grid gap-1 text-sm sm:text-base">
+            <div class="flex items-center justify-between gap-4 border-b border-slate-200 py-3">
+              <span class="text-slate-500">Status</span>
+              <span class="inline-flex items-center rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700">Suspended</span>
+            </div>
+            <div class="flex items-center justify-between gap-4 border-b border-slate-200 py-3">
+              <span class="text-slate-500">Reason</span>
+              <span class="font-semibold text-slate-800">{$safeReasonLabel}</span>
+            </div>
+            <div class="flex items-center justify-between gap-4 border-b border-slate-200 py-3">
+              <span class="text-slate-500">Suspended since</span>
+              <span class="font-semibold text-slate-800">{$safeSuspendedSince}</span>
+            </div>
+            <div class="flex items-center justify-between gap-4 py-3">
+              <span class="text-slate-500">Grace period</span>
+              <span class="font-semibold text-slate-800">{$safeGracePeriod}</span>
+            </div>
+            {$reasonCodeRow}
+          </div>
+        </div>
+
+        <p class="mt-5 text-sm text-slate-600">{$safeMessage}</p>
+
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+          <a data-loading-btn href="{$safeRenewHref}" class="inline-flex min-w-[220px] items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700">
+            Reactivate Now / Mark as Paid
+          </a>
+          <a data-loading-btn href="{$safeRequestExtensionHref}" class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+            Request Extension
+          </a>
+          <a data-loading-btn href="{$safeContactHref}" class="inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-800">
+            Contact Support
+          </a>
+        </div>
+
+        <div class="mt-6 rounded-xl border border-dashed border-slate-300 bg-white p-4">
+          <h3 class="text-sm font-semibold text-slate-700">Quick extension request examples</h3>
+          <p class="mt-1 text-xs text-slate-500">Select one of the options below to draft a ready-to-send email request.</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            {$weekPillsHtml}
+          </div>
+        </div>
+      </section>
     </main>
+  </div>
+
+  <script>
+    document.querySelectorAll('[data-loading-btn]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (btn.dataset.loading === '1') return;
+        btn.dataset.loading = '1';
+        var original = btn.innerHTML;
+        btn.dataset.originalText = original;
+        btn.classList.add('opacity-70', 'pointer-events-none');
+        btn.innerHTML = '<span class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>Processing...';
+        setTimeout(function () {
+          btn.classList.remove('opacity-70', 'pointer-events-none');
+          btn.innerHTML = btn.dataset.originalText || original;
+          btn.dataset.loading = '0';
+        }, 1600);
+      });
+    });
+  </script>
 </body>
-</html>';
+</html>
+HTML;
         exit;
     }
 }
