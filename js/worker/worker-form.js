@@ -491,6 +491,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function mountCountryRequirementsPanel() {
+        // Hidden by default for end-users; can be enabled for diagnostics only.
+        if (window.SHOW_COUNTRY_REQUIREMENTS_PANEL !== true) return;
         const form = document.getElementById('workerForm');
         if (!form) return;
         if (form.querySelector('#countryRequirementsPanel')) return;
@@ -507,6 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateCountryRequirementsPanelLive() {
+        if (window.SHOW_COUNTRY_REQUIREMENTS_PANEL !== true) return;
         const form = document.getElementById('workerForm');
         if (!form) return;
         const listEl = document.getElementById('countryRequirementsList');
@@ -952,13 +955,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, true);
 
-        // Keep country requirement panel live with any value changes.
-        workerForm.addEventListener('input', function () {
-            updateCountryRequirementsPanelLive();
-        });
-        workerForm.addEventListener('change', function () {
-            updateCountryRequirementsPanelLive();
-        });
+        // Keep country requirement panel live only when diagnostics panel is enabled.
+        if (window.SHOW_COUNTRY_REQUIREMENTS_PANEL === true) {
+            workerForm.addEventListener('input', function () {
+                updateCountryRequirementsPanelLive();
+            });
+            workerForm.addEventListener('change', function () {
+                updateCountryRequirementsPanelLive();
+            });
+        }
     }
     
     // Function to actually close the form (called after confirmation)
