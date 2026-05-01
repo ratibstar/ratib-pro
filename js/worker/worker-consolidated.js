@@ -3444,19 +3444,23 @@ window.uploadEmptyCvPhoto = async function(file) {
     if (!modal || !file) return;
     try {
         const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
+        const workerId = modal.getAttribute('data-worker-id');
+        if (!workerId) {
+            throw new Error('Worker ID is missing');
+        }
         const formData = new FormData();
         formData.append('file', file);
-        // Use an existing writable docs folder to avoid server mkdir restrictions.
-        formData.append('documentType', 'identity');
-        const response = await fetch(`${workersApi}/upload-file.php`, {
+        formData.append('id', workerId);
+        const response = await fetch(`${workersApi}/upload-profile-photo.php`, {
             method: 'POST',
             body: formData
         });
         const result = await response.json();
-        if (!response.ok || !result?.success || !result?.fileName) {
+        const uploadedPath = result?.data?.path || '';
+        if (!response.ok || !result?.success || !uploadedPath) {
             throw new Error(result?.message || 'Photo upload failed');
         }
-        const photoUrl = `../uploads/documents/identity/${result.fileName}`;
+        const photoUrl = uploadedPath;
         modal.setAttribute('data-photo-url', photoUrl);
         const preview = document.getElementById('emptyCvPhotoPreview');
         const placeholder = document.getElementById('emptyCvPhotoPlaceholder');
