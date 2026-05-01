@@ -701,6 +701,49 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
      */
     function ratib_halt_for_agency_db_error($message)
     {
+        if (!function_exists('ratib_control_agencies_has_column')) {
+            function ratib_control_agencies_has_column(?mysqli $conn, string $column): bool
+            {
+                static $cache = [];
+                if (!($conn instanceof mysqli) || $column === '') {
+                    return false;
+                }
+                $key = spl_object_hash($conn) . ':' . $column;
+                if (isset($cache[$key])) {
+                    return $cache[$key];
+                }
+                try {
+                    $safeCol = preg_replace('/[^a-zA-Z0-9_]/', '', $column);
+                    if ($safeCol === '') {
+                        return false;
+                    }
+                    $q = @$conn->query("SHOW COLUMNS FROM control_agencies LIKE '" . $conn->real_escape_string($safeCol) . "'");
+                    $ok = $q && $q->num_rows > 0;
+                    if ($q instanceof mysqli_result) {
+                        $q->free();
+                    }
+                    $cache[$key] = $ok;
+                    return $ok;
+                } catch (Throwable $e) {
+                    return false;
+                }
+            }
+        }
+        if (!function_exists('ratib_prepare_one_week_extension_columns')) {
+            function ratib_prepare_one_week_extension_columns(?mysqli $conn): void
+            {
+                if (!($conn instanceof mysqli)) {
+                    return;
+                }
+                if (!ratib_control_agencies_has_column($conn, 'one_week_extension_used')) {
+                    @$conn->query("ALTER TABLE control_agencies ADD COLUMN one_week_extension_used TINYINT(1) NOT NULL DEFAULT 0");
+                }
+                if (!ratib_control_agencies_has_column($conn, 'extension_active_until')) {
+                    @$conn->query("ALTER TABLE control_agencies ADD COLUMN extension_active_until DATETIME NULL");
+                }
+            }
+        }
+
         $msg = is_string($message) && trim($message) !== '' ? trim($message) : 'Agency database configuration error.';
         error_log('Agency DB strict mode: ' . $msg);
         $reqUri = strtolower((string) ($_SERVER['REQUEST_URI'] ?? ''));
@@ -734,8 +777,62 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
         } elseif (strpos($lower, 'table not found') !== false) {
             $reasonCode = 'CONTROL_TABLE_MISSING';
         }
-        $isApiRequest = !empty($_SERVER['REQUEST_URI']) && strpos((string)$_SERVER['REQUEST_URI'], '/api/') !== false;
         $isControlContext = !empty($_GET['control']) && (string)$_GET['control'] === '1';
+        $requestedAgencyId = isset($_GET['agency_id']) && ctype_digit((string)$_GET['agency_id']) ? (int)$_GET['agency_id'] : 0;
+        $isOneWeekRequest = isset($_GET['request_one_week_activation']) && (string)$_GET['request_one_week_activation'] === '1';
+        if ($reasonCode === 'AGENCY_SUSPENDED' && $isControlContext && $requestedAgencyId > 0 && $isOneWeekRequest) {
+            try {
+                $lookupConn = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
+                if ($lookupConn instanceof mysqli) {
+                    ratib_prepare_one_week_extension_columns($lookupConn);
+                    $hasUsedCol = ratib_control_agencies_has_column($lookupConn, 'one_week_extension_used');
+                    $hasUntilCol = ratib_control_agencies_has_column($lookupConn, 'extension_active_until');
+                    $sql = "SELECT is_suspended, is_active"
+                        . ($hasUsedCol ? ", one_week_extension_used" : ", 0 AS one_week_extension_used")
+                        . ($hasUntilCol ? ", extension_active_until" : ", NULL AS extension_active_until")
+                        . " FROM control_agencies WHERE id = ? LIMIT 1";
+                    $st = $lookupConn->prepare($sql);
+                    if ($st) {
+                        $st->bind_param('i', $requestedAgencyId);
+                        $st->execute();
+                        $res = $st->get_result();
+                        $row = $res ? $res->fetch_assoc() : null;
+                        $st->close();
+                        $status = 'error';
+                        if (is_array($row)) {
+                            $used = (int)($row['one_week_extension_used'] ?? 0) === 1;
+                            if ($used) {
+                                $status = 'used';
+                            } else {
+                                $updates = "UPDATE control_agencies SET is_active = 1, is_suspended = 0";
+                                if ($hasUsedCol) {
+                                    $updates .= ", one_week_extension_used = 1";
+                                }
+                                if ($hasUntilCol) {
+                                    $updates .= ", extension_active_until = DATE_ADD(NOW(), INTERVAL 7 DAY)";
+                                }
+                                $updates .= " WHERE id = ? LIMIT 1";
+                                $up = $lookupConn->prepare($updates);
+                                if ($up) {
+                                    $up->bind_param('i', $requestedAgencyId);
+                                    $up->execute();
+                                    $status = $up->affected_rows >= 0 ? 'success' : 'error';
+                                    $up->close();
+                                }
+                            }
+                        }
+                        $redirectParams = $_GET;
+                        unset($redirectParams['request_one_week_activation']);
+                        $redirectParams['activation_status'] = $status;
+                        header('Location: ?' . http_build_query($redirectParams));
+                        exit;
+                    }
+                }
+            } catch (Throwable $e) {
+                error_log('One-week activation request failed: ' . $e->getMessage());
+            }
+        }
+        $isApiRequest = !empty($_SERVER['REQUEST_URI']) && strpos((string)$_SERVER['REQUEST_URI'], '/api/') !== false;
         $outMsg = $publicMsg . ($isControlContext ? (' [Reason: ' . $reasonCode . ']') : '');
         if ($isApiRequest) {
             header('Content-Type: application/json; charset=UTF-8');
@@ -756,7 +853,14 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
         $supportEmail = 'support@ratib.sa';
         $subjectBase = 'Agency support - ' . $agencyDescriptor;
         $renewHref = '/admin/control-center.php';
-        $requestExtensionHref = '#extension-options';
+        if ($agencyIdLabel !== '' && ctype_digit($agencyIdLabel)) {
+            $renewHref .= '?control=1&agency_id=' . rawurlencode($agencyIdLabel) . '&open=payments';
+        } else {
+            $renewHref .= '?open=payments';
+        }
+        $oneWeekParams = $_GET;
+        $oneWeekParams['request_one_week_activation'] = '1';
+        $requestExtensionHref = '?' . http_build_query($oneWeekParams);
         $contactHref = 'mailto:' . $supportEmail . '?subject=' . rawurlencode($subjectBase . ' - Contact request');
         $reasonLabelMap = [
             'AGENCY_SUSPENDED' => 'Non-payment',
@@ -780,13 +884,26 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
         $graceDaysRaw = isset($_GET['grace_days_left']) ? (int)$_GET['grace_days_left'] : 0;
         $gracePeriodText = $graceDaysRaw > 0 ? ($graceDaysRaw . ' days left') : 'Expired';
         $safeGracePeriod = htmlspecialchars($gracePeriodText, ENT_QUOTES, 'UTF-8');
+        $agencyIdDisplay = ($agencyIdLabel !== '' && ctype_digit($agencyIdLabel)) ? $agencyIdLabel : 'N/A';
+        $safeAgencyIdDisplay = htmlspecialchars($agencyIdDisplay, ENT_QUOTES, 'UTF-8');
+        $safeCurrentHost = htmlspecialchars($currentHost !== '' ? $currentHost : 'N/A', ENT_QUOTES, 'UTF-8');
+        $safeSupportEmail = htmlspecialchars($supportEmail, ENT_QUOTES, 'UTF-8');
+        $activationStatus = trim((string)($_GET['activation_status'] ?? ''));
+        $activationNoticeHtml = '';
+        if ($activationStatus === 'success') {
+            $activationNoticeHtml = '<div class="mb-4 rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">One-week activation is enabled. This agency will be auto-suspended again after 7 days if payment is not completed.</div>';
+        } elseif ($activationStatus === 'used') {
+            $activationNoticeHtml = '<div class="mb-4 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">One-week activation was already used for this agency. Please complete payment or contact support.</div>';
+        } elseif ($activationStatus === 'error') {
+            $activationNoticeHtml = '<div class="mb-4 rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">Unable to activate one week automatically. Please contact support.</div>';
+        }
         $safeRenewHref = htmlspecialchars($renewHref, ENT_QUOTES, 'UTF-8');
         $safeRequestExtensionHref = htmlspecialchars($requestExtensionHref, ENT_QUOTES, 'UTF-8');
         $safeContactHref = htmlspecialchars($contactHref, ENT_QUOTES, 'UTF-8');
 
         $weekPillsHtml = '';
         if ($showSuspendedActions) {
-            for ($i = 1; $i <= 4; $i++) {
+            for ($i = 1; $i <= 1; $i++) {
                 $weekLabel = 'Request ' . $i . ' week' . ($i > 1 ? 's' : '');
                 $weekText = $i . ' week' . ($i > 1 ? 's' : '');
                 $weekHref = 'mailto:' . $supportEmail
@@ -835,6 +952,7 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
       </header>
 
       <section class="px-6 py-7 sm:px-8 sm:py-8">
+        {$activationNoticeHtml}
         <div class="mb-6 flex items-start gap-4">
           <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-300 ring-1 ring-rose-300/30">
             <svg viewBox="0 0 24 24" fill="none" class="h-9 w-9" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -845,6 +963,28 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
             <h1 class="text-2xl font-bold tracking-tight text-slate-100 sm:text-3xl">Agency Access Suspended</h1>
             <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">This agency has been temporarily suspended due to non-payment. You can reactivate instantly or request an extension.</p>
             <p class="mt-2 text-sm text-slate-400">Agency: {$safeAgencyDescriptor}</p>
+          </div>
+        </div>
+
+        <div class="mb-6 rounded-2xl border border-slate-700 bg-slate-800/40 p-4 sm:p-5">
+          <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">Agency Information</h2>
+          <div class="grid gap-1 text-sm sm:text-base">
+            <div class="flex items-center justify-between gap-4 border-b border-slate-700 py-3">
+              <span class="text-slate-400">Agency name</span>
+              <span class="font-semibold text-slate-100">{$safeAgencyDescriptor}</span>
+            </div>
+            <div class="flex items-center justify-between gap-4 border-b border-slate-700 py-3">
+              <span class="text-slate-400">Agency ID</span>
+              <span class="font-semibold text-slate-100">{$safeAgencyIdDisplay}</span>
+            </div>
+            <div class="flex items-center justify-between gap-4 border-b border-slate-700 py-3">
+              <span class="text-slate-400">Current host</span>
+              <span class="font-semibold text-slate-100">{$safeCurrentHost}</span>
+            </div>
+            <div class="flex items-center justify-between gap-4 py-3">
+              <span class="text-slate-400">Support channel</span>
+              <span class="font-semibold text-slate-100">{$safeSupportEmail}</span>
+            </div>
           </div>
         </div>
 
@@ -878,7 +1018,7 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
             Reactivate Now / Mark as Paid
           </a>
           <a data-loading-btn href="{$safeRequestExtensionHref}" class="inline-flex items-center justify-center border-l border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-700/70">
-            Request Extension
+            Requesting 1 week activation
           </a>
           <a data-loading-btn href="{$safeContactHref}" class="inline-flex items-center justify-center border-l border-slate-700 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:bg-slate-700/70 hover:text-slate-100">
             Contact Support
@@ -887,7 +1027,7 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
 
         <div id="extension-options" class="mt-6 rounded-xl border border-dashed border-slate-600 bg-slate-800/40 p-4">
           <h3 class="text-sm font-semibold text-slate-200">Quick extension request examples</h3>
-          <p class="mt-1 text-xs text-slate-400">Choose a duration to open a pre-filled extension email request.</p>
+          <p class="mt-1 text-xs text-slate-400">One-time activation option (7 days). If not paid, suspension returns automatically.</p>
           <div class="mt-3 flex flex-wrap gap-2">
             {$weekPillsHtml}
           </div>
@@ -942,9 +1082,18 @@ if (
                 $hasSuspCol = function_exists('ratib_control_agencies_has_is_suspended')
                     ? ratib_control_agencies_has_is_suspended($lookupConn)
                     : false;
+                $hasOneWeekUsedCol = function_exists('ratib_control_agencies_has_column')
+                    ? ratib_control_agencies_has_column($lookupConn, 'one_week_extension_used')
+                    : false;
+                $hasExtensionUntilCol = function_exists('ratib_control_agencies_has_column')
+                    ? ratib_control_agencies_has_column($lookupConn, 'extension_active_until')
+                    : false;
                 $statusSql = $hasSuspCol
-                    ? "SELECT is_active, is_suspended FROM control_agencies WHERE id = ? LIMIT 1"
-                    : "SELECT is_active, 0 AS is_suspended FROM control_agencies WHERE id = ? LIMIT 1";
+                    ? "SELECT is_active, is_suspended"
+                        . ($hasOneWeekUsedCol ? ", one_week_extension_used" : ", 0 AS one_week_extension_used")
+                        . ($hasExtensionUntilCol ? ", extension_active_until" : ", NULL AS extension_active_until")
+                        . " FROM control_agencies WHERE id = ? LIMIT 1"
+                    : "SELECT is_active, 0 AS is_suspended, 0 AS one_week_extension_used, NULL AS extension_active_until FROM control_agencies WHERE id = ? LIMIT 1";
                 $st = $lookupConn->prepare($statusSql);
                 if ($st) {
                     $st->bind_param("i", $requestedAgencyId);
@@ -954,7 +1103,23 @@ if (
                         $row = $rs->fetch_assoc();
                         $isActive = (int)($row['is_active'] ?? 0) === 1;
                         $isSuspended = (int)($row['is_suspended'] ?? 0) === 1;
+                        $extensionUntilRaw = trim((string)($row['extension_active_until'] ?? ''));
+                        $hasExtensionExpired = false;
+                        if ($extensionUntilRaw !== '') {
+                            $extensionTs = strtotime($extensionUntilRaw);
+                            $hasExtensionExpired = $extensionTs !== false && $extensionTs < time();
+                        }
                         $st->close();
+                        if ($hasExtensionExpired && !$isSuspended && $hasSuspCol) {
+                            $autoSuspendSql = "UPDATE control_agencies SET is_suspended = 1 WHERE id = ? LIMIT 1";
+                            $autoSuspendSt = $lookupConn->prepare($autoSuspendSql);
+                            if ($autoSuspendSt) {
+                                $autoSuspendSt->bind_param("i", $requestedAgencyId);
+                                $autoSuspendSt->execute();
+                                $autoSuspendSt->close();
+                            }
+                            ratib_halt_for_agency_db_error('Agency is suspended. One-week activation expired.');
+                        }
                         if (!$isActive) {
                             ratib_halt_for_agency_db_error('Agency is inactive.');
                         }
