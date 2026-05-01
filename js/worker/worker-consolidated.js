@@ -3094,6 +3094,193 @@ Musaned Status: ${worker.musaned_status || 'Not processed'}
     }
 };
 
+function ensureEmptyCvModal() {
+    let modal = document.getElementById('emptyCvModal');
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.id = 'emptyCvModal';
+    modal.className = 'empty-cv-modal';
+    modal.innerHTML = `
+        <div class="empty-cv-modal-overlay" data-action="close-empty-cv"></div>
+        <div class="empty-cv-modal-dialog" role="dialog" aria-modal="true" aria-label="Empty CV">
+            <div class="empty-cv-toolbar">
+                <button type="button" class="empty-cv-btn" data-action="print-empty-cv">Print</button>
+                <button type="button" class="empty-cv-btn" data-action="reset-empty-cv">Reset</button>
+                <span class="empty-cv-hint">Click text to edit before printing.</span>
+                <button type="button" class="empty-cv-btn close" data-action="close-empty-cv">Close</button>
+            </div>
+            <div class="empty-cv-body">
+                <div id="emptyCvSheet"></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    if (!document.getElementById('emptyCvModalStyles')) {
+        const style = document.createElement('style');
+        style.id = 'emptyCvModalStyles';
+        style.textContent = `
+            .empty-cv-modal{position:fixed;inset:0;display:none;z-index:10000}
+            .empty-cv-modal.show{display:block}
+            .empty-cv-modal-overlay{position:absolute;inset:0;background:rgba(10,20,34,.75)}
+            .empty-cv-modal-dialog{position:relative;width:min(1100px,95vw);height:min(92vh,920px);margin:4vh auto;background:#101a29;border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+            .empty-cv-toolbar{display:flex;gap:8px;align-items:center;padding:10px 12px;background:#0f2940;color:#fff}
+            .empty-cv-btn{background:#fff;color:#0f2940;border:0;border-radius:4px;padding:6px 10px;font-weight:700;cursor:pointer}
+            .empty-cv-btn.close{margin-left:auto}
+            .empty-cv-hint{font-size:12px;opacity:.95}
+            .empty-cv-body{flex:1;overflow:auto;background:#f3f6fa;padding:14px}
+            #emptyCvSheet .page{max-width:900px;margin:0 auto 18px auto;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+            #emptyCvSheet .header{background:#9ec8ea;color:#0f2940;padding:18px 24px;text-align:center}
+            #emptyCvSheet .header h1{margin:0;font-size:28px;letter-spacing:1px}
+            #emptyCvSheet .header h2{margin:6px 0 0;font-size:17px;font-weight:600}
+            #emptyCvSheet .grid{display:grid;grid-template-columns:290px 1fr}
+            #emptyCvSheet .left{background:#f1f8ff;padding:16px;border-right:1px solid #c8e1f7}
+            #emptyCvSheet .right{padding:20px 24px;color:#1d2a3a}
+            #emptyCvSheet .photo{height:180px;border:2px dashed #7aaedb;background:#eaf4fc;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700}
+            #emptyCvSheet .sec{margin-top:14px}
+            #emptyCvSheet .sec h3{margin:0 0 8px;color:#0a4f85;border-bottom:2px solid #c6def2;padding-bottom:4px;font-size:16px}
+            #emptyCvSheet .line{padding:4px 0;border-bottom:1px dotted #b8c9d8;font-size:14px}
+            #emptyCvSheet ul{margin:8px 0 0 18px;padding:0}
+            #emptyCvSheet li{margin:6px 0}
+            #emptyCvSheet .note{color:#4d6478;font-size:12px;margin-top:16px}
+            #emptyCvSheet .editable:focus{outline:2px dashed #7aaedb;outline-offset:2px}
+        `;
+        document.head.appendChild(style);
+    }
+
+    modal.addEventListener('click', function (event) {
+        const actionEl = event.target.closest('[data-action]');
+        if (!actionEl) return;
+        const action = actionEl.getAttribute('data-action');
+        if (action === 'close-empty-cv') window.closeEmptyCvModal();
+        if (action === 'reset-empty-cv') window.resetEmptyCvModal();
+        if (action === 'print-empty-cv') window.printEmptyCvModal();
+    });
+
+    return modal;
+}
+
+function buildEmptyCvHtml(worker) {
+    const esc = (value) => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    const line = (value, fallback = '____________________') => {
+        const clean = String(value ?? '').trim();
+        return clean ? esc(clean) : fallback;
+    };
+
+    const fullName = line(worker.worker_name || worker.full_name);
+    const nationality = line(worker.nationality, 'INDONESIAN');
+    const identity = line(worker.identity_number);
+    const passport = line(worker.passport_number);
+    const job = line(worker.job_title || worker.specialization || worker.occupation, 'DOMESTIC WORKER');
+    const dob = line(worker.date_of_birth || worker.birth_date);
+    const phone = line(worker.phone || worker.contact || worker.mobile);
+
+    return `
+        <div class="page">
+            <div class="header">
+                <h1 class="editable" contenteditable="true">${fullName}</h1>
+                <h2 class="editable" contenteditable="true">${job}</h2>
+            </div>
+            <div class="grid">
+                <aside class="left">
+                    <div class="photo editable" contenteditable="true">PHOTO</div>
+                    <div class="sec">
+                        <h3>Contact Info</h3>
+                        <div class="line editable" contenteditable="true">Phone: ${phone}</div>
+                        <div class="line editable" contenteditable="true">Nationality: ${nationality}</div>
+                        <div class="line editable" contenteditable="true">Passport: ${passport}</div>
+                        <div class="line editable" contenteditable="true">Identity: ${identity}</div>
+                        <div class="line editable" contenteditable="true">Date of Birth: ${dob}</div>
+                    </div>
+                    <div class="sec">
+                        <h3>Personal Details</h3>
+                        <div class="line editable" contenteditable="true">Religion: ____________________</div>
+                        <div class="line editable" contenteditable="true">Marital Status: ____________________</div>
+                        <div class="line editable" contenteditable="true">Height / Weight: ____________________</div>
+                    </div>
+                </aside>
+                <main class="right">
+                    <div class="sec">
+                        <h3>Summary</h3>
+                        <div class="line editable" contenteditable="true">___________________________________________</div>
+                        <div class="line editable" contenteditable="true">___________________________________________</div>
+                        <div class="line editable" contenteditable="true">___________________________________________</div>
+                    </div>
+                    <div class="sec">
+                        <h3>Work Experience</h3>
+                        <div class="line editable" contenteditable="true">___________________________________________</div>
+                        <div class="line editable" contenteditable="true">___________________________________________</div>
+                        <div class="line editable" contenteditable="true">___________________________________________</div>
+                    </div>
+                    <div class="sec">
+                        <h3>Duties and Responsibilities</h3>
+                        <ul>
+                            <li class="editable" contenteditable="true">___________________________________________</li>
+                            <li class="editable" contenteditable="true">___________________________________________</li>
+                            <li class="editable" contenteditable="true">___________________________________________</li>
+                            <li class="editable" contenteditable="true">___________________________________________</li>
+                        </ul>
+                    </div>
+                    <div class="sec">
+                        <h3>Education & Training</h3>
+                        <div class="line editable" contenteditable="true">___________________________________________</div>
+                        <div class="line editable" contenteditable="true">___________________________________________</div>
+                    </div>
+                    <div class="note">Ratib Pro Indonesia - Empty CV Template</div>
+                </main>
+            </div>
+        </div>
+    `;
+}
+
+window.closeEmptyCvModal = function() {
+    const modal = document.getElementById('emptyCvModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+};
+
+window.resetEmptyCvModal = function() {
+    const modal = document.getElementById('emptyCvModal');
+    const sheet = document.getElementById('emptyCvSheet');
+    if (!modal || !sheet) return;
+    sheet.innerHTML = modal.getAttribute('data-initial-html') || '';
+};
+
+window.printEmptyCvModal = function() {
+    const sheet = document.getElementById('emptyCvSheet');
+    if (!sheet) return;
+    const printWindow = window.open('', '_blank', 'width=900,height=1200');
+    if (!printWindow) return;
+    printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Worker CV</title>
+        <style>
+            body{margin:0;background:#fff;font-family:Arial,sans-serif;color:#1d2a3a}
+            .page{max-width:900px;margin:0 auto;background:#fff}
+            .header{background:#9ec8ea;color:#0f2940;padding:18px 24px;text-align:center}
+            .header h1{margin:0;font-size:28px;letter-spacing:1px}
+            .header h2{margin:6px 0 0;font-size:17px;font-weight:600}
+            .grid{display:grid;grid-template-columns:290px 1fr}
+            .left{background:#f1f8ff;padding:16px;border-right:1px solid #c8e1f7}
+            .right{padding:20px 24px}
+            .photo{height:180px;border:2px dashed #7aaedb;background:#eaf4fc;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700}
+            .sec{margin-top:14px}
+            .sec h3{margin:0 0 8px;color:#0a4f85;border-bottom:2px solid #c6def2;padding-bottom:4px;font-size:16px}
+            .line{padding:4px 0;border-bottom:1px dotted #b8c9d8;font-size:14px}
+            ul{margin:8px 0 0 18px;padding:0}
+            li{margin:6px 0}
+            .note{color:#4d6478;font-size:12px;margin-top:16px}
+        </style>
+    </head><body>${sheet.innerHTML}</body></html>`);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+};
+
 window.showEmptyCv = async function(workerId) {
     debug.log('Show Empty CV called with ID:', workerId);
     try {
@@ -3103,119 +3290,15 @@ window.showEmptyCv = async function(workerId) {
         const worker = data?.success && data?.data?.workers?.length ? data.data.workers[0] : null;
         if (!worker) return;
 
-        const esc = (value) => String(value ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-        const line = (value, fallback = '____________________') => {
-            const clean = String(value ?? '').trim();
-            return clean ? esc(clean) : fallback;
-        };
+        const modal = ensureEmptyCvModal();
+        const sheet = document.getElementById('emptyCvSheet');
+        if (!sheet) return;
 
-        const fullName = line(worker.worker_name || worker.full_name);
-        const nationality = line(worker.nationality, 'INDONESIAN');
-        const identity = line(worker.identity_number);
-        const passport = line(worker.passport_number);
-        const job = line(worker.job_title || worker.specialization || worker.occupation, 'DOMESTIC WORKER');
-        const dob = line(worker.date_of_birth || worker.birth_date);
-        const phone = line(worker.phone || worker.contact || worker.mobile);
-
-        const cvWindow = window.open('', '_blank');
-        if (!cvWindow) return;
-        cvWindow.document.write(`<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Worker Empty CV - ${fullName}</title>
-<style>
-body{margin:0;background:#f3f6fa;font-family:Arial,sans-serif;color:#1d2a3a}
-.toolbar{position:sticky;top:0;z-index:9;background:#0f2940;color:#fff;padding:10px 14px;display:flex;gap:8px;align-items:center}
-.toolbar button{background:#fff;color:#0f2940;border:0;border-radius:4px;padding:6px 10px;font-weight:700;cursor:pointer}
-.toolbar .hint{font-size:12px;opacity:.9;margin-left:auto}
-.page{max-width:900px;margin:24px auto;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12)}
-.header{background:#9ec8ea;color:#0f2940;padding:18px 24px;text-align:center}
-.header h1{margin:0;font-size:28px;letter-spacing:1px}
-.header h2{margin:6px 0 0;font-size:17px;font-weight:600}
-.grid{display:grid;grid-template-columns:290px 1fr}
-.left{background:#f1f8ff;padding:16px;border-right:1px solid #c8e1f7}
-.right{padding:20px 24px}
-.photo{height:180px;border:2px dashed #7aaedb;background:#eaf4fc;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700}
-.sec{margin-top:14px}
-.sec h3{margin:0 0 8px;color:#0a4f85;border-bottom:2px solid #c6def2;padding-bottom:4px;font-size:16px}
-.line{padding:4px 0;border-bottom:1px dotted #b8c9d8;font-size:14px}
-ul{margin:8px 0 0 18px;padding:0}
-li{margin:6px 0}
-.note{color:#4d6478;font-size:12px;margin-top:16px}
-.editable:focus{outline:2px dashed #7aaedb;outline-offset:2px}
-@media print{body{background:#fff}.toolbar{display:none}.page{margin:0;box-shadow:none}}
-</style>
-</head>
-<body>
-<div class="toolbar">
-<button onclick="window.print()">Print</button>
-<button onclick="window.location.reload()">Reset</button>
-<span class="hint">Click any line/text to edit before printing.</span>
-</div>
-<div class="page">
-<div class="header">
-<h1 class="editable" contenteditable="true">${fullName}</h1>
-<h2 class="editable" contenteditable="true">${job}</h2>
-</div>
-<div class="grid">
-<aside class="left">
-<div class="photo editable" contenteditable="true">PHOTO</div>
-<div class="sec">
-<h3>Contact Info</h3>
-<div class="line editable" contenteditable="true">Phone: ${phone}</div>
-<div class="line editable" contenteditable="true">Nationality: ${nationality}</div>
-<div class="line editable" contenteditable="true">Passport: ${passport}</div>
-<div class="line editable" contenteditable="true">Identity: ${identity}</div>
-<div class="line editable" contenteditable="true">Date of Birth: ${dob}</div>
-</div>
-<div class="sec">
-<h3>Personal Details</h3>
-<div class="line editable" contenteditable="true">Religion: ____________________</div>
-<div class="line editable" contenteditable="true">Marital Status: ____________________</div>
-<div class="line editable" contenteditable="true">Height / Weight: ____________________</div>
-</div>
-</aside>
-<main class="right">
-<div class="sec">
-<h3>Summary</h3>
-<div class="line editable" contenteditable="true">___________________________________________</div>
-<div class="line editable" contenteditable="true">___________________________________________</div>
-<div class="line editable" contenteditable="true">___________________________________________</div>
-</div>
-<div class="sec">
-<h3>Work Experience</h3>
-<div class="line editable" contenteditable="true">___________________________________________</div>
-<div class="line editable" contenteditable="true">___________________________________________</div>
-<div class="line editable" contenteditable="true">___________________________________________</div>
-</div>
-<div class="sec">
-<h3>Duties and Responsibilities</h3>
-<ul>
-<li class="editable" contenteditable="true">___________________________________________</li>
-<li class="editable" contenteditable="true">___________________________________________</li>
-<li class="editable" contenteditable="true">___________________________________________</li>
-<li class="editable" contenteditable="true">___________________________________________</li>
-</ul>
-</div>
-<div class="sec">
-<h3>Education & Training</h3>
-<div class="line editable" contenteditable="true">___________________________________________</div>
-<div class="line editable" contenteditable="true">___________________________________________</div>
-</div>
-<div class="note">Ratib Pro Indonesia - Empty CV Template</div>
-</main>
-</div>
-</div>
-</body>
-</html>`);
-        cvWindow.document.close();
+        const html = buildEmptyCvHtml(worker);
+        modal.setAttribute('data-initial-html', html);
+        sheet.innerHTML = html;
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
     } catch (error) {
         debug.error('Error loading empty CV:', error);
     }
