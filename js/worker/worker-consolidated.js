@@ -3130,19 +3130,21 @@ function ensureEmptyCvModal() {
             .empty-cv-btn.close{margin-left:auto}
             .empty-cv-hint{font-size:12px;opacity:.95}
             .empty-cv-body{flex:1;overflow:auto;background:#f3f6fa;padding:14px}
-            #emptyCvSheet .page{max-width:900px;margin:0 auto 18px auto;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12)}
-            #emptyCvSheet .header{background:#9ec8ea;color:#0f2940;padding:18px 24px;text-align:center}
-            #emptyCvSheet .header h1{margin:0;font-size:28px;letter-spacing:1px}
-            #emptyCvSheet .header h2{margin:6px 0 0;font-size:17px;font-weight:600}
-            #emptyCvSheet .grid{display:grid;grid-template-columns:290px 1fr}
-            #emptyCvSheet .left{background:#f1f8ff;padding:16px;border-right:1px solid #c8e1f7}
-            #emptyCvSheet .right{padding:20px 24px;color:#1d2a3a}
-            #emptyCvSheet .photo{height:180px;border:2px dashed #7aaedb;background:#eaf4fc;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700}
-            #emptyCvSheet .sec{margin-top:14px}
-            #emptyCvSheet .sec h3{margin:0 0 8px;color:#0a4f85;border-bottom:2px solid #c6def2;padding-bottom:4px;font-size:16px}
-            #emptyCvSheet .line{padding:4px 0;border-bottom:1px dotted #b8c9d8;font-size:14px}
-            #emptyCvSheet ul{margin:8px 0 0 18px;padding:0}
-            #emptyCvSheet li{margin:6px 0}
+            #emptyCvSheet .page{max-width:850px;margin:0 auto 18px auto;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12);font-family:Georgia,'Times New Roman',serif}
+            #emptyCvSheet .header{background:#a8d3ef;color:#0d2538;padding:8px 24px;text-align:center;border-bottom:1px solid #8bbbdc}
+            #emptyCvSheet .header h1{margin:0;font-size:44px;letter-spacing:1px;font-weight:700;text-transform:uppercase;line-height:1}
+            #emptyCvSheet .header h2{margin:2px 0 0;font-size:22px;font-weight:700;text-transform:capitalize}
+            #emptyCvSheet .grid{display:grid;grid-template-columns:250px 1fr}
+            #emptyCvSheet .left{background:#fff;padding:14px;border-right:10px solid #c8dcee}
+            #emptyCvSheet .right{padding:14px 18px;color:#1d2a3a;background:#f5fbff}
+            #emptyCvSheet .photo{height:170px;border:1px solid #9fc6e2;background:#f4f8fb;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700}
+            #emptyCvSheet .side-title{background:#2f7fc2;color:#fff;font-size:28px;font-style:italic;font-weight:700;padding:2px 8px;line-height:1;margin:10px 0 6px}
+            #emptyCvSheet .main-title{color:#1f6ea8;font-size:38px;font-style:italic;font-weight:700;line-height:1;margin:10px 0 6px}
+            #emptyCvSheet .line{padding:2px 0;border-bottom:1px solid #c2d6e6;font-size:22px;line-height:1.2}
+            #emptyCvSheet .pair{display:grid;grid-template-columns:120px 1fr;gap:6px}
+            #emptyCvSheet .pair .k{font-weight:700}
+            #emptyCvSheet ul{margin:6px 0 0 20px;padding:0}
+            #emptyCvSheet li{margin:4px 0;font-size:22px;line-height:1.2}
             #emptyCvSheet .note{color:#4d6478;font-size:12px;margin-top:16px}
             #emptyCvSheet .editable:focus{outline:2px dashed #7aaedb;outline-offset:2px}
         `;
@@ -3207,6 +3209,8 @@ function buildEmptyCvHtml(worker) {
     const workingHours = line(pick('working_hours'));
     const salary = line(pick('salary'));
 
+    const photoUrl = pick('personal_photo_url');
+
     return `
         <div class="page">
             <div class="header">
@@ -3215,49 +3219,38 @@ function buildEmptyCvHtml(worker) {
             </div>
             <div class="grid">
                 <aside class="left">
-                    <div class="photo editable" contenteditable="true">PHOTO</div>
-                    <div class="sec">
-                        <h3>Contact Info</h3>
-                        <div class="line editable" contenteditable="true">Phone: <span data-field="phone">${phone}</span></div>
-                        <div class="line editable" contenteditable="true">Email: <span data-field="email">${email}</span></div>
-                        <div class="line editable" contenteditable="true">Nationality: <span data-field="nationality">${nationality}</span></div>
-                        <div class="line editable" contenteditable="true">Passport: <span data-field="passport_number">${passport}</span></div>
-                        <div class="line editable" contenteditable="true">Identity: <span data-field="identity_number">${identity}</span></div>
-                        <div class="line editable" contenteditable="true">Date of Birth: <span data-field="date_of_birth">${dob}</span></div>
-                        <div class="line editable" contenteditable="true">Place of Birth: <span data-field="place_of_birth">${placeOfBirth}</span></div>
-                    </div>
-                    <div class="sec">
-                        <h3>Personal Details</h3>
-                        <div class="line editable" contenteditable="true">Marital Status: <span data-field="marital_status">${maritalStatus}</span></div>
-                        <div class="line editable" contenteditable="true">Language: <span data-field="language">${language}</span></div>
-                        <div class="line editable" contenteditable="true">Language Level: <span data-field="language_level">${languageLevel}</span></div>
-                        <div class="line editable" contenteditable="true">Address: <span data-field="address">${address}</span></div>
-                    </div>
+                    <div class="photo">${photoUrl ? `<img src="${esc(photoUrl)}" alt="photo" style="max-width:100%;max-height:100%">` : 'PHOTO'}</div>
+                    <div class="side-title">CONTACT INFO</div>
+                    <div class="line editable pair" contenteditable="true"><span class="k">Phone</span><span data-field="phone">${phone}</span></div>
+                    <div class="line editable pair" contenteditable="true"><span class="k">Email</span><span data-field="email">${email}</span></div>
+                    <div class="line editable pair" contenteditable="true"><span class="k">Address</span><span data-field="address">${address}</span></div>
+                    <div class="side-title">Personal Details</div>
+                    <div class="line editable pair" contenteditable="true"><span class="k">Date of Birth</span><span data-field="date_of_birth">${dob}</span></div>
+                    <div class="line editable pair" contenteditable="true"><span class="k">Place of Birth</span><span data-field="place_of_birth">${placeOfBirth}</span></div>
+                    <div class="line editable pair" contenteditable="true"><span class="k">Nationality</span><span data-field="nationality">${nationality}</span></div>
+                    <div class="line editable pair" contenteditable="true"><span class="k">Marital Status</span><span data-field="marital_status">${maritalStatus}</span></div>
+                    <div class="line editable pair" contenteditable="true"><span class="k">Passport</span><span data-field="passport_number">${passport}</span></div>
+                    <div class="line editable pair" contenteditable="true"><span class="k">Identity</span><span data-field="identity_number">${identity}</span></div>
+                    <div class="line editable pair" contenteditable="true"><span class="k">Language</span><span data-field="language">${language}</span></div>
+                    <div class="line editable pair" contenteditable="true"><span class="k">Lang. Level</span><span data-field="language_level">${languageLevel}</span></div>
+                    <div class="side-title">Education</div>
+                    <div class="line editable" contenteditable="true"><span data-field="education_level">${educationLevel}</span></div>
                 </aside>
                 <main class="right">
-                    <div class="sec">
-                        <h3>Summary</h3>
-                        <div class="line editable" contenteditable="true"><span data-field="qualification">${qualification}</span></div>
-                        <div class="line editable" contenteditable="true"><span data-field="skills">${skills}</span></div>
-                        <div class="line editable" contenteditable="true"><span data-field="language">${language}</span></div>
-                    </div>
-                    <div class="sec">
-                        <h3>Work Experience</h3>
-                        <div class="line editable" contenteditable="true">General: <span data-field="work_experience">${workExperience}</span></div>
-                        <div class="line editable" contenteditable="true">Local: <span data-field="local_experience">${localExperience}</span></div>
-                        <div class="line editable" contenteditable="true">Abroad: <span data-field="abroad_experience">${abroadExperience}</span></div>
-                    </div>
-                    <div class="sec">
-                        <h3>Duties and Responsibilities</h3>
-                        <div class="line editable" contenteditable="true">Contract Duration: <span data-field="contract_duration">${contractDuration}</span></div>
-                        <div class="line editable" contenteditable="true">Working Hours: <span data-field="working_hours">${workingHours}</span></div>
-                        <div class="line editable" contenteditable="true">Salary: <span data-field="salary">${salary}</span></div>
-                    </div>
-                    <div class="sec">
-                        <h3>Education & Training</h3>
-                        <div class="line editable" contenteditable="true">Education Level: <span data-field="education_level">${educationLevel}</span></div>
-                        <div class="line editable" contenteditable="true">Training / Notes: <span data-field="training_notes">${trainingNotes}</span></div>
-                    </div>
+                    <div class="main-title">Summary</div>
+                    <div class="line editable" contenteditable="true"><span data-field="qualification">${qualification}</span></div>
+                    <div class="line editable" contenteditable="true"><span data-field="skills">${skills}</span></div>
+                    <div class="main-title">Work Experience</div>
+                    <div class="line editable" contenteditable="true"><span data-field="work_experience">${workExperience}</span></div>
+                    <div class="line editable" contenteditable="true">Local: <span data-field="local_experience">${localExperience}</span></div>
+                    <div class="line editable" contenteditable="true">Abroad: <span data-field="abroad_experience">${abroadExperience}</span></div>
+                    <div class="main-title">Duties and Responsibilities</div>
+                    <ul>
+                        <li class="editable" contenteditable="true"><span data-field="training_notes">${trainingNotes}</span></li>
+                        <li class="editable" contenteditable="true">Contract Duration: <span data-field="contract_duration">${contractDuration}</span></li>
+                        <li class="editable" contenteditable="true">Working Hours: <span data-field="working_hours">${workingHours}</span></li>
+                        <li class="editable" contenteditable="true">Salary: <span data-field="salary">${salary}</span></li>
+                    </ul>
                     <div class="note">Ratib Pro Indonesia - Empty CV Template</div>
                 </main>
             </div>
@@ -3287,19 +3280,21 @@ window.printEmptyCvModal = function() {
     printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Worker CV</title>
         <style>
             body{margin:0;background:#fff;font-family:Arial,sans-serif;color:#1d2a3a}
-            .page{max-width:900px;margin:0 auto;background:#fff}
-            .header{background:#9ec8ea;color:#0f2940;padding:18px 24px;text-align:center}
-            .header h1{margin:0;font-size:28px;letter-spacing:1px}
-            .header h2{margin:6px 0 0;font-size:17px;font-weight:600}
-            .grid{display:grid;grid-template-columns:290px 1fr}
-            .left{background:#f1f8ff;padding:16px;border-right:1px solid #c8e1f7}
-            .right{padding:20px 24px}
-            .photo{height:180px;border:2px dashed #7aaedb;background:#eaf4fc;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700}
-            .sec{margin-top:14px}
-            .sec h3{margin:0 0 8px;color:#0a4f85;border-bottom:2px solid #c6def2;padding-bottom:4px;font-size:16px}
-            .line{padding:4px 0;border-bottom:1px dotted #b8c9d8;font-size:14px}
-            ul{margin:8px 0 0 18px;padding:0}
-            li{margin:6px 0}
+            .page{max-width:850px;margin:0 auto;background:#fff;font-family:Georgia,'Times New Roman',serif}
+            .header{background:#a8d3ef;color:#0d2538;padding:8px 24px;text-align:center;border-bottom:1px solid #8bbbdc}
+            .header h1{margin:0;font-size:44px;letter-spacing:1px;font-weight:700;text-transform:uppercase;line-height:1}
+            .header h2{margin:2px 0 0;font-size:22px;font-weight:700;text-transform:capitalize}
+            .grid{display:grid;grid-template-columns:250px 1fr}
+            .left{background:#fff;padding:14px;border-right:10px solid #c8dcee}
+            .right{padding:14px 18px;background:#f5fbff}
+            .photo{height:170px;border:1px solid #9fc6e2;background:#f4f8fb;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700}
+            .side-title{background:#2f7fc2;color:#fff;font-size:28px;font-style:italic;font-weight:700;padding:2px 8px;line-height:1;margin:10px 0 6px}
+            .main-title{color:#1f6ea8;font-size:38px;font-style:italic;font-weight:700;line-height:1;margin:10px 0 6px}
+            .line{padding:2px 0;border-bottom:1px solid #c2d6e6;font-size:22px;line-height:1.2}
+            .pair{display:grid;grid-template-columns:120px 1fr;gap:6px}
+            .pair .k{font-weight:700}
+            ul{margin:6px 0 0 20px;padding:0}
+            li{margin:4px 0;font-size:22px;line-height:1.2}
             .note{color:#4d6478;font-size:12px;margin-top:16px}
         </style>
     </head><body>${sheet.innerHTML}</body></html>`);
