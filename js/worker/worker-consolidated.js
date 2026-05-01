@@ -3096,7 +3096,11 @@ Musaned Status: ${worker.musaned_status || 'Not processed'}
 
 function ensureEmptyCvModal() {
     let modal = document.getElementById('emptyCvModal');
-    if (modal) return modal;
+    if (modal) {
+        const legacyToggleBtn = modal.querySelector('[data-action="toggle-empty-cv-missing"]');
+        if (legacyToggleBtn) legacyToggleBtn.remove();
+        return modal;
+    }
     modal = document.createElement('div');
     modal.id = 'emptyCvModal';
     modal.className = 'empty-cv-modal';
@@ -3108,7 +3112,6 @@ function ensureEmptyCvModal() {
                 <button type="button" class="empty-cv-btn" data-action="reset-empty-cv">Reset</button>
                 <button type="button" class="empty-cv-btn" data-action="upload-empty-cv-photo">Upload Photo</button>
                 <button type="button" class="empty-cv-btn" data-action="save-empty-cv">Save To System</button>
-                <button type="button" class="empty-cv-btn" data-action="toggle-empty-cv-missing">Show Only Missing</button>
                 <span class="empty-cv-hint">Click text to edit before printing.</span>
                 <button type="button" class="empty-cv-btn close" data-action="close-empty-cv">Close</button>
             </div>
@@ -3168,11 +3171,6 @@ function ensureEmptyCvModal() {
             const fileInput = document.getElementById('emptyCvPhotoInput');
             if (fileInput) fileInput.click();
         }
-        if (action === 'toggle-empty-cv-missing') {
-            const enabled = modal.getAttribute('data-missing-only') === '1';
-            window.toggleEmptyCvMissingOnly(!enabled);
-            actionEl.textContent = enabled ? 'Show Only Missing' : 'Show All Fields';
-        }
     });
     const fileInput = modal.querySelector('#emptyCvPhotoInput');
     if (fileInput) {
@@ -3217,20 +3215,20 @@ function buildEmptyCvHtml(worker) {
     };
 
     const fullName = line(pick('worker_name', 'full_name'));
-    const nationality = line(pick('nationality'), 'INDONESIAN');
+    const nationality = line(pick('nationality', 'country'), 'INDONESIAN');
     const identity = line(pick('identity_number'));
     const passport = line(pick('passport_number'));
-    const job = line(pick('job_title'), 'DOMESTIC WORKER');
+    const job = line(pick('job_title', 'occupation', 'specialization'), 'DOMESTIC WORKER');
     const dob = line(pick('date_of_birth', 'birth_date'));
     const placeOfBirth = line(pick('place_of_birth'));
-    const phone = line(pick('phone', 'contact_number'));
+    const phone = line(pick('phone', 'contact_number', 'contact', 'mobile'));
     const email = line(pick('email'));
-    const address = line(pick('address'));
+    const address = line(pick('address', 'city', 'country'));
     const maritalStatus = line(pick('marital_status'));
-    const language = line(pick('language'));
+    const language = line(pick('language', 'language_level'));
     const languageLevel = line(pick('language_level'));
-    const educationLevel = line(pick('education_level'));
-    const workExperience = line(pick('work_experience'));
+    const educationLevel = line(pick('education_level', 'qualification'));
+    const workExperience = line(pick('work_experience', 'local_experience', 'abroad_experience'));
     const skills = line(pick('skills'));
     const localExperience = line(pick('local_experience'));
     const abroadExperience = line(pick('abroad_experience'));
@@ -3503,8 +3501,6 @@ window.showEmptyCv = async function(workerId) {
         modal.setAttribute('data-missing-only', '0');
         sheet.innerHTML = html;
         window.toggleEmptyCvMissingOnly(false);
-        const toggleBtn = modal.querySelector('[data-action="toggle-empty-cv-missing"]');
-        if (toggleBtn) toggleBtn.textContent = 'Show Only Missing';
         modal.classList.add('show');
         document.body.style.overflow = 'hidden';
     } catch (error) {
