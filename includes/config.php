@@ -30,12 +30,10 @@ if (!function_exists('str_ends_with')) {
     }
 }
 
-// Ratib Pro requires PHP 8.2+ in production.
+// Compatibility mode: allow temporary operation on older PHP versions.
+// Keep this non-blocking until infrastructure is upgraded.
 if (PHP_VERSION_ID < 80200) {
-    http_response_code(503);
-    header('Content-Type: text/plain; charset=UTF-8');
-    echo 'Ratib Pro requires PHP 8.2 or higher. Current version: ' . PHP_VERSION;
-    exit;
+    error_log('Ratib Pro compatibility mode active on PHP ' . PHP_VERSION . '. Upgrade target remains PHP 8.2+.');
 }
 
 /**

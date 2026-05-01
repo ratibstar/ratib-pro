@@ -27,7 +27,7 @@ try {
     $eventDispatcherOk = true;
     try {
         $container->get(\App\Core\EventDispatcher::class);
-    } catch (Throwable) {
+    } catch (Throwable $e) {
         $eventDispatcherOk = false;
     }
 

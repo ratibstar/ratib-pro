@@ -7,6 +7,8 @@ use App\Repositories\WorkflowRepository;
 
 final class WorkflowMetrics
 {
+    /** @var WorkflowRepository */
+    private $workflowRepository;
     /** @var array<int, float> */
     private array $startedAt = [];
     private int $totalStarted = 0;
@@ -20,8 +22,9 @@ final class WorkflowMetrics
     /** @var array<int, array{started:int,completed:int,failed:int}> */
     private array $perCountry = [];
 
-    public function __construct(private readonly WorkflowRepository $workflowRepository)
+    public function __construct(WorkflowRepository $workflowRepository)
     {
+        $this->workflowRepository = $workflowRepository;
     }
 
     public function markStarted(int $workflowId): void
@@ -32,7 +35,7 @@ final class WorkflowMetrics
         try {
             $this->workflowRepository->incrementMetricsTotals();
             $this->incrementDimensions($workflowId, 'started');
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             // metrics are best-effort and must not affect workflow execution
         }
     }
@@ -49,7 +52,7 @@ final class WorkflowMetrics
         try {
             $this->workflowRepository->incrementMetricsSuccess($durationMs);
             $this->incrementDimensions($workflowId, 'completed');
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             // metrics are best-effort and must not affect workflow execution
         }
     }
@@ -62,7 +65,7 @@ final class WorkflowMetrics
         try {
             $this->workflowRepository->incrementMetricsFailure($durationMs);
             $this->incrementDimensions($workflowId, 'failed');
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             // metrics are best-effort and must not affect workflow execution
         }
     }

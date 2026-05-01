@@ -77,7 +77,7 @@ final class ErrorTracker
                 if ($pdo instanceof PDO) {
                     return $pdo;
                 }
-            } catch (Throwable) {
+            } catch (Throwable $e) {
                 // fall through
             }
         }

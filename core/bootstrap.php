@@ -59,7 +59,7 @@ if (class_exists(\App\Core\ErrorTracker::class)) {
         if (class_exists('Database')) {
             try {
                 return Database::getInstance()->getConnection();
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
                 return null;
             }
         }
