@@ -3106,6 +3106,7 @@ function ensureEmptyCvModal() {
             <div class="empty-cv-toolbar">
                 <button type="button" class="empty-cv-btn" data-action="print-empty-cv">Print</button>
                 <button type="button" class="empty-cv-btn" data-action="reset-empty-cv">Reset</button>
+                <button type="button" class="empty-cv-btn" data-action="save-empty-cv">Save To System</button>
                 <span class="empty-cv-hint">Click text to edit before printing.</span>
                 <button type="button" class="empty-cv-btn close" data-action="close-empty-cv">Close</button>
             </div>
@@ -3155,6 +3156,7 @@ function ensureEmptyCvModal() {
         if (action === 'close-empty-cv') window.closeEmptyCvModal();
         if (action === 'reset-empty-cv') window.resetEmptyCvModal();
         if (action === 'print-empty-cv') window.printEmptyCvModal();
+        if (action === 'save-empty-cv') window.saveEmptyCvModal();
     });
 
     return modal;
@@ -3179,29 +3181,34 @@ function buildEmptyCvHtml(worker) {
     const job = line(worker.job_title || worker.specialization || worker.occupation, 'DOMESTIC WORKER');
     const dob = line(worker.date_of_birth || worker.birth_date);
     const phone = line(worker.phone || worker.contact || worker.mobile);
+    const email = line(worker.email);
+    const address = line(worker.address);
+    const maritalStatus = line(worker.marital_status);
 
     return `
         <div class="page">
             <div class="header">
-                <h1 class="editable" contenteditable="true">${fullName}</h1>
-                <h2 class="editable" contenteditable="true">${job}</h2>
+                <h1 class="editable" contenteditable="true" data-field="full_name">${fullName}</h1>
+                <h2 class="editable" contenteditable="true" data-field="job_title">${job}</h2>
             </div>
             <div class="grid">
                 <aside class="left">
                     <div class="photo editable" contenteditable="true">PHOTO</div>
                     <div class="sec">
                         <h3>Contact Info</h3>
-                        <div class="line editable" contenteditable="true">Phone: ${phone}</div>
-                        <div class="line editable" contenteditable="true">Nationality: ${nationality}</div>
-                        <div class="line editable" contenteditable="true">Passport: ${passport}</div>
-                        <div class="line editable" contenteditable="true">Identity: ${identity}</div>
-                        <div class="line editable" contenteditable="true">Date of Birth: ${dob}</div>
+                        <div class="line editable" contenteditable="true">Phone: <span data-field="phone">${phone}</span></div>
+                        <div class="line editable" contenteditable="true">Email: <span data-field="email">${email}</span></div>
+                        <div class="line editable" contenteditable="true">Nationality: <span data-field="nationality">${nationality}</span></div>
+                        <div class="line editable" contenteditable="true">Passport: <span data-field="passport_number">${passport}</span></div>
+                        <div class="line editable" contenteditable="true">Identity: <span data-field="identity_number">${identity}</span></div>
+                        <div class="line editable" contenteditable="true">Date of Birth: <span data-field="date_of_birth">${dob}</span></div>
                     </div>
                     <div class="sec">
                         <h3>Personal Details</h3>
                         <div class="line editable" contenteditable="true">Religion: ____________________</div>
-                        <div class="line editable" contenteditable="true">Marital Status: ____________________</div>
+                        <div class="line editable" contenteditable="true">Marital Status: <span data-field="marital_status">${maritalStatus}</span></div>
                         <div class="line editable" contenteditable="true">Height / Weight: ____________________</div>
+                        <div class="line editable" contenteditable="true">Address: <span data-field="address">${address}</span></div>
                     </div>
                 </aside>
                 <main class="right">
@@ -3281,6 +3288,51 @@ window.printEmptyCvModal = function() {
     printWindow.print();
 };
 
+window.saveEmptyCvModal = async function() {
+    const modal = document.getElementById('emptyCvModal');
+    const sheet = document.getElementById('emptyCvSheet');
+    if (!modal || !sheet) return;
+    const workerId = modal.getAttribute('data-worker-id');
+    if (!workerId) return;
+
+    const payload = {};
+    const editableFields = sheet.querySelectorAll('[data-field]');
+    editableFields.forEach((el) => {
+        const field = String(el.getAttribute('data-field') || '').trim();
+        if (!field) return;
+        const value = String(el.textContent || '').trim();
+        if (!value || /^_+$/.test(value)) return;
+        payload[field] = value;
+    });
+    if (!Object.keys(payload).length) {
+        SimpleAlert.show('No Changes', 'Nothing to save from CV.', 'info', { notification: true, autoClose: true });
+        return;
+    }
+
+    try {
+        const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
+        const response = await fetch(`${workersApi}/core/update.php?id=${encodeURIComponent(workerId)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok || !result?.success) {
+            throw new Error(result?.message || 'Failed to save CV changes');
+        }
+
+        SimpleAlert.show('Saved', 'CV edits were saved to worker data.', 'success', { notification: true, autoClose: true });
+        modal.setAttribute('data-initial-html', sheet.innerHTML);
+        if (window.workerTable) {
+            window.workerTable.loadWorkers();
+            window.workerTable.loadStats();
+        }
+    } catch (error) {
+        debug.error('Save CV error:', error);
+        SimpleAlert.show('Save Failed', String(error?.message || error), 'danger', { notification: true });
+    }
+};
+
 window.showEmptyCv = async function(workerId) {
     debug.log('Show Empty CV called with ID:', workerId);
     try {
@@ -3296,6 +3348,7 @@ window.showEmptyCv = async function(workerId) {
 
         const html = buildEmptyCvHtml(worker);
         modal.setAttribute('data-initial-html', html);
+        modal.setAttribute('data-worker-id', String(worker.id || workerId));
         sheet.innerHTML = html;
         modal.classList.add('show');
         document.body.style.overflow = 'hidden';
