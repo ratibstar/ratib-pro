@@ -3106,13 +3106,16 @@ function ensureEmptyCvModal() {
             <div class="empty-cv-toolbar">
                 <button type="button" class="empty-cv-btn" data-action="print-empty-cv">Print</button>
                 <button type="button" class="empty-cv-btn" data-action="reset-empty-cv">Reset</button>
+                <button type="button" class="empty-cv-btn" data-action="upload-empty-cv-photo">Upload Photo</button>
                 <button type="button" class="empty-cv-btn" data-action="save-empty-cv">Save To System</button>
+                <button type="button" class="empty-cv-btn" data-action="toggle-empty-cv-missing">Show Only Missing</button>
                 <span class="empty-cv-hint">Click text to edit before printing.</span>
                 <button type="button" class="empty-cv-btn close" data-action="close-empty-cv">Close</button>
             </div>
             <div class="empty-cv-body">
                 <div id="emptyCvSheet"></div>
             </div>
+            <input type="file" id="emptyCvPhotoInput" accept="image/*" style="display:none">
         </div>
     `;
     document.body.appendChild(modal);
@@ -3132,21 +3135,23 @@ function ensureEmptyCvModal() {
             .empty-cv-body{flex:1;overflow:auto;background:#f3f6fa;padding:14px}
             #emptyCvSheet .page{max-width:850px;margin:0 auto 18px auto;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12);font-family:Georgia,'Times New Roman',serif}
             #emptyCvSheet .header{background:#a8d3ef;color:#0d2538;padding:8px 24px;text-align:center;border-bottom:1px solid #8bbbdc}
-            #emptyCvSheet .header h1{margin:0;font-size:44px;letter-spacing:1px;font-weight:700;text-transform:uppercase;line-height:1}
-            #emptyCvSheet .header h2{margin:2px 0 0;font-size:22px;font-weight:700;text-transform:capitalize}
+            #emptyCvSheet .header h1{margin:0;font-size:22px;letter-spacing:1px;font-weight:700;text-transform:uppercase;line-height:1.1}
+            #emptyCvSheet .header h2{margin:2px 0 0;font-size:12px;font-weight:700;text-transform:capitalize}
             #emptyCvSheet .grid{display:grid;grid-template-columns:250px 1fr}
             #emptyCvSheet .left{background:#fff;padding:14px;border-right:10px solid #c8dcee}
             #emptyCvSheet .right{padding:14px 18px;color:#1d2a3a;background:#f5fbff}
             #emptyCvSheet .photo{height:170px;border:1px solid #9fc6e2;background:#f4f8fb;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700}
-            #emptyCvSheet .side-title{background:#2f7fc2;color:#fff;font-size:28px;font-style:italic;font-weight:700;padding:2px 8px;line-height:1;margin:10px 0 6px}
-            #emptyCvSheet .main-title{color:#1f6ea8;font-size:38px;font-style:italic;font-weight:700;line-height:1;margin:10px 0 6px}
-            #emptyCvSheet .line{padding:2px 0;border-bottom:1px solid #c2d6e6;font-size:22px;line-height:1.2}
+            #emptyCvSheet .side-title{background:#2f7fc2;color:#fff;font-size:16px;font-style:italic;font-weight:700;padding:3px 8px;line-height:1;margin:10px 0 6px}
+            #emptyCvSheet .main-title{color:#1f6ea8;font-size:18px;font-style:italic;font-weight:700;line-height:1.1;margin:10px 0 6px}
+            #emptyCvSheet .line{padding:2px 0;border-bottom:1px solid #c2d6e6;font-size:14px;line-height:1.25}
             #emptyCvSheet .pair{display:grid;grid-template-columns:120px 1fr;gap:6px}
             #emptyCvSheet .pair .k{font-weight:700}
             #emptyCvSheet ul{margin:6px 0 0 20px;padding:0}
-            #emptyCvSheet li{margin:4px 0;font-size:22px;line-height:1.2}
+            #emptyCvSheet li{margin:4px 0;font-size:14px;line-height:1.25}
             #emptyCvSheet .note{color:#4d6478;font-size:12px;margin-top:16px}
             #emptyCvSheet .editable:focus{outline:2px dashed #7aaedb;outline-offset:2px}
+            #emptyCvSheet .missing-value{color:#c62828;font-weight:700}
+            #emptyCvSheet .hidden-by-missing-filter{display:none !important}
         `;
         document.head.appendChild(style);
     }
@@ -3159,7 +3164,25 @@ function ensureEmptyCvModal() {
         if (action === 'reset-empty-cv') window.resetEmptyCvModal();
         if (action === 'print-empty-cv') window.printEmptyCvModal();
         if (action === 'save-empty-cv') window.saveEmptyCvModal();
+        if (action === 'upload-empty-cv-photo') {
+            const fileInput = document.getElementById('emptyCvPhotoInput');
+            if (fileInput) fileInput.click();
+        }
+        if (action === 'toggle-empty-cv-missing') {
+            const enabled = modal.getAttribute('data-missing-only') === '1';
+            window.toggleEmptyCvMissingOnly(!enabled);
+            actionEl.textContent = enabled ? 'Show Only Missing' : 'Show All Fields';
+        }
     });
+    const fileInput = modal.querySelector('#emptyCvPhotoInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', async function () {
+            const file = this.files && this.files[0] ? this.files[0] : null;
+            if (!file) return;
+            await window.uploadEmptyCvPhoto(file);
+            this.value = '';
+        });
+    }
 
     return modal;
 }
@@ -3183,6 +3206,14 @@ function buildEmptyCvHtml(worker) {
     const line = (value, fallback = 'Not provided') => {
         const clean = String(value ?? '').trim();
         return clean ? esc(clean) : fallback;
+    };
+    const show = (value) => line(value, '-');
+    const markMissing = (value) => {
+        const raw = String(value || '').trim();
+        if (!raw || raw === '-' || raw.toLowerCase() === 'not provided') {
+            return '<span class="missing-value">Missing</span>';
+        }
+        return esc(raw);
     };
 
     const fullName = line(pick('worker_name', 'full_name'));
@@ -3208,6 +3239,20 @@ function buildEmptyCvHtml(worker) {
     const contractDuration = line(pick('contract_duration'));
     const workingHours = line(pick('working_hours'));
     const salary = line(pick('salary'));
+    const gender = show(pick('gender'));
+    const age = show(pick('age'));
+    const city = show(pick('city'));
+    const country = show(pick('country'));
+    const agentName = show(pick('agent_name'));
+    const subagentName = show(pick('subagent_name'));
+    const workerStatus = show(pick('status'));
+    const passportExpiry = show(pick('passport_expiry', 'passport_expiry_date'));
+    const visaNumber = show(pick('visa_number'));
+    const ticketNumber = show(pick('ticket_number'));
+    const medicalNumber = show(pick('medical_number'));
+    const trainingCertificateNumber = show(pick('training_certificate_number'));
+    const emergencyName = show(pick('emergency_name'));
+    const emergencyPhone = show(pick('emergency_phone'));
 
     const photoUrl = pick('personal_photo_url');
 
@@ -3219,7 +3264,7 @@ function buildEmptyCvHtml(worker) {
             </div>
             <div class="grid">
                 <aside class="left">
-                    <div class="photo">${photoUrl ? `<img src="${esc(photoUrl)}" alt="photo" style="max-width:100%;max-height:100%">` : 'PHOTO'}</div>
+                    <div class="photo"><img id="emptyCvPhotoPreview" src="${photoUrl ? esc(photoUrl) : ''}" alt="photo" style="${photoUrl ? 'max-width:100%;max-height:100%;display:block' : 'display:none'}"><span id="emptyCvPhotoPlaceholder" style="${photoUrl ? 'display:none' : 'display:block'}">PHOTO</span></div>
                     <div class="side-title">CONTACT INFO</div>
                     <div class="line editable pair" contenteditable="true"><span class="k">Phone</span><span data-field="phone">${phone}</span></div>
                     <div class="line editable pair" contenteditable="true"><span class="k">Email</span><span data-field="email">${email}</span></div>
@@ -3228,11 +3273,15 @@ function buildEmptyCvHtml(worker) {
                     <div class="line editable pair" contenteditable="true"><span class="k">Date of Birth</span><span data-field="date_of_birth">${dob}</span></div>
                     <div class="line editable pair" contenteditable="true"><span class="k">Place of Birth</span><span data-field="place_of_birth">${placeOfBirth}</span></div>
                     <div class="line editable pair" contenteditable="true"><span class="k">Nationality</span><span data-field="nationality">${nationality}</span></div>
+                    <div class="line pair"><span class="k">Gender</span><span>${markMissing(gender)}</span></div>
+                    <div class="line pair"><span class="k">Age</span><span>${markMissing(age)}</span></div>
                     <div class="line editable pair" contenteditable="true"><span class="k">Marital Status</span><span data-field="marital_status">${maritalStatus}</span></div>
                     <div class="line editable pair" contenteditable="true"><span class="k">Passport</span><span data-field="passport_number">${passport}</span></div>
                     <div class="line editable pair" contenteditable="true"><span class="k">Identity</span><span data-field="identity_number">${identity}</span></div>
                     <div class="line editable pair" contenteditable="true"><span class="k">Language</span><span data-field="language">${language}</span></div>
                     <div class="line editable pair" contenteditable="true"><span class="k">Lang. Level</span><span data-field="language_level">${languageLevel}</span></div>
+                    <div class="line pair"><span class="k">City</span><span>${markMissing(city)}</span></div>
+                    <div class="line pair"><span class="k">Country</span><span>${markMissing(country)}</span></div>
                     <div class="side-title">Education</div>
                     <div class="line editable" contenteditable="true"><span data-field="education_level">${educationLevel}</span></div>
                 </aside>
@@ -3251,6 +3300,17 @@ function buildEmptyCvHtml(worker) {
                         <li class="editable" contenteditable="true">Working Hours: <span data-field="working_hours">${workingHours}</span></li>
                         <li class="editable" contenteditable="true">Salary: <span data-field="salary">${salary}</span></li>
                     </ul>
+                    <div class="main-title">Suggested Worker Data</div>
+                    <div class="line pair"><span class="k">Agent</span><span>${markMissing(agentName)}</span></div>
+                    <div class="line pair"><span class="k">Subagent</span><span>${markMissing(subagentName)}</span></div>
+                    <div class="line pair"><span class="k">Status</span><span>${markMissing(workerStatus)}</span></div>
+                    <div class="line pair"><span class="k">Passport Expiry</span><span>${markMissing(passportExpiry)}</span></div>
+                    <div class="line pair"><span class="k">Medical No.</span><span>${markMissing(medicalNumber)}</span></div>
+                    <div class="line pair"><span class="k">Visa No.</span><span>${markMissing(visaNumber)}</span></div>
+                    <div class="line pair"><span class="k">Ticket No.</span><span>${markMissing(ticketNumber)}</span></div>
+                    <div class="line pair"><span class="k">Training Cert.</span><span>${markMissing(trainingCertificateNumber)}</span></div>
+                    <div class="line pair"><span class="k">Emergency Name</span><span>${markMissing(emergencyName)}</span></div>
+                    <div class="line pair"><span class="k">Emergency Phone</span><span>${markMissing(emergencyPhone)}</span></div>
                     <div class="note">Ratib Pro Indonesia - Empty CV Template</div>
                 </main>
             </div>
@@ -3270,6 +3330,7 @@ window.resetEmptyCvModal = function() {
     const sheet = document.getElementById('emptyCvSheet');
     if (!modal || !sheet) return;
     sheet.innerHTML = modal.getAttribute('data-initial-html') || '';
+    window.toggleEmptyCvMissingOnly(false);
 };
 
 window.printEmptyCvModal = function() {
@@ -3282,19 +3343,19 @@ window.printEmptyCvModal = function() {
             body{margin:0;background:#fff;font-family:Arial,sans-serif;color:#1d2a3a}
             .page{max-width:850px;margin:0 auto;background:#fff;font-family:Georgia,'Times New Roman',serif}
             .header{background:#a8d3ef;color:#0d2538;padding:8px 24px;text-align:center;border-bottom:1px solid #8bbbdc}
-            .header h1{margin:0;font-size:44px;letter-spacing:1px;font-weight:700;text-transform:uppercase;line-height:1}
-            .header h2{margin:2px 0 0;font-size:22px;font-weight:700;text-transform:capitalize}
+            .header h1{margin:0;font-size:22px;letter-spacing:1px;font-weight:700;text-transform:uppercase;line-height:1.1}
+            .header h2{margin:2px 0 0;font-size:12px;font-weight:700;text-transform:capitalize}
             .grid{display:grid;grid-template-columns:250px 1fr}
             .left{background:#fff;padding:14px;border-right:10px solid #c8dcee}
             .right{padding:14px 18px;background:#f5fbff}
             .photo{height:170px;border:1px solid #9fc6e2;background:#f4f8fb;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700}
-            .side-title{background:#2f7fc2;color:#fff;font-size:28px;font-style:italic;font-weight:700;padding:2px 8px;line-height:1;margin:10px 0 6px}
-            .main-title{color:#1f6ea8;font-size:38px;font-style:italic;font-weight:700;line-height:1;margin:10px 0 6px}
-            .line{padding:2px 0;border-bottom:1px solid #c2d6e6;font-size:22px;line-height:1.2}
+            .side-title{background:#2f7fc2;color:#fff;font-size:16px;font-style:italic;font-weight:700;padding:3px 8px;line-height:1;margin:10px 0 6px}
+            .main-title{color:#1f6ea8;font-size:18px;font-style:italic;font-weight:700;line-height:1.1;margin:10px 0 6px}
+            .line{padding:2px 0;border-bottom:1px solid #c2d6e6;font-size:14px;line-height:1.25}
             .pair{display:grid;grid-template-columns:120px 1fr;gap:6px}
             .pair .k{font-weight:700}
             ul{margin:6px 0 0 20px;padding:0}
-            li{margin:4px 0;font-size:22px;line-height:1.2}
+            li{margin:4px 0;font-size:14px;line-height:1.25}
             .note{color:#4d6478;font-size:12px;margin-top:16px}
         </style>
     </head><body>${sheet.innerHTML}</body></html>`);
@@ -3333,6 +3394,7 @@ window.saveEmptyCvModal = async function() {
         'qualification',
         'skills',
         'training_notes',
+        'personal_photo_url',
         'contract_duration',
         'working_hours',
         'salary'
@@ -3356,6 +3418,10 @@ window.saveEmptyCvModal = async function() {
     });
     if (payload.date_of_birth && !payload.birth_date) {
         payload.birth_date = payload.date_of_birth;
+    }
+    const photoUrl = modal.getAttribute('data-photo-url');
+    if (photoUrl && String(photoUrl).trim() !== '') {
+        payload.personal_photo_url = String(photoUrl).trim();
     }
     if (!Object.keys(payload).length) {
         SimpleAlert.show('No Changes', 'Nothing to save from CV.', 'info', { notification: true, autoClose: true });
@@ -3386,6 +3452,50 @@ window.saveEmptyCvModal = async function() {
     }
 };
 
+window.uploadEmptyCvPhoto = async function(file) {
+    const modal = document.getElementById('emptyCvModal');
+    if (!modal || !file) return;
+    try {
+        const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('documentType', 'personal_photo');
+        const response = await fetch(`${workersApi}/upload-file.php`, {
+            method: 'POST',
+            body: formData
+        });
+        const result = await response.json();
+        if (!response.ok || !result?.success || !result?.fileName) {
+            throw new Error(result?.message || 'Photo upload failed');
+        }
+        const photoUrl = `../uploads/documents/personal_photo/${result.fileName}`;
+        modal.setAttribute('data-photo-url', photoUrl);
+        const preview = document.getElementById('emptyCvPhotoPreview');
+        const placeholder = document.getElementById('emptyCvPhotoPlaceholder');
+        if (preview) {
+            preview.src = photoUrl;
+            preview.style.display = 'block';
+        }
+        if (placeholder) placeholder.style.display = 'none';
+        SimpleAlert.show('Photo Uploaded', 'Photo is ready. Click Save To System.', 'success', { notification: true, autoClose: true });
+    } catch (error) {
+        debug.error('CV photo upload error:', error);
+        SimpleAlert.show('Upload Failed', String(error?.message || error), 'danger', { notification: true });
+    }
+};
+
+window.toggleEmptyCvMissingOnly = function(enabled) {
+    const modal = document.getElementById('emptyCvModal');
+    const sheet = document.getElementById('emptyCvSheet');
+    if (!modal || !sheet) return;
+    modal.setAttribute('data-missing-only', enabled ? '1' : '0');
+    const rows = sheet.querySelectorAll('.line, li');
+    rows.forEach((row) => {
+        const hasMissing = !!row.querySelector('.missing-value');
+        row.classList.toggle('hidden-by-missing-filter', enabled && !hasMissing);
+    });
+};
+
 window.showEmptyCv = async function(workerId) {
     debug.log('Show Empty CV called with ID:', workerId);
     try {
@@ -3402,7 +3512,11 @@ window.showEmptyCv = async function(workerId) {
         const html = buildEmptyCvHtml(worker);
         modal.setAttribute('data-initial-html', html);
         modal.setAttribute('data-worker-id', String(worker.id || workerId));
+        modal.setAttribute('data-photo-url', String(worker.personal_photo_url || ''));
+        modal.setAttribute('data-missing-only', '0');
         sheet.innerHTML = html;
+        const toggleBtn = modal.querySelector('[data-action="toggle-empty-cv-missing"]');
+        if (toggleBtn) toggleBtn.textContent = 'Show Only Missing';
         modal.classList.add('show');
         document.body.style.overflow = 'hidden';
     } catch (error) {
