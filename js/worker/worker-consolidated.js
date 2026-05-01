@@ -3184,24 +3184,28 @@ function buildEmptyCvHtml(worker) {
     };
 
     const fullName = line(pick('worker_name', 'full_name'));
-    const nationality = line(pick('nationality', 'country'), 'INDONESIAN');
+    const nationality = line(pick('nationality'), 'INDONESIAN');
     const identity = line(pick('identity_number'));
     const passport = line(pick('passport_number'));
-    const job = line(pick('job_title', 'skills', 'qualification', 'specialization', 'occupation'), 'DOMESTIC WORKER');
+    const job = line(pick('job_title'), 'DOMESTIC WORKER');
     const dob = line(pick('date_of_birth', 'birth_date'));
     const placeOfBirth = line(pick('place_of_birth'));
-    const phone = line(pick('phone', 'contact_number', 'contact', 'mobile', 'emergency_phone'));
+    const phone = line(pick('phone', 'contact_number'));
     const email = line(pick('email'));
-    const address = line(pick('address', 'city', 'country'));
+    const address = line(pick('address'));
     const maritalStatus = line(pick('marital_status'));
-    const language = line(pick('language', 'language_level'));
-    const educationLevel = line(pick('education_level', 'qualification'));
+    const language = line(pick('language'));
+    const languageLevel = line(pick('language_level'));
+    const educationLevel = line(pick('education_level'));
     const workExperience = line(pick('work_experience'));
     const skills = line(pick('skills'));
     const localExperience = line(pick('local_experience'));
     const abroadExperience = line(pick('abroad_experience'));
     const qualification = line(pick('qualification'));
     const trainingNotes = line(pick('training_notes'));
+    const contractDuration = line(pick('contract_duration'));
+    const workingHours = line(pick('working_hours'));
+    const salary = line(pick('salary'));
 
     return `
         <div class="page">
@@ -3224,10 +3228,9 @@ function buildEmptyCvHtml(worker) {
                     </div>
                     <div class="sec">
                         <h3>Personal Details</h3>
-                        <div class="line editable" contenteditable="true">Religion: ____________________</div>
                         <div class="line editable" contenteditable="true">Marital Status: <span data-field="marital_status">${maritalStatus}</span></div>
                         <div class="line editable" contenteditable="true">Language: <span data-field="language">${language}</span></div>
-                        <div class="line editable" contenteditable="true">Height / Weight: ____________________</div>
+                        <div class="line editable" contenteditable="true">Language Level: <span data-field="language_level">${languageLevel}</span></div>
                         <div class="line editable" contenteditable="true">Address: <span data-field="address">${address}</span></div>
                     </div>
                 </aside>
@@ -3246,12 +3249,9 @@ function buildEmptyCvHtml(worker) {
                     </div>
                     <div class="sec">
                         <h3>Duties and Responsibilities</h3>
-                        <ul>
-                            <li class="editable" contenteditable="true">___________________________________________</li>
-                            <li class="editable" contenteditable="true">___________________________________________</li>
-                            <li class="editable" contenteditable="true">___________________________________________</li>
-                            <li class="editable" contenteditable="true">___________________________________________</li>
-                        </ul>
+                        <div class="line editable" contenteditable="true">Contract Duration: <span data-field="contract_duration">${contractDuration}</span></div>
+                        <div class="line editable" contenteditable="true">Working Hours: <span data-field="working_hours">${workingHours}</span></div>
+                        <div class="line editable" contenteditable="true">Salary: <span data-field="salary">${salary}</span></div>
                     </div>
                     <div class="sec">
                         <h3>Education & Training</h3>
@@ -3330,13 +3330,17 @@ window.saveEmptyCvModal = async function() {
         'address',
         'place_of_birth',
         'language',
+        'language_level',
         'education_level',
         'work_experience',
         'local_experience',
         'abroad_experience',
         'qualification',
         'skills',
-        'training_notes'
+        'training_notes',
+        'contract_duration',
+        'working_hours',
+        'salary'
     ]);
     const isIsoDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
     const normalizeValue = (field, rawValue) => {
