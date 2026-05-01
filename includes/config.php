@@ -747,6 +747,150 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
             ]);
             exit;
         }
+        if ($reasonCode === 'AGENCY_SUSPENDED') {
+            header('Content-Type: text/html; charset=UTF-8');
+            $contactText = 'support@ratib.sa';
+            $safeMessage = htmlspecialchars($outMsg, ENT_QUOTES, 'UTF-8');
+            $safeContact = htmlspecialchars($contactText, ENT_QUOTES, 'UTF-8');
+            echo '<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agency Suspended</title>
+    <style>
+        :root {
+            --bg: #f5f8ff;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #475569;
+            --primary: #1d4ed8;
+            --primary-hover: #1e40af;
+            --accent: #f59e0b;
+            --border: #dbe4ff;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(180deg, #eff4ff 0%, var(--bg) 100%);
+            color: var(--text);
+            display: grid;
+            place-items: center;
+            padding: 16px;
+        }
+        .card {
+            width: min(760px, 100%);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+            padding: 24px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #fff7ed;
+            color: #b45309;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+        h1 {
+            margin: 12px 0 8px;
+            font-size: 24px;
+            line-height: 1.2;
+        }
+        p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .btn {
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+        .btn-outline {
+            background: #ffffff;
+            color: var(--primary);
+            border-color: #bfdbfe;
+        }
+        .btn-outline:hover {
+            background: #eff6ff;
+        }
+        .btn-ghost {
+            background: #f8fafc;
+            color: #1e293b;
+            border-color: #e2e8f0;
+        }
+        .btn-ghost:hover {
+            background: #f1f5f9;
+        }
+        .helper {
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px dashed #e2e8f0;
+        }
+        .helper h2 {
+            margin: 0 0 10px;
+            font-size: 16px;
+        }
+        .contact {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #334155;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <span class="badge">Account status</span>
+        <h1>Agency Suspended</h1>
+        <p>' . $safeMessage . '</p>
+
+        <div class="actions">
+            <a class="btn btn-primary" href="/admin/control-center.php">Renewal</a>
+            <a class="btn btn-outline" href="mailto:' . $safeContact . '?subject=Agency%20Renewal%20Support">Contact Us</a>
+        </div>
+
+        <div class="helper">
+            <h2>Extension request examples</h2>
+            <div class="actions">
+                <a class="btn btn-ghost" href="mailto:' . $safeContact . '?subject=Extension%20Request%20-%201%20Week&body=Please%20extend%20our%20agency%20for%201%20week.">Request 1 Week</a>
+                <a class="btn btn-ghost" href="mailto:' . $safeContact . '?subject=Extension%20Request%20-%202%20Weeks&body=Please%20extend%20our%20agency%20for%202%20weeks.">Request 2 Weeks</a>
+                <a class="btn btn-ghost" href="mailto:' . $safeContact . '?subject=Extension%20Request%20-%203%20Weeks&body=Please%20extend%20our%20agency%20for%203%20weeks.">Request 3 Weeks</a>
+                <a class="btn btn-ghost" href="mailto:' . $safeContact . '?subject=Extension%20Request%20-%204%20Weeks&body=Please%20extend%20our%20agency%20for%204%20weeks.">Request 4 Weeks</a>
+            </div>
+            <div class="contact">Support email: ' . $safeContact . '</div>
+        </div>
+    </div>
+</body>
+</html>';
+            exit;
+        }
         echo $outMsg;
         exit;
     }
