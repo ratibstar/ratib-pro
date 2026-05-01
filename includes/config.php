@@ -891,11 +891,11 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
         $activationStatus = trim((string)($_GET['activation_status'] ?? ''));
         $activationNoticeHtml = '';
         if ($activationStatus === 'success') {
-            $activationNoticeHtml = '<div class="mb-4 rounded-xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">One-week activation is enabled. This agency will be auto-suspended again after 7 days if payment is not completed.</div>';
+            $activationNoticeHtml = '<div class="alert-success">One-week activation is enabled. This agency will be auto-suspended again after 7 days if payment is not completed.</div>';
         } elseif ($activationStatus === 'used') {
-            $activationNoticeHtml = '<div class="mb-4 rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">One-week activation was already used for this agency. Please complete payment or contact support.</div>';
+            $activationNoticeHtml = '<div class="alert-warning">One-week activation was already used for this agency. Please complete payment or contact support.</div>';
         } elseif ($activationStatus === 'error') {
-            $activationNoticeHtml = '<div class="mb-4 rounded-xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">Unable to activate one week automatically. Please contact support.</div>';
+            $activationNoticeHtml = '<div class="alert-error">Unable to activate one week automatically. Please contact support.</div>';
         }
         $safeRenewHref = htmlspecialchars($renewHref, ENT_QUOTES, 'UTF-8');
         $safeRequestExtensionHref = htmlspecialchars($requestExtensionHref, ENT_QUOTES, 'UTF-8');

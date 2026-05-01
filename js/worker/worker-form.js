@@ -524,15 +524,26 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!val) missing.push(name === 'identity' ? 'identity (identity_number)' : name);
         });
         const doneCount = Math.max(0, req.length - missing.length);
+        const hasStartedFilling = req.some(function (name) {
+            const domName = name === 'identity' ? 'identity_number' : name;
+            const el = form.querySelector('[name="' + domName + '"]');
+            if (!el) return false;
+            return ((el.value || '').toString().trim() !== '');
+        });
         const pwdLine = pwdRequired
             ? '<div class="small text-muted mt-1"><strong>password</strong> is configured via mobile onboarding / tracking device (not on this form).</div>'
             : '';
+        const bodyLine = (!hasStartedFilling && missing.length === req.length)
+            ? '<div class="mt-1 text-muted">Start filling the form and required fields status will update automatically.</div>'
+            : (missing.length
+                ? ('<div class="mt-1">Missing fields: ' + missing.join(', ') + '</div>')
+                : '<div class="mt-1 text-success">All required country fields on this form are completed.</div>');
         listEl.innerHTML =
             '<div><span class="badge bg-primary">Profile: ' + profile + '</span> ' +
             '<span class="badge bg-success ms-1">Done: ' + doneCount + '/' + req.length + '</span> ' +
             '<span class="badge bg-danger ms-1">Missing: ' + missing.length + '</span></div>' +
             pwdLine +
-            (missing.length ? ('<div class="mt-1">Missing fields: ' + missing.join(', ') + '</div>') : '<div class="mt-1 text-success">All required country fields on this form are completed.</div>');
+            bodyLine;
     }
 
     window.updateIndonesiaComplianceVisibility = updateIndonesiaComplianceVisibility;
