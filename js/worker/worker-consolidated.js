@@ -3446,7 +3446,8 @@ window.uploadEmptyCvPhoto = async function(file) {
         const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('documentType', 'personal_photo');
+        // Use an existing writable docs folder to avoid server mkdir restrictions.
+        formData.append('documentType', 'identity');
         const response = await fetch(`${workersApi}/upload-file.php`, {
             method: 'POST',
             body: formData
@@ -3455,7 +3456,7 @@ window.uploadEmptyCvPhoto = async function(file) {
         if (!response.ok || !result?.success || !result?.fileName) {
             throw new Error(result?.message || 'Photo upload failed');
         }
-        const photoUrl = `../uploads/documents/personal_photo/${result.fileName}`;
+        const photoUrl = `../uploads/documents/identity/${result.fileName}`;
         modal.setAttribute('data-photo-url', photoUrl);
         const preview = document.getElementById('emptyCvPhotoPreview');
         const placeholder = document.getElementById('emptyCvPhotoPlaceholder');
