@@ -176,7 +176,7 @@ if (!function_exists('ratib_country_profile_value_for_field')) {
 }
 
 if (!function_exists('ratib_country_profile_is_missing')) {
-    function ratib_country_profile_is_missing(mixed $value): bool
+    function ratib_country_profile_is_missing($value): bool
     {
         if ($value === null) return true;
         if (is_string($value)) return trim($value) === '';
