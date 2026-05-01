@@ -909,153 +909,45 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
                 $weekHref = 'mailto:' . $supportEmail
                     . '?subject=' . rawurlencode($subjectBase . ' - Extension request (' . $weekText . ')')
                     . '&body=' . rawurlencode("Hello Support,\n\nPlease grant an extension request for " . $weekText . " for " . $agencyDescriptor . ".\n\nHost: " . $currentHost . "\nReason code: " . $reasonCode . "\n\nThank you.");
-                $weekPillsHtml .= '<a data-loading-btn href="' . htmlspecialchars($weekHref, ENT_QUOTES, 'UTF-8') . '" class="inline-flex items-center justify-center rounded-full border border-slate-600 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:-translate-y-0.5 hover:border-blue-400/60 hover:bg-blue-500/10 hover:text-blue-300">' . htmlspecialchars($weekLabel, ENT_QUOTES, 'UTF-8') . '</a>';
+                $weekPillsHtml .= '<a data-loading-btn class="extension-pill" href="' . htmlspecialchars($weekHref, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($weekLabel, ENT_QUOTES, 'UTF-8') . '</a>';
             }
         }
 
         $reasonCodeRow = $isControlContext
-            ? '<div class="flex items-center justify-between gap-4 border-b border-slate-700 py-3"><span class="text-slate-400">Reason code</span><span class="rounded-md bg-slate-700 px-2 py-1 text-xs font-semibold text-slate-100">' . $safeReasonCode . '</span></div>'
+            ? '<div class="info-row"><span class="info-label">Reason code</span><span class="info-value badge-soft">' . $safeReasonCode . '</span></div>'
             : '';
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = (string)($_SERVER['HTTP_HOST'] ?? '');
+        $fallbackBase = $host !== '' ? ($scheme . '://' . $host) : '';
+        $siteBaseUrl = rtrim((string)(defined('SITE_URL') ? SITE_URL : $fallbackBase), '/');
+        $suspensionCssDisk = __DIR__ . '/../css/pages/agency-suspension.css';
+        $suspensionJsDisk = __DIR__ . '/../js/pages/agency-suspension.js';
+        $homeCssDisk = __DIR__ . '/../css/pages/home-public.css';
+        $suspensionCssUrl = $siteBaseUrl . '/css/pages/agency-suspension.css?v=' . (int)(is_file($suspensionCssDisk) ? filemtime($suspensionCssDisk) : time());
+        $suspensionJsUrl = $siteBaseUrl . '/js/pages/agency-suspension.js?v=' . (int)(is_file($suspensionJsDisk) ? filemtime($suspensionJsDisk) : time());
+        $homeCssUrl = $siteBaseUrl . '/css/pages/home-public.css?v=' . (int)(is_file($homeCssDisk) ? filemtime($homeCssDisk) : time());
 
-        echo <<<HTML
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Agency Access Suspended</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(10px) scale(0.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-.animate-card-in { animation: cardIn .35s ease-out both; }
-</style>
-</head>
-<body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-100 antialiased">
-  <div class="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-4 py-8 sm:px-6 lg:px-8">
-    <main class="animate-card-in w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-700/70 bg-slate-900/90 shadow-2xl shadow-black/40 backdrop-blur">
-      <header class="border-b border-slate-700/70 bg-slate-900/80 px-6 py-5 sm:px-8">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex items-center gap-3">
-            <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500 text-white shadow-md shadow-blue-500/30">
-              <span class="text-lg font-bold">R</span>
-            </div>
-            <div>
-              <p class="text-sm font-semibold tracking-wide text-slate-200">RATIB Workforce System</p>
-              <p class="text-sm text-slate-400">Government Workforce Operations</p>
-            </div>
-          </div>
-          <span class="inline-flex w-fit items-center rounded-full border border-rose-400/30 bg-rose-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-rose-300">Access Restricted</span>
-        </div>
-      </header>
-
-      <section class="px-6 py-7 sm:px-8 sm:py-8">
-        {$activationNoticeHtml}
-        <div class="mb-6 flex items-start gap-4">
-          <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-300 ring-1 ring-rose-300/30">
-            <svg viewBox="0 0 24 24" fill="none" class="h-9 w-9" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.7L2.8 17a2 2 0 001.7 3h15a2 2 0 001.7-3L13.7 3.7a2 2 0 00-3.4 0z" />
-            </svg>
-          </div>
-          <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-100 sm:text-3xl">Agency Access Suspended</h1>
-            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">This agency has been temporarily suspended due to non-payment. You can reactivate instantly or request an extension.</p>
-            <p class="mt-2 text-sm text-slate-400">Agency: {$safeAgencyDescriptor}</p>
-          </div>
-        </div>
-
-        <div class="mb-6 rounded-2xl border border-slate-700 bg-slate-800/40 p-4 sm:p-5">
-          <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">Agency Information</h2>
-          <div class="grid gap-1 text-sm sm:text-base">
-            <div class="flex items-center justify-between gap-4 border-b border-slate-700 py-3">
-              <span class="text-slate-400">Agency name</span>
-              <span class="font-semibold text-slate-100">{$safeAgencyDescriptor}</span>
-            </div>
-            <div class="flex items-center justify-between gap-4 border-b border-slate-700 py-3">
-              <span class="text-slate-400">Agency ID</span>
-              <span class="font-semibold text-slate-100">{$safeAgencyIdDisplay}</span>
-            </div>
-            <div class="flex items-center justify-between gap-4 border-b border-slate-700 py-3">
-              <span class="text-slate-400">Current host</span>
-              <span class="font-semibold text-slate-100">{$safeCurrentHost}</span>
-            </div>
-            <div class="flex items-center justify-between gap-4 py-3">
-              <span class="text-slate-400">Support channel</span>
-              <span class="font-semibold text-slate-100">{$safeSupportEmail}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="rounded-2xl border border-slate-700 bg-slate-800/60 p-4 sm:p-5">
-          <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">Current Status</h2>
-          <div class="grid gap-1 text-sm sm:text-base">
-            <div class="flex items-center justify-between gap-4 border-b border-slate-700 py-3">
-              <span class="text-slate-400">Status</span>
-              <span class="inline-flex items-center rounded-full bg-rose-500/20 px-3 py-1 text-xs font-semibold text-rose-300">Suspended</span>
-            </div>
-            <div class="flex items-center justify-between gap-4 border-b border-slate-700 py-3">
-              <span class="text-slate-400">Reason</span>
-              <span class="font-semibold text-slate-100">{$safeReasonLabel}</span>
-            </div>
-            <div class="flex items-center justify-between gap-4 border-b border-slate-700 py-3">
-              <span class="text-slate-400">Suspended since</span>
-              <span class="font-semibold text-slate-100">{$safeSuspendedSince}</span>
-            </div>
-            <div class="flex items-center justify-between gap-4 py-3">
-              <span class="text-slate-400">Grace period</span>
-              <span class="font-semibold text-slate-100">{$safeGracePeriod}</span>
-            </div>
-            {$reasonCodeRow}
-          </div>
-        </div>
-
-        <p class="mt-5 text-sm text-slate-300">{$safeMessage}</p>
-
-        <div class="mt-6 inline-flex flex-wrap overflow-hidden rounded-xl border border-slate-700 bg-slate-800/70">
-          <a data-loading-btn href="{$safeRenewHref}" class="inline-flex min-w-[220px] items-center justify-center bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500">
-            Reactivate Now / Mark as Paid
-          </a>
-          <a data-loading-btn href="{$safeRequestExtensionHref}" class="inline-flex items-center justify-center border-l border-slate-700 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-slate-700/70">
-            Requesting 1 week activation
-          </a>
-          <a data-loading-btn href="{$safeContactHref}" class="inline-flex items-center justify-center border-l border-slate-700 px-5 py-3 text-sm font-semibold text-slate-300 transition hover:bg-slate-700/70 hover:text-slate-100">
-            Contact Support
-          </a>
-        </div>
-
-        <div id="extension-options" class="mt-6 rounded-xl border border-dashed border-slate-600 bg-slate-800/40 p-4">
-          <h3 class="text-sm font-semibold text-slate-200">Quick extension request examples</h3>
-          <p class="mt-1 text-xs text-slate-400">One-time activation option (7 days). If not paid, suspension returns automatically.</p>
-          <div class="mt-3 flex flex-wrap gap-2">
-            {$weekPillsHtml}
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <script>
-    document.querySelectorAll('[data-loading-btn]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        if (btn.dataset.loading === '1') return;
-        btn.dataset.loading = '1';
-        var original = btn.innerHTML;
-        btn.dataset.originalText = original;
-        btn.classList.add('opacity-70', 'pointer-events-none');
-        btn.innerHTML = '<span class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>Processing...';
-        setTimeout(function () {
-          btn.classList.remove('opacity-70', 'pointer-events-none');
-          btn.innerHTML = btn.dataset.originalText || original;
-          btn.dataset.loading = '0';
-        }, 1600);
-      });
-    });
-  </script>
-</body>
-</html>
-HTML;
+        $viewData = [
+            'siteBaseUrl' => $siteBaseUrl,
+            'homeCssUrl' => $homeCssUrl,
+            'suspensionCssUrl' => $suspensionCssUrl,
+            'suspensionJsUrl' => $suspensionJsUrl,
+            'activationNoticeHtml' => $activationNoticeHtml,
+            'safeAgencyDescriptor' => $safeAgencyDescriptor,
+            'safeAgencyIdDisplay' => $safeAgencyIdDisplay,
+            'safeCurrentHost' => $safeCurrentHost,
+            'safeSupportEmail' => $safeSupportEmail,
+            'safeReasonLabel' => $safeReasonLabel,
+            'safeSuspendedSince' => $safeSuspendedSince,
+            'safeGracePeriod' => $safeGracePeriod,
+            'reasonCodeRow' => $reasonCodeRow,
+            'safeMessage' => $safeMessage,
+            'safeRenewHref' => $safeRenewHref,
+            'safeRequestExtensionHref' => $safeRequestExtensionHref,
+            'safeContactHref' => $safeContactHref,
+            'weekPillsHtml' => $weekPillsHtml,
+        ];
+        require __DIR__ . '/views/agency-suspension.php';
         exit;
     }
 }

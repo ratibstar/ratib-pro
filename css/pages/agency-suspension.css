@@ -1,0 +1,309 @@
+body.agency-suspension-page {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, rgba(31, 48, 82, 0.45), rgba(8, 18, 36, 0.96) 45%, #080f1f 100%);
+    color: #e4ebff;
+}
+
+.suspension-shell {
+    max-width: 1180px;
+    margin: 24px auto 40px;
+    padding: 0 16px 24px;
+}
+
+.suspension-card {
+    border: 1px solid rgba(123, 143, 182, 0.25);
+    border-radius: 20px;
+    background: linear-gradient(165deg, rgba(14, 27, 50, 0.95), rgba(8, 16, 32, 0.98));
+    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.35);
+    padding: 24px;
+    animation: suspensionCardIn .35s ease-out;
+}
+
+@keyframes suspensionCardIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.988); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.hero-row {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.alert-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffb4bf;
+    background: rgba(239, 68, 68, 0.16);
+    border: 1px solid rgba(255, 129, 151, 0.42);
+    font-size: 22px;
+}
+
+.state-badge {
+    display: inline-flex;
+    border-radius: 999px;
+    border: 1px solid rgba(253, 164, 175, 0.4);
+    color: #fecdd3;
+    background: rgba(190, 24, 93, 0.22);
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.hero-row h1 {
+    margin: 8px 0 6px;
+    font-size: 34px;
+    line-height: 1.2;
+    color: #f5f8ff;
+}
+
+.hero-row p {
+    margin: 0;
+    color: #b9c8ea;
+}
+
+.agency-name {
+    margin-top: 6px !important;
+    font-weight: 600;
+    color: #d6e2fb;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.info-panel {
+    border: 1px solid rgba(126, 152, 199, 0.22);
+    border-radius: 16px;
+    background: rgba(10, 20, 40, 0.72);
+    padding: 14px;
+}
+
+.info-panel h2 {
+    margin: 0 0 8px;
+    color: #a6b8df;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(123, 143, 182, 0.2);
+}
+
+.info-panel .info-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 2px;
+}
+
+.info-label {
+    color: #9fb0d6;
+}
+
+.info-value {
+    color: #f2f7ff;
+    font-weight: 700;
+    text-align: right;
+}
+
+.badge-danger,
+.badge-soft {
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.badge-danger {
+    background: rgba(244, 63, 94, 0.2);
+    color: #fecdd3;
+}
+
+.badge-soft {
+    background: rgba(148, 163, 184, 0.24);
+    color: #dbe7ff;
+}
+
+.state-message {
+    margin: 10px 0 0;
+    color: #c8d5f4;
+}
+
+.action-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    border: 1px solid rgba(123, 143, 182, 0.35);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.action-btn {
+    padding: 12px 18px;
+    text-decoration: none;
+    font-weight: 700;
+    border-right: 1px solid rgba(123, 143, 182, 0.35);
+    transition: all .2s ease;
+}
+
+.action-btn:last-child {
+    border-right: 0;
+}
+
+.action-btn.primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+.action-btn.primary:hover {
+    background: #3b82f6;
+}
+
+.action-btn.secondary {
+    background: rgba(30, 41, 59, 0.84);
+    color: #e2e8f0;
+}
+
+.action-btn.secondary:hover,
+.action-btn.ghost:hover {
+    background: rgba(59, 130, 246, 0.15);
+    color: #dbeafe;
+}
+
+.action-btn.ghost {
+    background: rgba(30, 41, 59, 0.74);
+    color: #cbd5e1;
+}
+
+.extension-panel {
+    margin-top: 16px;
+    border: 1px dashed rgba(123, 143, 182, 0.4);
+    border-radius: 12px;
+    background: rgba(14, 26, 47, 0.7);
+    padding: 14px;
+}
+
+.extension-panel h3 {
+    margin: 0;
+    font-size: 15px;
+}
+
+.extension-panel p {
+    margin: 6px 0 0;
+    color: #9fb0d6;
+    font-size: 13px;
+}
+
+.extension-list {
+    margin-top: 10px;
+}
+
+.extension-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid rgba(123, 143, 182, 0.45);
+    background: rgba(15, 23, 42, 0.9);
+    color: #e2e8f0;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 12px;
+}
+
+.extension-pill:hover {
+    border-color: rgba(96, 165, 250, 0.7);
+    background: rgba(59, 130, 246, 0.16);
+    color: #dbeafe;
+}
+
+.alert-success,
+.alert-warning,
+.alert-error {
+    border-radius: 12px;
+    padding: 11px 14px;
+    margin-bottom: 14px;
+    font-size: 14px;
+}
+
+.alert-success {
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    background: rgba(16, 185, 129, 0.14);
+    color: #a7f3d0;
+}
+
+.alert-warning {
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    background: rgba(251, 191, 36, 0.12);
+    color: #fde68a;
+}
+
+.alert-error {
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    background: rgba(248, 113, 113, 0.12);
+    color: #fecaca;
+}
+
+.action-btn.is-loading {
+    pointer-events: none;
+    opacity: 0.72;
+}
+
+.action-btn-spinner {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    margin-right: 7px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    animation: suspensionSpin .8s linear infinite;
+    vertical-align: text-bottom;
+}
+
+@keyframes suspensionSpin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 920px) {
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .hero-row h1 {
+        font-size: 28px;
+    }
+
+    .action-group {
+        display: grid;
+        width: 100%;
+    }
+
+    .action-btn {
+        border-right: 0;
+        border-bottom: 1px solid rgba(123, 143, 182, 0.35);
+    }
+
+    .action-btn:last-child {
+        border-bottom: 0;
+    }
+}
