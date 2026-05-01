@@ -3169,29 +3169,39 @@ function buildEmptyCvHtml(worker) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
-    const line = (value, fallback = '____________________') => {
+    const pick = (...keys) => {
+        for (const key of keys) {
+            const val = worker && Object.prototype.hasOwnProperty.call(worker, key) ? worker[key] : undefined;
+            if (val !== undefined && val !== null && String(val).trim() !== '') {
+                return String(val).trim();
+            }
+        }
+        return '';
+    };
+    const line = (value, fallback = 'Not provided') => {
         const clean = String(value ?? '').trim();
         return clean ? esc(clean) : fallback;
     };
 
-    const fullName = line(worker.worker_name || worker.full_name);
-    const nationality = line(worker.nationality, 'INDONESIAN');
-    const identity = line(worker.identity_number);
-    const passport = line(worker.passport_number);
-    const job = line(worker.job_title || worker.specialization || worker.occupation, 'DOMESTIC WORKER');
-    const dob = line(worker.date_of_birth || worker.birth_date);
-    const placeOfBirth = line(worker.place_of_birth);
-    const phone = line(worker.phone || worker.contact || worker.mobile);
-    const email = line(worker.email);
-    const address = line(worker.address);
-    const maritalStatus = line(worker.marital_status);
-    const language = line(worker.language);
-    const educationLevel = line(worker.education_level);
-    const workExperience = line(worker.work_experience);
-    const skills = line(worker.skills);
-    const localExperience = line(worker.local_experience);
-    const abroadExperience = line(worker.abroad_experience);
-    const qualification = line(worker.qualification);
+    const fullName = line(pick('worker_name', 'full_name'));
+    const nationality = line(pick('nationality', 'country'), 'INDONESIAN');
+    const identity = line(pick('identity_number'));
+    const passport = line(pick('passport_number'));
+    const job = line(pick('job_title', 'skills', 'qualification', 'specialization', 'occupation'), 'DOMESTIC WORKER');
+    const dob = line(pick('date_of_birth', 'birth_date'));
+    const placeOfBirth = line(pick('place_of_birth'));
+    const phone = line(pick('phone', 'contact_number', 'contact', 'mobile', 'emergency_phone'));
+    const email = line(pick('email'));
+    const address = line(pick('address', 'city', 'country'));
+    const maritalStatus = line(pick('marital_status'));
+    const language = line(pick('language', 'language_level'));
+    const educationLevel = line(pick('education_level', 'qualification'));
+    const workExperience = line(pick('work_experience'));
+    const skills = line(pick('skills'));
+    const localExperience = line(pick('local_experience'));
+    const abroadExperience = line(pick('abroad_experience'));
+    const qualification = line(pick('qualification'));
+    const trainingNotes = line(pick('training_notes'));
 
     return `
         <div class="page">
@@ -3246,7 +3256,7 @@ function buildEmptyCvHtml(worker) {
                     <div class="sec">
                         <h3>Education & Training</h3>
                         <div class="line editable" contenteditable="true">Education Level: <span data-field="education_level">${educationLevel}</span></div>
-                        <div class="line editable" contenteditable="true">Training / Notes: <span data-field="training_notes">${line(worker.training_notes)}</span></div>
+                        <div class="line editable" contenteditable="true">Training / Notes: <span data-field="training_notes">${trainingNotes}</span></div>
                     </div>
                     <div class="note">Ratib Pro Indonesia - Empty CV Template</div>
                 </main>
