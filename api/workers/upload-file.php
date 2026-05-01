@@ -28,6 +28,13 @@ if (!isset($_FILES['file']) || !isset($_POST['documentType'])) {
 $file = $_FILES['file'];
 $documentType = $_POST['documentType'];
 
+// Normalize document type for safe filesystem paths
+$documentType = preg_replace('/[^a-zA-Z0-9_-]/', '', (string)$documentType);
+if ($documentType === '') {
+    echo json_encode(['success' => false, 'message' => 'Invalid document type']);
+    exit;
+}
+
 // Validate file
 if ($file['error'] !== UPLOAD_ERR_OK) {
     echo json_encode(['success' => false, 'message' => 'File upload error: ' . $file['error']]);
@@ -50,9 +57,23 @@ if ($file['size'] > $maxSize) {
 
 try {
     // Create upload directory if it doesn't exist
-    $uploadDir = __DIR__ . '/../../uploads/documents/' . $documentType . '/';
+    $uploadRoot = realpath(__DIR__ . '/../../uploads');
+    if ($uploadRoot === false) {
+        $uploadRoot = __DIR__ . '/../../uploads';
+        if (!is_dir($uploadRoot) && !@mkdir($uploadRoot, 0777, true)) {
+            echo json_encode(['success' => false, 'message' => 'Failed to create upload root directory']);
+            exit;
+        }
+    }
+    $uploadDir = rtrim($uploadRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . $documentType . DIRECTORY_SEPARATOR;
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+        if (!@mkdir($uploadDir, 0777, true) && !is_dir($uploadDir)) {
+            echo json_encode(['success' => false, 'message' => 'Failed to create upload directory']);
+            exit;
+        }
+    }
+    if (!is_writable($uploadDir)) {
+        @chmod($uploadDir, 0777);
     }
     
     // Generate unique filename
@@ -61,7 +82,7 @@ try {
     $filePath = $uploadDir . $fileName;
     
     // Move uploaded file
-    if (move_uploaded_file($file['tmp_name'], $filePath)) {
+    if (move_uploaded_file($file['tmp_name'], $filePath) || (@copy($file['tmp_name'], $filePath) && @unlink($file['tmp_name']))) {
         echo json_encode([
             'success' => true,
             'message' => 'File uploaded successfully',
@@ -70,7 +91,9 @@ try {
             'documentType' => $documentType
         ]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to move uploaded file']);
+        $lastError = error_get_last();
+        $detail = is_array($lastError) && isset($lastError['message']) ? (' - ' . $lastError['message']) : '';
+        echo json_encode(['success' => false, 'message' => 'Failed to move uploaded file' . $detail]);
     }
     
 } catch (Exception $e) {
