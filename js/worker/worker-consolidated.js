@@ -994,6 +994,9 @@ class WorkerTable {
                 case 'documents':
                     window.showDocuments(workerId);
                     break;
+                case 'empty-cv':
+                    window.showEmptyCv(workerId);
+                    break;
                 case 'deploy':
                     if (typeof window.openDeploymentModal === 'function') {
                         window.openDeploymentModal(workerId);
@@ -1164,6 +1167,10 @@ class WorkerTable {
                         <button class="btn-icon-small docs-btn" data-action="documents" data-worker-id="${worker.id}" title="Documents" data-permission="view_worker_documents">
                             <i class="fas fa-file-alt"></i>
                         </button>
+                        ${this.isIndonesiaProgramContext() ? `
+                        <button class="btn-icon-small docs-btn" data-action="empty-cv" data-worker-id="${worker.id}" title="Empty CV" data-permission="view_worker_documents">
+                            <i class="fas fa-file-lines"></i>
+                        </button>` : ''}
                         <button class="btn-icon-small deploy-btn" data-action="deploy" data-worker-id="${worker.id}" title="Send Abroad" data-permission="edit_worker">
                             <i class="fas fa-plane-departure"></i>
                         </button>
@@ -2307,6 +2314,10 @@ debug.log(`Pagination button clicked: page ${page}`);
                             <button class="btn btn-info btn-icon-small" data-action="view-documents" data-worker-id="${worker.id}" title="Documents">
                                 <i class="fas fa-file-alt"></i>
                             </button>
+                            ${this.isIndonesiaProgramContext() ? `
+                            <button class="btn btn-secondary btn-icon-small" data-action="empty-cv" data-worker-id="${worker.id}" title="Empty CV">
+                                <i class="fas fa-file-lines"></i>
+                            </button>` : ''}
                             <button class="btn btn-warning btn-icon-small" data-action="deploy-worker" data-worker-id="${worker.id}" title="Send Abroad">
                                 <i class="fas fa-plane-departure"></i>
                             </button>
@@ -2355,6 +2366,15 @@ debug.log(`Pagination button clicked: page ${page}`);
                 const workerId = parseInt(this.getAttribute('data-worker-id'));
                 if (window.workerTable && typeof window.workerTable.viewDocuments === 'function') {
                     window.workerTable.viewDocuments(workerId);
+                }
+            });
+        });
+
+        mobileContainer.querySelectorAll('[data-action="empty-cv"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const workerId = parseInt(this.getAttribute('data-worker-id'));
+                if (typeof window.showEmptyCv === 'function') {
+                    window.showEmptyCv(workerId);
                 }
             });
         });
@@ -3071,6 +3091,124 @@ Musaned Status: ${worker.musaned_status || 'Not processed'}
     } catch (error) {
         debug.error('Error loading Musaned data:', error);
         // Error loading Musaned data - no alert needed
+    }
+};
+
+window.showEmptyCv = async function(workerId) {
+    debug.log('Show Empty CV called with ID:', workerId);
+    try {
+        const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
+        const response = await fetch(`${workersApi}/core/get.php?id=${workerId}`);
+        const data = await response.json();
+        const worker = data?.success && data?.data?.workers?.length ? data.data.workers[0] : null;
+        if (!worker) return;
+
+        const esc = (value) => String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        const line = (value, fallback = '____________________') => {
+            const clean = String(value ?? '').trim();
+            return clean ? esc(clean) : fallback;
+        };
+
+        const fullName = line(worker.worker_name || worker.full_name);
+        const nationality = line(worker.nationality, 'INDONESIAN');
+        const identity = line(worker.identity_number);
+        const passport = line(worker.passport_number);
+        const job = line(worker.job_title || worker.specialization || worker.occupation, 'DOMESTIC WORKER');
+        const dob = line(worker.date_of_birth || worker.birth_date);
+        const phone = line(worker.phone || worker.contact || worker.mobile);
+
+        const cvWindow = window.open('', '_blank');
+        if (!cvWindow) return;
+        cvWindow.document.write(`<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Worker Empty CV - ${fullName}</title>
+<style>
+body{margin:0;background:#f3f6fa;font-family:Arial,sans-serif;color:#1d2a3a}
+.page{max-width:900px;margin:24px auto;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.header{background:#9ec8ea;color:#0f2940;padding:18px 24px;text-align:center}
+.header h1{margin:0;font-size:28px;letter-spacing:1px}
+.header h2{margin:6px 0 0;font-size:17px;font-weight:600}
+.grid{display:grid;grid-template-columns:290px 1fr}
+.left{background:#f1f8ff;padding:16px;border-right:1px solid #c8e1f7}
+.right{padding:20px 24px}
+.photo{height:180px;border:2px dashed #7aaedb;background:#eaf4fc;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700}
+.sec{margin-top:14px}
+.sec h3{margin:0 0 8px;color:#0a4f85;border-bottom:2px solid #c6def2;padding-bottom:4px;font-size:16px}
+.line{padding:4px 0;border-bottom:1px dotted #b8c9d8;font-size:14px}
+ul{margin:8px 0 0 18px;padding:0}
+li{margin:6px 0}
+.note{color:#4d6478;font-size:12px;margin-top:16px}
+@media print{body{background:#fff}.page{margin:0;box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="header">
+<h1>${fullName}</h1>
+<h2>${job}</h2>
+</div>
+<div class="grid">
+<aside class="left">
+<div class="photo">PHOTO</div>
+<div class="sec">
+<h3>Contact Info</h3>
+<div class="line">Phone: ${phone}</div>
+<div class="line">Nationality: ${nationality}</div>
+<div class="line">Passport: ${passport}</div>
+<div class="line">Identity: ${identity}</div>
+<div class="line">Date of Birth: ${dob}</div>
+</div>
+<div class="sec">
+<h3>Personal Details</h3>
+<div class="line">Religion: ____________________</div>
+<div class="line">Marital Status: ____________________</div>
+<div class="line">Height / Weight: ____________________</div>
+</div>
+</aside>
+<main class="right">
+<div class="sec">
+<h3>Summary</h3>
+<div class="line">___________________________________________</div>
+<div class="line">___________________________________________</div>
+<div class="line">___________________________________________</div>
+</div>
+<div class="sec">
+<h3>Work Experience</h3>
+<div class="line">___________________________________________</div>
+<div class="line">___________________________________________</div>
+<div class="line">___________________________________________</div>
+</div>
+<div class="sec">
+<h3>Duties and Responsibilities</h3>
+<ul>
+<li>___________________________________________</li>
+<li>___________________________________________</li>
+<li>___________________________________________</li>
+<li>___________________________________________</li>
+</ul>
+</div>
+<div class="sec">
+<h3>Education & Training</h3>
+<div class="line">___________________________________________</div>
+<div class="line">___________________________________________</div>
+</div>
+<div class="note">Ratib Pro Indonesia - Empty CV Template</div>
+</main>
+</div>
+</div>
+</body>
+</html>`);
+        cvWindow.document.close();
+    } catch (error) {
+        debug.error('Error loading empty CV:', error);
     }
 };
 
