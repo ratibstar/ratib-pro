@@ -745,7 +745,197 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
             ]);
             exit;
         }
-                echo $outMsg;
+        $safeMsg = htmlspecialchars($publicMsg, ENT_QUOTES, 'UTF-8');
+        $safeReason = htmlspecialchars($reasonCode, ENT_QUOTES, 'UTF-8');
+        $showSuspendedActions = ($reasonCode === 'AGENCY_SUSPENDED');
+        $currentHost = (string)($_SERVER['HTTP_HOST'] ?? '');
+        $agencyLabel = trim((string)($_GET['agency'] ?? ''));
+        $agencyIdLabel = trim((string)($_GET['agency_id'] ?? ''));
+        $agencyDescriptor = $agencyLabel !== '' ? $agencyLabel : ('Agency #' . ($agencyIdLabel !== '' ? $agencyIdLabel : 'Unknown'));
+        $subjectBase = 'Agency support - ' . $agencyDescriptor;
+        $subjectRenew = rawurlencode($subjectBase . ' - Renewal request');
+        $subjectContact = rawurlencode($subjectBase . ' - Contact request');
+        $supportEmail = 'support@ratib.sa';
+        $renewHref = '/admin/control-center.php';
+        $contactHref = 'mailto:' . $supportEmail . '?subject=' . $subjectContact;
+        $weekButtonsHtml = '';
+        if ($showSuspendedActions) {
+            for ($i = 1; $i <= 4; $i++) {
+                $weekText = $i . ' week' . ($i > 1 ? 's' : '');
+                $subjectExtend = rawurlencode($subjectBase . ' - Extension request (' . $weekText . ')');
+                $bodyExtend = rawurlencode("Hello Support,\n\nPlease grant an extension request for " . $weekText . " for " . $agencyDescriptor . ".\n\nHost: " . $currentHost . "\nReason code: " . $reasonCode . "\n\nThank you.");
+                $weekButtonsHtml .= '<a class="btn btn-secondary btn-small" href="mailto:' . $supportEmail . '?subject=' . $subjectExtend . '&body=' . $bodyExtend . '">Request ' . htmlspecialchars($weekText, ENT_QUOTES, 'UTF-8') . '</a>';
+            }
+        }
+        $reasonHtml = $isControlContext ? ('<p class="reason">Reason: <code>' . $safeReason . '</code></p>') : '';
+        $suspendedActionsHtml = '';
+        if ($showSuspendedActions) {
+            $suspendedActionsHtml = '
+                <div class="actions">
+                    <a class="btn btn-primary" href="' . htmlspecialchars($renewHref, ENT_QUOTES, 'UTF-8') . '">Renew / Mark as Paid</a>
+                    <a class="btn btn-secondary" href="' . htmlspecialchars($contactHref, ENT_QUOTES, 'UTF-8') . '">Contact Us</a>
+                </div>
+                <div class="extension-wrap">
+                    <p class="extension-title">Need more time? Send an extension request example:</p>
+                    <div class="week-grid">' . $weekButtonsHtml . '</div>
+                </div>
+            ';
+        } else {
+            $suspendedActionsHtml = '
+                <div class="actions">
+                    <a class="btn btn-secondary" href="' . htmlspecialchars($contactHref, ENT_QUOTES, 'UTF-8') . '">Contact Us</a>
+                </div>
+            ';
+        }
+        echo '<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agency Access Notice</title>
+<style>
+    :root {
+        --bg: #f4f7fb;
+        --card: #ffffff;
+        --text: #10213a;
+        --muted: #5f6b7a;
+        --primary: #1b66ff;
+        --primary-hover: #1452cf;
+        --border: #dbe4f1;
+        --danger: #d3455b;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: Arial, sans-serif;
+        background: radial-gradient(circle at top, #ffffff, var(--bg));
+        color: var(--text);
+        padding: 24px;
+    }
+    .card {
+        width: min(840px, 100%);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(16, 33, 58, 0.08);
+        overflow: hidden;
+    }
+    .card-head {
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--border);
+        background: #f8fbff;
+    }
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #ffe7eb;
+        color: var(--danger);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .3px;
+        text-transform: uppercase;
+    }
+    .title {
+        margin: 10px 0 0;
+        font-size: 24px;
+        line-height: 1.3;
+    }
+    .content {
+        padding: 20px 22px 22px;
+    }
+    .message {
+        margin: 0 0 12px;
+        color: var(--text);
+        font-size: 16px;
+        line-height: 1.6;
+    }
+    .reason {
+        margin: 0 0 18px;
+        color: var(--muted);
+        font-size: 14px;
+    }
+    code {
+        background: #eef3ff;
+        border: 1px solid #dfe8ff;
+        border-radius: 6px;
+        padding: 2px 7px;
+    }
+    .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 14px;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 700;
+        transition: .18s ease;
+    }
+    .btn-primary {
+        background: var(--primary);
+        color: #fff;
+    }
+    .btn-primary:hover {
+        background: var(--primary-hover);
+    }
+    .btn-secondary {
+        background: #fff;
+        color: var(--text);
+        border-color: var(--border);
+    }
+    .btn-secondary:hover {
+        border-color: #b7c8e6;
+        background: #f8fbff;
+    }
+    .btn-small {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    .extension-wrap {
+        border-top: 1px dashed var(--border);
+        padding-top: 14px;
+    }
+    .extension-title {
+        margin: 0 0 10px;
+        color: var(--muted);
+        font-size: 13px;
+    }
+    .week-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+    }
+    @media (max-width: 560px) {
+        .title { font-size: 20px; }
+        .message { font-size: 15px; }
+    }
+</style>
+</head>
+<body>
+    <main class="card">
+        <header class="card-head">
+            <span class="badge">Access Restricted</span>
+            <h1 class="title">Agency Access Notice</h1>
+        </header>
+        <section class="content">
+            <p class="message">' . $safeMsg . '</p>
+            ' . $reasonHtml . '
+            ' . $suspendedActionsHtml . '
+        </section>
+    </main>
+</body>
+</html>';
         exit;
     }
 }
