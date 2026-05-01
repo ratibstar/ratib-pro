@@ -3243,16 +3243,9 @@ function buildEmptyCvHtml(worker) {
     const age = show(pick('age'));
     const city = show(pick('city'));
     const country = show(pick('country'));
-    const agentName = show(pick('agent_name'));
-    const subagentName = show(pick('subagent_name'));
     const workerStatus = show(pick('status'));
     const passportExpiry = show(pick('passport_expiry', 'passport_expiry_date'));
-    const visaNumber = show(pick('visa_number'));
-    const ticketNumber = show(pick('ticket_number'));
     const medicalNumber = show(pick('medical_number'));
-    const trainingCertificateNumber = show(pick('training_certificate_number'));
-    const emergencyName = show(pick('emergency_name'));
-    const emergencyPhone = show(pick('emergency_phone'));
 
     const photoUrl = pick('personal_photo_url');
 
@@ -3301,16 +3294,9 @@ function buildEmptyCvHtml(worker) {
                         <li class="editable" contenteditable="true">Salary: <span data-field="salary">${salary}</span></li>
                     </ul>
                     <div class="main-title">Suggested Worker Data</div>
-                    <div class="line pair"><span class="k">Agent</span><span>${markMissing(agentName)}</span></div>
-                    <div class="line pair"><span class="k">Subagent</span><span>${markMissing(subagentName)}</span></div>
                     <div class="line pair"><span class="k">Status</span><span>${markMissing(workerStatus)}</span></div>
                     <div class="line pair"><span class="k">Passport Expiry</span><span>${markMissing(passportExpiry)}</span></div>
                     <div class="line pair"><span class="k">Medical No.</span><span>${markMissing(medicalNumber)}</span></div>
-                    <div class="line pair"><span class="k">Visa No.</span><span>${markMissing(visaNumber)}</span></div>
-                    <div class="line pair"><span class="k">Ticket No.</span><span>${markMissing(ticketNumber)}</span></div>
-                    <div class="line pair"><span class="k">Training Cert.</span><span>${markMissing(trainingCertificateNumber)}</span></div>
-                    <div class="line pair"><span class="k">Emergency Name</span><span>${markMissing(emergencyName)}</span></div>
-                    <div class="line pair"><span class="k">Emergency Phone</span><span>${markMissing(emergencyPhone)}</span></div>
                     <div class="note">Ratib Pro Indonesia - Empty CV Template</div>
                 </main>
             </div>
