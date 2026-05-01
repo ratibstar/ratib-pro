@@ -3427,6 +3427,7 @@ window.saveEmptyCvModal = async function() {
         }
 
         SimpleAlert.show('Saved', 'CV edits were saved to worker data.', 'success', { notification: true, autoClose: true });
+        window.toggleEmptyCvMissingOnly(false);
         modal.setAttribute('data-initial-html', sheet.innerHTML);
         if (window.workerTable) {
             window.workerTable.loadWorkers();
@@ -3501,6 +3502,7 @@ window.showEmptyCv = async function(workerId) {
         modal.setAttribute('data-photo-url', String(worker.personal_photo_url || ''));
         modal.setAttribute('data-missing-only', '0');
         sheet.innerHTML = html;
+        window.toggleEmptyCvMissingOnly(false);
         const toggleBtn = modal.querySelector('[data-action="toggle-empty-cv-missing"]');
         if (toggleBtn) toggleBtn.textContent = 'Show Only Missing';
         modal.classList.add('show');
