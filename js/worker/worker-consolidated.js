@@ -3132,6 +3132,9 @@ window.showEmptyCv = async function(workerId) {
 <title>Worker Empty CV - ${fullName}</title>
 <style>
 body{margin:0;background:#f3f6fa;font-family:Arial,sans-serif;color:#1d2a3a}
+.toolbar{position:sticky;top:0;z-index:9;background:#0f2940;color:#fff;padding:10px 14px;display:flex;gap:8px;align-items:center}
+.toolbar button{background:#fff;color:#0f2940;border:0;border-radius:4px;padding:6px 10px;font-weight:700;cursor:pointer}
+.toolbar .hint{font-size:12px;opacity:.9;margin-left:auto}
 .page{max-width:900px;margin:24px auto;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12)}
 .header{background:#9ec8ea;color:#0f2940;padding:18px 24px;text-align:center}
 .header h1{margin:0;font-size:28px;letter-spacing:1px}
@@ -3146,59 +3149,65 @@ body{margin:0;background:#f3f6fa;font-family:Arial,sans-serif;color:#1d2a3a}
 ul{margin:8px 0 0 18px;padding:0}
 li{margin:6px 0}
 .note{color:#4d6478;font-size:12px;margin-top:16px}
-@media print{body{background:#fff}.page{margin:0;box-shadow:none}}
+.editable:focus{outline:2px dashed #7aaedb;outline-offset:2px}
+@media print{body{background:#fff}.toolbar{display:none}.page{margin:0;box-shadow:none}}
 </style>
 </head>
 <body>
+<div class="toolbar">
+<button onclick="window.print()">Print</button>
+<button onclick="window.location.reload()">Reset</button>
+<span class="hint">Click any line/text to edit before printing.</span>
+</div>
 <div class="page">
 <div class="header">
-<h1>${fullName}</h1>
-<h2>${job}</h2>
+<h1 class="editable" contenteditable="true">${fullName}</h1>
+<h2 class="editable" contenteditable="true">${job}</h2>
 </div>
 <div class="grid">
 <aside class="left">
-<div class="photo">PHOTO</div>
+<div class="photo editable" contenteditable="true">PHOTO</div>
 <div class="sec">
 <h3>Contact Info</h3>
-<div class="line">Phone: ${phone}</div>
-<div class="line">Nationality: ${nationality}</div>
-<div class="line">Passport: ${passport}</div>
-<div class="line">Identity: ${identity}</div>
-<div class="line">Date of Birth: ${dob}</div>
+<div class="line editable" contenteditable="true">Phone: ${phone}</div>
+<div class="line editable" contenteditable="true">Nationality: ${nationality}</div>
+<div class="line editable" contenteditable="true">Passport: ${passport}</div>
+<div class="line editable" contenteditable="true">Identity: ${identity}</div>
+<div class="line editable" contenteditable="true">Date of Birth: ${dob}</div>
 </div>
 <div class="sec">
 <h3>Personal Details</h3>
-<div class="line">Religion: ____________________</div>
-<div class="line">Marital Status: ____________________</div>
-<div class="line">Height / Weight: ____________________</div>
+<div class="line editable" contenteditable="true">Religion: ____________________</div>
+<div class="line editable" contenteditable="true">Marital Status: ____________________</div>
+<div class="line editable" contenteditable="true">Height / Weight: ____________________</div>
 </div>
 </aside>
 <main class="right">
 <div class="sec">
 <h3>Summary</h3>
-<div class="line">___________________________________________</div>
-<div class="line">___________________________________________</div>
-<div class="line">___________________________________________</div>
+<div class="line editable" contenteditable="true">___________________________________________</div>
+<div class="line editable" contenteditable="true">___________________________________________</div>
+<div class="line editable" contenteditable="true">___________________________________________</div>
 </div>
 <div class="sec">
 <h3>Work Experience</h3>
-<div class="line">___________________________________________</div>
-<div class="line">___________________________________________</div>
-<div class="line">___________________________________________</div>
+<div class="line editable" contenteditable="true">___________________________________________</div>
+<div class="line editable" contenteditable="true">___________________________________________</div>
+<div class="line editable" contenteditable="true">___________________________________________</div>
 </div>
 <div class="sec">
 <h3>Duties and Responsibilities</h3>
 <ul>
-<li>___________________________________________</li>
-<li>___________________________________________</li>
-<li>___________________________________________</li>
-<li>___________________________________________</li>
+<li class="editable" contenteditable="true">___________________________________________</li>
+<li class="editable" contenteditable="true">___________________________________________</li>
+<li class="editable" contenteditable="true">___________________________________________</li>
+<li class="editable" contenteditable="true">___________________________________________</li>
 </ul>
 </div>
 <div class="sec">
 <h3>Education & Training</h3>
-<div class="line">___________________________________________</div>
-<div class="line">___________________________________________</div>
+<div class="line editable" contenteditable="true">___________________________________________</div>
+<div class="line editable" contenteditable="true">___________________________________________</div>
 </div>
 <div class="note">Ratib Pro Indonesia - Empty CV Template</div>
 </main>
