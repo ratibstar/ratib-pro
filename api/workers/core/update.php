@@ -75,8 +75,15 @@ try {
         throw new Exception('Worker not found');
     }
 
-    // Enforce country profile requirements against merged old+new payload.
-    ratib_enforce_country_requirements($data, $oldWorker);
+    // Enforce country profile requirements only when explicitly requested.
+    // Normal edits (including CV popup updates) should not be blocked by
+    // unrelated lifecycle-required fields that may be completed later.
+    $enforceCountryRequirements = isset($data['enforce_country_requirements'])
+        ? filter_var($data['enforce_country_requirements'], FILTER_VALIDATE_BOOLEAN)
+        : false;
+    if ($enforceCountryRequirements) {
+        ratib_enforce_country_requirements($data, $oldWorker);
+    }
 
     $mergedWorkerContext = array_merge($oldWorker, [
         'country' => (string)($data['country'] ?? ($oldWorker['country'] ?? '')),
