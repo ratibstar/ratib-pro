@@ -3180,10 +3180,18 @@ function buildEmptyCvHtml(worker) {
     const passport = line(worker.passport_number);
     const job = line(worker.job_title || worker.specialization || worker.occupation, 'DOMESTIC WORKER');
     const dob = line(worker.date_of_birth || worker.birth_date);
+    const placeOfBirth = line(worker.place_of_birth);
     const phone = line(worker.phone || worker.contact || worker.mobile);
     const email = line(worker.email);
     const address = line(worker.address);
     const maritalStatus = line(worker.marital_status);
+    const language = line(worker.language);
+    const educationLevel = line(worker.education_level);
+    const workExperience = line(worker.work_experience);
+    const skills = line(worker.skills);
+    const localExperience = line(worker.local_experience);
+    const abroadExperience = line(worker.abroad_experience);
+    const qualification = line(worker.qualification);
 
     return `
         <div class="page">
@@ -3202,11 +3210,13 @@ function buildEmptyCvHtml(worker) {
                         <div class="line editable" contenteditable="true">Passport: <span data-field="passport_number">${passport}</span></div>
                         <div class="line editable" contenteditable="true">Identity: <span data-field="identity_number">${identity}</span></div>
                         <div class="line editable" contenteditable="true">Date of Birth: <span data-field="date_of_birth">${dob}</span></div>
+                        <div class="line editable" contenteditable="true">Place of Birth: <span data-field="place_of_birth">${placeOfBirth}</span></div>
                     </div>
                     <div class="sec">
                         <h3>Personal Details</h3>
                         <div class="line editable" contenteditable="true">Religion: ____________________</div>
                         <div class="line editable" contenteditable="true">Marital Status: <span data-field="marital_status">${maritalStatus}</span></div>
+                        <div class="line editable" contenteditable="true">Language: <span data-field="language">${language}</span></div>
                         <div class="line editable" contenteditable="true">Height / Weight: ____________________</div>
                         <div class="line editable" contenteditable="true">Address: <span data-field="address">${address}</span></div>
                     </div>
@@ -3214,15 +3224,15 @@ function buildEmptyCvHtml(worker) {
                 <main class="right">
                     <div class="sec">
                         <h3>Summary</h3>
-                        <div class="line editable" contenteditable="true">___________________________________________</div>
-                        <div class="line editable" contenteditable="true">___________________________________________</div>
-                        <div class="line editable" contenteditable="true">___________________________________________</div>
+                        <div class="line editable" contenteditable="true"><span data-field="qualification">${qualification}</span></div>
+                        <div class="line editable" contenteditable="true"><span data-field="skills">${skills}</span></div>
+                        <div class="line editable" contenteditable="true"><span data-field="language">${language}</span></div>
                     </div>
                     <div class="sec">
                         <h3>Work Experience</h3>
-                        <div class="line editable" contenteditable="true">___________________________________________</div>
-                        <div class="line editable" contenteditable="true">___________________________________________</div>
-                        <div class="line editable" contenteditable="true">___________________________________________</div>
+                        <div class="line editable" contenteditable="true">General: <span data-field="work_experience">${workExperience}</span></div>
+                        <div class="line editable" contenteditable="true">Local: <span data-field="local_experience">${localExperience}</span></div>
+                        <div class="line editable" contenteditable="true">Abroad: <span data-field="abroad_experience">${abroadExperience}</span></div>
                     </div>
                     <div class="sec">
                         <h3>Duties and Responsibilities</h3>
@@ -3235,8 +3245,8 @@ function buildEmptyCvHtml(worker) {
                     </div>
                     <div class="sec">
                         <h3>Education & Training</h3>
-                        <div class="line editable" contenteditable="true">___________________________________________</div>
-                        <div class="line editable" contenteditable="true">___________________________________________</div>
+                        <div class="line editable" contenteditable="true">Education Level: <span data-field="education_level">${educationLevel}</span></div>
+                        <div class="line editable" contenteditable="true">Training / Notes: <span data-field="training_notes">${line(worker.training_notes)}</span></div>
                     </div>
                     <div class="note">Ratib Pro Indonesia - Empty CV Template</div>
                 </main>
@@ -3296,14 +3306,48 @@ window.saveEmptyCvModal = async function() {
     if (!workerId) return;
 
     const payload = {};
+    const allowedCvFields = new Set([
+        'full_name',
+        'job_title',
+        'phone',
+        'email',
+        'nationality',
+        'passport_number',
+        'identity_number',
+        'date_of_birth',
+        'birth_date',
+        'marital_status',
+        'address',
+        'place_of_birth',
+        'language',
+        'education_level',
+        'work_experience',
+        'local_experience',
+        'abroad_experience',
+        'qualification',
+        'skills',
+        'training_notes'
+    ]);
+    const isIsoDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
+    const normalizeValue = (field, rawValue) => {
+        const value = String(rawValue || '').trim();
+        if (!value || /^_+$/.test(value)) return null;
+        if (!allowedCvFields.has(field)) return null;
+        if ((field === 'date_of_birth' || field === 'birth_date') && !isIsoDate(value)) return null;
+        if (field === 'email' && value !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return null;
+        return value;
+    };
     const editableFields = sheet.querySelectorAll('[data-field]');
     editableFields.forEach((el) => {
         const field = String(el.getAttribute('data-field') || '').trim();
         if (!field) return;
-        const value = String(el.textContent || '').trim();
-        if (!value || /^_+$/.test(value)) return;
+        const value = normalizeValue(field, el.textContent || '');
+        if (value === null) return;
         payload[field] = value;
     });
+    if (payload.date_of_birth && !payload.birth_date) {
+        payload.birth_date = payload.date_of_birth;
+    }
     if (!Object.keys(payload).length) {
         SimpleAlert.show('No Changes', 'Nothing to save from CV.', 'info', { notification: true, autoClose: true });
         return;
