@@ -51,24 +51,37 @@ include __DIR__ . '/../includes/partner-portal-header.php';
 ?>
 
 <div class="partner-portal-wrap" dir="ltr" lang="en">
-    <header class="partner-portal-top glass-card">
-        <div class="partner-portal-brand">
-            <span class="partner-portal-globe" aria-hidden="true">🌍</span>
-            <div>
-                <p class="partner-portal-kicker">Partner portal</p>
-                <h1 id="ppAgencyName" class="partner-portal-title">Loading…</h1>
+    <header class="partner-portal-header-mega glass-card">
+        <?php include __DIR__ . '/../includes/partner-portal-marketing-strip.php'; ?>
+        <div class="partner-portal-top partner-portal-top--identity">
+            <div class="partner-portal-brand">
+                <span class="partner-portal-globe" aria-hidden="true">🌍</span>
+                <div>
+                    <p class="partner-portal-kicker">Partner portal</p>
+                    <h1 id="ppAgencyName" class="partner-portal-title">Loading…</h1>
+                </div>
             </div>
-        </div>
-        <div class="partner-portal-actions">
-            <span id="ppStatus" class="status-pill status-inactive" hidden></span>
-            <span id="ppAgencyIdBadge" class="agency-detail-id-badge" hidden></span>
-            <a class="muted-btn" href="<?php echo htmlspecialchars(pageUrl('partner-portal-logout.php'), ENT_QUOTES, 'UTF-8'); ?>">Log out</a>
+            <div class="partner-portal-actions">
+                <span id="ppStatus" class="status-pill status-inactive" hidden></span>
+                <span id="ppAgencyIdBadge" class="agency-detail-id-badge" hidden></span>
+                <a class="partner-portal-btn-portal" href="<?php echo htmlspecialchars(pageUrl('partner-portal-logout.php'), ENT_QUOTES, 'UTF-8'); ?>">
+                    <span class="partner-portal-btn-portal-icon" aria-hidden="true">👤</span>
+                    Log out
+                </a>
+            </div>
         </div>
     </header>
 
     <div id="ppError" class="partner-portal-error glass-card is-hidden" hidden></div>
 
-    <div class="agency-detail-grid">
+    <nav class="partner-portal-section-nav glass-card" aria-label="Page sections">
+        <span class="partner-portal-section-nav-label">Jump to</span>
+        <a href="#partner-portal-section-overview">Agency &amp; contracts</a>
+        <a href="#partner-portal-section-documents">Documents &amp; CVs</a>
+        <a href="#partner-portal-section-worker-docs">Worker documents shared</a>
+    </nav>
+
+    <div id="partner-portal-section-overview" class="agency-detail-grid partner-portal-anchor-target">
         <div class="agency-detail-main-col">
             <section class="agency-detail-card glass-card">
                 <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">🏢</span> Agency data</h2>
@@ -96,14 +109,14 @@ include __DIR__ . '/../includes/partner-portal-header.php';
         </aside>
     </div>
 
-    <section class="agency-detail-card glass-card partner-portal-cvs-block">
+    <section id="partner-portal-section-documents" class="agency-detail-card glass-card partner-portal-cvs-block partner-portal-anchor-target">
         <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📎</span> Documents &amp; CVs</h2>
         <p class="agency-detail-note">Your office uploads files here in Ratib Pro. You can download them below; uploads are not available on this page.</p>
         <ul id="ppCvList" class="partner-portal-cv-list"></ul>
         <p id="ppCvEmpty" class="agency-detail-empty" hidden>No documents uploaded yet.</p>
     </section>
 
-    <section class="agency-detail-card glass-card partner-portal-worker-shares-block">
+    <section id="partner-portal-section-worker-docs" class="agency-detail-card glass-card partner-portal-worker-shares-block partner-portal-anchor-target">
         <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">👤</span> Worker documents from your office</h2>
         <p class="agency-detail-note">Only workers and document types your office selected for this agency appear here. Download only.</p>
         <ul id="ppWorkerShareList" class="partner-portal-worker-share-list"></ul>
