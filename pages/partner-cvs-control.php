@@ -29,11 +29,43 @@ include '../includes/header.php';
         </div>
     </div>
 
+    <section class="glass-card cvs-send-wizard" aria-label="Send full CVs to partner">
+        <h3 class="cvs-wizard-title">Send full CVs to a partner</h3>
+        <p class="cvs-wizard-lead">1) Select workers with a <strong>full CV</strong> (every document file is uploaded on their profile). 2) Choose the partner. 3) Send — all their files are shared on that partner’s portal (they must be <strong>deployed</strong> to that partner).</p>
+        <ol class="cvs-wizard-steps">
+            <li class="cvs-wizard-step">
+                <span class="cvs-wizard-step-label">1. Select workers (full CV)</span>
+                <input id="cvsReadySearch" type="search" class="cvs-ready-search" placeholder="Search name or passport…" aria-label="Search ready workers">
+                <div id="cvsReadyWorkerList" class="cvs-ready-worker-list" role="group" aria-label="Ready workers"></div>
+                <div class="toolbar-actions cvs-ready-toolbar">
+                    <button type="button" id="cvsSelectAllReadyBtn" class="muted-btn">Select all shown</button>
+                    <button type="button" id="cvsClearReadyBtn" class="muted-btn">Clear selection</button>
+                    <span id="cvsReadySelectionLabel" class="cvs-ready-selection-label">0 workers selected</span>
+                </div>
+            </li>
+            <li class="cvs-wizard-step">
+                <span class="cvs-wizard-step-label">2. Choose partner</span>
+                <div class="toolbar-actions">
+                    <select id="cvsPartnerSelect" aria-label="Partner agency">
+                        <option value="">Select partner agency…</option>
+                    </select>
+                </div>
+                <p id="cvsPartnerWizardHint" class="cvs-wizard-hint" hidden></p>
+            </li>
+            <li class="cvs-wizard-step">
+                <span class="cvs-wizard-step-label">3. Send to partner portal</span>
+                <div class="toolbar-actions cvs-wizard-send-row">
+                    <button type="button" id="cvsSendToPartnerBtn" class="neon-btn" disabled>Send selected CVs to this partner</button>
+                </div>
+            </li>
+        </ol>
+    </section>
+
+    <h3 class="cvs-advanced-title">Per-document details (optional)</h3>
+    <p class="cvs-advanced-lead">After you choose a partner above, you can fine-tune each document row below.</p>
+
     <div class="glass-card partner-cvs-control-filters">
         <div class="toolbar-actions">
-            <select id="cvsPartnerSelect" aria-label="Partner agency">
-                <option value="">Select partner agency…</option>
-            </select>
             <select id="cvsWorkerQuickSelect" aria-label="Select all document rows for one worker" title="Pick a worker to check every CV/document row for bulk share with this partner">
                 <option value="">Select worker (all their CV rows)…</option>
             </select>

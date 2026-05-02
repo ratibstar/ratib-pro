@@ -311,6 +311,150 @@ class PartnerAgencyWorkerDocSharesController
         ];
     }
 
+    public function workerDeployedToPartner(int $workerId, int $partnerAgencyId): bool
+    {
+        if ($workerId <= 0 || $partnerAgencyId <= 0) {
+            return false;
+        }
+        $stmt = $this->conn->prepare(
+            'SELECT 1 FROM worker_deployments WHERE worker_id = ? AND partner_agency_id = ? LIMIT 1'
+        );
+        $stmt->execute([$workerId, $partnerAgencyId]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /**
+     * Workers who have every allowed document file uploaded, with deployment partner ids.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listFullReadyWorkers(): array
+    {
+        $types = self::allowedDocumentTypes();
+        $conditions = [];
+        foreach ($types as $t) {
+            $col = $t . '_file';
+            $conditions[] = "TRIM(COALESCE(w.`{$col}`,'')) <> ''";
+        }
+        $fileWhere = implode(' AND ', $conditions);
+        $sql = "SELECT w.id, w.worker_name, w.passport_number
+            FROM workers w
+            WHERE (w.status IS NULL OR w.status = '' OR w.status != 'deleted')
+            AND {$fileWhere}
+            ORDER BY w.worker_name ASC";
+        $stmt = $this->conn->query($sql);
+        $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+        if ($rows === []) {
+            return [];
+        }
+        $ids = [];
+        foreach ($rows as $r) {
+            $ids[] = (int) ($r['id'] ?? 0);
+        }
+        $ids = array_values(array_filter($ids, static fn ($id) => $id > 0));
+        if ($ids === []) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $depStmt = $this->conn->prepare(
+            "SELECT worker_id, partner_agency_id FROM worker_deployments WHERE worker_id IN ({$placeholders})"
+        );
+        $depStmt->execute($ids);
+        $byWorker = [];
+        foreach ($depStmt->fetchAll(PDO::FETCH_ASSOC) as $d) {
+            $wid = (int) ($d['worker_id'] ?? 0);
+            $pid = (int) ($d['partner_agency_id'] ?? 0);
+            if ($wid <= 0 || $pid <= 0) {
+                continue;
+            }
+            if (!isset($byWorker[$wid])) {
+                $byWorker[$wid] = [];
+            }
+            $byWorker[$wid][$pid] = true;
+        }
+        $out = [];
+        foreach ($rows as $r) {
+            $id = (int) ($r['id'] ?? 0);
+            if ($id <= 0) {
+                continue;
+            }
+            $pids = isset($byWorker[$id]) ? array_keys($byWorker[$id]) : [];
+            sort($pids);
+            $out[] = [
+                'id' => $id,
+                'worker_name' => $r['worker_name'] ?? '',
+                'passport_number' => trim((string) ($r['passport_number'] ?? '')),
+                'partner_agency_ids' => $pids,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Create portal shares for every document type that has a file on the worker profile.
+     *
+     * @param array<int> $workerIds
+     *
+     * @return array{added: int, skipped: int, failed: int, not_deployed: int}
+     */
+    public function addAllFileSharesForWorkersToPartner(int $partnerAgencyId, array $workerIds): array
+    {
+        if ($partnerAgencyId <= 0) {
+            throw new InvalidArgumentException('partner_agency_id is required');
+        }
+        $added = 0;
+        $skipped = 0;
+        $failed = 0;
+        $notDeployed = 0;
+
+        foreach ($workerIds as $widRaw) {
+            $wid = (int) $widRaw;
+            if ($wid <= 0) {
+                continue;
+            }
+            if (!$this->workerDeployedToPartner($wid, $partnerAgencyId)) {
+                $notDeployed++;
+
+                continue;
+            }
+            $worker = $this->fetchWorkerRow($wid);
+            if (!$worker) {
+                $notDeployed++;
+
+                continue;
+            }
+            foreach (self::allowedDocumentTypes() as $dt) {
+                $col = $dt . '_file';
+                $hasFile = isset($worker[$col]) && trim((string) $worker[$col]) !== '';
+                if (!$hasFile) {
+                    continue;
+                }
+                try {
+                    $this->addShare($partnerAgencyId, $wid, $dt);
+                    $added++;
+                } catch (InvalidArgumentException $e) {
+                    $msg = $e->getMessage();
+                    if (stripos($msg, 'already') !== false || stripos($msg, 'Duplicate') !== false) {
+                        $skipped++;
+                    } else {
+                        $failed++;
+                    }
+                } catch (Throwable $e) {
+                    $failed++;
+                }
+            }
+        }
+
+        return [
+            'added' => $added,
+            'skipped' => $skipped,
+            'failed' => $failed,
+            'not_deployed' => $notDeployed,
+        ];
+    }
+
     /**
      * Resolve share for download (portal or staff); returns worker row fragment + paths.
      *

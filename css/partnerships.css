@@ -216,6 +216,120 @@
     background: #0b1220;
 }
 
+.cvs-send-wizard {
+    padding: 1rem 1.15rem 1.15rem;
+    margin-bottom: 1rem;
+}
+
+.cvs-wizard-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+}
+
+.cvs-wizard-lead {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    line-height: 1.55;
+    max-width: 56rem;
+}
+
+.cvs-wizard-steps {
+    margin: 0;
+    padding-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+}
+
+.cvs-wizard-step {
+    list-style-position: outside;
+}
+
+.cvs-wizard-step-label {
+    display: block;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 0.45rem;
+}
+
+.cvs-ready-search {
+    width: 100%;
+    max-width: 22rem;
+    margin-bottom: 0.55rem;
+}
+
+.cvs-ready-empty {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #94a3b8;
+    line-height: 1.45;
+}
+
+.cvs-ready-worker-list {
+    max-height: 220px;
+    overflow: auto;
+    padding: 0.5rem 0.65rem;
+    border-radius: 10px;
+    border: 1px solid rgba(94, 234, 212, 0.15);
+    background: rgba(2, 6, 23, 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.cvs-ready-worker-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #e2e8f0;
+}
+
+.cvs-ready-worker-row input[type='checkbox'] {
+    margin-top: 0.2rem;
+}
+
+.cvs-ready-worker-meta {
+    font-size: 0.78rem;
+    color: #94a3b8;
+}
+
+.cvs-ready-toolbar {
+    margin-top: 0.5rem;
+}
+
+.cvs-ready-selection-label {
+    font-size: 0.85rem;
+    color: #a5b4fc;
+}
+
+.cvs-wizard-hint {
+    margin: 0.45rem 0 0;
+    font-size: 0.82rem;
+    color: #fca5a5;
+}
+
+.cvs-wizard-hint.is-ok {
+    color: #5eead4;
+}
+
+.cvs-wizard-send-row {
+    margin-top: 0.35rem;
+}
+
+.cvs-advanced-title {
+    margin: 1rem 0 0.35rem;
+    font-size: 1rem;
+    color: #e2e8f0;
+}
+
+.cvs-advanced-lead {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
 .partnerships-table th.col-select,
 .partnerships-table td.col-select {
     width: 2.5rem;

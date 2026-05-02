@@ -13,6 +13,10 @@
         documentLabels: {},
         page: 1,
         pageSize: 25,
+        /** Full-CV wizard */
+        readyWorkers: [],
+        selectedReadyWorkerIds: new Set(),
+        readySearch: '',
     };
 
     function $(id) {
@@ -116,7 +120,8 @@
         const total = state.rows.length;
         const info = $('cvsFilteredInfo');
         if (info) {
-            info.textContent = state.partnerId > 0 ? `${n} filtered · ${total} total` : 'Select a partner agency';
+            info.textContent =
+                state.partnerId > 0 ? `${n} filtered · ${total} total` : 'Choose a partner in the wizard above for details';
         }
         const hasPartner = state.partnerId > 0;
         const can = hasPartner && n > 0;
@@ -124,6 +129,165 @@
             const b = $(id);
             if (b) b.disabled = !can;
         });
+    }
+
+    function getFilteredReadyWorkers() {
+        const q = String(state.readySearch || '')
+            .toLowerCase()
+            .trim();
+        if (!q) return state.readyWorkers;
+        return state.readyWorkers.filter((w) => {
+            const hay = `${w.worker_name || ''} ${w.passport_number || ''} ${w.id}`.toLowerCase();
+            return hay.indexOf(q) !== -1;
+        });
+    }
+
+    /** @returns {Set<number>|null} null = any partner allowed; empty = none */
+    function validPartnerIntersection() {
+        const ids = [...state.selectedReadyWorkerIds];
+        if (ids.length === 0) return null;
+        let inter = null;
+        for (let i = 0; i < ids.length; i += 1) {
+            const w = state.readyWorkers.find((x) => x.id === ids[i]);
+            if (!w) {
+                return new Set();
+            }
+            const pids = Array.isArray(w.partner_agency_ids) ? w.partner_agency_ids.map(Number) : [];
+            const s = new Set(pids);
+            if (pids.length === 0) {
+                return new Set();
+            }
+            if (inter === null) {
+                inter = s;
+            } else {
+                inter = new Set([...inter].filter((x) => s.has(x)));
+            }
+            if (inter.size === 0) return new Set();
+        }
+        return inter;
+    }
+
+    function applyPartnerOptionAvailability() {
+        const sel = $('cvsPartnerSelect');
+        if (!sel) return;
+        const valid = validPartnerIntersection();
+        const restrict = state.selectedReadyWorkerIds.size > 0;
+        Array.from(sel.querySelectorAll('option')).forEach((opt) => {
+            const v = String(opt.value || '').trim();
+            if (v === '') {
+                opt.disabled = false;
+                return;
+            }
+            const id = parseInt(v, 10);
+            if (!restrict || valid === null) {
+                opt.disabled = false;
+            } else if (valid.size === 0) {
+                opt.disabled = true;
+            } else {
+                opt.disabled = !valid.has(id);
+            }
+        });
+    }
+
+    function enforcePartnerStillValid() {
+        const sel = $('cvsPartnerSelect');
+        if (!sel) return;
+        const pid = parseInt(String(sel.value || '0'), 10) || 0;
+        if (state.selectedReadyWorkerIds.size === 0 || !pid) return;
+        const valid = validPartnerIntersection();
+        if (valid && !valid.has(pid)) {
+            sel.value = '';
+            state.partnerId = 0;
+            void loadPartnerRows(0);
+        }
+    }
+
+    function updateReadyWizardUi() {
+        enforcePartnerStillValid();
+        const label = $('cvsReadySelectionLabel');
+        if (label) {
+            const n = state.selectedReadyWorkerIds.size;
+            label.textContent = `${n} worker${n === 1 ? '' : 's'} selected`;
+        }
+        const sendBtn = $('cvsSendToPartnerBtn');
+        const partnerOk = state.partnerId > 0;
+        const valid = validPartnerIntersection();
+        const canSend =
+            state.selectedReadyWorkerIds.size > 0 &&
+            partnerOk &&
+            (valid === null || (valid && valid.size > 0 && valid.has(state.partnerId)));
+        if (sendBtn) sendBtn.disabled = !canSend;
+
+        const hint = $('cvsPartnerWizardHint');
+        if (hint) {
+            const ns = state.selectedReadyWorkerIds.size;
+            if (ns === 0) {
+                hint.hidden = true;
+                hint.textContent = '';
+            } else if (valid && valid.size === 0) {
+                hint.hidden = false;
+                hint.textContent =
+                    'No partner has all selected workers on a deployment. Add deployments first, or pick workers who share the same partner.';
+                hint.classList.remove('is-ok');
+            } else if (valid && valid.size > 0) {
+                hint.hidden = false;
+                hint.textContent = `${valid.size} partner agency(ies) available for this selection (dropdown options are limited accordingly).`;
+                hint.classList.add('is-ok');
+            } else {
+                hint.hidden = true;
+            }
+        }
+        applyPartnerOptionAvailability();
+    }
+
+    function renderReadyWorkerList() {
+        const box = $('cvsReadyWorkerList');
+        if (!box) return;
+        const rows = getFilteredReadyWorkers();
+        if (!rows.length) {
+            box.innerHTML =
+                '<p class="cvs-ready-empty">No workers with every document file uploaded yet — complete files on Workers first.</p>';
+            return;
+        }
+        box.innerHTML = rows
+            .map((w) => {
+                const wid = w.id;
+                const pids = Array.isArray(w.partner_agency_ids) ? w.partner_agency_ids : [];
+                const depHint =
+                    pids.length === 0
+                        ? 'Not deployed to any partner — cannot send until added to a deployment.'
+                        : `Deployed to ${pids.length} partner(s)`;
+                const checked = state.selectedReadyWorkerIds.has(wid) ? ' checked' : '';
+                const disabled = pids.length === 0 ? ' disabled' : '';
+                const passport = String(w.passport_number || '').trim() || '—';
+
+                return `<label class="cvs-ready-worker-row">
+                    <input type="checkbox" class="cvs-ready-worker-cb" data-worker-id="${escapeHtml(String(wid))}"${checked}${disabled}>
+                    <span>
+                        <strong>${escapeHtml(w.worker_name || `Worker #${wid}`)}</strong>
+                        <span class="cvs-ready-worker-meta">#${escapeHtml(String(wid))} · Passport: ${escapeHtml(passport)} · ${escapeHtml(depHint)}</span>
+                    </span>
+                </label>`;
+            })
+            .join('');
+        updateReadyWizardUi();
+    }
+
+    async function loadReadyWorkers() {
+        try {
+            const json = await fetchJson('../api/partnerships/partner-cvs-ready-workers.php', {
+                credentials: 'same-origin',
+            });
+            const workers = json.data && Array.isArray(json.data.workers) ? json.data.workers : [];
+            state.readyWorkers = workers;
+            renderReadyWorkerList();
+        } catch (e) {
+            state.readyWorkers = [];
+            const box = $('cvsReadyWorkerList');
+            if (box) {
+                box.innerHTML = `<p class="cvs-ready-empty">${escapeHtml(e && e.message ? e.message : 'Could not load ready workers.')}</p>`;
+            }
+        }
     }
 
     function labelForType(type) {
@@ -148,7 +312,8 @@
         if (!modal || !iframe) return;
         const wid = Number(workerId);
         const rowForName = state.rows.find((r) => r.worker_id === wid);
-        const name = rowForName ? rowForName.worker_name : `Worker #${wid}`;
+        const fromReady = state.readyWorkers.find((w) => w.id === wid);
+        const name = (rowForName && rowForName.worker_name) || (fromReady && fromReady.worker_name) || `Worker #${wid}`;
         iframe.src = withContext(buildWorkerProfileHref(wid));
         if (title) title.textContent = String(name).trim() || `Worker #${wid}`;
         modal.classList.add('open');
@@ -383,10 +548,10 @@
             const initialId = parseInt(String(q.get('partner_agency_id') || ''), 10);
             if (Number.isFinite(initialId) && initialId > 0) {
                 sel.value = String(initialId);
-            } else if (rows.length) {
-                sel.value = String(rows[0].id || '');
             }
             state.partnerId = parseInt(String(sel.value || '0'), 10) || 0;
+            applyPartnerOptionAvailability();
+            updateReadyWizardUi();
             setNotice('', '');
             if (state.partnerId > 0) {
                 await loadPartnerRows(state.partnerId);
@@ -548,11 +713,87 @@
         const bulkRemoveFilteredBtn = $('cvsBulkRemoveFilteredBtn');
         const bulkEditFilteredBtn = $('cvsBulkEditFilteredBtn');
         const workerQuick = $('cvsWorkerQuickSelect');
+        const readySearch = $('cvsReadySearch');
+        const selectAllReadyBtn = $('cvsSelectAllReadyBtn');
+        const clearReadyBtn = $('cvsClearReadyBtn');
+        const sendToPartnerBtn = $('cvsSendToPartnerBtn');
+        const readyList = $('cvsReadyWorkerList');
 
         if (partnerSel) {
             partnerSel.addEventListener('change', async () => {
                 const pid = parseInt(String(partnerSel.value || '0'), 10) || 0;
                 await loadPartnerRows(pid);
+                updateReadyWizardUi();
+            });
+        }
+        if (readySearch) {
+            readySearch.addEventListener('input', () => {
+                state.readySearch = String(readySearch.value || '');
+                renderReadyWorkerList();
+            });
+        }
+        if (selectAllReadyBtn) {
+            selectAllReadyBtn.addEventListener('click', () => {
+                getFilteredReadyWorkers().forEach((w) => {
+                    if (Array.isArray(w.partner_agency_ids) && w.partner_agency_ids.length > 0) {
+                        state.selectedReadyWorkerIds.add(w.id);
+                    }
+                });
+                updateReadyWizardUi();
+                renderReadyWorkerList();
+            });
+        }
+        if (clearReadyBtn) {
+            clearReadyBtn.addEventListener('click', () => {
+                state.selectedReadyWorkerIds.clear();
+                updateReadyWizardUi();
+                renderReadyWorkerList();
+            });
+        }
+        if (sendToPartnerBtn) {
+            sendToPartnerBtn.addEventListener('click', async () => {
+                if (state.selectedReadyWorkerIds.size === 0 || state.partnerId <= 0) return;
+                const n = state.selectedReadyWorkerIds.size;
+                if (
+                    !window.confirm(
+                        `Send all uploaded document files for ${n} worker(s) to this partner’s portal? (Already shared documents are skipped.)`
+                    )
+                ) {
+                    return;
+                }
+                try {
+                    setNotice('Sending…', 'success');
+                    const json = await fetchJson('../api/partnerships/partner-cvs-send-to-partner.php', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            partner_agency_id: state.partnerId,
+                            worker_ids: [...state.selectedReadyWorkerIds],
+                        }),
+                    });
+                    const d = (json && json.data) || {};
+                    setNotice(
+                        `Done: ${d.added != null ? d.added : 0} added, ${d.skipped != null ? d.skipped : 0} skipped (already shared), ${d.not_deployed != null ? d.not_deployed : 0} not deployed to this partner, ${d.failed != null ? d.failed : 0} failed.`,
+                        d.failed > 0 ? 'error' : 'success'
+                    );
+                    state.selectedReadyWorkerIds.clear();
+                    await loadReadyWorkers();
+                    await loadPartnerRows(state.partnerId);
+                } catch (e) {
+                    setNotice(e && e.message ? e.message : 'Send failed.', 'error');
+                }
+            });
+        }
+        if (readyList) {
+            readyList.addEventListener('change', (e) => {
+                const cb = e.target.closest('.cvs-ready-worker-cb');
+                if (!cb || cb.disabled) return;
+                const id = parseInt(String(cb.getAttribute('data-worker-id') || ''), 10);
+                if (!Number.isFinite(id) || id <= 0) return;
+                if (cb.checked) state.selectedReadyWorkerIds.add(id);
+                else state.selectedReadyWorkerIds.delete(id);
+                updateReadyWizardUi();
             });
         }
         if (workerQuick) {
@@ -852,7 +1093,7 @@
 
     function init() {
         bindEvents();
-        loadPartners();
+        void Promise.all([loadReadyWorkers(), loadPartners()]);
     }
 
     if (document.readyState === 'loading') {
