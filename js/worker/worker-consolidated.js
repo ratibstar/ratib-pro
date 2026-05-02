@@ -3130,42 +3130,49 @@ function ensureEmptyCvModal() {
             .empty-cv-modal{position:fixed;inset:0;display:none;z-index:10000}
             .empty-cv-modal.show{display:block}
             .empty-cv-modal-overlay{position:absolute;inset:0;background:rgba(10,20,34,.75)}
-            .empty-cv-modal-dialog{position:relative;width:min(1100px,95vw);height:min(92vh,920px);margin:4vh auto;background:#101a29;border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
-            .empty-cv-toolbar{display:flex;gap:8px;align-items:center;padding:10px 12px;background:#0f2940;color:#fff;flex-wrap:wrap}
-            .empty-cv-btn{background:#fff;color:#0f2940;border:0;border-radius:4px;padding:6px 10px;font-weight:700;cursor:pointer}
-            .empty-cv-btn.close{margin-left:auto}
-            .empty-cv-hint{font-size:12px;opacity:.95;flex:1;min-width:160px}
-            .empty-cv-body{flex:1;overflow:auto;background:linear-gradient(180deg,#eef4fb 0%,#f7fafc 100%);padding:16px}
-            #emptyCvSheet .page{max-width:880px;margin:0 auto 18px auto;background:#fff;box-shadow:0 10px 28px rgba(15,41,64,.14);border-radius:6px;overflow:hidden;font-family:Georgia,'Times New Roman',serif;color:#1d2a3a}
-            #emptyCvSheet .header{background:linear-gradient(180deg,#c7e3f7 0%,#a8d3ef 100%);color:#0d2538;padding:12px 20px;text-align:center;border-bottom:1px solid #8bbbdc}
-            #emptyCvSheet .header h1{margin:0;font-size:20px;letter-spacing:.06em;font-weight:700;text-transform:uppercase;line-height:1.15}
-            #emptyCvSheet .header h2{margin:6px 0 0;font-size:13px;font-weight:600;text-transform:none;color:#1a3d5c;max-width:42em;margin-left:auto;margin-right:auto;line-height:1.35}
-            #emptyCvSheet .grid{display:grid;grid-template-columns:minmax(0,280px) minmax(0,1fr);gap:0;align-items:stretch}
-            #emptyCvSheet .cv-panel{padding:14px 16px}
-            #emptyCvSheet .left{background:#fafcfe;border-right:1px solid #d6e6f2}
-            #emptyCvSheet .right{background:#f3f9fd}
-            #emptyCvSheet .photo{height:200px;border-radius:4px;border:1px solid #b8d4ea;background:#eef6fb;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700;overflow:hidden}
-            #emptyCvSheet .photo img{max-width:100%;max-height:100%;object-fit:cover;display:block}
-            #emptyCvSheet .side-title{background:#2f7fc2;color:#fff;font-size:14px;font-weight:700;padding:6px 10px;line-height:1.2;margin:14px 0 8px;border-radius:3px;letter-spacing:.02em}
-            #emptyCvSheet .side-title:first-of-type{margin-top:10px}
-            #emptyCvSheet .main-title{color:#145a8a;font-size:15px;font-weight:700;line-height:1.2;margin:16px 0 8px;padding-bottom:4px;border-bottom:2px solid #b9d6ea}
+            .empty-cv-modal-dialog{position:relative;width:min(1100px,95vw);height:min(92vh,920px);margin:4vh auto;background:linear-gradient(165deg,#0d1f33 0%,#152a44 100%);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(5,15,30,.45)}
+            .empty-cv-toolbar{display:flex;gap:10px;align-items:center;padding:12px 16px;background:rgba(0,0,0,.25);border-bottom:1px solid rgba(255,255,255,.08);color:#fff;flex-wrap:wrap}
+            .empty-cv-btn{background:#fff;color:#0c2d4a;border:0;border-radius:6px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:transform .12s ease,box-shadow .12s ease}
+            .empty-cv-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.18)}
+            .empty-cv-btn.close{margin-left:auto;background:rgba(255,255,255,.92)}
+            .empty-cv-hint{font-size:12px;opacity:.88;flex:1;min-width:180px;line-height:1.35}
+            .empty-cv-body{flex:1;overflow:auto;background:linear-gradient(180deg,#dfeaf6 0%,#eef3f8 45%,#f5f8fb 100%);padding:20px}
+            #emptyCvSheet .page.cv-page{max-width:900px;margin:0 auto 22px auto;background:#fff;box-shadow:0 12px 40px rgba(15,41,64,.16),0 0 0 1px rgba(13,90,138,.08);border-radius:10px;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#152838}
+            #emptyCvSheet .cv-accent-top{height:5px;background:linear-gradient(90deg,#1a5f8a,#2e8fc9,#1a5f8a)}
+            #emptyCvSheet .header{background:linear-gradient(180deg,#d4ebfb 0%,#b9dcf3 100%);color:#062438;padding:18px 22px 16px;text-align:center;border-bottom:1px solid #8fc0e0}
+            #emptyCvSheet .header h1{margin:0;font-size:22px;letter-spacing:.08em;font-weight:800;text-transform:uppercase;line-height:1.12;font-family:Georgia,'Times New Roman',serif}
+            #emptyCvSheet .header h2{margin:10px 0 0;font-size:13px;font-weight:600;text-transform:none;color:#134060;max-width:46em;margin-left:auto;margin-right:auto;line-height:1.45}
+            #emptyCvSheet .grid{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:0;align-items:stretch}
+            #emptyCvSheet .cv-panel{padding:18px 20px}
+            #emptyCvSheet .left{background:linear-gradient(180deg,#fbfdff 0%,#f3f8fc 100%);border-right:1px solid #cfe3f0}
+            #emptyCvSheet .right{background:linear-gradient(180deg,#f5fafd 0%,#eef6fb 100%)}
+            #emptyCvSheet .photo-wrap{margin-bottom:4px}
+            #emptyCvSheet .photo{aspect-ratio:3/4;max-height:260px;width:100%;border-radius:8px;border:1px solid #9dc4e0;background:linear-gradient(145deg,#e8f4fc,#dceefa);display:flex;align-items:center;justify-content:center;color:#4a7aa3;font-weight:800;font-size:13px;letter-spacing:.12em;overflow:hidden}
+            #emptyCvSheet .photo img{width:100%;height:100%;object-fit:cover;display:block}
+            #emptyCvSheet .side-title{background:linear-gradient(90deg,#1e6ead,#2b8cc9);color:#fff;font-size:12px;font-weight:800;padding:8px 12px;line-height:1.25;margin:18px 0 10px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase;box-shadow:0 2px 6px rgba(30,110,173,.25)}
+            #emptyCvSheet .side-title:first-of-type{margin-top:6px}
+            #emptyCvSheet .main-title{color:#0d4a73;font-size:13px;font-weight:800;line-height:1.25;margin:20px 0 10px;padding:8px 0 6px;border-bottom:2px solid #8ec5e8;letter-spacing:.04em;text-transform:uppercase}
             #emptyCvSheet .main-title:first-child{margin-top:0}
-            #emptyCvSheet .line{padding:6px 0;font-size:13px;line-height:1.35;border-bottom:1px solid #ddeaf4}
-            #emptyCvSheet .line:last-child{border-bottom:0}
-            #emptyCvSheet .pair{display:grid;grid-template-columns:minmax(0,38%) minmax(0,62%);gap:8px 12px;align-items:start}
-            #emptyCvSheet .pair .k{font-weight:700;color:#2c4a63;font-size:12px;text-transform:none;padding-top:2px}
-            #emptyCvSheet .left .line .k{color:#2c4a63}
-            #emptyCvSheet .left, #emptyCvSheet .left .line, #emptyCvSheet .left .line span{color:#1d2a3a !important}
-            #emptyCvSheet .cv-value[contenteditable="true"]{outline:none;display:block;min-height:1.2em;word-break:break-word}
-            #emptyCvSheet ul{margin:4px 0 0 1.1em;padding:0}
-            #emptyCvSheet li{margin:6px 0;font-size:13px;line-height:1.4}
-            #emptyCvSheet .note{color:#5a6b7a;font-size:11px;margin-top:14px;text-align:right}
-            #emptyCvSheet .editable:focus{outline:2px dashed #7aaedb;outline-offset:2px;border-radius:2px}
+            #emptyCvSheet .cv-section{margin-bottom:4px}
+            #emptyCvSheet .line.cv-field-row{padding:8px 2px;font-size:13px;line-height:1.4;border-bottom:1px solid #e2ecf5}
+            #emptyCvSheet .line.cv-field-row:last-child{border-bottom:0}
+            #emptyCvSheet .pair{display:grid;grid-template-columns:minmax(0,40%) minmax(0,60%);gap:10px 14px;align-items:start}
+            #emptyCvSheet .pair .k{font-weight:700;color:#2a5270;font-size:12px;text-transform:none;padding-top:3px}
+            #emptyCvSheet .left .line .k{color:#244a63}
+            #emptyCvSheet .left, #emptyCvSheet .left .line, #emptyCvSheet .left .line span{color:#1a2f42 !important}
+            #emptyCvSheet .cv-value[contenteditable="true"]{outline:none;display:block;min-height:1.25em;word-break:break-word;border-radius:3px;padding:2px 4px;margin:-2px -4px}
+            #emptyCvSheet .cv-value[contenteditable="true"]:hover{background:rgba(46,143,201,.08)}
+            #emptyCvSheet .cv-duties{display:flex;flex-direction:column;gap:0;border:1px solid #cfe3f2;border-radius:8px;overflow:hidden;background:#fafdff;margin-top:6px}
+            #emptyCvSheet .cv-duty-row.cv-field-row{padding:10px 12px;border-bottom:1px solid #e2ecf5;margin:0}
+            #emptyCvSheet .cv-duty-row.cv-field-row:last-child{border-bottom:0}
+            #emptyCvSheet .cv-duty-row .k{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#356688}
+            #emptyCvSheet .note{color:#6a7d8f;font-size:11px;margin-top:18px;text-align:right;letter-spacing:.02em}
+            #emptyCvSheet .editable:focus{outline:2px solid rgba(46,143,201,.55);outline-offset:2px;border-radius:4px}
             #emptyCvSheet .missing-value{color:#c62828;font-weight:700}
             #emptyCvSheet .hidden-by-missing-filter{display:none !important}
             @media (max-width:780px){
                 #emptyCvSheet .grid{grid-template-columns:1fr}
-                #emptyCvSheet .left{border-right:0;border-bottom:1px solid #d6e6f2}
+                #emptyCvSheet .left{border-right:0;border-bottom:1px solid #cfe3f0}
             }
         `;
         document.head.appendChild(style);
@@ -3260,54 +3267,65 @@ function buildEmptyCvHtml(worker) {
     const photoUrl = pick('personal_photo_url');
 
     return `
-        <div class="page">
+        <div class="page cv-page">
+            <div class="cv-accent-top"></div>
             <div class="header">
                 <h1 class="editable" contenteditable="true" data-field="full_name">${fullName}</h1>
                 <h2 class="editable" contenteditable="true" data-field="job_title">${job}</h2>
             </div>
             <div class="grid">
                 <aside class="left cv-panel">
-                    <div class="photo"><img id="emptyCvPhotoPreview" src="${photoUrl ? esc(photoUrl) : ''}" alt="photo" style="${photoUrl ? 'max-width:100%;max-height:100%;display:block' : 'display:none'}"><span id="emptyCvPhotoPlaceholder" style="${photoUrl ? 'display:none' : 'display:block'}">PHOTO</span></div>
-                    <div class="side-title">CONTACT INFO</div>
-                    <div class="line pair"><span class="k">Phone</span><span class="cv-value editable" contenteditable="true" data-field="phone">${phone}</span></div>
-                    <div class="line pair"><span class="k">Email</span><span class="cv-value editable" contenteditable="true" data-field="email">${email}</span></div>
-                    <div class="line pair"><span class="k">Address</span><span class="cv-value editable" contenteditable="true" data-field="address">${address}</span></div>
-                    <div class="side-title">Personal Details</div>
-                    <div class="line pair"><span class="k">Date of Birth</span><span class="cv-value editable" contenteditable="true" data-field="date_of_birth">${dob}</span></div>
-                    <div class="line pair"><span class="k">Place of Birth</span><span class="cv-value editable" contenteditable="true" data-field="place_of_birth">${placeOfBirth}</span></div>
-                    <div class="line pair"><span class="k">Nationality</span><span class="cv-value editable" contenteditable="true" data-field="nationality">${nationality}</span></div>
-                    <div class="line pair"><span class="k">Gender</span><span>${markMissing(gender)}</span></div>
-                    <div class="line pair"><span class="k">Age</span><span>${markMissing(age)}</span></div>
-                    <div class="line pair"><span class="k">Marital Status</span><span class="cv-value editable" contenteditable="true" data-field="marital_status">${maritalStatus}</span></div>
-                    <div class="line pair"><span class="k">Passport</span><span class="cv-value editable" contenteditable="true" data-field="passport_number">${passport}</span></div>
-                    <div class="line pair"><span class="k">Identity</span><span class="cv-value editable" contenteditable="true" data-field="identity_number">${identity}</span></div>
-                    <div class="line pair"><span class="k">Language</span><span class="cv-value editable" contenteditable="true" data-field="language">${language}</span></div>
-                    <div class="line pair"><span class="k">Lang. Level</span><span class="cv-value editable" contenteditable="true" data-field="language_level">${languageLevel}</span></div>
-                    <div class="line pair"><span class="k">City</span><span>${markMissing(city)}</span></div>
-                    <div class="line pair"><span class="k">Country</span><span>${markMissing(country)}</span></div>
+                    <div class="photo-wrap">
+                        <div class="photo"><img id="emptyCvPhotoPreview" src="${photoUrl ? esc(photoUrl) : ''}" alt="" style="${photoUrl ? 'width:100%;height:100%;object-fit:cover;display:block' : 'display:none'}"><span id="emptyCvPhotoPlaceholder" style="${photoUrl ? 'display:none' : 'display:block'}">PHOTO</span></div>
+                    </div>
+                    <div class="side-title">Contact info</div>
+                    <div class="line cv-field-row pair"><span class="k">Phone</span><span class="cv-value editable" contenteditable="true" data-field="phone">${phone}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">Email</span><span class="cv-value editable" contenteditable="true" data-field="email">${email}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">Address</span><span class="cv-value editable" contenteditable="true" data-field="address">${address}</span></div>
+                    <div class="side-title">Personal details</div>
+                    <div class="line cv-field-row pair"><span class="k">Date of Birth</span><span class="cv-value editable" contenteditable="true" data-field="date_of_birth">${dob}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">Place of Birth</span><span class="cv-value editable" contenteditable="true" data-field="place_of_birth">${placeOfBirth}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">Nationality</span><span class="cv-value editable" contenteditable="true" data-field="nationality">${nationality}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">Gender</span><span>${markMissing(gender)}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">Age</span><span>${markMissing(age)}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">Marital Status</span><span class="cv-value editable" contenteditable="true" data-field="marital_status">${maritalStatus}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">Passport</span><span class="cv-value editable" contenteditable="true" data-field="passport_number">${passport}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">Identity</span><span class="cv-value editable" contenteditable="true" data-field="identity_number">${identity}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">Language</span><span class="cv-value editable" contenteditable="true" data-field="language">${language}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">Lang. level</span><span class="cv-value editable" contenteditable="true" data-field="language_level">${languageLevel}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">City</span><span>${markMissing(city)}</span></div>
+                    <div class="line cv-field-row pair"><span class="k">Country</span><span>${markMissing(country)}</span></div>
                     <div class="side-title">Education</div>
-                    <div class="line"><span class="cv-value editable" contenteditable="true" data-field="education_level">${educationLevel}</span></div>
+                    <div class="line cv-field-row"><span class="cv-value editable" contenteditable="true" data-field="education_level">${educationLevel}</span></div>
                 </aside>
                 <main class="right cv-panel">
-                    <div class="main-title">Summary</div>
-                    <div class="line pair"><span class="k">Qualification</span><span class="cv-value editable" contenteditable="true" data-field="qualification">${qualification}</span></div>
-                    <div class="line pair"><span class="k">Skills</span><span class="cv-value editable" contenteditable="true" data-field="skills">${skills}</span></div>
-                    <div class="main-title">Work Experience</div>
-                    <div class="line pair"><span class="k">Total (years)</span><span class="cv-value editable" contenteditable="true" data-field="work_experience">${workExperience}</span></div>
-                    <div class="line pair"><span class="k">Local</span><span class="cv-value editable" contenteditable="true" data-field="local_experience">${localExperience}</span></div>
-                    <div class="line pair"><span class="k">Abroad</span><span class="cv-value editable" contenteditable="true" data-field="abroad_experience">${abroadExperience}</span></div>
-                    <div class="main-title">Duties and Responsibilities</div>
-                    <ul>
-                        <li class="editable" contenteditable="true"><span data-field="training_notes">${trainingNotes}</span></li>
-                        <li class="editable" contenteditable="true">Contract Duration: <span data-field="contract_duration">${contractDuration}</span></li>
-                        <li class="editable" contenteditable="true">Working Hours: <span data-field="working_hours">${workingHours}</span></li>
-                        <li class="editable" contenteditable="true">Salary: <span data-field="salary">${salary}</span></li>
-                    </ul>
-                    <div class="main-title">Suggested Worker Data</div>
-                    <div class="line pair"><span class="k">Status</span><span>${markMissing(workerStatus)}</span></div>
-                    <div class="line pair"><span class="k">Passport Expiry</span><span>${markMissing(passportExpiry)}</span></div>
-                    <div class="line pair"><span class="k">Medical No.</span><span>${markMissing(medicalNumber)}</span></div>
-                    <div class="note">Ratib Pro Indonesia - Empty CV Template</div>
+                    <div class="cv-section">
+                        <div class="main-title">Summary</div>
+                        <div class="line cv-field-row pair"><span class="k">Qualification</span><span class="cv-value editable" contenteditable="true" data-field="qualification">${qualification}</span></div>
+                        <div class="line cv-field-row pair"><span class="k">Skills</span><span class="cv-value editable" contenteditable="true" data-field="skills">${skills}</span></div>
+                    </div>
+                    <div class="cv-section">
+                        <div class="main-title">Work experience</div>
+                        <div class="line cv-field-row pair"><span class="k">Total (years)</span><span class="cv-value editable" contenteditable="true" data-field="work_experience">${workExperience}</span></div>
+                        <div class="line cv-field-row pair"><span class="k">Local</span><span class="cv-value editable" contenteditable="true" data-field="local_experience">${localExperience}</span></div>
+                        <div class="line cv-field-row pair"><span class="k">Abroad</span><span class="cv-value editable" contenteditable="true" data-field="abroad_experience">${abroadExperience}</span></div>
+                    </div>
+                    <div class="cv-section">
+                        <div class="main-title">Duties & responsibilities</div>
+                        <div class="cv-duties">
+                            <div class="cv-duty-row cv-field-row pair"><span class="k">Training & duties</span><span class="cv-value editable" contenteditable="true" data-field="training_notes">${trainingNotes}</span></div>
+                            <div class="cv-duty-row cv-field-row pair"><span class="k">Contract duration</span><span class="cv-value editable" contenteditable="true" data-field="contract_duration">${contractDuration}</span></div>
+                            <div class="cv-duty-row cv-field-row pair"><span class="k">Working hours</span><span class="cv-value editable" contenteditable="true" data-field="working_hours">${workingHours}</span></div>
+                            <div class="cv-duty-row cv-field-row pair"><span class="k">Salary</span><span class="cv-value editable" contenteditable="true" data-field="salary">${salary}</span></div>
+                        </div>
+                    </div>
+                    <div class="cv-section">
+                        <div class="main-title">Record snapshot</div>
+                        <div class="line cv-field-row pair"><span class="k">Status</span><span>${markMissing(workerStatus)}</span></div>
+                        <div class="line cv-field-row pair"><span class="k">Passport expiry</span><span>${markMissing(passportExpiry)}</span></div>
+                        <div class="line cv-field-row pair"><span class="k">Medical no.</span><span>${markMissing(medicalNumber)}</span></div>
+                    </div>
+                    <div class="note">Ratib Pro Indonesia · CV preview — click fields to edit, then Save To System</div>
                 </main>
             </div>
         </div>
@@ -3336,25 +3354,28 @@ window.printEmptyCvModal = function() {
     if (!printWindow) return;
     printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Worker CV</title>
         <style>
-            body{margin:0;background:#fff;font-family:Georgia,'Times New Roman',serif;color:#1d2a3a}
-            .page{max-width:880px;margin:0 auto;background:#fff;border-radius:6px;overflow:hidden}
-            .header{background:linear-gradient(180deg,#c7e3f7 0%,#a8d3ef 100%);color:#0d2538;padding:12px 20px;text-align:center;border-bottom:1px solid #8bbbdc}
-            .header h1{margin:0;font-size:20px;letter-spacing:.06em;font-weight:700;text-transform:uppercase;line-height:1.15}
-            .header h2{margin:6px 0 0;font-size:13px;font-weight:600;color:#1a3d5c}
-            .grid{display:grid;grid-template-columns:minmax(0,280px) minmax(0,1fr)}
-            .cv-panel{padding:14px 16px}
-            .left{background:#fafcfe;border-right:1px solid #d6e6f2}
-            .right{background:#f3f9fd}
-            .photo{height:200px;border-radius:4px;border:1px solid #b8d4ea;background:#eef6fb;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700;overflow:hidden}
-            .photo img{max-width:100%;max-height:100%;object-fit:cover;display:block}
-            .side-title{background:#2f7fc2;color:#fff;font-size:14px;font-weight:700;padding:6px 10px;line-height:1.2;margin:14px 0 8px;border-radius:3px}
-            .main-title{color:#145a8a;font-size:15px;font-weight:700;line-height:1.2;margin:16px 0 8px;padding-bottom:4px;border-bottom:2px solid #b9d6ea}
-            .line{padding:6px 0;font-size:13px;line-height:1.35;border-bottom:1px solid #ddeaf4}
-            .pair{display:grid;grid-template-columns:minmax(0,38%) minmax(0,62%);gap:8px 12px;align-items:start}
-            .pair .k{font-weight:700;color:#2c4a63;font-size:12px;padding-top:2px}
-            ul{margin:4px 0 0 1.1em;padding:0}
-            li{margin:6px 0;font-size:13px;line-height:1.4}
-            .note{color:#5a6b7a;font-size:11px;margin-top:14px;text-align:right}
+            body{margin:0;background:#fff;font-family:'Segoe UI',system-ui,Georgia,serif;color:#152838}
+            .page.cv-page{max-width:900px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden}
+            .cv-accent-top{height:5px;background:linear-gradient(90deg,#1a5f8a,#2e8fc9,#1a5f8a)}
+            .header{background:linear-gradient(180deg,#d4ebfb 0%,#b9dcf3 100%);color:#062438;padding:18px 22px 16px;text-align:center;border-bottom:1px solid #8fc0e0}
+            .header h1{margin:0;font-size:22px;letter-spacing:.08em;font-weight:800;text-transform:uppercase;line-height:1.12;font-family:Georgia,'Times New Roman',serif}
+            .header h2{margin:10px 0 0;font-size:13px;font-weight:600;color:#134060;line-height:1.45}
+            .grid{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr)}
+            .cv-panel{padding:18px 20px}
+            .left{background:linear-gradient(180deg,#fbfdff 0%,#f3f8fc 100%);border-right:1px solid #cfe3f0}
+            .right{background:linear-gradient(180deg,#f5fafd 0%,#eef6fb 100%)}
+            .photo{aspect-ratio:3/4;max-height:260px;width:100%;border-radius:8px;border:1px solid #9dc4e0;background:#e8f4fc;display:flex;align-items:center;justify-content:center;color:#4a7aa3;font-weight:800;font-size:13px;letter-spacing:.12em;overflow:hidden}
+            .photo img{width:100%;height:100%;object-fit:cover;display:block}
+            .side-title{background:linear-gradient(90deg,#1e6ead,#2b8cc9);color:#fff;font-size:12px;font-weight:800;padding:8px 12px;margin:18px 0 10px;border-radius:4px;letter-spacing:.06em;text-transform:uppercase}
+            .main-title{color:#0d4a73;font-size:13px;font-weight:800;margin:20px 0 10px;padding:8px 0 6px;border-bottom:2px solid #8ec5e8;letter-spacing:.04em;text-transform:uppercase}
+            .line.cv-field-row{padding:8px 2px;font-size:13px;line-height:1.4;border-bottom:1px solid #e2ecf5}
+            .pair{display:grid;grid-template-columns:minmax(0,40%) minmax(0,60%);gap:10px 14px;align-items:start}
+            .pair .k{font-weight:700;color:#2a5270;font-size:12px;padding-top:3px}
+            .cv-duties{border:1px solid #cfe3f2;border-radius:8px;overflow:hidden;background:#fafdff;margin-top:6px}
+            .cv-duty-row.cv-field-row{padding:10px 12px;border-bottom:1px solid #e2ecf5}
+            .cv-duty-row.cv-field-row:last-child{border-bottom:0}
+            .note{color:#6a7d8f;font-size:11px;margin-top:18px;text-align:right}
+            @media print{.page{box-shadow:none}}
         </style>
     </head><body>${sheet.innerHTML}</body></html>`);
     printWindow.document.close();
@@ -3493,7 +3514,7 @@ window.toggleEmptyCvMissingOnly = function(enabled) {
     const sheet = document.getElementById('emptyCvSheet');
     if (!modal || !sheet) return;
     modal.setAttribute('data-missing-only', enabled ? '1' : '0');
-    const rows = sheet.querySelectorAll('.line, li');
+    const rows = sheet.querySelectorAll('.cv-field-row');
     rows.forEach((row) => {
         const hasMissing = !!row.querySelector('.missing-value');
         row.classList.toggle('hidden-by-missing-filter', enabled && !hasMissing);
@@ -4722,61 +4743,8 @@ window.saveWorker = async function(event) {
         return;
     }
 
-    // Prevent noisy failed requests by validating key workflow fields client-side first.
-    const stageKey = String(workerData.current_stage || '').trim().toLowerCase();
-    const requiredByStage = {
-        identity: ['identity_number', 'identity_date'],
-        passport: ['passport_number', 'passport_date'],
-        police: ['police_number', 'police_date'],
-        medical: ['medical_number', 'medical_date'],
-        technical_training: ['training_certificate_number', 'training_certificate_date'],
-        contract: ['contract_duration'],
-        government: ['government_registration_number'],
-        work_permit: ['work_permit_number'],
-        visa: ['visa_number', 'visa_date'],
-        predeparture_training: ['predeparture_training_completed'],
-        ticket: ['ticket_number', 'ticket_date'],
-        travel: ['travel_date']
-    };
-    const fieldLabels = {
-        identity_number: 'Identity Number',
-        identity_date: 'Identity Date',
-        passport_number: 'Passport Number',
-        passport_date: 'Passport Date',
-        police_number: 'Police Number',
-        police_date: 'Police Date',
-        medical_number: 'Medical Number',
-        medical_date: 'Medical Date',
-        training_certificate_number: 'Training Certificate Number',
-        training_certificate_date: 'Training Certificate Date',
-        contract_duration: 'Contract Duration',
-        government_registration_number: 'Government Registration Number',
-        work_permit_number: 'Work Permit Number',
-        visa_number: 'Visa Number',
-        visa_date: 'Visa Date',
-        ticket_number: 'Ticket Number',
-        ticket_date: 'Ticket Date',
-        travel_date: 'Travel Date'
-    };
-    const stageRequiredFields = requiredByStage[stageKey] || [];
-    if (stageRequiredFields.length > 0) {
-        const missingFields = stageRequiredFields.filter((field) => {
-            const value = workerData[field];
-            return value === undefined || value === null || String(value).trim() === '';
-        });
-        if (missingFields.length > 0) {
-            const labels = missingFields.map((field) => fieldLabels[field] || field.replace(/_/g, ' '));
-            SimpleAlert.show(
-                'Missing Required Fields',
-                `Missing required fields (${labels.length}): ${labels.join(', ')}`,
-                'warning',
-                { notification: true }
-            );
-            window.isSavingWorker = false;
-            return;
-        }
-    }
-    
+    // Workflow-stage document fields are optional on save; completion can be tracked per stage in the UI.
+
     try {
         const isEdit = workerData.id && workerData.id.trim() !== '';
         

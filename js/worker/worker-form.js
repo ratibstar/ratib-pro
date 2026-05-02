@@ -392,16 +392,11 @@ document.addEventListener('DOMContentLoaded', function() {
             && window.RATIB_COUNTRY_PROFILE_CONFIG.requirements.length > 0) {
             return window.RATIB_COUNTRY_PROFILE_CONFIG.requirements.map(function (x) { return String(x || '').trim(); }).filter(Boolean);
         }
+        // Core identity only — document row fields (ID, passport, police, etc.) stay optional; see applyCountrySpecificRequirements.
         const common = [
             'full_name',
             'gender',
-            'agent_id',
-            'identity_number',
-            'passport_number',
-            'police_number',
-            'medical_number',
-            'visa_number',
-            'ticket_number'
+            'agent_id'
         ];
         const byCountry = {
             indonesia: [
@@ -481,6 +476,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const name = String(el.getAttribute('name') || '').trim();
             if (!name) return;
             const isBaseRequired = el.getAttribute('data-base-required') === '1';
+            const inDocumentsSection = !!el.closest('.section.documents');
+            if (inDocumentsSection && !isBaseRequired) {
+                el.removeAttribute('required');
+                return;
+            }
             const shouldRequire = expanded.has(name) || isBaseRequired;
             if (shouldRequire) {
                 el.setAttribute('required', 'required');
