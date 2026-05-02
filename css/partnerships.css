@@ -236,14 +236,18 @@
 
 .cvs-wizard-steps {
     margin: 0;
-    padding-left: 1.25rem;
+    padding-left: 0;
     display: flex;
     flex-direction: column;
     gap: 1.15rem;
 }
 
 .cvs-wizard-step {
-    list-style-position: outside;
+    list-style: none;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 10px;
+    background: rgba(2, 6, 23, 0.35);
 }
 
 .cvs-wizard-step-label {
@@ -284,6 +288,7 @@
     gap: 0.5rem;
     font-size: 0.9rem;
     color: #e2e8f0;
+    padding: 0.2rem 0;
 }
 
 .cvs-ready-worker-row input[type='checkbox'] {
@@ -293,6 +298,7 @@
 .cvs-ready-worker-meta {
     font-size: 0.78rem;
     color: #94a3b8;
+    display: block;
 }
 
 .cvs-ready-toolbar {
@@ -318,6 +324,12 @@
     margin-top: 0.35rem;
 }
 
+.cvs-wizard-send-row .neon-btn[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    filter: grayscale(0.35);
+}
+
 .cvs-advanced-title {
     margin: 1rem 0 0.35rem;
     font-size: 1rem;
@@ -328,6 +340,23 @@
     margin: 0 0 0.75rem;
     font-size: 0.85rem;
     color: #94a3b8;
+}
+
+.partnerships-table--cvs-control td.actions-cell {
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+@media (max-width: 900px) {
+    .cvs-send-wizard,
+    .partner-cvs-control-page .partner-cvs-control-filters {
+        padding: 0.75rem;
+    }
+    .cvs-wizard-step {
+        padding: 0.65rem;
+    }
 }
 
 .partnerships-table th.col-select,

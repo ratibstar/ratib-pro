@@ -325,33 +325,50 @@ class PartnerAgencyWorkerDocSharesController
     }
 
     /**
-     * Workers who have every allowed document file uploaded, with deployment partner ids.
+     * Workers with at least one uploaded document file, plus readiness score and deployment partner ids.
      *
      * @return array<int, array<string, mixed>>
      */
     public function listFullReadyWorkers(): array
     {
         $types = self::allowedDocumentTypes();
-        $conditions = [];
-        foreach ($types as $t) {
-            $col = $t . '_file';
-            $conditions[] = "TRIM(COALESCE(w.`{$col}`,'')) <> ''";
-        }
-        $fileWhere = implode(' AND ', $conditions);
         $sql = "SELECT w.id, w.worker_name, w.passport_number
             FROM workers w
             WHERE (w.status IS NULL OR w.status = '' OR w.status != 'deleted')
-            AND {$fileWhere}
             ORDER BY w.worker_name ASC";
         $stmt = $this->conn->query($sql);
         $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
         if ($rows === []) {
             return [];
         }
-        $ids = [];
+        $candidates = [];
         foreach ($rows as $r) {
-            $ids[] = (int) ($r['id'] ?? 0);
+            $id = (int) ($r['id'] ?? 0);
+            if ($id <= 0) {
+                continue;
+            }
+            $worker = $this->fetchWorkerRow($id);
+            if (!$worker) {
+                continue;
+            }
+            $readyCount = 0;
+            foreach ($types as $dt) {
+                $col = $dt . '_file';
+                if (isset($worker[$col]) && trim((string) $worker[$col]) !== '') {
+                    $readyCount++;
+                }
+            }
+            if ($readyCount <= 0) {
+                continue;
+            }
+            $r['ready_docs_count'] = $readyCount;
+            $r['total_docs'] = count($types);
+            $candidates[] = $r;
         }
+        if ($candidates === []) {
+            return [];
+        }
+        $ids = array_map(static fn ($r) => (int) ($r['id'] ?? 0), $candidates);
         $ids = array_values(array_filter($ids, static fn ($id) => $id > 0));
         if ($ids === []) {
             return [];
@@ -374,7 +391,7 @@ class PartnerAgencyWorkerDocSharesController
             $byWorker[$wid][$pid] = true;
         }
         $out = [];
-        foreach ($rows as $r) {
+        foreach ($candidates as $r) {
             $id = (int) ($r['id'] ?? 0);
             if ($id <= 0) {
                 continue;
@@ -385,6 +402,8 @@ class PartnerAgencyWorkerDocSharesController
                 'id' => $id,
                 'worker_name' => $r['worker_name'] ?? '',
                 'passport_number' => trim((string) ($r['passport_number'] ?? '')),
+                'ready_docs_count' => (int) ($r['ready_docs_count'] ?? 0),
+                'total_docs' => (int) ($r['total_docs'] ?? count($types)),
                 'partner_agency_ids' => $pids,
             ];
         }

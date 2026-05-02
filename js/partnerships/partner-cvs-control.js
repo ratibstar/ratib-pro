@@ -246,7 +246,8 @@
         const rows = getFilteredReadyWorkers();
         if (!rows.length) {
             box.innerHTML =
-                '<p class="cvs-ready-empty">No workers with every document file uploaded yet — complete files on Workers first.</p>';
+                '<p class="cvs-ready-empty">No ready workers found yet. Upload worker document files first, then refresh.</p>';
+            updateReadyWizardUi();
             return;
         }
         box.innerHTML = rows
@@ -255,17 +256,17 @@
                 const pids = Array.isArray(w.partner_agency_ids) ? w.partner_agency_ids : [];
                 const depHint =
                     pids.length === 0
-                        ? 'Not deployed to any partner — cannot send until added to a deployment.'
-                        : `Deployed to ${pids.length} partner(s)`;
+                        ? 'Not deployed to any partner - cannot send until added to a deployment.'
+                        : `Ready docs: ${Number(w.ready_docs_count || 0)}/${Number(w.total_docs || 0)} - Deployed to ${pids.length} partner(s)`;
                 const checked = state.selectedReadyWorkerIds.has(wid) ? ' checked' : '';
                 const disabled = pids.length === 0 ? ' disabled' : '';
-                const passport = String(w.passport_number || '').trim() || '—';
+                const passport = String(w.passport_number || '').trim() || '-';
 
                 return `<label class="cvs-ready-worker-row">
                     <input type="checkbox" class="cvs-ready-worker-cb" data-worker-id="${escapeHtml(String(wid))}"${checked}${disabled}>
                     <span>
                         <strong>${escapeHtml(w.worker_name || `Worker #${wid}`)}</strong>
-                        <span class="cvs-ready-worker-meta">#${escapeHtml(String(wid))} · Passport: ${escapeHtml(passport)} · ${escapeHtml(depHint)}</span>
+                        <span class="cvs-ready-worker-meta">#${escapeHtml(String(wid))} - Passport: ${escapeHtml(passport)} - ${escapeHtml(depHint)}</span>
                     </span>
                 </label>`;
             })
@@ -283,10 +284,12 @@
             renderReadyWorkerList();
         } catch (e) {
             state.readyWorkers = [];
+            state.selectedReadyWorkerIds.clear();
             const box = $('cvsReadyWorkerList');
             if (box) {
                 box.innerHTML = `<p class="cvs-ready-empty">${escapeHtml(e && e.message ? e.message : 'Could not load ready workers.')}</p>`;
             }
+            updateReadyWizardUi();
         }
     }
 
@@ -756,13 +759,13 @@
                 const n = state.selectedReadyWorkerIds.size;
                 if (
                     !window.confirm(
-                        `Send all uploaded document files for ${n} worker(s) to this partner’s portal? (Already shared documents are skipped.)`
+                        `Send all uploaded document files for ${n} worker(s) to this partner portal? (Already shared documents are skipped.)`
                     )
                 ) {
                     return;
                 }
                 try {
-                    setNotice('Sending…', 'success');
+                    setNotice('Sending...', 'success');
                     const json = await fetchJson('../api/partnerships/partner-cvs-send-to-partner.php', {
                         method: 'POST',
                         credentials: 'same-origin',
@@ -780,6 +783,7 @@
                     state.selectedReadyWorkerIds.clear();
                     await loadReadyWorkers();
                     await loadPartnerRows(state.partnerId);
+                    updateReadyWizardUi();
                 } catch (e) {
                     setNotice(e && e.message ? e.message : 'Send failed.', 'error');
                 }
