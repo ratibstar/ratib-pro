@@ -1147,7 +1147,7 @@ body.indonesia-table-visible .worker-table td.indonesia-only-column {
     .section.professional-details {
         padding: 2px !important;
         gap: 2px !important;
-        max-height: 260px !important;
+        max-height: 380px !important;
         overflow-y: auto !important;
     }
     
@@ -2610,7 +2610,7 @@ body.indonesia-table-visible .worker-table td.indonesia-only-column {
 .section.professional-details {
     background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%) !important;
     border: 1px solid rgba(34, 197, 94, 0.2) !important;
-    max-height: 320px !important;
+    max-height: 420px !important;
     min-height: auto !important;
     height: auto !important;
     overflow-y: auto !important;
@@ -2631,7 +2631,8 @@ body.indonesia-table-visible .worker-table td.indonesia-only-column {
 }
 
 .section.professional-details .form-group input,
-.section.professional-details .form-group select {
+.section.professional-details .form-group select,
+.section.professional-details .form-group textarea {
     padding: 10px 14px !important;
     font-size: 14px !important;
     min-height: 42px !important;
@@ -2644,6 +2645,30 @@ body.indonesia-table-visible .worker-table td.indonesia-only-column {
     margin-bottom: 0 !important;
 }
 
+.section.professional-details .form-group textarea {
+    min-height: 72px !important;
+    resize: vertical !important;
+}
+
+.section.professional-details .form-group.employment-training-bundle {
+    grid-column: 1 / -1 !important;
+}
+
+.section.professional-details .form-row.employment-terms-row {
+    grid-column: 1 / -1 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 6px !important;
+    align-items: start !important;
+}
+
+.section.documents .contract-doc-hint {
+    font-size: 12px !important;
+    color: rgba(255, 255, 255, 0.72) !important;
+    margin: 0 0 8px 0 !important;
+    line-height: 1.35 !important;
+}
+
 .section.professional-details .form-label {
     margin-bottom: 6px !important;
     font-size: 14px !important;
@@ -2652,7 +2677,8 @@ body.indonesia-table-visible .worker-table td.indonesia-only-column {
 }
 
 .section.professional-details .form-group input:focus,
-.section.professional-details .form-group select:focus {
+.section.professional-details .form-group select:focus,
+.section.professional-details .form-group textarea:focus {
     outline: none !important;
     border-color: #22c55e !important;
     box-shadow: 
@@ -2663,7 +2689,8 @@ body.indonesia-table-visible .worker-table td.indonesia-only-column {
 }
 
 .section.professional-details .form-group input::placeholder,
-.section.professional-details .form-group select::placeholder {
+.section.professional-details .form-group select::placeholder,
+.section.professional-details .form-group textarea::placeholder {
     font-size: 13px !important;
     color: rgba(255, 255, 255, 0.7) !important;
     font-weight: 400 !important;
@@ -6247,6 +6274,10 @@ button[data-permission][style*="display: none"],
         gap: 12px !important;
     }
     
+    .section.professional-details .form-row.employment-terms-row {
+        grid-template-columns: 1fr !important;
+    }
+    
     /* Form groups - improved mobile spacing */
     .form-group {
         width: 100% !important;
@@ -7465,8 +7496,12 @@ button[data-permission][style*="display: none"],
 }
 
 .section.professional-details .form-group:has(#job_title) {
-    grid-column: 1 / 3 !important;
+    grid-column: 1 / -1 !important;
     width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    align-items: stretch !important;
 }
 
 .section.professional-details .form-group:has(#qualification) {
@@ -7475,15 +7510,15 @@ button[data-permission][style*="display: none"],
 }
 
 .section.professional-details #selectedJobTitleTags {
-    grid-column: 1 / 3 !important;
     width: 100% !important;
 }
 
 .custom-multiselect-dropdown {
     position: relative;
     width: 100%;
-    margin-bottom: 8px;
+    margin-bottom: 0;
     box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 .custom-dropdown-trigger {
@@ -7602,30 +7637,33 @@ button[data-permission][style*="display: none"],
 
 .selected-tags-container {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     flex-direction: row;
-    gap: 4px;
-    margin-top: 6px;
-    padding: 6px 8px;
-    min-height: auto;
-    max-height: 40px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    white-space: nowrap;
-    background: rgba(255, 255, 255, 0.03);
+    align-items: flex-start;
+    align-content: flex-start;
+    gap: 6px;
+    margin-top: 0;
+    padding: 8px 10px;
+    min-height: 44px;
+    max-height: none;
+    overflow-x: visible;
+    overflow-y: visible;
+    white-space: normal;
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     width: 100%;
     box-sizing: border-box;
 }
 
 .section.professional-details .selected-tags-container {
-    margin-top: 4px !important;
-    padding: 3px 5px !important;
-    gap: 3px !important;
-    min-height: auto !important;
-    max-height: 40px !important;
+    margin-top: 0 !important;
+    padding: 8px 10px !important;
+    gap: 6px !important;
+    min-height: 44px !important;
+    max-height: none !important;
     width: 100% !important;
-    grid-column: 1 / -1 !important;
+    grid-column: unset !important;
 }
 
 .selected-tag {

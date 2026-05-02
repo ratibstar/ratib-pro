@@ -2171,6 +2171,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             return dateValue;
         };
+
+        /** Match stored worker values to select options (case/spacing/legacy free text). */
+        function applySelectValueWithFallback(selectEl, raw) {
+            if (!selectEl || selectEl.tagName !== 'SELECT') return;
+            const v = raw === undefined || raw === null ? '' : String(raw).trim();
+            if (!v) {
+                selectEl.selectedIndex = 0;
+                selectEl.value = '';
+                return;
+            }
+            selectEl.value = v;
+            if (selectEl.value === v) return;
+            const norm = (s) => String(s || '').toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+            const vn = norm(v);
+            const opt = Array.from(selectEl.options).find((o) => {
+                const ov = String(o.value || '').trim();
+                const ot = String(o.textContent || '').trim();
+                return (
+                    norm(ov) === vn
+                    || norm(ot) === vn
+                    || ov.toLowerCase() === v.toLowerCase()
+                );
+            });
+            if (opt) {
+                selectEl.value = opt.value;
+                return;
+            }
+            const extra = document.createElement('option');
+            extra.value = v;
+            extra.textContent = v;
+            selectEl.appendChild(extra);
+            selectEl.value = v;
+        }
         
         // Map database fields to form fields (all values pass through toEnglish to convert Arabic)
         const fieldMappings = {
@@ -2275,23 +2308,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     } else {
                         const value = fieldMappings[fieldName] || '';
-                        element.value = value;
-                        // For select elements, also verify the option exists and try to set it
-                        if (element.tagName === 'SELECT' && value) {
-                            // Try to set the value
+                        if (element.tagName === 'SELECT') {
+                            applySelectValueWithFallback(element, value);
+                        } else {
                             element.value = value;
-                            // Verify it was set correctly
-                            if (element.value !== value) {
-                                // Try to find by text content
-                                const optionFound = Array.from(element.options).find(opt => 
-                                    opt.value === value || opt.textContent.trim() === value
-                                );
-                                if (optionFound) {
-                                    element.value = optionFound.value;
-                                } else {
-                                    debugForm.warn(`Option value "${value}" not found in select "${fieldName}"`);
-                                }
-                            }
                         }
                     }
                     debugForm.log(`Set ${fieldName} to:`, element.value);
@@ -2329,14 +2349,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const skillsField = workerForm.querySelector('[name="skills"]');
             if (skillsField && savedSkills) {
                 if (skillsField.tagName === 'SELECT') {
-                    const optionFound = Array.from(skillsField.options).find(opt => 
-                        opt.value === savedSkills || opt.textContent.trim() === savedSkills
-                    );
-                    if (optionFound) {
-                        skillsField.value = optionFound.value;
-                    } else if (savedSkills) {
-                        skillsField.value = savedSkills;
-                    }
+                    applySelectValueWithFallback(skillsField, savedSkills);
                 } else {
                     skillsField.value = savedSkills;
                 }
@@ -2504,8 +2517,38 @@ document.addEventListener('DOMContentLoaded', function() {
                     break;
                 }
             }
-            if (!countryFound) {
-                debugForm.warn('Country not found in dropdown:', countryValue);
+            if (!countryFound && countryValue) {
+                const opt = document.createElement('option');
+                opt.value = countryValue;
+                opt.textContent = countryValue;
+                countrySelect.appendChild(opt);
+                countrySelect.value = countryValue;
+                debugForm.log('✅ Added country option from worker data:', countryValue);
+                if (typeof window.loadCitiesByCountry === 'function') {
+                    await window.loadCitiesByCountry(worker.country, 'city');
+                }
+                const citySelect = document.getElementById('city');
+                if (citySelect && savedCity) {
+                    const cityValue = String(savedCity).trim();
+                    let cityFound = false;
+                    for (let j = 0; j < citySelect.options.length; j++) {
+                        const cv = citySelect.options[j].value.trim();
+                        if (cv === cityValue || cv.toLowerCase() === cityValue.toLowerCase()) {
+                            citySelect.selectedIndex = j;
+                            citySelect.value = cityValue;
+                            cityFound = true;
+                            citySelect.setAttribute('data-city-set', 'true');
+                            break;
+                        }
+                    }
+                    if (!cityFound && cityValue) {
+                        const copt = document.createElement('option');
+                        copt.value = cityValue;
+                        copt.textContent = cityValue;
+                        copt.selected = true;
+                        citySelect.appendChild(copt);
+                    }
+                }
             }
         };
 

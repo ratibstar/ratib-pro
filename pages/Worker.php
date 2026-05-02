@@ -551,11 +551,44 @@ include '../includes/header.php';
                     </div>
                     <div class="form-group">
                         <label for="nationality" class="form-label">Nationality</label>
-                        <input type="text" 
-                               name="nationality" 
-                               id="nationality" 
-                               class="form-control" 
-                               placeholder="Enter nationality">
+                        <select name="nationality" id="nationality" class="form-select">
+                            <option value="">Select nationality</option>
+                            <option value="Not specified">Not specified</option>
+                            <option value="Indonesia">Indonesia</option>
+                            <option value="Philippines">Philippines</option>
+                            <option value="India">India</option>
+                            <option value="Bangladesh">Bangladesh</option>
+                            <option value="Sri Lanka">Sri Lanka</option>
+                            <option value="Nepal">Nepal</option>
+                            <option value="Pakistan">Pakistan</option>
+                            <option value="Egypt">Egypt</option>
+                            <option value="Sudan">Sudan</option>
+                            <option value="Kenya">Kenya</option>
+                            <option value="Uganda">Uganda</option>
+                            <option value="Ethiopia">Ethiopia</option>
+                            <option value="Ghana">Ghana</option>
+                            <option value="Nigeria">Nigeria</option>
+                            <option value="Vietnam">Vietnam</option>
+                            <option value="Myanmar">Myanmar</option>
+                            <option value="Thailand">Thailand</option>
+                            <option value="Malaysia">Malaysia</option>
+                            <option value="China">China</option>
+                            <option value="Jordan">Jordan</option>
+                            <option value="Lebanon">Lebanon</option>
+                            <option value="Syria">Syria</option>
+                            <option value="Yemen">Yemen</option>
+                            <option value="Saudi Arabia">Saudi Arabia</option>
+                            <option value="United Arab Emirates">United Arab Emirates</option>
+                            <option value="Kuwait">Kuwait</option>
+                            <option value="Qatar">Qatar</option>
+                            <option value="Oman">Oman</option>
+                            <option value="Bahrain">Bahrain</option>
+                            <option value="Iraq">Iraq</option>
+                            <option value="Morocco">Morocco</option>
+                            <option value="Tunisia">Tunisia</option>
+                            <option value="Algeria">Algeria</option>
+                            <option value="Other">Other</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="gender" class="form-label">Gender *</label>
@@ -598,12 +631,14 @@ include '../includes/header.php';
                     </div>
                     <div class="form-row">
                         <div class="form-group">
+                            <label for="birth_date" class="form-label">Date of birth</label>
                             <div class="date-input-wrapper">
                                 <input type="text" name="birth_date" id="birth_date" class="form-control date-input" placeholder="YYYY-MM-DD" autocomplete="off">
                                 <i class="fas fa-calendar-alt date-icon"></i>
                             </div>
                         </div>
                         <div class="form-group">
+                            <label for="place_of_birth" class="form-label">Place of birth</label>
                             <input type="text" name="place_of_birth" id="place_of_birth" class="form-control" 
                                    placeholder="Enter place of birth">
                         </div>
@@ -743,9 +778,26 @@ include '../includes/header.php';
                                class="form-control" 
                                placeholder="Enter years of work experience abroad">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group employment-training-bundle">
                         <label for="training_notes" class="form-label">Training / duties notes</label>
                         <textarea name="training_notes" id="training_notes" class="form-control" rows="3" placeholder="Enter training notes, duties, or responsibilities"></textarea>
+                    </div>
+                    <div class="form-row employment-terms-row">
+                        <div class="form-group">
+                            <label for="salary" class="form-label">Salary</label>
+                            <input type="text" name="salary" id="salary" class="form-control" data-field-key="salary"
+                                   placeholder="e.g. 1500.00" inputmode="decimal" lang="en" dir="ltr">
+                        </div>
+                        <div class="form-group">
+                            <label for="working_hours" class="form-label">Working hours</label>
+                            <input type="text" name="working_hours" id="working_hours" class="form-control" data-field-key="working_hours"
+                                   placeholder="e.g. 8h/day">
+                        </div>
+                        <div class="form-group">
+                            <label for="contract_duration" class="form-label">Contract duration</label>
+                            <input type="text" name="contract_duration" id="contract_duration" class="form-control" data-field-key="contract_duration"
+                                   placeholder="e.g. 24 months">
+                        </div>
                     </div>
                     <?php if ($isIndonesiaProgram): ?>
                     <div class="form-group indonesia-compliance-field">
@@ -1156,13 +1208,8 @@ include '../includes/header.php';
 
                     <div class="doc-row contract-compliance compliance-black" data-workflow-stage="contract" data-stage-label="Contract">
                         <div class="doc-group">
-                            <label class="form-label">Contract</label>
-                            <label class="form-label" for="salary">Salary</label>
-                            <input type="text" id="salary" name="salary" data-field-key="salary" placeholder="Salary (e.g. 1500.00)" inputmode="decimal" lang="en" dir="ltr">
-                            <label class="form-label" for="working_hours">Working Hours</label>
-                            <input type="text" id="working_hours" name="working_hours" data-field-key="working_hours" placeholder="Working Hours (e.g. 8h/day)">
-                            <label class="form-label" for="contract_duration">Contract Duration</label>
-                            <input type="text" id="contract_duration" name="contract_duration" data-field-key="contract_duration" placeholder="Contract Duration (e.g. 24 months)">
+                            <label class="form-label">Contract (document)</label>
+                            <p class="contract-doc-hint">Salary, working hours, and contract duration are edited in <strong>Professional Details</strong> (above).</p>
                             <div class="upload-wrapper">
                                 <input type="file" class="file-input" id="contract_deployment_primary_file" accept=".pdf,.jpg,.jpeg,.png">
                                 <button type="button" class="upload-btn" data-target="contract_deployment_primary_file">
