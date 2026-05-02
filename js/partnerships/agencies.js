@@ -203,7 +203,7 @@
                 </td>
                 <td class="agency-actions-cell">
                     <a class="muted-btn agency-details-link" href="${withContext(`partner-agency-detail.php?id=${encodeURIComponent(String(r.id))}`)}">Details</a>
-                    <a class="muted-btn agency-portal-cvs-link" href="${withContext(`partner-agency-portal-cvs.php?id=${encodeURIComponent(String(r.id))}`)}" title="Open the partner-style CVs page (same downloads as the partner portal)">CVs</a>
+                    <button type="button" class="muted-btn agency-portal-cvs-link" data-action="open-cvs" data-partner-agency-id="${String(r.id ?? '').replace(/"/g, '&quot;')}" data-name="${(r.name || '').replace(/"/g, '&quot;')}" title="Open the worker CV profile (Worker page)">CVs</button>
                     <button class="muted-btn" data-action="edit" data-id="${r.id}">Edit</button>
                     <button class="muted-btn" data-action="delete" data-id="${r.id}">Delete</button>
                 </td>
@@ -568,8 +568,11 @@
         showToast('CSV exported.', 'success');
     };
 
-    const openWorkersModal = async (partnerAgencyId, agencyName) => {
-        workersModalTitle.textContent = `Deployments — ${agencyName || ''}`;
+    const openWorkersModal = async (partnerAgencyId, agencyName, options = {}) => {
+        const cvsMode = !!(options && options.cvsMode);
+        workersModalTitle.textContent = cvsMode
+            ? `Worker CVs — ${agencyName || ''}`
+            : `Deployments — ${agencyName || ''}`;
         workersModalBody.innerHTML = `<tr><td colspan="${workersSentColspan}">Loading...</td></tr>`;
         workersModal.classList.add('open');
 
@@ -616,6 +619,53 @@
             resetWorkersSentPaginationOnly();
             workersModalBody.innerHTML = `<tr><td colspan="${workersSentColspan}">Unable to load workers.</td></tr>`;
         }
+    };
+
+    /** Go to Worker.php profile/CV: one worker → direct; several → pick from modal (Profile link). */
+    const openCvsForPartnerAgency = async (partnerAgencyId, agencyName) => {
+        const pid = parseInt(String(partnerAgencyId), 10);
+        if (!Number.isFinite(pid) || pid <= 0) {
+            showToast('Missing partner agency id.', 'error');
+            return;
+        }
+        workersSentPartnerId = pid;
+
+        const row = allRows.find((r) => String(r.id) === String(pid));
+        let workers = Array.isArray(row?.sent_workers) ? row.sent_workers : [];
+        const countHint = Number(row?.workers_sent || 0);
+
+        if (workers.length === 0 && countHint > 0) {
+            try {
+                const workersUrl = `${apiBase}?partner_agency_id=${encodeURIComponent(pid)}&workers=1`;
+                const res = await fetch(withContext(workersUrl), { credentials: 'same-origin' });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok || json.success !== true) {
+                    showToast(json.message || 'Could not load workers.', 'error');
+                    return;
+                }
+                workers = Array.isArray(json.data) ? json.data : [];
+            } catch (e) {
+                showToast('Could not load workers.', 'error');
+                return;
+            }
+        }
+
+        const widSet = new Set();
+        workers.forEach((w) => {
+            const wid = w.worker_id;
+            if (wid != null && String(wid).trim() !== '') widSet.add(String(wid));
+        });
+
+        if (widSet.size === 0) {
+            showToast('No workers deployed for this agency yet.', 'error');
+            return;
+        }
+        if (widSet.size === 1) {
+            const onlyId = widSet.values().next().value;
+            window.location.href = withContext(buildWorkerProfileHref(onlyId));
+            return;
+        }
+        openWorkersModal(pid, agencyName || row?.name || 'Agency', { cvsMode: true });
     };
 
     const load = async () => {
@@ -738,6 +788,11 @@
                 return;
             }
             openWorkersModal(pid, btn.dataset.name || 'Agency');
+            return;
+        }
+        if (btn.dataset.action === 'open-cvs') {
+            const pid = parseInt(String(btn.getAttribute('data-partner-agency-id') || id || ''), 10);
+            openCvsForPartnerAgency(pid, btn.dataset.name || '');
             return;
         }
         const rowId = btn.dataset.id;
