@@ -3139,14 +3139,15 @@ function ensureEmptyCvModal() {
             .empty-cv-hint{font-size:12px;opacity:.85;flex:1;min-width:200px;line-height:1.4;color:#94a3b8}
             .empty-cv-body{flex:1;overflow:auto;background:linear-gradient(165deg,#cbd5e1 0%,#e2e8f0 40%,#f1f5f9 100%);padding:24px}
             #emptyCvSheet .page.cv-page{max-width:920px;margin:0 auto 24px auto;background:#f1f5f9;box-shadow:0 25px 50px -12px rgba(15,23,42,.2);border-radius:16px;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0f172a;-webkit-font-smoothing:antialiased}
+            #emptyCvSheet .cv-agency-bar{text-align:center;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#334155;background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);border-bottom:1px solid #e2e8f0;padding:12px 20px 11px;line-height:1.35}
             #emptyCvSheet .cv-hero{position:relative;margin:0;padding:0}
             #emptyCvSheet .cv-hero-bg{position:absolute;inset:0;background:linear-gradient(120deg,#020617 0%,#0f172a 40%,#164e63 100%);opacity:1}
-            #emptyCvSheet .cv-hero-inner.cv-hero-layout{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px 28px;padding:28px 28px 26px 32px;text-align:left}
+            #emptyCvSheet .cv-hero-inner.cv-hero-layout{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px 32px;padding:32px 28px 30px 32px;text-align:left;min-height:132px}
             #emptyCvSheet .cv-hero-text{flex:1;min-width:min(100%,220px)}
             #emptyCvSheet .cv-name{margin:0;font-size:clamp(1.5rem,3.5vw,2rem);font-weight:700;letter-spacing:-.02em;color:#f8fafc;line-height:1.1;font-family:Georgia,"Times New Roman",serif}
             #emptyCvSheet .cv-headline{margin:14px 0 0;font-size:.8125rem;font-weight:500;color:#a5f3fc;letter-spacing:.06em;line-height:1.55;max-width:36rem}
             #emptyCvSheet .cv-hero-photo{flex-shrink:0}
-            #emptyCvSheet .photo.photo--hero{width:116px;height:116px;border-radius:50%;border:4px solid rgba(255,255,255,.25);box-shadow:0 12px 40px rgba(0,0,0,.35);background:linear-gradient(145deg,#334155,#475569);display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;overflow:hidden}
+            #emptyCvSheet .photo.photo--hero{width:168px;height:168px;border-radius:50%;border:5px solid rgba(255,255,255,.28);box-shadow:0 16px 48px rgba(0,0,0,.4);background:linear-gradient(145deg,#334155,#475569);display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;overflow:hidden}
             #emptyCvSheet .photo.photo--hero img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
             #emptyCvSheet .cv-body-grid{display:grid;grid-template-columns:minmax(0,290px) minmax(0,1fr);gap:0;align-items:start;background:#fff}
             #emptyCvSheet .cv-sidebar{padding:22px 18px 28px;background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);border-right:1px solid #e2e8f0}
@@ -3182,7 +3183,8 @@ function ensureEmptyCvModal() {
             #emptyCvSheet .missing-value{color:#dc2626;font-weight:600;font-size:12.5px}
             #emptyCvSheet .hidden-by-missing-filter{display:none !important}
             @media (max-width:780px){
-                #emptyCvSheet .cv-hero-inner.cv-hero-layout{flex-direction:column;align-items:flex-start;text-align:center;padding:22px 18px}
+                #emptyCvSheet .cv-hero-inner.cv-hero-layout{flex-direction:column;align-items:flex-start;text-align:center;padding:22px 18px;min-height:0}
+                #emptyCvSheet .photo.photo--hero{width:148px;height:148px}
                 #emptyCvSheet .cv-hero-text{text-align:center;width:100%}
                 #emptyCvSheet .cv-hero-photo{align-self:center}
                 #emptyCvSheet .cv-body-grid{grid-template-columns:1fr}
@@ -3291,8 +3293,22 @@ function buildEmptyCvHtml(worker) {
 
     const photoUrl = pick('personal_photo_url');
 
+    const agencyDisplayName = (() => {
+        try {
+            const el = document.getElementById('app-config');
+            const raw = el && el.getAttribute('data-company-name');
+            const s = raw != null ? String(raw).trim() : '';
+            if (s) return s;
+            if (typeof window.RATIB_AGENCY_DISPLAY_NAME === 'string' && window.RATIB_AGENCY_DISPLAY_NAME.trim()) {
+                return window.RATIB_AGENCY_DISPLAY_NAME.trim();
+            }
+        } catch (_e) { /* ignore */ }
+        return 'Ratib Pro';
+    })();
+
     return `
         <div class="page cv-page">
+            <div class="cv-agency-bar">${esc(agencyDisplayName)}</div>
             <header class="cv-hero">
                 <div class="cv-hero-bg"></div>
                 <div class="cv-hero-inner cv-hero-layout">
@@ -3399,12 +3415,13 @@ window.printEmptyCvModal = function() {
             @page{margin:11mm}
             body{margin:0;background:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#0f172a;-webkit-print-color-adjust:exact;print-color-adjust:exact}
             .page.cv-page{max-width:920px;margin:0 auto;background:#f1f5f9;border-radius:16px;overflow:hidden}
+            .cv-agency-bar{text-align:center;font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:#334155;background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 16px}
             .cv-hero{position:relative}
             .cv-hero-bg{position:absolute;inset:0;background:linear-gradient(120deg,#020617 0%,#0f172a 40%,#164e63 100%)}
             .cv-hero-inner.cv-hero-layout{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:18px;padding:22px 26px}
             .cv-name{margin:0;font-size:22px;font-weight:700;color:#f8fafc;font-family:Georgia,serif}
             .cv-headline{margin:10px 0 0;font-size:11px;color:#a5f3fc}
-            .photo.photo--hero{width:104px;height:104px;border-radius:50%;border:4px solid rgba(255,255,255,.25);overflow:hidden;display:flex;align-items:center;justify-content:center;background:#475569;color:#e2e8f0;font-size:9px}
+            .photo.photo--hero{width:148px;height:148px;border-radius:50%;border:5px solid rgba(255,255,255,.28);overflow:hidden;display:flex;align-items:center;justify-content:center;background:#475569;color:#e2e8f0;font-size:10px}
             .photo.photo--hero img{width:100%;height:100%;object-fit:cover;border-radius:50%}
             .cv-body-grid{display:grid;grid-template-columns:minmax(0,280px) 1fr;background:#fff}
             .cv-sidebar{padding:16px;border-right:1px solid #e2e8f0;background:#fafafa}

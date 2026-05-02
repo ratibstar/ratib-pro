@@ -90,6 +90,7 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
          data-base-url="<?php echo htmlspecialchars(getBaseUrl(), ENT_QUOTES, 'UTF-8'); ?>"
          data-api-base="<?php echo htmlspecialchars(getBaseUrl() . '/api', ENT_QUOTES, 'UTF-8'); ?>"
          data-site-url="<?php echo htmlspecialchars(SITE_URL, ENT_QUOTES, 'UTF-8'); ?>"
+         data-company-name="<?php echo htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8'); ?>"
          data-control-pro-bridge="<?php echo $ratibControlProBridge ? '1' : '0'; ?>"
          data-agency-id="<?php echo (int) ($_SESSION['agency_id'] ?? 0); ?>"
          data-country-id="<?php echo (int) ($_SESSION['country_id'] ?? 0); ?>"
