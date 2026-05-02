@@ -620,3 +620,41 @@
     border-color: rgba(129, 140, 248, 0.65);
     background: rgba(49, 46, 129, 0.35);
 }
+
+/* Staff: partner-style CVs-only page */
+.partner-agency-portal-cvs-page .partner-agency-portal-cvs-hero {
+    padding-top: 0.25rem;
+}
+
+.partner-agency-portal-cvs-kicker {
+    margin: 0 0 0.35rem;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+}
+
+.partner-agency-portal-cvs-lead {
+    margin: 0.5rem 0 0.75rem;
+    font-size: 0.92rem;
+    color: #cbd5e1;
+    line-height: 1.55;
+    max-width: 52rem;
+}
+
+.partner-agency-portal-cvs-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: center;
+    margin: 0.25rem 0 0;
+}
+
+.agency-detail-breadcrumb a.agency-detail-breadcrumb-agency {
+    color: #5eead4;
+    text-decoration: none;
+}
+
+.agency-detail-breadcrumb a.agency-detail-breadcrumb-agency:hover {
+    text-decoration: underline;
+}

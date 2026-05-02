@@ -203,7 +203,7 @@
                 </td>
                 <td class="agency-actions-cell">
                     <a class="muted-btn agency-details-link" href="${withContext(`partner-agency-detail.php?id=${encodeURIComponent(String(r.id))}`)}">Details</a>
-                    <a class="muted-btn agency-portal-cvs-link" href="${withContext(`partner-agency-detail.php?id=${encodeURIComponent(String(r.id))}&tab=attachments`)}" title="Open worker profile documents (Worker page files) and portal uploads for this partner">CVs</a>
+                    <a class="muted-btn agency-portal-cvs-link" href="${withContext(`partner-agency-portal-cvs.php?id=${encodeURIComponent(String(r.id))}`)}" title="Open the partner-style CVs page (same downloads as the partner portal)">CVs</a>
                     <button class="muted-btn" data-action="edit" data-id="${r.id}">Edit</button>
                     <button class="muted-btn" data-action="delete" data-id="${r.id}">Delete</button>
                 </td>
