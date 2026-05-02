@@ -47,6 +47,7 @@ include '../includes/header.php';
             <button type="button" id="bulkAgencyActivate" class="bulk-agency-btn bulk-agency-btn--act" disabled title="Set selected to Active">Act</button>
             <button type="button" id="bulkAgencyDeactivate" class="bulk-agency-btn bulk-agency-btn--inact" disabled title="Set selected to Inactive">Inact</button>
             <button type="button" id="bulkAgencyClear" class="bulk-agency-btn bulk-agency-btn--clear" disabled title="Clear selection">Clear</button>
+            <a class="muted-btn" href="<?php echo htmlspecialchars(ratib_nav_url('partner-cvs-control.php'), ENT_QUOTES, 'UTF-8'); ?>">CVs Control</a>
             <button id="addAgencyBtn" class="neon-btn">Add Agency</button>
         </div>
     </div>
