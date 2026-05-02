@@ -4,8 +4,12 @@
  */
 class PartnerAgencyCvsController
 {
-    public function __construct(private PDO $conn)
+    /** @var PDO */
+    private $conn;
+
+    public function __construct(PDO $conn)
     {
+        $this->conn = $conn;
     }
 
     public static function uploadsBaseDir(): string

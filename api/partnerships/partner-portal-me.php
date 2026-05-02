@@ -38,18 +38,42 @@ try {
     ratibEnsureGlobalPartnershipsSchema($conn);
 
     $pa = new PartnerAgencyController($conn);
-    $agency = $pa->show($aid);
+    try {
+        $agency = $pa->show($aid);
+    } catch (RuntimeException $e) {
+        partnerPortalMeJson(['success' => false, 'message' => 'Agency not found or no longer available.'], 404);
+    }
 
-    $cvsCtl = new PartnerAgencyCvsController($conn);
-    $cvs = $cvsCtl->listForAgency($aid);
+    $cvs = [];
+    try {
+        $cvsCtl = new PartnerAgencyCvsController($conn);
+        $cvs = $cvsCtl->listForAgency($aid);
+    } catch (Throwable $cvsErr) {
+        error_log('partner-portal-me listForAgency: ' . $cvsErr->getMessage());
+    }
 
-    partnerPortalMeJson([
+    $payload = [
         'success' => true,
         'data' => [
             'agency' => $agency,
             'cvs' => $cvs,
         ],
-    ]);
+    ];
+    $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+    if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
+        $jsonFlags |= JSON_INVALID_UTF8_SUBSTITUTE;
+    }
+    $json = json_encode($payload, $jsonFlags);
+    if ($json === false) {
+        partnerPortalMeJson(['success' => false, 'message' => 'Could not encode response'], 500);
+    }
+    if (ob_get_length()) {
+        ob_clean();
+    }
+    http_response_code(200);
+    echo $json;
+    exit;
 } catch (Throwable $e) {
-    partnerPortalMeJson(['success' => false, 'message' => $e->getMessage()], 500);
+    error_log('partner-portal-me: ' . $e->getMessage());
+    partnerPortalMeJson(['success' => false, 'message' => 'Internal server error'], 500);
 }

@@ -382,16 +382,54 @@ if (!function_exists('ratib_partner_portal_agency_id')) {
     }
 }
 
+if (!function_exists('ratib_absolute_public_base')) {
+    /**
+     * Site root for fully qualified links (email, partner magic URL). When BASE_URL is empty,
+     * uses SITE_URL or the current request host so partners get https://host/... not a path-only URL.
+     */
+    function ratib_absolute_public_base(): string
+    {
+        $base = defined('BASE_URL') ? (string) BASE_URL : '';
+        $base = rtrim($base, '/');
+        if ($base !== '' && preg_match('#^https?://#i', $base)) {
+            return $base;
+        }
+        if (defined('SITE_URL') && SITE_URL !== '') {
+            return rtrim((string) SITE_URL, '/');
+        }
+        if ($base !== '') {
+            return $base;
+        }
+        $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])
+                && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+        $scheme = $https ? 'https' : 'http';
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        if ($host === '') {
+            return '';
+        }
+
+        return $scheme . '://' . $host;
+    }
+}
+
 if (!function_exists('ratib_partner_portal_magic_link_url')) {
     /**
      * Full URL for bookmark / sharing (treat like a password — HTTPS only in production).
      */
     function ratib_partner_portal_magic_link_url(string $token): string
     {
-        $page = pageUrl('partner-portal.php');
-        $sep = strpos($page, '?') !== false ? '&' : '?';
+        $root = ratib_absolute_public_base();
+        $path = '/pages/partner-portal.php';
+        $url = ($root !== '' ? $root : '') . $path . '?token=' . rawurlencode($token);
+        if ($root === '') {
+            $page = pageUrl('partner-portal.php');
+            $sep = strpos($page, '?') !== false ? '&' : '?';
 
-        return $page . $sep . 'token=' . rawurlencode($token);
+            return $page . $sep . 'token=' . rawurlencode($token);
+        }
+
+        return $url;
     }
 }
 
