@@ -98,13 +98,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
 
     <section class="agency-detail-card glass-card partner-portal-cvs-block">
         <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📎</span> Documents &amp; CVs</h2>
-        <p class="agency-detail-note">Files you upload here are available to your office and appear in this list. Allowed: PDF, Word, JPG, PNG, WEBP (max 8MB).</p>
-        <form id="ppCvUploadForm" class="agency-cv-upload-form">
-            <input type="text" id="ppCvTitle" name="title" placeholder="Title (e.g. CV — worker name)" required maxlength="255" autocomplete="off">
-            <input type="file" id="ppCvFile" name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" required>
-            <button type="submit" class="neon-btn" id="ppCvUploadBtn">Upload</button>
-        </form>
-        <p id="ppCvUploadMsg" class="partner-portal-upload-msg" hidden></p>
+        <p class="agency-detail-note">Your office uploads files here in Ratib Pro. You can download them below; uploads are not available on this page.</p>
         <ul id="ppCvList" class="partner-portal-cv-list"></ul>
         <p id="ppCvEmpty" class="agency-detail-empty" hidden>No documents uploaded yet.</p>
     </section>

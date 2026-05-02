@@ -188,6 +188,68 @@ class PartnerAgencyWorkerDocSharesController
     }
 
     /**
+     * Change which document type is shared (same worker + partner row).
+     *
+     * @return array<string, mixed>
+     */
+    public function updateShareDocumentType(int $shareId, int $partnerAgencyId, string $documentType): array
+    {
+        if ($shareId <= 0 || $partnerAgencyId <= 0) {
+            throw new InvalidArgumentException('Invalid share');
+        }
+        $documentType = strtolower(trim($documentType));
+        if (!in_array($documentType, self::allowedDocumentTypes(), true)) {
+            throw new InvalidArgumentException('Invalid document type');
+        }
+
+        $stmt = $this->conn->prepare(
+            'SELECT id, worker_id, document_type FROM partner_agency_worker_document_shares
+             WHERE id = ? AND partner_agency_id = ? LIMIT 1'
+        );
+        $stmt->execute([$shareId, $partnerAgencyId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            throw new InvalidArgumentException('Share not found');
+        }
+        $workerId = (int) ($row['worker_id'] ?? 0);
+        $current = (string) ($row['document_type'] ?? '');
+        if ($current === $documentType) {
+            return [
+                'id' => $shareId,
+                'partner_agency_id' => $partnerAgencyId,
+                'worker_id' => $workerId,
+                'document_type' => $documentType,
+                'document_label' => self::documentTypeLabel($documentType),
+            ];
+        }
+
+        $dup = $this->conn->prepare(
+            'SELECT id FROM partner_agency_worker_document_shares
+             WHERE partner_agency_id = ? AND worker_id = ? AND document_type = ? AND id != ? LIMIT 1'
+        );
+        $dup->execute([$partnerAgencyId, $workerId, $documentType, $shareId]);
+        if ($dup->fetch(PDO::FETCH_ASSOC)) {
+            throw new InvalidArgumentException('That document type is already shared for this worker');
+        }
+
+        $up = $this->conn->prepare(
+            'UPDATE partner_agency_worker_document_shares SET document_type = ? WHERE id = ? AND partner_agency_id = ?'
+        );
+        $up->execute([$documentType, $shareId, $partnerAgencyId]);
+        if ((int) $up->rowCount() === 0) {
+            throw new InvalidArgumentException('Could not update share');
+        }
+
+        return [
+            'id' => $shareId,
+            'partner_agency_id' => $partnerAgencyId,
+            'worker_id' => $workerId,
+            'document_type' => $documentType,
+            'document_label' => self::documentTypeLabel($documentType),
+        ];
+    }
+
+    /**
      * Resolve share for download (portal or staff); returns worker row fragment + paths.
      *
      * @return array{share: array<string, mixed>, worker: array<string, mixed>, file_column: string, filename: string}|null

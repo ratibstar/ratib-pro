@@ -241,6 +241,17 @@
     background: rgba(30, 41, 59, 0.62);
 }
 
+.partnerships-table td.agency-actions-cell {
+    white-space: normal;
+    vertical-align: top;
+    min-width: 11.5rem;
+}
+
+.partnerships-table td.agency-actions-cell .muted-btn {
+    display: inline-block;
+    margin: 0.12rem 0.25rem 0.12rem 0;
+}
+
 .status-pill {
     border-radius: 999px;
     padding: 0.2rem 0.55rem;

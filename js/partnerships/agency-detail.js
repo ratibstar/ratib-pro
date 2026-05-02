@@ -224,52 +224,137 @@
                     const sid = s.id;
                     const name = displayValue(s.worker_name);
                     const docLab = displayValue(s.document_label || s.document_type);
+                    const curType = String(s.document_type || '');
                     const hasFile = !!s.has_file;
                     const href = withContext(`${dlBase}?share_id=${encodeURIComponent(String(sid))}`);
                     const dl = hasFile
                         ? `<a class="muted-btn" href="${escapeHtml(href)}" target="_blank" rel="noopener">Download</a>`
                         : '<span class="agency-share-no-file">No file on worker</span>';
 
-                    return `<li class="agency-worker-share-item">
-                        <div>
-                            <strong>${escapeHtml(name)}</strong>
-                            <div class="agency-cv-admin-meta">${escapeHtml(docLab)} · ${escapeHtml(
+                    const opts = types
+                        .map((t) => {
+                            const lab = labels[t] || t;
+                            const sel = t === curType ? ' selected' : '';
+
+                            return `<option value="${escapeHtml(t)}"${sel}>${escapeHtml(lab)}</option>`;
+                        })
+                        .join('');
+
+                    return `<li class="agency-worker-share-item" data-share-id="${String(sid)}">
+                        <div class="agency-share-row-main">
+                            <div>
+                                <strong>${escapeHtml(name)}</strong>
+                                <div class="agency-cv-admin-meta">${escapeHtml(docLab)} · ${escapeHtml(
                         formatCalendarDate(s.created_at)
                     )}</div>
-                        </div>
-                        <div>
-                            ${dl}
-                            <button type="button" class="muted-btn agency-worker-share-remove" data-share-id="${String(
+                            </div>
+                            <div class="agency-worker-share-actions">
+                                ${dl}
+                                <button type="button" class="muted-btn agency-worker-share-edit" data-share-id="${String(
+                        sid
+                    )}">Edit</button>
+                                <button type="button" class="muted-btn agency-worker-share-remove" data-share-id="${String(
                         sid
                     )}">Remove</button>
+                            </div>
+                        </div>
+                        <div class="agency-share-edit-panel" hidden>
+                            <label class="agency-share-edit-label">Document type
+                                <select class="agency-share-edit-select" aria-label="Document type">${opts}</select>
+                            </label>
+                            <button type="button" class="muted-btn agency-share-save" data-share-id="${String(
+                        sid
+                    )}">Save</button>
+                            <button type="button" class="muted-btn agency-share-cancel" data-share-id="${String(
+                        sid
+                    )}">Cancel</button>
                         </div>
                     </li>`;
                 })
                 .join('');
-
-            list.querySelectorAll('.agency-worker-share-remove').forEach((btn) => {
-                btn.addEventListener('click', async () => {
-                    const shareId = btn.getAttribute('data-share-id');
-                    if (!shareId || !agencyId) return;
-                    if (!window.confirm('Remove this share? Partners will no longer see it.')) return;
-                    try {
-                        const url = withContext(
-                            `../api/partnerships/partner-agency-worker-shares.php?id=${encodeURIComponent(
-                                shareId
-                            )}&partner_agency_id=${encodeURIComponent(String(agencyId))}`
-                        );
-                        const r = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
-                        const j = await r.json().catch(() => ({}));
-                        if (!r.ok || !j.success) throw new Error(j.message || 'Remove failed');
-                        await loadWorkerSharesForAgency(agencyId);
-                    } catch (err) {
-                        showError(err && err.message ? err.message : 'Could not remove.');
-                    }
-                });
-            });
         } catch (e) {
             list.innerHTML = '';
         }
+    }
+
+    function bindWorkerShareListActions() {
+        const list = document.getElementById('workerShareList');
+        if (!list || list.dataset.shareActionsBound === '1') return;
+        list.dataset.shareActionsBound = '1';
+        list.addEventListener('click', async (e) => {
+            const aid =
+                agencySnapshot && agencySnapshot.id != null ? Number(agencySnapshot.id) : 0;
+            if (!aid) return;
+
+            const editBtn = e.target.closest('.agency-worker-share-edit');
+            if (editBtn) {
+                const li = editBtn.closest('.agency-worker-share-item');
+                if (!li) return;
+                const main = li.querySelector('.agency-share-row-main');
+                const panel = li.querySelector('.agency-share-edit-panel');
+                if (main) main.hidden = true;
+                if (panel) panel.hidden = false;
+                return;
+            }
+
+            const cancelBtn = e.target.closest('.agency-share-cancel');
+            if (cancelBtn) {
+                const li = cancelBtn.closest('.agency-worker-share-item');
+                if (!li) return;
+                const main = li.querySelector('.agency-share-row-main');
+                const panel = li.querySelector('.agency-share-edit-panel');
+                if (main) main.hidden = false;
+                if (panel) panel.hidden = true;
+                return;
+            }
+
+            const saveBtn = e.target.closest('.agency-share-save');
+            if (saveBtn) {
+                const sid = saveBtn.getAttribute('data-share-id');
+                const li = saveBtn.closest('.agency-worker-share-item');
+                const sel = li ? li.querySelector('.agency-share-edit-select') : null;
+                const docType = sel ? String(sel.value || '').trim() : '';
+                if (!sid || !docType) return;
+                try {
+                    const res = await fetch(withContext('../api/partnerships/partner-agency-worker-shares.php'), {
+                        method: 'PUT',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id: parseInt(sid, 10),
+                            partner_agency_id: aid,
+                            document_type: docType,
+                        }),
+                    });
+                    const j = await res.json().catch(() => ({}));
+                    if (!res.ok || !j.success) throw new Error(j.message || 'Update failed');
+                    await loadWorkerSharesForAgency(aid);
+                } catch (err) {
+                    showError(err && err.message ? err.message : 'Could not update.');
+                }
+                return;
+            }
+
+            const removeBtn = e.target.closest('.agency-worker-share-remove');
+            if (removeBtn) {
+                const shareId = removeBtn.getAttribute('data-share-id');
+                if (!shareId) return;
+                if (!window.confirm('Remove this share? Partners will no longer see it.')) return;
+                try {
+                    const url = withContext(
+                        `../api/partnerships/partner-agency-worker-shares.php?id=${encodeURIComponent(
+                            shareId
+                        )}&partner_agency_id=${encodeURIComponent(String(aid))}`
+                    );
+                    const r = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
+                    const j = await r.json().catch(() => ({}));
+                    if (!r.ok || !j.success) throw new Error(j.message || 'Remove failed');
+                    await loadWorkerSharesForAgency(aid);
+                } catch (err) {
+                    showError(err && err.message ? err.message : 'Could not remove.');
+                }
+            }
+        });
     }
 
     async function loadCvsForAgency(agencyId) {
@@ -504,6 +589,16 @@
                 return;
             }
             applyAgency(json.data || {});
+            const tabWant = (params.get('tab') || '').toLowerCase();
+            if (tabWant === 'attachments' || tabWant === 'account' || tabWant === 'basic') {
+                setTabActive(tabWant);
+                if (tabWant === 'attachments') {
+                    requestAnimationFrame(() => {
+                        const panel = document.getElementById('panel-attachments');
+                        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                }
+            }
         } catch (e) {
             showError(e && e.message ? e.message : 'Network error loading agency.');
         }
@@ -653,6 +748,7 @@
 
     function init() {
         initTabs();
+        bindWorkerShareListActions();
         initPortalControls();
         load();
     }

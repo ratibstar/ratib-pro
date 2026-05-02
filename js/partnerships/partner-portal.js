@@ -1,5 +1,6 @@
 /**
  * Partner portal dashboard (scoped session) — aligned with staff agency detail fields.
+ * Upload/delete for agency files is staff-only; partners see download-only lists.
  */
 (function () {
     const DATE_LOCALE = 'en-US';
@@ -156,22 +157,11 @@
                             <strong>${escapeHtml(title)}</strong>
                             <div class="partner-portal-cv-meta">${escapeHtml(fn)} · ${escapeHtml(formatCalendarDate(c.created_at))}</div>
                         </div>
-                        <div class="partner-portal-cv-actions">
-                            <a class="neon-btn partner-portal-dl-btn" href="${href}">Download</a>
-                            <button type="button" class="muted-btn partner-portal-cv-delete" data-cv-id="${escapeHtml(String(id))}">Delete</button>
-                        </div>
+                        <a class="neon-btn partner-portal-dl-btn" href="${href}">Download</a>
                     </li>`;
                 })
                 .join('');
         }
-    }
-
-    function setUploadMessage(text, isError) {
-        const el = document.getElementById('ppCvUploadMsg');
-        if (!el) return;
-        el.textContent = text || '';
-        el.hidden = !text;
-        el.classList.toggle('partner-portal-upload-msg--err', !!isError);
     }
 
     async function load() {
@@ -259,75 +249,7 @@
         }
     }
 
-    function initCvDeleteDelegation() {
-        const list = document.getElementById('ppCvList');
-        if (!list || list.dataset.cvDeleteBound === '1') return;
-        list.dataset.cvDeleteBound = '1';
-        list.addEventListener('click', async (e) => {
-            const btn = e.target.closest('.partner-portal-cv-delete');
-            if (!btn) return;
-            const cvId = btn.getAttribute('data-cv-id');
-            if (!cvId) return;
-            if (!window.confirm('Remove this document?')) return;
-            try {
-                const url = `../api/partnerships/partner-agency-cvs.php?id=${encodeURIComponent(cvId)}`;
-                const res = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
-                const json = await res.json().catch(() => ({}));
-                if (!res.ok || !json.success) {
-                    throw new Error(json.message || 'Could not delete.');
-                }
-                setUploadMessage('Document removed.', false);
-                await load();
-            } catch (err) {
-                setUploadMessage(err && err.message ? err.message : 'Delete failed.', true);
-            }
-        });
-    }
-
-    function initUpload() {
-        const form = document.getElementById('ppCvUploadForm');
-        if (!form) return;
-        form.addEventListener('submit', async (ev) => {
-            ev.preventDefault();
-            const titleEl = document.getElementById('ppCvTitle');
-            const fileEl = document.getElementById('ppCvFile');
-            const btn = document.getElementById('ppCvUploadBtn');
-            const title = titleEl ? String(titleEl.value || '').trim() : '';
-            const file = fileEl && fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
-            if (!title || !file) {
-                setUploadMessage('Enter a title and choose a file.', true);
-                return;
-            }
-            setUploadMessage('');
-            const fd = new FormData();
-            fd.append('title', title);
-            fd.append('file', file);
-            if (btn) btn.disabled = true;
-            try {
-                const res = await fetch('../api/partnerships/partner-agency-cvs.php', {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    body: fd,
-                });
-                const json = await res.json().catch(() => ({}));
-                if (!res.ok || !json.success) {
-                    throw new Error(json.message || `Upload failed (${res.status})`);
-                }
-                if (titleEl) titleEl.value = '';
-                if (fileEl) fileEl.value = '';
-                setUploadMessage('Uploaded successfully.', false);
-                await load();
-            } catch (e) {
-                setUploadMessage(e && e.message ? e.message : 'Upload failed.', true);
-            } finally {
-                if (btn) btn.disabled = false;
-            }
-        });
-    }
-
     function init() {
-        initCvDeleteDelegation();
-        initUpload();
         load();
     }
 

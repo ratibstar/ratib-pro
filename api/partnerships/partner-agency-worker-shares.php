@@ -71,6 +71,23 @@ try {
         workerSharesJson(['success' => true, 'message' => 'Share added', 'data' => $created], 201);
     }
 
+    if ($method === 'PUT') {
+        enforceApiPermission('partnerships', 'update');
+        $raw = (string) file_get_contents('php://input');
+        $json = $raw !== '' ? json_decode($raw, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+        $shareId = (int) ($json['id'] ?? 0);
+        $partnerAgencyId = (int) ($json['partner_agency_id'] ?? 0);
+        $documentType = (string) ($json['document_type'] ?? '');
+        if ($shareId <= 0 || $partnerAgencyId <= 0 || $documentType === '') {
+            throw new InvalidArgumentException('id, partner_agency_id, and document_type are required');
+        }
+        $updated = $ctl->updateShareDocumentType($shareId, $partnerAgencyId, $documentType);
+        workerSharesJson(['success' => true, 'message' => 'Share updated', 'data' => $updated]);
+    }
+
     if ($method === 'DELETE') {
         enforceApiPermission('partnerships', 'delete');
         $shareId = (int) ($_GET['id'] ?? 0);

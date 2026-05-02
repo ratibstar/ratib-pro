@@ -505,3 +505,37 @@
     font-size: 0.82rem;
     color: #94a3b8;
 }
+
+.agency-worker-share-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.agency-share-edit-panel {
+    margin-top: 0.65rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(51, 65, 85, 0.55);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.agency-share-edit-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.82rem;
+    color: #94a3b8;
+}
+
+.agency-share-edit-label select {
+    min-width: 200px;
+    padding: 0.4rem 0.5rem;
+    border-radius: 8px;
+    border: 1px solid rgba(94, 234, 212, 0.25);
+    background: rgba(2, 6, 23, 0.75);
+    color: #e2e8f0;
+}

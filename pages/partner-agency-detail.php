@@ -115,7 +115,7 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
     <div id="panel-attachments" class="agency-detail-panels is-hidden" role="tabpanel" hidden>
         <section class="agency-detail-card glass-card">
             <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📎</span> Documents &amp; CVs (partner portal)</h2>
-            <p class="agency-detail-note">Files listed here are visible to this agency when they use their partner portal link.</p>
+            <p class="agency-detail-note">Files you upload here and worker documents you share below are the only items this partner can open from their portal (plus their deployment list on the portal home).</p>
             <form id="cvUploadForm" class="agency-cv-upload-form">
                 <input type="text" id="cvTitle" placeholder="Title (e.g. Company profile 2026)" required maxlength="255">
                 <input type="file" id="cvFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" required>

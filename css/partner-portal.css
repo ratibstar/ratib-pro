@@ -134,6 +134,10 @@
     background: rgba(2, 6, 23, 0.35);
 }
 
+.partner-portal-cvs-block .partner-portal-cv-item .partner-portal-dl-btn {
+    flex-shrink: 0;
+}
+
 .partner-portal-cv-actions {
     display: flex;
     align-items: center;
