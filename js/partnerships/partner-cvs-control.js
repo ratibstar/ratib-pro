@@ -141,6 +141,52 @@
         return `Worker.php?${qs.toString()}`;
     }
 
+    function openWorkerCvModal(workerId) {
+        const modal = $('cvsWorkerModal');
+        const iframe = $('cvsWorkerIframe');
+        const title = $('cvsWorkerModalTitle');
+        if (!modal || !iframe) return;
+        const wid = Number(workerId);
+        const rowForName = state.rows.find((r) => r.worker_id === wid);
+        const name = rowForName ? rowForName.worker_name : `Worker #${wid}`;
+        iframe.src = withContext(buildWorkerProfileHref(wid));
+        if (title) title.textContent = String(name).trim() || `Worker #${wid}`;
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeWorkerCvModal() {
+        const modal = $('cvsWorkerModal');
+        const iframe = $('cvsWorkerIframe');
+        if (iframe) iframe.src = 'about:blank';
+        if (modal) {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+        document.body.style.overflow = '';
+    }
+
+    function populateWorkerQuickSelect() {
+        const sel = $('cvsWorkerQuickSelect');
+        if (!sel) return;
+        const map = new Map();
+        state.rows.forEach((r) => {
+            if (!map.has(r.worker_id)) {
+                map.set(r.worker_id, r.worker_name || `Worker #${r.worker_id}`);
+            }
+        });
+        const sorted = [...map.entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+        sel.innerHTML =
+            '<option value="">Select worker (all their CV rows)…</option>' +
+            sorted
+                .map(
+                    ([id, name]) =>
+                        `<option value="${escapeHtml(String(id))}">${escapeHtml(String(name))} (#${escapeHtml(String(id))})</option>`
+                )
+                .join('');
+    }
+
     async function fetchJson(url, options) {
         const res = await fetch(withContext(url), options || { credentials: 'same-origin' });
         const json = await res.json().catch(() => ({}));
@@ -251,7 +297,6 @@
         } else {
             body.innerHTML = rows
                 .map((r) => {
-                    const profileHref = buildWorkerProfileHref(r.worker_id);
                     const hasFileText = r.has_file ? 'Yes' : 'No';
                     const hasFileClass = r.has_file ? 'tag-ok' : 'tag-muted';
                     const shareText = r.shared_on_portal ? 'Shared' : 'Not shared';
@@ -276,7 +321,7 @@
                         <td><span class="table-tag ${hasFileClass}">${hasFileText}</span></td>
                         <td><span class="table-tag ${shareClass}">${shareText}</span></td>
                         <td class="actions-cell">
-                            <a class="muted-btn" href="${escapeHtml(profileHref)}">Profile</a>
+                            <button type="button" class="muted-btn" data-action="open-worker-profile" data-worker-id="${escapeHtml(String(r.worker_id))}">Profile</button>
                             ${actionButton}
                             <label class="cvs-row-edit-wrap">
                                 <select class="cvs-row-type-select">${typeOptions}</select>
@@ -362,6 +407,7 @@
         if (!state.partnerId) {
             state.rows = [];
             state.filtered = [];
+            populateWorkerQuickSelect();
             renderTable();
             return;
         }
@@ -379,12 +425,14 @@
             state.documentLabels =
                 d.document_labels && typeof d.document_labels === 'object' ? d.document_labels : {};
             state.rows = flattenProfileRows(d.workers_profile_documents);
+            populateWorkerQuickSelect();
             renderDocumentTypeOptions();
             applyFilters();
             setNotice(`Loaded ${state.rows.length} rows.`, 'success');
         } catch (e) {
             state.rows = [];
             state.filtered = [];
+            populateWorkerQuickSelect();
             renderTable();
             setNotice(e && e.message ? e.message : 'Could not load rows.', 'error');
         }
@@ -499,6 +547,7 @@
         const bulkShareFilteredBtn = $('cvsBulkShareFilteredBtn');
         const bulkRemoveFilteredBtn = $('cvsBulkRemoveFilteredBtn');
         const bulkEditFilteredBtn = $('cvsBulkEditFilteredBtn');
+        const workerQuick = $('cvsWorkerQuickSelect');
 
         if (partnerSel) {
             partnerSel.addEventListener('change', async () => {
@@ -506,6 +555,19 @@
                 await loadPartnerRows(pid);
             });
         }
+        if (workerQuick) {
+            workerQuick.addEventListener('change', () => {
+                const wid = parseInt(String(workerQuick.value || ''), 10);
+                workerQuick.value = '';
+                if (!Number.isFinite(wid) || wid <= 0 || state.rows.length === 0) return;
+                state.selectedKeys.clear();
+                const picked = state.rows.filter((r) => r.worker_id === wid);
+                picked.forEach((r) => state.selectedKeys.add(r.key));
+                renderTable();
+                setNotice(`Selected ${picked.length} document row(s) for worker #${wid}. Use Bulk Add to share with this partner.`, 'success');
+            });
+        }
+
         [search, shared, file, doc].forEach((el) => {
             if (!el) return;
             el.addEventListener('input', applyFilters);
@@ -679,6 +741,22 @@
                 await loadPartnerRows(state.partnerId);
             });
         }
+        const modalClose = $('cvsWorkerModalClose');
+        const workerModal = $('cvsWorkerModal');
+        if (modalClose) {
+            modalClose.addEventListener('click', () => closeWorkerCvModal());
+        }
+        if (workerModal) {
+            workerModal.addEventListener('click', (e) => {
+                if (e.target === workerModal) closeWorkerCvModal();
+            });
+        }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && workerModal && workerModal.classList.contains('open')) {
+                closeWorkerCvModal();
+            }
+        });
+
         if (body) {
             body.addEventListener('change', (e) => {
                 const check = e.target.closest('.cvs-row-check');
@@ -692,6 +770,14 @@
             });
 
             body.addEventListener('click', async (e) => {
+                const profBtn = e.target.closest('button[data-action="open-worker-profile"]');
+                if (profBtn) {
+                    e.preventDefault();
+                    const wid = parseInt(String(profBtn.getAttribute('data-worker-id') || ''), 10);
+                    if (Number.isFinite(wid) && wid > 0) openWorkerCvModal(wid);
+                    return;
+                }
+
                 const btn = e.target.closest('button[data-action]');
                 if (!btn) return;
                 const action = btn.getAttribute('data-action') || '';

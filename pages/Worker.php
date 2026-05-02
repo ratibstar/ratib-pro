@@ -33,7 +33,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 // Set security headers
-header("X-Frame-Options: DENY");
+// Allow same-origin embedding (e.g. CVs Control modal iframe). Blocks external sites.
+header('X-Frame-Options: SAMEORIGIN');
 header("X-XSS-Protection: 1; mode=block");
 header("X-Content-Type-Options: nosniff");
 

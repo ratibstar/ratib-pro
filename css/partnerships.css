@@ -185,6 +185,37 @@
     margin-right: 0.25rem;
 }
 
+#cvsWorkerModal.modal-wrap.open {
+    justify-content: center;
+    align-items: flex-start;
+    padding: clamp(12px, 2vh, 24px) clamp(10px, 1.5vw, 20px);
+}
+
+#cvsWorkerModal .modal-card--cvs-worker {
+    width: min(1280px, calc(100vw - 24px));
+    max-height: calc(100vh - 20px);
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.1rem 1.1rem;
+    color-scheme: dark;
+}
+
+.cvs-worker-modal-hint {
+    margin: 0 0 0.65rem;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.45;
+}
+
+.cvs-worker-iframe {
+    width: 100%;
+    min-height: min(82vh, 880px);
+    flex: 1;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 10px;
+    background: #0b1220;
+}
+
 .partnerships-table th.col-select,
 .partnerships-table td.col-select {
     width: 2.5rem;

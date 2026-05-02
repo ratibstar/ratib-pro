@@ -34,6 +34,9 @@ include '../includes/header.php';
             <select id="cvsPartnerSelect" aria-label="Partner agency">
                 <option value="">Select partner agency…</option>
             </select>
+            <select id="cvsWorkerQuickSelect" aria-label="Select all document rows for one worker" title="Pick a worker to check every CV/document row for bulk share with this partner">
+                <option value="">Select worker (all their CV rows)…</option>
+            </select>
             <input id="cvsSearch" type="text" placeholder="Search worker, passport, document">
             <select id="cvsSharedFilter" aria-label="Shared status">
                 <option value="">All shares</option>
@@ -100,6 +103,17 @@ include '../includes/header.php';
             <span id="cvsPageInfo">Page 1 / 1</span>
             <button id="cvsNextPage" class="muted-btn" type="button">Next</button>
         </div>
+    </div>
+</div>
+
+<div id="cvsWorkerModal" class="modal-wrap modal-wrap--cvs-worker" aria-hidden="true">
+    <div class="modal-card modal-card--cvs-worker glass-card">
+        <div class="modal-header-row">
+            <h3 id="cvsWorkerModalTitle">Worker CV</h3>
+            <button type="button" id="cvsWorkerModalClose" class="icon-btn" aria-label="Close">×</button>
+        </div>
+        <p class="cvs-worker-modal-hint">Same CV/worker form as Workers → opens in view mode. Close when done — your CVs Control table is still open behind this.</p>
+        <iframe id="cvsWorkerIframe" class="cvs-worker-iframe" title="Worker CV form"></iframe>
     </div>
 </div>
 
