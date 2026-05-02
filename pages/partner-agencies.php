@@ -80,24 +80,89 @@ include '../includes/header.php';
     </div>
 </div>
 
-<div id="agencyModal" class="modal-wrap">
-    <div class="modal-card glass-card">
+<div id="agencyModal" class="modal-wrap modal-wrap--agency-form">
+    <div class="modal-card glass-card modal-card--agency-wide">
         <div class="modal-header-row">
             <h3 id="agencyModalTitle">Add Agency</h3>
             <button id="closeAgencyModal" class="icon-btn">×</button>
         </div>
-        <form id="agencyForm" class="grid-form">
+        <form id="agencyForm" class="grid-form agency-form-grid">
             <input type="hidden" id="agencyId">
-            <input type="text" id="agencyName" placeholder="Agency Name" required>
-            <input type="text" id="agencyCountry" placeholder="Country" required>
-            <input type="text" id="agencyCity" placeholder="City">
-            <input type="text" id="agencyContact" placeholder="Contact Person">
-            <input type="email" id="agencyEmail" placeholder="Email">
-            <input type="text" id="agencyPhone" placeholder="Phone">
-            <select id="agencyStatus">
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-            </select>
+            <p class="agency-form-hint">Fields marked <span class="req-mark">*</span> are required. Email and partner password are used for the partner portal login.</p>
+
+            <div class="agency-form-row">
+                <label class="agency-field"><span class="req-mark">*</span> Name (Arabic)
+                    <input type="text" id="agencyNameAr" required maxlength="255" autocomplete="off"></label>
+                <label class="agency-field"><span class="req-mark">*</span> Name (English)
+                    <input type="text" id="agencyName" required maxlength="255" autocomplete="organization"></label>
+            </div>
+            <div class="agency-form-row">
+                <label class="agency-field">Agency code
+                    <input type="text" id="agencyCode" maxlength="64" autocomplete="off"></label>
+                <label class="agency-field"><span class="req-mark">*</span> Country
+                    <input type="text" id="agencyCountry" required maxlength="100" autocomplete="country-name"></label>
+            </div>
+            <div class="agency-form-row">
+                <label class="agency-field"><span class="req-mark">*</span> Email (login)
+                    <input type="email" id="agencyEmail" required maxlength="255" autocomplete="email"></label>
+                <label class="agency-field"><span class="req-mark">*</span> Partner login password
+                    <input type="password" id="agencyPortalPassword" autocomplete="new-password" placeholder="Min 6 characters" minlength="6"></label>
+            </div>
+            <div class="agency-form-row">
+                <label class="agency-field"><span class="req-mark">*</span> Address (Arabic)
+                    <input type="text" id="agencyAddressAr" required maxlength="500" autocomplete="street-address"></label>
+                <label class="agency-field"><span class="req-mark">*</span> Address (English)
+                    <input type="text" id="agencyAddressEn" required maxlength="500" autocomplete="street-address"></label>
+            </div>
+            <div class="agency-form-row">
+                <label class="agency-field"><span class="req-mark">*</span> City (Arabic)
+                    <input type="text" id="agencyCityAr" required maxlength="100"></label>
+                <label class="agency-field"><span class="req-mark">*</span> City (English)
+                    <input type="text" id="agencyCity" required maxlength="100" autocomplete="address-level2"></label>
+            </div>
+            <div class="agency-form-row">
+                <label class="agency-field"><span class="req-mark">*</span> License
+                    <input type="text" id="agencyLicense" required maxlength="255"></label>
+                <label class="agency-field">Manager / contact person
+                    <input type="text" id="agencyContact" maxlength="255" autocomplete="name"></label>
+            </div>
+            <div class="agency-form-row">
+                <label class="agency-field"><span class="req-mark">*</span> Phone 1
+                    <input type="text" id="agencyPhone" required maxlength="50" autocomplete="tel"></label>
+                <label class="agency-field"><span class="req-mark">*</span> Phone 2
+                    <input type="text" id="agencyPhone2" required maxlength="50" autocomplete="tel"></label>
+            </div>
+            <div class="agency-form-row">
+                <label class="agency-field"><span class="req-mark">*</span> Fax
+                    <input type="text" id="agencyFax" required maxlength="50"></label>
+                <label class="agency-field">Mobile
+                    <input type="text" id="agencyMobile" maxlength="50" autocomplete="tel"></label>
+            </div>
+            <div class="agency-form-row">
+                <label class="agency-field">Passport no.
+                    <input type="text" id="agencyPassportNo" maxlength="80"></label>
+                <label class="agency-field">Place of issue
+                    <input type="text" id="agencyPassportPlace" maxlength="255"></label>
+            </div>
+            <div class="agency-form-row">
+                <label class="agency-field">Date of issue
+                    <input type="date" id="agencyPassportDate"></label>
+                <label class="agency-field">Sending bank
+                    <input type="text" id="agencyBank" maxlength="255"></label>
+            </div>
+            <div class="agency-form-row">
+                <label class="agency-field">Account number
+                    <input type="text" id="agencyAccountNo" maxlength="100"></label>
+                <label class="agency-field">License owner
+                    <input type="text" id="agencyLicenseOwner" maxlength="255"></label>
+            </div>
+            <label class="agency-field agency-field--full">Notes
+                <textarea id="agencyNotes" rows="3" maxlength="8000" placeholder="Optional notes"></textarea></label>
+            <label class="agency-field agency-field--full"><span class="req-mark">*</span> Status
+                <select id="agencyStatus">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select></label>
             <div class="form-actions">
                 <button type="button" id="cancelAgencyBtn" class="muted-btn">Cancel</button>
                 <button type="submit" class="neon-btn">Save Agency</button>

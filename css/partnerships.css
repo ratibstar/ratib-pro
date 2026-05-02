@@ -748,3 +748,72 @@
     font-size: 0.88rem;
 }
 
+/* Add / Edit agency modal — wide two-column profile (English, dark) */
+.modal-wrap--agency-form .modal-card--agency-wide {
+    max-width: min(760px, 96vw);
+    width: 100%;
+    max-height: min(92vh, 900px);
+    overflow-y: auto;
+}
+
+.agency-form-hint {
+    grid-column: 1 / -1;
+    margin: 0 0 0.35rem;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.45;
+}
+
+.req-mark {
+    color: #fb7185;
+    font-weight: 700;
+}
+
+.agency-form-grid.agency-form-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.agency-form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem;
+}
+
+@media (max-width: 640px) {
+    .agency-form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.agency-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.agency-field input,
+.agency-field select,
+.agency-field textarea {
+    font-weight: 400;
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    border-radius: 10px;
+    border: 1px solid rgba(94, 234, 212, 0.22);
+    background: rgba(2, 6, 23, 0.78);
+    color: #e6edf3;
+}
+
+.agency-field textarea {
+    resize: vertical;
+    min-height: 4rem;
+}
+
+.agency-field--full {
+    width: 100%;
+}
+

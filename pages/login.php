@@ -1035,6 +1035,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                         $_SESSION['username'] = $user['username'];
                         $_SESSION['role_id'] = $user['role_id'];
                         $_SESSION['logged_in'] = true;
+                        if (function_exists('ratib_partner_portal_clear')) {
+                            ratib_partner_portal_clear();
+                        }
 
                         // Set role name for display (Admin, User, etc.) — use same DB as user (country DB)
                         $_SESSION['role'] = 'User';
@@ -1154,6 +1157,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                         $_SESSION['username'] = (string)($tryUser['username'] ?? '');
                                         $_SESSION['role_id'] = $tryRoleId;
                                         $_SESSION['logged_in'] = true;
+                                        if (function_exists('ratib_partner_portal_clear')) {
+                                            ratib_partner_portal_clear();
+                                        }
                                         $_SESSION['role'] = 'User';
                                         try {
                                             $rStmt = $tryConn->prepare("SELECT role_name FROM roles WHERE role_id = ? LIMIT 1");
@@ -1224,6 +1230,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                 $_SESSION['username'] = $user['username'];
                                 $_SESSION['role_id'] = $user['role_id'];
                                 $_SESSION['logged_in'] = true;
+                                if (function_exists('ratib_partner_portal_clear')) {
+                                    ratib_partner_portal_clear();
+                                }
                                 $_SESSION['role'] = 'User';
                                 try {
                                     $rStmt = $conn->prepare("SELECT role_name FROM roles WHERE role_id = ? LIMIT 1");

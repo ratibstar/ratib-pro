@@ -1,0 +1,92 @@
+<?php
+/**
+ * Partner agency portal — magic-link login (?token=) then scoped dashboard (English, dark).
+ */
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../api/core/Database.php';
+require_once __DIR__ . '/../api/core/ensure-global-partnerships-schema.php';
+
+$db = Database::getInstance();
+$conn = $db->getConnection();
+ratibEnsureGlobalPartnershipsSchema($conn);
+
+if (!empty($_GET['token'])) {
+    $tok = trim((string) $_GET['token']);
+    if ($tok !== '') {
+        $stmt = $conn->prepare(
+            'SELECT id FROM partner_agencies WHERE portal_enabled = 1 AND portal_access_token = ? LIMIT 1'
+        );
+        $stmt->execute([$tok]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            session_regenerate_id(true);
+            $_SESSION['partner_portal_logged_in'] = true;
+            $_SESSION['partner_portal_agency_id'] = (int) $row['id'];
+            header('Location: ' . pageUrl('partner-portal.php'), true, 302);
+            exit;
+        }
+    }
+    header('Location: ' . pageUrl('partner-portal-login.php') . '?err=1', true, 302);
+    exit;
+}
+
+if (!ratib_partner_portal_session_is_valid()) {
+    header('Location: ' . pageUrl('partner-portal-login.php'));
+    exit;
+}
+
+$pageTitle = 'Partner portal';
+$v = time();
+$pageCss = [
+    asset('css/partnerships.css') . '?v=' . $v,
+    asset('css/partner-portal.css') . '?v=' . $v,
+];
+$pageJs = [asset('js/partnerships/partner-portal.js') . '?v=' . $v];
+$partnerPortalMinimal = true;
+include __DIR__ . '/../includes/partner-portal-header.php';
+?>
+
+<div class="partner-portal-wrap" dir="ltr" lang="en">
+    <header class="partner-portal-top glass-card">
+        <div class="partner-portal-brand">
+            <span class="partner-portal-globe" aria-hidden="true">🌍</span>
+            <div>
+                <p class="partner-portal-kicker">Partner portal</p>
+                <h1 id="ppAgencyName" class="partner-portal-title">Loading…</h1>
+            </div>
+        </div>
+        <div class="partner-portal-actions">
+            <span id="ppStatus" class="status-pill status-inactive" hidden></span>
+            <a class="muted-btn" href="<?php echo htmlspecialchars(pageUrl('partner-portal-logout.php'), ENT_QUOTES, 'UTF-8'); ?>">Log out</a>
+        </div>
+    </header>
+
+    <div id="ppError" class="partner-portal-error glass-card is-hidden" hidden></div>
+
+    <div class="partner-portal-grid">
+        <section class="glass-card partner-portal-card">
+            <h2 class="partner-portal-h2">Your agency</h2>
+            <dl class="agency-detail-dl" id="ppAgencyDl"></dl>
+        </section>
+        <section class="glass-card partner-portal-card">
+            <div class="partner-portal-card-head">
+                <h2 class="partner-portal-h2">Recruitment contracts</h2>
+                <span class="agency-detail-count" id="ppContractCount">0</span>
+            </div>
+            <div id="ppContracts" class="agency-contracts-list"></div>
+            <p id="ppContractsEmpty" class="agency-detail-empty" hidden>No deployments yet.</p>
+        </section>
+    </div>
+
+    <section class="glass-card partner-portal-card partner-portal-cvs-block">
+        <h2 class="partner-portal-h2">Documents &amp; CVs</h2>
+        <p class="partner-portal-hint">Your office uploads files here for your agency. Download only.</p>
+        <ul id="ppCvList" class="partner-portal-cv-list"></ul>
+        <p id="ppCvEmpty" class="agency-detail-empty" hidden>No documents uploaded yet.</p>
+    </section>
+</div>
+
+<?php include __DIR__ . '/../includes/partner-portal-footer.php'; ?>

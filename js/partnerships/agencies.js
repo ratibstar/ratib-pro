@@ -99,16 +99,48 @@
     const agencyTableColspan = 10;
     const selectedAgencyIds = new Set();
 
+    const pwInput = () => $('agencyPortalPassword');
+
     const openModal = (agency = null) => {
-        $('agencyModalTitle').textContent = agency ? 'Edit Agency' : 'Add Agency';
+        const isEdit = Boolean(agency?.id);
+        $('agencyModalTitle').textContent = isEdit ? 'Edit Agency' : 'Add Agency';
         $('agencyId').value = agency?.id || '';
+        $('agencyNameAr').value = agency?.name_ar || '';
         $('agencyName').value = agency?.name || '';
+        $('agencyCode').value = agency?.agency_code || '';
         $('agencyCountry').value = agency?.country || '';
         $('agencyCity').value = agency?.city || '';
+        $('agencyCityAr').value = agency?.city_ar || '';
         $('agencyContact').value = agency?.contact_person || '';
         $('agencyEmail').value = agency?.email || '';
         $('agencyPhone').value = agency?.phone || '';
+        $('agencyPhone2').value = agency?.phone2 || '';
+        $('agencyFax').value = agency?.fax || '';
+        $('agencyAddressAr').value = agency?.address_ar || '';
+        $('agencyAddressEn').value = agency?.address_en || '';
+        $('agencyLicense').value = agency?.license || '';
+        $('agencyMobile').value = agency?.mobile || '';
+        $('agencyPassportNo').value = agency?.passport_no || '';
+        $('agencyPassportPlace').value = agency?.passport_issue_place || '';
+        $('agencyPassportDate').value = agency?.passport_issue_date
+            ? String(agency.passport_issue_date).slice(0, 10)
+            : '';
+        $('agencyBank').value = agency?.sending_bank || '';
+        $('agencyAccountNo').value = agency?.account_number || '';
+        $('agencyLicenseOwner').value = agency?.license_owner || '';
+        $('agencyNotes').value = agency?.notes || '';
         $('agencyStatus').value = agency?.status || 'active';
+        const pwp = pwInput();
+        if (pwp) {
+            pwp.value = '';
+            pwp.required = !isEdit;
+            if (isEdit) {
+                pwp.removeAttribute('minlength');
+            } else {
+                pwp.setAttribute('minlength', '6');
+            }
+            pwp.placeholder = isEdit ? 'Leave blank to keep current password' : 'Min 6 characters (partner login)';
+        }
         modal.classList.add('open');
     };
 
@@ -656,16 +688,36 @@
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = $('agencyId').value;
+        const isEdit = Boolean(id);
+        const pwVal = pwInput() ? pwInput().value.trim() : '';
         const payload = {
+            name_ar: $('agencyNameAr').value.trim(),
             name: $('agencyName').value.trim(),
+            agency_code: $('agencyCode').value.trim(),
             country: $('agencyCountry').value.trim(),
             city: $('agencyCity').value.trim(),
+            city_ar: $('agencyCityAr').value.trim(),
             contact_person: $('agencyContact').value.trim(),
             email: $('agencyEmail').value.trim(),
             phone: $('agencyPhone').value.trim(),
+            phone2: $('agencyPhone2').value.trim(),
+            fax: $('agencyFax').value.trim(),
+            address_ar: $('agencyAddressAr').value.trim(),
+            address_en: $('agencyAddressEn').value.trim(),
+            license: $('agencyLicense').value.trim(),
+            mobile: $('agencyMobile').value.trim(),
+            passport_no: $('agencyPassportNo').value.trim(),
+            passport_issue_place: $('agencyPassportPlace').value.trim(),
+            passport_issue_date: $('agencyPassportDate').value.trim(),
+            sending_bank: $('agencyBank').value.trim(),
+            account_number: $('agencyAccountNo').value.trim(),
+            license_owner: $('agencyLicenseOwner').value.trim(),
+            notes: $('agencyNotes').value.trim(),
             status: $('agencyStatus').value
         };
-        const isEdit = Boolean(id);
+        if (!isEdit || pwVal !== '') {
+            payload.portal_password = pwVal;
+        }
         const res = await fetch(isEdit ? `${api}?id=${encodeURIComponent(id)}` : api, {
             method: isEdit ? 'PUT' : 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -708,18 +760,19 @@
             return;
         }
         if (btn.dataset.action === 'edit') {
-            const row = btn.closest('tr');
-            const cells = row.querySelectorAll('td');
-            openModal({
-                id: rowId,
-                name: cells[0].textContent.trim(),
-                country: cells[1].textContent.trim(),
-                city: cells[2].textContent.trim(),
-                contact_person: cells[3].textContent.trim(),
-                email: cells[4].textContent.trim(),
-                phone: cells[5].textContent.trim(),
-                status: (cells[7].textContent || '').trim().toLowerCase() === 'active' ? 'active' : 'inactive'
-            });
+            (async () => {
+                try {
+                    const res = await fetch(`${api}?id=${encodeURIComponent(rowId)}`, { credentials: 'same-origin' });
+                    const json = await res.json().catch(() => ({}));
+                    if (res.ok && json.success && json.data) {
+                        openModal(json.data);
+                    } else {
+                        showToast(json.message || 'Could not load agency for edit.', 'error');
+                    }
+                } catch (err) {
+                    showToast('Could not load agency for edit.', 'error');
+                }
+            })();
         }
     });
 

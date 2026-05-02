@@ -101,6 +101,142 @@
         }
     }
 
+    /** @type {Record<string, unknown>|null} */
+    let agencySnapshot = null;
+
+    function collectPayloadFromSnapshot(extra) {
+        if (!agencySnapshot) return null;
+        const o = agencySnapshot;
+        const emailStr = String(o.email ?? '').trim();
+        const payload = {
+            name_ar: String(o.name_ar ?? ''),
+            name: String(o.name ?? ''),
+            agency_code: String(o.agency_code ?? '').trim(),
+            country: String(o.country ?? ''),
+            city: String(o.city ?? ''),
+            city_ar: String(o.city_ar ?? ''),
+            contact_person: String(o.contact_person ?? ''),
+            email: emailStr === '' ? null : emailStr,
+            phone: String(o.phone ?? ''),
+            phone2: String(o.phone2 ?? ''),
+            fax: String(o.fax ?? ''),
+            address_ar: String(o.address_ar ?? ''),
+            address_en: String(o.address_en ?? ''),
+            license: String(o.license ?? ''),
+            passport_no: String(o.passport_no ?? ''),
+            passport_issue_place: String(o.passport_issue_place ?? ''),
+            passport_issue_date: String(o.passport_issue_date ?? '').trim(),
+            sending_bank: String(o.sending_bank ?? ''),
+            account_number: String(o.account_number ?? ''),
+            mobile: String(o.mobile ?? ''),
+            license_owner: String(o.license_owner ?? ''),
+            notes: String(o.notes ?? ''),
+            status: String(o.status ?? 'active'),
+        };
+        return Object.assign(payload, extra || {});
+    }
+
+    async function putAgency(id, extra) {
+        const payload = collectPayloadFromSnapshot(extra);
+        if (!payload) return null;
+        const res = await fetch(withContext(`../api/partnerships/partner-agencies.php?id=${encodeURIComponent(String(id))}`), {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.success) {
+            throw new Error(json.message || `Save failed (${res.status})`);
+        }
+        return json.data || {};
+    }
+
+    function applyPortalUi(agency) {
+        const en = document.getElementById('portalEnabled');
+        if (en) en.checked = !!agency.portal_enabled;
+        const st = document.getElementById('portalTokenStatus');
+        if (st) {
+            const parts = [];
+            if (agency.portal_has_token) parts.push('Access link is active.');
+            else parts.push('No access link yet — enable portal and click “Generate new access link”.');
+            if (agency.portal_has_password) parts.push('Portal password is set.');
+            st.textContent = parts.join(' ');
+        }
+        const wrap = document.getElementById('portalMagicLinkWrap');
+        const field = document.getElementById('portalMagicLinkField');
+        if (wrap && field) {
+            wrap.classList.add('is-hidden');
+            wrap.hidden = true;
+            field.value = '';
+        }
+    }
+
+    async function loadCvsForAgency(agencyId) {
+        const list = document.getElementById('cvAdminList');
+        const empty = document.getElementById('cvAdminEmpty');
+        if (!list) return;
+        try {
+            const res = await fetch(
+                withContext(`../api/partnerships/partner-agency-cvs.php?partner_agency_id=${encodeURIComponent(String(agencyId))}`),
+                { credentials: 'same-origin' }
+            );
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok || !json.success) {
+                list.innerHTML = '';
+                return;
+            }
+            const rows = Array.isArray(json.data) ? json.data : [];
+            if (rows.length === 0) {
+                list.innerHTML = '';
+                if (empty) empty.hidden = false;
+                return;
+            }
+            if (empty) empty.hidden = true;
+            const dlBase = `../api/partnerships/partner-agency-cv-download.php`;
+            list.innerHTML = rows
+                .map((c) => {
+                    const id = c.id;
+                    const title = displayValue(c.title);
+                    const fn = displayValue(c.original_filename);
+                    const href = escapeHtml(withContext(`${dlBase}?id=${encodeURIComponent(String(id))}`));
+
+                    return `<li class="agency-cv-admin-item">
+                        <div>
+                            <strong>${escapeHtml(title)}</strong>
+                            <div class="agency-cv-admin-meta">${escapeHtml(fn)} · ${escapeHtml(formatCalendarDate(c.created_at))}</div>
+                        </div>
+                        <div>
+                            <a class="muted-btn" href="${href}" target="_blank" rel="noopener">Download</a>
+                            <button type="button" class="muted-btn agency-cv-delete" data-cv-id="${String(id)}">Delete</button>
+                        </div>
+                    </li>`;
+                })
+                .join('');
+
+            list.querySelectorAll('.agency-cv-delete').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const cvId = btn.getAttribute('data-cv-id');
+                    if (!cvId || !agencySnapshot?.id) return;
+                    if (!window.confirm('Remove this document?')) return;
+                    try {
+                        const url = withContext(
+                            `../api/partnerships/partner-agency-cvs.php?id=${encodeURIComponent(cvId)}&partner_agency_id=${encodeURIComponent(String(agencySnapshot.id))}`
+                        );
+                        const r = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
+                        const j = await r.json().catch(() => ({}));
+                        if (!r.ok || !j.success) throw new Error(j.message || 'Delete failed');
+                        await loadCvsForAgency(Number(agencySnapshot.id));
+                    } catch (err) {
+                        showError(err && err.message ? err.message : 'Could not delete.');
+                    }
+                });
+            });
+        } catch (e) {
+            list.innerHTML = '';
+        }
+    }
+
     function renderContracts(agency) {
         const list = document.getElementById('contractsList');
         const empty = document.getElementById('contractsEmpty');
@@ -185,30 +321,71 @@
         }
 
         renderDl(document.getElementById('detailAgencyData'), [
-            ['Agency name', displayValue(agency.name)],
+            ['Name (English)', displayValue(agency.name)],
+            ['Name (Arabic)', displayValue(agency.name_ar)],
+            ['Agency code', displayValue(agency.agency_code)],
             ['Country', displayValue(agency.country)],
-            ['City', displayValue(agency.city)],
+            ['City (English)', displayValue(agency.city)],
+            ['City (Arabic)', displayValue(agency.city_ar)],
+            ['Address (English)', displayValue(agency.address_en)],
+            ['Address (Arabic)', displayValue(agency.address_ar)],
             ['Contact person', displayValue(agency.contact_person)],
             ['Record created', formatCalendarDate(agency.created_at)],
         ]);
 
         renderDl(document.getElementById('detailContactData'), [
             ['Email', displayValue(agency.email)],
-            ['Phone', displayValue(agency.phone)],
-            ['Secondary phone', '—'],
-            ['Fax', '—'],
-            ['Account number', '—'],
+            ['Phone 1', displayValue(agency.phone)],
+            ['Phone 2', displayValue(agency.phone2)],
+            ['Fax', displayValue(agency.fax)],
+            ['Mobile', displayValue(agency.mobile)],
+            ['Account number', displayValue(agency.account_number)],
         ]);
 
         renderDl(document.getElementById('detailAdminData'), [
-            ['License', '—'],
-            ['Responsible person', displayValue(agency.contact_person)],
-            ['Sending bank', '—'],
-            ['License owner', '—'],
-            ['Notes', '—'],
+            ['License', displayValue(agency.license)],
+            ['License owner', displayValue(agency.license_owner)],
+            ['Sending bank', displayValue(agency.sending_bank)],
+            ['Passport no.', displayValue(agency.passport_no)],
+            ['Passport issue', `${displayValue(agency.passport_issue_place)} · ${formatCalendarDate(agency.passport_issue_date)}`],
+            ['Notes', displayValue(agency.notes)],
         ]);
 
         renderContracts(agency);
+
+        agencySnapshot = {
+            id: agency.id,
+            name_ar: agency.name_ar ?? '',
+            name: agency.name ?? '',
+            agency_code: agency.agency_code ?? '',
+            country: agency.country ?? '',
+            city: agency.city ?? '',
+            city_ar: agency.city_ar ?? '',
+            contact_person: agency.contact_person ?? '',
+            email: agency.email ?? '',
+            phone: agency.phone ?? '',
+            phone2: agency.phone2 ?? '',
+            fax: agency.fax ?? '',
+            address_ar: agency.address_ar ?? '',
+            address_en: agency.address_en ?? '',
+            license: agency.license ?? '',
+            passport_no: agency.passport_no ?? '',
+            passport_issue_place: agency.passport_issue_place ?? '',
+            passport_issue_date: agency.passport_issue_date
+                ? String(agency.passport_issue_date).slice(0, 10)
+                : '',
+            sending_bank: agency.sending_bank ?? '',
+            account_number: agency.account_number ?? '',
+            mobile: agency.mobile ?? '',
+            license_owner: agency.license_owner ?? '',
+            notes: agency.notes ?? '',
+            status: agency.status ?? 'active',
+        };
+
+        applyPortalUi(agency);
+        if (agency.id != null) {
+            loadCvsForAgency(Number(agency.id));
+        }
     }
 
     async function load() {
@@ -245,8 +422,103 @@
         });
     }
 
+    function initPortalControls() {
+        const id = () => (agencySnapshot && agencySnapshot.id != null ? Number(agencySnapshot.id) : 0);
+
+        const regen = document.getElementById('portalRegenBtn');
+        if (regen) {
+            regen.addEventListener('click', async () => {
+                if (!id()) return;
+                try {
+                    const data = await putAgency(id(), { regenerate_portal_token: true });
+                    const magic = data && data.portal_magic_link ? String(data.portal_magic_link) : '';
+                    await load();
+                    const wrap = document.getElementById('portalMagicLinkWrap');
+                    const field = document.getElementById('portalMagicLinkField');
+                    if (magic && wrap && field) {
+                        field.value = magic;
+                        wrap.classList.remove('is-hidden');
+                        wrap.hidden = false;
+                    }
+                } catch (e) {
+                    showError(e && e.message ? e.message : 'Could not generate link.');
+                }
+            });
+        }
+
+        const save = document.getElementById('portalSaveBtn');
+        if (save) {
+            save.addEventListener('click', async () => {
+                if (!id()) return;
+                const pw = document.getElementById('portalPasswordInput');
+                const pe = document.getElementById('portalEnabled');
+                const extra = { portal_enabled: !!(pe && pe.checked) };
+                if (pw && String(pw.value).trim() !== '') {
+                    extra.portal_password = String(pw.value);
+                }
+                try {
+                    await putAgency(id(), extra);
+                    await load();
+                    if (pw) pw.value = '';
+                } catch (e) {
+                    showError(e && e.message ? e.message : 'Could not save.');
+                }
+            });
+        }
+
+        const clr = document.getElementById('portalPwClearBtn');
+        if (clr) {
+            clr.addEventListener('click', async () => {
+                if (!id()) return;
+                try {
+                    const pe2 = document.getElementById('portalEnabled');
+                    await putAgency(id(), {
+                        portal_enabled: !!(pe2 && pe2.checked),
+                        portal_password: '__CLEAR__',
+                    });
+                    await load();
+                } catch (e) {
+                    showError(e && e.message ? e.message : 'Could not clear password.');
+                }
+            });
+        }
+
+        const form = document.getElementById('cvUploadForm');
+        if (form) {
+            form.addEventListener('submit', async (ev) => {
+                ev.preventDefault();
+                const aid = id();
+                if (!aid) return;
+                const titleEl = document.getElementById('cvTitle');
+                const fileEl = document.getElementById('cvFile');
+                const title = titleEl ? String(titleEl.value || '').trim() : '';
+                const file = fileEl && fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
+                if (!title || !file) return;
+                const fd = new FormData();
+                fd.append('partner_agency_id', String(aid));
+                fd.append('title', title);
+                fd.append('file', file);
+                try {
+                    const res = await fetch(withContext('../api/partnerships/partner-agency-cvs.php'), {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        body: fd,
+                    });
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok || !json.success) throw new Error(json.message || 'Upload failed');
+                    if (titleEl) titleEl.value = '';
+                    if (fileEl) fileEl.value = '';
+                    await loadCvsForAgency(aid);
+                } catch (e) {
+                    showError(e && e.message ? e.message : 'Upload failed.');
+                }
+            });
+        }
+    }
+
     function init() {
         initTabs();
+        initPortalControls();
         load();
     }
 

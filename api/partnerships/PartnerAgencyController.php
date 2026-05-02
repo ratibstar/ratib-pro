@@ -16,46 +16,31 @@ class PartnerAgencyController
     public function index(): array
     {
         try {
+            $stmt = $this->conn->query('SELECT * FROM partner_agencies ORDER BY id DESC');
+            $agencies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            error_log('PartnerAgencyController::index SELECT * failed: ' . $e->getMessage());
             $stmt = $this->conn->query(
-                "SELECT pa.id, pa.name, pa.country, pa.city, pa.contact_person, pa.email, pa.phone, pa.status, pa.created_at,
-                        COALESCE(COUNT(DISTINCT wd.id), 0) AS workers_sent,
-                        COALESCE(
-                            GROUP_CONCAT(
-                                DISTINCT CONCAT(
-                                    COALESCE(w.worker_name, CONCAT('Worker #', wd.worker_id)),
-                                    ' (',
-                                    COALESCE(w.passport_number, '-'),
-                                    ')'
-                                )
-                                ORDER BY wd.id DESC
-                                SEPARATOR ' | '
-                            ),
-                            ''
-                        ) AS workers_sent_details
-                 FROM partner_agencies pa
-                 LEFT JOIN worker_deployments wd ON wd.partner_agency_id = pa.id
-                 LEFT JOIN workers w ON w.id = wd.worker_id
-                 GROUP BY pa.id, pa.name, pa.country, pa.city, pa.contact_person, pa.email, pa.phone, pa.status, pa.created_at
-                 ORDER BY pa.id DESC"
+                'SELECT id, name, country, city, contact_person, email, phone, status, created_at FROM partner_agencies ORDER BY id DESC'
             );
             $agencies = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            return $this->hydrateSentWorkers($agencies);
-        } catch (Throwable $e) {
-            // Fallback if deployment table/join is unavailable in this tenant DB.
-            $stmt = $this->conn->query(
-                "SELECT id, name, country, city, contact_person, email, phone, status, created_at, 0 AS workers_sent, '' AS workers_sent_details
-                 FROM partner_agencies
-                 ORDER BY id DESC"
-            );
-            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            foreach ($rows as &$r) {
-                $r['sent_workers'] = [];
-            }
-            unset($r);
-
-            return $rows;
         }
+
+        $agencies = $this->hydrateSentWorkers($agencies);
+        foreach ($agencies as &$a) {
+            $sent = $a['sent_workers'] ?? [];
+            $a['workers_sent'] = is_array($sent) ? count($sent) : 0;
+            $parts = [];
+            if (is_array($sent)) {
+                foreach ($sent as $s) {
+                    $parts[] = ($s['worker_name'] ?? '') . ' (' . ($s['passport_number'] ?? '-') . ')';
+                }
+            }
+            $a['workers_sent_details'] = implode(' | ', $parts);
+        }
+        unset($a);
+
+        return $agencies;
     }
 
     /**
@@ -162,13 +147,29 @@ class PartnerAgencyController
     public function create(array $payload): array
     {
         $data = $this->validate($payload, false);
+        $portalPw = trim((string) ($payload['portal_password'] ?? ''));
+
         $stmt = $this->conn->prepare(
-            "INSERT INTO partner_agencies (name, country, city, contact_person, email, phone, status)
-             VALUES (:name, :country, :city, :contact_person, :email, :phone, :status)"
+            'INSERT INTO partner_agencies (
+                name, name_ar, agency_code, country, city, city_ar, contact_person, email, phone, phone2, fax,
+                address_ar, address_en, license, status,
+                passport_no, passport_issue_place, passport_issue_date, sending_bank, account_number, mobile, license_owner, notes
+            ) VALUES (
+                :name, :name_ar, :agency_code, :country, :city, :city_ar, :contact_person, :email, :phone, :phone2, :fax,
+                :address_ar, :address_en, :license, :status,
+                :passport_no, :passport_issue_place, :passport_issue_date, :sending_bank, :account_number, :mobile, :license_owner, :notes
+            )'
         );
         $stmt->execute($data);
         $id = (int) $this->conn->lastInsertId();
-        return $this->find($id);
+
+        if ($portalPw !== '') {
+            $hash = password_hash($portalPw, PASSWORD_DEFAULT);
+            $u = $this->conn->prepare('UPDATE partner_agencies SET portal_password_hash = ?, portal_enabled = 1 WHERE id = ?');
+            $u->execute([$hash, $id]);
+        }
+
+        return $this->toPublicRow($this->find($id));
     }
 
     public function update(int $id, array $payload): array
@@ -177,13 +178,51 @@ class PartnerAgencyController
         $data = $this->validate($payload, true);
         $data['id'] = $id;
         $stmt = $this->conn->prepare(
-            "UPDATE partner_agencies
-             SET name = :name, country = :country, city = :city, contact_person = :contact_person,
-                 email = :email, phone = :phone, status = :status
-             WHERE id = :id"
+            'UPDATE partner_agencies SET
+                name = :name, name_ar = :name_ar, agency_code = :agency_code, country = :country, city = :city, city_ar = :city_ar,
+                contact_person = :contact_person, email = :email, phone = :phone, phone2 = :phone2, fax = :fax,
+                address_ar = :address_ar, address_en = :address_en, license = :license, status = :status,
+                passport_no = :passport_no, passport_issue_place = :passport_issue_place, passport_issue_date = :passport_issue_date,
+                sending_bank = :sending_bank, account_number = :account_number, mobile = :mobile, license_owner = :license_owner, notes = :notes
+             WHERE id = :id'
         );
         $stmt->execute($data);
-        return $this->find($id);
+
+        if (array_key_exists('portal_password', $payload)) {
+            $pp = trim((string) ($payload['portal_password'] ?? ''));
+            if ($pp === '__CLEAR__') {
+                $u = $this->conn->prepare('UPDATE partner_agencies SET portal_password_hash = NULL WHERE id = ?');
+                $u->execute([$id]);
+            } elseif ($pp !== '') {
+                if (mb_strlen($pp) < 6) {
+                    throw new InvalidArgumentException('Password must be at least 6 characters');
+                }
+                $hash = password_hash($pp, PASSWORD_DEFAULT);
+                $u = $this->conn->prepare('UPDATE partner_agencies SET portal_password_hash = ?, portal_enabled = 1 WHERE id = ?');
+                $u->execute([$hash, $id]);
+            }
+        }
+
+        $magicTokenForLink = null;
+        if (!empty($payload['regenerate_portal_token'])) {
+            $magicTokenForLink = bin2hex(random_bytes(32));
+            $u = $this->conn->prepare('UPDATE partner_agencies SET portal_access_token = ? WHERE id = ?');
+            $u->execute([$magicTokenForLink, $id]);
+        }
+
+        if (array_key_exists('portal_enabled', $payload)) {
+            $en = !empty($payload['portal_enabled']) ? 1 : 0;
+            $u = $this->conn->prepare('UPDATE partner_agencies SET portal_enabled = ? WHERE id = ?');
+            $u->execute([$en, $id]);
+        }
+
+        $row = $this->find($id);
+        $public = $this->toPublicRow($row);
+        if ($magicTokenForLink !== null && function_exists('ratib_partner_portal_magic_link_url')) {
+            $public['portal_magic_link'] = ratib_partner_portal_magic_link_url($magicTokenForLink);
+        }
+
+        return $public;
     }
 
     public function delete(int $id): void
@@ -206,6 +245,24 @@ class PartnerAgencyController
         $row = $hydrated[0] ?? $agency;
         $sent = $row['sent_workers'] ?? [];
         $row['workers_sent'] = is_array($sent) ? count($sent) : 0;
+
+        return $this->toPublicRow($row);
+    }
+
+    /**
+     * Strip secrets; add booleans for UI. Keeps sent_workers and list fields.
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    public function toPublicRow(array $row): array
+    {
+        $token = isset($row['portal_access_token']) ? (string) $row['portal_access_token'] : '';
+        $hash = isset($row['portal_password_hash']) ? (string) $row['portal_password_hash'] : '';
+        unset($row['portal_access_token'], $row['portal_password_hash']);
+        $row['portal_enabled'] = !empty($row['portal_enabled']);
+        $row['portal_has_token'] = $token !== '';
+        $row['portal_has_password'] = $hash !== '';
 
         return $row;
     }
@@ -275,15 +332,22 @@ class PartnerAgencyController
 
     private function find(int $id): array
     {
-        $stmt = $this->conn->prepare(
-            "SELECT id, name, country, city, contact_person, email, phone, status, created_at
-             FROM partner_agencies WHERE id = ? LIMIT 1"
-        );
-        $stmt->execute([$id]);
+        try {
+            $stmt = $this->conn->prepare('SELECT * FROM partner_agencies WHERE id = ? LIMIT 1');
+            $stmt->execute([$id]);
+        } catch (Throwable $e) {
+            $stmt = $this->conn->prepare(
+                'SELECT id, name, country, city, contact_person, email, phone, status, created_at,
+                        COALESCE(portal_enabled, 0) AS portal_enabled, portal_access_token, portal_password_hash
+                 FROM partner_agencies WHERE id = ? LIMIT 1'
+            );
+            $stmt->execute([$id]);
+        }
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
             throw new RuntimeException('Agency not found');
         }
+
         return $row;
     }
 
@@ -338,9 +402,44 @@ class PartnerAgencyController
     private function validate(array $payload, bool $forUpdate): array
     {
         $name = trim((string) ($payload['name'] ?? ''));
+        $nameAr = trim((string) ($payload['name_ar'] ?? ''));
         $country = trim((string) ($payload['country'] ?? ''));
-        if ($name === '' || $country === '') {
-            throw new InvalidArgumentException('Name and country are required');
+        if ($name === '' || $nameAr === '' || $country === '') {
+            throw new InvalidArgumentException('English name, Arabic name, and country are required');
+        }
+
+        $email = trim((string) ($payload['email'] ?? ''));
+        if ($email === '') {
+            throw new InvalidArgumentException('Email is required for partner portal login');
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException('Invalid email format');
+        }
+
+        $portalPw = trim((string) ($payload['portal_password'] ?? ''));
+        if (!$forUpdate) {
+            if ($portalPw === '') {
+                throw new InvalidArgumentException('Partner login password is required when adding an agency');
+            }
+            if (mb_strlen($portalPw) < 6) {
+                throw new InvalidArgumentException('Partner login password must be at least 6 characters');
+            }
+        }
+
+        $addressAr = trim((string) ($payload['address_ar'] ?? ''));
+        $addressEn = trim((string) ($payload['address_en'] ?? ''));
+        $cityAr = trim((string) ($payload['city_ar'] ?? ''));
+        $city = trim((string) ($payload['city'] ?? ''));
+        $license = trim((string) ($payload['license'] ?? ''));
+        $phone = trim((string) ($payload['phone'] ?? ''));
+        $phone2 = trim((string) ($payload['phone2'] ?? ''));
+        $fax = trim((string) ($payload['fax'] ?? ''));
+
+        if ($addressAr === '' || $addressEn === '' || $cityAr === '' || $city === '' || $license === ''
+            || $phone === '' || $phone2 === '' || $fax === '') {
+            throw new InvalidArgumentException(
+                'Address (Arabic & English), city (Arabic & English), license, Phone 1, Phone 2, and Fax are required'
+            );
         }
 
         $status = strtolower(trim((string) ($payload['status'] ?? 'active')));
@@ -348,19 +447,43 @@ class PartnerAgencyController
             $status = 'active';
         }
 
-        $email = trim((string) ($payload['email'] ?? ''));
-        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new InvalidArgumentException('Invalid email format');
+        $agencyCode = trim((string) ($payload['agency_code'] ?? ''));
+        $agencyCode = $agencyCode === '' ? null : mb_substr($agencyCode, 0, 64);
+
+        $passportIssueRaw = trim((string) ($payload['passport_issue_date'] ?? ''));
+        $passportIssueDate = null;
+        if ($passportIssueRaw !== '') {
+            $dt = \DateTime::createFromFormat('Y-m-d', $passportIssueRaw);
+            if (!$dt || $dt->format('Y-m-d') !== $passportIssueRaw) {
+                throw new InvalidArgumentException('Passport issue date must be YYYY-MM-DD or empty');
+            }
+            $passportIssueDate = $passportIssueRaw;
         }
 
         return [
             'name' => mb_substr($name, 0, 255),
+            'name_ar' => mb_substr($nameAr, 0, 255),
+            'agency_code' => $agencyCode,
             'country' => mb_substr($country, 0, 100),
-            'city' => mb_substr(trim((string) ($payload['city'] ?? '')), 0, 100),
+            'city' => mb_substr($city, 0, 100),
+            'city_ar' => mb_substr($cityAr, 0, 100),
             'contact_person' => mb_substr(trim((string) ($payload['contact_person'] ?? '')), 0, 255),
-            'email' => $email === '' ? null : mb_substr($email, 0, 255),
-            'phone' => mb_substr(trim((string) ($payload['phone'] ?? '')), 0, 50),
+            'email' => mb_substr($email, 0, 255),
+            'phone' => mb_substr($phone, 0, 50),
+            'phone2' => mb_substr($phone2, 0, 50),
+            'fax' => mb_substr($fax, 0, 50),
+            'address_ar' => mb_substr($addressAr, 0, 500),
+            'address_en' => mb_substr($addressEn, 0, 500),
+            'license' => mb_substr($license, 0, 255),
             'status' => $status,
+            'passport_no' => mb_substr(trim((string) ($payload['passport_no'] ?? '')), 0, 80),
+            'passport_issue_place' => mb_substr(trim((string) ($payload['passport_issue_place'] ?? '')), 0, 255),
+            'passport_issue_date' => $passportIssueDate,
+            'sending_bank' => mb_substr(trim((string) ($payload['sending_bank'] ?? '')), 0, 255),
+            'account_number' => mb_substr(trim((string) ($payload['account_number'] ?? '')), 0, 100),
+            'mobile' => mb_substr(trim((string) ($payload['mobile'] ?? '')), 0, 50),
+            'license_owner' => mb_substr(trim((string) ($payload['license_owner'] ?? '')), 0, 255),
+            'notes' => trim((string) ($payload['notes'] ?? '')) === '' ? null : mb_substr(trim((string) ($payload['notes'] ?? '')), 0, 65535),
         ];
     }
 }

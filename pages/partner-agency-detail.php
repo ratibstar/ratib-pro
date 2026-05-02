@@ -75,6 +75,30 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
                     <dl class="agency-detail-dl" id="detailAdminData"></dl>
                     <p class="agency-detail-note">Extended license and banking fields can be added when available in your profile.</p>
                 </section>
+                <section class="agency-detail-card glass-card agency-portal-card" id="partnerPortalCard">
+                    <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">🔗</span> Partner portal (baby link)</h2>
+                    <p class="agency-detail-note">Give this agency a private link to view only their deployments and the documents you upload here. Treat the link like a password.</p>
+                    <div class="agency-portal-row">
+                        <label class="agency-portal-check"><input type="checkbox" id="portalEnabled"> Enable partner portal</label>
+                    </div>
+                    <p class="agency-detail-note" id="portalTokenStatus"></p>
+                    <div class="agency-portal-actions">
+                        <button type="button" class="muted-btn" id="portalRegenBtn">Generate new access link</button>
+                        <button type="button" class="muted-btn" id="portalSaveBtn">Save portal settings</button>
+                    </div>
+                    <div id="portalMagicLinkWrap" class="agency-portal-magic is-hidden" hidden>
+                        <label class="agency-portal-label" for="portalMagicLinkField">Copy this link for the partner (shown once after generate)</label>
+                        <input type="text" readonly class="agency-portal-input" id="portalMagicLinkField" autocomplete="off">
+                    </div>
+                    <div class="agency-portal-pw">
+                        <label class="agency-portal-label" for="portalPasswordInput">Optional portal password (agency ID + password on login page)</label>
+                        <input type="password" class="agency-portal-input" id="portalPasswordInput" placeholder="Leave blank to keep unchanged" autocomplete="new-password">
+                        <div class="agency-portal-actions">
+                            <button type="button" class="muted-btn" id="portalPwClearBtn">Clear password</button>
+                        </div>
+                    </div>
+                    <p class="agency-detail-note">Partner sign-in page: <a href="<?php echo htmlspecialchars(pageUrl('partner-portal-login.php'), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">partner-portal-login.php</a></p>
+                </section>
             </div>
             <aside class="agency-detail-side-col">
                 <section class="agency-detail-card glass-card agency-detail-contracts-card">
@@ -90,9 +114,17 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
     </div>
 
     <div id="panel-attachments" class="agency-detail-panels is-hidden" role="tabpanel" hidden>
-        <div class="agency-detail-placeholder glass-card">
-            <p>Attachments and updates will appear here when connected to your document workflow.</p>
-        </div>
+        <section class="agency-detail-card glass-card">
+            <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📎</span> Documents &amp; CVs (partner portal)</h2>
+            <p class="agency-detail-note">Files listed here are visible to this agency when they use their partner portal link.</p>
+            <form id="cvUploadForm" class="agency-cv-upload-form">
+                <input type="text" id="cvTitle" placeholder="Title (e.g. Company profile 2026)" required maxlength="255">
+                <input type="file" id="cvFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" required>
+                <button type="submit" class="neon-btn" id="cvUploadBtn">Upload</button>
+            </form>
+            <ul id="cvAdminList" class="agency-cv-admin-list"></ul>
+            <p id="cvAdminEmpty" class="agency-detail-empty" hidden>No documents uploaded yet.</p>
+        </section>
     </div>
 
     <div id="panel-account" class="agency-detail-panels is-hidden" role="tabpanel" hidden>

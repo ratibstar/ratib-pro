@@ -359,6 +359,42 @@ if (!function_exists('ratib_control_pro_bridge')) {
     }
 }
 
+/** Partner agency portal (magic-link / optional password): scoped session, no staff permissions. */
+if (!function_exists('ratib_partner_portal_clear')) {
+    function ratib_partner_portal_clear(): void
+    {
+        unset($_SESSION['partner_portal_logged_in'], $_SESSION['partner_portal_agency_id']);
+    }
+}
+
+if (!function_exists('ratib_partner_portal_session_is_valid')) {
+    function ratib_partner_portal_session_is_valid(): bool
+    {
+        return !empty($_SESSION['partner_portal_logged_in'])
+            && (int) ($_SESSION['partner_portal_agency_id'] ?? 0) > 0;
+    }
+}
+
+if (!function_exists('ratib_partner_portal_agency_id')) {
+    function ratib_partner_portal_agency_id(): int
+    {
+        return ratib_partner_portal_session_is_valid() ? (int) $_SESSION['partner_portal_agency_id'] : 0;
+    }
+}
+
+if (!function_exists('ratib_partner_portal_magic_link_url')) {
+    /**
+     * Full URL for bookmark / sharing (treat like a password — HTTPS only in production).
+     */
+    function ratib_partner_portal_magic_link_url(string $token): string
+    {
+        $page = pageUrl('partner-portal.php');
+        $sep = strpos($page, '?') !== false ? '&' : '?';
+
+        return $page . $sep . 'token=' . rawurlencode($token);
+    }
+}
+
 if (!function_exists('ratib_nav_url')) {
     /**
      * Internal page URL; appends ?control=1&agency_id= for control-panel SSO users so APIs and SSO stay aligned.

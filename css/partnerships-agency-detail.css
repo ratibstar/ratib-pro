@@ -361,3 +361,101 @@
 .agency-detail-error.is-hidden {
     display: none;
 }
+
+.agency-portal-card .agency-portal-row {
+    margin: 0.75rem 0;
+}
+
+.agency-portal-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    cursor: pointer;
+}
+
+.agency-portal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+}
+
+.agency-portal-magic {
+    margin: 0.75rem 0 1rem;
+}
+
+.agency-portal-magic.is-hidden {
+    display: none;
+}
+
+.agency-portal-label {
+    display: block;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin-bottom: 0.35rem;
+}
+
+.agency-portal-input {
+    width: 100%;
+    max-width: 100%;
+    padding: 0.5rem 0.65rem;
+    border-radius: 10px;
+    border: 1px solid rgba(94, 234, 212, 0.25);
+    background: rgba(2, 6, 23, 0.75);
+    color: #e2e8f0;
+    font-size: 0.9rem;
+}
+
+.agency-portal-pw {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(51, 65, 85, 0.65);
+}
+
+.agency-cv-upload-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.agency-cv-upload-form input[type="text"] {
+    flex: 1 1 200px;
+    min-width: 160px;
+    padding: 0.5rem 0.65rem;
+    border-radius: 10px;
+    border: 1px solid rgba(94, 234, 212, 0.25);
+    background: rgba(2, 6, 23, 0.75);
+    color: #e2e8f0;
+}
+
+.agency-cv-admin-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.agency-cv-admin-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid rgba(94, 234, 212, 0.12);
+    border-radius: 10px;
+    background: rgba(2, 6, 23, 0.35);
+    font-size: 0.9rem;
+}
+
+.agency-cv-admin-meta {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    margin-top: 0.2rem;
+}
