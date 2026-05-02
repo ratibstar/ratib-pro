@@ -168,6 +168,109 @@
         }
     }
 
+    function renderWorkerProfileDocs(profileWorkers) {
+        const grid = document.getElementById('workerProfileDocsGrid');
+        const profileEmpty = document.getElementById('workerProfileDocsEmpty');
+        if (!grid) return;
+        const rows = Array.isArray(profileWorkers) ? profileWorkers : [];
+        if (rows.length === 0) {
+            grid.innerHTML = '';
+            if (profileEmpty) profileEmpty.hidden = false;
+            return;
+        }
+        if (profileEmpty) profileEmpty.hidden = true;
+        grid.innerHTML = rows
+            .map((w) => {
+                const wid = w.id != null ? String(w.id) : '';
+                const name = displayValue(w.worker_name);
+                const pw = displayValue(w.passport_number);
+                const docs = Array.isArray(w.documents) ? w.documents : [];
+                const chips = docs
+                    .map((doc) => {
+                        const dt = String(doc.type || '');
+                        const lab = displayValue(doc.label || dt);
+                        const hasFile = !!doc.has_file;
+                        const shared = !!doc.shared_on_portal;
+                        const shareId = doc.share_id != null ? String(doc.share_id) : '';
+                        if (!hasFile) {
+                            return `<span class="agency-doc-chip agency-doc-chip--missing" title="No file saved on worker profile">${escapeHtml(lab)}</span>`;
+                        }
+                        if (shared && shareId !== '') {
+                            return `<span class="agency-doc-chip agency-doc-chip--on-portal">
+                                <span class="agency-doc-chip-label">${escapeHtml(lab)} · Partner portal</span>
+                                <button type="button" class="muted-btn agency-doc-unshare-btn" data-share-id="${escapeHtml(shareId)}">Remove</button>
+                            </span>`;
+                        }
+                        return `<button type="button" class="agency-doc-chip agency-doc-share-btn neon-btn" data-worker-id="${escapeHtml(wid)}" data-doc-type="${escapeHtml(dt)}">
+                            + ${escapeHtml(lab)}
+                        </button>`;
+                    })
+                    .join('');
+                return `<div class="agency-worker-profile-block">
+                    <h4 class="agency-worker-profile-heading">${escapeHtml(name)} <span class="agency-worker-profile-meta">#${escapeHtml(wid)} · Passport: ${escapeHtml(pw)}</span></h4>
+                    <p class="agency-worker-profile-hint">Same document slots as on the Worker page for this person.</p>
+                    <div class="agency-worker-doc-chips">${chips}</div>
+                </div>`;
+            })
+            .join('');
+    }
+
+    function bindWorkerProfileDocsGridOnce() {
+        const grid = document.getElementById('workerProfileDocsGrid');
+        if (!grid || grid.dataset.bound === '1') return;
+        grid.dataset.bound = '1';
+        grid.addEventListener('click', async (e) => {
+            const aid =
+                agencySnapshot && agencySnapshot.id != null ? Number(agencySnapshot.id) : 0;
+            if (!aid) return;
+
+            const addBtn = e.target.closest('.agency-doc-share-btn');
+            if (addBtn) {
+                const wid = parseInt(addBtn.getAttribute('data-worker-id') || '0', 10);
+                const dt = addBtn.getAttribute('data-doc-type') || '';
+                if (!wid || !dt) return;
+                try {
+                    const res = await fetch(withContext('../api/partnerships/partner-agency-worker-shares.php'), {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            partner_agency_id: aid,
+                            worker_id: wid,
+                            document_type: dt,
+                        }),
+                    });
+                    const j = await res.json().catch(() => ({}));
+                    if (!res.ok || !j.success) throw new Error(j.message || 'Could not add to portal');
+                    await loadWorkerSharesForAgency(aid);
+                } catch (err) {
+                    showError(err && err.message ? err.message : 'Could not share document.');
+                }
+                return;
+            }
+
+            const unBtn = e.target.closest('.agency-doc-unshare-btn');
+            if (unBtn) {
+                const sid = unBtn.getAttribute('data-share-id');
+                if (!sid) return;
+                if (!window.confirm('Remove this document from the partner portal?')) return;
+                try {
+                    const url = withContext(
+                        `../api/partnerships/partner-agency-worker-shares.php?id=${encodeURIComponent(
+                            sid
+                        )}&partner_agency_id=${encodeURIComponent(String(aid))}`
+                    );
+                    const r = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
+                    const j = await r.json().catch(() => ({}));
+                    if (!r.ok || !j.success) throw new Error(j.message || 'Remove failed');
+                    await loadWorkerSharesForAgency(aid);
+                } catch (err) {
+                    showError(err && err.message ? err.message : 'Could not remove.');
+                }
+            }
+        });
+    }
+
     async function loadWorkerSharesForAgency(agencyId) {
         const list = document.getElementById('workerShareList');
         const empty = document.getElementById('workerShareEmpty');
@@ -184,6 +287,10 @@
             const json = await res.json().catch(() => ({}));
             if (!res.ok || !json.success) {
                 list.innerHTML = '';
+                const grid = document.getElementById('workerProfileDocsGrid');
+                const pe = document.getElementById('workerProfileDocsEmpty');
+                if (grid) grid.innerHTML = '';
+                if (pe) pe.hidden = true;
                 return;
             }
             const d = json.data || {};
@@ -191,6 +298,9 @@
             const workers = Array.isArray(d.deployment_workers) ? d.deployment_workers : [];
             const types = Array.isArray(d.document_types) ? d.document_types : [];
             const labels = d.document_labels && typeof d.document_labels === 'object' ? d.document_labels : {};
+            const profileWorkers = Array.isArray(d.workers_profile_documents) ? d.workers_profile_documents : [];
+
+            renderWorkerProfileDocs(profileWorkers);
 
             if (wSel) {
                 wSel.innerHTML = '<option value="">Select worker (deployments)…</option>';
@@ -215,8 +325,7 @@
             if (shares.length === 0) {
                 list.innerHTML = '';
                 if (empty) empty.hidden = false;
-                return;
-            }
+            } else {
             if (empty) empty.hidden = true;
             const dlBase = `../api/partnerships/partner-shared-worker-doc-download.php`;
             list.innerHTML = shares
@@ -272,8 +381,13 @@
                     </li>`;
                 })
                 .join('');
+            }
         } catch (e) {
             list.innerHTML = '';
+            const grid = document.getElementById('workerProfileDocsGrid');
+            const pe = document.getElementById('workerProfileDocsEmpty');
+            if (grid) grid.innerHTML = '';
+            if (pe) pe.hidden = true;
         }
     }
 
@@ -749,6 +863,7 @@
     function init() {
         initTabs();
         bindWorkerShareListActions();
+        bindWorkerProfileDocsGridOnce();
         initPortalControls();
         load();
     }

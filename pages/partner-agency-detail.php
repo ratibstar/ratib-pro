@@ -127,7 +127,10 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
 
         <section class="agency-detail-card glass-card agency-share-worker-docs">
             <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">👤</span> Worker documents on partner portal</h2>
-            <p class="agency-detail-note">Choose which worker files (passport, medical, etc.) this partner may open from their portal link. Only selected types appear for them.</p>
+            <p class="agency-detail-note">Documents listed below come from each worker’s profile (same files as on the Worker page). Use <strong>+</strong> to put a file on the partner portal; partners only see what you enable here.</p>
+            <div id="workerProfileDocsGrid" class="agency-worker-profile-docs-root"></div>
+            <p id="workerProfileDocsEmpty" class="agency-detail-empty" hidden>No deployed workers for this agency yet — add a deployment first, or use “Or worker ID” below.</p>
+            <h3 class="agency-worker-docs-subtitle">Manual add (worker not in list)</h3>
             <div class="agency-share-docs-toolbar">
                 <select id="shareWorkerSelect" aria-label="Worker">
                     <option value="">Select worker (deployments)…</option>

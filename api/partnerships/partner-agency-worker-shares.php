@@ -49,6 +49,7 @@ try {
 
                     return $out;
                 })(),
+                'workers_profile_documents' => $ctl->listDeploymentWorkersWithProfileDocuments($partnerAgencyId),
             ],
         ];
         workerSharesJson($body);

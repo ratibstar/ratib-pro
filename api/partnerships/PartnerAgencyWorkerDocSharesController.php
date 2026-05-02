@@ -72,6 +72,68 @@ class PartnerAgencyWorkerDocSharesController
     }
 
     /**
+     * Workers deployed to this partner, with document slots matching the Worker profile (workers.*_file columns).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listDeploymentWorkersWithProfileDocuments(int $partnerAgencyId): array
+    {
+        if ($partnerAgencyId <= 0) {
+            return [];
+        }
+
+        $stmt = $this->conn->prepare(
+            'SELECT id, worker_id, document_type FROM partner_agency_worker_document_shares WHERE partner_agency_id = ?'
+        );
+        $stmt->execute([$partnerAgencyId]);
+        $shareIdByKey = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $wid = (int) ($row['worker_id'] ?? 0);
+            $dt = (string) ($row['document_type'] ?? '');
+            if ($wid > 0 && $dt !== '') {
+                $shareIdByKey[$wid . '|' . $dt] = (int) ($row['id'] ?? 0);
+            }
+        }
+
+        $workers = $this->listDeploymentWorkers($partnerAgencyId);
+        $out = [];
+        foreach ($workers as $w) {
+            $wid = (int) ($w['id'] ?? 0);
+            if ($wid <= 0) {
+                continue;
+            }
+            $workerRow = $this->fetchWorkerRow($wid);
+            if (!$workerRow) {
+                continue;
+            }
+
+            $documents = [];
+            foreach (self::allowedDocumentTypes() as $dt) {
+                $col = $dt . '_file';
+                $hasFile = isset($workerRow[$col]) && trim((string) $workerRow[$col]) !== '';
+                $key = $wid . '|' . $dt;
+                $sid = $shareIdByKey[$key] ?? null;
+                $documents[] = [
+                    'type' => $dt,
+                    'label' => self::documentTypeLabel($dt),
+                    'has_file' => $hasFile,
+                    'shared_on_portal' => $sid !== null && $sid > 0,
+                    'share_id' => ($sid !== null && $sid > 0) ? $sid : null,
+                ];
+            }
+
+            $out[] = [
+                'id' => $wid,
+                'worker_name' => $w['worker_name'] ?? '',
+                'passport_number' => $w['passport_number'] ?? '',
+                'documents' => $documents,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * @return array<string, mixed>|null
      */
     public function fetchWorkerRow(int $workerId): ?array
