@@ -3131,32 +3131,42 @@ function ensureEmptyCvModal() {
             .empty-cv-modal.show{display:block}
             .empty-cv-modal-overlay{position:absolute;inset:0;background:rgba(10,20,34,.75)}
             .empty-cv-modal-dialog{position:relative;width:min(1100px,95vw);height:min(92vh,920px);margin:4vh auto;background:#101a29;border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
-            .empty-cv-toolbar{display:flex;gap:8px;align-items:center;padding:10px 12px;background:#0f2940;color:#fff}
+            .empty-cv-toolbar{display:flex;gap:8px;align-items:center;padding:10px 12px;background:#0f2940;color:#fff;flex-wrap:wrap}
             .empty-cv-btn{background:#fff;color:#0f2940;border:0;border-radius:4px;padding:6px 10px;font-weight:700;cursor:pointer}
             .empty-cv-btn.close{margin-left:auto}
-            .empty-cv-hint{font-size:12px;opacity:.95}
-            .empty-cv-body{flex:1;overflow:auto;background:#f3f6fa;padding:14px}
-            #emptyCvSheet .page{max-width:850px;margin:0 auto 18px auto;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,.12);font-family:Georgia,'Times New Roman',serif}
-            #emptyCvSheet .header{background:#a8d3ef;color:#0d2538;padding:8px 24px;text-align:center;border-bottom:1px solid #8bbbdc}
-            #emptyCvSheet .header h1{margin:0;font-size:22px;letter-spacing:1px;font-weight:700;text-transform:uppercase;line-height:1.1}
-            #emptyCvSheet .header h2{margin:2px 0 0;font-size:12px;font-weight:700;text-transform:capitalize}
-            #emptyCvSheet .grid{display:grid;grid-template-columns:250px 1fr}
-            #emptyCvSheet .left{background:#fff;padding:14px;border-right:10px solid #c8dcee}
-            #emptyCvSheet .right{padding:14px 18px;color:#1d2a3a;background:#f5fbff}
-            #emptyCvSheet .photo{height:170px;border:1px solid #9fc6e2;background:#f4f8fb;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700}
-            #emptyCvSheet .side-title{background:#2f7fc2;color:#fff;font-size:16px;font-style:italic;font-weight:700;padding:3px 8px;line-height:1;margin:10px 0 6px}
-            #emptyCvSheet .main-title{color:#1f6ea8;font-size:18px;font-style:italic;font-weight:700;line-height:1.1;margin:10px 0 6px}
-            #emptyCvSheet .line{padding:2px 0;border-bottom:1px solid #c2d6e6;font-size:14px;line-height:1.25}
-            #emptyCvSheet .pair{display:grid;grid-template-columns:120px 1fr;gap:6px}
-            #emptyCvSheet .pair .k{font-weight:700}
+            .empty-cv-hint{font-size:12px;opacity:.95;flex:1;min-width:160px}
+            .empty-cv-body{flex:1;overflow:auto;background:linear-gradient(180deg,#eef4fb 0%,#f7fafc 100%);padding:16px}
+            #emptyCvSheet .page{max-width:880px;margin:0 auto 18px auto;background:#fff;box-shadow:0 10px 28px rgba(15,41,64,.14);border-radius:6px;overflow:hidden;font-family:Georgia,'Times New Roman',serif;color:#1d2a3a}
+            #emptyCvSheet .header{background:linear-gradient(180deg,#c7e3f7 0%,#a8d3ef 100%);color:#0d2538;padding:12px 20px;text-align:center;border-bottom:1px solid #8bbbdc}
+            #emptyCvSheet .header h1{margin:0;font-size:20px;letter-spacing:.06em;font-weight:700;text-transform:uppercase;line-height:1.15}
+            #emptyCvSheet .header h2{margin:6px 0 0;font-size:13px;font-weight:600;text-transform:none;color:#1a3d5c;max-width:42em;margin-left:auto;margin-right:auto;line-height:1.35}
+            #emptyCvSheet .grid{display:grid;grid-template-columns:minmax(0,280px) minmax(0,1fr);gap:0;align-items:stretch}
+            #emptyCvSheet .cv-panel{padding:14px 16px}
+            #emptyCvSheet .left{background:#fafcfe;border-right:1px solid #d6e6f2}
+            #emptyCvSheet .right{background:#f3f9fd}
+            #emptyCvSheet .photo{height:200px;border-radius:4px;border:1px solid #b8d4ea;background:#eef6fb;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700;overflow:hidden}
+            #emptyCvSheet .photo img{max-width:100%;max-height:100%;object-fit:cover;display:block}
+            #emptyCvSheet .side-title{background:#2f7fc2;color:#fff;font-size:14px;font-weight:700;padding:6px 10px;line-height:1.2;margin:14px 0 8px;border-radius:3px;letter-spacing:.02em}
+            #emptyCvSheet .side-title:first-of-type{margin-top:10px}
+            #emptyCvSheet .main-title{color:#145a8a;font-size:15px;font-weight:700;line-height:1.2;margin:16px 0 8px;padding-bottom:4px;border-bottom:2px solid #b9d6ea}
+            #emptyCvSheet .main-title:first-child{margin-top:0}
+            #emptyCvSheet .line{padding:6px 0;font-size:13px;line-height:1.35;border-bottom:1px solid #ddeaf4}
+            #emptyCvSheet .line:last-child{border-bottom:0}
+            #emptyCvSheet .pair{display:grid;grid-template-columns:minmax(0,38%) minmax(0,62%);gap:8px 12px;align-items:start}
+            #emptyCvSheet .pair .k{font-weight:700;color:#2c4a63;font-size:12px;text-transform:none;padding-top:2px}
+            #emptyCvSheet .left .line .k{color:#2c4a63}
             #emptyCvSheet .left, #emptyCvSheet .left .line, #emptyCvSheet .left .line span{color:#1d2a3a !important}
-            #emptyCvSheet .cv-value[contenteditable="true"]{outline:none;display:inline-block;min-width:40px}
-            #emptyCvSheet ul{margin:6px 0 0 20px;padding:0}
-            #emptyCvSheet li{margin:4px 0;font-size:14px;line-height:1.25}
-            #emptyCvSheet .note{color:#4d6478;font-size:12px;margin-top:16px}
-            #emptyCvSheet .editable:focus{outline:2px dashed #7aaedb;outline-offset:2px}
+            #emptyCvSheet .cv-value[contenteditable="true"]{outline:none;display:block;min-height:1.2em;word-break:break-word}
+            #emptyCvSheet ul{margin:4px 0 0 1.1em;padding:0}
+            #emptyCvSheet li{margin:6px 0;font-size:13px;line-height:1.4}
+            #emptyCvSheet .note{color:#5a6b7a;font-size:11px;margin-top:14px;text-align:right}
+            #emptyCvSheet .editable:focus{outline:2px dashed #7aaedb;outline-offset:2px;border-radius:2px}
             #emptyCvSheet .missing-value{color:#c62828;font-weight:700}
             #emptyCvSheet .hidden-by-missing-filter{display:none !important}
+            @media (max-width:780px){
+                #emptyCvSheet .grid{grid-template-columns:1fr}
+                #emptyCvSheet .left{border-right:0;border-bottom:1px solid #d6e6f2}
+            }
         `;
         document.head.appendChild(style);
     }
@@ -3256,7 +3266,7 @@ function buildEmptyCvHtml(worker) {
                 <h2 class="editable" contenteditable="true" data-field="job_title">${job}</h2>
             </div>
             <div class="grid">
-                <aside class="left">
+                <aside class="left cv-panel">
                     <div class="photo"><img id="emptyCvPhotoPreview" src="${photoUrl ? esc(photoUrl) : ''}" alt="photo" style="${photoUrl ? 'max-width:100%;max-height:100%;display:block' : 'display:none'}"><span id="emptyCvPhotoPlaceholder" style="${photoUrl ? 'display:none' : 'display:block'}">PHOTO</span></div>
                     <div class="side-title">CONTACT INFO</div>
                     <div class="line pair"><span class="k">Phone</span><span class="cv-value editable" contenteditable="true" data-field="phone">${phone}</span></div>
@@ -3278,14 +3288,14 @@ function buildEmptyCvHtml(worker) {
                     <div class="side-title">Education</div>
                     <div class="line"><span class="cv-value editable" contenteditable="true" data-field="education_level">${educationLevel}</span></div>
                 </aside>
-                <main class="right">
+                <main class="right cv-panel">
                     <div class="main-title">Summary</div>
-                    <div class="line editable" contenteditable="true"><span data-field="qualification">${qualification}</span></div>
-                    <div class="line editable" contenteditable="true"><span data-field="skills">${skills}</span></div>
+                    <div class="line pair"><span class="k">Qualification</span><span class="cv-value editable" contenteditable="true" data-field="qualification">${qualification}</span></div>
+                    <div class="line pair"><span class="k">Skills</span><span class="cv-value editable" contenteditable="true" data-field="skills">${skills}</span></div>
                     <div class="main-title">Work Experience</div>
-                    <div class="line editable" contenteditable="true"><span data-field="work_experience">${workExperience}</span></div>
-                    <div class="line editable" contenteditable="true">Local: <span data-field="local_experience">${localExperience}</span></div>
-                    <div class="line editable" contenteditable="true">Abroad: <span data-field="abroad_experience">${abroadExperience}</span></div>
+                    <div class="line pair"><span class="k">Total (years)</span><span class="cv-value editable" contenteditable="true" data-field="work_experience">${workExperience}</span></div>
+                    <div class="line pair"><span class="k">Local</span><span class="cv-value editable" contenteditable="true" data-field="local_experience">${localExperience}</span></div>
+                    <div class="line pair"><span class="k">Abroad</span><span class="cv-value editable" contenteditable="true" data-field="abroad_experience">${abroadExperience}</span></div>
                     <div class="main-title">Duties and Responsibilities</div>
                     <ul>
                         <li class="editable" contenteditable="true"><span data-field="training_notes">${trainingNotes}</span></li>
@@ -3326,23 +3336,25 @@ window.printEmptyCvModal = function() {
     if (!printWindow) return;
     printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Worker CV</title>
         <style>
-            body{margin:0;background:#fff;font-family:Arial,sans-serif;color:#1d2a3a}
-            .page{max-width:850px;margin:0 auto;background:#fff;font-family:Georgia,'Times New Roman',serif}
-            .header{background:#a8d3ef;color:#0d2538;padding:8px 24px;text-align:center;border-bottom:1px solid #8bbbdc}
-            .header h1{margin:0;font-size:22px;letter-spacing:1px;font-weight:700;text-transform:uppercase;line-height:1.1}
-            .header h2{margin:2px 0 0;font-size:12px;font-weight:700;text-transform:capitalize}
-            .grid{display:grid;grid-template-columns:250px 1fr}
-            .left{background:#fff;padding:14px;border-right:10px solid #c8dcee}
-            .right{padding:14px 18px;background:#f5fbff}
-            .photo{height:170px;border:1px solid #9fc6e2;background:#f4f8fb;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700}
-            .side-title{background:#2f7fc2;color:#fff;font-size:16px;font-style:italic;font-weight:700;padding:3px 8px;line-height:1;margin:10px 0 6px}
-            .main-title{color:#1f6ea8;font-size:18px;font-style:italic;font-weight:700;line-height:1.1;margin:10px 0 6px}
-            .line{padding:2px 0;border-bottom:1px solid #c2d6e6;font-size:14px;line-height:1.25}
-            .pair{display:grid;grid-template-columns:120px 1fr;gap:6px}
-            .pair .k{font-weight:700}
-            ul{margin:6px 0 0 20px;padding:0}
-            li{margin:4px 0;font-size:14px;line-height:1.25}
-            .note{color:#4d6478;font-size:12px;margin-top:16px}
+            body{margin:0;background:#fff;font-family:Georgia,'Times New Roman',serif;color:#1d2a3a}
+            .page{max-width:880px;margin:0 auto;background:#fff;border-radius:6px;overflow:hidden}
+            .header{background:linear-gradient(180deg,#c7e3f7 0%,#a8d3ef 100%);color:#0d2538;padding:12px 20px;text-align:center;border-bottom:1px solid #8bbbdc}
+            .header h1{margin:0;font-size:20px;letter-spacing:.06em;font-weight:700;text-transform:uppercase;line-height:1.15}
+            .header h2{margin:6px 0 0;font-size:13px;font-weight:600;color:#1a3d5c}
+            .grid{display:grid;grid-template-columns:minmax(0,280px) minmax(0,1fr)}
+            .cv-panel{padding:14px 16px}
+            .left{background:#fafcfe;border-right:1px solid #d6e6f2}
+            .right{background:#f3f9fd}
+            .photo{height:200px;border-radius:4px;border:1px solid #b8d4ea;background:#eef6fb;display:flex;align-items:center;justify-content:center;color:#4f7da5;font-weight:700;overflow:hidden}
+            .photo img{max-width:100%;max-height:100%;object-fit:cover;display:block}
+            .side-title{background:#2f7fc2;color:#fff;font-size:14px;font-weight:700;padding:6px 10px;line-height:1.2;margin:14px 0 8px;border-radius:3px}
+            .main-title{color:#145a8a;font-size:15px;font-weight:700;line-height:1.2;margin:16px 0 8px;padding-bottom:4px;border-bottom:2px solid #b9d6ea}
+            .line{padding:6px 0;font-size:13px;line-height:1.35;border-bottom:1px solid #ddeaf4}
+            .pair{display:grid;grid-template-columns:minmax(0,38%) minmax(0,62%);gap:8px 12px;align-items:start}
+            .pair .k{font-weight:700;color:#2c4a63;font-size:12px;padding-top:2px}
+            ul{margin:4px 0 0 1.1em;padding:0}
+            li{margin:6px 0;font-size:13px;line-height:1.4}
+            .note{color:#5a6b7a;font-size:11px;margin-top:14px;text-align:right}
         </style>
     </head><body>${sheet.innerHTML}</body></html>`);
     printWindow.document.close();
