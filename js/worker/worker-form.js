@@ -2205,6 +2205,13 @@ document.addEventListener('DOMContentLoaded', function() {
             selectEl.value = v;
         }
         
+        // CV template showed "Not provided" for empty slots; that literal was sometimes saved via "Save To System".
+        const stripCvPlaceholder = (val) => {
+            const s = String(val ?? '').trim();
+            if (/^not provided$/i.test(s) || /^n\/?a$/i.test(s)) return '';
+            return s;
+        };
+
         // Map database fields to form fields (all values pass through toEnglish to convert Arabic)
         const fieldMappings = {
             'id': toEnglish(worker.id) ?? worker.id ?? '',
@@ -2242,9 +2249,9 @@ document.addEventListener('DOMContentLoaded', function() {
             'is_identity_verified': String(worker.is_identity_verified ?? '0'),
             'biometric_id': toEnglish(worker.biometric_id || ''),
             'demand_letter_id': toEnglish(worker.demand_letter_id || ''),
-            'salary': toEnglish(worker.salary) ?? worker.salary ?? '',
-            'working_hours': toEnglish(worker.working_hours || ''),
-            'contract_duration': toEnglish(worker.contract_duration || ''),
+            'salary': stripCvPlaceholder(String(toEnglish(worker.salary) ?? worker.salary ?? '')),
+            'working_hours': stripCvPlaceholder(toEnglish(worker.working_hours || '')),
+            'contract_duration': stripCvPlaceholder(toEnglish(worker.contract_duration || '')),
             'vacation_days': toEnglish(worker.vacation_days) ?? worker.vacation_days ?? '',
             'accommodation_details': toEnglish(worker.accommodation_details || ''),
             'food_details': toEnglish(worker.food_details || ''),
@@ -2252,7 +2259,7 @@ document.addEventListener('DOMContentLoaded', function() {
             'insurance_details': toEnglish(worker.insurance_details || ''),
             'medical_check_date': cleanDate(worker.medical_check_date),
             'predeparture_training_completed': String(worker.predeparture_training_completed ?? '0'),
-            'training_notes': toEnglish(worker.training_notes || ''),
+            'training_notes': stripCvPlaceholder(toEnglish(worker.training_notes || '')),
             'government_registration_number': toEnglish(worker.government_registration_number || ''),
             'worker_card_number': toEnglish(worker.worker_card_number || ''),
             'exit_clearance_status': worker.exit_clearance_status || 'pending',
