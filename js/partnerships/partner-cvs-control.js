@@ -56,6 +56,11 @@
         el.textContent = message;
         el.classList.toggle('is-error', type === 'error');
         el.classList.toggle('is-success', type === 'success');
+        try {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (e) {
+            /* ignore */
+        }
     }
 
     function showTableMessage(message) {

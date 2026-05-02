@@ -130,6 +130,14 @@
     color: #94a3b8;
 }
 
+.cvs-send-wizard .cvs-page-notice {
+    margin: 0.85rem 0 0;
+    padding: 0.55rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(100, 116, 139, 0.35);
+    background: rgba(2, 6, 23, 0.5);
+}
+
 .partner-cvs-control-notice.is-success {
     color: #5eead4;
 }

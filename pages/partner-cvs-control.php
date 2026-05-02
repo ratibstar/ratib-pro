@@ -59,6 +59,7 @@ include '../includes/header.php';
                 </div>
             </li>
         </ol>
+        <p id="cvsControlNotice" class="partner-cvs-control-notice cvs-page-notice" role="status" aria-live="polite" hidden></p>
     </section>
 
     <div class="cvs-advanced-bar glass-card">
@@ -113,7 +114,6 @@ include '../includes/header.php';
             <button type="button" id="cvsReloadBtn" class="muted-btn">Reload</button>
         </div>
         <p class="cvs-bulk-hint">Use <strong>Select all filtered</strong> with <strong>Bulk Add / Remove / Edit</strong> to apply to every row matching your filters (all pages).</p>
-        <p id="cvsControlNotice" class="partner-cvs-control-notice" hidden></p>
     </div>
 
     <div class="glass-card table-shell">
