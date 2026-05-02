@@ -23,7 +23,7 @@
         if (m) {
             const d = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
             if (!Number.isNaN(d.getTime())) {
-                return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
             }
         }
         return str;

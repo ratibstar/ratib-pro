@@ -1,7 +1,9 @@
 /**
- * Partner portal dashboard (scoped session).
+ * Partner portal dashboard (scoped session) — aligned with staff agency detail fields.
  */
 (function () {
+    const DATE_LOCALE = 'en-US';
+
     function escapeHtml(s) {
         if (s == null) return '';
         return String(s)
@@ -23,7 +25,7 @@
         if (m) {
             const d = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
             if (!Number.isNaN(d.getTime())) {
-                return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+                return d.toLocaleDateString(DATE_LOCALE, { year: 'numeric', month: 'short', day: 'numeric' });
             }
         }
         return str;
@@ -51,6 +53,90 @@
         return `../api/partnerships/partner-agency-cv-download.php?id=${encodeURIComponent(String(cvId))}`;
     }
 
+    function renderContracts(agency) {
+        const list = document.getElementById('ppContracts');
+        const empty = document.getElementById('ppContractsEmpty');
+        const countEl = document.getElementById('ppContractCount');
+        const sent = Array.isArray(agency.sent_workers) ? agency.sent_workers : [];
+        if (countEl) countEl.textContent = String(sent.length);
+        if (sent.length === 0) {
+            if (list) list.innerHTML = '';
+            if (empty) empty.hidden = false;
+            return;
+        }
+        if (empty) empty.hidden = true;
+        if (!list) return;
+
+        list.innerHTML = sent
+            .map((w) => {
+                const depId = w.deployment_id != null ? w.deployment_id : '';
+                const workerName = displayValue(w.worker_name);
+                const st = String(w.status || 'processing');
+                const statusExtra = statusClassForDeployment(st);
+                const salaryRaw = w.salary != null && String(w.salary).trim() !== '' ? String(w.salary) : '';
+                const salary = salaryRaw !== '' ? `${salaryRaw} SAR` : '—';
+                const start = formatCalendarDate(w.contract_start);
+                const job = displayValue(w.job_title);
+                const country = displayValue(w.country);
+
+                return `
+                <article class="agency-contract-card">
+                    <div class="agency-contract-card-top">
+                        <span class="agency-contract-id">#${escapeHtml(depId)}</span>
+                        <span class="agency-contract-status ${escapeHtml(statusExtra)}">${escapeHtml(st)}</span>
+                    </div>
+                    <div class="agency-contract-body">
+                        <div><strong>${workerName}</strong></div>
+                        <div>${escapeHtml(start)} · ${escapeHtml(job)} · ${escapeHtml(country)}</div>
+                    </div>
+                    <div class="agency-contract-meta">
+                        <span class="agency-contract-salary">${escapeHtml(salary)}</span>
+                    </div>
+                </article>`;
+            })
+            .join('');
+    }
+
+    function renderCvList(cvs) {
+        const cvList = document.getElementById('ppCvList');
+        const cvEmpty = document.getElementById('ppCvEmpty');
+        if (cvs.length === 0) {
+            if (cvList) cvList.innerHTML = '';
+            if (cvEmpty) cvEmpty.hidden = false;
+            return;
+        }
+        if (cvEmpty) cvEmpty.hidden = true;
+        if (cvList) {
+            cvList.innerHTML = cvs
+                .map((c) => {
+                    const id = c.id;
+                    const title = displayValue(c.title);
+                    const fn = displayValue(c.original_filename);
+                    const href = escapeHtml(downloadHref(id));
+
+                    return `<li class="partner-portal-cv-item">
+                        <div>
+                            <strong>${escapeHtml(title)}</strong>
+                            <div class="partner-portal-cv-meta">${escapeHtml(fn)} · ${escapeHtml(formatCalendarDate(c.created_at))}</div>
+                        </div>
+                        <div class="partner-portal-cv-actions">
+                            <a class="neon-btn partner-portal-dl-btn" href="${href}">Download</a>
+                            <button type="button" class="muted-btn partner-portal-cv-delete" data-cv-id="${escapeHtml(String(id))}">Delete</button>
+                        </div>
+                    </li>`;
+                })
+                .join('');
+        }
+    }
+
+    function setUploadMessage(text, isError) {
+        const el = document.getElementById('ppCvUploadMsg');
+        if (!el) return;
+        el.textContent = text || '';
+        el.hidden = !text;
+        el.classList.toggle('partner-portal-upload-msg--err', !!isError);
+    }
+
     async function load() {
         const errEl = document.getElementById('ppError');
         try {
@@ -64,12 +150,24 @@
                 }
                 return;
             }
+            if (errEl) {
+                errEl.textContent = '';
+                errEl.hidden = true;
+                errEl.classList.add('is-hidden');
+            }
+
             const data = json.data || {};
             const agency = data.agency || {};
             const cvs = Array.isArray(data.cvs) ? data.cvs : [];
 
             const title = document.getElementById('ppAgencyName');
             if (title) title.textContent = displayValue(agency.name);
+
+            const idBadge = document.getElementById('ppAgencyIdBadge');
+            if (idBadge && agency.id != null) {
+                idBadge.textContent = `ID ${agency.id}`;
+                idBadge.hidden = false;
+            }
 
             const st = document.getElementById('ppStatus');
             if (st) {
@@ -79,83 +177,39 @@
                 st.hidden = false;
             }
 
-            renderDl(document.getElementById('ppAgencyDl'), [
+            renderDl(document.getElementById('ppAgencyData'), [
+                ['Agency name', displayValue(agency.name)],
+                ['Agency code', displayValue(agency.agency_code)],
                 ['Country', displayValue(agency.country)],
                 ['City', displayValue(agency.city)],
-                ['Contact', displayValue(agency.contact_person)],
-                ['Email', displayValue(agency.email)],
-                ['Phone', displayValue(agency.phone)],
+                ['Address', displayValue(agency.address_en)],
+                ['Contact person', displayValue(agency.contact_person)],
+                ['Record created', formatCalendarDate(agency.created_at)],
             ]);
 
-            const sent = Array.isArray(agency.sent_workers) ? agency.sent_workers : [];
-            const countEl = document.getElementById('ppContractCount');
-            if (countEl) countEl.textContent = String(sent.length);
-            const list = document.getElementById('ppContracts');
-            const emptyC = document.getElementById('ppContractsEmpty');
-            if (sent.length === 0) {
-                if (list) list.innerHTML = '';
-                if (emptyC) emptyC.hidden = false;
-            } else {
-                if (emptyC) emptyC.hidden = true;
-                if (list) {
-                    list.innerHTML = sent
-                        .map((w) => {
-                            const depId = w.deployment_id != null ? w.deployment_id : '';
-                            const workerName = displayValue(w.worker_name);
-                            const st = String(w.status || 'processing');
-                            const statusExtra = statusClassForDeployment(st);
-                            const salaryRaw =
-                                w.salary != null && String(w.salary).trim() !== '' ? String(w.salary) : '';
-                            const salary = salaryRaw !== '' ? `${salaryRaw} SAR` : '—';
-                            const start = formatCalendarDate(w.contract_start);
-                            const job = displayValue(w.job_title);
-                            const country = displayValue(w.country);
+            renderDl(document.getElementById('ppContactData'), [
+                ['Email', displayValue(agency.email)],
+                ['Phone 1', displayValue(agency.phone)],
+                ['Phone 2', displayValue(agency.phone2)],
+                ['Fax', displayValue(agency.fax)],
+                ['Mobile', displayValue(agency.mobile)],
+                ['Account number', displayValue(agency.account_number)],
+            ]);
 
-                            return `
-                            <article class="agency-contract-card">
-                                <div class="agency-contract-card-top">
-                                    <span class="agency-contract-id">#${escapeHtml(depId)}</span>
-                                    <span class="agency-contract-status ${escapeHtml(statusExtra)}">${escapeHtml(st)}</span>
-                                </div>
-                                <div class="agency-contract-body">
-                                    <div><strong>${workerName}</strong></div>
-                                    <div>${escapeHtml(start)} · ${escapeHtml(job)} · ${escapeHtml(country)}</div>
-                                </div>
-                                <div class="agency-contract-meta">
-                                    <span class="agency-contract-salary">${escapeHtml(salary)}</span>
-                                </div>
-                            </article>`;
-                        })
-                        .join('');
-                }
-            }
+            renderDl(document.getElementById('ppAdminData'), [
+                ['License', displayValue(agency.license)],
+                ['License owner', displayValue(agency.license_owner)],
+                ['Sending bank', displayValue(agency.sending_bank)],
+                ['Passport no.', displayValue(agency.passport_no)],
+                [
+                    'Passport issue',
+                    `${displayValue(agency.passport_issue_place)} · ${formatCalendarDate(agency.passport_issue_date)}`,
+                ],
+                ['Notes', displayValue(agency.notes)],
+            ]);
 
-            const cvList = document.getElementById('ppCvList');
-            const cvEmpty = document.getElementById('ppCvEmpty');
-            if (cvs.length === 0) {
-                if (cvList) cvList.innerHTML = '';
-                if (cvEmpty) cvEmpty.hidden = false;
-            } else {
-                if (cvEmpty) cvEmpty.hidden = true;
-                if (cvList) {
-                    cvList.innerHTML = cvs
-                        .map((c) => {
-                            const id = c.id;
-                            const title = displayValue(c.title);
-                            const fn = displayValue(c.original_filename);
-                            const href = escapeHtml(downloadHref(id));
-
-                            return `<li class="partner-portal-cv-item">
-                                <div>
-                                    <strong>${escapeHtml(title)}</strong>
-                                    <div class="partner-portal-cv-meta">${escapeHtml(fn)} · ${formatCalendarDate(c.created_at)}</div>
-                                </div>
-                                <a class="neon-btn partner-portal-dl-btn" href="${href}">Download</a>
-                            </li>`;
-                        })
-                        .join('');
-                }
-            }
+            renderContracts(agency);
+            renderCvList(cvs);
         } catch (e) {
             if (errEl) {
                 errEl.textContent = e && e.message ? e.message : 'Failed to load.';
@@ -165,9 +219,81 @@
         }
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', load);
-    } else {
+    function initCvDeleteDelegation() {
+        const list = document.getElementById('ppCvList');
+        if (!list || list.dataset.cvDeleteBound === '1') return;
+        list.dataset.cvDeleteBound = '1';
+        list.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.partner-portal-cv-delete');
+            if (!btn) return;
+            const cvId = btn.getAttribute('data-cv-id');
+            if (!cvId) return;
+            if (!window.confirm('Remove this document?')) return;
+            try {
+                const url = `../api/partnerships/partner-agency-cvs.php?id=${encodeURIComponent(cvId)}`;
+                const res = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok || !json.success) {
+                    throw new Error(json.message || 'Could not delete.');
+                }
+                setUploadMessage('Document removed.', false);
+                await load();
+            } catch (err) {
+                setUploadMessage(err && err.message ? err.message : 'Delete failed.', true);
+            }
+        });
+    }
+
+    function initUpload() {
+        const form = document.getElementById('ppCvUploadForm');
+        if (!form) return;
+        form.addEventListener('submit', async (ev) => {
+            ev.preventDefault();
+            const titleEl = document.getElementById('ppCvTitle');
+            const fileEl = document.getElementById('ppCvFile');
+            const btn = document.getElementById('ppCvUploadBtn');
+            const title = titleEl ? String(titleEl.value || '').trim() : '';
+            const file = fileEl && fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
+            if (!title || !file) {
+                setUploadMessage('Enter a title and choose a file.', true);
+                return;
+            }
+            setUploadMessage('');
+            const fd = new FormData();
+            fd.append('title', title);
+            fd.append('file', file);
+            if (btn) btn.disabled = true;
+            try {
+                const res = await fetch('../api/partnerships/partner-agency-cvs.php', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: fd,
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok || !json.success) {
+                    throw new Error(json.message || `Upload failed (${res.status})`);
+                }
+                if (titleEl) titleEl.value = '';
+                if (fileEl) fileEl.value = '';
+                setUploadMessage('Uploaded successfully.', false);
+                await load();
+            } catch (e) {
+                setUploadMessage(e && e.message ? e.message : 'Upload failed.', true);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        });
+    }
+
+    function init() {
+        initCvDeleteDelegation();
+        initUpload();
         load();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
 })();

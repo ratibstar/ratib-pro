@@ -42,6 +42,7 @@ $pageTitle = 'Partner portal';
 $v = time();
 $pageCss = [
     asset('css/partnerships.css') . '?v=' . $v,
+    asset('css/partnerships-agency-detail.css') . '?v=' . $v,
     asset('css/partner-portal.css') . '?v=' . $v,
 ];
 $pageJs = [asset('js/partnerships/partner-portal.js') . '?v=' . $v];
@@ -60,30 +61,50 @@ include __DIR__ . '/../includes/partner-portal-header.php';
         </div>
         <div class="partner-portal-actions">
             <span id="ppStatus" class="status-pill status-inactive" hidden></span>
+            <span id="ppAgencyIdBadge" class="agency-detail-id-badge" hidden></span>
             <a class="muted-btn" href="<?php echo htmlspecialchars(pageUrl('partner-portal-logout.php'), ENT_QUOTES, 'UTF-8'); ?>">Log out</a>
         </div>
     </header>
 
     <div id="ppError" class="partner-portal-error glass-card is-hidden" hidden></div>
 
-    <div class="partner-portal-grid">
-        <section class="glass-card partner-portal-card">
-            <h2 class="partner-portal-h2">Your agency</h2>
-            <dl class="agency-detail-dl" id="ppAgencyDl"></dl>
-        </section>
-        <section class="glass-card partner-portal-card">
-            <div class="partner-portal-card-head">
-                <h2 class="partner-portal-h2">Recruitment contracts</h2>
-                <span class="agency-detail-count" id="ppContractCount">0</span>
-            </div>
-            <div id="ppContracts" class="agency-contracts-list"></div>
-            <p id="ppContractsEmpty" class="agency-detail-empty" hidden>No deployments yet.</p>
-        </section>
+    <div class="agency-detail-grid">
+        <div class="agency-detail-main-col">
+            <section class="agency-detail-card glass-card">
+                <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">🏢</span> Agency data</h2>
+                <dl class="agency-detail-dl" id="ppAgencyData"></dl>
+            </section>
+            <section class="agency-detail-card glass-card">
+                <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📞</span> Contact information</h2>
+                <dl class="agency-detail-dl" id="ppContactData"></dl>
+            </section>
+            <section class="agency-detail-card glass-card">
+                <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📋</span> Administrative &amp; financial</h2>
+                <dl class="agency-detail-dl" id="ppAdminData"></dl>
+                <p class="agency-detail-note">Extended license and banking fields can be added when available in your profile.</p>
+            </section>
+        </div>
+        <aside class="agency-detail-side-col">
+            <section class="agency-detail-card glass-card agency-detail-contracts-card">
+                <div class="agency-detail-card-head">
+                    <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📄</span> Recruitment contracts</h2>
+                    <span class="agency-detail-count" id="ppContractCount">0</span>
+                </div>
+                <div id="ppContracts" class="agency-contracts-list"></div>
+                <p id="ppContractsEmpty" class="agency-detail-empty" hidden>No deployments recorded for this agency yet.</p>
+            </section>
+        </aside>
     </div>
 
-    <section class="glass-card partner-portal-card partner-portal-cvs-block">
-        <h2 class="partner-portal-h2">Documents &amp; CVs</h2>
-        <p class="partner-portal-hint">Your office uploads files here for your agency. Download only.</p>
+    <section class="agency-detail-card glass-card partner-portal-cvs-block">
+        <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📎</span> Documents &amp; CVs</h2>
+        <p class="agency-detail-note">Files you upload here are available to your office and appear in this list. Allowed: PDF, Word, JPG, PNG, WEBP (max 8MB).</p>
+        <form id="ppCvUploadForm" class="agency-cv-upload-form">
+            <input type="text" id="ppCvTitle" name="title" placeholder="Title (e.g. CV — worker name)" required maxlength="255" autocomplete="off">
+            <input type="file" id="ppCvFile" name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" required>
+            <button type="submit" class="neon-btn" id="ppCvUploadBtn">Upload</button>
+        </form>
+        <p id="ppCvUploadMsg" class="partner-portal-upload-msg" hidden></p>
         <ul id="ppCvList" class="partner-portal-cv-list"></ul>
         <p id="ppCvEmpty" class="agency-detail-empty" hidden>No documents uploaded yet.</p>
     </section>

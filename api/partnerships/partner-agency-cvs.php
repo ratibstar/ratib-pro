@@ -1,6 +1,7 @@
 <?php
 /**
- * List / upload / delete partner agency CVs (staff). Partners: GET list only for own agency.
+ * List / upload / delete partner agency CVs. Staff: all methods with permissions.
+ * Partners (portal session): GET/POST/DELETE for their agency only.
  */
 ob_start();
 header('Content-Type: application/json');
@@ -41,6 +42,19 @@ try {
     }
 
     if ($method === 'POST') {
+        if (function_exists('ratib_partner_portal_session_is_valid') && ratib_partner_portal_session_is_valid()) {
+            $agencyId = ratib_partner_portal_agency_id();
+            if ($agencyId <= 0) {
+                throw new InvalidArgumentException('Partner portal session required');
+            }
+            $title = trim((string) ($_POST['title'] ?? ''));
+            if (!isset($_FILES['file'])) {
+                throw new InvalidArgumentException('file is required');
+            }
+            $created = $cvs->create($agencyId, $title, $_FILES['file']);
+            partnerAgencyCvsJson(['success' => true, 'message' => 'Document uploaded', 'data' => $created], 201);
+        }
+
         enforceApiPermission('partnerships', 'update');
         $agencyId = (int) ($_POST['partner_agency_id'] ?? 0);
         $title = trim((string) ($_POST['title'] ?? ''));
@@ -55,11 +69,23 @@ try {
     }
 
     if ($method === 'DELETE') {
-        enforceApiPermission('partnerships', 'delete');
         $cvId = (int) ($_GET['id'] ?? 0);
+        if ($cvId <= 0) {
+            throw new InvalidArgumentException('id is required');
+        }
+        if (function_exists('ratib_partner_portal_session_is_valid') && ratib_partner_portal_session_is_valid()) {
+            $agencyId = ratib_partner_portal_agency_id();
+            if ($agencyId <= 0) {
+                throw new InvalidArgumentException('Partner portal session required');
+            }
+            $cvs->delete($cvId, $agencyId);
+            partnerAgencyCvsJson(['success' => true, 'message' => 'Document removed']);
+        }
+
+        enforceApiPermission('partnerships', 'delete');
         $agencyId = (int) ($_GET['partner_agency_id'] ?? 0);
-        if ($cvId <= 0 || $agencyId <= 0) {
-            throw new InvalidArgumentException('id and partner_agency_id are required');
+        if ($agencyId <= 0) {
+            throw new InvalidArgumentException('partner_agency_id is required');
         }
         $cvs->delete($cvId, $agencyId);
         partnerAgencyCvsJson(['success' => true, 'message' => 'Document removed']);

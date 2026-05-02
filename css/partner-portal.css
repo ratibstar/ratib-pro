@@ -10,7 +10,7 @@
 }
 
 .partner-portal-shell {
-    max-width: 960px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 1.25rem;
 }
@@ -70,16 +70,16 @@
     display: none;
 }
 
-.partner-portal-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+/* Main layout uses .agency-detail-grid from partnerships-agency-detail.css */
+
+.partner-portal-upload-msg {
+    margin: 0.5rem 0 0.75rem;
+    font-size: 0.9rem;
+    color: #5eead4;
 }
 
-@media (max-width: 768px) {
-    .partner-portal-grid {
-        grid-template-columns: 1fr;
-    }
+.partner-portal-upload-msg--err {
+    color: #fecaca;
 }
 
 .partner-portal-card {
@@ -132,6 +132,13 @@
     border: 1px solid rgba(94, 234, 212, 0.15);
     border-radius: 12px;
     background: rgba(2, 6, 23, 0.35);
+}
+
+.partner-portal-cv-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .partner-portal-cv-meta {
