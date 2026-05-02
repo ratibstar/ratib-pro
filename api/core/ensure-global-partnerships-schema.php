@@ -58,6 +58,61 @@ function ratibEnsureGlobalPartnershipsSchema(PDO $conn)
 
     ratibEnsurePartnerPortalPartnershipsSchema($conn);
     ratibEnsurePartnerAgencyExtendedProfileColumns($conn);
+    ratibEnsurePartnerAgencyWorkerDocumentSharesSchema($conn);
+}
+
+/**
+ * Staff toggles which worker document types each partner agency may see on the partner portal.
+ */
+function ratibEnsurePartnerAgencyWorkerDocumentSharesSchema(PDO $conn): void
+{
+    static $shareDone = false;
+    if ($shareDone) {
+        return;
+    }
+
+    try {
+        $conn->exec(
+            "CREATE TABLE IF NOT EXISTS `partner_agency_worker_document_shares` (
+                `id` INT NOT NULL AUTO_INCREMENT,
+                `partner_agency_id` INT NOT NULL,
+                `worker_id` INT NOT NULL,
+                `document_type` VARCHAR(64) NOT NULL,
+                `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `uq_partner_worker_doctype` (`partner_agency_id`, `worker_id`, `document_type`),
+                KEY `idx_pawd_partner` (`partner_agency_id`),
+                KEY `idx_pawd_worker` (`worker_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+    } catch (Throwable $e) {
+        error_log('ratibEnsurePartnerAgencyWorkerDocumentSharesSchema CREATE: ' . $e->getMessage());
+    }
+
+    $tryFk = static function (PDO $conn, string $sql): void {
+        try {
+            $conn->exec($sql);
+        } catch (Throwable $e) {
+            $msg = $e->getMessage();
+            if (stripos($msg, 'Duplicate foreign key') === false && stripos($msg, 'already exists') === false
+                && stripos($msg, 'Duplicate key name') === false) {
+                error_log('ratibEnsurePartnerAgencyWorkerDocumentSharesSchema FK: ' . $msg);
+            }
+        }
+    };
+
+    $tryFk(
+        $conn,
+        "ALTER TABLE `partner_agency_worker_document_shares`
+            ADD CONSTRAINT `fk_pawd_partner` FOREIGN KEY (`partner_agency_id`) REFERENCES `partner_agencies` (`id`) ON DELETE CASCADE"
+    );
+    $tryFk(
+        $conn,
+        "ALTER TABLE `partner_agency_worker_document_shares`
+            ADD CONSTRAINT `fk_pawd_worker` FOREIGN KEY (`worker_id`) REFERENCES `workers` (`id`) ON DELETE CASCADE"
+    );
+
+    $shareDone = true;
 }
 
 /**

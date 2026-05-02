@@ -168,6 +168,110 @@
         }
     }
 
+    async function loadWorkerSharesForAgency(agencyId) {
+        const list = document.getElementById('workerShareList');
+        const empty = document.getElementById('workerShareEmpty');
+        const wSel = document.getElementById('shareWorkerSelect');
+        const dSel = document.getElementById('shareDocTypeSelect');
+        if (!list) return;
+        try {
+            const res = await fetch(
+                withContext(
+                    `../api/partnerships/partner-agency-worker-shares.php?partner_agency_id=${encodeURIComponent(String(agencyId))}`
+                ),
+                { credentials: 'same-origin' }
+            );
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok || !json.success) {
+                list.innerHTML = '';
+                return;
+            }
+            const d = json.data || {};
+            const shares = Array.isArray(d.shares) ? d.shares : [];
+            const workers = Array.isArray(d.deployment_workers) ? d.deployment_workers : [];
+            const types = Array.isArray(d.document_types) ? d.document_types : [];
+            const labels = d.document_labels && typeof d.document_labels === 'object' ? d.document_labels : {};
+
+            if (wSel) {
+                wSel.innerHTML = '<option value="">Select worker (deployments)…</option>';
+                workers.forEach((w) => {
+                    const o = document.createElement('option');
+                    o.value = String(w.id);
+                    const p = w.passport_number ? String(w.passport_number).trim() : '';
+                    o.textContent = `${w.worker_name || 'Worker'} (#${w.id})${p ? ' · ' + p : ''}`;
+                    wSel.appendChild(o);
+                });
+            }
+            if (dSel) {
+                dSel.innerHTML = '<option value="">Document type…</option>';
+                types.forEach((t) => {
+                    const o = document.createElement('option');
+                    o.value = t;
+                    o.textContent = labels[t] || t;
+                    dSel.appendChild(o);
+                });
+            }
+
+            if (shares.length === 0) {
+                list.innerHTML = '';
+                if (empty) empty.hidden = false;
+                return;
+            }
+            if (empty) empty.hidden = true;
+            const dlBase = `../api/partnerships/partner-shared-worker-doc-download.php`;
+            list.innerHTML = shares
+                .map((s) => {
+                    const sid = s.id;
+                    const name = displayValue(s.worker_name);
+                    const docLab = displayValue(s.document_label || s.document_type);
+                    const hasFile = !!s.has_file;
+                    const href = withContext(`${dlBase}?share_id=${encodeURIComponent(String(sid))}`);
+                    const dl = hasFile
+                        ? `<a class="muted-btn" href="${escapeHtml(href)}" target="_blank" rel="noopener">Download</a>`
+                        : '<span class="agency-share-no-file">No file on worker</span>';
+
+                    return `<li class="agency-worker-share-item">
+                        <div>
+                            <strong>${escapeHtml(name)}</strong>
+                            <div class="agency-cv-admin-meta">${escapeHtml(docLab)} · ${escapeHtml(
+                        formatCalendarDate(s.created_at)
+                    )}</div>
+                        </div>
+                        <div>
+                            ${dl}
+                            <button type="button" class="muted-btn agency-worker-share-remove" data-share-id="${String(
+                        sid
+                    )}">Remove</button>
+                        </div>
+                    </li>`;
+                })
+                .join('');
+
+            list.querySelectorAll('.agency-worker-share-remove').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const shareId = btn.getAttribute('data-share-id');
+                    if (!shareId || !agencyId) return;
+                    if (!window.confirm('Remove this share? Partners will no longer see it.')) return;
+                    try {
+                        const url = withContext(
+                            `../api/partnerships/partner-agency-worker-shares.php?id=${encodeURIComponent(
+                                shareId
+                            )}&partner_agency_id=${encodeURIComponent(String(agencyId))}`
+                        );
+                        const r = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
+                        const j = await r.json().catch(() => ({}));
+                        if (!r.ok || !j.success) throw new Error(j.message || 'Remove failed');
+                        await loadWorkerSharesForAgency(agencyId);
+                    } catch (err) {
+                        showError(err && err.message ? err.message : 'Could not remove.');
+                    }
+                });
+            });
+        } catch (e) {
+            list.innerHTML = '';
+        }
+    }
+
     async function loadCvsForAgency(agencyId) {
         const list = document.getElementById('cvAdminList');
         const empty = document.getElementById('cvAdminEmpty');
@@ -374,7 +478,9 @@
 
         applyPortalUi(agency);
         if (agency.id != null) {
-            loadCvsForAgency(Number(agency.id));
+            const aid = Number(agency.id);
+            loadCvsForAgency(aid);
+            loadWorkerSharesForAgency(aid);
         }
     }
 
@@ -501,6 +607,45 @@
                     await loadCvsForAgency(aid);
                 } catch (e) {
                     showError(e && e.message ? e.message : 'Upload failed.');
+                }
+            });
+        }
+
+        const shareAdd = document.getElementById('shareDocAddBtn');
+        if (shareAdd) {
+            shareAdd.addEventListener('click', async () => {
+                const aid = id();
+                if (!aid) return;
+                const wSel = document.getElementById('shareWorkerSelect');
+                const manual = document.getElementById('shareWorkerIdManual');
+                const dSel = document.getElementById('shareDocTypeSelect');
+                let wid = wSel && wSel.value ? parseInt(String(wSel.value), 10) : 0;
+                if (!Number.isFinite(wid) || wid <= 0) {
+                    const m = manual && String(manual.value || '').trim();
+                    if (m) wid = parseInt(m, 10);
+                }
+                const docType = dSel ? String(dSel.value || '').trim() : '';
+                if (!Number.isFinite(wid) || wid <= 0 || !docType) {
+                    showError('Choose a worker (or enter worker ID) and a document type.');
+                    return;
+                }
+                try {
+                    const res = await fetch(withContext('../api/partnerships/partner-agency-worker-shares.php'), {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            partner_agency_id: aid,
+                            worker_id: wid,
+                            document_type: docType,
+                        }),
+                    });
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok || !json.success) throw new Error(json.message || 'Could not add share');
+                    if (manual) manual.value = '';
+                    await loadWorkerSharesForAgency(aid);
+                } catch (e) {
+                    showError(e && e.message ? e.message : 'Could not add share.');
                 }
             });
         }

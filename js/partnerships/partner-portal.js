@@ -97,6 +97,43 @@
             .join('');
     }
 
+    function workerShareDownloadHref(shareId) {
+        return `../api/partnerships/partner-shared-worker-doc-download.php?share_id=${encodeURIComponent(String(shareId))}`;
+    }
+
+    function renderSharedWorkerDocs(rows) {
+        const list = document.getElementById('ppWorkerShareList');
+        const empty = document.getElementById('ppWorkerShareEmpty');
+        if (!list) return;
+        if (!rows.length) {
+            list.innerHTML = '';
+            if (empty) empty.hidden = false;
+            return;
+        }
+        if (empty) empty.hidden = true;
+        list.innerHTML = rows
+            .map((r) => {
+                const sid = r.id;
+                const name = displayValue(r.worker_name);
+                const docLab = displayValue(r.document_label || r.document_type);
+                const passport = displayValue(r.passport_number);
+                const hasFile = !!r.has_file;
+                const dl = workerShareDownloadHref(sid);
+                const dlBtn = hasFile
+                    ? `<a class="neon-btn partner-portal-dl-btn" href="${escapeHtml(dl)}">Download</a>`
+                    : `<span class="partner-portal-no-file muted-label">No file uploaded yet</span>`;
+
+                return `<li class="partner-portal-worker-share-item">
+                    <div>
+                        <strong>${escapeHtml(name)}</strong>
+                        <div class="partner-portal-cv-meta">${escapeHtml(docLab)} · Passport: ${escapeHtml(passport)} · Added ${escapeHtml(formatCalendarDate(r.created_at))}</div>
+                    </div>
+                    ${dlBtn}
+                </li>`;
+            })
+            .join('');
+    }
+
     function renderCvList(cvs) {
         const cvList = document.getElementById('ppCvList');
         const cvEmpty = document.getElementById('ppCvEmpty');
@@ -210,6 +247,9 @@
 
             renderContracts(agency);
             renderCvList(cvs);
+
+            const shared = Array.isArray(data.shared_worker_documents) ? data.shared_worker_documents : [];
+            renderSharedWorkerDocs(shared);
         } catch (e) {
             if (errEl) {
                 errEl.textContent = e && e.message ? e.message : 'Failed to load.';

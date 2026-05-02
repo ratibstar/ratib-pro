@@ -108,6 +108,13 @@ include __DIR__ . '/../includes/partner-portal-header.php';
         <ul id="ppCvList" class="partner-portal-cv-list"></ul>
         <p id="ppCvEmpty" class="agency-detail-empty" hidden>No documents uploaded yet.</p>
     </section>
+
+    <section class="agency-detail-card glass-card partner-portal-worker-shares-block">
+        <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">👤</span> Worker documents from your office</h2>
+        <p class="agency-detail-note">Only workers and document types your office selected for this agency appear here. Download only.</p>
+        <ul id="ppWorkerShareList" class="partner-portal-worker-share-list"></ul>
+        <p id="ppWorkerShareEmpty" class="agency-detail-empty" hidden>No worker documents shared with your portal yet.</p>
+    </section>
 </div>
 
 <?php include __DIR__ . '/../includes/partner-portal-footer.php'; ?>

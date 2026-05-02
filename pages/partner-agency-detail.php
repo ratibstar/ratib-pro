@@ -124,6 +124,23 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
             <ul id="cvAdminList" class="agency-cv-admin-list"></ul>
             <p id="cvAdminEmpty" class="agency-detail-empty" hidden>No documents uploaded yet.</p>
         </section>
+
+        <section class="agency-detail-card glass-card agency-share-worker-docs">
+            <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">👤</span> Worker documents on partner portal</h2>
+            <p class="agency-detail-note">Choose which worker files (passport, medical, etc.) this partner may open from their portal link. Only selected types appear for them.</p>
+            <div class="agency-share-docs-toolbar">
+                <select id="shareWorkerSelect" aria-label="Worker">
+                    <option value="">Select worker (deployments)…</option>
+                </select>
+                <input type="number" id="shareWorkerIdManual" class="agency-share-worker-id" min="1" placeholder="Or worker ID" aria-label="Worker ID">
+                <select id="shareDocTypeSelect" aria-label="Document type">
+                    <option value="">Document type…</option>
+                </select>
+                <button type="button" class="neon-btn" id="shareDocAddBtn">Add</button>
+            </div>
+            <ul id="workerShareList" class="agency-worker-share-list"></ul>
+            <p id="workerShareEmpty" class="agency-detail-empty" hidden>No worker documents shared yet.</p>
+        </section>
     </div>
 
     <div id="panel-account" class="agency-detail-panels is-hidden" role="tabpanel" hidden>

@@ -16,6 +16,7 @@ require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../core/ensure-global-partnerships-schema.php';
 require_once __DIR__ . '/PartnerAgencyController.php';
 require_once __DIR__ . '/PartnerAgencyCvsController.php';
+require_once __DIR__ . '/PartnerAgencyWorkerDocSharesController.php';
 
 function partnerPortalMeJson(array $payload, int $status = 200): void
 {
@@ -52,11 +53,20 @@ try {
         error_log('partner-portal-me listForAgency: ' . $cvsErr->getMessage());
     }
 
+    $sharedWorkerDocs = [];
+    try {
+        $shCtl = new PartnerAgencyWorkerDocSharesController($conn);
+        $sharedWorkerDocs = $shCtl->listSharesWithDetails($aid);
+    } catch (Throwable $shErr) {
+        error_log('partner-portal-me worker shares: ' . $shErr->getMessage());
+    }
+
     $payload = [
         'success' => true,
         'data' => [
             'agency' => $agency,
             'cvs' => $cvs,
+            'shared_worker_documents' => $sharedWorkerDocs,
         ],
     ];
     $jsonFlags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;

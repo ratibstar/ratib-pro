@@ -459,3 +459,49 @@
     font-size: 0.8rem;
     margin-top: 0.2rem;
 }
+
+.agency-share-docs-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.agency-share-docs-toolbar select,
+.agency-share-worker-id {
+    padding: 0.45rem 0.55rem;
+    border-radius: 10px;
+    border: 1px solid rgba(94, 234, 212, 0.25);
+    background: rgba(2, 6, 23, 0.75);
+    color: #e2e8f0;
+    font-size: 0.88rem;
+    min-width: 140px;
+}
+
+.agency-worker-share-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.agency-worker-share-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid rgba(94, 234, 212, 0.12);
+    border-radius: 10px;
+    background: rgba(2, 6, 23, 0.35);
+    font-size: 0.9rem;
+}
+
+.agency-share-no-file {
+    font-size: 0.82rem;
+    color: #94a3b8;
+}
