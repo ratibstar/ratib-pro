@@ -1,6 +1,5 @@
 /**
- * EN: Partner agency detail page — load one agency, render English dark UI.
- * AR: صفحة تفاصيل وكيل الشريك.
+ * Partner agency detail page — load one agency, portal controls, CVs.
  */
 (function () {
     function escapeHtml(s) {
@@ -109,18 +108,15 @@
         const o = agencySnapshot;
         const emailStr = String(o.email ?? '').trim();
         const payload = {
-            name_ar: String(o.name_ar ?? ''),
             name: String(o.name ?? ''),
             agency_code: String(o.agency_code ?? '').trim(),
             country: String(o.country ?? ''),
             city: String(o.city ?? ''),
-            city_ar: String(o.city_ar ?? ''),
             contact_person: String(o.contact_person ?? ''),
             email: emailStr === '' ? null : emailStr,
             phone: String(o.phone ?? ''),
             phone2: String(o.phone2 ?? ''),
             fax: String(o.fax ?? ''),
-            address_ar: String(o.address_ar ?? ''),
             address_en: String(o.address_en ?? ''),
             license: String(o.license ?? ''),
             passport_no: String(o.passport_no ?? ''),
@@ -321,14 +317,11 @@
         }
 
         renderDl(document.getElementById('detailAgencyData'), [
-            ['Name (English)', displayValue(agency.name)],
-            ['Name (Arabic)', displayValue(agency.name_ar)],
+            ['Agency name', displayValue(agency.name)],
             ['Agency code', displayValue(agency.agency_code)],
             ['Country', displayValue(agency.country)],
-            ['City (English)', displayValue(agency.city)],
-            ['City (Arabic)', displayValue(agency.city_ar)],
-            ['Address (English)', displayValue(agency.address_en)],
-            ['Address (Arabic)', displayValue(agency.address_ar)],
+            ['City', displayValue(agency.city)],
+            ['Address', displayValue(agency.address_en)],
             ['Contact person', displayValue(agency.contact_person)],
             ['Record created', formatCalendarDate(agency.created_at)],
         ]);
@@ -355,18 +348,15 @@
 
         agencySnapshot = {
             id: agency.id,
-            name_ar: agency.name_ar ?? '',
             name: agency.name ?? '',
             agency_code: agency.agency_code ?? '',
             country: agency.country ?? '',
             city: agency.city ?? '',
-            city_ar: agency.city_ar ?? '',
             contact_person: agency.contact_person ?? '',
             email: agency.email ?? '',
             phone: agency.phone ?? '',
             phone2: agency.phone2 ?? '',
             fax: agency.fax ?? '',
-            address_ar: agency.address_ar ?? '',
             address_en: agency.address_en ?? '',
             license: agency.license ?? '',
             passport_no: agency.passport_no ?? '',

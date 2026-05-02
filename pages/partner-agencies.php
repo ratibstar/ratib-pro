@@ -1,7 +1,6 @@
 <?php
 /**
- * EN: Handles user-facing page rendering and page-level server flow in `pages/partner-agencies.php`.
- * AR: يدير عرض صفحات المستخدم وتدفق الخادم الخاص بالصفحة في `pages/partner-agencies.php`.
+ * Staff page: list and manage partner agencies.
  */
 require_once '../includes/config.php';
 require_once '../includes/permissions.php';
@@ -21,7 +20,7 @@ $pageJs = [asset('js/partnerships/agencies.js') . '?v=' . time()];
 include '../includes/header.php';
 ?>
 
-<div class="main-content partnerships-page">
+<div class="main-content partnerships-page" lang="en" dir="ltr">
     <div class="partnerships-toolbar glass-card">
         <h2>🌍 Partner Agencies</h2>
         <div class="toolbar-actions">

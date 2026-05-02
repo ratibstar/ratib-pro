@@ -61,7 +61,7 @@ function ratibEnsureGlobalPartnershipsSchema(PDO $conn)
 }
 
 /**
- * Full partner agency profile fields (English + Arabic layout, license, bank, etc.).
+ * Extended partner agency profile fields (license, bank, passport, legacy Arabic columns unused in English UI).
  */
 function ratibEnsurePartnerAgencyExtendedProfileColumns(PDO $conn): void
 {

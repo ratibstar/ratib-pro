@@ -1,6 +1,5 @@
 /**
- * EN: Implements frontend interaction behavior in `js/partnerships/deployments.js`.
- * AR: ينفذ سلوك تفاعلات الواجهة الأمامية في `js/partnerships/deployments.js`.
+ * Partner agency deployments (worker placement) UI.
  */
 (function () {
     function showToast(message, type) {

@@ -402,10 +402,9 @@ class PartnerAgencyController
     private function validate(array $payload, bool $forUpdate): array
     {
         $name = trim((string) ($payload['name'] ?? ''));
-        $nameAr = trim((string) ($payload['name_ar'] ?? ''));
         $country = trim((string) ($payload['country'] ?? ''));
-        if ($name === '' || $nameAr === '' || $country === '') {
-            throw new InvalidArgumentException('English name, Arabic name, and country are required');
+        if ($name === '' || $country === '') {
+            throw new InvalidArgumentException('Agency name and country are required');
         }
 
         $email = trim((string) ($payload['email'] ?? ''));
@@ -426,19 +425,16 @@ class PartnerAgencyController
             }
         }
 
-        $addressAr = trim((string) ($payload['address_ar'] ?? ''));
         $addressEn = trim((string) ($payload['address_en'] ?? ''));
-        $cityAr = trim((string) ($payload['city_ar'] ?? ''));
         $city = trim((string) ($payload['city'] ?? ''));
         $license = trim((string) ($payload['license'] ?? ''));
         $phone = trim((string) ($payload['phone'] ?? ''));
         $phone2 = trim((string) ($payload['phone2'] ?? ''));
         $fax = trim((string) ($payload['fax'] ?? ''));
 
-        if ($addressAr === '' || $addressEn === '' || $cityAr === '' || $city === '' || $license === ''
-            || $phone === '' || $phone2 === '' || $fax === '') {
+        if ($addressEn === '' || $city === '' || $license === '' || $phone === '' || $fax === '') {
             throw new InvalidArgumentException(
-                'Address (Arabic & English), city (Arabic & English), license, Phone 1, Phone 2, and Fax are required'
+                'Address, city, license, primary phone, and fax are required'
             );
         }
 
@@ -460,19 +456,21 @@ class PartnerAgencyController
             $passportIssueDate = $passportIssueRaw;
         }
 
+        $phone2Val = $phone2 === '' ? null : mb_substr($phone2, 0, 50);
+
         return [
             'name' => mb_substr($name, 0, 255),
-            'name_ar' => mb_substr($nameAr, 0, 255),
+            'name_ar' => null,
             'agency_code' => $agencyCode,
             'country' => mb_substr($country, 0, 100),
             'city' => mb_substr($city, 0, 100),
-            'city_ar' => mb_substr($cityAr, 0, 100),
+            'city_ar' => null,
             'contact_person' => mb_substr(trim((string) ($payload['contact_person'] ?? '')), 0, 255),
             'email' => mb_substr($email, 0, 255),
             'phone' => mb_substr($phone, 0, 50),
-            'phone2' => mb_substr($phone2, 0, 50),
+            'phone2' => $phone2Val,
             'fax' => mb_substr($fax, 0, 50),
-            'address_ar' => mb_substr($addressAr, 0, 500),
+            'address_ar' => null,
             'address_en' => mb_substr($addressEn, 0, 500),
             'license' => mb_substr($license, 0, 255),
             'status' => $status,

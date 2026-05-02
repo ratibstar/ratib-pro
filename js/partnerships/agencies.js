@@ -1,6 +1,5 @@
 /**
- * EN: Implements frontend interaction behavior in `js/partnerships/agencies.js`.
- * AR: ينفذ سلوك تفاعلات الواجهة الأمامية في `js/partnerships/agencies.js`.
+ * Partner agencies list, search, and add/edit agency modal.
  */
 (function () {
     function showToast(message, type) {
@@ -105,18 +104,15 @@
         const isEdit = Boolean(agency?.id);
         $('agencyModalTitle').textContent = isEdit ? 'Edit Agency' : 'Add Agency';
         $('agencyId').value = agency?.id || '';
-        $('agencyNameAr').value = agency?.name_ar || '';
         $('agencyName').value = agency?.name || '';
         $('agencyCode').value = agency?.agency_code || '';
         $('agencyCountry').value = agency?.country || '';
         $('agencyCity').value = agency?.city || '';
-        $('agencyCityAr').value = agency?.city_ar || '';
         $('agencyContact').value = agency?.contact_person || '';
         $('agencyEmail').value = agency?.email || '';
         $('agencyPhone').value = agency?.phone || '';
         $('agencyPhone2').value = agency?.phone2 || '';
         $('agencyFax').value = agency?.fax || '';
-        $('agencyAddressAr').value = agency?.address_ar || '';
         $('agencyAddressEn').value = agency?.address_en || '';
         $('agencyLicense').value = agency?.license || '';
         $('agencyMobile').value = agency?.mobile || '';
@@ -691,18 +687,15 @@
         const isEdit = Boolean(id);
         const pwVal = pwInput() ? pwInput().value.trim() : '';
         const payload = {
-            name_ar: $('agencyNameAr').value.trim(),
             name: $('agencyName').value.trim(),
             agency_code: $('agencyCode').value.trim(),
             country: $('agencyCountry').value.trim(),
             city: $('agencyCity').value.trim(),
-            city_ar: $('agencyCityAr').value.trim(),
             contact_person: $('agencyContact').value.trim(),
             email: $('agencyEmail').value.trim(),
             phone: $('agencyPhone').value.trim(),
             phone2: $('agencyPhone2').value.trim(),
             fax: $('agencyFax').value.trim(),
-            address_ar: $('agencyAddressAr').value.trim(),
             address_en: $('agencyAddressEn').value.trim(),
             license: $('agencyLicense').value.trim(),
             mobile: $('agencyMobile').value.trim(),

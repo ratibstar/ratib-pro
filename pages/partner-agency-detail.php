@@ -1,7 +1,6 @@
 <?php
 /**
- * EN: Partner agency profile / detail (English, dark theme).
- * AR: تفاصيل وكيل الشريك.
+ * Staff page: single partner agency profile, portal, and CVs.
  */
 require_once '../includes/config.php';
 require_once '../includes/permissions.php';
