@@ -214,14 +214,8 @@
             const n = state.selectedReadyWorkerIds.size;
             label.textContent = `${n} worker${n === 1 ? '' : 's'} selected`;
         }
-        const sendBtn = $('cvsSendToPartnerBtn');
-        const partnerOk = state.partnerId > 0;
         const valid = validPartnerIntersection();
-        const canSend =
-            state.selectedReadyWorkerIds.size > 0 &&
-            partnerOk &&
-            (valid === null || (valid && valid.size > 0 && valid.has(state.partnerId)));
-        if (sendBtn) sendBtn.disabled = !canSend;
+        updateSendButtonState();
 
         const hint = $('cvsPartnerWizardHint');
         if (hint) {
@@ -418,6 +412,42 @@
         return state.filtered.slice(start, start + state.pageSize);
     }
 
+    function selectedWorkerIdsFromTableSelection() {
+        const ids = new Set();
+        state.rows.forEach((r) => {
+            if (state.selectedKeys.has(r.key) && Number(r.worker_id) > 0) {
+                ids.add(Number(r.worker_id));
+            }
+        });
+        return [...ids];
+    }
+
+    function getWorkerIdsForSendAction() {
+        if (state.selectedReadyWorkerIds.size > 0) {
+            return [...state.selectedReadyWorkerIds];
+        }
+        return selectedWorkerIdsFromTableSelection();
+    }
+
+    function updateSendButtonState() {
+        const sendBtn = $('cvsSendToPartnerBtn');
+        if (!sendBtn) return;
+        const partnerOk = state.partnerId > 0;
+        const hasReadySelection = state.selectedReadyWorkerIds.size > 0;
+        const tableWorkerIds = selectedWorkerIdsFromTableSelection();
+        const hasTableSelection = tableWorkerIds.length > 0;
+        const valid = validPartnerIntersection();
+        const readySelectionOk =
+            hasReadySelection &&
+            (valid === null || (valid && valid.size > 0 && valid.has(state.partnerId)));
+        sendBtn.disabled = !(partnerOk && (readySelectionOk || (!hasReadySelection && hasTableSelection)));
+        const count = hasReadySelection ? state.selectedReadyWorkerIds.size : tableWorkerIds.length;
+        sendBtn.textContent =
+            count > 0
+                ? `Send ${count} selected CV${count === 1 ? '' : 's'} to this partner`
+                : 'Send selected CVs to this partner';
+    }
+
     function syncSelectionUi() {
         const selectedCount = state.selectedKeys.size;
         const label = $('cvsSelectionLabel');
@@ -430,6 +460,7 @@
         if (bRemove) bRemove.disabled = selectedCount === 0 || state.partnerId <= 0;
         if (bEdit) bEdit.disabled = selectedCount === 0 || state.partnerId <= 0;
         if (bClear) bClear.disabled = selectedCount === 0;
+        updateSendButtonState();
 
         const selectAll = $('cvsSelectAll');
         if (!selectAll) return;
@@ -757,8 +788,12 @@
         }
         if (sendToPartnerBtn) {
             sendToPartnerBtn.addEventListener('click', async () => {
-                if (state.selectedReadyWorkerIds.size === 0 || state.partnerId <= 0) return;
-                const n = state.selectedReadyWorkerIds.size;
+                const workerIds = getWorkerIdsForSendAction();
+                if (workerIds.length === 0 || state.partnerId <= 0) {
+                    setNotice('Select workers first (top checklist or selected table rows).', 'error');
+                    return;
+                }
+                const n = workerIds.length;
                 if (
                     !window.confirm(
                         `Send all uploaded document files for ${n} worker(s) to this partner portal? (Already shared documents are skipped.)`
@@ -774,7 +809,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             partner_agency_id: state.partnerId,
-                            worker_ids: [...state.selectedReadyWorkerIds],
+                            worker_ids: workerIds,
                         }),
                     });
                     const d = (json && json.data) || {};
@@ -783,6 +818,7 @@
                         d.failed > 0 ? 'error' : 'success'
                     );
                     state.selectedReadyWorkerIds.clear();
+                    state.selectedKeys.clear();
                     await loadReadyWorkers();
                     await loadPartnerRows(state.partnerId);
                     updateReadyWizardUi();
