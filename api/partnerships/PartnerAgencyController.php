@@ -193,6 +193,23 @@ class PartnerAgencyController
         $stmt->execute([$id]);
     }
 
+    /**
+     * Single agency for detail view: base fields plus hydrated sent_workers (deployments).
+     */
+    public function show(int $id): array
+    {
+        if ($id <= 0) {
+            throw new InvalidArgumentException('Invalid agency id');
+        }
+        $agency = $this->find($id);
+        $hydrated = $this->hydrateSentWorkers([$agency]);
+        $row = $hydrated[0] ?? $agency;
+        $sent = $row['sent_workers'] ?? [];
+        $row['workers_sent'] = is_array($sent) ? count($sent) : 0;
+
+        return $row;
+    }
+
     public function stats(): array
     {
         $stmt = $this->conn->query(

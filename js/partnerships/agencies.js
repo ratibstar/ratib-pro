@@ -174,6 +174,7 @@
                     <input type="checkbox" class="agency-row-check" data-agency-id="${String(r.id ?? '').replace(/"/g, '&quot;')}" aria-label="Select row" ${selectedAgencyIds.has(String(r.id)) ? 'checked' : ''}>
                 </td>
                 <td>
+                    <a class="muted-btn agency-details-link" href="${withContext(`partner-agency-detail.php?id=${encodeURIComponent(String(r.id))}`)}">Details</a>
                     <button class="muted-btn" data-action="edit" data-id="${r.id}">Edit</button>
                     <button class="muted-btn" data-action="delete" data-id="${r.id}">Delete</button>
                 </td>

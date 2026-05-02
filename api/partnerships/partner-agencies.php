@@ -43,6 +43,17 @@ try {
         if (isset($_GET['stats']) && (string) ($_GET['stats'] ?? '') === '1') {
             partnershipsJson(['success' => true, 'data' => $controller->stats()]);
         }
+        $detailId = (int) ($_GET['id'] ?? 0);
+        if ($detailId > 0) {
+            try {
+                partnershipsJson(['success' => true, 'data' => $controller->show($detailId)]);
+            } catch (RuntimeException $e) {
+                if (stripos($e->getMessage(), 'not found') !== false) {
+                    partnershipsJson(['success' => false, 'message' => $e->getMessage()], 404);
+                }
+                throw $e;
+            }
+        }
         partnershipsJson(['success' => true, 'data' => $controller->index()]);
     }
 
