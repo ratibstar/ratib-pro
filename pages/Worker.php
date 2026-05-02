@@ -743,6 +743,10 @@ include '../includes/header.php';
                                class="form-control" 
                                placeholder="Enter years of work experience abroad">
                     </div>
+                    <div class="form-group">
+                        <label for="training_notes" class="form-label">Training / duties notes</label>
+                        <textarea name="training_notes" id="training_notes" class="form-control" rows="3" placeholder="Enter training notes, duties, or responsibilities"></textarea>
+                    </div>
                     <?php if ($isIndonesiaProgram): ?>
                     <div class="form-group indonesia-compliance-field">
                         <label for="training_status" class="form-label">Training Status</label>
@@ -1153,9 +1157,12 @@ include '../includes/header.php';
                     <div class="doc-row contract-compliance compliance-black" data-workflow-stage="contract" data-stage-label="Contract">
                         <div class="doc-group">
                             <label class="form-label">Contract</label>
-                            <input type="text" name="salary" data-field-key="salary" placeholder="Salary (e.g. 1500.00)" inputmode="decimal" lang="en" dir="ltr">
-                            <input type="text" name="working_hours" data-field-key="working_hours" placeholder="Working Hours (e.g. 8h/day)">
-                            <input type="text" name="contract_duration" data-field-key="contract_duration" placeholder="Contract Duration (e.g. 24 months)">
+                            <label class="form-label" for="salary">Salary</label>
+                            <input type="text" id="salary" name="salary" data-field-key="salary" placeholder="Salary (e.g. 1500.00)" inputmode="decimal" lang="en" dir="ltr">
+                            <label class="form-label" for="working_hours">Working Hours</label>
+                            <input type="text" id="working_hours" name="working_hours" data-field-key="working_hours" placeholder="Working Hours (e.g. 8h/day)">
+                            <label class="form-label" for="contract_duration">Contract Duration</label>
+                            <input type="text" id="contract_duration" name="contract_duration" data-field-key="contract_duration" placeholder="Contract Duration (e.g. 24 months)">
                             <div class="upload-wrapper">
                                 <input type="file" class="file-input" id="contract_deployment_primary_file" accept=".pdf,.jpg,.jpeg,.png">
                                 <button type="button" class="upload-btn" data-target="contract_deployment_primary_file">
