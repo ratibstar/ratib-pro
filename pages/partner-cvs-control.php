@@ -61,9 +61,15 @@ include '../includes/header.php';
         </ol>
     </section>
 
-    <h3 class="cvs-advanced-title">Per-document details (optional)</h3>
-    <p class="cvs-advanced-lead">After you choose a partner above, you can fine-tune each document row below.</p>
+    <div class="cvs-advanced-bar glass-card">
+        <div class="cvs-advanced-bar-text">
+            <h3 class="cvs-advanced-title">Advanced: per-document editing</h3>
+            <p class="cvs-advanced-lead">Optional row-by-row filters and bulk actions. Keep closed for a cleaner screen.</p>
+        </div>
+        <button type="button" id="cvsToggleAdvancedBtn" class="muted-btn cvs-advanced-toggle" aria-expanded="false" aria-controls="cvsAdvancedPanel">Show advanced</button>
+    </div>
 
+    <div id="cvsAdvancedPanel" class="cvs-advanced-panel" hidden>
     <div class="glass-card partner-cvs-control-filters">
         <div class="toolbar-actions">
             <select id="cvsWorkerQuickSelect" aria-label="Select all document rows for one worker" title="Pick a worker to check every CV/document row for bulk share with this partner">
@@ -106,12 +112,7 @@ include '../includes/header.php';
             <button type="button" id="cvsClearSelectionBtn" class="muted-btn" disabled>Clear</button>
             <button type="button" id="cvsReloadBtn" class="muted-btn">Reload</button>
         </div>
-        <div class="toolbar-actions partner-cvs-control-filtered-bulk">
-            <span class="partner-cvs-filtered-bulk-label">Matching filters (all pages):</span>
-            <button type="button" id="cvsBulkShareFilteredBtn" class="bulk-agency-btn bulk-agency-btn--act" disabled>Bulk add</button>
-            <button type="button" id="cvsBulkRemoveFilteredBtn" class="bulk-agency-btn bulk-agency-btn--inact" disabled>Bulk remove</button>
-            <button type="button" id="cvsBulkEditFilteredBtn" class="bulk-agency-btn bulk-agency-btn--clear" disabled>Bulk edit type</button>
-        </div>
+        <p class="cvs-bulk-hint">Use <strong>Select all filtered</strong> with <strong>Bulk Add / Remove / Edit</strong> to apply to every row matching your filters (all pages).</p>
         <p id="cvsControlNotice" class="partner-cvs-control-notice" hidden></p>
     </div>
 
@@ -135,6 +136,7 @@ include '../includes/header.php';
             <span id="cvsPageInfo">Page 1 / 1</span>
             <button id="cvsNextPage" class="muted-btn" type="button">Next</button>
         </div>
+    </div>
     </div>
 </div>
 

@@ -125,7 +125,7 @@
         }
         const hasPartner = state.partnerId > 0;
         const can = hasPartner && n > 0;
-        ['cvsSelectFilteredBtn', 'cvsExportCsvBtn', 'cvsBulkShareFilteredBtn', 'cvsBulkRemoveFilteredBtn', 'cvsBulkEditFilteredBtn'].forEach((id) => {
+        ['cvsSelectFilteredBtn', 'cvsExportCsvBtn'].forEach((id) => {
             const b = $(id);
             if (b) b.disabled = !can;
         });
@@ -712,9 +712,6 @@
         const bulkEditType = $('cvsBulkEditType');
         const selectFilteredBtn = $('cvsSelectFilteredBtn');
         const exportCsvBtn = $('cvsExportCsvBtn');
-        const bulkShareFilteredBtn = $('cvsBulkShareFilteredBtn');
-        const bulkRemoveFilteredBtn = $('cvsBulkRemoveFilteredBtn');
-        const bulkEditFilteredBtn = $('cvsBulkEditFilteredBtn');
         const workerQuick = $('cvsWorkerQuickSelect');
         const readySearch = $('cvsReadySearch');
         const selectAllReadyBtn = $('cvsSelectAllReadyBtn');
@@ -916,76 +913,41 @@
         if (exportCsvBtn) {
             exportCsvBtn.addEventListener('click', () => exportFilteredCsv());
         }
-        if (bulkShareFilteredBtn) {
-            bulkShareFilteredBtn.addEventListener('click', async () => {
-                const rows = state.filtered;
-                if (!rows.length || state.partnerId <= 0) return;
-                const eligible = rows.filter((r) => !r.shared_on_portal && r.has_file).length;
-                if (
-                    !window.confirm(
-                        `Bulk add portal shares for ${eligible} eligible rows (has file, not shared) out of ${rows.length} filtered?`
-                    )
-                ) {
-                    return;
-                }
-                setNotice('Running bulk add on filtered rows…', 'success');
-                const res = await bulkShare(rows);
-                setNotice(
-                    `Bulk add (filtered): ${res.added} added, ${res.skipped} skipped, ${res.failed} failed.`,
-                    res.failed > 0 ? 'error' : 'success'
-                );
-                await loadPartnerRows(state.partnerId);
+
+        const advBtn = $('cvsToggleAdvancedBtn');
+        const advPanel = $('cvsAdvancedPanel');
+        const ADV_STORAGE = 'partnerCvsAdvancedOpen';
+        function setAdvancedOpen(open) {
+            if (!advBtn || !advPanel) return;
+            if (open) {
+                advPanel.removeAttribute('hidden');
+                advBtn.setAttribute('aria-expanded', 'true');
+                advBtn.textContent = 'Hide advanced';
+            } else {
+                advPanel.setAttribute('hidden', '');
+                advBtn.setAttribute('aria-expanded', 'false');
+                advBtn.textContent = 'Show advanced';
+            }
+            try {
+                localStorage.setItem(ADV_STORAGE, open ? '1' : '0');
+            } catch (e) {
+                /* ignore */
+            }
+        }
+        if (advBtn && advPanel) {
+            let initialOpen = false;
+            try {
+                initialOpen = localStorage.getItem(ADV_STORAGE) === '1';
+            } catch (e) {
+                initialOpen = false;
+            }
+            setAdvancedOpen(initialOpen);
+            advBtn.addEventListener('click', () => {
+                const next = advPanel.hasAttribute('hidden');
+                setAdvancedOpen(next);
             });
         }
-        if (bulkRemoveFilteredBtn) {
-            bulkRemoveFilteredBtn.addEventListener('click', async () => {
-                const rows = state.filtered;
-                if (!rows.length || state.partnerId <= 0) return;
-                const shared = rows.filter((r) => r.shared_on_portal && r.share_id).length;
-                if (
-                    !window.confirm(
-                        `Remove partner portal shares for ${shared} shared rows out of ${rows.length} filtered?`
-                    )
-                ) {
-                    return;
-                }
-                setNotice('Running bulk remove on filtered rows…', 'success');
-                const res = await bulkRemove(rows);
-                setNotice(
-                    `Bulk remove (filtered): ${res.removed} removed, ${res.skipped} skipped, ${res.failed} failed.`,
-                    res.failed > 0 ? 'error' : 'success'
-                );
-                await loadPartnerRows(state.partnerId);
-            });
-        }
-        if (bulkEditFilteredBtn) {
-            bulkEditFilteredBtn.addEventListener('click', async () => {
-                const toType = String((bulkEditType && bulkEditType.value) || '').trim();
-                if (!toType) {
-                    setNotice('Choose a document type above (Edit type to…).', 'error');
-                    return;
-                }
-                const rows = state.filtered;
-                if (!rows.length || state.partnerId <= 0) return;
-                const wouldEdit = rows.filter(
-                    (r) => r.shared_on_portal && r.share_id && r.document_type !== toType
-                ).length;
-                if (
-                    !window.confirm(
-                        `Change document type to "${labelForType(toType)}" for ${wouldEdit} shares (filtered rows)?`
-                    )
-                ) {
-                    return;
-                }
-                setNotice('Running bulk edit on filtered rows…', 'success');
-                const res = await bulkEditType(rows, toType);
-                setNotice(
-                    `Bulk edit (filtered): ${res.edited} edited, ${res.skipped} skipped, ${res.failed} failed.`,
-                    res.failed > 0 ? 'error' : 'success'
-                );
-                await loadPartnerRows(state.partnerId);
-            });
-        }
+
         const modalClose = $('cvsWorkerModalClose');
         const workerModal = $('cvsWorkerModal');
         if (modalClose) {
