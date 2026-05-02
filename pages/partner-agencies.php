@@ -91,33 +91,27 @@ include '../includes/header.php';
             <p class="agency-form-hint">Fields marked <span class="req-mark">*</span> are required. Email and partner password are used for the partner portal login.</p>
 
             <div class="agency-form-row">
-                <label class="agency-field"><span class="req-mark">*</span> Name (Arabic)
-                    <input type="text" id="agencyNameAr" required maxlength="255" autocomplete="off"></label>
-                <label class="agency-field"><span class="req-mark">*</span> Name (English)
+                <label class="agency-field"><span class="req-mark">*</span> Agency name
                     <input type="text" id="agencyName" required maxlength="255" autocomplete="organization"></label>
-            </div>
-            <div class="agency-form-row">
                 <label class="agency-field">Agency code
                     <input type="text" id="agencyCode" maxlength="64" autocomplete="off"></label>
+            </div>
+            <div class="agency-form-row">
                 <label class="agency-field"><span class="req-mark">*</span> Country
                     <input type="text" id="agencyCountry" required maxlength="100" autocomplete="country-name"></label>
-            </div>
-            <div class="agency-form-row">
                 <label class="agency-field"><span class="req-mark">*</span> Email (login)
                     <input type="email" id="agencyEmail" required maxlength="255" autocomplete="email"></label>
+            </div>
+            <div class="agency-form-row">
                 <label class="agency-field"><span class="req-mark">*</span> Partner login password
                     <input type="password" id="agencyPortalPassword" autocomplete="new-password" placeholder="Min 6 characters" minlength="6"></label>
+                <label class="agency-field"><span class="req-mark">*</span> Phone 1
+                    <input type="text" id="agencyPhone" required maxlength="50" autocomplete="tel"></label>
             </div>
             <div class="agency-form-row">
-                <label class="agency-field"><span class="req-mark">*</span> Address (Arabic)
-                    <input type="text" id="agencyAddressAr" required maxlength="500" autocomplete="street-address"></label>
-                <label class="agency-field"><span class="req-mark">*</span> Address (English)
+                <label class="agency-field"><span class="req-mark">*</span> Address
                     <input type="text" id="agencyAddressEn" required maxlength="500" autocomplete="street-address"></label>
-            </div>
-            <div class="agency-form-row">
-                <label class="agency-field"><span class="req-mark">*</span> City (Arabic)
-                    <input type="text" id="agencyCityAr" required maxlength="100"></label>
-                <label class="agency-field"><span class="req-mark">*</span> City (English)
+                <label class="agency-field"><span class="req-mark">*</span> City
                     <input type="text" id="agencyCity" required maxlength="100" autocomplete="address-level2"></label>
             </div>
             <div class="agency-form-row">
@@ -127,35 +121,31 @@ include '../includes/header.php';
                     <input type="text" id="agencyContact" maxlength="255" autocomplete="name"></label>
             </div>
             <div class="agency-form-row">
-                <label class="agency-field"><span class="req-mark">*</span> Phone 1
-                    <input type="text" id="agencyPhone" required maxlength="50" autocomplete="tel"></label>
-                <label class="agency-field"><span class="req-mark">*</span> Phone 2
-                    <input type="text" id="agencyPhone2" required maxlength="50" autocomplete="tel"></label>
-            </div>
-            <div class="agency-form-row">
+                <label class="agency-field">Phone 2
+                    <input type="text" id="agencyPhone2" maxlength="50" autocomplete="tel"></label>
                 <label class="agency-field"><span class="req-mark">*</span> Fax
                     <input type="text" id="agencyFax" required maxlength="50"></label>
+            </div>
+            <div class="agency-form-row">
                 <label class="agency-field">Mobile
                     <input type="text" id="agencyMobile" maxlength="50" autocomplete="tel"></label>
-            </div>
-            <div class="agency-form-row">
                 <label class="agency-field">Passport no.
                     <input type="text" id="agencyPassportNo" maxlength="80"></label>
+            </div>
+            <div class="agency-form-row">
                 <label class="agency-field">Place of issue
                     <input type="text" id="agencyPassportPlace" maxlength="255"></label>
-            </div>
-            <div class="agency-form-row">
                 <label class="agency-field">Date of issue
                     <input type="date" id="agencyPassportDate"></label>
-                <label class="agency-field">Sending bank
-                    <input type="text" id="agencyBank" maxlength="255"></label>
             </div>
             <div class="agency-form-row">
+                <label class="agency-field">Sending bank
+                    <input type="text" id="agencyBank" maxlength="255"></label>
                 <label class="agency-field">Account number
                     <input type="text" id="agencyAccountNo" maxlength="100"></label>
-                <label class="agency-field">License owner
-                    <input type="text" id="agencyLicenseOwner" maxlength="255"></label>
             </div>
+            <label class="agency-field agency-field--full">License owner
+                <input type="text" id="agencyLicenseOwner" maxlength="255"></label>
             <label class="agency-field agency-field--full">Notes
                 <textarea id="agencyNotes" rows="3" maxlength="8000" placeholder="Optional notes"></textarea></label>
             <label class="agency-field agency-field--full"><span class="req-mark">*</span> Status
