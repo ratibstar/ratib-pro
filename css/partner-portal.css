@@ -723,6 +723,23 @@
     gap: 0.5rem;
 }
 
+.partner-portal-docs-bulk-status-wrap {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.5rem;
+}
+
+.partner-portal-docs-bulk-status-label {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+.partner-portal-docs-bulk-status-btn {
+    white-space: nowrap;
+}
+
 .partner-portal-docs-staff-upload-wrap {
     padding: 0.75rem 1rem;
     margin-bottom: 0.65rem;
@@ -805,8 +822,14 @@
 }
 
 .partner-portal-docs-table {
-    min-width: 1040px;
+    min-width: 720px;
     margin: 0;
+}
+
+.partner-portal-docs-table .col-worker-type {
+    max-width: 14rem;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .partner-portal-docs-table .col-status {

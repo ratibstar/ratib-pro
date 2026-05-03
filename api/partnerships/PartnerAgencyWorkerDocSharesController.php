@@ -244,6 +244,35 @@ class PartnerAgencyWorkerDocSharesController
     }
 
     /**
+     * Short label for partner/staff documents table (job title, else gender · nationality).
+     *
+     * @param array<string, mixed> $worker
+     */
+    private static function formatWorkerTypeForPortal(array $worker): string
+    {
+        $jt = isset($worker['job_title']) ? trim((string) $worker['job_title']) : '';
+        if ($jt !== '') {
+            $chunks = preg_split('/\s*[,;]\s*/u', $jt, -1, PREG_SPLIT_NO_EMPTY);
+            if ($chunks === false || $chunks === []) {
+                return '—';
+            }
+            $chunks = array_map('trim', $chunks);
+            $chunks = array_filter($chunks, static function ($x) {
+                return $x !== '';
+            });
+
+            return $chunks === [] ? '—' : implode(' · ', $chunks);
+        }
+        $g = isset($worker['gender']) ? trim((string) $worker['gender']) : '';
+        $n = isset($worker['nationality']) ? trim((string) $worker['nationality']) : '';
+        $parts = array_filter([$g, $n], static function ($x) {
+            return $x !== '';
+        });
+
+        return $parts === [] ? '—' : implode(' · ', $parts);
+    }
+
+    /**
      * Resolve uploaded worker document on disk (same layout as partner-shared-worker-doc-download).
      *
      * @param array<string, mixed> $worker
@@ -334,6 +363,7 @@ class PartnerAgencyWorkerDocSharesController
                 'document_type' => $dt,
                 'document_label' => self::documentTypeLabel($dt),
                 'worker_name' => $name,
+                'worker_type' => self::formatWorkerTypeForPortal($worker),
                 'passport_number' => trim((string) ($worker['passport_number'] ?? '')) ?: '—',
                 'has_file' => $hasFile,
                 'storage_filename' => $meta['basename'] ?? null,

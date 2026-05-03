@@ -42,7 +42,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
     </div>
 
     <div class="glass-card partner-portal-docs-toolbar">
-        <input type="search" id="ppDocsSearch" class="partner-portal-input partner-portal-docs-search" placeholder="Search title, file name, worker, type, or status…" aria-label="Search documents">
+        <input type="search" id="ppDocsSearch" class="partner-portal-input partner-portal-docs-search" placeholder="Search title, worker, CV ref, worker type, or status…" aria-label="Search documents">
         <div class="partner-portal-docs-toolbar-right">
             <label class="partner-portal-docs-rows-label">
                 Rows
@@ -63,12 +63,9 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <thead>
                     <tr>
                         <th scope="col" class="col-num"><button type="button" class="partner-portal-sort-btn" data-sort="idx">CV ref</button></th>
-                        <th scope="col" class="col-source"><button type="button" class="partner-portal-sort-btn" data-sort="source">Source</button></th>
                         <th scope="col" class="col-status"><button type="button" class="partner-portal-sort-btn" data-sort="portal_status">Status</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="title">Title</button></th>
-                        <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="original_filename">File name</button></th>
-                        <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="mime_type">Type</button></th>
-                        <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="file_size">Size</button></th>
+                        <th scope="col" class="col-worker-type"><button type="button" class="partner-portal-sort-btn" data-sort="worker_type">Worker type</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="created_at">Uploaded</button></th>
                         <th scope="col" class="col-actions">Actions</th>
                     </tr>

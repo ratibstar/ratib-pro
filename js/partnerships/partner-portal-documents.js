@@ -278,7 +278,7 @@
         return `${r._kind}|${r.id}`;
     }
 
-    /** Stable ref for table # column: newest row (by uploaded time) is CV00001. */
+    /** CV ref: larger number = newer upload; top row when sorted by date desc shows the newest ref. */
     function formatCvTableId(idx) {
         const n = Math.max(0, Math.floor(Number(idx) || 0));
         return 'CV' + String(n).padStart(5, '0');
@@ -324,6 +324,21 @@
         return html;
     }
 
+    function initBulkStatusSelect() {
+        const sel = $('ppDocsBulkStatusSelect');
+        if (!sel || !staffMode) return;
+        const parts = [
+            '<option value="" selected>Set for selected rows…</option>',
+            `<option value="__auto__">${escapeHtml('Auto (file + assignment)')}</option>`,
+        ];
+        PORTAL_STATUS_CARD_ORDER.forEach((slug) => {
+            parts.push(
+                `<option value="${escapeHtml(slug)}">${escapeHtml(formatPortalStatusLabel(slug))}</option>`
+            );
+        });
+        sel.innerHTML = parts.join('');
+    }
+
     async function patchDocumentDisplayStatus(row, displayStatusForApi) {
         if (!staffMode || !staffCfg || !row || !row._kind) return false;
         const pid = parseInt(String(staffCfg.partner_agency_id || ''), 10);
@@ -366,14 +381,24 @@
     function updateBulkDeleteUi() {
         const btn = $('ppDocsDeleteSelected');
         const cnt = $('ppDocsSelectedCount');
-        if (!btn || !staffMode) return;
+        const wrap = $('ppDocsBulkStatusWrap');
+        const bulkSel = $('ppDocsBulkStatusSelect');
+        if (!staffMode) return;
         const n = selectedDocKeys.size;
-        btn.hidden = n === 0;
+        if (btn) {
+            btn.hidden = n === 0;
+            btn.disabled = n === 0;
+        }
+        if (wrap) {
+            wrap.hidden = n === 0;
+        }
+        if (bulkSel && n === 0) {
+            bulkSel.selectedIndex = 0;
+        }
         if (cnt) {
             cnt.hidden = n === 0;
             cnt.textContent = n > 0 ? `${n} selected` : '';
         }
-        btn.disabled = n === 0;
     }
 
     function syncSelectAllCheckbox(slice) {
@@ -553,6 +578,7 @@
             const stSlug = String(r.portal_status || '').toLowerCase();
             const stLabel = formatPortalStatusLabel(r.portal_status).toLowerCase();
             const cvRef = formatCvTableId(r.__idx).toLowerCase();
+            const wt = String(r.worker_type || '').toLowerCase();
             const pendingTxt =
                 r._kind === 'worker_share' && !r._hasFile
                     ? `${WORKER_SHARE_NO_FILE.fileLabel} ${WORKER_SHARE_NO_FILE.typeLabel} ${WORKER_SHARE_NO_FILE.sizeLabel}`.toLowerCase()
@@ -566,6 +592,7 @@
                 extra.indexOf(q) !== -1 ||
                 (stSlug && stSlug.indexOf(q) !== -1) ||
                 stLabel.indexOf(q) !== -1 ||
+                (wt && wt.indexOf(q) !== -1) ||
                 cvRef.indexOf(q) !== -1 ||
                 (pendingTxt && pendingTxt.indexOf(q) !== -1)
             );
@@ -668,41 +695,9 @@
                 const refId = escapeHtml(formatCvTableId(r.__idx));
                 const dl = escapeHtml(downloadHref(r));
                 const isWorkerRow = r._kind === 'worker_share';
-                const mimeRaw = String(r.mime_type || '').trim();
-                let mimeTd;
-                if (isWorkerRow && !r._hasFile) {
-                    mimeTd = `<span class="table-tag tag-muted" title="${escapeHtml(
-                        'Upload this document in Workers. The real MIME type appears after upload.'
-                    )}">${escapeHtml(WORKER_SHARE_NO_FILE.typeLabel)}</span>`;
-                } else {
-                    const mimeShort = escapeHtml(formatMimeTypeDisplay(mimeRaw));
-                    const mimeTitle = escapeHtml(mimeRaw);
-                    mimeTd = `<span class="table-tag tag-muted" title="${mimeTitle}">${mimeShort}</span>`;
-                }
                 const title = escapeHtml(r.title || '—');
-                let fnCell = '—';
-                if (isWorkerRow) {
-                    if (r._hasFile && r.original_filename && String(r.original_filename).trim() !== '') {
-                        fnCell = escapeHtml(String(r.original_filename).trim());
-                    } else {
-                        fnCell = `<span class="pp-docs-file-placeholder" title="${escapeHtml(
-                            workerShareNoFilePathHint(r)
-                        )}">${escapeHtml(WORKER_SHARE_NO_FILE.fileLabel)}</span>`;
-                    }
-                } else if (r.original_filename && String(r.original_filename).trim() !== '') {
-                    fnCell = escapeHtml(String(r.original_filename).trim());
-                } else {
-                    fnCell = '—';
-                }
-                const sz =
-                    isWorkerRow && !r._hasFile
-                        ? escapeHtml(WORKER_SHARE_NO_FILE.sizeLabel)
-                        : escapeHtml(formatBytes(r.file_size));
                 const when = escapeHtml(formatDate(r.created_at));
-                const srcTag =
-                    r._kind === 'worker_share'
-                        ? `<span class="table-tag tag-muted" title="Shared by your office">Worker</span>`
-                        : `<span class="table-tag tag-muted" title="Agency upload">Agency</span>`;
+                const workerTypeCell = escapeHtml(String(r.worker_type != null ? r.worker_type : '—'));
                 const statusSlug = normalizePortalStatusSlug(
                     r.portal_status,
                     r._kind === 'worker_share' ? (r._hasFile ? 'processing' : 'waiting') : 'ready'
@@ -737,12 +732,9 @@
                 return `<tr>
                     ${selectCell}
                     <td class="col-num">${refId}</td>
-                    <td class="col-source">${srcTag}</td>
                     ${statusTd}
                     <td>${title}</td>
-                    <td>${fnCell}</td>
-                    <td>${mimeTd}</td>
-                    <td>${sz}</td>
+                    <td class="col-worker-type">${workerTypeCell}</td>
                     <td>${when}</td>
                     <td class="col-actions partner-portal-docs-actions">${actions}</td>
                 </tr>`;
@@ -784,6 +776,7 @@
             Object.assign({}, row, {
                 _kind: 'agency_cv',
                 source: 'Agency file',
+                worker_type: 'Agency',
                 portal_status: normalizePortalStatusSlug(row.portal_status, 'ready'),
                 display_status:
                     row.display_status != null && String(row.display_status).trim() !== ''
@@ -799,6 +792,10 @@
             const dtype = String(s.document_type || '').trim().toLowerCase();
             const dlabel = String(s.document_label || s.document_type || 'Document').trim() || 'Document';
             const ppn = String(s.passport_number || '').trim();
+            const wtype =
+                s.worker_type != null && String(s.worker_type).trim() !== ''
+                    ? String(s.worker_type).trim()
+                    : '—';
             const title = `${dlabel} — ${wname}`;
             const hasFile = !!s.has_file;
             const storageFn = s.storage_filename != null ? String(s.storage_filename).trim() : '';
@@ -826,6 +823,7 @@
                 _document_label: dlabel,
                 _document_type: dtype,
                 _passport: ppn,
+                worker_type: wtype,
             };
         });
 
@@ -843,8 +841,9 @@
             state.staffHighlightActive = true;
         }
         merged.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+        const nMerge = merged.length;
         merged.forEach((row, i) => {
-            row.__idx = i + 1;
+            row.__idx = nMerge - i;
         });
         state.rows = merged;
         state.page = 1;
@@ -934,7 +933,8 @@
                     state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
                 } else {
                     state.sortKey = k;
-                    state.sortDir = k === 'created_at' || k === 'file_size' || k === 'idx' ? 'desc' : 'asc';
+                    state.sortDir =
+                        k === 'created_at' || k === 'file_size' || k === 'idx' ? 'desc' : 'asc';
                 }
                 renderTable();
             });
@@ -1074,6 +1074,42 @@
             });
         }
 
+        const bulkApply = $('ppDocsApplyStatusSelected');
+        const bulkStatusSel = $('ppDocsBulkStatusSelect');
+        if (bulkApply && bulkStatusSel && staffMode) {
+            bulkApply.addEventListener('click', async () => {
+                const keys = Array.from(selectedDocKeys);
+                if (keys.length === 0) return;
+                const raw = String(bulkStatusSel.value || '');
+                if (raw === '') {
+                    setError('Choose a status (or Auto) before applying.');
+                    return;
+                }
+                const apiVal = raw === '__auto__' ? '' : raw;
+                bulkApply.disabled = true;
+                bulkStatusSel.disabled = true;
+                let failed = 0;
+                for (let i = 0; i < keys.length; i++) {
+                    const row = findRowByKey(keys[i]);
+                    if (!row || !(await patchDocumentDisplayStatus(row, apiVal))) {
+                        failed++;
+                    }
+                }
+                bulkApply.disabled = false;
+                bulkStatusSel.disabled = false;
+                bulkStatusSel.selectedIndex = 0;
+                if (failed > 0) {
+                    setError(
+                        `${failed} of ${keys.length} row(s) could not be updated. Check permissions and try again.`
+                    );
+                } else {
+                    setError('');
+                }
+                await load();
+                updateBulkDeleteUi();
+            });
+        }
+
         const bulkDel = $('ppDocsDeleteSelected');
         if (bulkDel && staffMode) {
             bulkDel.addEventListener('click', async () => {
@@ -1129,6 +1165,7 @@
 
     function init() {
         refreshStaffMode();
+        initBulkStatusSelect();
         bindEvents();
         updateBulkDeleteUi();
         load();

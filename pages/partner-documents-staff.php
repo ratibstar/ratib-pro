@@ -88,9 +88,14 @@ window.RATIB_PARTNER_DOCS_STAFF = {
     </div>
 
     <div class="glass-card partner-portal-docs-toolbar">
-        <input type="search" id="ppDocsSearch" class="partner-portal-input partner-portal-docs-search" placeholder="Search title, file name, worker, type, or status…" aria-label="Search documents">
+        <input type="search" id="ppDocsSearch" class="partner-portal-input partner-portal-docs-search" placeholder="Search title, worker, CV ref, worker type, or status…" aria-label="Search documents">
         <div class="partner-portal-docs-toolbar-right">
             <span id="ppDocsSelectedCount" class="partner-portal-docs-selected-count" hidden></span>
+            <div class="partner-portal-docs-bulk-status-wrap" id="ppDocsBulkStatusWrap" hidden>
+                <label class="partner-portal-docs-bulk-status-label" for="ppDocsBulkStatusSelect">Status for selected</label>
+                <select id="ppDocsBulkStatusSelect" class="partner-portal-input partner-portal-docs-select" aria-label="Portal status to apply to selected rows"></select>
+                <button type="button" class="neon-btn partner-portal-docs-bulk-status-btn" id="ppDocsApplyStatusSelected">Apply status</button>
+            </div>
             <button type="button" class="muted-btn partner-portal-docs-bulk-delete" id="ppDocsDeleteSelected" hidden>Delete selected</button>
             <label class="partner-portal-docs-rows-label">
                 Rows
@@ -117,8 +122,9 @@ window.RATIB_PARTNER_DOCS_STAFF = {
     </div>
 
     <p class="partner-portal-docs-staff-status-help">
-        To change what the <strong>partner portal</strong> shows for a row, use the <strong>Status</strong> menu
-        <strong>under the colored pill</strong> (Waiting, Ready, …). Choose <strong>Auto (file + assignment)</strong> to clear a manual value and go back to automatic rules.
+        To change what the <strong>partner portal</strong> shows, use the <strong>Status</strong> dropdown
+        <strong>under the colored pill</strong> on each row, or tick several rows and use <strong>Status for selected</strong> → <strong>Apply status</strong>.
+        Choose <strong>Auto (file + assignment)</strong> to clear a manual value and go back to automatic rules.
     </p>
 
     <div class="glass-card partner-portal-docs-table-shell">
@@ -130,12 +136,9 @@ window.RATIB_PARTNER_DOCS_STAFF = {
                             <input type="checkbox" id="ppDocsSelectAll" class="pp-docs-select-all" title="Select all on this page" aria-label="Select all on this page">
                         </th>
                         <th scope="col" class="col-num"><button type="button" class="partner-portal-sort-btn" data-sort="idx">CV ref</button></th>
-                        <th scope="col" class="col-source"><button type="button" class="partner-portal-sort-btn" data-sort="source">Source</button></th>
                         <th scope="col" class="col-status"><button type="button" class="partner-portal-sort-btn" data-sort="portal_status">Status</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="title">Title</button></th>
-                        <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="original_filename">File name</button></th>
-                        <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="mime_type">Type</button></th>
-                        <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="file_size">Size</button></th>
+                        <th scope="col" class="col-worker-type"><button type="button" class="partner-portal-sort-btn" data-sort="worker_type">Worker type</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="created_at">Uploaded</button></th>
                         <th scope="col" class="col-actions">Actions</th>
                     </tr>
