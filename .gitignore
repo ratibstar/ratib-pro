@@ -13,6 +13,9 @@ vendor/
 dist/
 build/
 
+# Runtime-selected upload root (server-specific; do not commit)
+storage/.ratib_effective_upload_root
+
 # Logs, cache, temp
 logs/
 *.log

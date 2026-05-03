@@ -28,16 +28,16 @@ try {
         throw new Exception('Invalid file type. Only JPG, PNG and PDF allowed');
     }
 
-    $uploadDir = ratib_uploads_base_dir() . DIRECTORY_SEPARATOR . 'workers' . DIRECTORY_SEPARATOR . $workerId
-        . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . $docType . DIRECTORY_SEPARATOR;
     try {
-        ratib_uploads_ensure_dir($uploadDir);
+        $base = ratib_uploads_pick_base_for_worker_document($workerId, $docType);
     } catch (RuntimeException $e) {
         throw new Exception(
             $e->getMessage()
                 . ' Set RATIB_UPLOADS_BASE (or define RATIB_UPLOADS_BASE) to an absolute path the web server can write.'
         );
     }
+    $uploadDir = $base . DIRECTORY_SEPARATOR . 'workers' . DIRECTORY_SEPARATOR . $workerId
+        . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . $docType . DIRECTORY_SEPARATOR;
 
     // Generate unique filename
     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
