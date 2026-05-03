@@ -28,6 +28,10 @@
 
     const $ = (id) => document.getElementById(id);
     const pageQuery = new URLSearchParams(window.location.search || '');
+    let pendingWorkerIds = (pageQuery.get('worker_ids') || '')
+        .split(/[,]+/)
+        .map((x) => parseInt(String(x).trim(), 10))
+        .filter((id) => id > 0);
     const control = pageQuery.get('control');
     const pageAgencyId = pageQuery.get('agency_id');
     // Workers modal uses ?partner_agency_id= (partner row), not ?agency_id= (control SSO office id).
@@ -90,6 +94,20 @@
 
     ensureControlsUi();
     ensurePaginationUi();
+
+    const updateSendBanner = () => {
+        const wrap = $('partnerAgenciesSendBanner');
+        const txt = $('partnerAgenciesSendBannerText');
+        if (!wrap || !txt) return;
+        if (pendingWorkerIds.length === 0) {
+            wrap.hidden = true;
+            txt.textContent = '';
+            return;
+        }
+        wrap.hidden = false;
+        txt.textContent = `${pendingWorkerIds.length} worker(s) ready to assign — choose an agency below.`;
+    };
+    updateSendBanner();
 
     let allRows = [];
     let filteredRows = [];
@@ -203,7 +221,7 @@
                 </td>
                 <td class="agency-actions-cell">
                     <a class="muted-btn agency-details-link" href="${withContext(`partner-agency-detail.php?id=${encodeURIComponent(String(r.id))}`)}">Details</a>
-                    <a class="muted-btn agency-portal-cvs-link" href="${withContext(`partner-cvs-control.php?partner_agency_id=${encodeURIComponent(String(r.id))}`)}" title="Open CVs bulk-control table for this partner">CVs</a>
+                    ${pendingWorkerIds.length > 0 ? `<button type="button" class="neon-btn agency-send-workers-btn" data-action="send-workers" data-partner-agency-id="${String(r.id ?? '').replace(/"/g, '&quot;')}">Send workers here</button>` : ''}
                     <button class="muted-btn" data-action="edit" data-id="${r.id}">Edit</button>
                     <button class="muted-btn" data-action="delete" data-id="${r.id}">Delete</button>
                 </td>
@@ -734,6 +752,54 @@
         const btn = e.target.closest('button[data-action]');
         if (!btn) return;
         const id = btn.getAttribute('data-partner-agency-id') || btn.dataset.id;
+        if (btn.dataset.action === 'send-workers') {
+            const pid = parseInt(String(btn.getAttribute('data-partner-agency-id') || id || ''), 10);
+            if (!Number.isFinite(pid) || pid <= 0) {
+                showToast('Invalid agency.', 'error');
+                return;
+            }
+            if (pendingWorkerIds.length === 0) {
+                showToast('No workers to send. Go back to Workers and select workers first.', 'error');
+                return;
+            }
+            if (
+                !window.confirm(
+                    `Share all uploaded document files for ${pendingWorkerIds.length} worker(s) with this partner portal?`
+                )
+            ) {
+                return;
+            }
+            try {
+                const res = await fetch(withContext('../api/partnerships/partner-cvs-send-to-partner.php'), {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        partner_agency_id: pid,
+                        worker_ids: pendingWorkerIds,
+                    }),
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok || !json.success) {
+                    showToast(json.message || 'Could not send workers.', 'error');
+                    return;
+                }
+                const d = json.data || {};
+                showToast(
+                    `Done: added ${d.added ?? 0}, skipped ${d.skipped ?? 0}, not deployed ${d.not_deployed ?? 0}, failed ${d.failed ?? 0}.`,
+                    'success'
+                );
+                pendingWorkerIds = [];
+                updateSendBanner();
+                const u = new URL(window.location.href);
+                u.searchParams.delete('worker_ids');
+                window.history.replaceState({}, '', u.toString());
+                applyControls();
+            } catch (err) {
+                showToast('Could not send workers.', 'error');
+            }
+            return;
+        }
         if (btn.dataset.action === 'view-workers') {
             const pid = parseInt(String(id || ''), 10);
             if (!Number.isFinite(pid) || pid <= 0) {

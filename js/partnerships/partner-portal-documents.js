@@ -253,19 +253,11 @@
                         : `<span class="table-tag tag-muted" title="Agency upload">Agency</span>`;
                 const noFile = r._kind === 'worker_share' && !r._hasFile;
                 const dkey = escapeHtml(docRowKey(r));
-                const cvHref =
-                    r._kind === 'worker_share' && r._worker_id
-                        ? escapeHtml(`partner-portal-cv.php?worker_id=${encodeURIComponent(String(r._worker_id))}`)
-                        : '';
-                const cvBtn =
-                    cvHref !== ''
-                        ? `<a class="neon-btn partner-portal-docs-action" href="${cvHref}">CV</a>`
-                        : '';
-                const viewBtn = `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-doc-key="${dkey}" data-pp-doc-action="view">Details</button>`;
+                const viewBtn = `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-doc-key="${dkey}" data-pp-doc-action="view">View</button>`;
                 const fileActions = noFile
                     ? `<span class="partner-portal-docs-no-file" title="No file is stored for this document on our side yet. Ask your office if you need the file.">No file</span>`
                     : `<a class="muted-btn partner-portal-docs-action" href="${dl}" target="_blank" rel="noopener">Open</a><a class="neon-btn partner-portal-docs-action" href="${dl}" download>Download</a>`;
-                const actions = `${cvBtn}${viewBtn}${fileActions}`;
+                const actions = `${viewBtn}${fileActions}`;
 
                 return `<tr>
                     <td class="col-num">${globalIdx}</td>
@@ -357,71 +349,7 @@
         });
         state.rows = merged;
         state.page = 1;
-        renderCvHub();
-        renderSummaryCounts();
         renderTable();
-    }
-
-    function renderCvHub() {
-        const hub = $('ppDocsCvHub');
-        const empty = $('ppDocsCvHubEmpty');
-        if (!hub) return;
-        const byId = new Map();
-        state.rows.forEach((r) => {
-            if (r._kind !== 'worker_share' || !r._worker_id) return;
-            const wid = Number(r._worker_id);
-            if (!wid) return;
-            if (!byId.has(wid)) {
-                byId.set(wid, {
-                    id: wid,
-                    name: r._worker_name || `Worker #${wid}`,
-                    passport: r._passport || '',
-                });
-            }
-        });
-        const list = Array.from(byId.values()).sort((a, b) =>
-            String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base' })
-        );
-        if (list.length === 0) {
-            hub.innerHTML = '';
-            if (empty) empty.hidden = false;
-            return;
-        }
-        if (empty) empty.hidden = true;
-        hub.innerHTML = list
-            .map((w) => {
-                const pp =
-                    w.passport && String(w.passport).trim() !== '' && w.passport !== '—'
-                        ? ` · Passport ${escapeHtml(String(w.passport))}`
-                        : '';
-                const href = escapeHtml(`partner-portal-cv.php?worker_id=${encodeURIComponent(String(w.id))}`);
-                return `<div class="partner-portal-docs-cv-card glass-card">
-                    <div class="partner-portal-docs-cv-card-text">
-                        <strong>${escapeHtml(w.name)}</strong>
-                        <span class="partner-portal-docs-cv-passport">${pp}</span>
-                    </div>
-                    <a class="neon-btn partner-portal-docs-cv-open" href="${href}">View CV</a>
-                </div>`;
-            })
-            .join('');
-    }
-
-    function renderSummaryCounts() {
-        const nAg = state.rows.filter((r) => r._kind === 'agency_cv').length;
-        const u = new Set();
-        state.rows.forEach((r) => {
-            if (r._kind === 'worker_share' && r._worker_id) {
-                u.add(Number(r._worker_id));
-            }
-        });
-        const nProfiles = u.size;
-        const total = state.rows.length;
-        const ca = $('ppDocsCountAgency');
-        const cp = $('ppDocsCountCvProfiles');
-        const ct = $('ppDocsCountTotal');
-        if (ca) ca.textContent = String(nAg);
-        if (cp) cp.textContent = String(nProfiles);
-        if (ct) ct.textContent = String(total);
     }
 
     async function load() {

@@ -325,25 +325,6 @@ class PartnerAgencyWorkerDocSharesController
     }
 
     /**
-     * Partner may open read-only CV if the worker is deployed to them or has any document share with them.
-     */
-    public function partnerPortalCanViewWorkerCv(int $partnerAgencyId, int $workerId): bool
-    {
-        if ($workerId <= 0 || $partnerAgencyId <= 0) {
-            return false;
-        }
-        if ($this->workerDeployedToPartner($workerId, $partnerAgencyId)) {
-            return true;
-        }
-        $stmt = $this->conn->prepare(
-            'SELECT 1 FROM partner_agency_worker_document_shares WHERE partner_agency_id = ? AND worker_id = ? LIMIT 1'
-        );
-        $stmt->execute([$partnerAgencyId, $workerId]);
-
-        return (bool) $stmt->fetchColumn();
-    }
-
-    /**
      * Workers with at least one uploaded document file, plus readiness score and deployment partner ids.
      *
      * @return array<int, array<string, mixed>>
@@ -431,6 +412,50 @@ class PartnerAgencyWorkerDocSharesController
     }
 
     /**
+     * Ensure worker_deployments has a row for this worker + partner (minimal defaults from worker/agency).
+     */
+    private function ensureMinimalDeployment(int $workerId, int $partnerAgencyId): bool
+    {
+        if ($workerId <= 0 || $partnerAgencyId <= 0) {
+            return false;
+        }
+        if ($this->workerDeployedToPartner($workerId, $partnerAgencyId)) {
+            return true;
+        }
+        $worker = $this->fetchWorkerRow($workerId);
+        if (!$worker) {
+            return false;
+        }
+        $stmt = $this->conn->prepare('SELECT country FROM partner_agencies WHERE id = ? LIMIT 1');
+        $stmt->execute([$partnerAgencyId]);
+        $pa = $stmt->fetch(PDO::FETCH_ASSOC);
+        $agencyCountry = trim((string) ($pa['country'] ?? ''));
+        $country = trim((string) ($worker['country'] ?? ''));
+        if ($country === '') {
+            $country = $agencyCountry !== '' ? $agencyCountry : 'Saudi Arabia';
+        }
+        $job = trim((string) ($worker['job_title'] ?? $worker['occupation'] ?? $worker['specialization'] ?? ''));
+        if ($job === '') {
+            $job = 'Domestic worker';
+        }
+        require_once __DIR__ . '/DeploymentController.php';
+        $depCtl = new DeploymentController($this->conn);
+        try {
+            $depCtl->create([
+                'worker_id' => $workerId,
+                'partner_agency_id' => $partnerAgencyId,
+                'country' => $country,
+                'job_title' => $job,
+                'status' => 'processing',
+            ]);
+        } catch (Throwable $e) {
+            return false;
+        }
+
+        return $this->workerDeployedToPartner($workerId, $partnerAgencyId);
+    }
+
+    /**
      * Create portal shares for every document type that has a file on the worker profile.
      *
      * @param array<int> $workerIds
@@ -451,6 +476,9 @@ class PartnerAgencyWorkerDocSharesController
             $wid = (int) $widRaw;
             if ($wid <= 0) {
                 continue;
+            }
+            if (!$this->workerDeployedToPartner($wid, $partnerAgencyId)) {
+                $this->ensureMinimalDeployment($wid, $partnerAgencyId);
             }
             if (!$this->workerDeployedToPartner($wid, $partnerAgencyId)) {
                 $notDeployed++;

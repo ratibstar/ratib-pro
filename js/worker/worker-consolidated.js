@@ -451,6 +451,10 @@ class WorkerTable {
         if (bulkDeleteBtn) {
             bulkDeleteBtn.addEventListener('click', () => this.handleBulkAction('delete'));
         }
+        const bulkSendToPartnerBtn = document.getElementById('bulkSendToPartnerBtn');
+        if (bulkSendToPartnerBtn) {
+            bulkSendToPartnerBtn.addEventListener('click', () => this.goPartnerAgenciesWithSelection());
+        }
 
         // Select all checkbox
         const selectAllCheckbox = document.getElementById('selectAll');
@@ -1218,9 +1222,17 @@ class WorkerTable {
         }, 100);
     }
 
+    goPartnerAgenciesWithSelection() {
+        if (this.state.selectedWorkers.size === 0) return;
+        const ids = Array.from(this.state.selectedWorkers);
+        const dest = new URL('partner-agencies.php', window.location.href);
+        dest.searchParams.set('worker_ids', ids.join(','));
+        window.location.assign(dest.toString());
+    }
+
     updateBulkActionButtons() {
         const hasSelected = this.state.selectedWorkers.size > 0;
-        const buttonIds = ['bulkActivateBtn', 'bulkDeactivateBtn', 'bulkPendingBtn', 'bulkSuspendedBtn', 'bulkDeleteBtn'];
+        const buttonIds = ['bulkActivateBtn', 'bulkDeactivateBtn', 'bulkPendingBtn', 'bulkSuspendedBtn', 'bulkDeleteBtn', 'bulkSendToPartnerBtn'];
         
         buttonIds.forEach(id => {
             const btn = document.getElementById(id);

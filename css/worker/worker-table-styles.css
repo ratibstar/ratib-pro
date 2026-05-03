@@ -3605,6 +3605,15 @@ select[name="job_title"] {
     background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
 }
 
+.bulk-send-partner {
+    background: linear-gradient(135deg, #0e7490 0%, #155e75 100%) !important;
+    color: white !important;
+}
+
+.bulk-send-partner:not(:disabled):hover {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) !important;
+}
+
 /* ========================================
    7. SEARCH AND FILTERS SECTION
    ======================================== */
