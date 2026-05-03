@@ -100,6 +100,49 @@
         'exit_permit',
     ]);
 
+    /** Same order as `api/workers/documents/get.php` for a stable staff table. */
+    const WORKER_DOC_TABLE_ORDER = [
+        'identity',
+        'passport',
+        'contract_signed',
+        'insurance',
+        'police',
+        'medical',
+        'training_certificate',
+        'visa',
+        'exit_permit',
+        'ticket',
+    ];
+
+    const WORKER_DOC_TYPE_LABELS = {
+        identity: 'Identity',
+        passport: 'Passport',
+        police: 'Police clearance',
+        medical: 'Medical',
+        visa: 'Visa',
+        ticket: 'Ticket',
+        training_certificate: 'Training certificate',
+        contract_signed: 'Contract signed',
+        insurance: 'Insurance',
+        exit_permit: 'Exit permit',
+    };
+
+    function workerDocTypeLabel(slug) {
+        const k = String(slug || '').trim().toLowerCase();
+        if (WORKER_DOC_TYPE_LABELS[k]) return WORKER_DOC_TYPE_LABELS[k];
+        if (!k) return '—';
+        return k.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+
+    function isAnyPartnerPortalModalOpen() {
+        return (
+            ($('ppCvModal') && $('ppCvModal').classList.contains('open')) ||
+            ($('ppDocModal') && $('ppDocModal').classList.contains('open')) ||
+            ($('ppInlineDocViewerModal') && $('ppInlineDocViewerModal').classList.contains('open')) ||
+            ($('ppWorkerDocsListModal') && $('ppWorkerDocsListModal').classList.contains('open'))
+        );
+    }
+
     function workerShareNoFilePathHint(r) {
         const docTypeHint = String(r._document_type || '').trim().toLowerCase() || 'document';
         return (
@@ -245,11 +288,8 @@
             modal.classList.remove('open');
             modal.setAttribute('aria-hidden', 'true');
         }
-        if (!$('ppDocModal') || !$('ppDocModal').classList.contains('open')) {
-            const inline = $('ppInlineDocViewerModal');
-            if (!inline || !inline.classList.contains('open')) {
-                document.body.style.overflow = '';
-            }
+        if (!isAnyPartnerPortalModalOpen()) {
+            document.body.style.overflow = '';
         }
     }
 
@@ -263,9 +303,7 @@
             modal.classList.remove('open');
             modal.setAttribute('aria-hidden', 'true');
         }
-        const cvOpen = $('ppCvModal') && $('ppCvModal').classList.contains('open');
-        const docOpen = $('ppDocModal') && $('ppDocModal').classList.contains('open');
-        if (!cvOpen && !docOpen) {
+        if (!isAnyPartnerPortalModalOpen()) {
             document.body.style.overflow = '';
         }
     }
@@ -304,6 +342,7 @@
 
     function openInlineDocPreview(url) {
         if (!url) return;
+        closeWorkerDocsListModal();
         closeDocModal();
         closeCvModal();
         ensureInlineDocViewerModal();
@@ -314,6 +353,291 @@
         modal.classList.add('open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
+    }
+
+    function closeWorkerDocsListModal() {
+        const modal = $('ppWorkerDocsListModal');
+        const frame = $('ppWorkerDocsListPreviewFrame');
+        if (frame) {
+            frame.src = 'about:blank';
+        }
+        const shell = $('ppWorkerDocsListPreviewShell');
+        if (shell) {
+            shell.hidden = true;
+            shell.classList.add('is-hidden');
+        }
+        if (modal) {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+        if (!isAnyPartnerPortalModalOpen()) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    function showWorkerDocsListPreviewPane(url) {
+        if (!url) return;
+        const shell = $('ppWorkerDocsListPreviewShell');
+        const frame = $('ppWorkerDocsListPreviewFrame');
+        if (!shell || !frame) return;
+        frame.src = url;
+        shell.hidden = false;
+        shell.classList.remove('is-hidden');
+        try {
+            frame.focus({ preventScroll: true });
+        } catch (_e) {
+            /* ignore */
+        }
+    }
+
+    function hideWorkerDocsListPreviewPane() {
+        const frame = $('ppWorkerDocsListPreviewFrame');
+        if (frame) frame.src = 'about:blank';
+        const shell = $('ppWorkerDocsListPreviewShell');
+        if (shell) {
+            shell.hidden = true;
+            shell.classList.add('is-hidden');
+        }
+    }
+
+    function ensureWorkerDocsListModal() {
+        if ($('ppWorkerDocsListModal')) {
+            return;
+        }
+        const wrap = document.createElement('div');
+        wrap.id = 'ppWorkerDocsListModal';
+        wrap.className = 'modal-wrap partner-portal-modal partner-portal-modal--worker-docs-list';
+        wrap.setAttribute('aria-hidden', 'true');
+        wrap.innerHTML =
+            '<div class="modal-card glass-card partner-portal-modal-card partner-portal-modal-card--worker-docs-list" role="dialog" aria-modal="true" aria-labelledby="ppWorkerDocsListTitle">' +
+            '<div class="partner-portal-modal-head">' +
+            '<h3 id="ppWorkerDocsListTitle" class="partner-portal-modal-title">Worker documents</h3>' +
+            '<button type="button" class="icon-btn" id="ppWorkerDocsListCloseX" aria-label="Close">×</button>' +
+            '</div>' +
+            '<p id="ppWorkerDocsListSub" class="partner-portal-modal-lead"></p>' +
+            '<div class="pp-worker-docs-split">' +
+            '<div class="pp-worker-docs-table-scroll">' +
+            '<table class="pp-worker-docs-list-table">' +
+            '<thead><tr><th scope="col">Document type</th><th scope="col">File</th><th scope="col">Status</th><th scope="col" class="pp-worker-docs-actions-col">Actions</th></tr></thead>' +
+            '<tbody id="ppWorkerDocsListTbody"></tbody>' +
+            '</table>' +
+            '</div>' +
+            '<div id="ppWorkerDocsListPreviewShell" class="pp-worker-docs-preview-shell is-hidden" hidden>' +
+            '<div class="pp-worker-docs-preview-head">' +
+            '<span class="pp-worker-docs-preview-title">Preview</span>' +
+            '<button type="button" class="muted-btn" id="ppWorkerDocsListPreviewHide">Hide preview</button>' +
+            '</div>' +
+            '<div class="pp-worker-docs-preview-frame-wrap">' +
+            '<iframe id="ppWorkerDocsListPreviewFrame" class="partner-portal-cv-frame pp-worker-docs-preview-frame" title="Document preview"></iframe>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '<div class="partner-portal-modal-footer">' +
+            '<button type="button" class="muted-btn" id="ppWorkerDocsListCloseBtn">Close</button>' +
+            '</div>' +
+            '</div>';
+        document.body.appendChild(wrap);
+        const closeAll = () => closeWorkerDocsListModal();
+        const bx = $('ppWorkerDocsListCloseX');
+        const bc = $('ppWorkerDocsListCloseBtn');
+        if (bx) bx.addEventListener('click', closeAll);
+        if (bc) bc.addEventListener('click', closeAll);
+        const hidePrev = $('ppWorkerDocsListPreviewHide');
+        if (hidePrev) hidePrev.addEventListener('click', () => hideWorkerDocsListPreviewPane());
+        wrap.addEventListener('click', (e) => {
+            if (e.target === wrap) closeAll();
+        });
+        wrap.addEventListener('click', (e) => {
+            const uploadBtn = e.target && e.target.closest ? e.target.closest('[data-pp-worker-docs-slot-upload]') : null;
+            if (uploadBtn && staffMode) {
+                e.preventDefault();
+                const wid = parseInt(String(uploadBtn.getAttribute('data-worker-id') || ''), 10);
+                const docType = String(uploadBtn.getAttribute('data-doc-type') || '').trim().toLowerCase();
+                const fin = $('ppStaffWorkerDocUploadInput');
+                if (!fin || !Number.isFinite(wid) || wid <= 0 || !WORKER_DOCUMENT_UPLOAD_TYPES.has(docType)) return;
+                fin.dataset.ppUploadWorkerId = String(wid);
+                fin.dataset.ppUploadDocType = docType;
+                fin.value = '';
+                fin.click();
+                return;
+            }
+            const prevB = e.target && e.target.closest ? e.target.closest('[data-pp-worker-docs-slot-preview]') : null;
+            if (prevB) {
+                e.preventDefault();
+                const enc = prevB.getAttribute('data-pp-worker-docs-slot-preview');
+                if (!enc) return;
+                try {
+                    showWorkerDocsListPreviewPane(decodeURIComponent(enc));
+                } catch (_err) {
+                    /* ignore */
+                }
+                return;
+            }
+            const row = e.target && e.target.closest ? e.target.closest('tr[data-pp-worker-docs-row-preview]') : null;
+            if (row && !(e.target && e.target.closest && e.target.closest('a,button'))) {
+                const enc = row.getAttribute('data-pp-worker-docs-row-preview');
+                if (!enc) return;
+                try {
+                    showWorkerDocsListPreviewPane(decodeURIComponent(enc));
+                } catch (_err2) {
+                    /* ignore */
+                }
+            }
+        });
+    }
+
+    function buildStaffWorkerDocTableRows(workerId, formatted) {
+        const data = formatted && typeof formatted === 'object' ? formatted : {};
+        return WORKER_DOC_TABLE_ORDER.map((docType) => {
+            const slot = data[docType] || {};
+            const fn = slot.file != null ? String(slot.file).trim() : '';
+            const hasFile = fn !== '';
+            const previewUrl = hasFile ? workerDocStaffPreviewUrl(workerId, docType) : '';
+            const st = slot.status != null ? String(slot.status).trim() : 'pending';
+            return {
+                docType,
+                typeLabel: workerDocTypeLabel(docType),
+                fileName: hasFile ? fn : '—',
+                statusLabel: st ? st.replace(/_/g, ' ') : '—',
+                hasFile,
+                previewUrl,
+                openUrl: previewUrl,
+                downloadUrl: previewUrl,
+            };
+        });
+    }
+
+    function buildPartnerWorkerDocSlotsForTable(workerId) {
+        const wid = Number(workerId);
+        const rows = state.rows.filter((r) => r._kind === 'worker_share' && Number(r._worker_id) === wid);
+        const orderIdx = (t) => {
+            const i = WORKER_DOC_TABLE_ORDER.indexOf(String(t || '').trim().toLowerCase());
+            return i === -1 ? 999 : i;
+        };
+        rows.sort((a, b) => {
+            const c = orderIdx(a._document_type) - orderIdx(b._document_type);
+            if (c !== 0) return c;
+            return String(a.title || '').localeCompare(String(b.title || ''));
+        });
+        return rows.map((r) => {
+            const docType = String(r._document_type || '').trim().toLowerCase();
+            const hasFile = !!r._hasFile;
+            const sid = r._shareId != null ? r._shareId : r.id;
+            const previewUrl = hasFile && sid != null && String(sid).trim() !== '' ? partnerShareInlineDownloadUrl(String(sid)) : '';
+            const dl = downloadHref(r);
+            const typeLabel =
+                r._document_label && String(r._document_label).trim() !== ''
+                    ? String(r._document_label).trim()
+                    : workerDocTypeLabel(docType);
+            return {
+                docType,
+                typeLabel,
+                fileName:
+                    hasFile && r.original_filename && String(r.original_filename).trim() !== '' && r.original_filename !== '—'
+                        ? String(r.original_filename)
+                        : '—',
+                statusLabel: formatPortalStatusLabel(selectThemeSlugForRow(r)),
+                hasFile,
+                previewUrl,
+                openUrl: dl,
+                downloadUrl: dl,
+            };
+        });
+    }
+
+    function renderWorkerDocsListTableRows(workerId, tableRows) {
+        const tbody = $('ppWorkerDocsListTbody');
+        if (!tbody) return;
+        if (!tableRows.length) {
+            tbody.innerHTML =
+                '<tr><td colspan="4" class="pp-worker-docs-empty-cell">No document slots for this worker in the current list.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = tableRows
+            .map((row) => {
+                const prevEnc = row.hasFile && row.previewUrl ? encodeURIComponent(row.previewUrl) : '';
+                const rowPreviewAttr =
+                    row.hasFile && row.previewUrl
+                        ? ` data-pp-worker-docs-row-preview="${prevEnc}" class="pp-worker-docs-row--clickable"`
+                        : '';
+                const previewBtn =
+                    row.hasFile && row.previewUrl
+                        ? `<button type="button" class="muted-btn pp-worker-docs-action-btn" data-pp-worker-docs-slot-preview="${prevEnc}">Preview</button>`
+                        : '<span class="muted-label">—</span>';
+                const openBtn =
+                    row.hasFile && row.openUrl
+                        ? `<a class="muted-btn pp-worker-docs-action-btn" href="${escapeHtml(row.openUrl)}" target="_blank" rel="noopener">Open</a>`
+                        : '';
+                const dlBtn =
+                    row.hasFile && row.downloadUrl
+                        ? `<a class="neon-btn pp-worker-docs-action-btn" href="${escapeHtml(row.downloadUrl)}" download>Download</a>`
+                        : '';
+                const upBtn =
+                    staffMode && WORKER_DOCUMENT_UPLOAD_TYPES.has(row.docType)
+                        ? `<button type="button" class="muted-btn pp-worker-docs-action-btn" data-pp-worker-docs-slot-upload data-worker-id="${String(
+                              workerId
+                          )}" data-doc-type="${escapeHtml(row.docType)}">Upload</button>`
+                        : '';
+                return (
+                    `<tr${rowPreviewAttr}>` +
+                    `<td><strong>${escapeHtml(row.typeLabel)}</strong><div class="pp-worker-docs-slug muted-label">${escapeHtml(
+                        row.docType || '—'
+                    )}</div></td>` +
+                    `<td class="pp-worker-docs-file-cell">${escapeHtml(row.fileName)}</td>` +
+                    `<td>${escapeHtml(row.statusLabel)}</td>` +
+                    `<td class="pp-worker-docs-actions-cell"><span class="pp-worker-docs-actions-inner">${previewBtn}${openBtn}${dlBtn}${upBtn}</span></td>` +
+                    `</tr>`
+                );
+            })
+            .join('');
+    }
+
+    async function openWorkerDocumentsListModal(workerId, workerName) {
+        const wid = parseInt(String(workerId || ''), 10);
+        if (!Number.isFinite(wid) || wid <= 0) return;
+        closeCvModal();
+        closeDocModal();
+        closeInlineDocPreview();
+        ensureWorkerDocsListModal();
+        const modal = $('ppWorkerDocsListModal');
+        const titleEl = $('ppWorkerDocsListTitle');
+        const subEl = $('ppWorkerDocsListSub');
+        const tbody = $('ppWorkerDocsListTbody');
+        if (!modal || !tbody) return;
+        hideWorkerDocsListPreviewPane();
+        if (titleEl) titleEl.textContent = 'Worker documents';
+        const namePart = workerName && String(workerName).trim() !== '' ? String(workerName).trim() : '';
+        if (subEl) {
+            subEl.textContent = namePart ? `${namePart} · Worker ID ${wid}` : `Worker ID ${wid}`;
+        }
+        tbody.innerHTML =
+            '<tr><td colspan="4" class="pp-worker-docs-empty-cell">Loading…</td></tr>';
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        let rows = [];
+        if (staffMode) {
+            try {
+                const res = await fetch(`../api/workers/documents/get.php?id=${encodeURIComponent(String(wid))}`, {
+                    credentials: 'same-origin',
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok || !json.success || !json.data) {
+                    tbody.innerHTML =
+                        '<tr><td colspan="4" class="pp-worker-docs-empty-cell">Could not load worker documents. Check permissions.</td></tr>';
+                    return;
+                }
+                rows = buildStaffWorkerDocTableRows(wid, json.data);
+            } catch (_e) {
+                tbody.innerHTML =
+                    '<tr><td colspan="4" class="pp-worker-docs-empty-cell">Failed to load documents.</td></tr>';
+                return;
+            }
+        } else {
+            rows = buildPartnerWorkerDocSlotsForTable(wid);
+        }
+        renderWorkerDocsListTableRows(wid, rows);
     }
 
     function ensureCvModal() {
@@ -349,6 +673,7 @@
     }
 
     function openCvModal(workerId) {
+        closeWorkerDocsListModal();
         closeInlineDocPreview();
         closeDocModal();
         ensureCvModal();
@@ -578,14 +903,13 @@
             modal.classList.remove('open');
             modal.setAttribute('aria-hidden', 'true');
         }
-        const cvOpen = $('ppCvModal') && $('ppCvModal').classList.contains('open');
-        const inlineOpen = $('ppInlineDocViewerModal') && $('ppInlineDocViewerModal').classList.contains('open');
-        if (!cvOpen && !inlineOpen) {
+        if (!isAnyPartnerPortalModalOpen()) {
             document.body.style.overflow = '';
         }
     }
 
     function openDocModal(r) {
+        closeWorkerDocsListModal();
         closeInlineDocPreview();
         const modal = $('ppDocModal');
         const titleEl = $('ppDocModalTitle');
@@ -876,21 +1200,13 @@
                           r._worker_id
                       )}" data-doc-type="${escapeHtml(docTypeSlug)}">Upload</button>`
                     : '';
-                const shareIdForPrev = r._shareId != null ? r._shareId : r.id;
-                const canPreviewSlot =
-                    isWorkerRow &&
-                    !noFile &&
-                    WORKER_DOCUMENT_UPLOAD_TYPES.has(docTypeSlug) &&
-                    r._worker_id &&
-                    (staffMode || (shareIdForPrev != null && String(shareIdForPrev).trim() !== ''));
-                const previewBtn = canPreviewSlot
-                    ? staffMode
-                        ? `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-worker-doc-preview="1" data-worker-id="${String(
-                              r._worker_id
-                          )}" data-doc-type="${escapeHtml(docTypeSlug)}">Preview</button>`
-                        : `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-partner-doc-preview="${String(
-                              shareIdForPrev
-                          )}">Preview</button>`
+                const wnameShort = String(r._worker_name || '').trim() || '';
+                const wnameAttr = escapeHtml(wnameShort || 'Worker');
+                const canWorkerDocsTablePreview = isWorkerRow && r._worker_id;
+                const previewBtn = canWorkerDocsTablePreview
+                    ? `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-worker-all-docs-preview="1" data-worker-id="${String(
+                          r._worker_id
+                      )}" data-worker-name="${wnameAttr}">Preview</button>`
                     : '';
                 const cvBtn =
                     r._kind === 'worker_share' && r._worker_id
@@ -1200,21 +1516,13 @@
                 });
             }
             tbody.addEventListener('click', (e) => {
-                const prevStaff = e.target && e.target.closest ? e.target.closest('[data-pp-worker-doc-preview]') : null;
-                if (prevStaff && staffMode) {
+                const prevAll = e.target && e.target.closest ? e.target.closest('[data-pp-worker-all-docs-preview]') : null;
+                if (prevAll && prevAll.getAttribute('data-pp-worker-all-docs-preview')) {
                     e.preventDefault();
-                    const wid = parseInt(String(prevStaff.getAttribute('data-worker-id') || ''), 10);
-                    const docType = String(prevStaff.getAttribute('data-doc-type') || '').trim().toLowerCase();
-                    if (!Number.isFinite(wid) || wid <= 0 || !WORKER_DOCUMENT_UPLOAD_TYPES.has(docType)) return;
-                    openInlineDocPreview(workerDocStaffPreviewUrl(wid, docType));
-                    return;
-                }
-                const prevPartner = e.target && e.target.closest ? e.target.closest('[data-pp-partner-doc-preview]') : null;
-                if (prevPartner && !staffMode) {
-                    e.preventDefault();
-                    const sid = prevPartner.getAttribute('data-pp-partner-doc-preview');
-                    if (!sid) return;
-                    openInlineDocPreview(partnerShareInlineDownloadUrl(sid));
+                    const wid = parseInt(String(prevAll.getAttribute('data-worker-id') || ''), 10);
+                    const wn = String(prevAll.getAttribute('data-worker-name') || '').trim();
+                    if (!Number.isFinite(wid) || wid <= 0) return;
+                    openWorkerDocumentsListModal(wid, wn);
                     return;
                 }
                 const uploadBtn = e.target && e.target.closest ? e.target.closest('[data-pp-worker-doc-upload]') : null;
@@ -1402,6 +1710,12 @@
             if (inlinePrev && inlinePrev.classList.contains('open')) {
                 e.preventDefault();
                 closeInlineDocPreview();
+                return;
+            }
+            const workerDocsList = $('ppWorkerDocsListModal');
+            if (workerDocsList && workerDocsList.classList.contains('open')) {
+                e.preventDefault();
+                closeWorkerDocsListModal();
                 return;
             }
             if (docModal && docModal.classList.contains('open')) {
