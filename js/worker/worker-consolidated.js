@@ -358,20 +358,17 @@ class WorkerTable {
         // Update display
         this.updateStatusDisplay(indicator, text, nextStatus);
         
-        // Store status in form field (for form submission)
-        const statusInput = document.querySelector(`input[name="${docType}_status"]`);
+        // Store status in form field (for form submission) — scope to #workerForm only
+        const wf = document.getElementById('workerForm');
+        const statusInput = wf ? wf.querySelector(`input[name="${docType}_status"]`) : null;
         if (statusInput) {
             statusInput.value = nextStatus;
-        } else {
-            // Create hidden input if it doesn't exist
-            const form = document.getElementById('workerForm');
-            if (form) {
-                const hiddenInput = document.createElement('input');
-                hiddenInput.type = 'hidden';
-                hiddenInput.name = `${docType}_status`;
-                hiddenInput.value = nextStatus;
-                form.appendChild(hiddenInput);
-            }
+        } else if (wf) {
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = `${docType}_status`;
+            hiddenInput.value = nextStatus;
+            wf.appendChild(hiddenInput);
         }
         
         // Update table immediately if worker is visible
@@ -4771,6 +4768,28 @@ window.saveWorker = async function(event) {
     }
 
     // Lifecycle required checks removed to restore previous Ratib Pro flow.
+
+    /** Keep hidden *_status fields aligned with status-dot UI so Save persists what the user sees. */
+    (function syncWorkerFormDocumentStatusesFromWrappers(workerFormEl) {
+        if (!workerFormEl) return;
+        workerFormEl.querySelectorAll('.status-wrapper[data-doc-type]').forEach((wrapper) => {
+            const docType = wrapper.getAttribute('data-doc-type');
+            if (!docType) return;
+            const indicator = wrapper.querySelector('.status-indicator');
+            if (!indicator) return;
+            const currentStatus = indicator.classList.contains('status-pending')
+                ? 'pending'
+                : indicator.classList.contains('status-ok')
+                  ? 'ok'
+                  : indicator.classList.contains('status-not_ok')
+                    ? 'not_ok'
+                    : 'pending';
+            const statusInput = workerFormEl.querySelector(`input[name="${docType}_status"]`);
+            if (statusInput && statusInput.tagName === 'INPUT') {
+                statusInput.value = currentStatus;
+            }
+        });
+    })(form);
     
     const formData = new FormData(form);
     
@@ -4850,8 +4869,7 @@ window.saveWorker = async function(event) {
         workerData.skills = workerData['skills[]'].filter(s => s).join(',');
         delete workerData['skills[]'];
     }
-    
-    
+
     // CRITICAL: Ensure status field is included and mapped correctly
     const statusField = form.querySelector('[name="status"]');
     

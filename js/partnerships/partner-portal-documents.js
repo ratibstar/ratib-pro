@@ -758,6 +758,27 @@
         });
     }
 
+    /** Map DB / worker-form status values to modal badge text (aligned with Worker.php selects). */
+    function formatStaffWorkerDocStatusText(raw) {
+        const slug = String(raw != null ? raw : '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '_');
+        if (['ok', 'complete', 'completed', 'approved', 'passed'].includes(slug)) {
+            return 'OK';
+        }
+        if (['not_ok', 'failed', 'rejected'].includes(slug)) {
+            return 'NOT OK';
+        }
+        if (['pending', 'waiting', 'processing', ''].includes(slug) || !slug) {
+            return 'PENDING';
+        }
+        return String(raw)
+            .trim()
+            .replace(/_/g, ' ')
+            .toUpperCase();
+    }
+
     function buildStaffWorkerDocTableRows(workerId, formatted) {
         const data = formatted && typeof formatted === 'object' ? formatted : {};
         return WORKER_DOC_TABLE_ORDER.map((docType) => {
@@ -765,12 +786,12 @@
             const fn = slot.file != null ? String(slot.file).trim() : '';
             const hasFile = fn !== '';
             const previewUrl = hasFile ? workerDocStaffPreviewUrl(workerId, docType) : '';
-            const st = slot.status != null ? String(slot.status).trim() : 'pending';
+            const statusLabel = formatStaffWorkerDocStatusText(slot.status);
             return {
                 docType,
                 typeLabel: workerDocTypeLabel(docType),
                 fileName: hasFile ? fn : '—',
-                statusLabel: st ? st.replace(/_/g, ' ') : '—',
+                statusLabel,
                 hasFile,
                 previewUrl,
                 downloadUrl: hasFile ? workerDocStaffPreviewUrl(workerId, docType) : '',
@@ -821,14 +842,30 @@
     function workerDocsStatusBadgeClass(label) {
         const s = String(label || '')
             .trim()
-            .toLowerCase();
-        if (s === 'ok' || s === 'complete' || s === 'completed' || s === 'approved') {
+            .toLowerCase()
+            .replace(/\s+/g, ' ');
+        const slug = s.replace(/\s+/g, '_');
+        if (
+            s === 'ok' ||
+            slug === 'ok' ||
+            slug === 'complete' ||
+            slug === 'completed' ||
+            slug === 'approved' ||
+            slug === 'passed'
+        ) {
             return 'pp-worker-docs-status-badge pp-worker-docs-status-badge--ok';
         }
-        if (s.indexOf('pending') !== -1 || s === 'waiting' || s === 'processing') {
+        if (s.indexOf('pending') !== -1 || slug === 'waiting' || slug === 'processing') {
             return 'pp-worker-docs-status-badge pp-worker-docs-status-badge--pending';
         }
-        if (s.indexOf('issue') !== -1 || s === 'returned') {
+        if (
+            s.indexOf('not ok') !== -1 ||
+            slug === 'not_ok' ||
+            slug === 'failed' ||
+            slug === 'rejected' ||
+            s.indexOf('issue') !== -1 ||
+            slug === 'returned'
+        ) {
             return 'pp-worker-docs-status-badge pp-worker-docs-status-badge--issue';
         }
         return 'pp-worker-docs-status-badge pp-worker-docs-status-badge--neutral';

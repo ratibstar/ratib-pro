@@ -41,10 +41,17 @@ try {
     $docTypes = ['identity', 'passport', 'contract_signed', 'insurance', 'police', 'medical', 'training_certificate', 'visa', 'exit_permit', 'ticket'];
     
     foreach ($docTypes as $type) {
+        $statusCol = "{$type}_status";
+        $rawStatus = array_key_exists($statusCol, $documents) ? $documents[$statusCol] : null;
+        if ($rawStatus === null || $rawStatus === '') {
+            $statusVal = 'pending';
+        } else {
+            $statusVal = strtolower(trim((string) $rawStatus));
+        }
         $formattedDocs[$type] = [
             'number' => $documents["{$type}_number"] ?? null,
             'file' => $documents["{$type}_file"] ?? null,
-            'status' => $documents["{$type}_status"] ?? 'pending',
+            'status' => $statusVal,
             'url' => !empty($documents["{$type}_file"]) ? 
                 "/uploads/workers/{$workerId}/documents/{$type}/{$documents["{$type}_file"]}" : 
                 null
