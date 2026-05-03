@@ -934,6 +934,18 @@
             .join('');
     }
 
+    /** When the worker-documents modal is open, reload its rows from the server (avoids stale cache after Worker.php save). */
+    async function refreshOpenWorkerDocumentsListModalIfNeeded() {
+        refreshStaffMode();
+        if (!staffMode) return;
+        const modal = $('ppWorkerDocsListModal');
+        if (!modal || !modal.classList.contains('open')) return;
+        const wid = parseInt(String(modal.dataset.ppWorkerModalId || ''), 10);
+        if (!Number.isFinite(wid) || wid <= 0) return;
+        const wname = String(modal.dataset.ppWorkerModalName || '').trim();
+        await openWorkerDocumentsListModal(wid, wname);
+    }
+
     async function openWorkerDocumentsListModal(workerId, workerName) {
         const wid = parseInt(String(workerId || ''), 10);
         if (!Number.isFinite(wid) || wid <= 0) return;
@@ -969,9 +981,18 @@
         let rows = [];
         if (staffMode) {
             try {
-                const res = await fetch(`../api/workers/documents/get.php?id=${encodeURIComponent(String(wid))}`, {
-                    credentials: 'same-origin',
-                });
+                const bust = Date.now();
+                const res = await fetch(
+                    `../api/workers/documents/get.php?id=${encodeURIComponent(String(wid))}&_=${bust}`,
+                    {
+                        credentials: 'same-origin',
+                        cache: 'no-store',
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            Pragma: 'no-cache',
+                        },
+                    }
+                );
                 const json = await res.json().catch(() => ({}));
                 if (!res.ok || !json.success || !json.data) {
                     tbody.innerHTML =
@@ -1780,6 +1801,9 @@
                 return;
             }
             applyDocumentsData(json.data || {});
+            if (staffMode && staffCfg) {
+                await refreshOpenWorkerDocumentsListModalIfNeeded();
+            }
         } catch (e) {
             setError(e && e.message ? e.message : 'Failed to load.');
         } finally {
