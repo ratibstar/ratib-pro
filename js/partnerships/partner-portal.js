@@ -759,8 +759,6 @@
 
             const title = document.getElementById('ppAgencyName');
             if (title) title.textContent = displayValue(agency.name);
-            const agencyContractsSub = document.getElementById('ppAgencyContractsSub');
-            if (agencyContractsSub) agencyContractsSub.textContent = displayValue(agency.name);
 
             const idBadge = document.getElementById('ppAgencyIdBadge');
             if (idBadge && agency.id != null) {

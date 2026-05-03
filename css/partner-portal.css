@@ -886,18 +886,6 @@
     border-top: 1px solid rgba(51, 65, 85, 0.45);
 }
 
-.partner-portal-agency-intro-top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.65rem;
-}
-
-.partner-portal-agency-logout {
-    align-self: center;
-}
-
 .partner-portal-docs-back {
     align-self: flex-start;
 }
