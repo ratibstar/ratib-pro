@@ -41,11 +41,28 @@
     }
 
     function formatBytes(n) {
+        if (n == null || n === '') return '—';
         const x = Number(n);
         if (!Number.isFinite(x) || x < 0) return '—';
+        if (x === 0) return '0 B';
         if (x < 1024) return `${x} B`;
         if (x < 1024 * 1024) return `${(x / 1024).toFixed(1)} KB`;
         return `${(x / (1024 * 1024)).toFixed(2)} MB`;
+    }
+
+    /** Short label for MIME in table Type column */
+    function formatMimeTypeDisplay(mime) {
+        const m = mime != null ? String(mime).trim() : '';
+        if (m === '') return '—';
+        const lower = m.toLowerCase();
+        if (lower === 'application/pdf') return 'PDF';
+        if (lower === 'image/jpeg' || lower === 'image/jpg') return 'JPEG';
+        if (lower === 'image/png') return 'PNG';
+        if (lower === 'image/webp') return 'WebP';
+        if (lower.indexOf('image/') === 0) return 'Image';
+        if (lower.indexOf('video/') === 0) return 'Video';
+        const cut = m.length > 36 ? `${m.slice(0, 33)}…` : m;
+        return cut;
     }
 
     function formatDate(s) {
@@ -203,7 +220,19 @@
             rows.push(['Worker', r._worker_name && String(r._worker_name).trim() !== '' ? r._worker_name : '—']);
             const ppn = r._passport && String(r._passport).trim() !== '' && r._passport !== '—' ? r._passport : '—';
             rows.push(['Passport', ppn]);
-            rows.push(['Document', r._document_label && String(r._document_label).trim() !== '' ? r._document_label : '—']);
+            rows.push(['Document slot', r._document_label && String(r._document_label).trim() !== '' ? r._document_label : '—']);
+            const fnDisp =
+                r._hasFile && r.original_filename && String(r.original_filename).trim() !== '' && r.original_filename !== '—'
+                    ? String(r.original_filename)
+                    : '—';
+            rows.push(['File name', fnDisp]);
+            rows.push([
+                'Type (MIME)',
+                r._hasFile && r.mime_type && String(r.mime_type).trim() !== '' && r.mime_type !== '—'
+                    ? String(r.mime_type)
+                    : '—',
+            ]);
+            rows.push(['Size', formatBytes(r.file_size)]);
             rows.push(['File on record', r._hasFile ? 'Yes — you can open or download' : 'No — ask your office if you need the file']);
         } else {
             rows.push(['File name', r.original_filename && String(r.original_filename).trim() !== '' ? r.original_filename : '—']);
@@ -228,9 +257,9 @@
                     : '';
             if (canDl) {
                 const href = escapeHtml(downloadHref(r));
-                links.innerHTML = `${cvOpenBtn}${fullPageLink}<a class="neon-btn partner-portal-docs-action" href="${href}" target="_blank" rel="noopener">Open file</a><a class="muted-btn partner-portal-docs-action" href="${href}" download>Download</a>`;
+                links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}</span><a class="neon-btn partner-portal-docs-action" href="${href}" target="_blank" rel="noopener">Open file</a><a class="muted-btn partner-portal-docs-action" href="${href}" download>Download</a>`;
             } else {
-                links.innerHTML = cvOpenBtn + fullPageLink;
+                links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}</span>`;
             }
         }
 
@@ -287,7 +316,9 @@
                 return dir * va.localeCompare(vb);
             }
             if (key === 'file_size') {
-                return dir * ((Number(va) || 0) - (Number(vb) || 0));
+                const na = va == null || !Number.isFinite(Number(va)) ? -1 : Number(va);
+                const nb = vb == null || !Number.isFinite(Number(vb)) ? -1 : Number(vb);
+                return dir * (na - nb);
             }
             va = va != null ? String(va) : '';
             vb = vb != null ? String(vb) : '';
@@ -349,9 +380,21 @@
             .map((r, i) => {
                 const globalIdx = (state.page - 1) * state.pageSize + i + 1;
                 const dl = escapeHtml(downloadHref(r));
-                const mime = escapeHtml(r.mime_type || '—');
+                const isWorkerRow = r._kind === 'worker_share';
+                const mimeRaw = String(r.mime_type || '').trim();
+                const mimeShort = escapeHtml(formatMimeTypeDisplay(mimeRaw));
+                const mimeTitle = escapeHtml(mimeRaw);
                 const title = escapeHtml(r.title || '—');
-                const fn = escapeHtml(r.original_filename || '—');
+                let fnCell = '—';
+                if (isWorkerRow) {
+                    if (r._hasFile && r.original_filename && String(r.original_filename).trim() !== '') {
+                        fnCell = escapeHtml(String(r.original_filename).trim());
+                    }
+                } else if (r.original_filename && String(r.original_filename).trim() !== '') {
+                    fnCell = escapeHtml(String(r.original_filename).trim());
+                } else {
+                    fnCell = '—';
+                }
                 const sz = formatBytes(r.file_size);
                 const when = escapeHtml(formatDate(r.created_at));
                 const srcTag =
@@ -368,14 +411,15 @@
                 const fileActions = noFile
                     ? `<span class="partner-portal-docs-no-file" title="No file is stored for this document on our side yet. Ask your office if you need the file.">No file</span>`
                     : `<a class="muted-btn partner-portal-docs-action" href="${dl}" target="_blank" rel="noopener">Open</a><a class="neon-btn partner-portal-docs-action" href="${dl}" download>Download</a>`;
-                const actions = `${cvBtn}${viewBtn}${fileActions}`;
+                const btnRow = `<span class="partner-portal-docs-actions-btns">${cvBtn}${viewBtn}${noFile ? '' : fileActions}</span>`;
+                const actions = noFile ? `${btnRow}${fileActions}` : btnRow;
 
                 return `<tr>
                     <td class="col-num">${globalIdx}</td>
                     <td class="col-source">${srcTag}</td>
                     <td>${title}</td>
-                    <td>${fn}</td>
-                    <td><span class="table-tag tag-muted">${mime}</span></td>
+                    <td>${fnCell}</td>
+                    <td><span class="table-tag tag-muted" title="${mimeTitle}">${mimeShort}</span></td>
                     <td>${escapeHtml(sz)}</td>
                     <td>${when}</td>
                     <td class="col-actions partner-portal-docs-actions">${actions}</td>
@@ -422,8 +466,11 @@
             const dlabel = String(s.document_label || s.document_type || 'Document').trim() || 'Document';
             const ppn = String(s.passport_number || '').trim();
             const title = `${dlabel} — ${wname}`;
-            const fnHint = ppn && ppn !== '—' ? `Passport ${ppn}` : String(s.document_type || 'document');
             const hasFile = !!s.has_file;
+            const storageFn = s.storage_filename != null ? String(s.storage_filename).trim() : '';
+            const mimeFull = s.mime_type != null ? String(s.mime_type).trim() : '';
+            const fs = s.file_size;
+            const fileSizeNum = fs != null && Number.isFinite(Number(fs)) ? Number(fs) : null;
             return {
                 id: shareId,
                 _kind: 'worker_share',
@@ -431,9 +478,9 @@
                 _worker_id: workerId,
                 source: 'Worker document',
                 title,
-                original_filename: fnHint,
-                mime_type: dlabel,
-                file_size: null,
+                original_filename: hasFile && storageFn ? storageFn : '—',
+                mime_type: hasFile && mimeFull ? mimeFull : '',
+                file_size: fileSizeNum,
                 created_at: s.created_at != null ? s.created_at : '',
                 _hasFile: hasFile,
                 _worker_name: wname,

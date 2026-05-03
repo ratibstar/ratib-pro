@@ -165,6 +165,52 @@ class PartnerAgencyWorkerDocSharesController
     }
 
     /**
+     * Resolve uploaded worker document on disk (same layout as partner-shared-worker-doc-download).
+     *
+     * @param array<string, mixed> $worker
+     *
+     * @return array{basename: string, bytes: int, mime: string}|null
+     */
+    private function workerDocumentFileMeta(int $workerId, string $documentType, array $worker): ?array
+    {
+        $documentType = strtolower(trim($documentType));
+        if ($workerId <= 0 || !in_array($documentType, self::allowedDocumentTypes(), true)) {
+            return null;
+        }
+        $col = $documentType . '_file';
+        $fn = isset($worker[$col]) ? trim((string) $worker[$col]) : '';
+        if ($fn === '') {
+            return null;
+        }
+        $baseDir = realpath(__DIR__ . '/../../uploads/workers/' . $workerId . '/documents/' . $documentType);
+        if ($baseDir === false) {
+            return null;
+        }
+        $path = $baseDir . DIRECTORY_SEPARATOR . $fn;
+        $real = realpath($path);
+        if ($real === false || !is_file($real) || strpos($real, $baseDir) !== 0) {
+            return null;
+        }
+        $bytes = @filesize($real);
+        if ($bytes === false) {
+            return null;
+        }
+        $mime = 'application/octet-stream';
+        if (function_exists('mime_content_type')) {
+            $m = (string) @mime_content_type($real);
+            if ($m !== '') {
+                $mime = $m;
+            }
+        }
+
+        return [
+            'basename' => basename($fn),
+            'bytes' => (int) $bytes,
+            'mime' => $mime,
+        ];
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     public function listSharesWithDetails(int $partnerAgencyId): array
@@ -187,8 +233,8 @@ class PartnerAgencyWorkerDocSharesController
             if (!$worker) {
                 continue;
             }
-            $col = $dt . '_file';
-            $hasFile = isset($worker[$col]) && trim((string) $worker[$col]) !== '';
+            $meta = $this->workerDocumentFileMeta($wid, $dt, $worker);
+            $hasFile = $meta !== null;
             $name = trim((string) ($worker['worker_name'] ?? ''));
             if ($name === '') {
                 $name = 'Worker #' . $wid;
@@ -202,6 +248,9 @@ class PartnerAgencyWorkerDocSharesController
                 'worker_name' => $name,
                 'passport_number' => trim((string) ($worker['passport_number'] ?? '')) ?: '—',
                 'has_file' => $hasFile,
+                'storage_filename' => $meta['basename'] ?? null,
+                'file_size' => $meta !== null ? $meta['bytes'] : null,
+                'mime_type' => $meta !== null ? $meta['mime'] : null,
                 'created_at' => $s['created_at'] ?? null,
             ];
         }

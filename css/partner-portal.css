@@ -670,8 +670,11 @@
 }
 
 .partner-portal-docs-table .col-actions {
-    width: 1%;
-    white-space: nowrap;
+    width: auto;
+    min-width: 14rem;
+    max-width: 22rem;
+    white-space: normal;
+    vertical-align: middle;
 }
 
 .partner-portal-sort-btn {
@@ -706,11 +709,20 @@
 }
 
 .partner-portal-docs-actions {
-    display: inline-flex;
+    display: flex;
+    flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
+    gap: 0.35rem 0.45rem;
+    justify-content: flex-start;
+}
+
+.partner-portal-docs-actions-btns {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
     gap: 0.35rem;
-    justify-content: flex-end;
 }
 
 .partner-portal-docs-action {
@@ -721,9 +733,12 @@
 }
 
 .partner-portal-docs-no-file {
-    font-size: 0.78rem;
+    display: inline-block;
+    font-size: 0.72rem;
     color: #64748b;
     cursor: help;
+    white-space: nowrap;
+    margin-left: 0.15rem;
 }
 
 .partner-portal-docs-modal-footer {
@@ -737,6 +752,14 @@
     gap: 0.45rem;
     align-items: center;
     margin-right: auto;
+}
+
+.partner-portal-docs-modal-links-btns {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.4rem;
 }
 
 .partner-portal-docs-modal-links:empty {
