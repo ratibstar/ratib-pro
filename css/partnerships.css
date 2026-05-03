@@ -487,14 +487,14 @@
 }
 
 .partnerships-page input,
-.partnerships-page select,
+.partnerships-page select:not(.pp-doc-status-select-solo),
 .partnerships-page textarea {
     background-color: rgba(2, 6, 23, 0.92) !important;
     color: #e6edf3 !important;
     border: 1px solid rgba(148, 163, 184, 0.35) !important;
 }
 
-.partnerships-page select {
+.partnerships-page select:not(.pp-doc-status-select-solo) {
     background-color: rgba(2, 6, 23, 0.98) !important;
 }
 
@@ -506,7 +506,7 @@
 .partnerships-page input:-webkit-autofill:hover,
 .partnerships-page input:-webkit-autofill:focus,
 .partnerships-page textarea:-webkit-autofill,
-.partnerships-page select:-webkit-autofill {
+.partnerships-page select:not(.pp-doc-status-select-solo):-webkit-autofill {
     -webkit-text-fill-color: #e6edf3 !important;
     -webkit-box-shadow: 0 0 0 1000px #0b1220 inset !important;
     transition: background-color 9999s ease-in-out 0s;

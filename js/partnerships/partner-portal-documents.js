@@ -309,6 +309,36 @@
         return basePath + (basePath.indexOf('?') === -1 ? '?' : '&') + suf.slice(1);
     }
 
+    /** CSS theme class suffix; manual override uses display_status, else effective portal_status. */
+    function selectThemeSlugForRow(r) {
+        if (r.display_status != null && String(r.display_status).trim() !== '') {
+            return normalizePortalStatusSlug(r.display_status, PORTAL_STATUS_CARD_ORDER[0]);
+        }
+        return normalizePortalStatusSlug(
+            r.portal_status,
+            r._kind === 'worker_share' ? (r._hasFile ? 'processing' : 'waiting') : 'ready'
+        );
+    }
+
+    /** While the row <select> is open / value changed, theme follows the current value (then server after load). */
+    function selectVisualSlugFromControl(row, selectEl) {
+        const raw = selectEl.value != null ? String(selectEl.value).trim() : '';
+        if (raw !== '') {
+            return normalizePortalStatusSlug(raw, PORTAL_STATUS_CARD_ORDER[0]);
+        }
+        return normalizePortalStatusSlug(
+            row.portal_status,
+            row._kind === 'worker_share' ? (row._hasFile ? 'processing' : 'waiting') : 'ready'
+        );
+    }
+
+    function applySoloStatusSelectTheme(selectEl, row) {
+        if (!selectEl || !row || !selectEl.classList || !selectEl.classList.contains('pp-docs-status-select')) return;
+        const slug = selectVisualSlugFromControl(row, selectEl);
+        selectEl.className =
+            'partner-portal-input pp-docs-status-select pp-doc-status-select-solo pp-doc-status-select-solo--' + slug;
+    }
+
     function buildPortalStatusSelectOptions(displayStatusField) {
         const selVal =
             displayStatusField != null && String(displayStatusField).trim() !== ''
@@ -701,10 +731,7 @@
                 const title = escapeHtml(r.title || '—');
                 const when = escapeHtml(formatDate(r.created_at));
                 const workerTypeCell = escapeHtml(String(r.worker_type != null ? r.worker_type : '—'));
-                const statusSlug = normalizePortalStatusSlug(
-                    r.portal_status,
-                    r._kind === 'worker_share' ? (r._hasFile ? 'processing' : 'waiting') : 'ready'
-                );
+                const statusSlug = selectThemeSlugForRow(r);
                 const statusLabel = escapeHtml(formatPortalStatusLabel(statusSlug));
                 const statusInner = staffMode
                     ? `<select class="partner-portal-input pp-docs-status-select pp-doc-status-select-solo pp-doc-status-select-solo--${escapeHtml(
@@ -989,6 +1016,7 @@
                                 ? normalizePortalStatusSlug(row.display_status, PORTAL_STATUS_CARD_ORDER[0])
                                 : '';
                         if (String(t.value || '') === prev) return;
+                        applySoloStatusSelectTheme(t, row);
                         t.disabled = true;
                         const ok = await patchDocumentDisplayStatus(row, t.value);
                         t.disabled = false;
@@ -998,6 +1026,7 @@
                         } else {
                             setError('Could not update status. Check permissions and try again.');
                             t.value = prev;
+                            applySoloStatusSelectTheme(t, row);
                         }
                         return;
                     }
