@@ -33,6 +33,215 @@
         return str;
     }
 
+    function formatMoneyAmount(n) {
+        const x = Number(n);
+        if (Number.isNaN(x)) return '—';
+        return `${x.toLocaleString(DATE_LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`;
+    }
+
+    /** @type {{ destroy?: () => void } | null} */
+    let ppOvLedgerChartInst = null;
+
+    function ppOvDestroyLedgerChartInstanceOnly() {
+        if (ppOvLedgerChartInst && typeof ppOvLedgerChartInst.destroy === 'function') {
+            ppOvLedgerChartInst.destroy();
+        }
+        ppOvLedgerChartInst = null;
+    }
+
+    function ppOvDestroyLedgerChart() {
+        ppOvDestroyLedgerChartInstanceOnly();
+        const wrap = document.getElementById('ppOvAcctChartWrap');
+        if (wrap) {
+            wrap.classList.add('is-hidden');
+            wrap.hidden = true;
+        }
+    }
+
+    function ppOvRenderLedgerChart(monthRows) {
+        const wrap = document.getElementById('ppOvAcctChartWrap');
+        const canvas = document.getElementById('ppOvAcctChart');
+        if (!wrap || !canvas) return;
+        if (typeof Chart === 'undefined') {
+            wrap.classList.add('is-hidden');
+            wrap.hidden = true;
+            return;
+        }
+        const rows = Array.isArray(monthRows) ? monthRows : [];
+        if (rows.length === 0) {
+            ppOvDestroyLedgerChart();
+            return;
+        }
+        wrap.classList.remove('is-hidden');
+        wrap.hidden = false;
+        ppOvDestroyLedgerChartInstanceOnly();
+        const labels = rows.map((r) => (r && r.label) || (r && r.key) || '');
+        const debits = rows.map((r) => (Number(r && r.debit) ? Number(r.debit) : 0));
+        const credits = rows.map((r) => (Number(r && r.credit) ? Number(r.credit) : 0));
+        ppOvLedgerChartInst = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Debit (SAR)',
+                        data: debits,
+                        backgroundColor: 'rgba(45, 212, 191, 0.65)',
+                        borderColor: 'rgba(45, 212, 191, 1)',
+                        borderWidth: 1,
+                    },
+                    {
+                        label: 'Credit (SAR)',
+                        data: credits,
+                        backgroundColor: 'rgba(99, 102, 241, 0.55)',
+                        borderColor: 'rgba(165, 180, 252, 1)',
+                        borderWidth: 1,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#cbd5e1' } },
+                    title: {
+                        display: true,
+                        text: 'Posted activity by month',
+                        color: '#e2e8f0',
+                        font: { size: 13 },
+                    },
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                    },
+                    y: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                    },
+                },
+            },
+        });
+    }
+
+    function initOverviewLedgerDefaultDates() {
+        const startEl = document.getElementById('ppOvAcctStart');
+        const endEl = document.getElementById('ppOvAcctEnd');
+        if (startEl && !startEl.value) {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+            startEl.value = start.toISOString().slice(0, 10);
+        }
+        if (endEl && !endEl.value) {
+            const now = new Date();
+            const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            endEl.value = end.toISOString().slice(0, 10);
+        }
+    }
+
+    async function loadOverviewLedger() {
+        const sum = document.getElementById('ppOvAcctSummary');
+        const filters = document.getElementById('ppOvAcctFilters');
+        const balances = document.getElementById('ppOvAcctBalances');
+        const wrap = document.getElementById('ppOvAcctTableWrap');
+        const tbody = document.getElementById('ppOvAcctTbody');
+        const hintEl = document.getElementById('ppOvAcctHint');
+
+        if (hintEl) {
+            hintEl.textContent = '';
+            hintEl.classList.add('is-hidden');
+            hintEl.hidden = true;
+        }
+
+        const startEl = document.getElementById('ppOvAcctStart');
+        const endEl = document.getElementById('ppOvAcctEnd');
+        const qs = new URLSearchParams();
+        if (startEl && startEl.value) qs.set('start_date', startEl.value);
+        if (endEl && endEl.value) qs.set('end_date', endEl.value);
+
+        try {
+            const res = await fetch(`../api/partnerships/partner-portal-account-statement.php?${qs.toString()}`, {
+                credentials: 'same-origin',
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok || json.success === false) {
+                throw new Error(json.message || `Statement failed (${res.status})`);
+            }
+
+            if (!json.linked) {
+                ppOvDestroyLedgerChart();
+                if (filters) filters.hidden = true;
+                if (balances) {
+                    balances.classList.add('is-hidden');
+                    balances.hidden = true;
+                }
+                if (wrap) {
+                    wrap.classList.add('is-hidden');
+                    wrap.hidden = true;
+                }
+                if (sum) {
+                    sum.textContent =
+                        json.message ||
+                        'Not linked yet. Ask your office to connect this agency to the chart of accounts.';
+                }
+                if (hintEl && json.message) {
+                    hintEl.textContent = json.message;
+                    hintEl.classList.remove('is-hidden');
+                    hintEl.hidden = false;
+                }
+                return;
+            }
+
+            const code = json.account_code || '';
+            const aname = json.account_name || '';
+            if (sum) {
+                sum.textContent =
+                    code && aname
+                        ? `Linked to chart account ${code} — ${aname}.`
+                        : 'Linked to your office chart of accounts.';
+            }
+
+            if (filters) filters.hidden = false;
+            if (balances) {
+                balances.innerHTML = `
+            <div><span>Opening</span><span class="agency-accounting-balance-val">${escapeHtml(formatMoneyAmount(json.opening_balance))}</span></div>
+            <div><span>Closing</span><span class="agency-accounting-balance-val">${escapeHtml(formatMoneyAmount(json.closing_balance))}</span></div>
+            <div><span>Period debits</span><span class="agency-accounting-balance-val">${escapeHtml(formatMoneyAmount(json.total_debit))}</span></div>
+            <div><span>Period credits</span><span class="agency-accounting-balance-val">${escapeHtml(formatMoneyAmount(json.total_credit))}</span></div>
+        `;
+                balances.classList.remove('is-hidden');
+                balances.hidden = false;
+            }
+
+            const lines = Array.isArray(json.lines) ? json.lines : [];
+            if (tbody) {
+                tbody.innerHTML = lines
+                    .map((row) => {
+                        const d = escapeHtml(String(row.date || ''));
+                        const ref = escapeHtml(String(row.reference || ''));
+                        const desc = escapeHtml(String(row.description || ''));
+                        const dr = escapeHtml(formatMoneyAmount(row.debit));
+                        const cr = escapeHtml(formatMoneyAmount(row.credit));
+                        const bal = escapeHtml(formatMoneyAmount(row.balance));
+                        return `<tr><td>${d}</td><td>${ref}</td><td>${desc}</td><td class="num">${dr}</td><td class="num">${cr}</td><td class="num">${bal}</td></tr>`;
+                    })
+                    .join('');
+            }
+            if (wrap) {
+                wrap.classList.remove('is-hidden');
+                wrap.hidden = false;
+            }
+
+            ppOvRenderLedgerChart(json.chart_by_month);
+        } catch (e) {
+            ppOvDestroyLedgerChart();
+            if (sum) {
+                sum.textContent = e && e.message ? e.message : 'Could not load account statement.';
+            }
+        }
+    }
+
     function statusClassForDeployment(status) {
         const st = String(status || 'processing').toLowerCase();
         if (st === 'issue' || st === 'returned' || st === 'processing') {
@@ -506,6 +715,7 @@
             const shared = Array.isArray(data.shared_worker_documents) ? data.shared_worker_documents : [];
             renderSharedWorkerDocs(shared);
             updateDashboard(agency, cvs, shared);
+            await loadOverviewLedger();
             scrollToPartnerPortalHash();
             schedulePartnerNavSpy();
         } catch (e) {
@@ -616,6 +826,11 @@
             });
         }
 
+        const ovAcctRefresh = document.getElementById('ppOvAcctRefreshBtn');
+        if (ovAcctRefresh) {
+            ovAcctRefresh.addEventListener('click', () => loadOverviewLedger());
+        }
+
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
             if (profileModal && profileModal.classList.contains('open')) closeProfileModal();
@@ -624,6 +839,7 @@
     }
 
     function init() {
+        initOverviewLedgerDefaultDates();
         bindProfileAndContractUi();
         window.addEventListener('hashchange', () => {
             scrollToPartnerPortalHash();

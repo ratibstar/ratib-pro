@@ -45,7 +45,11 @@ $pageCss = [
     asset('css/partnerships-agency-detail.css') . '?v=' . $v,
     asset('css/partner-portal.css') . '?v=' . $v,
 ];
-$pageJs = [asset('js/partnerships/partner-portal.js') . '?v=' . $v];
+$pageJs = [
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
+    asset('js/partnerships/partner-portal.js') . '?v=' . $v,
+];
+$ppAccountingPage = htmlspecialchars(pageUrl('partner-portal-accounting.php'), ENT_QUOTES, 'UTF-8');
 $partnerPortalMinimal = true;
 $partnerPortalNavActive = 'home';
 include __DIR__ . '/../includes/partner-portal-header.php';
@@ -119,7 +123,8 @@ include __DIR__ . '/../includes/partner-portal-header.php';
         </div>
     </section>
 
-    <div id="partner-portal-section-overview" class="agency-detail-grid partner-portal-anchor-target">
+    <div id="partner-portal-section-overview" class="partner-portal-overview-stack partner-portal-anchor-target">
+        <div class="agency-detail-grid">
         <div class="agency-detail-main-col">
             <section class="agency-detail-card glass-card">
                 <div class="agency-detail-card-head">
@@ -167,6 +172,47 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <p id="ppContractsEmpty" class="agency-detail-empty" hidden>No deployments recorded for this agency yet.</p>
             </section>
         </aside>
+        </div>
+
+        <section class="agency-detail-card glass-card partner-portal-ledger-in-overview" aria-labelledby="ppOvAcctHeading">
+            <div class="agency-detail-card-head partner-portal-ledger-in-overview-head">
+                <h2 id="ppOvAcctHeading" class="agency-detail-card-title">
+                    <span class="agency-detail-card-icon" aria-hidden="true">📊</span> Account statement (Ratib Pro)
+                </h2>
+                <a class="muted-btn partner-portal-ledger-full-link" href="<?php echo $ppAccountingPage; ?>">Full screen →</a>
+            </div>
+            <p class="agency-detail-note">Posted journal lines on the chart account your office linked to this partnership. Read-only; same data your office sees in accounting.</p>
+            <p id="ppOvAcctSummary" class="agency-detail-note partner-portal-ledger-summary">Loading…</p>
+            <div class="agency-accounting-filters glass-card partner-portal-ledger-filters" id="ppOvAcctFilters" hidden>
+                <label class="agency-accounting-date-label">From <input type="date" id="ppOvAcctStart" class="agency-accounting-date-input" autocomplete="off"></label>
+                <label class="agency-accounting-date-label">To <input type="date" id="ppOvAcctEnd" class="agency-accounting-date-input" autocomplete="off"></label>
+                <button type="button" class="neon-btn agency-accounting-refresh" id="ppOvAcctRefreshBtn">Refresh</button>
+            </div>
+            <div id="ppOvAcctBalances" class="agency-accounting-balances glass-card partner-portal-ledger-balances is-hidden" hidden></div>
+            <div id="ppOvAcctChartWrap" class="agency-accounting-chart-wrap glass-card partner-portal-ledger-chart is-hidden" hidden lang="en">
+                <h3 class="agency-accounting-chart-heading">Monthly debit and credit (SAR)</h3>
+                <p class="agency-accounting-chart-note">English summary for the selected range.</p>
+                <div class="agency-accounting-chart-canvas partner-portal-ledger-chart-canvas">
+                    <canvas id="ppOvAcctChart" aria-label="Monthly debit and credit"></canvas>
+                </div>
+            </div>
+            <div id="ppOvAcctTableWrap" class="agency-accounting-table-wrap glass-card partner-portal-ledger-table is-hidden" hidden>
+                <table class="agency-accounting-table" id="ppOvAcctTable">
+                    <thead>
+                        <tr>
+                            <th scope="col">Date</th>
+                            <th scope="col">Reference</th>
+                            <th scope="col">Description</th>
+                            <th scope="col" class="num">Debit</th>
+                            <th scope="col" class="num">Credit</th>
+                            <th scope="col" class="num">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ppOvAcctTbody"></tbody>
+                </table>
+            </div>
+            <p id="ppOvAcctHint" class="agency-detail-note agency-accounting-hint glass-card partner-portal-ledger-hint is-hidden" hidden></p>
+        </section>
     </div>
 
     <section id="partner-portal-section-documents" class="agency-detail-card glass-card partner-portal-cvs-block partner-portal-anchor-target">
