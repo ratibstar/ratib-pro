@@ -286,6 +286,65 @@
         el.classList.remove('is-hidden');
     }
 
+    function applyDocumentsData(data) {
+        const agency = data.agency || {};
+        state.agencyName = String(agency.name || '').trim() || 'Partner agency';
+        const cvs = Array.isArray(data.cvs) ? data.cvs : [];
+        const shares = Array.isArray(data.shared_worker_documents) ? data.shared_worker_documents : [];
+        const nAg = cvs.length;
+        const nW = shares.length;
+        const sub = $('ppDocsAgencySub');
+        if (sub) {
+            const name = state.agencyName;
+            const idPart = agency.id != null ? ` · ID ${agency.id}` : '';
+            const total = nAg + nW;
+            const tail =
+                total === 0 ? ' · No documents yet' : ` · ${nAg} agency · ${nW} worker`;
+            sub.textContent = name + idPart + tail;
+        }
+
+        const agencyRows = cvs.map((row) =>
+            Object.assign({}, row, {
+                _kind: 'agency_cv',
+                source: 'Agency file',
+            })
+        );
+
+        const workerRows = shares.map((s) => {
+            const shareId = parseInt(String(s.id || 0), 10) || 0;
+            const wname = String(s.worker_name || '').trim() || 'Worker';
+            const dlabel = String(s.document_label || s.document_type || 'Document').trim() || 'Document';
+            const ppn = String(s.passport_number || '').trim();
+            const title = `${dlabel} — ${wname}`;
+            const fnHint = ppn && ppn !== '—' ? `Passport ${ppn}` : String(s.document_type || 'document');
+            const hasFile = !!s.has_file;
+            return {
+                id: shareId,
+                _kind: 'worker_share',
+                _shareId: shareId,
+                source: 'Worker document',
+                title,
+                original_filename: fnHint,
+                mime_type: dlabel,
+                file_size: null,
+                created_at: s.created_at != null ? s.created_at : '',
+                _hasFile: hasFile,
+                _worker_name: wname,
+                _document_label: dlabel,
+                _passport: ppn,
+            };
+        });
+
+        const merged = agencyRows.concat(workerRows);
+        merged.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+        merged.forEach((row, i) => {
+            row.__idx = i + 1;
+        });
+        state.rows = merged;
+        state.page = 1;
+        renderTable();
+    }
+
     async function load() {
         setError('');
         const refreshBtn = $('ppDocsRefresh');
@@ -294,71 +353,18 @@
             refreshBtn.setAttribute('aria-busy', 'true');
         }
         try {
-            const res = await fetch('../api/partnerships/partner-portal-documents.php', { credentials: 'same-origin' });
+            const urlDocs = '../api/partnerships/partner-portal-documents.php';
+            const urlMe = '../api/partnerships/partner-portal-me.php';
+            let res = await fetch(urlDocs, { credentials: 'same-origin' });
+            if (res.status === 404) {
+                res = await fetch(urlMe, { credentials: 'same-origin' });
+            }
             const json = await res.json().catch(() => ({}));
             if (!res.ok || !json.success) {
                 setError(json.message || `Could not load (${res.status})`);
                 return;
             }
-            const data = json.data || {};
-            const agency = data.agency || {};
-            state.agencyName = String(agency.name || '').trim() || 'Partner agency';
-            const cvs = Array.isArray(data.cvs) ? data.cvs : [];
-            const shares = Array.isArray(data.shared_worker_documents) ? data.shared_worker_documents : [];
-            const nAg = cvs.length;
-            const nW = shares.length;
-            const sub = $('ppDocsAgencySub');
-            if (sub) {
-                const name = state.agencyName;
-                const idPart = agency.id != null ? ` · ID ${agency.id}` : '';
-                const total = nAg + nW;
-                const tail =
-                    total === 0
-                        ? ' · No documents yet'
-                        : ` · ${nAg} agency · ${nW} worker`;
-                sub.textContent = name + idPart + tail;
-            }
-
-            const agencyRows = cvs.map((row) =>
-                Object.assign({}, row, {
-                    _kind: 'agency_cv',
-                    source: 'Agency file',
-                })
-            );
-
-            const workerRows = shares.map((s) => {
-                const shareId = parseInt(String(s.id || 0), 10) || 0;
-                const wname = String(s.worker_name || '').trim() || 'Worker';
-                const dlabel = String(s.document_label || s.document_type || 'Document').trim() || 'Document';
-                const ppn = String(s.passport_number || '').trim();
-                const title = `${dlabel} — ${wname}`;
-                const fnHint = ppn && ppn !== '—' ? `Passport ${ppn}` : String(s.document_type || 'document');
-                const hasFile = !!s.has_file;
-                return {
-                    id: shareId,
-                    _kind: 'worker_share',
-                    _shareId: shareId,
-                    source: 'Worker document',
-                    title,
-                    original_filename: fnHint,
-                    mime_type: dlabel,
-                    file_size: null,
-                    created_at: s.created_at != null ? s.created_at : '',
-                    _hasFile: hasFile,
-                    _worker_name: wname,
-                    _document_label: dlabel,
-                    _passport: ppn,
-                };
-            });
-
-            const merged = agencyRows.concat(workerRows);
-            merged.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
-            merged.forEach((row, i) => {
-                row.__idx = i + 1;
-            });
-            state.rows = merged;
-            state.page = 1;
-            renderTable();
+            applyDocumentsData(json.data || {});
         } catch (e) {
             setError(e && e.message ? e.message : 'Failed to load.');
         } finally {
