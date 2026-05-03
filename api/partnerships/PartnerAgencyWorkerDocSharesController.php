@@ -325,6 +325,25 @@ class PartnerAgencyWorkerDocSharesController
     }
 
     /**
+     * Partner may open read-only CV if the worker is deployed to them or has any document share with them.
+     */
+    public function partnerPortalCanViewWorkerCv(int $partnerAgencyId, int $workerId): bool
+    {
+        if ($workerId <= 0 || $partnerAgencyId <= 0) {
+            return false;
+        }
+        if ($this->workerDeployedToPartner($workerId, $partnerAgencyId)) {
+            return true;
+        }
+        $stmt = $this->conn->prepare(
+            'SELECT 1 FROM partner_agency_worker_document_shares WHERE partner_agency_id = ? AND worker_id = ? LIMIT 1'
+        );
+        $stmt->execute([$partnerAgencyId, $workerId]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    /**
      * Workers with at least one uploaded document file, plus readiness score and deployment partner ids.
      *
      * @return array<int, array<string, mixed>>

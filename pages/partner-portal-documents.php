@@ -37,7 +37,39 @@ include __DIR__ . '/../includes/partner-portal-header.php';
 
     <div id="ppDocsError" class="partner-portal-error glass-card is-hidden" hidden></div>
 
-    <div class="glass-card partner-portal-docs-toolbar">
+    <section class="glass-card partner-portal-docs-cv-hub" aria-labelledby="ppDocsCvHubHeading">
+        <h2 id="ppDocsCvHubHeading" class="partner-portal-docs-section-title">Worker CVs</h2>
+        <p class="partner-portal-docs-section-lead">Formatted CV (same layout as your office). Read-only — use Print on the CV page if needed.</p>
+        <div id="ppDocsCvHub" class="partner-portal-docs-cv-cards"></div>
+        <p id="ppDocsCvHubEmpty" class="agency-detail-empty partner-portal-docs-cv-empty" hidden>No worker CVs linked to your portal yet.</p>
+    </section>
+
+    <section class="glass-card partner-portal-docs-summary-wrap" aria-labelledby="ppDocsSummaryHeading">
+        <h2 id="ppDocsSummaryHeading" class="partner-portal-docs-section-title">Counts</h2>
+        <p class="partner-portal-docs-section-lead">Quick totals; open a CV above or use the file list below for downloads.</p>
+        <table class="partnerships-table partner-portal-docs-summary-table" aria-label="Document counts">
+            <tbody>
+                <tr>
+                    <th scope="row">Agency file uploads</th>
+                    <td id="ppDocsCountAgency">0</td>
+                </tr>
+                <tr>
+                    <th scope="row">Worker CV profiles</th>
+                    <td id="ppDocsCountCvProfiles">0</td>
+                </tr>
+                <tr>
+                    <th scope="row">Shared items total</th>
+                    <td id="ppDocsCountTotal">0</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="glass-card partner-portal-docs-files-section">
+        <h2 class="partner-portal-docs-section-title">Shared files</h2>
+        <p class="partner-portal-docs-section-lead">One row per uploaded or shared file (for downloads). CV layout is opened from Worker CVs.</p>
+
+    <div class="partner-portal-docs-toolbar partner-portal-docs-toolbar--nested">
         <input type="search" id="ppDocsSearch" class="partner-portal-input partner-portal-docs-search" placeholder="Search title, file name, worker, or type…" aria-label="Search documents">
         <div class="partner-portal-docs-toolbar-right">
             <label class="partner-portal-docs-rows-label">
@@ -53,7 +85,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
         </div>
     </div>
 
-    <div class="glass-card partner-portal-docs-table-shell">
+    <div class="partner-portal-docs-table-shell">
         <div class="partner-portal-docs-table-scroll">
             <table class="partnerships-table partner-portal-docs-table" aria-label="Partner documents and CVs">
                 <thead>
@@ -74,11 +106,12 @@ include __DIR__ . '/../includes/partner-portal-header.php';
         <p id="ppDocsEmpty" class="agency-detail-empty partner-portal-docs-empty" hidden>No documents yet.</p>
     </div>
 
-    <div class="partner-portal-docs-pagination glass-card">
+    <div class="partner-portal-docs-pagination partner-portal-docs-pagination--nested">
         <button type="button" class="muted-btn" id="ppDocsPrev">Prev</button>
         <span id="ppDocsPageInfo" class="partner-portal-docs-page-info">Page 1 / 1</span>
         <button type="button" class="muted-btn" id="ppDocsNext">Next</button>
     </div>
+    </section>
 </div>
 
 <div id="ppDocModal" class="modal-wrap partner-portal-modal" aria-hidden="true">
