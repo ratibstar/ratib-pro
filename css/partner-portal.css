@@ -1041,13 +1041,14 @@
     font-weight: 600;
 }
 
-/* Portal row status <select>: full color fill inside the control (no outer row/column bar) */
+/*
+ * Portal row status <select>: solid fills aligned with .pp-docs-status-card-* (no var() in
+ * background-image — some builds dropped gradients so controls stayed grey on staff page).
+ */
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo.partner-portal-input,
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo,
 .partner-portal-docs-table select.pp-doc-status-select-solo.partner-portal-input,
 .partner-portal-docs-table select.pp-doc-status-select-solo {
-    --dm-border: rgba(148, 163, 184, 0.5);
-    --dm-fg: #f1f5f9;
-    --dm-chevron: #e2e8f0;
-    --dm-fill: linear-gradient(165deg, #64748b 0%, #475569 42%, #334155 100%);
     display: block;
     box-sizing: border-box;
     width: 100%;
@@ -1061,58 +1062,77 @@
     appearance: none;
     -webkit-appearance: none;
     text-transform: capitalize;
-    border: 1px solid var(--dm-border) !important;
     border-radius: 10px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-    background-color: transparent !important;
-    color: var(--dm-fg) !important;
-    background-image: var(--dm-fill), linear-gradient(45deg, transparent 50%, var(--dm-chevron) 50%),
-        linear-gradient(135deg, var(--dm-chevron) 50%, transparent 50%);
-    background-position: 0 0, calc(100% - 12px) calc(50% - 2px), calc(100% - 7px) calc(50% - 2px);
-    background-size: auto, 5px 5px, 5px 5px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
     background-repeat: no-repeat;
+    background-position: calc(100% - 12px) calc(50% - 2px), calc(100% - 7px) calc(50% - 2px);
+    background-size: 5px 5px, 5px 5px;
 }
 
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo--waiting.partner-portal-input,
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo--waiting,
+.partner-portal-docs-table select.pp-doc-status-select-solo--waiting.partner-portal-input,
 .partner-portal-docs-table select.pp-doc-status-select-solo--waiting {
-    --dm-border: rgba(203, 213, 225, 0.4);
-    --dm-fg: #f8fafc;
-    --dm-chevron: #e2e8f0;
-    --dm-fill: linear-gradient(165deg, #94a3b8 0%, #64748b 40%, #475569 100%);
+    color: #f1f5f9 !important;
+    background-color: rgba(51, 65, 85, 0.88) !important;
+    border: 1px solid rgba(148, 163, 184, 0.55) !important;
+    background-image: linear-gradient(45deg, transparent 50%, #cbd5e1 50%),
+        linear-gradient(135deg, #cbd5e1 50%, transparent 50%);
 }
 
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo--processing.partner-portal-input,
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo--processing,
+.partner-portal-docs-table select.pp-doc-status-select-solo--processing.partner-portal-input,
 .partner-portal-docs-table select.pp-doc-status-select-solo--processing {
-    --dm-border: rgba(254, 243, 199, 0.45);
-    --dm-fg: #fffbeb;
-    --dm-chevron: #fde68a;
-    --dm-fill: linear-gradient(165deg, #fbbf24 0%, #d97706 38%, #9a3412 100%);
+    color: #fde68a !important;
+    background-color: rgba(120, 53, 15, 0.9) !important;
+    border: 1px solid rgba(245, 158, 11, 0.55) !important;
+    background-image: linear-gradient(45deg, transparent 50%, #fcd34d 50%),
+        linear-gradient(135deg, #fcd34d 50%, transparent 50%);
 }
 
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo--ready.partner-portal-input,
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo--ready,
+.partner-portal-docs-table select.pp-doc-status-select-solo--ready.partner-portal-input,
 .partner-portal-docs-table select.pp-doc-status-select-solo--ready {
-    --dm-border: rgba(187, 247, 208, 0.45);
-    --dm-fg: #f0fdf4;
-    --dm-chevron: #bbf7d0;
-    --dm-fill: linear-gradient(165deg, #4ade80 0%, #16a34a 40%, #14532d 100%);
+    color: #bbf7d0 !important;
+    background-color: rgba(20, 83, 45, 0.9) !important;
+    border: 1px solid rgba(34, 197, 94, 0.55) !important;
+    background-image: linear-gradient(45deg, transparent 50%, #86efac 50%),
+        linear-gradient(135deg, #86efac 50%, transparent 50%);
 }
 
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo--issues.partner-portal-input,
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo--issues,
+.partner-portal-docs-table select.pp-doc-status-select-solo--issues.partner-portal-input,
 .partner-portal-docs-table select.pp-doc-status-select-solo--issues {
-    --dm-border: rgba(254, 202, 202, 0.45);
-    --dm-fg: #fff1f2;
-    --dm-chevron: #fecdd3;
-    --dm-fill: linear-gradient(165deg, #f87171 0%, #dc2626 40%, #7f1d1d 100%);
+    color: #fecaca !important;
+    background-color: rgba(127, 29, 29, 0.9) !important;
+    border: 1px solid rgba(248, 113, 113, 0.55) !important;
+    background-image: linear-gradient(45deg, transparent 50%, #fca5a5 50%),
+        linear-gradient(135deg, #fca5a5 50%, transparent 50%);
 }
 
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo--returned.partner-portal-input,
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo--returned,
+.partner-portal-docs-table select.pp-doc-status-select-solo--returned.partner-portal-input,
 .partner-portal-docs-table select.pp-doc-status-select-solo--returned {
-    --dm-border: rgba(191, 219, 254, 0.45);
-    --dm-fg: #eff6ff;
-    --dm-chevron: #bfdbfe;
-    --dm-fill: linear-gradient(165deg, #60a5fa 0%, #2563eb 40%, #1e3a8a 100%);
+    color: #bfdbfe !important;
+    background-color: rgba(30, 58, 138, 0.9) !important;
+    border: 1px solid rgba(59, 130, 246, 0.55) !important;
+    background-image: linear-gradient(45deg, transparent 50%, #93c5fd 50%),
+        linear-gradient(135deg, #93c5fd 50%, transparent 50%);
 }
 
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo--transferred.partner-portal-input,
+.partnerships-page .partner-portal-docs-table select.pp-doc-status-select-solo--transferred,
+.partner-portal-docs-table select.pp-doc-status-select-solo--transferred.partner-portal-input,
 .partner-portal-docs-table select.pp-doc-status-select-solo--transferred {
-    --dm-border: rgba(233, 213, 255, 0.45);
-    --dm-fg: #faf5ff;
-    --dm-chevron: #e9d5ff;
-    --dm-fill: linear-gradient(165deg, #c084fc 0%, #9333ea 42%, #581c87 100%);
+    color: #e9d5ff !important;
+    background-color: rgba(88, 28, 135, 0.9) !important;
+    border: 1px solid rgba(168, 85, 247, 0.55) !important;
+    background-image: linear-gradient(45deg, transparent 50%, #d8b4fe 50%),
+        linear-gradient(135deg, #d8b4fe 50%, transparent 50%);
 }
 
 .partner-portal-docs-table select.pp-doc-status-select-solo option {
