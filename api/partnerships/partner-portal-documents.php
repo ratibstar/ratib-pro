@@ -44,7 +44,7 @@ try {
     $pa = new PartnerAgencyController($conn);
     try {
         $agency = $pa->portalSummary($aid);
-    } catch (RuntimeException $e) {
+    } catch (InvalidArgumentException | RuntimeException $e) {
         partnerPortalDocumentsJson(['success' => false, 'message' => 'Agency not found or no longer available.'], 404);
     }
 

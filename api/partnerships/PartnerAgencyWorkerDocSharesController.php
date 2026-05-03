@@ -40,14 +40,21 @@ class PartnerAgencyWorkerDocSharesController
             return 'waiting';
         }
         $d = strtolower(trim((string) ($deploymentStatus ?? 'processing')));
-        return match ($d) {
-            'issue' => 'issues',
-            'returned' => 'returned',
-            'transferred' => 'transferred',
-            'deployed' => 'ready',
-            'processing', '' => 'processing',
-            default => 'processing',
-        };
+        switch ($d) {
+            case 'issue':
+                return 'issues';
+            case 'returned':
+                return 'returned';
+            case 'transferred':
+                return 'transferred';
+            case 'deployed':
+                return 'ready';
+            case '':
+            case 'processing':
+                return 'processing';
+            default:
+                return 'processing';
+        }
     }
 
     public static function documentTypeLabel(string $t): string
