@@ -1448,6 +1448,39 @@ iframe.partner-portal-cv-frame {
     }
 }
 
+.pp-worker-docs-list-hint {
+    margin: 0 0 0.65rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    max-width: 42rem;
+}
+
+.pp-worker-docs-file-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.pp-worker-docs-file-type {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.35rem 0.5rem;
+}
+
+.pp-worker-docs-file-name {
+    font-size: 0.88rem;
+    color: #cbd5e1;
+    word-break: break-word;
+}
+
+.pp-worker-docs-status-cell {
+    white-space: nowrap;
+    vertical-align: middle;
+    color: #e2e8f0;
+}
+
 .pp-worker-docs-list-table {
     width: 100%;
     border-collapse: collapse;

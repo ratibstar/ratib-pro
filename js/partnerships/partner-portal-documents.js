@@ -479,8 +479,13 @@
     }
 
     function ensureWorkerDocsListModal() {
-        if ($('ppWorkerDocsListModal')) {
-            return;
+        const existing = $('ppWorkerDocsListModal');
+        if (existing) {
+            const hr = existing.querySelector('.pp-worker-docs-list-table thead tr');
+            if (hr && hr.querySelectorAll('th').length === 2) {
+                return;
+            }
+            existing.remove();
         }
         const wrap = document.createElement('div');
         wrap.id = 'ppWorkerDocsListModal';
@@ -493,10 +498,11 @@
             '<button type="button" class="icon-btn" id="ppWorkerDocsListCloseX" aria-label="Close">×</button>' +
             '</div>' +
             '<p id="ppWorkerDocsListSub" class="partner-portal-modal-lead"></p>' +
+            '<p id="ppWorkerDocsListHint" class="pp-worker-docs-list-hint muted-label"></p>' +
             '<div class="pp-worker-docs-split">' +
             '<div class="pp-worker-docs-table-scroll">' +
             '<table class="pp-worker-docs-list-table">' +
-            '<thead><tr><th scope="col" class="pp-worker-docs-th-type">Document type</th><th scope="col" class="pp-worker-docs-th-file">File</th><th scope="col" class="pp-worker-docs-th-status">Status</th><th scope="col" class="pp-worker-docs-actions-col pp-worker-docs-th-actions">Preview</th></tr></thead>' +
+            '<thead><tr><th scope="col" class="pp-worker-docs-th-file">File</th><th scope="col" class="pp-worker-docs-th-status">Status</th></tr></thead>' +
             '<tbody id="ppWorkerDocsListTbody"></tbody>' +
             '</table>' +
             '</div>' +
@@ -544,18 +550,6 @@
             });
         }
         wrap.addEventListener('click', (e) => {
-            const prevB = e.target && e.target.closest ? e.target.closest('[data-pp-worker-docs-slot-preview]') : null;
-            if (prevB) {
-                e.preventDefault();
-                const enc = prevB.getAttribute('data-pp-worker-docs-slot-preview');
-                if (!enc) return;
-                try {
-                    showWorkerDocsListPreviewPane(decodeURIComponent(enc));
-                } catch (_err) {
-                    /* ignore */
-                }
-                return;
-            }
             const uploadSlotRow = e.target && e.target.closest ? e.target.closest('tr[data-pp-worker-docs-upload-slot]') : null;
             if (uploadSlotRow && staffMode && !(e.target && e.target.closest && e.target.closest('button'))) {
                 e.preventDefault();
@@ -637,7 +631,7 @@
         if (!tbody) return;
         if (!tableRows.length) {
             tbody.innerHTML =
-                '<tr><td colspan="4" class="pp-worker-docs-empty-cell">No document slots for this worker in the current list.</td></tr>';
+                '<tr><td colspan="2" class="pp-worker-docs-empty-cell">No document slots for this worker in the current list.</td></tr>';
             return;
         }
         tbody.innerHTML = tableRows
@@ -645,7 +639,7 @@
                 const prevEnc = row.hasFile && row.previewUrl ? encodeURIComponent(row.previewUrl) : '';
                 const rowPreviewAttr =
                     row.hasFile && row.previewUrl
-                        ? ` data-pp-worker-docs-row-preview="${prevEnc}" class="pp-worker-docs-row--clickable"`
+                        ? ` data-pp-worker-docs-row-preview="${prevEnc}" class="pp-worker-docs-row--clickable" title="Click to preview"`
                         : '';
                 const uploadSlotAttr =
                     staffMode &&
@@ -658,18 +652,16 @@
                           )}" class="pp-worker-docs-row--clickable" title="Open upload panel for this slot"`
                         : '';
                 const trAttrs = rowPreviewAttr || uploadSlotAttr;
-                const previewBtn =
-                    row.hasFile && row.previewUrl
-                        ? `<button type="button" class="muted-btn pp-worker-docs-action-btn" data-pp-worker-docs-slot-preview="${prevEnc}">Preview</button>`
-                        : '<span class="muted-label">—</span>';
+                const fileCell =
+                    `<div class="pp-worker-docs-file-stack">` +
+                    `<div class="pp-worker-docs-file-type"><strong>${escapeHtml(row.typeLabel)}</strong>` +
+                    `<span class="pp-worker-docs-slug muted-label">${escapeHtml(row.docType || '—')}</span></div>` +
+                    `<div class="pp-worker-docs-file-name">${escapeHtml(row.fileName)}</div>` +
+                    `</div>`;
                 return (
                     `<tr${trAttrs}>` +
-                    `<td><strong>${escapeHtml(row.typeLabel)}</strong><div class="pp-worker-docs-slug muted-label">${escapeHtml(
-                        row.docType || '—'
-                    )}</div></td>` +
-                    `<td class="pp-worker-docs-file-cell">${escapeHtml(row.fileName)}</td>` +
-                    `<td>${escapeHtml(row.statusLabel)}</td>` +
-                    `<td class="pp-worker-docs-actions-cell"><span class="pp-worker-docs-actions-inner">${previewBtn}</span></td>` +
+                    `<td class="pp-worker-docs-file-cell">${fileCell}</td>` +
+                    `<td class="pp-worker-docs-status-cell">${escapeHtml(row.statusLabel)}</td>` +
                     `</tr>`
                 );
             })
@@ -697,10 +689,16 @@
         modal.dataset.ppWorkerModalName = namePart;
         modal.dataset.ppWorkerModalId = String(wid);
         tbody.innerHTML =
-            '<tr><td colspan="4" class="pp-worker-docs-empty-cell">Loading…</td></tr>';
+            '<tr><td colspan="2" class="pp-worker-docs-empty-cell">Loading…</td></tr>';
         modal.classList.add('open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
+        const hint = $('ppWorkerDocsListHint');
+        if (hint) {
+            hint.textContent = staffMode
+                ? 'Click a row with a file to preview, or an empty row to upload. Download and Upload / replace are in the panel beside the table.'
+                : 'Click a row with a file to preview. Download is in the panel beside the table.';
+        }
 
         let rows = [];
         if (staffMode) {
@@ -711,13 +709,13 @@
                 const json = await res.json().catch(() => ({}));
                 if (!res.ok || !json.success || !json.data) {
                     tbody.innerHTML =
-                        '<tr><td colspan="4" class="pp-worker-docs-empty-cell">Could not load worker documents. Check permissions.</td></tr>';
+                        '<tr><td colspan="2" class="pp-worker-docs-empty-cell">Could not load worker documents. Check permissions.</td></tr>';
                     return;
                 }
                 rows = buildStaffWorkerDocTableRows(wid, json.data);
             } catch (_e) {
                 tbody.innerHTML =
-                    '<tr><td colspan="4" class="pp-worker-docs-empty-cell">Failed to load documents.</td></tr>';
+                    '<tr><td colspan="2" class="pp-worker-docs-empty-cell">Failed to load documents.</td></tr>';
                 return;
             }
         } else {
