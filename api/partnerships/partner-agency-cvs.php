@@ -90,6 +90,8 @@ try {
     }
 
     partnerAgencyCvsJson(['success' => false, 'message' => 'Method not allowed'], 405);
+} catch (InvalidArgumentException $e) {
+    partnerAgencyCvsJson(['success' => false, 'message' => $e->getMessage()], 400);
 } catch (Throwable $e) {
     partnerAgencyCvsJson(['success' => false, 'message' => $e->getMessage()], 500);
 }

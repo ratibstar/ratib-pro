@@ -33,6 +33,63 @@ class PartnerAgencyCvsController
     }
 
     /**
+     * Creates uploads/partner_agency_cvs/{id} when missing (POST upload).
+     *
+     * @throws InvalidArgumentException
+     * @throws RuntimeException
+     */
+    public static function ensurePartnerAgencyCvUploadTree(int $agencyId): string
+    {
+        if ($agencyId <= 0) {
+            throw new InvalidArgumentException('Invalid agency');
+        }
+        $base = rtrim(self::uploadsBaseDir(), DIRECTORY_SEPARATOR);
+        self::mkdirWritableOrThrow($base);
+        $mid = $base . DIRECTORY_SEPARATOR . 'partner_agency_cvs';
+        self::mkdirWritableOrThrow($mid);
+        $dir = $mid . DIRECTORY_SEPARATOR . $agencyId;
+        self::mkdirWritableOrThrow($dir);
+
+        return $dir;
+    }
+
+    /**
+     * @throws RuntimeException
+     */
+    private static function mkdirWritableOrThrow(string $path): void
+    {
+        if (is_dir($path)) {
+            if (!is_writable($path)) {
+                @chmod($path, 0777);
+            }
+            if (!is_writable($path)) {
+                throw new RuntimeException('Directory is not writable: ' . $path);
+            }
+
+            return;
+        }
+        if (file_exists($path)) {
+            throw new RuntimeException('Upload path exists but is not a directory: ' . $path);
+        }
+        if (!@mkdir($path, 0777, true) && !is_dir($path)) {
+            $err = '';
+            if (function_exists('error_get_last')) {
+                $le = error_get_last();
+                if (is_array($le) && !empty($le['message'])) {
+                    $err = ' — ' . (string) $le['message'];
+                }
+            }
+            throw new RuntimeException('Could not create directory: ' . $path . $err);
+        }
+        if (!is_writable($path)) {
+            @chmod($path, 0777);
+        }
+        if (!is_writable($path)) {
+            throw new RuntimeException('Directory was created but is not writable: ' . $path);
+        }
+    }
+
+    /**
      * @return array<int, array<string, mixed>>
      */
     public function listForAgency(int $agencyId): array
@@ -94,13 +151,7 @@ class PartnerAgencyCvsController
             $mime = (string) $file['type'];
         }
 
-        $dir = self::agencyCvDir($agencyId);
-        if (!is_dir($dir) && !@mkdir($dir, 0777, true) && !is_dir($dir)) {
-            throw new RuntimeException('Could not create upload directory');
-        }
-        if (!is_writable($dir)) {
-            @chmod($dir, 0777);
-        }
+        $dir = self::ensurePartnerAgencyCvUploadTree($agencyId);
 
         $stored = bin2hex(random_bytes(16)) . '.' . $ext;
         $dest = $dir . DIRECTORY_SEPARATOR . $stored;

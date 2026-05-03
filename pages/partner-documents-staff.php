@@ -114,9 +114,9 @@ window.RATIB_PARTNER_DOCS_STAFF = {
         <p class="partner-portal-docs-staff-upload-hint">
             Upload an <strong>agency-only</strong> file for this partner (PDF, Word, or image). Worker CV slots: select workers on the Workers page → <strong>Send CVs bulk</strong> → choose this agency.
         </p>
-        <form id="ppStaffAgencyCvForm" class="partner-portal-docs-staff-upload-form">
-            <input type="text" id="ppStaffAgencyCvTitle" class="partner-portal-input" placeholder="Title (e.g. Company profile 2026)" maxlength="255" required>
-            <input type="file" id="ppStaffAgencyCvFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" required>
+        <form id="ppStaffAgencyCvForm" class="partner-portal-docs-staff-upload-form" method="post" enctype="multipart/form-data">
+            <input type="text" id="ppStaffAgencyCvTitle" name="title" class="partner-portal-input" placeholder="Title (e.g. Company profile 2026)" maxlength="255" required autocomplete="off">
+            <input type="file" id="ppStaffAgencyCvFile" name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" required>
             <button type="submit" class="neon-btn" id="ppStaffAgencyCvSubmit">Upload agency file</button>
         </form>
     </div>
