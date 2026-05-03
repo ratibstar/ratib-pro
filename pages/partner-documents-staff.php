@@ -113,7 +113,7 @@ window.RATIB_PARTNER_DOCS_STAFF = {
     <input type="file" id="ppStaffWorkerDocUploadInput" name="pp_staff_worker_document" class="partner-portal-docs-hidden-file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" tabindex="-1" aria-hidden="true" title="Worker document file">
 
     <p class="partner-portal-docs-staff-status-help">
-        Use <strong>Preview</strong> to open the file like Worker Documents (same storage as Workers). <strong>Upload</strong> adds or replaces that slot (PDF, JPG, or PNG).
+        <strong>Preview</strong> opens the worker documents list. Use row <strong>Preview</strong> for files, or click an empty row to open the side panel — <strong>Download</strong> and <strong>Upload / replace</strong> are on that panel (PDF, JPG, or PNG).
         Use <strong>Status</strong> or bulk <strong>Apply status</strong> for what the partner portal shows; <strong>Auto</strong> clears a manual label.
     </p>
 

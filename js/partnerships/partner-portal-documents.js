@@ -375,12 +375,66 @@
         }
     }
 
+    function parseWorkerDocsPreviewContext(previewUrl) {
+        if (!previewUrl || String(previewUrl).trim() === '') return null;
+        try {
+            const u = new URL(previewUrl, window.location.href);
+            const path = u.pathname.toLowerCase();
+            if (path.indexOf('documents/view.php') !== -1) {
+                const id = parseInt(String(u.searchParams.get('id') || ''), 10);
+                const docType = String(u.searchParams.get('type') || '').trim().toLowerCase();
+                if (!Number.isFinite(id) || id <= 0 || !docType) return null;
+                return { downloadUrl: previewUrl, workerId: id, docType, kind: 'staff' };
+            }
+            if (path.indexOf('partner-shared-worker-doc-download.php') !== -1) {
+                const sid = u.searchParams.get('share_id');
+                if (!sid) return null;
+                const downloadUrl = `../api/partnerships/partner-shared-worker-doc-download.php?share_id=${encodeURIComponent(sid)}`;
+                return { downloadUrl, kind: 'partner' };
+            }
+        } catch (_e) {
+            /* ignore */
+        }
+        return null;
+    }
+
+    function syncWorkerDocsPreviewToolbar(previewUrl) {
+        const ctx = previewUrl ? parseWorkerDocsPreviewContext(previewUrl) : null;
+        const tb = $('ppWorkerDocsPreviewToolbar');
+        const dlA = $('ppWorkerDocsPreviewDownload');
+        const upB = $('ppWorkerDocsPreviewUpload');
+        if (!tb || !dlA || !upB) return;
+        dlA.hidden = true;
+        upB.hidden = true;
+        dlA.removeAttribute('href');
+        upB.removeAttribute('data-worker-id');
+        upB.removeAttribute('data-doc-type');
+        if (ctx && ctx.downloadUrl) {
+            dlA.setAttribute('href', ctx.downloadUrl);
+            dlA.hidden = false;
+        }
+        if (
+            staffMode &&
+            ctx &&
+            ctx.kind === 'staff' &&
+            ctx.workerId &&
+            ctx.docType &&
+            WORKER_DOCUMENT_UPLOAD_TYPES.has(ctx.docType)
+        ) {
+            upB.hidden = false;
+            upB.setAttribute('data-worker-id', String(ctx.workerId));
+            upB.setAttribute('data-doc-type', ctx.docType);
+        }
+        tb.hidden = dlA.hidden && upB.hidden;
+    }
+
     function showWorkerDocsListPreviewPane(url) {
         if (!url) return;
         const shell = $('ppWorkerDocsListPreviewShell');
         const frame = $('ppWorkerDocsListPreviewFrame');
         if (!shell || !frame) return;
         frame.src = url;
+        syncWorkerDocsPreviewToolbar(url);
         shell.hidden = false;
         shell.classList.remove('is-hidden');
         try {
@@ -388,6 +442,27 @@
         } catch (_e) {
             /* ignore */
         }
+    }
+
+    /** Staff: empty slot — show preview panel with Upload in toolbar (no iframe). */
+    function showWorkerDocsSlotUploadPane(workerId, docType) {
+        const shell = $('ppWorkerDocsListPreviewShell');
+        const frame = $('ppWorkerDocsListPreviewFrame');
+        if (!shell || !frame) return;
+        frame.src = 'about:blank';
+        const tb = $('ppWorkerDocsPreviewToolbar');
+        const dlA = $('ppWorkerDocsPreviewDownload');
+        const upB = $('ppWorkerDocsPreviewUpload');
+        if (tb && dlA && upB) {
+            dlA.hidden = true;
+            dlA.removeAttribute('href');
+            upB.hidden = false;
+            upB.setAttribute('data-worker-id', String(workerId));
+            upB.setAttribute('data-doc-type', String(docType));
+            tb.hidden = false;
+        }
+        shell.hidden = false;
+        shell.classList.remove('is-hidden');
     }
 
     function hideWorkerDocsListPreviewPane() {
@@ -398,6 +473,9 @@
             shell.hidden = true;
             shell.classList.add('is-hidden');
         }
+        const tb = $('ppWorkerDocsPreviewToolbar');
+        if (tb) tb.hidden = true;
+        syncWorkerDocsPreviewToolbar(null);
     }
 
     function ensureWorkerDocsListModal() {
@@ -418,7 +496,7 @@
             '<div class="pp-worker-docs-split">' +
             '<div class="pp-worker-docs-table-scroll">' +
             '<table class="pp-worker-docs-list-table">' +
-            '<thead><tr><th scope="col" class="pp-worker-docs-th-type">Document type</th><th scope="col" class="pp-worker-docs-th-file">File</th><th scope="col" class="pp-worker-docs-th-status">Status</th><th scope="col" class="pp-worker-docs-actions-col pp-worker-docs-th-actions">Actions</th></tr></thead>' +
+            '<thead><tr><th scope="col" class="pp-worker-docs-th-type">Document type</th><th scope="col" class="pp-worker-docs-th-file">File</th><th scope="col" class="pp-worker-docs-th-status">Status</th><th scope="col" class="pp-worker-docs-actions-col pp-worker-docs-th-actions">Preview</th></tr></thead>' +
             '<tbody id="ppWorkerDocsListTbody"></tbody>' +
             '</table>' +
             '</div>' +
@@ -426,6 +504,10 @@
             '<div class="pp-worker-docs-preview-head">' +
             '<span class="pp-worker-docs-preview-title">Preview</span>' +
             '<button type="button" class="muted-btn" id="ppWorkerDocsListPreviewHide">Hide preview</button>' +
+            '</div>' +
+            '<div id="ppWorkerDocsPreviewToolbar" class="pp-worker-docs-preview-toolbar" hidden>' +
+            '<a id="ppWorkerDocsPreviewDownload" class="neon-btn pp-worker-docs-preview-toolbar-btn" href="#" download>Download</a>' +
+            '<button type="button" id="ppWorkerDocsPreviewUpload" class="muted-btn pp-worker-docs-preview-toolbar-btn" hidden>Upload / replace</button>' +
             '</div>' +
             '<div class="pp-worker-docs-preview-frame-wrap">' +
             '<iframe id="ppWorkerDocsListPreviewFrame" class="partner-portal-cv-frame pp-worker-docs-preview-frame" title="Document preview"></iframe>' +
@@ -447,20 +529,21 @@
         wrap.addEventListener('click', (e) => {
             if (e.target === wrap) closeAll();
         });
-        wrap.addEventListener('click', (e) => {
-            const uploadBtn = e.target && e.target.closest ? e.target.closest('[data-pp-worker-docs-slot-upload]') : null;
-            if (uploadBtn && staffMode) {
-                e.preventDefault();
-                const wid = parseInt(String(uploadBtn.getAttribute('data-worker-id') || ''), 10);
-                const docType = String(uploadBtn.getAttribute('data-doc-type') || '').trim().toLowerCase();
+        const previewToolbarUpload = $('ppWorkerDocsPreviewUpload');
+        if (previewToolbarUpload) {
+            previewToolbarUpload.addEventListener('click', () => {
+                if (!staffMode) return;
+                const wid = parseInt(String(previewToolbarUpload.getAttribute('data-worker-id') || ''), 10);
+                const docType = String(previewToolbarUpload.getAttribute('data-doc-type') || '').trim().toLowerCase();
                 const fin = $('ppStaffWorkerDocUploadInput');
                 if (!fin || !Number.isFinite(wid) || wid <= 0 || !WORKER_DOCUMENT_UPLOAD_TYPES.has(docType)) return;
                 fin.dataset.ppUploadWorkerId = String(wid);
                 fin.dataset.ppUploadDocType = docType;
                 fin.value = '';
                 fin.click();
-                return;
-            }
+            });
+        }
+        wrap.addEventListener('click', (e) => {
             const prevB = e.target && e.target.closest ? e.target.closest('[data-pp-worker-docs-slot-preview]') : null;
             if (prevB) {
                 e.preventDefault();
@@ -471,6 +554,15 @@
                 } catch (_err) {
                     /* ignore */
                 }
+                return;
+            }
+            const uploadSlotRow = e.target && e.target.closest ? e.target.closest('tr[data-pp-worker-docs-upload-slot]') : null;
+            if (uploadSlotRow && staffMode && !(e.target && e.target.closest && e.target.closest('button'))) {
+                e.preventDefault();
+                const wid = parseInt(String(uploadSlotRow.getAttribute('data-worker-id') || ''), 10);
+                const docType = String(uploadSlotRow.getAttribute('data-doc-type') || '').trim().toLowerCase();
+                if (!Number.isFinite(wid) || wid <= 0 || !WORKER_DOCUMENT_UPLOAD_TYPES.has(docType)) return;
+                showWorkerDocsSlotUploadPane(wid, docType);
                 return;
             }
             const row = e.target && e.target.closest ? e.target.closest('tr[data-pp-worker-docs-row-preview]') : null;
@@ -501,7 +593,6 @@
                 statusLabel: st ? st.replace(/_/g, ' ') : '—',
                 hasFile,
                 previewUrl,
-                downloadUrl: previewUrl,
             };
         });
     }
@@ -523,7 +614,6 @@
             const hasFile = !!r._hasFile;
             const sid = r._shareId != null ? r._shareId : r.id;
             const previewUrl = hasFile && sid != null && String(sid).trim() !== '' ? partnerShareInlineDownloadUrl(String(sid)) : '';
-            const dl = downloadHref(r);
             const typeLabel =
                 r._document_label && String(r._document_label).trim() !== ''
                     ? String(r._document_label).trim()
@@ -538,7 +628,6 @@
                 statusLabel: formatPortalStatusLabel(selectThemeSlugForRow(r)),
                 hasFile,
                 previewUrl,
-                downloadUrl: dl,
             };
         });
     }
@@ -558,28 +647,29 @@
                     row.hasFile && row.previewUrl
                         ? ` data-pp-worker-docs-row-preview="${prevEnc}" class="pp-worker-docs-row--clickable"`
                         : '';
+                const uploadSlotAttr =
+                    staffMode &&
+                    !row.hasFile &&
+                    WORKER_DOCUMENT_UPLOAD_TYPES.has(row.docType) &&
+                    Number.isFinite(Number(workerId)) &&
+                    Number(workerId) > 0
+                        ? ` data-pp-worker-docs-upload-slot="1" data-worker-id="${String(workerId)}" data-doc-type="${escapeHtml(
+                              row.docType
+                          )}" class="pp-worker-docs-row--clickable" title="Open upload panel for this slot"`
+                        : '';
+                const trAttrs = rowPreviewAttr || uploadSlotAttr;
                 const previewBtn =
                     row.hasFile && row.previewUrl
                         ? `<button type="button" class="muted-btn pp-worker-docs-action-btn" data-pp-worker-docs-slot-preview="${prevEnc}">Preview</button>`
                         : '<span class="muted-label">—</span>';
-                const dlBtn =
-                    row.hasFile && row.downloadUrl
-                        ? `<a class="neon-btn pp-worker-docs-action-btn" href="${escapeHtml(row.downloadUrl)}" download>Download</a>`
-                        : '';
-                const upBtn =
-                    staffMode && WORKER_DOCUMENT_UPLOAD_TYPES.has(row.docType)
-                        ? `<button type="button" class="muted-btn pp-worker-docs-action-btn" data-pp-worker-docs-slot-upload data-worker-id="${String(
-                              workerId
-                          )}" data-doc-type="${escapeHtml(row.docType)}">Upload</button>`
-                        : '';
                 return (
-                    `<tr${rowPreviewAttr}>` +
+                    `<tr${trAttrs}>` +
                     `<td><strong>${escapeHtml(row.typeLabel)}</strong><div class="pp-worker-docs-slug muted-label">${escapeHtml(
                         row.docType || '—'
                     )}</div></td>` +
                     `<td class="pp-worker-docs-file-cell">${escapeHtml(row.fileName)}</td>` +
                     `<td>${escapeHtml(row.statusLabel)}</td>` +
-                    `<td class="pp-worker-docs-actions-cell"><span class="pp-worker-docs-actions-inner">${previewBtn}${dlBtn}${upBtn}</span></td>` +
+                    `<td class="pp-worker-docs-actions-cell"><span class="pp-worker-docs-actions-inner">${previewBtn}</span></td>` +
                     `</tr>`
                 );
             })
