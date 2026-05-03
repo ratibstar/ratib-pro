@@ -136,6 +136,11 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
                 <a class="muted-btn agency-accounting-ac-link" id="agencyAccountingOpenCoa" href="#" hidden>Chart of accounts</a>
             </div>
         </div>
+        <p class="agency-detail-note agency-accounting-portal-bridge glass-card">
+            Partners signed into the
+            <a href="<?php echo htmlspecialchars(pageUrl('partner-portal-login.php'), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">partner portal</a>
+            see the same linked ledger under <strong>Account statement</strong> (read-only, English).
+        </p>
         <div class="agency-accounting-filters glass-card" id="agencyAccountingFilters" hidden>
             <label class="agency-accounting-date-label">From <input type="date" id="agencyAccountingStart" class="agency-accounting-date-input"></label>
             <label class="agency-accounting-date-label">To <input type="date" id="agencyAccountingEnd" class="agency-accounting-date-input"></label>

@@ -102,6 +102,13 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <span class="partner-portal-dash-card__hint" id="ppDashWorkerHint">Shared slots visible on this portal</span>
                 <span class="partner-portal-dash-card__cta">Jump to list →</span>
             </a>
+            <a href="<?php echo htmlspecialchars(pageUrl('partner-portal-accounting.php'), ENT_QUOTES, 'UTF-8'); ?>" class="partner-portal-dash-card glass-card partner-portal-dash-card--link">
+                <span class="partner-portal-dash-card__icon" aria-hidden="true">📊</span>
+                <span class="partner-portal-dash-card__value" id="ppDashAccounting">GL</span>
+                <span class="partner-portal-dash-card__label">Account statement</span>
+                <span class="partner-portal-dash-card__hint" id="ppDashAccountingHint">Same Ratib Pro ledger your office uses</span>
+                <span class="partner-portal-dash-card__cta">Open statement →</span>
+            </a>
             <div class="partner-portal-dash-card glass-card partner-portal-dash-card--static">
                 <span class="partner-portal-dash-card__icon" aria-hidden="true">🏢</span>
                 <span class="partner-portal-dash-card__value" id="ppDashAgencyStatus">—</span>

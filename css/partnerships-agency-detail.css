@@ -660,6 +660,12 @@
 }
 
 /* Partner agency — accounting tab */
+.agency-accounting-portal-bridge {
+    padding: 0.65rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.86rem;
+}
+
 .agency-accounting-toolbar {
     display: flex;
     flex-wrap: wrap;

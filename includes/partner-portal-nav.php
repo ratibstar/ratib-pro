@@ -6,6 +6,7 @@
 $ppNavActive = isset($partnerPortalNavActive) ? (string) $partnerPortalNavActive : 'home';
 $ppNavHome = pageUrl('partner-portal.php');
 $ppNavDocs = pageUrl('partner-portal-documents.php');
+$ppNavAccounting = pageUrl('partner-portal-accounting.php');
 ?>
 <nav class="partner-portal-main-nav glass-card" aria-label="Partner portal navigation">
     <div class="partner-portal-main-nav__inner">
@@ -30,6 +31,10 @@ $ppNavDocs = pageUrl('partner-portal-documents.php');
                 <a class="partner-portal-main-nav__link"
                    data-pp-nav-spy="worker-docs"
                    href="<?php echo htmlspecialchars($ppNavHome, ENT_QUOTES, 'UTF-8'); ?>#partner-portal-section-worker-docs">Worker documents</a>
+            </li>
+            <li>
+                <a class="partner-portal-main-nav__link<?php echo $ppNavActive === 'accounting' ? ' is-active' : ''; ?>"
+                   href="<?php echo htmlspecialchars($ppNavAccounting, ENT_QUOTES, 'UTF-8'); ?>">Account statement</a>
             </li>
         </ul>
     </div>
