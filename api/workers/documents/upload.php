@@ -5,6 +5,7 @@
  */
 require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/../../../includes/ratib_uploads_base.php';
 
 try {
     if (empty($_FILES['document']) || empty($_POST['id']) || empty($_POST['document_type'])) {
@@ -27,10 +28,10 @@ try {
         throw new Exception('Invalid file type. Only JPG, PNG and PDF allowed');
     }
 
-    // Create upload directory if it doesn't exist
-    $uploadDir = "../../uploads/workers/{$workerId}/documents/{$docType}/";
-    if (!file_exists($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
+    $uploadDir = ratib_uploads_base_dir() . DIRECTORY_SEPARATOR . 'workers' . DIRECTORY_SEPARATOR . $workerId
+        . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . $docType . DIRECTORY_SEPARATOR;
+    if (!is_dir($uploadDir) && !@mkdir($uploadDir, 0777, true) && !is_dir($uploadDir)) {
+        throw new Exception('Failed to create upload directory');
     }
 
     // Generate unique filename

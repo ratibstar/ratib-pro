@@ -86,6 +86,20 @@
         sizeLabel: 'N/A',
     };
 
+    /** Must match `api/workers/documents/upload.php` `$validDocTypes`. */
+    const WORKER_DOCUMENT_UPLOAD_TYPES = new Set([
+        'identity',
+        'passport',
+        'police',
+        'medical',
+        'visa',
+        'ticket',
+        'training_certificate',
+        'contract_signed',
+        'insurance',
+        'exit_permit',
+    ]);
+
     function workerShareNoFilePathHint(r) {
         const docTypeHint = String(r._document_type || '').trim().toLowerCase() || 'document';
         return (
@@ -546,7 +560,14 @@
                     : `${WORKER_SHARE_NO_FILE.typeLabel} (not on server yet)`,
             ]);
             rows.push(['Size', r._hasFile ? formatBytes(r.file_size) : WORKER_SHARE_NO_FILE.sizeLabel]);
-            rows.push(['File on record', r._hasFile ? 'Yes — you can open or download' : 'No — ask your office if you need the file']);
+            rows.push([
+                'File on record',
+                r._hasFile
+                    ? 'Yes — you can open or download'
+                    : staffMode
+                      ? 'No — use Upload on the row or add the file in Workers'
+                      : 'No — ask your office if you need the file',
+            ]);
         } else {
             rows.push(['File name', r.original_filename && String(r.original_filename).trim() !== '' ? r.original_filename : '—']);
             rows.push(['Type (MIME)', r.mime_type && String(r.mime_type).trim() !== '' ? r.mime_type : '—']);
@@ -744,6 +765,17 @@
                       )}</span>`;
                 const statusTd = `<td class="col-status">${statusInner}</td>`;
                 const noFile = r._kind === 'worker_share' && !r._hasFile;
+                const docTypeSlug = String(r._document_type || '').trim().toLowerCase();
+                const canRowUpload =
+                    staffMode &&
+                    isWorkerRow &&
+                    r._worker_id &&
+                    WORKER_DOCUMENT_UPLOAD_TYPES.has(docTypeSlug);
+                const uploadBtn = canRowUpload
+                    ? `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-worker-doc-upload="1" data-worker-id="${String(
+                          r._worker_id
+                      )}" data-doc-type="${escapeHtml(docTypeSlug)}">Upload</button>`
+                    : '';
                 const cvBtn =
                     r._kind === 'worker_share' && r._worker_id
                         ? `<button type="button" class="neon-btn partner-portal-docs-action" data-pp-cv-worker="${String(r._worker_id)}">View CV</button>`
@@ -759,7 +791,7 @@
                 const fileActions = noFile
                     ? ''
                     : `<a class="muted-btn partner-portal-docs-action" href="${dl}">Open</a><a class="neon-btn partner-portal-docs-action" href="${dl}" download>Download</a>`;
-                const actions = `<span class="partner-portal-docs-actions-btns">${cvBtn}${viewBtn}${editBtn}${deleteBtn}${fileActions}</span>`;
+                const actions = `<span class="partner-portal-docs-actions-btns">${cvBtn}${uploadBtn}${viewBtn}${editBtn}${deleteBtn}${fileActions}</span>`;
 
                 return `<tr>
                     ${selectCell}
@@ -1052,11 +1084,63 @@
                 });
             }
             tbody.addEventListener('click', (e) => {
+                const uploadBtn = e.target && e.target.closest ? e.target.closest('[data-pp-worker-doc-upload]') : null;
+                if (uploadBtn && staffMode) {
+                    e.preventDefault();
+                    const wid = parseInt(String(uploadBtn.getAttribute('data-worker-id') || ''), 10);
+                    const docType = String(uploadBtn.getAttribute('data-doc-type') || '').trim().toLowerCase();
+                    const fin = $('ppStaffWorkerDocUploadInput');
+                    if (!fin || !Number.isFinite(wid) || wid <= 0 || !WORKER_DOCUMENT_UPLOAD_TYPES.has(docType)) return;
+                    fin.dataset.ppUploadWorkerId = String(wid);
+                    fin.dataset.ppUploadDocType = docType;
+                    fin.value = '';
+                    fin.click();
+                    return;
+                }
                 const btn = e.target && e.target.closest ? e.target.closest('[data-pp-doc-action="view"]') : null;
                 if (!btn || btn.getAttribute('data-pp-doc-action') !== 'view') return;
                 const key = btn.getAttribute('data-pp-doc-key');
                 const row = findRowByKey(key);
                 if (row) openDocModal(row);
+            });
+        }
+
+        const workerUploadInput = $('ppStaffWorkerDocUploadInput');
+        if (workerUploadInput && staffMode) {
+            workerUploadInput.addEventListener('change', async () => {
+                const widStr = workerUploadInput.dataset.ppUploadWorkerId;
+                const docType = String(workerUploadInput.dataset.ppUploadDocType || '').trim().toLowerCase();
+                delete workerUploadInput.dataset.ppUploadWorkerId;
+                delete workerUploadInput.dataset.ppUploadDocType;
+                const file = workerUploadInput.files && workerUploadInput.files[0];
+                workerUploadInput.value = '';
+                if (!widStr || !docType || !file) return;
+                if (!WORKER_DOCUMENT_UPLOAD_TYPES.has(docType)) {
+                    setError('This document type cannot be uploaded from here.');
+                    return;
+                }
+                const wid = parseInt(widStr, 10);
+                if (!Number.isFinite(wid) || wid <= 0) return;
+                const fd = new FormData();
+                fd.append('id', String(wid));
+                fd.append('document_type', docType);
+                fd.append('document', file, file.name);
+                try {
+                    const res = await fetch('../api/workers/documents/upload.php', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        body: fd,
+                    });
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok || !json.success) {
+                        setError(json.message || 'Upload failed.');
+                        return;
+                    }
+                    setError('');
+                    await load();
+                } catch (err) {
+                    setError(err && err.message ? err.message : 'Upload failed.');
+                }
             });
         }
 
@@ -1074,44 +1158,6 @@
                     }
                 });
                 renderTable();
-            });
-        }
-
-        const staffCvForm = $('ppStaffAgencyCvForm');
-        if (staffCvForm && staffMode && staffCfg) {
-            staffCvForm.addEventListener('submit', async (ev) => {
-                ev.preventDefault();
-                const titleEl = $('ppStaffAgencyCvTitle');
-                const fileEl = $('ppStaffAgencyCvFile');
-                const title = titleEl ? String(titleEl.value || '').trim() : '';
-                const file = fileEl && fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
-                if (!title || !file) return;
-                const fd = new FormData();
-                fd.append('partner_agency_id', String(staffCfg.partner_agency_id));
-                fd.append('title', title);
-                fd.append('file', file);
-                const subBtn = $('ppStaffAgencyCvSubmit');
-                try {
-                    if (subBtn) subBtn.disabled = true;
-                    const res = await fetch('../api/partnerships/partner-agency-cvs.php', {
-                        method: 'POST',
-                        credentials: 'same-origin',
-                        body: fd,
-                    });
-                    const json = await res.json().catch(() => ({}));
-                    if (!res.ok || !json.success) {
-                        setError(json.message || 'Upload failed.');
-                        return;
-                    }
-                    setError('');
-                    if (titleEl) titleEl.value = '';
-                    if (fileEl) fileEl.value = '';
-                    await load();
-                } catch (e) {
-                    setError(e && e.message ? e.message : 'Upload failed.');
-                } finally {
-                    if (subBtn) subBtn.disabled = false;
-                }
             });
         }
 

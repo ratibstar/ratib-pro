@@ -110,21 +110,11 @@ window.RATIB_PARTNER_DOCS_STAFF = {
         </div>
     </div>
 
-    <div class="glass-card partner-portal-docs-staff-upload-wrap">
-        <p class="partner-portal-docs-staff-upload-hint">
-            Upload an <strong>agency-only</strong> file for this partner (PDF, Word, or image). Worker CV slots: select workers on the Workers page → <strong>Send CVs bulk</strong> → choose this agency.
-        </p>
-        <form id="ppStaffAgencyCvForm" class="partner-portal-docs-staff-upload-form" method="post" enctype="multipart/form-data">
-            <input type="text" id="ppStaffAgencyCvTitle" name="title" class="partner-portal-input" placeholder="Title (e.g. Company profile 2026)" maxlength="255" required autocomplete="off">
-            <input type="file" id="ppStaffAgencyCvFile" name="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" required>
-            <button type="submit" class="neon-btn" id="ppStaffAgencyCvSubmit">Upload agency file</button>
-        </form>
-    </div>
+    <input type="file" id="ppStaffWorkerDocUploadInput" class="partner-portal-docs-hidden-file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" tabindex="-1" aria-hidden="true" title="Worker document file">
 
     <p class="partner-portal-docs-staff-status-help">
-        Use the <strong>Status</strong> dropdown on each row (or select rows + <strong>Apply status</strong>) to set what the partner portal shows.
-        <strong>Processing</strong> (and other explicit statuses) also update <strong>Placements / Deployments</strong> on Partner Agencies so the worker appears there.
-        Choose <strong>Auto (file + assignment)</strong> to clear a manual portal label and use automatic rules again.
+        Use <strong>Upload</strong> on a worker row to add or replace that slot’s file (PDF, JPG, or PNG — same as worker documents).
+        Use the <strong>Status</strong> dropdown or bulk <strong>Apply status</strong> for what the partner portal shows; <strong>Auto</strong> clears a manual label.
     </p>
 
     <div class="glass-card partner-portal-docs-table-shell">

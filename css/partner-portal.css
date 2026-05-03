@@ -917,35 +917,17 @@
     max-width: min(100%, 18rem);
 }
 
-.partner-portal-docs-staff-upload-wrap {
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.65rem;
-}
-
-.partner-portal-docs-staff-upload-hint {
-    margin: 0 0 0.6rem;
-    font-size: 0.88rem;
-    color: #94a3b8;
-    line-height: 1.45;
-}
-
-.partner-portal-docs-staff-upload-form {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.partner-portal-docs-staff-upload-form .partner-portal-input {
-    flex: 1 1 160px;
-    max-width: min(100%, 20rem);
-    margin: 0;
-}
-
-.partner-portal-docs-staff-upload-form input[type='file'] {
-    flex: 1 1 180px;
-    min-width: 0;
-    font-size: 0.85rem;
+/* Staff partner docs: single hidden file input for per-row worker uploads */
+.partner-portal-docs-hidden-file {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 .partner-portal-docs-selected-count {
