@@ -998,6 +998,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     window.ratibGetPartnerDocumentsStaffReturnUrl = getPartnerDocumentsStaffReturnUrl;
 
+    /**
+     * Return to staff Documents & CVs: prefer history.back() (bfcache = instant) + sessionStorage
+     * for reopening the worker-documents modal; otherwise full navigation.
+     */
+    function navigatePartnerDocumentsStaffReturn() {
+        const href = getPartnerDocumentsStaffReturnUrl();
+        if (!href) {
+            return false;
+        }
+        try {
+            if (document.referrer && window.history.length > 1) {
+                const ref = new URL(document.referrer);
+                if (
+                    ref.origin === window.location.origin &&
+                    ref.pathname.indexOf('partner-documents-staff.php') !== -1
+                ) {
+                    const u = new URL(window.location.href);
+                    const wid = parseInt(u.searchParams.get('return_partner_documents_worker') || '0', 10);
+                    const aid = parseInt(u.searchParams.get('return_partner_documents') || '0', 10);
+                    const nm = u.searchParams.get('return_partner_documents_worker_name') || '';
+                    if (wid > 0 && aid > 0) {
+                        sessionStorage.setItem(
+                            'ratib_pp_reopen_worker_modal_v1',
+                            JSON.stringify({
+                                workerId: wid,
+                                workerName: nm,
+                                partnerAgencyId: aid,
+                                t: Date.now(),
+                            })
+                        );
+                    }
+                    window.history.back();
+                    return true;
+                }
+            }
+        } catch (e) {
+            debugForm.warn('navigatePartnerDocumentsStaffReturn', e);
+        }
+        window.location.assign(href);
+        return true;
+    }
+    window.ratibNavigatePartnerDocumentsStaffReturn = navigatePartnerDocumentsStaffReturn;
+
     // Function to actually close the form (called after confirmation)
     function performClose() {
         let partnerAgenciesReturnUrl = null;
@@ -1037,9 +1080,7 @@ document.addEventListener('DOMContentLoaded', function() {
             userHasInteracted = false;
         }
 
-        const partnerDocsStaffHref = getPartnerDocumentsStaffReturnUrl();
-        if (partnerDocsStaffHref) {
-            window.location.assign(partnerDocsStaffHref);
+        if (navigatePartnerDocumentsStaffReturn()) {
             return;
         }
 

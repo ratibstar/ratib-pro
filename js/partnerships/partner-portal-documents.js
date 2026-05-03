@@ -30,6 +30,10 @@
     /** Staff bulk selection (document row keys: `worker_share|id` or `agency_cv|id`). */
     let selectedDocKeys = new Set();
 
+    /** After history.back() from Worker.php, reopen modal without a full reload (see worker-form.js). */
+    const PP_REOPEN_MODAL_STORAGE_KEY = 'ratib_pp_reopen_worker_modal_v1';
+    const PP_REOPEN_MODAL_MAX_AGE_MS = 10 * 60 * 1000;
+
     function $(id) {
         return document.getElementById(id);
     }
@@ -2134,13 +2138,99 @@
         }
     }
 
+    function tryConsumeWorkerModalFromSessionStorage() {
+        refreshStaffMode();
+        if (!staffMode || !staffCfg) return false;
+        let raw;
+        try {
+            raw = sessionStorage.getItem(PP_REOPEN_MODAL_STORAGE_KEY);
+        } catch (_e) {
+            return false;
+        }
+        if (!raw) return false;
+        let o;
+        try {
+            o = JSON.parse(raw);
+        } catch (_e) {
+            try {
+                sessionStorage.removeItem(PP_REOPEN_MODAL_STORAGE_KEY);
+            } catch (_e2) {
+                /* ignore */
+            }
+            return false;
+        }
+        if (!o || o.workerId == null || o.partnerAgencyId == null) {
+            try {
+                sessionStorage.removeItem(PP_REOPEN_MODAL_STORAGE_KEY);
+            } catch (_e2) {
+                /* ignore */
+            }
+            return false;
+        }
+        const wid = parseInt(String(o.workerId), 10);
+        const storedAid = parseInt(String(o.partnerAgencyId), 10);
+        const cfgAid = parseInt(String(staffCfg.partner_agency_id), 10);
+        const t = Number(o.t) || 0;
+        if (!Number.isFinite(wid) || wid <= 0) {
+            try {
+                sessionStorage.removeItem(PP_REOPEN_MODAL_STORAGE_KEY);
+            } catch (_e2) {
+                /* ignore */
+            }
+            return false;
+        }
+        if (Number.isFinite(storedAid) && storedAid > 0 && Number.isFinite(cfgAid) && cfgAid > 0 && storedAid !== cfgAid) {
+            try {
+                sessionStorage.removeItem(PP_REOPEN_MODAL_STORAGE_KEY);
+            } catch (_e2) {
+                /* ignore */
+            }
+            return false;
+        }
+        if (t > 0 && Date.now() - t > PP_REOPEN_MODAL_MAX_AGE_MS) {
+            try {
+                sessionStorage.removeItem(PP_REOPEN_MODAL_STORAGE_KEY);
+            } catch (_e2) {
+                /* ignore */
+            }
+            return false;
+        }
+        try {
+            sessionStorage.removeItem(PP_REOPEN_MODAL_STORAGE_KEY);
+        } catch (_e2) {
+            /* ignore */
+        }
+        const wname = o.workerName != null ? String(o.workerName) : '';
+        void openWorkerDocumentsListModal(wid, wname);
+        return true;
+    }
+
+    if (typeof window !== 'undefined' && !window.__ratibPartnerDocsStaffPageshow) {
+        window.__ratibPartnerDocsStaffPageshow = true;
+        window.addEventListener('pageshow', (ev) => {
+            if (!ev.persisted) return;
+            try {
+                refreshStaffMode();
+                if (!staffMode || !staffCfg) return;
+                if (!$('ppDocsBody')) return;
+                tryConsumeWorkerModalFromSessionStorage();
+                void load();
+            } catch (_e) {
+                /* ignore */
+            }
+        });
+    }
+
     async function init() {
         refreshStaffMode();
         initBulkStatusSelect();
         bindEvents();
         updateBulkDeleteUi();
-        await load();
-        await maybeReopenWorkerDocsFromUrl();
+        if (tryConsumeWorkerModalFromSessionStorage()) {
+            await load();
+            return;
+        }
+        await Promise.all([load(), maybeReopenWorkerDocsFromUrl()]);
     }
 
     if (document.readyState === 'loading') {

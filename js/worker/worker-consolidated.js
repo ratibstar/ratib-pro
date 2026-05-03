@@ -4977,7 +4977,11 @@ window.saveWorker = async function(event) {
                     form.reset();
                 }
 
-                if (typeof window.ratibGetPartnerDocumentsStaffReturnUrl === 'function') {
+                if (typeof window.ratibNavigatePartnerDocumentsStaffReturn === 'function') {
+                    if (window.ratibNavigatePartnerDocumentsStaffReturn()) {
+                        return;
+                    }
+                } else if (typeof window.ratibGetPartnerDocumentsStaffReturnUrl === 'function') {
                     const partnerDocsStaffHref = window.ratibGetPartnerDocumentsStaffReturnUrl();
                     if (partnerDocsStaffHref) {
                         window.location.assign(partnerDocsStaffHref);
