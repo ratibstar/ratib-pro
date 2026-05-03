@@ -332,18 +332,18 @@
         );
     }
 
-    /** Updates themed <select> and the colored status chip in the same cell (staff table). */
+    /** Themed <select> + row / status-column colors (staff). */
     function syncSoloStatusRowUi(selectEl, row) {
         if (!selectEl || !row || !selectEl.classList || !selectEl.classList.contains('pp-docs-status-select')) return;
         const slug = selectVisualSlugFromControl(row, selectEl);
         selectEl.className =
             'partner-portal-input pp-docs-status-select pp-doc-status-select-solo pp-doc-status-select-solo--' + slug;
-        const cell = selectEl.closest('.pp-docs-status-cell');
-        if (!cell) return;
-        const chip = cell.querySelector('[data-pp-doc-status-chip]');
-        if (!chip) return;
-        chip.textContent = formatPortalStatusLabel(slug);
-        chip.className = 'pp-doc-status pp-doc-status--' + slug;
+        const tr = selectEl.closest('tr');
+        if (tr) tr.setAttribute('data-pp-status', slug);
+        const td = selectEl.closest('td');
+        if (td && td.classList.contains('col-status')) {
+            td.className = 'col-status pp-docs-status-col pp-docs-status-col--' + slug;
+        }
     }
 
     function buildPortalStatusSelectOptions(displayStatusField) {
@@ -739,17 +739,18 @@
                 const when = escapeHtml(formatDate(r.created_at));
                 const workerTypeCell = escapeHtml(String(r.worker_type != null ? r.worker_type : '—'));
                 const statusSlug = selectThemeSlugForRow(r);
-                const statusLabel = escapeHtml(formatPortalStatusLabel(statusSlug));
                 const statusInner = staffMode
-                    ? `<div class="pp-docs-status-cell"><span class="pp-doc-status pp-doc-status--${escapeHtml(
-                          statusSlug
-                      )}" data-pp-doc-status-chip="${dkey}" role="status">${statusLabel}</span><select class="partner-portal-input pp-docs-status-select pp-doc-status-select-solo pp-doc-status-select-solo--${escapeHtml(
+                    ? `<div class="pp-docs-status-cell"><select class="partner-portal-input pp-docs-status-select pp-doc-status-select-solo pp-doc-status-select-solo--${escapeHtml(
                           statusSlug
                       )}" data-pp-doc-key="${dkey}" aria-label="Portal status shown to partner" title="Status shown on partner portal">${buildPortalStatusSelectOptions(
                           r.display_status
                       )}</select></div>`
-                    : `<span class="pp-doc-status pp-doc-status--${escapeHtml(statusSlug)}">${statusLabel}</span>`;
-                const statusTd = `<td class="col-status">${statusInner}</td>`;
+                    : `<span class="pp-doc-status pp-doc-status--${escapeHtml(statusSlug)}">${escapeHtml(
+                          formatPortalStatusLabel(statusSlug)
+                      )}</span>`;
+                const statusTd = `<td class="col-status pp-docs-status-col pp-docs-status-col--${escapeHtml(
+                    statusSlug
+                )}">${statusInner}</td>`;
                 const noFile = r._kind === 'worker_share' && !r._hasFile;
                 const cvBtn =
                     r._kind === 'worker_share' && r._worker_id
@@ -768,7 +769,7 @@
                     : `<a class="muted-btn partner-portal-docs-action" href="${dl}">Open</a><a class="neon-btn partner-portal-docs-action" href="${dl}" download>Download</a>`;
                 const actions = `<span class="partner-portal-docs-actions-btns">${cvBtn}${viewBtn}${editBtn}${deleteBtn}${fileActions}</span>`;
 
-                return `<tr>
+                return `<tr data-pp-status="${escapeHtml(statusSlug)}">
                     ${selectCell}
                     <td class="col-num">${refId}</td>
                     ${statusTd}
