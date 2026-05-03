@@ -79,6 +79,24 @@
 
     const PORTAL_STATUS_CARD_ORDER = ['waiting', 'processing', 'ready', 'issues', 'returned', 'transferred'];
 
+    /** Shown when a worker share has no file on the server yet (honest placeholders, never blank). */
+    const WORKER_SHARE_NO_FILE = {
+        fileLabel: 'Awaiting upload',
+        typeLabel: 'Pending',
+        sizeLabel: 'N/A',
+    };
+
+    function workerShareNoFilePathHint(r) {
+        const docTypeHint = String(r._document_type || '').trim().toLowerCase() || 'document';
+        return (
+            'Upload in Workers so the real file name, type, and size appear. Expected folder: uploads/workers/' +
+            String(r._worker_id || '') +
+            '/documents/' +
+            docTypeHint +
+            '/'
+        );
+    }
+
     function normalizePortalStatusSlug(raw, fallback) {
         let s = raw != null ? String(raw).trim().toLowerCase() : '';
         if (s === 'issue') {
@@ -258,6 +276,12 @@
     function docRowKey(r) {
         if (!r || !r._kind) return '';
         return `${r._kind}|${r.id}`;
+    }
+
+    /** Stable ref for table # column: newest row (by uploaded time) is CV00001. */
+    function formatCvTableId(idx) {
+        const n = Math.max(0, Math.floor(Number(idx) || 0));
+        return 'CV' + String(n).padStart(5, '0');
     }
 
     function findRowByKey(key) {
@@ -454,15 +478,15 @@
             const fnDisp =
                 r._hasFile && r.original_filename && String(r.original_filename).trim() !== '' && r.original_filename !== '—'
                     ? String(r.original_filename)
-                    : '—';
+                    : WORKER_SHARE_NO_FILE.fileLabel;
             rows.push(['File name', fnDisp]);
             rows.push([
                 'Type (MIME)',
                 r._hasFile && r.mime_type && String(r.mime_type).trim() !== '' && r.mime_type !== '—'
                     ? String(r.mime_type)
-                    : '—',
+                    : `${WORKER_SHARE_NO_FILE.typeLabel} (not on server yet)`,
             ]);
-            rows.push(['Size', formatBytes(r.file_size)]);
+            rows.push(['Size', r._hasFile ? formatBytes(r.file_size) : WORKER_SHARE_NO_FILE.sizeLabel]);
             rows.push(['File on record', r._hasFile ? 'Yes — you can open or download' : 'No — ask your office if you need the file']);
         } else {
             rows.push(['File name', r.original_filename && String(r.original_filename).trim() !== '' ? r.original_filename : '—']);
@@ -528,6 +552,11 @@
                 .toLowerCase();
             const stSlug = String(r.portal_status || '').toLowerCase();
             const stLabel = formatPortalStatusLabel(r.portal_status).toLowerCase();
+            const cvRef = formatCvTableId(r.__idx).toLowerCase();
+            const pendingTxt =
+                r._kind === 'worker_share' && !r._hasFile
+                    ? `${WORKER_SHARE_NO_FILE.fileLabel} ${WORKER_SHARE_NO_FILE.typeLabel} ${WORKER_SHARE_NO_FILE.sizeLabel}`.toLowerCase()
+                    : '';
             return (
                 title.indexOf(q) !== -1 ||
                 fn.indexOf(q) !== -1 ||
@@ -536,7 +565,9 @@
                 (widStr && widStr.indexOf(q) !== -1) ||
                 extra.indexOf(q) !== -1 ||
                 (stSlug && stSlug.indexOf(q) !== -1) ||
-                stLabel.indexOf(q) !== -1
+                stLabel.indexOf(q) !== -1 ||
+                cvRef.indexOf(q) !== -1 ||
+                (pendingTxt && pendingTxt.indexOf(q) !== -1)
             );
         });
     }
@@ -634,24 +665,19 @@
                 const selectCell = staffMode
                     ? `<td class="pp-docs-select-col"><input type="checkbox" class="pp-docs-row-check" data-pp-doc-key="${dkey}" aria-label="Select row"${chk}></td>`
                     : '';
-                const globalIdx = (state.page - 1) * state.pageSize + i + 1;
+                const refId = escapeHtml(formatCvTableId(r.__idx));
                 const dl = escapeHtml(downloadHref(r));
                 const isWorkerRow = r._kind === 'worker_share';
                 const mimeRaw = String(r.mime_type || '').trim();
-                const docTypeHint = String(r._document_type || '').trim().toLowerCase() || 'document';
-                const noFileHint =
-                    'Waiting: no file for this slot. Upload the document in Workers, or ensure the file exists under uploads/workers/' +
-                    String(r._worker_id || '') +
-                    '/documents/' +
-                    docTypeHint +
-                    '/';
-                let mimeShort = escapeHtml(formatMimeTypeDisplay(mimeRaw));
-                let mimeTitle = escapeHtml(mimeRaw);
+                let mimeTd;
                 if (isWorkerRow && !r._hasFile) {
-                    mimeShort = `<span class="pp-docs-file-placeholder" title="${escapeHtml(
-                        'Shown after a file is uploaded for this document slot.'
-                    )}">—</span>`;
-                    mimeTitle = escapeHtml('No file');
+                    mimeTd = `<span class="table-tag tag-muted" title="${escapeHtml(
+                        'Upload this document in Workers. The real MIME type appears after upload.'
+                    )}">${escapeHtml(WORKER_SHARE_NO_FILE.typeLabel)}</span>`;
+                } else {
+                    const mimeShort = escapeHtml(formatMimeTypeDisplay(mimeRaw));
+                    const mimeTitle = escapeHtml(mimeRaw);
+                    mimeTd = `<span class="table-tag tag-muted" title="${mimeTitle}">${mimeShort}</span>`;
                 }
                 const title = escapeHtml(r.title || '—');
                 let fnCell = '—';
@@ -659,7 +685,9 @@
                     if (r._hasFile && r.original_filename && String(r.original_filename).trim() !== '') {
                         fnCell = escapeHtml(String(r.original_filename).trim());
                     } else {
-                        fnCell = `<span class="pp-docs-file-placeholder" title="${escapeHtml(noFileHint)}">No file on record</span>`;
+                        fnCell = `<span class="pp-docs-file-placeholder" title="${escapeHtml(
+                            workerShareNoFilePathHint(r)
+                        )}">${escapeHtml(WORKER_SHARE_NO_FILE.fileLabel)}</span>`;
                     }
                 } else if (r.original_filename && String(r.original_filename).trim() !== '') {
                     fnCell = escapeHtml(String(r.original_filename).trim());
@@ -668,9 +696,7 @@
                 }
                 const sz =
                     isWorkerRow && !r._hasFile
-                        ? `<span class="pp-docs-file-placeholder" title="${escapeHtml(
-                              'File size appears after a document file is stored on the server.'
-                          )}">—</span>`
+                        ? escapeHtml(WORKER_SHARE_NO_FILE.sizeLabel)
                         : escapeHtml(formatBytes(r.file_size));
                 const when = escapeHtml(formatDate(r.created_at));
                 const srcTag =
@@ -685,7 +711,7 @@
                 const statusInner = staffMode
                     ? `<div class="pp-doc-status-staff-wrap"><span class="pp-doc-status pp-doc-status--${escapeHtml(
                           statusSlug
-                      )}" title="Shown to partner">${statusLabel}</span><select class="partner-portal-input pp-docs-status-select" data-pp-doc-key="${dkey}" aria-label="Portal status for partner">${buildPortalStatusSelectOptions(
+                      )}" title="Current label shown to partner">${statusLabel}</span><span class="pp-docs-status-set-label">Set for partner</span><select class="partner-portal-input pp-docs-status-select" data-pp-doc-key="${dkey}" aria-label="Portal status shown to partner">${buildPortalStatusSelectOptions(
                           r.display_status
                       )}</select></div>`
                     : `<span class="pp-doc-status pp-doc-status--${escapeHtml(statusSlug)}">${statusLabel}</span>`;
@@ -710,12 +736,12 @@
 
                 return `<tr>
                     ${selectCell}
-                    <td class="col-num">${globalIdx}</td>
+                    <td class="col-num">${refId}</td>
                     <td class="col-source">${srcTag}</td>
                     ${statusTd}
                     <td>${title}</td>
                     <td>${fnCell}</td>
-                    <td><span class="table-tag tag-muted" title="${mimeTitle}">${mimeShort}</span></td>
+                    <td>${mimeTd}</td>
                     <td>${sz}</td>
                     <td>${when}</td>
                     <td class="col-actions partner-portal-docs-actions">${actions}</td>

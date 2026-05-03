@@ -783,6 +783,22 @@
     white-space: nowrap;
 }
 
+.partner-portal-docs-staff-status-help {
+    margin: 0 0 0.65rem;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: #94a3b8;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 10px;
+}
+
+.partner-docs-staff-page .partner-portal-docs-staff-status-help strong {
+    color: #e2e8f0;
+    font-weight: 600;
+}
+
 .pp-doc-status-staff-wrap {
     display: flex;
     flex-direction: column;
@@ -790,6 +806,14 @@
     gap: 0.35rem;
     min-width: 7.5rem;
     max-width: 11rem;
+}
+
+.pp-docs-status-set-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #94a3b8;
 }
 
 .pp-doc-status-staff-wrap .pp-docs-status-select {

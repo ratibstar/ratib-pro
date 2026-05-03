@@ -62,7 +62,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
             <table class="partnerships-table partner-portal-docs-table" aria-label="Partner documents and CVs">
                 <thead>
                     <tr>
-                        <th scope="col" class="col-num"><button type="button" class="partner-portal-sort-btn" data-sort="idx">#</button></th>
+                        <th scope="col" class="col-num"><button type="button" class="partner-portal-sort-btn" data-sort="idx">CV ref</button></th>
                         <th scope="col" class="col-source"><button type="button" class="partner-portal-sort-btn" data-sort="source">Source</button></th>
                         <th scope="col" class="col-status"><button type="button" class="partner-portal-sort-btn" data-sort="portal_status">Status</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="title">Title</button></th>

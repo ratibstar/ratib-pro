@@ -105,6 +105,11 @@ window.RATIB_PARTNER_DOCS_STAFF = {
         </div>
     </div>
 
+    <p class="partner-portal-docs-staff-status-help">
+        To change what the <strong>partner portal</strong> shows for a row, use the <strong>Status</strong> menu
+        <strong>under the colored pill</strong> (Waiting, Ready, …). Choose <strong>Auto (file + assignment)</strong> to clear a manual value and go back to automatic rules.
+    </p>
+
     <div class="glass-card partner-portal-docs-table-shell">
         <div class="partner-portal-docs-table-scroll">
             <table class="partnerships-table partner-portal-docs-table" aria-label="Partner documents and CVs">
@@ -113,7 +118,7 @@ window.RATIB_PARTNER_DOCS_STAFF = {
                         <th scope="col" class="pp-docs-select-col">
                             <input type="checkbox" id="ppDocsSelectAll" class="pp-docs-select-all" title="Select all on this page" aria-label="Select all on this page">
                         </th>
-                        <th scope="col" class="col-num"><button type="button" class="partner-portal-sort-btn" data-sort="idx">#</button></th>
+                        <th scope="col" class="col-num"><button type="button" class="partner-portal-sort-btn" data-sort="idx">CV ref</button></th>
                         <th scope="col" class="col-source"><button type="button" class="partner-portal-sort-btn" data-sort="source">Source</button></th>
                         <th scope="col" class="col-status"><button type="button" class="partner-portal-sort-btn" data-sort="portal_status">Status</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="title">Title</button></th>

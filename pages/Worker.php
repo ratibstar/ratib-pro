@@ -23,6 +23,11 @@ if (!hasPermission('view_workers')) {
     exit;
 }
 
+/** Same-origin iframe preview from Documents & CVs (staff): ?view=ID&embed_cv=1 — not edit mode. */
+$workerCvEmbedPreview = isset($_GET['embed_cv']) && (string) $_GET['embed_cv'] === '1'
+    && (int) ($_GET['view'] ?? 0) > 0
+    && !isset($_GET['edit']);
+
 // Check if the request method is POST to verify form submissions
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     // Verify the CSRF token to prevent cross-site request forgery
@@ -32,8 +37,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 
-// Set security headers
-header("X-Frame-Options: DENY");
+// Set security headers (DENY blocks staff CV iframe; SAMEORIGIN allows same-site embed only)
+if ($workerCvEmbedPreview) {
+    header('X-Frame-Options: SAMEORIGIN');
+} else {
+    header('X-Frame-Options: DENY');
+}
 header("X-XSS-Protection: 1; mode=block");
 header("X-Content-Type-Options: nosniff");
 
@@ -66,6 +75,10 @@ $cssFiles = [
 $pageCss = $cssFiles;
 $pageCss[] = "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css";
 $pageCss[] = "https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css";
+if ($workerCvEmbedPreview) {
+    $pageCss[] = asset('css/worker/worker-cv-embed.css') . "?v=$cacheBuster&force=$forceCache";
+}
+$extraBodyClasses = $workerCvEmbedPreview ? ['ratib-worker-cv-embed'] : [];
 $pageTitle = "Worker Management";
 
 include '../includes/header.php';

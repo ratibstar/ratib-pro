@@ -123,7 +123,8 @@ class PartnerAgencyWorkerDocSharesController
     }
 
     /**
-     * Workers linked via deployments to this partner (for picker).
+     * Workers linked to this partner for the share picker: active placements **or**
+     * workers with portal document shares (CV selection) even without a deployment row.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -135,13 +136,16 @@ class PartnerAgencyWorkerDocSharesController
         $sql = "SELECT DISTINCT w.id,
                 COALESCE(NULLIF(TRIM(w.worker_name), ''), CONCAT('Worker #', w.id)) AS worker_name,
                 COALESCE(NULLIF(TRIM(w.passport_number), ''), '') AS passport_number
-            FROM worker_deployments wd
-            INNER JOIN workers w ON w.id = wd.worker_id
-            WHERE wd.partner_agency_id = ?
-              AND (w.status IS NULL OR w.status = '' OR w.status != 'deleted')
+            FROM workers w
+            INNER JOIN (
+                SELECT worker_id FROM worker_deployments WHERE partner_agency_id = ?
+                UNION
+                SELECT DISTINCT worker_id FROM partner_agency_worker_document_shares WHERE partner_agency_id = ?
+            ) link ON link.worker_id = w.id
+            WHERE (w.status IS NULL OR w.status = '' OR w.status != 'deleted')
             ORDER BY worker_name ASC";
         $stmt = $this->conn->prepare($sql);
-        $stmt->execute([$partnerAgencyId]);
+        $stmt->execute([$partnerAgencyId, $partnerAgencyId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -480,19 +484,6 @@ class PartnerAgencyWorkerDocSharesController
         ];
     }
 
-    public function workerDeployedToPartner(int $workerId, int $partnerAgencyId): bool
-    {
-        if ($workerId <= 0 || $partnerAgencyId <= 0) {
-            return false;
-        }
-        $stmt = $this->conn->prepare(
-            'SELECT 1 FROM worker_deployments WHERE worker_id = ? AND partner_agency_id = ? LIMIT 1'
-        );
-        $stmt->execute([$workerId, $partnerAgencyId]);
-
-        return (bool) $stmt->fetchColumn();
-    }
-
     /**
      * Workers with at least one uploaded document file, plus readiness score and deployment partner ids.
      *
@@ -581,57 +572,16 @@ class PartnerAgencyWorkerDocSharesController
     }
 
     /**
-     * Ensure worker_deployments has a row for this worker + partner (minimal defaults from worker/agency).
-     */
-    private function ensureMinimalDeployment(int $workerId, int $partnerAgencyId): bool
-    {
-        if ($workerId <= 0 || $partnerAgencyId <= 0) {
-            return false;
-        }
-        if ($this->workerDeployedToPartner($workerId, $partnerAgencyId)) {
-            return true;
-        }
-        $worker = $this->fetchWorkerRow($workerId);
-        if (!$worker) {
-            return false;
-        }
-        $stmt = $this->conn->prepare('SELECT country FROM partner_agencies WHERE id = ? LIMIT 1');
-        $stmt->execute([$partnerAgencyId]);
-        $pa = $stmt->fetch(PDO::FETCH_ASSOC);
-        $agencyCountry = trim((string) ($pa['country'] ?? ''));
-        $country = trim((string) ($worker['country'] ?? ''));
-        if ($country === '') {
-            $country = $agencyCountry !== '' ? $agencyCountry : 'Saudi Arabia';
-        }
-        $job = trim((string) ($worker['job_title'] ?? $worker['occupation'] ?? $worker['specialization'] ?? ''));
-        if ($job === '') {
-            $job = 'Domestic worker';
-        }
-        require_once __DIR__ . '/DeploymentController.php';
-        $depCtl = new DeploymentController($this->conn);
-        try {
-            $depCtl->create([
-                'worker_id' => $workerId,
-                'partner_agency_id' => $partnerAgencyId,
-                'country' => $country,
-                'job_title' => $job,
-                'status' => 'processing',
-            ]);
-        } catch (Throwable $e) {
-            return false;
-        }
-
-        return $this->workerDeployedToPartner($workerId, $partnerAgencyId);
-    }
-
-    /**
      * Create portal shares for every document type that has a file on the worker profile.
      * If a worker has no uploaded files in those slots, creates one passport share so the partner
      * Documents & CVs table and View CV still list the worker for selection.
      *
+     * Does **not** create `worker_deployments` rows — placements stay separate until staff adds them
+     * via the Deployments / placements flow.
+     *
      * @param array<int> $workerIds
      *
-     * @return array{added: int, skipped: int, failed: int, not_deployed: int}
+     * @return array{added: int, skipped: int, failed: int, not_deployed: int} not_deployed counts workers not found (missing or deleted).
      */
     public function addAllFileSharesForWorkersToPartner(int $partnerAgencyId, array $workerIds): array
     {
@@ -646,14 +596,6 @@ class PartnerAgencyWorkerDocSharesController
         foreach ($workerIds as $widRaw) {
             $wid = (int) $widRaw;
             if ($wid <= 0) {
-                continue;
-            }
-            if (!$this->workerDeployedToPartner($wid, $partnerAgencyId)) {
-                $this->ensureMinimalDeployment($wid, $partnerAgencyId);
-            }
-            if (!$this->workerDeployedToPartner($wid, $partnerAgencyId)) {
-                $notDeployed++;
-
                 continue;
             }
             $worker = $this->fetchWorkerRow($wid);

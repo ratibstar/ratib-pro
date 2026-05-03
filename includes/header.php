@@ -136,6 +136,13 @@ $bodyClassList = ['ratib-app'];
 if (basename($_SERVER['PHP_SELF']) == 'agent.php') {
     $bodyClassList[] = 'agent-page';
 }
+if (!empty($extraBodyClasses) && is_array($extraBodyClasses)) {
+    foreach ($extraBodyClasses as $cls) {
+        if (is_string($cls) && $cls !== '' && preg_match('/^[a-zA-Z0-9_-]+$/', $cls)) {
+            $bodyClassList[] = $cls;
+        }
+    }
+}
 $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT_QUOTES, 'UTF-8') . '"';
 ?>
 <body<?php echo $bodyClassAttr; ?>> <!-- Add trigger area for mouse detection -->
