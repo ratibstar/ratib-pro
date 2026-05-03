@@ -4,6 +4,18 @@
 (function () {
     const DATE_LOCALE = 'en-US';
 
+    /** Set in init() after inline config in the page body (page JS loads in head). */
+    let staffCfg = null;
+    let staffMode = false;
+
+    function refreshStaffMode() {
+        staffCfg =
+            typeof window !== 'undefined' && window.RATIB_PARTNER_DOCS_STAFF && window.RATIB_PARTNER_DOCS_STAFF.partner_agency_id
+                ? window.RATIB_PARTNER_DOCS_STAFF
+                : null;
+        staffMode = !!staffCfg;
+    }
+
     const state = {
         rows: [],
         filtered: [],
@@ -12,6 +24,7 @@
         page: 1,
         pageSize: 25,
         agencyName: '',
+        staffHighlightActive: false,
     };
 
     function $(id) {
@@ -57,6 +70,86 @@
         return `../api/partnerships/partner-agency-cv-download.php?id=${encodeURIComponent(String(id))}`;
     }
 
+    function workerProfileHref(workerId) {
+        const wid = workerId != null ? String(workerId).trim() : '';
+        if (!wid) return 'Worker.php';
+        const base = `Worker.php?view=${encodeURIComponent(wid)}`;
+        const x = staffCfg && staffCfg.worker_profile_extra_query ? String(staffCfg.worker_profile_extra_query) : '';
+        return x ? `${base}&${x}` : base;
+    }
+
+    /** Same-origin URL loaded in the CV iframe (staff: Worker.php embed; partner: portal CV page). */
+    function workerCvIframeUrl(workerId) {
+        const wid = workerId != null ? String(workerId).trim() : '';
+        if (!wid) return '';
+        if (staffMode) {
+            let base = workerProfileHref(workerId);
+            base += (base.indexOf('?') !== -1 ? '&' : '?') + 'embed_cv=1';
+            return base;
+        }
+        return `partner-portal-worker-cv.php?worker_id=${encodeURIComponent(wid)}`;
+    }
+
+    function closeCvModal() {
+        const modal = $('ppCvModal');
+        const frame = $('ppCvFrame');
+        if (frame) {
+            frame.src = 'about:blank';
+        }
+        if (modal) {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+        if (!$('ppDocModal') || !$('ppDocModal').classList.contains('open')) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    function ensureCvModal() {
+        if ($('ppCvModal')) {
+            return;
+        }
+        const wrap = document.createElement('div');
+        wrap.id = 'ppCvModal';
+        wrap.className = 'modal-wrap partner-portal-modal partner-portal-modal--cv';
+        wrap.setAttribute('aria-hidden', 'true');
+        wrap.innerHTML =
+            '<div class="modal-card glass-card partner-portal-modal-card partner-portal-modal-card--cv" role="dialog" aria-modal="true" aria-labelledby="ppCvModalTitle">' +
+            '<div class="partner-portal-modal-head">' +
+            '<h3 id="ppCvModalTitle" class="partner-portal-modal-title">Worker CV</h3>' +
+            '<button type="button" class="icon-btn" id="ppCvModalCloseX" aria-label="Close">×</button>' +
+            '</div>' +
+            '<div class="partner-portal-cv-frame-shell">' +
+            '<iframe id="ppCvFrame" class="partner-portal-cv-frame" title="Worker CV preview"></iframe>' +
+            '</div>' +
+            '<div class="partner-portal-modal-footer partner-portal-modal-footer--cv">' +
+            '<button type="button" class="muted-btn" id="ppCvModalCloseBtn">Close</button>' +
+            '</div>' +
+            '</div>';
+        document.body.appendChild(wrap);
+        const closeCv = () => closeCvModal();
+        const bx = $('ppCvModalCloseX');
+        const bc = $('ppCvModalCloseBtn');
+        if (bx) bx.addEventListener('click', closeCv);
+        if (bc) bc.addEventListener('click', closeCv);
+        wrap.addEventListener('click', (e) => {
+            if (e.target === wrap) closeCv();
+        });
+    }
+
+    function openCvModal(workerId) {
+        closeDocModal();
+        ensureCvModal();
+        const modal = $('ppCvModal');
+        const frame = $('ppCvFrame');
+        const url = workerCvIframeUrl(workerId);
+        if (!modal || !frame || !url) return;
+        frame.src = url;
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
     function docRowKey(r) {
         if (!r || !r._kind) return '';
         return `${r._kind}|${r.id}`;
@@ -92,8 +185,12 @@
         titleEl.textContent = isWorker ? 'Shared worker document' : 'Agency document';
         if (lead) {
             lead.textContent = isWorker
-                ? 'Your office shared this worker file with your portal.'
-                : 'File uploaded for your agency by your office.';
+                ? staffMode
+                    ? 'This file is shared with the partner portal for this worker.'
+                    : 'Your office shared this worker file with your portal.'
+                : staffMode
+                  ? 'Agency file visible on the partner portal.'
+                  : 'File uploaded for your agency by your office.';
         }
 
         const rows = [];
@@ -121,11 +218,19 @@
 
         if (links) {
             const canDl = !isWorker || r._hasFile;
+            const cvOpenBtn =
+                isWorker && r._worker_id
+                    ? `<button type="button" class="neon-btn partner-portal-docs-action" data-pp-cv-worker="${String(r._worker_id)}">View CV</button>`
+                    : '';
+            const fullPageLink =
+                staffMode && isWorker && r._worker_id
+                    ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerProfileHref(r._worker_id))}" target="_blank" rel="noopener">Open in Workers</a>`
+                    : '';
             if (canDl) {
                 const href = escapeHtml(downloadHref(r));
-                links.innerHTML = `<a class="neon-btn partner-portal-docs-action" href="${href}" target="_blank" rel="noopener">Open</a><a class="muted-btn partner-portal-docs-action" href="${href}" download>Download</a>`;
+                links.innerHTML = `${cvOpenBtn}${fullPageLink}<a class="neon-btn partner-portal-docs-action" href="${href}" target="_blank" rel="noopener">Open file</a><a class="muted-btn partner-portal-docs-action" href="${href}" download>Download</a>`;
             } else {
-                links.innerHTML = '';
+                links.innerHTML = cvOpenBtn + fullPageLink;
             }
         }
 
@@ -229,7 +334,9 @@
                 empty.textContent =
                     state.rows.length > 0
                         ? 'No documents match your search.'
-                        : 'No documents yet. Agency uploads and worker files shared by your office will appear here.';
+                        : state.staffHighlightActive
+                          ? 'No shared worker documents for the selected workers yet. Ensure files exist for allowed document types, then use Send workers here again.'
+                          : 'No documents yet. Agency uploads and worker files shared by your office will appear here.';
             }
             if (info) info.textContent = state.rows.length > 0 ? '0 matches' : '0 documents';
             if (prev) prev.disabled = true;
@@ -253,11 +360,15 @@
                         : `<span class="table-tag tag-muted" title="Agency upload">Agency</span>`;
                 const noFile = r._kind === 'worker_share' && !r._hasFile;
                 const dkey = escapeHtml(docRowKey(r));
+                const cvBtn =
+                    r._kind === 'worker_share' && r._worker_id
+                        ? `<button type="button" class="neon-btn partner-portal-docs-action" data-pp-cv-worker="${String(r._worker_id)}">View CV</button>`
+                        : '';
                 const viewBtn = `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-doc-key="${dkey}" data-pp-doc-action="view">View</button>`;
                 const fileActions = noFile
                     ? `<span class="partner-portal-docs-no-file" title="No file is stored for this document on our side yet. Ask your office if you need the file.">No file</span>`
                     : `<a class="muted-btn partner-portal-docs-action" href="${dl}" target="_blank" rel="noopener">Open</a><a class="neon-btn partner-portal-docs-action" href="${dl}" download>Download</a>`;
-                const actions = `${viewBtn}${fileActions}`;
+                const actions = `${cvBtn}${viewBtn}${fileActions}`;
 
                 return `<tr>
                     <td class="col-num">${globalIdx}</td>
@@ -296,17 +407,6 @@
         state.agencyName = String(agency.name || '').trim() || 'Partner agency';
         const cvs = Array.isArray(data.cvs) ? data.cvs : [];
         const shares = Array.isArray(data.shared_worker_documents) ? data.shared_worker_documents : [];
-        const nAg = cvs.length;
-        const nW = shares.length;
-        const sub = $('ppDocsAgencySub');
-        if (sub) {
-            const name = state.agencyName;
-            const idPart = agency.id != null ? ` · ID ${agency.id}` : '';
-            const total = nAg + nW;
-            const tail =
-                total === 0 ? ' · No documents yet' : ` · ${nAg} agency · ${nW} worker`;
-            sub.textContent = name + idPart + tail;
-        }
 
         const agencyRows = cvs.map((row) =>
             Object.assign({}, row, {
@@ -342,13 +442,44 @@
             };
         });
 
-        const merged = agencyRows.concat(workerRows);
+        let merged = agencyRows.concat(workerRows);
+        state.staffHighlightActive = false;
+        if (
+            staffCfg &&
+            Array.isArray(staffCfg.highlight_worker_ids) &&
+            staffCfg.highlight_worker_ids.length > 0
+        ) {
+            const hs = new Set(staffCfg.highlight_worker_ids.map((x) => Number(x)));
+            merged = merged.filter(
+                (row) => row._kind !== 'worker_share' || hs.has(Number(row._worker_id))
+            );
+            state.staffHighlightActive = true;
+        }
         merged.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
         merged.forEach((row, i) => {
             row.__idx = i + 1;
         });
         state.rows = merged;
         state.page = 1;
+
+        const sub = $('ppDocsAgencySub');
+        if (sub) {
+            const name = state.agencyName;
+            const idPart = agency.id != null ? ` · ID ${agency.id}` : '';
+            const nAg = merged.filter((r) => r._kind === 'agency_cv').length;
+            const nW = merged.filter((r) => r._kind === 'worker_share').length;
+            const total = nAg + nW;
+            const selNote =
+                staffCfg &&
+                Array.isArray(staffCfg.highlight_worker_ids) &&
+                staffCfg.highlight_worker_ids.length > 0
+                    ? ' · Showing workers you sent'
+                    : '';
+            const tail =
+                total === 0 ? ' · No documents yet' : ` · ${nAg} agency · ${nW} worker`;
+            sub.textContent = name + idPart + tail + selNote;
+        }
+
         renderTable();
     }
 
@@ -360,11 +491,18 @@
             refreshBtn.setAttribute('aria-busy', 'true');
         }
         try {
-            const urlDocs = '../api/partnerships/partner-portal-documents.php';
-            const urlMe = '../api/partnerships/partner-portal-me.php';
-            let res = await fetch(urlDocs, { credentials: 'same-origin' });
-            if (res.status === 404) {
-                res = await fetch(urlMe, { credentials: 'same-origin' });
+            let res;
+            if (staffMode && staffCfg) {
+                const u = new URL('../api/partnerships/partner-documents-staff.php', window.location.href);
+                u.searchParams.set('partner_agency_id', String(staffCfg.partner_agency_id));
+                res = await fetch(u.pathname + u.search, { credentials: 'same-origin' });
+            } else {
+                const urlDocs = '../api/partnerships/partner-portal-documents.php';
+                const urlMe = '../api/partnerships/partner-portal-me.php';
+                res = await fetch(urlDocs, { credentials: 'same-origin' });
+                if (res.status === 404) {
+                    res = await fetch(urlMe, { credentials: 'same-origin' });
+                }
             }
             const json = await res.json().catch(() => ({}));
             if (!res.ok || !json.success) {
@@ -426,6 +564,17 @@
             renderTable();
         });
 
+        document.body.addEventListener('click', (e) => {
+            const cvBtn = e.target && e.target.closest ? e.target.closest('[data-pp-cv-worker]') : null;
+            if (cvBtn && cvBtn.getAttribute('data-pp-cv-worker')) {
+                e.preventDefault();
+                const wid = parseInt(String(cvBtn.getAttribute('data-pp-cv-worker') || ''), 10);
+                if (Number.isFinite(wid) && wid > 0) {
+                    openCvModal(wid);
+                }
+            }
+        });
+
         const tbody = $('ppDocsBody');
         if (tbody) {
             tbody.addEventListener('click', (e) => {
@@ -450,6 +599,12 @@
         }
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
+            const cvModal = $('ppCvModal');
+            if (cvModal && cvModal.classList.contains('open')) {
+                e.preventDefault();
+                closeCvModal();
+                return;
+            }
             if (docModal && docModal.classList.contains('open')) {
                 e.preventDefault();
                 closeDoc();
@@ -458,6 +613,7 @@
     }
 
     function init() {
+        refreshStaffMode();
         bindEvents();
         load();
     }

@@ -781,3 +781,36 @@
 .partner-portal-docs-teaser-cta {
     text-decoration: none;
 }
+
+/* Full CV preview (iframe) from Documents & CVs */
+.partner-portal-modal-card--cv {
+    max-width: min(1100px, 98vw);
+    width: min(1100px, 98vw);
+    max-height: min(92vh, 900px);
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem 1rem 1rem;
+}
+
+.partner-portal-cv-frame-shell {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0a0f18;
+}
+
+iframe.partner-portal-cv-frame {
+    display: block;
+    width: 100%;
+    height: min(75vh, 720px);
+    border: 0;
+    background: #fff;
+}
+
+.partner-portal-modal-footer--cv {
+    margin-top: 0.65rem;
+    flex-shrink: 0;
+}

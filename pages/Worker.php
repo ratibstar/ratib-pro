@@ -102,8 +102,16 @@ $pageCss[] = "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css";
 $pageCss[] = "https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css";
 $pageTitle = "Worker Management";
 
+$workerCvEmbed = isset($_GET['embed_cv']) && (string) $_GET['embed_cv'] === '1'
+    && isset($_GET['view']) && (int) $_GET['view'] > 0;
+
 include '../includes/header.php';
 ?>
+
+<?php if (!empty($workerCvEmbed)) : ?>
+<script>document.body.classList.add('ratib-worker-cv-embed');</script>
+<link rel="stylesheet" href="<?php echo htmlspecialchars(asset('css/worker/worker-cv-embed.css'), ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo (int) $cacheBuster; ?>">
+<?php endif; ?>
 
 <!-- Force no caching -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">

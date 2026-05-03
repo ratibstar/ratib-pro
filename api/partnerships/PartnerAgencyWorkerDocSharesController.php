@@ -134,8 +134,22 @@ class PartnerAgencyWorkerDocSharesController
     }
 
     /**
-     * @return array<string, mixed>|null
+     * True when this partner has at least one shared document slot for the worker (portal CV access).
      */
+    public function partnerHasShareForWorker(int $partnerAgencyId, int $workerId): bool
+    {
+        if ($partnerAgencyId <= 0 || $workerId <= 0) {
+            return false;
+        }
+        $stmt = $this->conn->prepare(
+            'SELECT 1 FROM partner_agency_worker_document_shares
+             WHERE partner_agency_id = ? AND worker_id = ? LIMIT 1'
+        );
+        $stmt->execute([$partnerAgencyId, $workerId]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
     public function fetchWorkerRow(int $workerId): ?array
     {
         if ($workerId <= 0) {

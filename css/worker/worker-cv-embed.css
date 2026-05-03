@@ -1,0 +1,28 @@
+/* Shown on Worker.php when ?view=&embed_cv=1 (iframe from Documents & CVs) */
+body.ratib-worker-cv-embed .nav-trigger-area,
+body.ratib-worker-cv-embed #mobileNavToggle,
+body.ratib-worker-cv-embed #mobileNavOverlay,
+body.ratib-worker-cv-embed #mainNav {
+    display: none !important;
+}
+
+body.ratib-worker-cv-embed .main-container.worker-management-container {
+    margin: 0;
+    padding: 0;
+    min-height: 0;
+    max-width: none;
+}
+
+body.ratib-worker-cv-embed .table-container,
+body.ratib-worker-cv-embed .worker-table-container,
+body.ratib-worker-cv-embed .page-header,
+body.ratib-worker-cv-embed .worker-management-container > .table-toolbar,
+body.ratib-worker-cv-embed .table-pagination,
+body.ratib-worker-cv-embed .bottom-pagination {
+    display: none !important;
+}
+
+/* Let the worker form modal use the full viewport when opened */
+body.ratib-worker-cv-embed #workerFormContainer {
+    z-index: 10000 !important;
+}

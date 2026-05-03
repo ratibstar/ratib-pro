@@ -784,17 +784,13 @@
                     showToast(json.message || 'Could not send workers.', 'error');
                     return;
                 }
-                const d = json.data || {};
-                showToast(
-                    `Done: added ${d.added ?? 0}, skipped ${d.skipped ?? 0}, not deployed ${d.not_deployed ?? 0}, failed ${d.failed ?? 0}.`,
-                    'success'
-                );
+                const sentWorkerIds = pendingWorkerIds.slice();
                 pendingWorkerIds = [];
                 updateSendBanner();
-                const u = new URL(window.location.href);
-                u.searchParams.delete('worker_ids');
-                window.history.replaceState({}, '', u.toString());
-                applyControls();
+                const docQs = new URLSearchParams();
+                docQs.set('partner_agency_id', String(pid));
+                docQs.set('worker_ids', sentWorkerIds.join(','));
+                window.location.href = withContext(`partner-documents-staff.php?${docQs.toString()}`);
             } catch (err) {
                 showToast('Could not send workers.', 'error');
             }
