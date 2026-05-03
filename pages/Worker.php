@@ -998,8 +998,8 @@ include '../includes/header.php';
                         </div>
                     </div>
 
-                    <!-- Contract signed (visible for all programs; not tied to Indonesia compliance UI) -->
-                    <div class="doc-row contract-signed" data-workflow-stage="contract" data-stage-label="Contract">
+                    <!-- Contract signed: data-stage-label must differ from contract-compliance row or syncStageDisplayLabels() overwrites both to "Contract". -->
+                    <div class="doc-row contract-signed" data-workflow-stage="contract" data-stage-label="Contract signed">
                         <div class="doc-group">
                             <label class="form-label">Contract signed</label>
                             <input type="text" name="contract_signed_number" data-field-key="contract_signed_number" placeholder="Enter Contract Reference">
@@ -1017,7 +1017,7 @@ include '../includes/header.php';
                         </div>
                     </div>
 
-                    <div class="doc-row insurance" data-workflow-stage="government" data-stage-label="Government Registration">
+                    <div class="doc-row insurance" data-workflow-stage="government" data-stage-label="Insurance">
                         <div class="doc-group">
                             <label class="form-label">Insurance</label>
                             <input type="text" name="insurance_number" data-field-key="insurance_number" placeholder="Enter Insurance Reference">
@@ -1035,8 +1035,8 @@ include '../includes/header.php';
                         </div>
                     </div>
 
-                    <!-- Exit permit (all programs) -->
-                    <div class="doc-row exit-permit" data-workflow-stage="work_permit" data-stage-label="Work Permit">
+                    <!-- Exit permit: label must differ from country-compliance work_permit row. -->
+                    <div class="doc-row exit-permit" data-workflow-stage="work_permit" data-stage-label="Exit permit">
                         <div class="doc-group">
                             <label class="form-label">Exit permit</label>
                             <input type="text" name="exit_permit_number" data-field-key="exit_permit_number" placeholder="Enter Exit Permit Reference">
@@ -1056,7 +1056,7 @@ include '../includes/header.php';
 
                     <?php if ($isIndonesiaProgram): ?>
                     <!-- Government Approval -->
-                    <div class="doc-row govt-approval indonesia-compliance-field" data-workflow-stage="government" data-stage-label="Government Registration">
+                    <div class="doc-row govt-approval indonesia-compliance-field" data-workflow-stage="government" data-stage-label="Government Approval">
                         <div class="doc-group">
                             <label class="form-label">Government Approval</label>
                             <input type="text" name="approval_reference_id" placeholder="Approval Reference ID">
