@@ -928,45 +928,6 @@ include '../includes/header.php';
                     </div>
                     <?php endif; ?>
 
-                    <!-- Signed Contract (all programs — was only in non-Indonesia branch, so Indonesia saves never updated status) -->
-                    <div class="doc-row contract-signed indonesia-compliance-field" data-workflow-stage="contract" data-stage-label="Contract">
-                        <div class="doc-group">
-                            <label class="form-label">Signed Contract</label>
-                            <input type="text" name="contract_signed_number" placeholder="Enter Contract Reference">
-                            <div class="upload-wrapper">
-                                <input type="file" class="file-input" id="contract_signed_file" accept=".pdf,.jpg,.jpeg,.png">
-                                <button type="button" class="upload-btn" data-target="contract_signed_file">
-                                    <i class="fas fa-upload"></i> UPLOAD
-                                </button>
-                            </div>
-                            <div class="status-wrapper" data-doc-type="contract_signed">
-                                <span class="status-indicator status-pending"></span>
-                                <span class="status-text status-pending">pending</span>
-                            </div>
-                            <input type="hidden" name="contract_signed_status" value="pending">
-                        </div>
-                    </div>
-
-                    <!-- Insurance (all programs) -->
-                    <div class="doc-row insurance indonesia-compliance-field" data-workflow-stage="government" data-stage-label="Government Registration">
-                        <div class="doc-group">
-                            <label class="form-label">Insurance</label>
-                            <input type="text" name="insurance_number" placeholder="Enter Insurance Reference">
-                            <div class="upload-wrapper">
-                                <input type="file" class="file-input" id="insurance_file" accept=".pdf,.jpg,.jpeg,.png">
-                                <button type="button" class="upload-btn" data-target="insurance_file">
-                                    <i class="fas fa-upload"></i> UPLOAD
-                                </button>
-                            </div>
-                            <div class="status-wrapper" data-doc-type="insurance">
-                                <span class="status-indicator status-pending"></span>
-                                <span class="status-text status-pending">pending</span>
-                            </div>
-                            <input type="hidden" name="insurance_status" value="pending">
-                        </div>
-                    </div>
-                    
-
                     <!-- Police Clearance -->
                     <div class="doc-row police" data-workflow-stage="police" data-stage-label="Police Clearance">
                         <div class="doc-group">
@@ -1037,12 +998,48 @@ include '../includes/header.php';
                         </div>
                     </div>
 
-                    <?php if ($isIndonesiaProgram): ?>
-                    <!-- Exit Permit -->
-                    <div class="doc-row exit-permit indonesia-compliance-field" data-workflow-stage="work_permit" data-stage-label="Work Permit">
+                    <!-- Contract signed (visible for all programs; not tied to Indonesia compliance UI) -->
+                    <div class="doc-row contract-signed" data-workflow-stage="contract" data-stage-label="Contract">
                         <div class="doc-group">
-                            <label class="form-label">Exit Permit</label>
-                            <input type="text" name="exit_permit_number" placeholder="Enter Exit Permit Reference">
+                            <label class="form-label">Contract signed</label>
+                            <input type="text" name="contract_signed_number" data-field-key="contract_signed_number" placeholder="Enter Contract Reference">
+                            <div class="upload-wrapper">
+                                <input type="file" class="file-input" id="contract_signed_file" accept=".pdf,.jpg,.jpeg,.png">
+                                <button type="button" class="upload-btn" data-target="contract_signed_file">
+                                    <i class="fas fa-upload"></i> UPLOAD
+                                </button>
+                            </div>
+                            <div class="status-wrapper" data-doc-type="contract_signed">
+                                <span class="status-indicator status-pending"></span>
+                                <span class="status-text status-pending">pending</span>
+                            </div>
+                            <input type="hidden" name="contract_signed_status" value="pending">
+                        </div>
+                    </div>
+
+                    <div class="doc-row insurance" data-workflow-stage="government" data-stage-label="Government Registration">
+                        <div class="doc-group">
+                            <label class="form-label">Insurance</label>
+                            <input type="text" name="insurance_number" data-field-key="insurance_number" placeholder="Enter Insurance Reference">
+                            <div class="upload-wrapper">
+                                <input type="file" class="file-input" id="insurance_file" accept=".pdf,.jpg,.jpeg,.png">
+                                <button type="button" class="upload-btn" data-target="insurance_file">
+                                    <i class="fas fa-upload"></i> UPLOAD
+                                </button>
+                            </div>
+                            <div class="status-wrapper" data-doc-type="insurance">
+                                <span class="status-indicator status-pending"></span>
+                                <span class="status-text status-pending">pending</span>
+                            </div>
+                            <input type="hidden" name="insurance_status" value="pending">
+                        </div>
+                    </div>
+
+                    <!-- Exit permit (all programs) -->
+                    <div class="doc-row exit-permit" data-workflow-stage="work_permit" data-stage-label="Work Permit">
+                        <div class="doc-group">
+                            <label class="form-label">Exit permit</label>
+                            <input type="text" name="exit_permit_number" data-field-key="exit_permit_number" placeholder="Enter Exit Permit Reference">
                             <div class="upload-wrapper">
                                 <input type="file" class="file-input" id="exit_permit_file" accept=".pdf,.jpg,.jpeg,.png">
                                 <button type="button" class="upload-btn" data-target="exit_permit_file">
@@ -1057,6 +1054,7 @@ include '../includes/header.php';
                         </div>
                     </div>
 
+                    <?php if ($isIndonesiaProgram): ?>
                     <!-- Government Approval -->
                     <div class="doc-row govt-approval indonesia-compliance-field" data-workflow-stage="government" data-stage-label="Government Registration">
                         <div class="doc-group">

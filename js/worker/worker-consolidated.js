@@ -371,8 +371,8 @@ class WorkerTable {
             wf.appendChild(hiddenInput);
         }
         
-        // Update table immediately if worker is visible
-        const workerIdInput = document.querySelector('input[name="id"]');
+        // Update table immediately if worker is visible (scope to main worker form)
+        const workerIdInput = wf ? wf.querySelector('input[name="id"]') : null;
         if (workerIdInput && workerIdInput.value) {
             const workerId = workerIdInput.value;
             // Only update table for police, medical, visa, ticket (not identity, passport)

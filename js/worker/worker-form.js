@@ -1393,13 +1393,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function resetStatusIndicators() {
         const docTypes = ['identity', 'passport', 'training_certificate', 'contract_signed', 'insurance', 'police', 'medical', 'visa', 'exit_permit', 'ticket', 'country_compliance_primary', 'country_compliance_secondary', 'contract_deployment_primary', 'contract_deployment_secondary', 'contract_deployment_verification'];
         
+        const formRoot = workerForm || document;
         docTypes.forEach(docType => {
-            const statusWrapper = document.querySelector(`.status-wrapper[data-doc-type="${docType}"]`);
+            const statusWrapper = formRoot.querySelector(`.status-wrapper[data-doc-type="${docType}"]`);
             if (!statusWrapper) return;
             
             const indicator = statusWrapper.querySelector('.status-indicator');
             const text = statusWrapper.querySelector('.status-text');
-            const statusInput = document.querySelector(`input[name="${docType}_status"]`);
+            const statusInput = formRoot.querySelector(`input[name="${docType}_status"]`);
             
             if (indicator) {
                 indicator.classList.remove('status-pending', 'status-ok', 'status-not_ok');
@@ -2690,8 +2691,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const docTypes = ['identity', 'passport', 'training_certificate', 'contract_signed', 'insurance', 'police', 'medical', 'visa', 'exit_permit', 'ticket', 'country_compliance_primary', 'country_compliance_secondary', 'contract_deployment_primary', 'contract_deployment_secondary', 'contract_deployment_verification'];
         
+        const formRoot = workerForm || document;
         docTypes.forEach(docType => {
-            const statusWrapper = document.querySelector(`.status-wrapper[data-doc-type="${docType}"]`);
+            const statusWrapper = formRoot.querySelector(`.status-wrapper[data-doc-type="${docType}"]`);
             if (!statusWrapper) return;
             
             const indicator = statusWrapper.querySelector('.status-indicator');
@@ -2720,7 +2722,7 @@ document.addEventListener('DOMContentLoaded', function() {
             text.textContent = statusTextMap[normalizedStatus] || 'pending';
             
             // Update hidden input field
-            const statusInput = document.querySelector(`input[name="${docType}_status"]`);
+            const statusInput = formRoot.querySelector(`input[name="${docType}_status"]`);
             if (statusInput) {
                 statusInput.value = normalizedStatus;
             }
