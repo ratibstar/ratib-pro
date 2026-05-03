@@ -332,18 +332,12 @@
         );
     }
 
-    /** Themed <select> + row / status-column colors (staff). */
+    /** Themed <select> only (colors live inside the control). */
     function syncSoloStatusRowUi(selectEl, row) {
         if (!selectEl || !row || !selectEl.classList || !selectEl.classList.contains('pp-docs-status-select')) return;
         const slug = selectVisualSlugFromControl(row, selectEl);
         selectEl.className =
             'partner-portal-input pp-docs-status-select pp-doc-status-select-solo pp-doc-status-select-solo--' + slug;
-        const tr = selectEl.closest('tr');
-        if (tr) tr.setAttribute('data-pp-status', slug);
-        const td = selectEl.closest('td');
-        if (td && td.classList.contains('col-status')) {
-            td.className = 'col-status pp-docs-status-col pp-docs-status-col--' + slug;
-        }
     }
 
     function buildPortalStatusSelectOptions(displayStatusField) {
@@ -748,9 +742,7 @@
                     : `<span class="pp-doc-status pp-doc-status--${escapeHtml(statusSlug)}">${escapeHtml(
                           formatPortalStatusLabel(statusSlug)
                       )}</span>`;
-                const statusTd = `<td class="col-status pp-docs-status-col pp-docs-status-col--${escapeHtml(
-                    statusSlug
-                )}">${statusInner}</td>`;
+                const statusTd = `<td class="col-status">${statusInner}</td>`;
                 const noFile = r._kind === 'worker_share' && !r._hasFile;
                 const cvBtn =
                     r._kind === 'worker_share' && r._worker_id
@@ -769,7 +761,7 @@
                     : `<a class="muted-btn partner-portal-docs-action" href="${dl}">Open</a><a class="neon-btn partner-portal-docs-action" href="${dl}" download>Download</a>`;
                 const actions = `<span class="partner-portal-docs-actions-btns">${cvBtn}${viewBtn}${editBtn}${deleteBtn}${fileActions}</span>`;
 
-                return `<tr data-pp-status="${escapeHtml(statusSlug)}">
+                return `<tr>
                     ${selectCell}
                     <td class="col-num">${refId}</td>
                     ${statusTd}
