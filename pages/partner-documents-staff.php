@@ -110,7 +110,7 @@ window.RATIB_PARTNER_DOCS_STAFF = {
         </div>
     </div>
 
-    <input type="file" id="ppStaffWorkerDocUploadInput" class="partner-portal-docs-hidden-file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" tabindex="-1" aria-hidden="true" title="Worker document file">
+    <input type="file" id="ppStaffWorkerDocUploadInput" name="pp_staff_worker_document" class="partner-portal-docs-hidden-file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" tabindex="-1" aria-hidden="true" title="Worker document file">
 
     <p class="partner-portal-docs-staff-status-help">
         Use <strong>Preview</strong> to open the file like Worker Documents (same storage as Workers). <strong>Upload</strong> adds or replaces that slot (PDF, JPG, or PNG).

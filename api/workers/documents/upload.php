@@ -30,8 +30,13 @@ try {
 
     $uploadDir = ratib_uploads_base_dir() . DIRECTORY_SEPARATOR . 'workers' . DIRECTORY_SEPARATOR . $workerId
         . DIRECTORY_SEPARATOR . 'documents' . DIRECTORY_SEPARATOR . $docType . DIRECTORY_SEPARATOR;
-    if (!is_dir($uploadDir) && !@mkdir($uploadDir, 0777, true) && !is_dir($uploadDir)) {
-        throw new Exception('Failed to create upload directory');
+    try {
+        ratib_uploads_ensure_dir($uploadDir);
+    } catch (RuntimeException $e) {
+        throw new Exception(
+            $e->getMessage()
+                . ' Set RATIB_UPLOADS_BASE (or define RATIB_UPLOADS_BASE) to an absolute path the web server can write.'
+        );
     }
 
     // Generate unique filename
