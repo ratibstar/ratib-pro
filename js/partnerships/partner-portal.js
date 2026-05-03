@@ -51,10 +51,6 @@
             .join('');
     }
 
-    function downloadHref(cvId) {
-        return `../api/partnerships/partner-agency-cv-download.php?id=${encodeURIComponent(String(cvId))}`;
-    }
-
     function renderContracts(agency) {
         const list = document.getElementById('ppContracts');
         const empty = document.getElementById('ppContractsEmpty');
@@ -138,32 +134,14 @@
     }
 
     function renderCvList(cvs) {
-        const cvList = document.getElementById('ppCvList');
-        const cvEmpty = document.getElementById('ppCvEmpty');
-        if (cvs.length === 0) {
-            if (cvList) cvList.innerHTML = '';
-            if (cvEmpty) cvEmpty.hidden = false;
+        const line = document.getElementById('ppCvTeaserLine');
+        if (!line) return;
+        const n = Array.isArray(cvs) ? cvs.length : 0;
+        if (n === 0) {
+            line.textContent = 'No agency documents uploaded yet.';
             return;
         }
-        if (cvEmpty) cvEmpty.hidden = true;
-        if (cvList) {
-            cvList.innerHTML = cvs
-                .map((c) => {
-                    const id = c.id;
-                    const title = displayValue(c.title);
-                    const fn = displayValue(c.original_filename);
-                    const href = escapeHtml(downloadHref(id));
-
-                    return `<li class="partner-portal-cv-item">
-                        <div>
-                            <strong>${escapeHtml(title)}</strong>
-                            <div class="partner-portal-cv-meta">${escapeHtml(fn)} · ${escapeHtml(formatCalendarDate(c.created_at))}</div>
-                        </div>
-                        <a class="neon-btn partner-portal-dl-btn" href="${href}">Download</a>
-                    </li>`;
-                })
-                .join('');
-        }
+        line.textContent = `${n} document${n === 1 ? '' : 's'} on file — open the full table to search, sort, and download.`;
     }
 
     function profileViewSectionsHtml(agency) {

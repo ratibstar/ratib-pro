@@ -578,3 +578,178 @@
 .partner-portal-contract-dl {
     margin: 0 0 0.75rem;
 }
+
+/* Documents & CVs full table page */
+.partner-portal-docs-page {
+    gap: 0.85rem;
+}
+
+.partner-portal-docs-page-intro {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.85rem 1.1rem 1.1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.partner-portal-docs-back {
+    align-self: flex-start;
+}
+
+.partner-portal-docs-page-h1 {
+    margin: 0.2rem 0 0;
+}
+
+.partner-portal-docs-subline {
+    margin: 0.35rem 0 0;
+    font-size: 0.88rem;
+    color: #94a3b8;
+}
+
+.partner-portal-docs-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.75rem 1rem;
+    justify-content: space-between;
+}
+
+.partner-portal-docs-search {
+    flex: 1 1 200px;
+    max-width: min(100%, 28rem);
+    margin: 0;
+}
+
+.partner-portal-docs-toolbar-right {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.partner-portal-docs-rows-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.partner-portal-docs-select {
+    width: auto;
+    min-width: 4.5rem;
+    margin: 0;
+    padding: 0.4rem 0.55rem;
+}
+
+.partner-portal-docs-table-shell {
+    padding: 0;
+    overflow: hidden;
+}
+
+.partner-portal-docs-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.partner-portal-docs-table {
+    min-width: 860px;
+    margin: 0;
+}
+
+.partner-portal-docs-table .col-num {
+    width: 2.5rem;
+    text-align: right;
+    color: #94a3b8;
+}
+
+.partner-portal-docs-table .col-actions {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.partner-portal-sort-btn {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    text-decoration: none;
+    color: #e2e8f0;
+}
+
+.partner-portal-sort-btn:hover {
+    color: #5eead4;
+}
+
+.partner-portal-sort-btn.is-sorted-asc::after {
+    content: ' ▲';
+    font-size: 0.65em;
+    opacity: 0.85;
+}
+
+.partner-portal-sort-btn.is-sorted-desc::after {
+    content: ' ▼';
+    font-size: 0.65em;
+    opacity: 0.85;
+}
+
+.partner-portal-docs-actions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    justify-content: flex-end;
+}
+
+.partner-portal-docs-action {
+    font-size: 0.78rem;
+    padding: 0.3rem 0.55rem;
+    text-decoration: none;
+    border-radius: 8px;
+}
+
+.partner-portal-docs-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+}
+
+.partner-portal-docs-page-info {
+    font-size: 0.88rem;
+    color: #94a3b8;
+}
+
+.partner-portal-docs-empty {
+    margin: 0;
+    padding: 1rem 1.1rem 1.15rem;
+}
+
+/* Main portal: documents teaser */
+.partner-portal-docs-teaser {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.partner-portal-docs-teaser-line {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    line-height: 1.5;
+}
+
+.partner-portal-docs-teaser-cta {
+    text-decoration: none;
+}

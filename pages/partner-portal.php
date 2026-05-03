@@ -77,7 +77,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
     <nav class="partner-portal-section-nav glass-card" aria-label="Page sections">
         <span class="partner-portal-section-nav-label">Jump to</span>
         <a href="#partner-portal-section-overview">Agency &amp; contracts</a>
-        <a href="#partner-portal-section-documents">Documents &amp; CVs</a>
+        <a href="<?php echo htmlspecialchars(pageUrl('partner-portal-documents.php'), ENT_QUOTES, 'UTF-8'); ?>">Documents &amp; CVs</a>
         <a href="#partner-portal-section-worker-docs">Worker documents shared</a>
     </nav>
 
@@ -139,9 +139,11 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <button type="button" class="neon-btn partner-portal-card-btn partner-portal-card-btn--primary" id="ppBtnEditDocs" title="Edit contact details">Edit</button>
             </div>
         </div>
-        <p class="agency-detail-note">Your office uploads files here in Ratib Pro. You can download them below; uploads are not available on this page.</p>
-        <ul id="ppCvList" class="partner-portal-cv-list"></ul>
-        <p id="ppCvEmpty" class="agency-detail-empty" hidden>No documents uploaded yet.</p>
+        <p class="agency-detail-note">Your office uploads files in Ratib Pro. Use the table page to search, sort, download, or open files.</p>
+        <div class="partner-portal-docs-teaser">
+            <p id="ppCvTeaserLine" class="partner-portal-docs-teaser-line">Loading document count…</p>
+            <a class="neon-btn partner-portal-docs-teaser-cta" href="<?php echo htmlspecialchars(pageUrl('partner-portal-documents.php'), ENT_QUOTES, 'UTF-8'); ?>">Open documents table</a>
+        </div>
     </section>
 
     <section id="partner-portal-section-worker-docs" class="agency-detail-card glass-card partner-portal-worker-shares-block partner-portal-anchor-target">
