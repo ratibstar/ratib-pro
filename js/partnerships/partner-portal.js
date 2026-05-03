@@ -302,7 +302,7 @@
         if (!json.linked) {
             lead.textContent =
                 json.message ||
-                'Not linked yet. Ask your office to connect this agency to accounting — then figures will show here and under Agency & contracts.';
+                'Not linked yet. Ask your office to connect this agency to accounting — then figures will show here and on Agency & contracts.';
             kpis.classList.add('is-hidden');
             kpis.hidden = true;
             kpis.innerHTML = '';
@@ -323,7 +323,7 @@
 
         lead.textContent =
             code && aname
-                ? `Chart account ${code} — ${aname}. Figures below use the same dates as Agency & contracts.`
+                ? `Chart account ${code} — ${aname}. Open Agency & contracts or Full statement for date filters and the full table.`
                 : 'Linked to your office chart of accounts.';
 
         const nLines = Array.isArray(json.lines) ? json.lines.length : 0;
@@ -469,7 +469,6 @@
 
     const PP_NAV_SPY_ORDER = [
         ['dashboard', 'partner-portal-dashboard'],
-        ['overview', 'partner-portal-section-overview'],
         ['documents', 'partner-portal-section-documents'],
         ['worker-docs', 'partner-portal-section-worker-docs'],
     ];
