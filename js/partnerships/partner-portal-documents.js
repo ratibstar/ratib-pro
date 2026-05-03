@@ -492,10 +492,12 @@
         wrap.className = 'modal-wrap partner-portal-modal partner-portal-modal--worker-docs-list';
         wrap.setAttribute('aria-hidden', 'true');
         wrap.innerHTML =
-            '<div class="modal-card glass-card partner-portal-modal-card partner-portal-modal-card--worker-docs-list" role="dialog" aria-modal="true" aria-labelledby="ppWorkerDocsListTitle">' +
-            '<div class="partner-portal-modal-head">' +
-            '<h3 id="ppWorkerDocsListTitle" class="partner-portal-modal-title">Worker documents</h3>' +
-            '<button type="button" class="icon-btn" id="ppWorkerDocsListCloseX" aria-label="Close">×</button>' +
+            '<div class="modal-card glass-card partner-portal-modal-card partner-portal-modal-card--worker-docs-list pp-worker-docs-modal-card" role="dialog" aria-modal="true" aria-labelledby="ppWorkerDocsListTitle">' +
+            '<div class="partner-portal-modal-head pp-worker-docs-modal-head">' +
+            '<div class="pp-worker-docs-modal-head-text">' +
+            '<h3 id="ppWorkerDocsListTitle" class="partner-portal-modal-title pp-worker-docs-modal-title">Worker documents</h3>' +
+            '</div>' +
+            '<button type="button" class="icon-btn pp-worker-docs-modal-close" id="ppWorkerDocsListCloseX" aria-label="Close">×</button>' +
             '</div>' +
             '<p id="ppWorkerDocsListSub" class="partner-portal-modal-lead"></p>' +
             '<p id="ppWorkerDocsListHint" class="pp-worker-docs-list-hint muted-label"></p>' +
@@ -520,8 +522,8 @@
             '</div>' +
             '</div>' +
             '</div>' +
-            '<div class="partner-portal-modal-footer">' +
-            '<button type="button" class="muted-btn" id="ppWorkerDocsListCloseBtn">Close</button>' +
+            '<div class="partner-portal-modal-footer pp-worker-docs-modal-footer">' +
+            '<button type="button" class="muted-btn pp-worker-docs-footer-close" id="ppWorkerDocsListCloseBtn">Close</button>' +
             '</div>' +
             '</div>';
         document.body.appendChild(wrap);
@@ -626,6 +628,22 @@
         });
     }
 
+    function workerDocsStatusBadgeClass(label) {
+        const s = String(label || '')
+            .trim()
+            .toLowerCase();
+        if (s === 'ok' || s === 'complete' || s === 'completed' || s === 'approved') {
+            return 'pp-worker-docs-status-badge pp-worker-docs-status-badge--ok';
+        }
+        if (s.indexOf('pending') !== -1 || s === 'waiting' || s === 'processing') {
+            return 'pp-worker-docs-status-badge pp-worker-docs-status-badge--pending';
+        }
+        if (s.indexOf('issue') !== -1 || s === 'returned') {
+            return 'pp-worker-docs-status-badge pp-worker-docs-status-badge--issue';
+        }
+        return 'pp-worker-docs-status-badge pp-worker-docs-status-badge--neutral';
+    }
+
     function renderWorkerDocsListTableRows(workerId, tableRows) {
         const tbody = $('ppWorkerDocsListTbody');
         if (!tbody) return;
@@ -652,16 +670,19 @@
                           )}" class="pp-worker-docs-row--clickable" title="Open upload panel for this slot"`
                         : '';
                 const trAttrs = rowPreviewAttr || uploadSlotAttr;
+                const stBadgeClass = workerDocsStatusBadgeClass(row.statusLabel);
                 const fileCell =
                     `<div class="pp-worker-docs-file-stack">` +
-                    `<div class="pp-worker-docs-file-type"><strong>${escapeHtml(row.typeLabel)}</strong>` +
-                    `<span class="pp-worker-docs-slug muted-label">${escapeHtml(row.docType || '—')}</span></div>` +
+                    `<div class="pp-worker-docs-file-type">` +
+                    `<span class="pp-worker-docs-type-label">${escapeHtml(row.typeLabel)}</span>` +
+                    `<code class="pp-worker-docs-slug-chip">${escapeHtml(row.docType || '—')}</code>` +
+                    `</div>` +
                     `<div class="pp-worker-docs-file-name">${escapeHtml(row.fileName)}</div>` +
                     `</div>`;
                 return (
                     `<tr${trAttrs}>` +
                     `<td class="pp-worker-docs-file-cell">${fileCell}</td>` +
-                    `<td class="pp-worker-docs-status-cell">${escapeHtml(row.statusLabel)}</td>` +
+                    `<td class="pp-worker-docs-status-cell"><span class="${stBadgeClass}">${escapeHtml(row.statusLabel)}</span></td>` +
                     `</tr>`
                 );
             })
