@@ -225,6 +225,62 @@ class PartnerAgencyController
         return $public;
     }
 
+    /**
+     * Partner self-service: update contact/address fields only (portal session). Does not change name, license, status, or portal secrets.
+     *
+     * @param array<string, mixed> $payload
+     */
+    public function updatePartnerPortalProfile(int $id, array $payload): array
+    {
+        if ($id <= 0) {
+            throw new InvalidArgumentException('Invalid agency id');
+        }
+        $this->assertExists($id);
+
+        $allowed = [
+            'contact_person' => 255,
+            'email' => 255,
+            'phone' => 80,
+            'phone2' => 80,
+            'fax' => 80,
+            'mobile' => 80,
+            'address_en' => 2000,
+            'address_ar' => 2000,
+        ];
+
+        $sets = [];
+        $params = [];
+        foreach ($allowed as $col => $maxLen) {
+            if (!array_key_exists($col, $payload)) {
+                continue;
+            }
+            $v = trim((string) ($payload[$col] ?? ''));
+            if (mb_strlen($v) > $maxLen) {
+                throw new InvalidArgumentException("Field too long: {$col}");
+            }
+            $sets[] = '`' . str_replace('`', '', $col) . '` = ?';
+            $params[] = $v;
+        }
+
+        if ($sets === []) {
+            throw new InvalidArgumentException('No valid fields to update');
+        }
+
+        if (array_key_exists('email', $payload)) {
+            $em = trim((string) ($payload['email'] ?? ''));
+            if ($em !== '' && !filter_var($em, FILTER_VALIDATE_EMAIL)) {
+                throw new InvalidArgumentException('Invalid email address');
+            }
+        }
+
+        $params[] = $id;
+        $sql = 'UPDATE partner_agencies SET ' . implode(', ', $sets) . ' WHERE id = ?';
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($params);
+
+        return $this->toPublicRow($this->find($id));
+    }
+
     public function delete(int $id): void
     {
         $this->assertExists($id);

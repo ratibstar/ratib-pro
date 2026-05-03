@@ -84,15 +84,31 @@ include __DIR__ . '/../includes/partner-portal-header.php';
     <div id="partner-portal-section-overview" class="agency-detail-grid partner-portal-anchor-target">
         <div class="agency-detail-main-col">
             <section class="agency-detail-card glass-card">
-                <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">🏢</span> Agency data</h2>
+                <div class="agency-detail-card-head">
+                    <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">🏢</span> Agency data</h2>
+                    <div class="partner-portal-card-actions">
+                        <button type="button" class="muted-btn partner-portal-card-btn" id="ppBtnViewProfile" title="View full profile">View</button>
+                    </div>
+                </div>
                 <dl class="agency-detail-dl" id="ppAgencyData"></dl>
             </section>
             <section class="agency-detail-card glass-card">
-                <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📞</span> Contact information</h2>
+                <div class="agency-detail-card-head">
+                    <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📞</span> Contact information</h2>
+                    <div class="partner-portal-card-actions">
+                        <button type="button" class="muted-btn partner-portal-card-btn" id="ppBtnViewContact" title="View contact details">View</button>
+                        <button type="button" class="neon-btn partner-portal-card-btn partner-portal-card-btn--primary" id="ppBtnEditContact" title="Edit contact details">Edit</button>
+                    </div>
+                </div>
                 <dl class="agency-detail-dl" id="ppContactData"></dl>
             </section>
             <section class="agency-detail-card glass-card">
-                <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📋</span> Administrative &amp; financial</h2>
+                <div class="agency-detail-card-head">
+                    <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📋</span> Administrative &amp; financial</h2>
+                    <div class="partner-portal-card-actions">
+                        <button type="button" class="muted-btn partner-portal-card-btn" id="ppBtnViewAdmin" title="View administrative details">View</button>
+                    </div>
+                </div>
                 <dl class="agency-detail-dl" id="ppAdminData"></dl>
                 <p class="agency-detail-note">Extended license and banking fields can be added when available in your profile.</p>
             </section>
@@ -122,6 +138,56 @@ include __DIR__ . '/../includes/partner-portal-header.php';
         <ul id="ppWorkerShareList" class="partner-portal-worker-share-list"></ul>
         <p id="ppWorkerShareEmpty" class="agency-detail-empty" hidden>No worker documents shared with your portal yet.</p>
     </section>
+</div>
+
+<div id="ppProfileModal" class="modal-wrap partner-portal-modal" aria-hidden="true">
+    <div class="modal-card glass-card partner-portal-modal-card" role="dialog" aria-modal="true" aria-labelledby="ppProfileModalTitle">
+        <div class="partner-portal-modal-head">
+            <h3 id="ppProfileModalTitle" class="partner-portal-modal-title">Profile</h3>
+            <button type="button" class="icon-btn" id="ppProfileModalClose" aria-label="Close">×</button>
+        </div>
+        <p id="ppProfileModalLead" class="partner-portal-modal-lead"></p>
+        <div id="ppProfileViewPanel" class="partner-portal-modal-view"></div>
+        <form id="ppProfileEditForm" class="partner-portal-edit-form" hidden>
+            <label class="partner-portal-label">Contact person</label>
+            <input type="text" name="contact_person" id="ppEditContactPerson" class="partner-portal-input" maxlength="255" autocomplete="name">
+            <label class="partner-portal-label">Email</label>
+            <input type="email" name="email" id="ppEditEmail" class="partner-portal-input" maxlength="255" autocomplete="email">
+            <label class="partner-portal-label">Phone 1</label>
+            <input type="text" name="phone" id="ppEditPhone" class="partner-portal-input" maxlength="80" autocomplete="tel">
+            <label class="partner-portal-label">Phone 2</label>
+            <input type="text" name="phone2" id="ppEditPhone2" class="partner-portal-input" maxlength="80">
+            <label class="partner-portal-label">Fax</label>
+            <input type="text" name="fax" id="ppEditFax" class="partner-portal-input" maxlength="80">
+            <label class="partner-portal-label">Mobile</label>
+            <input type="text" name="mobile" id="ppEditMobile" class="partner-portal-input" maxlength="80" autocomplete="tel">
+            <label class="partner-portal-label">Address (English)</label>
+            <textarea name="address_en" id="ppEditAddressEn" class="partner-portal-input partner-portal-textarea" rows="3" maxlength="2000"></textarea>
+            <label class="partner-portal-label">Address (Arabic)</label>
+            <textarea name="address_ar" id="ppEditAddressAr" class="partner-portal-input partner-portal-textarea" rows="2" maxlength="2000"></textarea>
+            <p id="ppProfileFormMsg" class="partner-portal-modal-msg" hidden></p>
+            <div class="partner-portal-modal-footer">
+                <button type="button" class="muted-btn" id="ppProfileCancelBtn">Cancel</button>
+                <button type="submit" class="neon-btn" id="ppProfileSaveBtn">Save</button>
+            </div>
+        </form>
+        <div id="ppProfileViewFooter" class="partner-portal-modal-footer">
+            <button type="button" class="muted-btn" id="ppProfileCloseBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+<div id="ppContractModal" class="modal-wrap partner-portal-modal" aria-hidden="true">
+    <div class="modal-card glass-card partner-portal-modal-card partner-portal-modal-card--compact" role="dialog" aria-modal="true" aria-labelledby="ppContractModalTitle">
+        <div class="partner-portal-modal-head">
+            <h3 id="ppContractModalTitle" class="partner-portal-modal-title">Deployment</h3>
+            <button type="button" class="icon-btn" id="ppContractModalClose" aria-label="Close">×</button>
+        </div>
+        <dl class="agency-detail-dl partner-portal-contract-dl" id="ppContractModalBody"></dl>
+        <div class="partner-portal-modal-footer">
+            <button type="button" class="muted-btn" id="ppContractCloseBtn">Close</button>
+        </div>
+    </div>
 </div>
 
 <?php include __DIR__ . '/../includes/partner-portal-footer.php'; ?>

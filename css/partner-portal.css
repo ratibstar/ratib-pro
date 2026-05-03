@@ -453,3 +453,120 @@
         margin-left: 0;
     }
 }
+
+/* Card View / Edit actions */
+.partner-portal-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+}
+
+.partner-portal-card-btn {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.7rem;
+}
+
+.partner-portal-card-btn--primary {
+    padding: 0.38rem 0.85rem;
+}
+
+.agency-contract-meta--with-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.partner-portal-modal .modal-card {
+    max-height: min(90vh, 900px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.partner-portal-modal-card {
+    width: min(720px, 96vw);
+}
+
+.partner-portal-modal-card--compact {
+    width: min(480px, 96vw);
+    max-height: min(85vh, 640px);
+}
+
+.partner-portal-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.partner-portal-modal-title {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #e2e8f0;
+}
+
+.partner-portal-modal-lead {
+    margin: 0 0 0.85rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    line-height: 1.45;
+}
+
+.partner-portal-modal-view {
+    overflow: auto;
+    flex: 1;
+    padding-right: 0.25rem;
+}
+
+.partner-portal-modal-section {
+    margin-bottom: 1rem;
+}
+
+.partner-portal-modal-section:last-child {
+    margin-bottom: 0;
+}
+
+.partner-portal-modal-section-title {
+    margin: 0 0 0.5rem;
+    font-size: 0.95rem;
+    color: #cbd5e1;
+}
+
+.partner-portal-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    overflow: auto;
+    flex: 1;
+    padding-bottom: 0.25rem;
+}
+
+.partner-portal-textarea {
+    min-height: 4rem;
+    resize: vertical;
+}
+
+.partner-portal-modal-msg {
+    margin: 0.5rem 0 0;
+    font-size: 0.88rem;
+    color: #fecaca;
+}
+
+.partner-portal-modal-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.partner-portal-contract-dl {
+    margin: 0 0 0.75rem;
+}

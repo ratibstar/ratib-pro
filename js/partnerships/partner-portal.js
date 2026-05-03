@@ -4,6 +4,7 @@
  */
 (function () {
     const DATE_LOCALE = 'en-US';
+    let lastAgency = null;
 
     function escapeHtml(s) {
         if (s == null) return '';
@@ -69,7 +70,7 @@
         if (!list) return;
 
         list.innerHTML = sent
-            .map((w) => {
+            .map((w, idx) => {
                 const depId = w.deployment_id != null ? w.deployment_id : '';
                 const workerName = displayValue(w.worker_name);
                 const st = String(w.status || 'processing');
@@ -90,8 +91,9 @@
                         <div><strong>${workerName}</strong></div>
                         <div>${escapeHtml(start)} · ${escapeHtml(job)} · ${escapeHtml(country)}</div>
                     </div>
-                    <div class="agency-contract-meta">
+                    <div class="agency-contract-meta agency-contract-meta--with-action">
                         <span class="agency-contract-salary">${escapeHtml(salary)}</span>
+                        <button type="button" class="muted-btn partner-portal-contract-view-btn" data-deployment-index="${idx}">View</button>
                     </div>
                 </article>`;
             })
@@ -164,6 +166,158 @@
         }
     }
 
+    function profileViewSectionsHtml(agency) {
+        const blocks = [
+            [
+                '🏢 Agency data',
+                [
+                    ['Agency name', displayValue(agency.name)],
+                    ['Agency code', displayValue(agency.agency_code)],
+                    ['Country', displayValue(agency.country)],
+                    ['City', displayValue(agency.city)],
+                    ['Address', displayValue(agency.address_en)],
+                    ['Contact person', displayValue(agency.contact_person)],
+                    ['Record created', formatCalendarDate(agency.created_at)],
+                ],
+            ],
+            [
+                '📞 Contact information',
+                [
+                    ['Email', displayValue(agency.email)],
+                    ['Phone 1', displayValue(agency.phone)],
+                    ['Phone 2', displayValue(agency.phone2)],
+                    ['Fax', displayValue(agency.fax)],
+                    ['Mobile', displayValue(agency.mobile)],
+                    ['Account number', displayValue(agency.account_number)],
+                ],
+            ],
+            [
+                '📋 Administrative & financial',
+                [
+                    ['License', displayValue(agency.license)],
+                    ['License owner', displayValue(agency.license_owner)],
+                    ['Sending bank', displayValue(agency.sending_bank)],
+                    ['Passport no.', displayValue(agency.passport_no)],
+                    [
+                        'Passport issue',
+                        `${displayValue(agency.passport_issue_place)} · ${formatCalendarDate(agency.passport_issue_date)}`,
+                    ],
+                    ['Notes', displayValue(agency.notes)],
+                ],
+            ],
+        ];
+        return blocks
+            .map(
+                ([title, rows]) =>
+                    `<section class="partner-portal-modal-section"><h4 class="partner-portal-modal-section-title">${escapeHtml(title)}</h4><dl class="agency-detail-dl">${rows
+                        .map(([dt, dd]) => `<div><dt>${escapeHtml(dt)}</dt><dd>${escapeHtml(dd)}</dd></div>`)
+                        .join('')}</dl></section>`
+            )
+            .join('');
+    }
+
+    function fillProfileEditForm(agency) {
+        const set = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val != null ? String(val) : '';
+        };
+        set('ppEditContactPerson', agency.contact_person);
+        set('ppEditEmail', agency.email);
+        set('ppEditPhone', agency.phone);
+        set('ppEditPhone2', agency.phone2);
+        set('ppEditFax', agency.fax);
+        set('ppEditMobile', agency.mobile);
+        set('ppEditAddressEn', agency.address_en);
+        set('ppEditAddressAr', agency.address_ar);
+    }
+
+    function openProfileModal(mode) {
+        const modal = document.getElementById('ppProfileModal');
+        const viewPanel = document.getElementById('ppProfileViewPanel');
+        const viewFooter = document.getElementById('ppProfileViewFooter');
+        const form = document.getElementById('ppProfileEditForm');
+        const lead = document.getElementById('ppProfileModalLead');
+        const title = document.getElementById('ppProfileModalTitle');
+        const msg = document.getElementById('ppProfileFormMsg');
+        if (!modal || !lastAgency) return;
+        if (msg) {
+            msg.hidden = true;
+            msg.textContent = '';
+        }
+        if (title) title.textContent = mode === 'edit' ? 'Edit contact details' : 'Your profile';
+        if (lead) {
+            lead.textContent =
+                mode === 'edit'
+                    ? 'Updates apply to your partner record. Your office manages agency name, license, contracts, and legal status.'
+                    : 'Information shared by your office. Contact them if something needs correcting beyond what you can edit.';
+        }
+        if (mode === 'edit') {
+            if (viewPanel) viewPanel.innerHTML = '';
+            if (viewPanel) viewPanel.hidden = true;
+            if (viewFooter) viewFooter.hidden = true;
+            if (form) {
+                fillProfileEditForm(lastAgency);
+                form.hidden = false;
+            }
+        } else {
+            if (viewPanel) {
+                viewPanel.hidden = false;
+                viewPanel.innerHTML = profileViewSectionsHtml(lastAgency);
+            }
+            if (viewFooter) viewFooter.hidden = false;
+            if (form) form.hidden = true;
+        }
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeProfileModal() {
+        const modal = document.getElementById('ppProfileModal');
+        const form = document.getElementById('ppProfileEditForm');
+        if (form) form.hidden = true;
+        if (modal) {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+        document.body.style.overflow = '';
+    }
+
+    function openContractModal(index) {
+        const modal = document.getElementById('ppContractModal');
+        const body = document.getElementById('ppContractModalBody');
+        if (!modal || !body || !lastAgency) return;
+        const sent = Array.isArray(lastAgency.sent_workers) ? lastAgency.sent_workers : [];
+        const w = sent[index];
+        if (!w) return;
+        const rows = [
+            ['Deployment #', displayValue(w.deployment_id)],
+            ['Worker', displayValue(w.worker_name)],
+            ['Passport', displayValue(w.passport_number)],
+            ['Worker ID', displayValue(w.worker_id)],
+            ['Status', displayValue(w.status)],
+            ['Contract start', formatCalendarDate(w.contract_start)],
+            ['Contract end', formatCalendarDate(w.contract_end)],
+            ['Job title', displayValue(w.job_title)],
+            ['Country', displayValue(w.country)],
+            ['Salary (SAR)', w.salary != null && String(w.salary).trim() !== '' ? String(w.salary) : '—'],
+            ['Partner agency', displayValue(w.partner_agency_name)],
+        ];
+        body.innerHTML = rows.map(([dt, dd]) => `<div><dt>${escapeHtml(dt)}</dt><dd>${escapeHtml(dd)}</dd></div>`).join('');
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeContractModal() {
+        const modal = document.getElementById('ppContractModal');
+        if (modal) {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+        document.body.style.overflow = '';
+    }
+
     async function load() {
         const errEl = document.getElementById('ppError');
         try {
@@ -185,6 +339,7 @@
 
             const data = json.data || {};
             const agency = data.agency || {};
+            lastAgency = agency;
             const cvs = Array.isArray(data.cvs) ? data.cvs : [];
 
             const title = document.getElementById('ppAgencyName');
@@ -249,7 +404,95 @@
         }
     }
 
+    function bindProfileAndContractUi() {
+        const viewBtns = ['ppBtnViewProfile', 'ppBtnViewContact', 'ppBtnViewAdmin'];
+        viewBtns.forEach((id) => {
+            const b = document.getElementById(id);
+            if (b) b.addEventListener('click', () => openProfileModal('view'));
+        });
+        const editBtn = document.getElementById('ppBtnEditContact');
+        if (editBtn) editBtn.addEventListener('click', () => openProfileModal('edit'));
+
+        ['ppProfileModalClose', 'ppProfileCloseBtn'].forEach((id) => {
+            const b = document.getElementById(id);
+            if (b) b.addEventListener('click', () => closeProfileModal());
+        });
+        const cancelBtn = document.getElementById('ppProfileCancelBtn');
+        if (cancelBtn) cancelBtn.addEventListener('click', () => closeProfileModal());
+
+        const profileModal = document.getElementById('ppProfileModal');
+        if (profileModal) {
+            profileModal.addEventListener('click', (e) => {
+                if (e.target === profileModal) closeProfileModal();
+            });
+        }
+
+        const form = document.getElementById('ppProfileEditForm');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const msg = document.getElementById('ppProfileFormMsg');
+                const fd = new FormData(form);
+                const payload = {};
+                ['contact_person', 'email', 'phone', 'phone2', 'fax', 'mobile', 'address_en', 'address_ar'].forEach((k) => {
+                    if (fd.has(k)) payload[k] = String(fd.get(k) || '').trim();
+                });
+                try {
+                    const res = await fetch('../api/partnerships/partner-portal-profile-update.php', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    const json = await res.json().catch(() => ({}));
+                    if (res.ok && json.success) {
+                        closeProfileModal();
+                        await load();
+                        return;
+                    }
+                    if (msg) {
+                        msg.textContent = json.message || 'Could not save.';
+                        msg.hidden = false;
+                    }
+                } catch (err) {
+                    if (msg) {
+                        msg.textContent = err && err.message ? err.message : 'Network error.';
+                        msg.hidden = false;
+                    }
+                }
+            });
+        }
+
+        const contracts = document.getElementById('ppContracts');
+        if (contracts) {
+            contracts.addEventListener('click', (e) => {
+                const btn = e.target.closest('.partner-portal-contract-view-btn');
+                if (!btn) return;
+                const ix = parseInt(String(btn.getAttribute('data-deployment-index') || ''), 10);
+                if (Number.isFinite(ix)) openContractModal(ix);
+            });
+        }
+
+        ['ppContractModalClose', 'ppContractCloseBtn'].forEach((id) => {
+            const b = document.getElementById(id);
+            if (b) b.addEventListener('click', () => closeContractModal());
+        });
+        const contractModal = document.getElementById('ppContractModal');
+        if (contractModal) {
+            contractModal.addEventListener('click', (e) => {
+                if (e.target === contractModal) closeContractModal();
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            if (profileModal && profileModal.classList.contains('open')) closeProfileModal();
+            if (contractModal && contractModal.classList.contains('open')) closeContractModal();
+        });
+    }
+
     function init() {
+        bindProfileAndContractUi();
         load();
     }
 
