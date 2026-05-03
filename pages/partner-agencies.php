@@ -53,7 +53,7 @@ include '../includes/header.php';
 
     <div id="partnerAgenciesSendBanner" class="glass-card partner-agencies-send-banner" hidden>
         <p class="partner-agencies-send-banner-title"><strong id="partnerAgenciesSendBannerText"></strong></p>
-        <p class="partner-agencies-send-banner-hint">Pick an agency in the table below, then click <strong>Send workers here</strong> to share their uploaded documents on the partner portal.</p>
+        <p class="partner-agencies-send-banner-hint">Pick an agency, then <strong>Send workers here</strong> to open <strong>Documents &amp; CVs</strong> for partner selection. Use <strong>Placements</strong> on each row only for deployment status — not for CV selection.</p>
     </div>
 
     <div class="glass-card table-shell">

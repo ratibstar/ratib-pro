@@ -212,7 +212,10 @@
                 <td>
                     <div class="workers-cell">
                         <div class="workers-preview" title="${(r.workers_sent_details || '').replace(/"/g, '&quot;')}">${r.workers_sent_details || '-'}</div>
-                        <button type="button" class="workers-sent-chip workers-link-btn" data-action="view-workers" data-partner-agency-id="${String(r.id ?? '').replace(/"/g, '&quot;')}" data-name="${(r.name || '').replace(/"/g, '&quot;')}">${Number(r.workers_sent || 0)} View</button>
+                        <div class="workers-sent-actions">
+                            <button type="button" class="workers-sent-chip workers-link-btn" data-action="view-workers" data-partner-agency-id="${String(r.id ?? '').replace(/"/g, '&quot;')}" data-name="${(r.name || '').replace(/"/g, '&quot;')}" title="Deployment status, contract dates, and placement workflow">${Number(r.workers_sent || 0)} Placements</button>
+                            <a class="muted-btn agency-partner-docs-btn" href="${withContext(`partner-documents-staff.php?partner_agency_id=${encodeURIComponent(String(r.id ?? ''))}`)}" title="Same table as the partner portal — CVs and shared files for selection">CVs &amp; documents</a>
+                        </div>
                     </div>
                 </td>
                 <td>${statusPill(r.status || 'inactive')}</td>

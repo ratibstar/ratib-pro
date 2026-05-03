@@ -471,6 +471,8 @@ class PartnerAgencyWorkerDocSharesController
 
     /**
      * Create portal shares for every document type that has a file on the worker profile.
+     * If a worker has no uploaded files in those slots, creates one passport share so the partner
+     * Documents & CVs table and View CV still list the worker for selection.
      *
      * @param array<int> $workerIds
      *
@@ -505,6 +507,7 @@ class PartnerAgencyWorkerDocSharesController
 
                 continue;
             }
+            $addedThisWorker = 0;
             foreach (self::allowedDocumentTypes() as $dt) {
                 $col = $dt . '_file';
                 $hasFile = isset($worker[$col]) && trim((string) $worker[$col]) !== '';
@@ -513,6 +516,24 @@ class PartnerAgencyWorkerDocSharesController
                 }
                 try {
                     $this->addShare($partnerAgencyId, $wid, $dt);
+                    $added++;
+                    $addedThisWorker++;
+                } catch (InvalidArgumentException $e) {
+                    $msg = $e->getMessage();
+                    if (stripos($msg, 'already') !== false || stripos($msg, 'Duplicate') !== false) {
+                        $skipped++;
+                    } else {
+                        $failed++;
+                    }
+                } catch (Throwable $e) {
+                    $failed++;
+                }
+            }
+            // Partner selection: ensure at least one portal row per worker so Documents & CVs / View CV work
+            // even when no document files are uploaded yet (file column empty).
+            if ($addedThisWorker === 0) {
+                try {
+                    $this->addShare($partnerAgencyId, $wid, 'passport');
                     $added++;
                 } catch (InvalidArgumentException $e) {
                     $msg = $e->getMessage();
