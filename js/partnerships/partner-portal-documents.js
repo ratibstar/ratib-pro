@@ -279,6 +279,66 @@
         return s ? `&${s}` : '';
     }
 
+    function staffApiUrlWithContext(basePath) {
+        const suf = staffContextSuffix();
+        if (!suf) return basePath;
+        return basePath + (basePath.indexOf('?') === -1 ? '?' : '&') + suf.slice(1);
+    }
+
+    function buildPortalStatusSelectOptions(displayStatusField) {
+        const selVal =
+            displayStatusField != null && String(displayStatusField).trim() !== ''
+                ? normalizePortalStatusSlug(displayStatusField, PORTAL_STATUS_CARD_ORDER[0])
+                : '';
+        const autoSel = selVal === '' ? ' selected' : '';
+        let html = `<option value=""${autoSel}>${escapeHtml('Auto (file + assignment)')}</option>`;
+        PORTAL_STATUS_CARD_ORDER.forEach((slug) => {
+            const lab = formatPortalStatusLabel(slug);
+            const selected = slug === selVal ? ' selected' : '';
+            html += `<option value="${escapeHtml(slug)}"${selected}>${escapeHtml(lab)}</option>`;
+        });
+        return html;
+    }
+
+    async function patchDocumentDisplayStatus(row, displayStatusForApi) {
+        if (!staffMode || !staffCfg || !row || !row._kind) return false;
+        const pid = parseInt(String(staffCfg.partner_agency_id || ''), 10);
+        if (!Number.isFinite(pid) || pid <= 0) return false;
+        let base;
+        const body = {
+            partner_agency_id: pid,
+            display_status:
+                displayStatusForApi === '' || displayStatusForApi === undefined || displayStatusForApi === null
+                    ? null
+                    : displayStatusForApi,
+        };
+        if (row._kind === 'worker_share') {
+            const sid = row._shareId != null ? row._shareId : row.id;
+            if (!Number.isFinite(Number(sid)) || Number(sid) <= 0) return false;
+            body.id = Number(sid);
+            base = '../api/partnerships/partner-agency-worker-shares.php';
+        } else if (row._kind === 'agency_cv') {
+            if (!Number.isFinite(Number(row.id)) || Number(row.id) <= 0) return false;
+            body.id = Number(row.id);
+            base = '../api/partnerships/partner-agency-cvs.php';
+        } else {
+            return false;
+        }
+        const url = staffApiUrlWithContext(base);
+        try {
+            const res = await fetch(url, {
+                method: 'PATCH',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            });
+            const json = await res.json().catch(() => ({}));
+            return !!(res.ok && json.success);
+        } catch (_e) {
+            return false;
+        }
+    }
+
     function updateBulkDeleteUi() {
         const btn = $('ppDocsDeleteSelected');
         const cnt = $('ppDocsSelectedCount');
@@ -376,7 +436,15 @@
             'Source',
             isWorker ? 'Worker document (shared by your office)' : 'Agency file (uploaded for you)',
         ]);
-        rows.push(['Status', formatPortalStatusLabel(r.portal_status)]);
+        (function () {
+            const st = formatPortalStatusLabel(r.portal_status);
+            if (staffMode) {
+                const manual = r.display_status != null && String(r.display_status).trim() !== '';
+                rows.push(['Status', manual ? `${st} (manual)` : `${st} (automatic)`]);
+            } else {
+                rows.push(['Status', st]);
+            }
+        })();
         rows.push(['Title', r.title && String(r.title).trim() !== '' ? String(r.title) : '—']);
         if (isWorker) {
             rows.push(['Worker', r._worker_name && String(r._worker_name).trim() !== '' ? r._worker_name : '—']);
@@ -415,18 +483,18 @@
                     : '';
             const fullPageLink =
                 staffMode && isWorker && r._worker_id
-                    ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerProfileHref(r._worker_id))}" target="_blank" rel="noopener">Open in Workers</a>`
+                    ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerProfileHref(r._worker_id))}">Open in Workers</a>`
                     : '';
             const editWorkerLink =
                 staffMode && isWorker && r._worker_id
-                    ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerEditHref(r._worker_id))}" target="_blank" rel="noopener">Edit</a>`
+                    ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerEditHref(r._worker_id))}">Edit</a>`
                     : '';
             const modalDeleteBtn = staffMode
                 ? `<button type="button" class="muted-btn partner-portal-docs-action pp-docs-delete-one" data-pp-doc-delete="${docKeyEsc}">Delete</button>`
                 : '';
             if (canDl) {
                 const href = escapeHtml(downloadHref(r));
-                links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}${editWorkerLink}${modalDeleteBtn}</span><a class="neon-btn partner-portal-docs-action" href="${href}" target="_blank" rel="noopener">Open file</a><a class="muted-btn partner-portal-docs-action" href="${href}" download>Download</a>`;
+                links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}${editWorkerLink}${modalDeleteBtn}</span><a class="neon-btn partner-portal-docs-action" href="${href}">Open file</a><a class="muted-btn partner-portal-docs-action" href="${href}" download>Download</a>`;
             } else {
                 links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}${editWorkerLink}${modalDeleteBtn}</span>`;
             }
@@ -570,20 +638,40 @@
                 const dl = escapeHtml(downloadHref(r));
                 const isWorkerRow = r._kind === 'worker_share';
                 const mimeRaw = String(r.mime_type || '').trim();
-                const mimeShort = escapeHtml(formatMimeTypeDisplay(mimeRaw));
-                const mimeTitle = escapeHtml(mimeRaw);
+                const docTypeHint = String(r._document_type || '').trim().toLowerCase() || 'document';
+                const noFileHint =
+                    'Waiting: no file for this slot. Upload the document in Workers, or ensure the file exists under uploads/workers/' +
+                    String(r._worker_id || '') +
+                    '/documents/' +
+                    docTypeHint +
+                    '/';
+                let mimeShort = escapeHtml(formatMimeTypeDisplay(mimeRaw));
+                let mimeTitle = escapeHtml(mimeRaw);
+                if (isWorkerRow && !r._hasFile) {
+                    mimeShort = `<span class="pp-docs-file-placeholder" title="${escapeHtml(
+                        'Shown after a file is uploaded for this document slot.'
+                    )}">—</span>`;
+                    mimeTitle = escapeHtml('No file');
+                }
                 const title = escapeHtml(r.title || '—');
                 let fnCell = '—';
                 if (isWorkerRow) {
                     if (r._hasFile && r.original_filename && String(r.original_filename).trim() !== '') {
                         fnCell = escapeHtml(String(r.original_filename).trim());
+                    } else {
+                        fnCell = `<span class="pp-docs-file-placeholder" title="${escapeHtml(noFileHint)}">No file on record</span>`;
                     }
                 } else if (r.original_filename && String(r.original_filename).trim() !== '') {
                     fnCell = escapeHtml(String(r.original_filename).trim());
                 } else {
                     fnCell = '—';
                 }
-                const sz = formatBytes(r.file_size);
+                const sz =
+                    isWorkerRow && !r._hasFile
+                        ? `<span class="pp-docs-file-placeholder" title="${escapeHtml(
+                              'File size appears after a document file is stored on the server.'
+                          )}">—</span>`
+                        : escapeHtml(formatBytes(r.file_size));
                 const when = escapeHtml(formatDate(r.created_at));
                 const srcTag =
                     r._kind === 'worker_share'
@@ -594,7 +682,14 @@
                     r._kind === 'worker_share' ? (r._hasFile ? 'processing' : 'waiting') : 'ready'
                 );
                 const statusLabel = escapeHtml(formatPortalStatusLabel(statusSlug));
-                const statusTd = `<td class="col-status"><span class="pp-doc-status pp-doc-status--${escapeHtml(statusSlug)}">${statusLabel}</span></td>`;
+                const statusInner = staffMode
+                    ? `<div class="pp-doc-status-staff-wrap"><span class="pp-doc-status pp-doc-status--${escapeHtml(
+                          statusSlug
+                      )}" title="Shown to partner">${statusLabel}</span><select class="partner-portal-input pp-docs-status-select" data-pp-doc-key="${dkey}" aria-label="Portal status for partner">${buildPortalStatusSelectOptions(
+                          r.display_status
+                      )}</select></div>`
+                    : `<span class="pp-doc-status pp-doc-status--${escapeHtml(statusSlug)}">${statusLabel}</span>`;
+                const statusTd = `<td class="col-status">${statusInner}</td>`;
                 const noFile = r._kind === 'worker_share' && !r._hasFile;
                 const cvBtn =
                     r._kind === 'worker_share' && r._worker_id
@@ -603,14 +698,14 @@
                 const viewBtn = `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-doc-key="${dkey}" data-pp-doc-action="view">View</button>`;
                 const editBtn =
                     staffMode && r._kind === 'worker_share' && r._worker_id
-                        ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerEditHref(r._worker_id))}" target="_blank" rel="noopener">Edit</a>`
+                        ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerEditHref(r._worker_id))}">Edit</a>`
                         : '';
                 const deleteBtn = staffMode
                     ? `<button type="button" class="muted-btn partner-portal-docs-action pp-docs-delete-one" data-pp-doc-delete="${dkey}">Delete</button>`
                     : '';
                 const fileActions = noFile
                     ? ''
-                    : `<a class="muted-btn partner-portal-docs-action" href="${dl}" target="_blank" rel="noopener">Open</a><a class="neon-btn partner-portal-docs-action" href="${dl}" download>Download</a>`;
+                    : `<a class="muted-btn partner-portal-docs-action" href="${dl}">Open</a><a class="neon-btn partner-portal-docs-action" href="${dl}" download>Download</a>`;
                 const actions = `<span class="partner-portal-docs-actions-btns">${cvBtn}${viewBtn}${editBtn}${deleteBtn}${fileActions}</span>`;
 
                 return `<tr>
@@ -664,6 +759,10 @@
                 _kind: 'agency_cv',
                 source: 'Agency file',
                 portal_status: normalizePortalStatusSlug(row.portal_status, 'ready'),
+                display_status:
+                    row.display_status != null && String(row.display_status).trim() !== ''
+                        ? normalizePortalStatusSlug(row.display_status, 'ready')
+                        : null,
             })
         );
 
@@ -671,6 +770,7 @@
             const shareId = parseInt(String(s.id || 0), 10) || 0;
             const workerId = parseInt(String(s.worker_id || 0), 10) || 0;
             const wname = String(s.worker_name || '').trim() || 'Worker';
+            const dtype = String(s.document_type || '').trim().toLowerCase();
             const dlabel = String(s.document_label || s.document_type || 'Document').trim() || 'Document';
             const ppn = String(s.passport_number || '').trim();
             const title = `${dlabel} — ${wname}`;
@@ -691,9 +791,14 @@
                 file_size: fileSizeNum,
                 created_at: s.created_at != null ? s.created_at : '',
                 portal_status: normalizePortalStatusSlug(s.portal_status, hasFile ? 'processing' : 'waiting'),
+                display_status:
+                    s.display_status != null && String(s.display_status).trim() !== ''
+                        ? normalizePortalStatusSlug(s.display_status, hasFile ? 'processing' : 'waiting')
+                        : null,
                 _hasFile: hasFile,
                 _worker_name: wname,
                 _document_label: dlabel,
+                _document_type: dtype,
                 _passport: ppn,
             };
         });
@@ -843,9 +948,31 @@
         const tbody = $('ppDocsBody');
         if (tbody) {
             if (staffMode) {
-                tbody.addEventListener('change', (e) => {
+                tbody.addEventListener('change', async (e) => {
                     const t = e.target;
-                    if (!t || !t.classList || !t.classList.contains('pp-docs-row-check')) return;
+                    if (!t || !t.classList) return;
+                    if (t.classList.contains('pp-docs-status-select')) {
+                        const key = t.getAttribute('data-pp-doc-key');
+                        const row = findRowByKey(key);
+                        if (!row) return;
+                        const prev =
+                            row.display_status != null && String(row.display_status).trim() !== ''
+                                ? normalizePortalStatusSlug(row.display_status, PORTAL_STATUS_CARD_ORDER[0])
+                                : '';
+                        if (String(t.value || '') === prev) return;
+                        t.disabled = true;
+                        const ok = await patchDocumentDisplayStatus(row, t.value);
+                        t.disabled = false;
+                        if (ok) {
+                            setError('');
+                            await load();
+                        } else {
+                            setError('Could not update status. Check permissions and try again.');
+                            t.value = prev;
+                        }
+                        return;
+                    }
+                    if (!t.classList.contains('pp-docs-row-check')) return;
                     const key = t.getAttribute('data-pp-doc-key');
                     if (!key) return;
                     if (t.checked) {

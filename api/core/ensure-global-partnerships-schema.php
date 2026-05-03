@@ -112,6 +112,17 @@ function ratibEnsurePartnerAgencyWorkerDocumentSharesSchema(PDO $conn): void
             ADD CONSTRAINT `fk_pawd_worker` FOREIGN KEY (`worker_id`) REFERENCES `workers` (`id`) ON DELETE CASCADE"
     );
 
+    try {
+        $conn->exec(
+            'ALTER TABLE `partner_agency_worker_document_shares` ADD COLUMN `display_status` VARCHAR(32) DEFAULT NULL'
+        );
+    } catch (Throwable $e) {
+        $msg = $e->getMessage();
+        if (stripos($msg, 'Duplicate column') === false) {
+            error_log('ratibEnsurePartnerAgencyWorkerDocumentSharesSchema display_status: ' . $msg);
+        }
+    }
+
     $shareDone = true;
 }
 
@@ -220,6 +231,11 @@ function ratibEnsurePartnerPortalPartnershipsSchema(PDO $conn): void
     } catch (Throwable $e) {
         error_log('ratibEnsurePartnerPortalPartnershipsSchema partner_agency_cvs table: ' . $e->getMessage());
     }
+
+    $addColumn(
+        $conn,
+        'ALTER TABLE `partner_agency_cvs` ADD COLUMN `display_status` VARCHAR(32) DEFAULT NULL AFTER `sort_order`'
+    );
 
     $portalDone = true;
 }

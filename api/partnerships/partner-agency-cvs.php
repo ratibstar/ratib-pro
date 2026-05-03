@@ -69,6 +69,26 @@ try {
         partnerAgencyCvsJson(['success' => true, 'message' => 'Document removed']);
     }
 
+    if ($method === 'PATCH') {
+        enforceApiPermission('partnerships', 'update');
+        $raw = (string) file_get_contents('php://input');
+        $json = $raw !== '' ? json_decode($raw, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+        $cvId = (int) ($json['id'] ?? 0);
+        $agencyId = (int) ($json['partner_agency_id'] ?? 0);
+        if ($cvId <= 0 || $agencyId <= 0) {
+            throw new InvalidArgumentException('id and partner_agency_id are required');
+        }
+        $displayStatus = array_key_exists('display_status', $json) ? $json['display_status'] : false;
+        if ($displayStatus === false) {
+            throw new InvalidArgumentException('display_status is required (use null or empty for automatic)');
+        }
+        $cvs->updateDisplayStatus($cvId, $agencyId, $displayStatus);
+        partnerAgencyCvsJson(['success' => true, 'message' => 'Status updated']);
+    }
+
     partnerAgencyCvsJson(['success' => false, 'message' => 'Method not allowed'], 405);
 } catch (Throwable $e) {
     partnerAgencyCvsJson(['success' => false, 'message' => $e->getMessage()], 500);

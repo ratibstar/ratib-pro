@@ -57,6 +57,53 @@ class PartnerAgencyWorkerDocSharesController
         }
     }
 
+    /** @return list<string> */
+    public static function allowedPortalDisplaySlugs(): array
+    {
+        return ['waiting', 'processing', 'ready', 'issues', 'returned', 'transferred'];
+    }
+
+    /**
+     * Staff override for portal status (null = automatic from file + deployment).
+     *
+     * @param mixed $raw
+     *
+     * @throws InvalidArgumentException when a non-empty value is not allowed
+     */
+    public static function parsePortalDisplayStatusForSave($raw): ?string
+    {
+        if ($raw === null) {
+            return null;
+        }
+        $s = strtolower(trim((string) $raw));
+        if ($s === '' || $s === 'auto') {
+            return null;
+        }
+        if ($s === 'issue') {
+            $s = 'issues';
+        }
+        if ($s === 'deployed') {
+            $s = 'ready';
+        }
+        if (!in_array($s, self::allowedPortalDisplaySlugs(), true)) {
+            throw new InvalidArgumentException('Invalid display_status');
+        }
+
+        return $s;
+    }
+
+    /**
+     * Read stored override; invalid legacy values behave as automatic.
+     */
+    public static function portalDisplayOverrideFromDb($raw): ?string
+    {
+        try {
+            return self::parsePortalDisplayStatusForSave($raw);
+        } catch (InvalidArgumentException $e) {
+            return null;
+        }
+    }
+
     public static function documentTypeLabel(string $t): string
     {
         $map = [
@@ -246,7 +293,7 @@ class PartnerAgencyWorkerDocSharesController
         if ($partnerAgencyId <= 0) {
             return [];
         }
-        $sql = 'SELECT s.id, s.partner_agency_id, s.worker_id, s.document_type, s.created_at,
+        $sql = 'SELECT s.id, s.partner_agency_id, s.worker_id, s.document_type, s.created_at, s.display_status,
                 (SELECT wd.status FROM worker_deployments wd
                  WHERE wd.worker_id = s.worker_id AND wd.partner_agency_id = s.partner_agency_id
                  LIMIT 1) AS deployment_status
@@ -268,7 +315,10 @@ class PartnerAgencyWorkerDocSharesController
             $hasFile = $meta !== null;
             $depRaw = isset($s['deployment_status']) ? trim((string) $s['deployment_status']) : '';
             $depStatus = $depRaw !== '' ? $depRaw : null;
-            $portalStatus = self::computePortalDocumentStatus($hasFile, $depStatus);
+            $override = self::portalDisplayOverrideFromDb($s['display_status'] ?? null);
+            $portalStatus = $override !== null
+                ? $override
+                : self::computePortalDocumentStatus($hasFile, $depStatus);
             $name = trim((string) ($worker['worker_name'] ?? ''));
             if ($name === '') {
                 $name = 'Worker #' . $wid;
@@ -286,6 +336,7 @@ class PartnerAgencyWorkerDocSharesController
                 'file_size' => $meta !== null ? $meta['bytes'] : null,
                 'mime_type' => $meta !== null ? $meta['mime'] : null,
                 'deployment_status' => $depStatus,
+                'display_status' => $override,
                 'portal_status' => $portalStatus,
                 'created_at' => $s['created_at'] ?? null,
             ];
@@ -346,6 +397,25 @@ class PartnerAgencyWorkerDocSharesController
         if ((int) $stmt->rowCount() === 0) {
             throw new InvalidArgumentException('Share not found');
         }
+    }
+
+    public function updateShareDisplayStatus(int $shareId, int $partnerAgencyId, $displayStatus): void
+    {
+        if ($shareId <= 0 || $partnerAgencyId <= 0) {
+            throw new InvalidArgumentException('Invalid share');
+        }
+        $toStore = self::parsePortalDisplayStatusForSave($displayStatus);
+        $chk = $this->conn->prepare(
+            'SELECT id FROM partner_agency_worker_document_shares WHERE id = ? AND partner_agency_id = ? LIMIT 1'
+        );
+        $chk->execute([$shareId, $partnerAgencyId]);
+        if (!$chk->fetchColumn()) {
+            throw new InvalidArgumentException('Share not found');
+        }
+        $stmt = $this->conn->prepare(
+            'UPDATE partner_agency_worker_document_shares SET display_status = ? WHERE id = ? AND partner_agency_id = ?'
+        );
+        $stmt->execute([$toStore, $shareId, $partnerAgencyId]);
     }
 
     /**

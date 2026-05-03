@@ -783,6 +783,30 @@
     white-space: nowrap;
 }
 
+.pp-doc-status-staff-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+    min-width: 7.5rem;
+    max-width: 11rem;
+}
+
+.pp-doc-status-staff-wrap .pp-docs-status-select {
+    font-size: 0.72rem;
+    padding: 0.25rem 0.4rem;
+    margin: 0;
+    width: 100%;
+}
+
+.partner-portal-docs-table .pp-docs-file-placeholder {
+    color: #94a3b8;
+    font-size: 0.82rem;
+    font-style: italic;
+    cursor: help;
+    border-bottom: 1px dotted rgba(148, 163, 184, 0.45);
+}
+
 .partner-portal-docs-table .pp-doc-status {
     display: inline-block;
     padding: 0.2rem 0.55rem;

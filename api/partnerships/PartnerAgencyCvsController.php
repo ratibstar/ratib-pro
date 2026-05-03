@@ -2,6 +2,8 @@
 /**
  * CV / document files attached to a partner agency (shown on partner portal).
  */
+require_once __DIR__ . '/PartnerAgencyWorkerDocSharesController.php';
+
 class PartnerAgencyCvsController
 {
     /** @var PDO */
@@ -39,13 +41,15 @@ class PartnerAgencyCvsController
             return [];
         }
         $stmt = $this->conn->prepare(
-            'SELECT id, partner_agency_id, title, original_filename, mime_type, file_size, sort_order, created_at
+            'SELECT id, partner_agency_id, title, original_filename, mime_type, file_size, sort_order, created_at, display_status
              FROM partner_agency_cvs WHERE partner_agency_id = ? ORDER BY sort_order ASC, id DESC'
         );
         $stmt->execute([$agencyId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         foreach ($rows as &$row) {
-            $row['portal_status'] = 'ready';
+            $ov = PartnerAgencyWorkerDocSharesController::portalDisplayOverrideFromDb($row['display_status'] ?? null);
+            $row['display_status'] = $ov;
+            $row['portal_status'] = $ov !== null ? $ov : 'ready';
         }
         unset($row);
 
@@ -130,7 +134,7 @@ class PartnerAgencyCvsController
     public function findById(int $id): array
     {
         $stmt = $this->conn->prepare(
-            'SELECT id, partner_agency_id, title, stored_filename, original_filename, mime_type, file_size, sort_order, created_at
+            'SELECT id, partner_agency_id, title, stored_filename, original_filename, mime_type, file_size, sort_order, created_at, display_status
              FROM partner_agency_cvs WHERE id = ? LIMIT 1'
         );
         $stmt->execute([$id]);
@@ -138,8 +142,30 @@ class PartnerAgencyCvsController
         if (!$row) {
             throw new RuntimeException('Document not found');
         }
+        $ov = PartnerAgencyWorkerDocSharesController::portalDisplayOverrideFromDb($row['display_status'] ?? null);
+        $row['display_status'] = $ov;
+        $row['portal_status'] = $ov !== null ? $ov : 'ready';
 
         return $row;
+    }
+
+    public function updateDisplayStatus(int $cvId, int $agencyId, $displayStatus): void
+    {
+        if ($cvId <= 0 || $agencyId <= 0) {
+            throw new InvalidArgumentException('Invalid document');
+        }
+        $toStore = PartnerAgencyWorkerDocSharesController::parsePortalDisplayStatusForSave($displayStatus);
+        $chk = $this->conn->prepare(
+            'SELECT id FROM partner_agency_cvs WHERE id = ? AND partner_agency_id = ? LIMIT 1'
+        );
+        $chk->execute([$cvId, $agencyId]);
+        if (!$chk->fetchColumn()) {
+            throw new InvalidArgumentException('Document not found');
+        }
+        $stmt = $this->conn->prepare(
+            'UPDATE partner_agency_cvs SET display_status = ? WHERE id = ? AND partner_agency_id = ?'
+        );
+        $stmt->execute([$toStore, $cvId, $agencyId]);
     }
 
     public function delete(int $cvId, int $expectedAgencyId): void

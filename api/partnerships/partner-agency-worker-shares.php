@@ -100,6 +100,26 @@ try {
         workerSharesJson(['success' => true, 'message' => 'Share removed']);
     }
 
+    if ($method === 'PATCH') {
+        enforceApiPermission('partnerships', 'update');
+        $raw = (string) file_get_contents('php://input');
+        $json = $raw !== '' ? json_decode($raw, true) : [];
+        if (!is_array($json)) {
+            $json = [];
+        }
+        $shareId = (int) ($json['id'] ?? 0);
+        $partnerAgencyId = (int) ($json['partner_agency_id'] ?? 0);
+        if ($shareId <= 0 || $partnerAgencyId <= 0) {
+            throw new InvalidArgumentException('id and partner_agency_id are required');
+        }
+        $displayStatus = array_key_exists('display_status', $json) ? $json['display_status'] : false;
+        if ($displayStatus === false) {
+            throw new InvalidArgumentException('display_status is required (use null or empty for automatic)');
+        }
+        $ctl->updateShareDisplayStatus($shareId, $partnerAgencyId, $displayStatus);
+        workerSharesJson(['success' => true, 'message' => 'Status updated']);
+    }
+
     workerSharesJson(['success' => false, 'message' => 'Method not allowed'], 405);
 } catch (Throwable $e) {
     workerSharesJson(['success' => false, 'message' => $e->getMessage()], 500);
