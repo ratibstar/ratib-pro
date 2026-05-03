@@ -2,6 +2,7 @@
 /**
  * CV / document files attached to a partner agency (shown on partner portal).
  */
+require_once __DIR__ . '/../../includes/ratib_uploads_base.php';
 require_once __DIR__ . '/PartnerAgencyWorkerDocSharesController.php';
 
 class PartnerAgencyCvsController
@@ -27,50 +28,7 @@ class PartnerAgencyCvsController
 
     private static function resolveUploadsBaseDir(): string
     {
-        if (defined('RATIB_UPLOADS_BASE')) {
-            $v = constant('RATIB_UPLOADS_BASE');
-            if (is_string($v) && trim($v) !== '') {
-                return rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, trim($v)), DIRECTORY_SEPARATOR);
-            }
-        }
-        $env = getenv('RATIB_UPLOADS_BASE');
-        if ($env !== false && trim((string) $env) !== '') {
-            return rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, trim((string) $env)), DIRECTORY_SEPARATOR);
-        }
-
-        $projectRoot = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..');
-        if ($projectRoot === false) {
-            $projectRoot = dirname(__DIR__, 2);
-        }
-        $default = $projectRoot . DIRECTORY_SEPARATOR . 'uploads';
-
-        if (!is_dir($default)) {
-            return $default;
-        }
-        if (@is_writable($default)) {
-            $rp = realpath($default);
-
-            return $rp !== false ? $rp : $default;
-        }
-
-        $parent = dirname($projectRoot);
-        if ($parent !== '' && $parent !== '.' && $parent !== $projectRoot) {
-            $fallback = $parent . DIRECTORY_SEPARATOR . 'ratib_uploads';
-            if (!is_dir($fallback)) {
-                @mkdir($fallback, 0775, true);
-            }
-            if (is_dir($fallback) && @is_writable($fallback)) {
-                $rp = realpath($fallback);
-                $use = $rp !== false ? $rp : $fallback;
-                error_log('PartnerAgencyCvsController: project uploads/ not writable; using ' . $use);
-
-                return $use;
-            }
-        }
-
-        $rp = realpath($default);
-
-        return $rp !== false ? $rp : $default;
+        return ratib_uploads_base_dir();
     }
 
     public static function agencyCvDir(int $agencyId): string

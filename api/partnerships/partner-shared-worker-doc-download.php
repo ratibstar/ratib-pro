@@ -10,6 +10,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../../includes/config.php';
+require_once __DIR__ . '/../../includes/ratib_uploads_base.php';
 require_once __DIR__ . '/../core/api-permission-helper.php';
 require_once __DIR__ . '/../core/ensure-global-partnerships-schema.php';
 require_once __DIR__ . '/PartnerAgencyWorkerDocSharesController.php';
@@ -66,7 +67,18 @@ try {
     $wid = (int) ($resolved['worker_id'] ?? 0);
     $dt = (string) ($resolved['document_type'] ?? '');
     $fn = (string) ($resolved['filename'] ?? '');
-    $baseDir = realpath(__DIR__ . '/../../uploads/workers/' . $wid . '/documents/' . $dt);
+    $baseRoot = ratib_uploads_base_dir();
+    $baseDir = realpath(
+        $baseRoot
+            . DIRECTORY_SEPARATOR
+            . 'workers'
+            . DIRECTORY_SEPARATOR
+            . $wid
+            . DIRECTORY_SEPARATOR
+            . 'documents'
+            . DIRECTORY_SEPARATOR
+            . $dt
+    );
     if ($baseDir === false) {
         http_response_code(404);
         header('Content-Type: text/plain; charset=UTF-8');

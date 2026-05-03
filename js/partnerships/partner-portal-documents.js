@@ -1133,7 +1133,13 @@
                     });
                     const json = await res.json().catch(() => ({}));
                     if (!res.ok || !json.success) {
-                        setError(json.message || 'Upload failed.');
+                        const msg = [json.message, json.error]
+                            .map((x) => (x != null ? String(x).trim() : ''))
+                            .find((s) => s !== '');
+                        setError(
+                            msg ||
+                                (res.status ? `Upload failed (HTTP ${res.status}).` : 'Upload failed.')
+                        );
                         return;
                     }
                     setError('');

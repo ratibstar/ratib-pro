@@ -2,6 +2,8 @@
 /**
  * Staff-selected worker documents visible on a partner agency portal (per worker + document type).
  */
+require_once __DIR__ . '/../../includes/ratib_uploads_base.php';
+
 class PartnerAgencyWorkerDocSharesController
 {
     /** @var PDO */
@@ -290,7 +292,18 @@ class PartnerAgencyWorkerDocSharesController
         if ($fn === '') {
             return null;
         }
-        $baseDir = realpath(__DIR__ . '/../../uploads/workers/' . $workerId . '/documents/' . $documentType);
+        $baseRoot = ratib_uploads_base_dir();
+        $baseDir = realpath(
+            $baseRoot
+                . DIRECTORY_SEPARATOR
+                . 'workers'
+                . DIRECTORY_SEPARATOR
+                . $workerId
+                . DIRECTORY_SEPARATOR
+                . 'documents'
+                . DIRECTORY_SEPARATOR
+                . $documentType
+        );
         if ($baseDir === false) {
             return null;
         }
