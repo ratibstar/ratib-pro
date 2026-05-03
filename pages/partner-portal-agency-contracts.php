@@ -22,28 +22,23 @@ $pageJs = [
 ];
 $partnerPortalMinimal = true;
 $partnerPortalNavActive = 'agency';
+$ppPortalHome = htmlspecialchars(pageUrl('partner-portal.php'), ENT_QUOTES, 'UTF-8');
 $ppAccountingPage = htmlspecialchars(pageUrl('partner-portal-accounting.php'), ENT_QUOTES, 'UTF-8');
 include __DIR__ . '/../includes/partner-portal-header.php';
 ?>
 
-<div class="partner-portal-wrap agency-detail-page" dir="ltr" lang="en">
+<div class="partner-portal-wrap partner-portal-docs-page agency-detail-page" dir="ltr" lang="en">
     <header class="partner-portal-header-mega glass-card">
         <?php include __DIR__ . '/../includes/partner-portal-marketing-strip.php'; ?>
-        <div class="partner-portal-top partner-portal-top--identity">
-            <div class="partner-portal-brand">
-                <span class="partner-portal-globe" aria-hidden="true">🌍</span>
-                <div>
-                    <p class="partner-portal-kicker">Partner portal</p>
-                    <h1 id="ppAgencyName" class="partner-portal-title">Loading…</h1>
-                </div>
+        <div class="partner-portal-docs-page-intro">
+            <div class="partner-portal-agency-intro-top">
+                <a class="muted-btn partner-portal-docs-back" href="<?php echo $ppPortalHome; ?>#partner-portal-dashboard">← Back to dashboard</a>
+                <a class="muted-btn partner-portal-agency-logout" href="<?php echo htmlspecialchars(pageUrl('partner-portal-logout.php'), ENT_QUOTES, 'UTF-8'); ?>">Log out</a>
             </div>
-            <div class="partner-portal-actions">
-                <span id="ppStatus" class="status-pill status-inactive" hidden></span>
-                <span id="ppAgencyIdBadge" class="agency-detail-id-badge" hidden></span>
-                <a class="partner-portal-btn-portal" href="<?php echo htmlspecialchars(pageUrl('partner-portal-logout.php'), ENT_QUOTES, 'UTF-8'); ?>">
-                    <span class="partner-portal-btn-portal-icon" aria-hidden="true">👤</span>
-                    Log out
-                </a>
+            <div class="partner-portal-docs-page-intro-text">
+                <p class="partner-portal-kicker">Partner portal</p>
+                <h1 class="partner-portal-title partner-portal-docs-page-h1">Agency &amp; contracts</h1>
+                <p id="ppAgencyContractsSub" class="partner-portal-docs-subline">Loading…</p>
             </div>
         </div>
     </header>
