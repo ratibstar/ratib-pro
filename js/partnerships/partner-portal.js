@@ -248,7 +248,7 @@
         if (lead) {
             lead.textContent =
                 mode === 'edit'
-                    ? 'Updates apply to your partner record. Your office manages agency name, license, contracts, and legal status.'
+                    ? 'Edit contact person, phones, email, and address. Your office manages agency name, codes, license, banking, contracts, and deployments.'
                     : 'Information shared by your office. Contact them if something needs correcting beyond what you can edit.';
         }
         if (mode === 'edit') {
@@ -405,13 +405,30 @@
     }
 
     function bindProfileAndContractUi() {
-        const viewBtns = ['ppBtnViewProfile', 'ppBtnViewContact', 'ppBtnViewAdmin'];
+        const viewBtns = [
+            'ppBtnViewProfile',
+            'ppBtnViewContact',
+            'ppBtnViewAdmin',
+            'ppBtnViewContractsCard',
+            'ppBtnViewDocs',
+            'ppBtnViewWorkerDocs',
+        ];
         viewBtns.forEach((id) => {
             const b = document.getElementById(id);
             if (b) b.addEventListener('click', () => openProfileModal('view'));
         });
-        const editBtn = document.getElementById('ppBtnEditContact');
-        if (editBtn) editBtn.addEventListener('click', () => openProfileModal('edit'));
+        const editBtns = [
+            'ppBtnEditAgency',
+            'ppBtnEditContact',
+            'ppBtnEditAdmin',
+            'ppBtnEditContractsCard',
+            'ppBtnEditDocs',
+            'ppBtnEditWorkerDocs',
+        ];
+        editBtns.forEach((id) => {
+            const b = document.getElementById(id);
+            if (b) b.addEventListener('click', () => openProfileModal('edit'));
+        });
 
         ['ppProfileModalClose', 'ppProfileCloseBtn'].forEach((id) => {
             const b = document.getElementById(id);

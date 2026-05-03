@@ -463,6 +463,14 @@
     gap: 0.4rem;
 }
 
+.partner-portal-contracts-actions {
+    gap: 0.45rem;
+}
+
+.partner-portal-contracts-actions .agency-detail-count {
+    margin-right: 0.15rem;
+}
+
 .partner-portal-card-btn {
     font-size: 0.8rem;
     padding: 0.35rem 0.7rem;

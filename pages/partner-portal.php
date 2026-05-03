@@ -88,6 +88,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                     <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">🏢</span> Agency data</h2>
                     <div class="partner-portal-card-actions">
                         <button type="button" class="muted-btn partner-portal-card-btn" id="ppBtnViewProfile" title="View full profile">View</button>
+                        <button type="button" class="neon-btn partner-portal-card-btn partner-portal-card-btn--primary" id="ppBtnEditAgency" title="Edit contact and address (office-managed fields stay with your office)">Edit</button>
                     </div>
                 </div>
                 <dl class="agency-detail-dl" id="ppAgencyData"></dl>
@@ -107,6 +108,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                     <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📋</span> Administrative &amp; financial</h2>
                     <div class="partner-portal-card-actions">
                         <button type="button" class="muted-btn partner-portal-card-btn" id="ppBtnViewAdmin" title="View administrative details">View</button>
+                        <button type="button" class="neon-btn partner-portal-card-btn partner-portal-card-btn--primary" id="ppBtnEditAdmin" title="Edit contact and address">Edit</button>
                     </div>
                 </div>
                 <dl class="agency-detail-dl" id="ppAdminData"></dl>
@@ -117,7 +119,11 @@ include __DIR__ . '/../includes/partner-portal-header.php';
             <section class="agency-detail-card glass-card agency-detail-contracts-card">
                 <div class="agency-detail-card-head">
                     <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📄</span> Recruitment contracts</h2>
-                    <span class="agency-detail-count" id="ppContractCount">0</span>
+                    <div class="partner-portal-card-actions partner-portal-contracts-actions">
+                        <span class="agency-detail-count" id="ppContractCount">0</span>
+                        <button type="button" class="muted-btn partner-portal-card-btn" id="ppBtnViewContractsCard" title="View profile including deployments">View</button>
+                        <button type="button" class="neon-btn partner-portal-card-btn partner-portal-card-btn--primary" id="ppBtnEditContractsCard" title="Edit your contact details">Edit</button>
+                    </div>
                 </div>
                 <div id="ppContracts" class="agency-contracts-list"></div>
                 <p id="ppContractsEmpty" class="agency-detail-empty" hidden>No deployments recorded for this agency yet.</p>
@@ -126,14 +132,26 @@ include __DIR__ . '/../includes/partner-portal-header.php';
     </div>
 
     <section id="partner-portal-section-documents" class="agency-detail-card glass-card partner-portal-cvs-block partner-portal-anchor-target">
-        <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📎</span> Documents &amp; CVs</h2>
+        <div class="agency-detail-card-head">
+            <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📎</span> Documents &amp; CVs</h2>
+            <div class="partner-portal-card-actions">
+                <button type="button" class="muted-btn partner-portal-card-btn" id="ppBtnViewDocs" title="View full profile">View</button>
+                <button type="button" class="neon-btn partner-portal-card-btn partner-portal-card-btn--primary" id="ppBtnEditDocs" title="Edit contact details">Edit</button>
+            </div>
+        </div>
         <p class="agency-detail-note">Your office uploads files here in Ratib Pro. You can download them below; uploads are not available on this page.</p>
         <ul id="ppCvList" class="partner-portal-cv-list"></ul>
         <p id="ppCvEmpty" class="agency-detail-empty" hidden>No documents uploaded yet.</p>
     </section>
 
     <section id="partner-portal-section-worker-docs" class="agency-detail-card glass-card partner-portal-worker-shares-block partner-portal-anchor-target">
-        <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">👤</span> Worker documents from your office</h2>
+        <div class="agency-detail-card-head">
+            <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">👤</span> Worker documents from your office</h2>
+            <div class="partner-portal-card-actions">
+                <button type="button" class="muted-btn partner-portal-card-btn" id="ppBtnViewWorkerDocs" title="View full profile">View</button>
+                <button type="button" class="neon-btn partner-portal-card-btn partner-portal-card-btn--primary" id="ppBtnEditWorkerDocs" title="Edit contact details">Edit</button>
+            </div>
+        </div>
         <p class="agency-detail-note">Only workers and document types your office selected for this agency appear here. Download only.</p>
         <ul id="ppWorkerShareList" class="partner-portal-worker-share-list"></ul>
         <p id="ppWorkerShareEmpty" class="agency-detail-empty" hidden>No worker documents shared with your portal yet.</p>
