@@ -1734,7 +1734,7 @@ iframe.partner-portal-cv-frame {
 .pp-worker-docs-select-actions {
     display: flex;
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
     gap: 0.5rem;
@@ -1779,7 +1779,7 @@ iframe.partner-portal-cv-frame {
 
 .pp-worker-docs-actions-col,
 .pp-worker-docs-actions-cell {
-    white-space: nowrap;
+    white-space: normal;
 }
 
 .pp-worker-docs-actions-inner {

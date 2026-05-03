@@ -593,6 +593,55 @@
                 showWorkerDocsSlotUploadPane(wid, docType);
                 return;
             }
+            const repBtn = e.target && e.target.closest ? e.target.closest('[data-pp-worker-docs-row-replace]') : null;
+            if (repBtn && staffMode && repBtn.getAttribute('data-pp-worker-docs-row-replace')) {
+                e.preventDefault();
+                const wid = parseInt(String(repBtn.getAttribute('data-worker-id') || ''), 10);
+                const docType = String(repBtn.getAttribute('data-doc-type') || '').trim().toLowerCase();
+                const fin = $('ppStaffWorkerDocUploadInput');
+                if (!fin || !Number.isFinite(wid) || wid <= 0 || !WORKER_DOCUMENT_UPLOAD_TYPES.has(docType)) return;
+                fin.dataset.ppUploadWorkerId = String(wid);
+                fin.dataset.ppUploadDocType = docType;
+                fin.value = '';
+                fin.click();
+                return;
+            }
+            const delBtn = e.target && e.target.closest ? e.target.closest('[data-pp-worker-docs-row-delete]') : null;
+            if (delBtn && staffMode && delBtn.getAttribute('data-pp-worker-docs-row-delete')) {
+                e.preventDefault();
+                const wid = parseInt(String(delBtn.getAttribute('data-worker-id') || ''), 10);
+                const docType = String(delBtn.getAttribute('data-doc-type') || '').trim().toLowerCase();
+                const dlab = String(delBtn.getAttribute('data-doc-label') || docType).trim();
+                if (!Number.isFinite(wid) || wid <= 0 || !docType) return;
+                if (!window.confirm(`Remove the ${dlab} file for this worker?`)) return;
+                (async () => {
+                    try {
+                        const res = await fetch('../api/workers/documents/delete.php', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: wid, document_type: docType }),
+                        });
+                        const json = await res.json().catch(() => ({}));
+                        if (!res.ok || !json.success) {
+                            const msg = json.message != null ? String(json.message).trim() : '';
+                            setError(msg || 'Could not delete this document.');
+                            return;
+                        }
+                        setError('');
+                        await load();
+                        const listModal = $('ppWorkerDocsListModal');
+                        if (listModal && listModal.classList.contains('open') && String(listModal.dataset.ppWorkerModalId || '') === String(wid)) {
+                            const wn = String(listModal.dataset.ppWorkerModalName || '').trim();
+                            await openWorkerDocumentsListModal(wid, wn);
+                        }
+                        hideWorkerDocsListPreviewPane();
+                    } catch (err) {
+                        setError(err && err.message ? err.message : 'Delete failed.');
+                    }
+                })();
+                return;
+            }
             const row = e.target && e.target.closest ? e.target.closest('tr[data-pp-worker-docs-row-preview]') : null;
             if (
                 row &&
@@ -819,11 +868,32 @@
                               workerId
                           )}" data-doc-type="${escapeHtml(row.docType)}">Upload</button>`
                         : '';
+                const staffRowActions =
+                    staffMode && Number.isFinite(Number(workerId)) && Number(workerId) > 0
+                        ? (() => {
+                              const widStr = String(workerId);
+                              const editL = `<a class="muted-btn pp-worker-docs-row-action-btn" href="${escapeHtml(
+                                  workerEditHref(workerId)
+                              )}">Edit</a>`;
+                              const deleteB = row.hasFile
+                                  ? `<button type="button" class="muted-btn pp-worker-docs-row-action-btn" data-pp-worker-docs-row-delete="1" data-worker-id="${widStr}" data-doc-type="${escapeHtml(
+                                        row.docType
+                                    )}" data-doc-label="${escapeHtml(row.typeLabel)}">Delete</button>`
+                                  : '';
+                              const replaceB =
+                                  row.hasFile && WORKER_DOCUMENT_UPLOAD_TYPES.has(row.docType)
+                                      ? `<button type="button" class="muted-btn pp-worker-docs-row-action-btn" data-pp-worker-docs-row-replace="1" data-worker-id="${widStr}" data-doc-type="${escapeHtml(
+                                            row.docType
+                                        )}">Update file</button>`
+                                      : '';
+                              return `${replaceB}${editL}${deleteB}`;
+                          })()
+                        : '';
                 const actionsCell =
                     `<td class="pp-worker-docs-actions-col">` +
                     `<div class="pp-worker-docs-select-actions">` +
                     chk +
-                    `<span class="pp-worker-docs-action-btns">${viewBtn}${dlA}${upB}</span>` +
+                    `<span class="pp-worker-docs-action-btns">${viewBtn}${dlA}${upB}${staffRowActions}</span>` +
                     `</div></td>`;
                 const fileCell =
                     `<div class="pp-worker-docs-file-stack">` +
@@ -872,7 +942,7 @@
         const hint = $('ppWorkerDocsListHint');
         if (hint) {
             hint.textContent = staffMode
-                ? 'Use checkboxes + bulk buttons for multiple downloads. Row actions: View, Download, Upload. Preview panel on the right for inline view.'
+                ? 'Use checkboxes + bulk buttons for multiple downloads. Row actions: View, Download, Update file, Upload, Edit, Delete. Preview panel on the right for inline view.'
                 : 'Use checkboxes + bulk download. Row actions: View, Download. Preview panel on the right.';
         }
 
