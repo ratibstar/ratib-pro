@@ -3096,7 +3096,7 @@ Musaned Status: ${worker.musaned_status || 'Not processed'}
 
 function ensureEmptyCvModal() {
     let modal = document.getElementById('emptyCvModal');
-    if (modal) {
+    if (modal) { 
         const legacyToggleBtn = modal.querySelector('[data-action="toggle-empty-cv-missing"]');
         if (legacyToggleBtn) legacyToggleBtn.remove();
         return modal;
