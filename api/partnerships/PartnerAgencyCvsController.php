@@ -43,8 +43,13 @@ class PartnerAgencyCvsController
              FROM partner_agency_cvs WHERE partner_agency_id = ? ORDER BY sort_order ASC, id DESC'
         );
         $stmt->execute([$agencyId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            $row['portal_status'] = 'ready';
+        }
+        unset($row);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $rows;
     }
 
     /**

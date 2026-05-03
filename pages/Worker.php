@@ -33,8 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 // Set security headers
-// Allow same-origin embedding (e.g. CVs Control modal iframe). Blocks external sites.
-header('X-Frame-Options: SAMEORIGIN');
+header("X-Frame-Options: DENY");
 header("X-XSS-Protection: 1; mode=block");
 header("X-Content-Type-Options: nosniff");
 
@@ -53,39 +52,6 @@ $programCountryText = strtolower(implode(' ', [
 $isIndonesiaProgram = strpos($programCountryText, 'indonesia') !== false
     || preg_match('/\bidn?\b/', $programCountryText) === 1;
 
-$countryNameLower = strtolower((string) ($_SESSION['country_name'] ?? (defined('COUNTRY_NAME') ? COUNTRY_NAME : '')));
-$countryCodeLower = strtolower((string) ($_SESSION['country_code'] ?? (defined('COUNTRY_CODE') ? COUNTRY_CODE : '')));
-$countrySlug = 'default';
-if (strpos($countryNameLower, 'indonesia') !== false || preg_match('/\bidn?\b/', $countryCodeLower) === 1) {
-    $countrySlug = 'indonesia';
-} elseif (strpos($countryNameLower, 'bangladesh') !== false || preg_match('/\bbd\b/', $countryCodeLower) === 1) {
-    $countrySlug = 'bangladesh';
-} elseif (strpos($countryNameLower, 'sri lanka') !== false || strpos($countryNameLower, 'srilanka') !== false || preg_match('/\blk\b/', $countryCodeLower) === 1) {
-    $countrySlug = 'sri_lanka';
-} elseif (strpos($countryNameLower, 'kenya') !== false || preg_match('/\bke\b/', $countryCodeLower) === 1) {
-    $countrySlug = 'kenya';
-}
-$countryProfileConfig = null;
-$ctrlConn = $GLOBALS['control_conn'] ?? null;
-if ($ctrlConn instanceof mysqli) {
-    $tblCheck = $ctrlConn->query("SHOW TABLES LIKE 'control_country_profiles'");
-    if ($tblCheck && $tblCheck->num_rows > 0) {
-        $stProfile = $ctrlConn->prepare("SELECT labels_json, requirements_json FROM control_country_profiles WHERE country_slug = ? LIMIT 1");
-        if ($stProfile) {
-            $stProfile->bind_param('s', $countrySlug);
-            $stProfile->execute();
-            $rowProfile = $stProfile->get_result()->fetch_assoc();
-            $stProfile->close();
-            if (is_array($rowProfile)) {
-                $countryProfileConfig = [
-                    'labels' => json_decode((string) ($rowProfile['labels_json'] ?? '{}'), true) ?: new stdClass(),
-                    'requirements' => json_decode((string) ($rowProfile['requirements_json'] ?? '[]'), true) ?: [],
-                ];
-            }
-        }
-    }
-}
-
 // CSS files configuration - Only the main CSS file with aggressive cache-busting
 $cacheBuster = time();
 $forceCache = rand(1000, 9999);
@@ -102,16 +68,8 @@ $pageCss[] = "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css";
 $pageCss[] = "https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css";
 $pageTitle = "Worker Management";
 
-$workerCvEmbed = isset($_GET['embed_cv']) && (string) $_GET['embed_cv'] === '1'
-    && isset($_GET['view']) && (int) $_GET['view'] > 0;
-
 include '../includes/header.php';
 ?>
-
-<?php if (!empty($workerCvEmbed)) : ?>
-<script>document.body.classList.add('ratib-worker-cv-embed');</script>
-<link rel="stylesheet" href="<?php echo htmlspecialchars(asset('css/worker/worker-cv-embed.css'), ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo (int) $cacheBuster; ?>">
-<?php endif; ?>
 
 <!-- Force no caching -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -121,8 +79,6 @@ include '../includes/header.php';
 <!-- Force cache clear on page load -->
 <script src="<?php echo asset('js/utils/cache-clear.js'); ?>?v=<?php echo $cacheBuster; ?>"></script>
 <script>window.RATIB_IS_INDONESIA_PROGRAM = <?php echo $isIndonesiaProgram ? 'true' : 'false'; ?>;</script>
-<script>window.RATIB_COUNTRY_PROFILE = <?php echo json_encode($countrySlug, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;</script>
-<script>window.RATIB_COUNTRY_PROFILE_CONFIG = <?php echo json_encode($countryProfileConfig, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;</script>
 
 <!-- Main container for the content of the page -->
 <div class="main-container worker-management-container">
@@ -369,10 +325,6 @@ include '../includes/header.php';
                         <i class="fas fa-trash"></i> <!-- Icon for delete action -->
                         <span>Delete</span> <!-- Button label -->
                     </button>
-                    <button id="bulkSendToPartnerBtn" type="button" class="bulk-btn bulk-send-partner" disabled data-permission="view_partner_agencies">
-                        <i class="fas fa-paper-plane"></i>
-                        <span>Send to partner</span>
-                    </button>
                 </div>
             </div>
 
@@ -564,44 +516,11 @@ include '../includes/header.php';
                     </div>
                     <div class="form-group">
                         <label for="nationality" class="form-label">Nationality</label>
-                        <select name="nationality" id="nationality" class="form-select">
-                            <option value="">Select nationality</option>
-                            <option value="Not specified">Not specified</option>
-                            <option value="Indonesia">Indonesia</option>
-                            <option value="Philippines">Philippines</option>
-                            <option value="India">India</option>
-                            <option value="Bangladesh">Bangladesh</option>
-                            <option value="Sri Lanka">Sri Lanka</option>
-                            <option value="Nepal">Nepal</option>
-                            <option value="Pakistan">Pakistan</option>
-                            <option value="Egypt">Egypt</option>
-                            <option value="Sudan">Sudan</option>
-                            <option value="Kenya">Kenya</option>
-                            <option value="Uganda">Uganda</option>
-                            <option value="Ethiopia">Ethiopia</option>
-                            <option value="Ghana">Ghana</option>
-                            <option value="Nigeria">Nigeria</option>
-                            <option value="Vietnam">Vietnam</option>
-                            <option value="Myanmar">Myanmar</option>
-                            <option value="Thailand">Thailand</option>
-                            <option value="Malaysia">Malaysia</option>
-                            <option value="China">China</option>
-                            <option value="Jordan">Jordan</option>
-                            <option value="Lebanon">Lebanon</option>
-                            <option value="Syria">Syria</option>
-                            <option value="Yemen">Yemen</option>
-                            <option value="Saudi Arabia">Saudi Arabia</option>
-                            <option value="United Arab Emirates">United Arab Emirates</option>
-                            <option value="Kuwait">Kuwait</option>
-                            <option value="Qatar">Qatar</option>
-                            <option value="Oman">Oman</option>
-                            <option value="Bahrain">Bahrain</option>
-                            <option value="Iraq">Iraq</option>
-                            <option value="Morocco">Morocco</option>
-                            <option value="Tunisia">Tunisia</option>
-                            <option value="Algeria">Algeria</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <input type="text" 
+                               name="nationality" 
+                               id="nationality" 
+                               class="form-control" 
+                               placeholder="Enter nationality">
                     </div>
                     <div class="form-group">
                         <label for="gender" class="form-label">Gender *</label>
@@ -644,14 +563,12 @@ include '../includes/header.php';
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="birth_date" class="form-label">Date of birth</label>
                             <div class="date-input-wrapper">
                                 <input type="text" name="birth_date" id="birth_date" class="form-control date-input" placeholder="YYYY-MM-DD" autocomplete="off">
                                 <i class="fas fa-calendar-alt date-icon"></i>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="place_of_birth" class="form-label">Place of birth</label>
                             <input type="text" name="place_of_birth" id="place_of_birth" class="form-control" 
                                    placeholder="Enter place of birth">
                         </div>
@@ -790,27 +707,6 @@ include '../includes/header.php';
                                id="abroad_experience" 
                                class="form-control" 
                                placeholder="Enter years of work experience abroad">
-                    </div>
-                    <div class="form-group employment-training-bundle">
-                        <label for="training_notes" class="form-label">Training / duties notes</label>
-                        <textarea name="training_notes" id="training_notes" class="form-control" rows="3" placeholder="Enter training notes, duties, or responsibilities"></textarea>
-                    </div>
-                    <div class="form-row employment-terms-row">
-                        <div class="form-group">
-                            <label for="salary" class="form-label">Salary</label>
-                            <input type="text" name="salary" id="salary" class="form-control" data-field-key="salary"
-                                   placeholder="e.g. 1500.00" inputmode="decimal" lang="en" dir="ltr">
-                        </div>
-                        <div class="form-group">
-                            <label for="working_hours" class="form-label">Working hours</label>
-                            <input type="text" name="working_hours" id="working_hours" class="form-control" data-field-key="working_hours"
-                                   placeholder="e.g. 8h/day">
-                        </div>
-                        <div class="form-group">
-                            <label for="contract_duration" class="form-label">Contract duration</label>
-                            <input type="text" name="contract_duration" id="contract_duration" class="form-control" data-field-key="contract_duration"
-                                   placeholder="e.g. 24 months">
-                        </div>
                     </div>
                     <?php if ($isIndonesiaProgram): ?>
                     <div class="form-group indonesia-compliance-field">
@@ -1221,8 +1117,10 @@ include '../includes/header.php';
 
                     <div class="doc-row contract-compliance compliance-black" data-workflow-stage="contract" data-stage-label="Contract">
                         <div class="doc-group">
-                            <label class="form-label">Contract (document)</label>
-                            <p class="contract-doc-hint">Salary, working hours, and contract duration are edited in <strong>Professional Details</strong> (above).</p>
+                            <label class="form-label">Contract</label>
+                            <input type="text" name="salary" data-field-key="salary" placeholder="Salary (e.g. 1500.00)" inputmode="decimal" lang="en" dir="ltr">
+                            <input type="text" name="working_hours" data-field-key="working_hours" placeholder="Working Hours (e.g. 8h/day)">
+                            <input type="text" name="contract_duration" data-field-key="contract_duration" placeholder="Contract Duration (e.g. 24 months)">
                             <div class="upload-wrapper">
                                 <input type="file" class="file-input" id="contract_deployment_primary_file" accept=".pdf,.jpg,.jpeg,.png">
                                 <button type="button" class="upload-btn" data-target="contract_deployment_primary_file">
@@ -1786,4 +1684,4 @@ if (!file_exists($footerPath)) {
 } else {
     include $footerPath;
 }
-?> 
+?>

@@ -29,6 +29,27 @@ class PartnerAgencyWorkerDocSharesController
         ];
     }
 
+    /**
+     * Unified portal row status for Documents & CVs (worker shares): file + deployment.
+     *
+     * @return 'waiting'|'processing'|'ready'|'issues'|'returned'|'transferred'
+     */
+    public static function computePortalDocumentStatus(bool $hasFile, ?string $deploymentStatus): string
+    {
+        if (!$hasFile) {
+            return 'waiting';
+        }
+        $d = strtolower(trim((string) ($deploymentStatus ?? 'processing')));
+        return match ($d) {
+            'issue' => 'issues',
+            'returned' => 'returned',
+            'transferred' => 'transferred',
+            'deployed' => 'ready',
+            'processing', '' => 'processing',
+            default => 'processing',
+        };
+    }
+
     public static function documentTypeLabel(string $t): string
     {
         $map = [
@@ -218,7 +239,10 @@ class PartnerAgencyWorkerDocSharesController
         if ($partnerAgencyId <= 0) {
             return [];
         }
-        $sql = 'SELECT s.id, s.partner_agency_id, s.worker_id, s.document_type, s.created_at
+        $sql = 'SELECT s.id, s.partner_agency_id, s.worker_id, s.document_type, s.created_at,
+                (SELECT wd.status FROM worker_deployments wd
+                 WHERE wd.worker_id = s.worker_id AND wd.partner_agency_id = s.partner_agency_id
+                 LIMIT 1) AS deployment_status
             FROM partner_agency_worker_document_shares s
             WHERE s.partner_agency_id = ?
             ORDER BY s.created_at DESC';
@@ -235,6 +259,9 @@ class PartnerAgencyWorkerDocSharesController
             }
             $meta = $this->workerDocumentFileMeta($wid, $dt, $worker);
             $hasFile = $meta !== null;
+            $depRaw = isset($s['deployment_status']) ? trim((string) $s['deployment_status']) : '';
+            $depStatus = $depRaw !== '' ? $depRaw : null;
+            $portalStatus = self::computePortalDocumentStatus($hasFile, $depStatus);
             $name = trim((string) ($worker['worker_name'] ?? ''));
             if ($name === '') {
                 $name = 'Worker #' . $wid;
@@ -251,6 +278,8 @@ class PartnerAgencyWorkerDocSharesController
                 'storage_filename' => $meta['basename'] ?? null,
                 'file_size' => $meta !== null ? $meta['bytes'] : null,
                 'mime_type' => $meta !== null ? $meta['mime'] : null,
+                'deployment_status' => $depStatus,
+                'portal_status' => $portalStatus,
                 'created_at' => $s['created_at'] ?? null,
             ];
         }

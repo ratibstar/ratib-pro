@@ -37,8 +37,12 @@ include __DIR__ . '/../includes/partner-portal-header.php';
 
     <div id="ppDocsError" class="partner-portal-error glass-card is-hidden" hidden></div>
 
+    <div id="ppDocsStatusCards" class="partner-portal-docs-status-cards glass-card" hidden aria-live="polite">
+        <div id="ppDocsStatusCardsInner" class="partner-portal-docs-status-cards-row"></div>
+    </div>
+
     <div class="glass-card partner-portal-docs-toolbar">
-        <input type="search" id="ppDocsSearch" class="partner-portal-input partner-portal-docs-search" placeholder="Search title, file name, worker, or type…" aria-label="Search documents">
+        <input type="search" id="ppDocsSearch" class="partner-portal-input partner-portal-docs-search" placeholder="Search title, file name, worker, type, or status…" aria-label="Search documents">
         <div class="partner-portal-docs-toolbar-right">
             <label class="partner-portal-docs-rows-label">
                 Rows
@@ -60,6 +64,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                     <tr>
                         <th scope="col" class="col-num"><button type="button" class="partner-portal-sort-btn" data-sort="idx">#</button></th>
                         <th scope="col" class="col-source"><button type="button" class="partner-portal-sort-btn" data-sort="source">Source</button></th>
+                        <th scope="col" class="col-status"><button type="button" class="partner-portal-sort-btn" data-sort="portal_status">Status</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="title">Title</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="original_filename">File name</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="mime_type">Type</button></th>

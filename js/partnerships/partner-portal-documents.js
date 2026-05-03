@@ -27,6 +27,9 @@
         staffHighlightActive: false,
     };
 
+    /** Staff bulk selection (document row keys: `worker_share|id` or `agency_cv|id`). */
+    let selectedDocKeys = new Set();
+
     function $(id) {
         return document.getElementById(id);
     }
@@ -65,6 +68,83 @@
         return cut;
     }
 
+    const PORTAL_STATUS_LABELS = {
+        waiting: 'Waiting',
+        processing: 'Processing',
+        ready: 'Ready',
+        issues: 'Issues',
+        returned: 'Returned',
+        transferred: 'Transferred',
+    };
+
+    const PORTAL_STATUS_CARD_ORDER = ['waiting', 'processing', 'ready', 'issues', 'returned', 'transferred'];
+
+    function normalizePortalStatusSlug(raw, fallback) {
+        let s = raw != null ? String(raw).trim().toLowerCase() : '';
+        if (s === 'issue') {
+            s = 'issues';
+        }
+        if (s === 'deployed') {
+            s = 'ready';
+        }
+        if (s && Object.prototype.hasOwnProperty.call(PORTAL_STATUS_LABELS, s)) {
+            return s;
+        }
+        return fallback != null && String(fallback).trim() !== '' ? String(fallback).trim().toLowerCase() : 'waiting';
+    }
+
+    function formatPortalStatusLabel(slug) {
+        const k = normalizePortalStatusSlug(slug, 'waiting');
+        return PORTAL_STATUS_LABELS[k] || (k ? k.charAt(0).toUpperCase() + k.slice(1) : '—');
+    }
+
+    function countRowsByPortalStatus(rows) {
+        const m = {};
+        PORTAL_STATUS_CARD_ORDER.forEach((k) => {
+            m[k] = 0;
+        });
+        (rows || []).forEach((r) => {
+            const slug = normalizePortalStatusSlug(
+                r.portal_status,
+                r._kind === 'worker_share' ? (r._hasFile ? 'processing' : 'waiting') : 'ready'
+            );
+            if (m[slug] !== undefined) {
+                m[slug] += 1;
+            }
+        });
+        return m;
+    }
+
+    function updateStatusCards() {
+        const wrap = $('ppDocsStatusCards');
+        const inner = $('ppDocsStatusCardsInner');
+        if (!wrap || !inner) {
+            return;
+        }
+        const rows = Array.isArray(state.filtered) ? state.filtered : [];
+        const counts = countRowsByPortalStatus(rows);
+        wrap.setAttribute('aria-label', 'Document counts for current search results');
+        inner.innerHTML = PORTAL_STATUS_CARD_ORDER.map((slug) => {
+            const n = counts[slug] || 0;
+            const label = formatPortalStatusLabel(slug);
+            return (
+                '<div class="pp-docs-status-card pp-docs-status-card--' +
+                escapeHtml(slug) +
+                '" title="' +
+                escapeHtml(label) +
+                ' — in current results (search filter)">' +
+                '<span class="pp-docs-status-card__n">' +
+                String(n) +
+                '</span>' +
+                '<span class="pp-docs-status-card__lbl">' +
+                escapeHtml(label) +
+                '</span>' +
+                '</div>'
+            );
+        }).join('');
+        wrap.hidden = false;
+    }
+
     function formatDate(s) {
         if (s == null || s === '') return '—';
         const str = String(s).trim();
@@ -91,6 +171,14 @@
         const wid = workerId != null ? String(workerId).trim() : '';
         if (!wid) return 'Worker.php';
         const base = `Worker.php?view=${encodeURIComponent(wid)}`;
+        const x = staffCfg && staffCfg.worker_profile_extra_query ? String(staffCfg.worker_profile_extra_query) : '';
+        return x ? `${base}&${x}` : base;
+    }
+
+    function workerEditHref(workerId) {
+        const wid = workerId != null ? String(workerId).trim() : '';
+        if (!wid) return 'Worker.php';
+        const base = `Worker.php?edit=${encodeURIComponent(wid)}`;
         const x = staffCfg && staffCfg.worker_profile_extra_query ? String(staffCfg.worker_profile_extra_query) : '';
         return x ? `${base}&${x}` : base;
     }
@@ -181,6 +269,77 @@
         return state.rows.find((row) => row._kind === kind && String(row.id) === id) || null;
     }
 
+    function staffContextSuffix() {
+        if (!staffMode) return '';
+        const u = new URLSearchParams(window.location.search || '');
+        const qs = new URLSearchParams();
+        if (u.get('control')) qs.set('control', u.get('control'));
+        if (u.get('agency_id')) qs.set('agency_id', u.get('agency_id'));
+        const s = qs.toString();
+        return s ? `&${s}` : '';
+    }
+
+    function updateBulkDeleteUi() {
+        const btn = $('ppDocsDeleteSelected');
+        const cnt = $('ppDocsSelectedCount');
+        if (!btn || !staffMode) return;
+        const n = selectedDocKeys.size;
+        btn.hidden = n === 0;
+        if (cnt) {
+            cnt.hidden = n === 0;
+            cnt.textContent = n > 0 ? `${n} selected` : '';
+        }
+        btn.disabled = n === 0;
+    }
+
+    function syncSelectAllCheckbox(slice) {
+        const el = $('ppDocsSelectAll');
+        if (!el || !staffMode || !Array.isArray(slice)) return;
+        const keys = slice.map((r) => docRowKey(r)).filter(Boolean);
+        const nSel = keys.filter((k) => selectedDocKeys.has(k)).length;
+        el.checked = keys.length > 0 && nSel === keys.length;
+        el.indeterminate = nSel > 0 && nSel < keys.length;
+    }
+
+    async function deleteDocumentRow(r) {
+        if (!staffMode || !staffCfg || !r || !r._kind) return false;
+        const pid = parseInt(String(staffCfg.partner_agency_id || ''), 10);
+        if (!Number.isFinite(pid) || pid <= 0) return false;
+        const suf = staffContextSuffix();
+        let url = '';
+        if (r._kind === 'worker_share') {
+            const sid = r._shareId != null ? r._shareId : r.id;
+            if (!Number.isFinite(Number(sid)) || Number(sid) <= 0) return false;
+            url = `../api/partnerships/partner-agency-worker-shares.php?id=${encodeURIComponent(String(sid))}&partner_agency_id=${encodeURIComponent(String(pid))}${suf}`;
+        } else if (r._kind === 'agency_cv') {
+            const cid = r.id;
+            if (!Number.isFinite(Number(cid)) || Number(cid) <= 0) return false;
+            url = `../api/partnerships/partner-agency-cvs.php?id=${encodeURIComponent(String(cid))}&partner_agency_id=${encodeURIComponent(String(pid))}${suf}`;
+        } else {
+            return false;
+        }
+        try {
+            const res = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
+            const json = await res.json().catch(() => ({}));
+            return !!(res.ok && json.success);
+        } catch (_e) {
+            return false;
+        }
+    }
+
+    async function handleDeleteRow(row) {
+        const ok = await deleteDocumentRow(row);
+        if (ok) {
+            selectedDocKeys.delete(docRowKey(row));
+            closeDocModal();
+            await load();
+            updateBulkDeleteUi();
+        } else if (staffMode) {
+            setError('Could not delete this item. Check permissions or try again.');
+        }
+        return ok;
+    }
+
     function closeDocModal() {
         const modal = $('ppDocModal');
         if (modal) {
@@ -198,6 +357,8 @@
         const links = $('ppDocModalFileLinks');
         if (!modal || !titleEl || !dl) return;
 
+        const docKey = docRowKey(r);
+        const docKeyEsc = escapeHtml(docKey);
         const isWorker = r._kind === 'worker_share';
         titleEl.textContent = isWorker ? 'Shared worker document' : 'Agency document';
         if (lead) {
@@ -215,6 +376,7 @@
             'Source',
             isWorker ? 'Worker document (shared by your office)' : 'Agency file (uploaded for you)',
         ]);
+        rows.push(['Status', formatPortalStatusLabel(r.portal_status)]);
         rows.push(['Title', r.title && String(r.title).trim() !== '' ? String(r.title) : '—']);
         if (isWorker) {
             rows.push(['Worker', r._worker_name && String(r._worker_name).trim() !== '' ? r._worker_name : '—']);
@@ -255,11 +417,18 @@
                 staffMode && isWorker && r._worker_id
                     ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerProfileHref(r._worker_id))}" target="_blank" rel="noopener">Open in Workers</a>`
                     : '';
+            const editWorkerLink =
+                staffMode && isWorker && r._worker_id
+                    ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerEditHref(r._worker_id))}" target="_blank" rel="noopener">Edit</a>`
+                    : '';
+            const modalDeleteBtn = staffMode
+                ? `<button type="button" class="muted-btn partner-portal-docs-action pp-docs-delete-one" data-pp-doc-delete="${docKeyEsc}">Delete</button>`
+                : '';
             if (canDl) {
                 const href = escapeHtml(downloadHref(r));
-                links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}</span><a class="neon-btn partner-portal-docs-action" href="${href}" target="_blank" rel="noopener">Open file</a><a class="muted-btn partner-portal-docs-action" href="${href}" download>Download</a>`;
+                links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}${editWorkerLink}${modalDeleteBtn}</span><a class="neon-btn partner-portal-docs-action" href="${href}" target="_blank" rel="noopener">Open file</a><a class="muted-btn partner-portal-docs-action" href="${href}" download>Download</a>`;
             } else {
-                links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}</span>`;
+                links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}${editWorkerLink}${modalDeleteBtn}</span>`;
             }
         }
 
@@ -289,13 +458,17 @@
                 .filter((x) => x != null && String(x).trim() !== '')
                 .join(' ')
                 .toLowerCase();
+            const stSlug = String(r.portal_status || '').toLowerCase();
+            const stLabel = formatPortalStatusLabel(r.portal_status).toLowerCase();
             return (
                 title.indexOf(q) !== -1 ||
                 fn.indexOf(q) !== -1 ||
                 src.indexOf(q) !== -1 ||
                 mime.indexOf(q) !== -1 ||
                 (widStr && widStr.indexOf(q) !== -1) ||
-                extra.indexOf(q) !== -1
+                extra.indexOf(q) !== -1 ||
+                (stSlug && stSlug.indexOf(q) !== -1) ||
+                stLabel.indexOf(q) !== -1
             );
         });
     }
@@ -347,6 +520,7 @@
 
     function renderTable() {
         applyFilter();
+        updateStatusCards();
         sortFiltered();
         const body = $('ppDocsBody');
         const empty = $('ppDocsEmpty');
@@ -372,12 +546,26 @@
             if (info) info.textContent = state.rows.length > 0 ? '0 matches' : '0 documents';
             if (prev) prev.disabled = true;
             if (next) next.disabled = true;
+            if (staffMode) {
+                const sa = $('ppDocsSelectAll');
+                if (sa) {
+                    sa.checked = false;
+                    sa.indeterminate = false;
+                }
+                updateBulkDeleteUi();
+            }
             return;
         }
         if (empty) empty.hidden = true;
 
         body.innerHTML = slice
             .map((r, i) => {
+                const key = docRowKey(r);
+                const dkey = escapeHtml(key);
+                const chk = selectedDocKeys.has(key) ? ' checked' : '';
+                const selectCell = staffMode
+                    ? `<td class="pp-docs-select-col"><input type="checkbox" class="pp-docs-row-check" data-pp-doc-key="${dkey}" aria-label="Select row"${chk}></td>`
+                    : '';
                 const globalIdx = (state.page - 1) * state.pageSize + i + 1;
                 const dl = escapeHtml(downloadHref(r));
                 const isWorkerRow = r._kind === 'worker_share';
@@ -401,22 +589,35 @@
                     r._kind === 'worker_share'
                         ? `<span class="table-tag tag-muted" title="Shared by your office">Worker</span>`
                         : `<span class="table-tag tag-muted" title="Agency upload">Agency</span>`;
+                const statusSlug = normalizePortalStatusSlug(
+                    r.portal_status,
+                    r._kind === 'worker_share' ? (r._hasFile ? 'processing' : 'waiting') : 'ready'
+                );
+                const statusLabel = escapeHtml(formatPortalStatusLabel(statusSlug));
+                const statusTd = `<td class="col-status"><span class="pp-doc-status pp-doc-status--${escapeHtml(statusSlug)}">${statusLabel}</span></td>`;
                 const noFile = r._kind === 'worker_share' && !r._hasFile;
-                const dkey = escapeHtml(docRowKey(r));
                 const cvBtn =
                     r._kind === 'worker_share' && r._worker_id
                         ? `<button type="button" class="neon-btn partner-portal-docs-action" data-pp-cv-worker="${String(r._worker_id)}">View CV</button>`
                         : '';
                 const viewBtn = `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-doc-key="${dkey}" data-pp-doc-action="view">View</button>`;
+                const editBtn =
+                    staffMode && r._kind === 'worker_share' && r._worker_id
+                        ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerEditHref(r._worker_id))}" target="_blank" rel="noopener">Edit</a>`
+                        : '';
+                const deleteBtn = staffMode
+                    ? `<button type="button" class="muted-btn partner-portal-docs-action pp-docs-delete-one" data-pp-doc-delete="${dkey}">Delete</button>`
+                    : '';
                 const fileActions = noFile
-                    ? `<span class="partner-portal-docs-no-file" title="No file is stored for this document on our side yet. Ask your office if you need the file.">No file</span>`
+                    ? ''
                     : `<a class="muted-btn partner-portal-docs-action" href="${dl}" target="_blank" rel="noopener">Open</a><a class="neon-btn partner-portal-docs-action" href="${dl}" download>Download</a>`;
-                const btnRow = `<span class="partner-portal-docs-actions-btns">${cvBtn}${viewBtn}${noFile ? '' : fileActions}</span>`;
-                const actions = noFile ? `${btnRow}${fileActions}` : btnRow;
+                const actions = `<span class="partner-portal-docs-actions-btns">${cvBtn}${viewBtn}${editBtn}${deleteBtn}${fileActions}</span>`;
 
                 return `<tr>
+                    ${selectCell}
                     <td class="col-num">${globalIdx}</td>
                     <td class="col-source">${srcTag}</td>
+                    ${statusTd}
                     <td>${title}</td>
                     <td>${fnCell}</td>
                     <td><span class="table-tag tag-muted" title="${mimeTitle}">${mimeShort}</span></td>
@@ -426,6 +627,11 @@
                 </tr>`;
             })
             .join('');
+
+        if (staffMode) {
+            syncSelectAllCheckbox(slice);
+            updateBulkDeleteUi();
+        }
 
         if (info) info.textContent = `Page ${state.page} / ${totalPages} · ${total} document${total === 1 ? '' : 's'}`;
         if (prev) prev.disabled = state.page <= 1;
@@ -447,6 +653,7 @@
     }
 
     function applyDocumentsData(data) {
+        selectedDocKeys.clear();
         const agency = data.agency || {};
         state.agencyName = String(agency.name || '').trim() || 'Partner agency';
         const cvs = Array.isArray(data.cvs) ? data.cvs : [];
@@ -456,6 +663,7 @@
             Object.assign({}, row, {
                 _kind: 'agency_cv',
                 source: 'Agency file',
+                portal_status: normalizePortalStatusSlug(row.portal_status, 'ready'),
             })
         );
 
@@ -482,6 +690,7 @@
                 mime_type: hasFile && mimeFull ? mimeFull : '',
                 file_size: fileSizeNum,
                 created_at: s.created_at != null ? s.created_at : '',
+                portal_status: normalizePortalStatusSlug(s.portal_status, hasFile ? 'processing' : 'waiting'),
                 _hasFile: hasFile,
                 _worker_name: wname,
                 _document_label: dlabel,
@@ -611,7 +820,16 @@
             renderTable();
         });
 
-        document.body.addEventListener('click', (e) => {
+        document.body.addEventListener('click', async (e) => {
+            const delOne = e.target && e.target.closest ? e.target.closest('[data-pp-doc-delete]') : null;
+            if (delOne && staffMode && delOne.getAttribute('data-pp-doc-delete')) {
+                e.preventDefault();
+                const key = delOne.getAttribute('data-pp-doc-delete');
+                if (!key || !window.confirm('Remove this item from the partner portal?')) return;
+                const row = findRowByKey(key);
+                if (row) await handleDeleteRow(row);
+                return;
+            }
             const cvBtn = e.target && e.target.closest ? e.target.closest('[data-pp-cv-worker]') : null;
             if (cvBtn && cvBtn.getAttribute('data-pp-cv-worker')) {
                 e.preventDefault();
@@ -624,12 +842,71 @@
 
         const tbody = $('ppDocsBody');
         if (tbody) {
+            if (staffMode) {
+                tbody.addEventListener('change', (e) => {
+                    const t = e.target;
+                    if (!t || !t.classList || !t.classList.contains('pp-docs-row-check')) return;
+                    const key = t.getAttribute('data-pp-doc-key');
+                    if (!key) return;
+                    if (t.checked) {
+                        selectedDocKeys.add(key);
+                    } else {
+                        selectedDocKeys.delete(key);
+                    }
+                    updateBulkDeleteUi();
+                    syncSelectAllCheckbox(getPageSlice().slice);
+                });
+            }
             tbody.addEventListener('click', (e) => {
                 const btn = e.target && e.target.closest ? e.target.closest('[data-pp-doc-action="view"]') : null;
                 if (!btn || btn.getAttribute('data-pp-doc-action') !== 'view') return;
                 const key = btn.getAttribute('data-pp-doc-key');
                 const row = findRowByKey(key);
                 if (row) openDocModal(row);
+            });
+        }
+
+        const selAll = $('ppDocsSelectAll');
+        if (selAll && staffMode) {
+            selAll.addEventListener('change', () => {
+                const { slice } = getPageSlice();
+                slice.forEach((r) => {
+                    const k = docRowKey(r);
+                    if (!k) return;
+                    if (selAll.checked) {
+                        selectedDocKeys.add(k);
+                    } else {
+                        selectedDocKeys.delete(k);
+                    }
+                });
+                renderTable();
+            });
+        }
+
+        const bulkDel = $('ppDocsDeleteSelected');
+        if (bulkDel && staffMode) {
+            bulkDel.addEventListener('click', async () => {
+                const keys = Array.from(selectedDocKeys);
+                if (keys.length === 0) return;
+                if (!window.confirm(`Remove ${keys.length} item(s) from this partner portal? They will disappear for the partner.`)) {
+                    return;
+                }
+                let failed = 0;
+                for (let i = 0; i < keys.length; i++) {
+                    const row = findRowByKey(keys[i]);
+                    if (!row || !(await deleteDocumentRow(row))) {
+                        failed++;
+                    } else {
+                        selectedDocKeys.delete(keys[i]);
+                    }
+                }
+                if (failed > 0) {
+                    setError(`${failed} item(s) could not be removed. Check permissions.`);
+                } else {
+                    setError('');
+                }
+                await load();
+                updateBulkDeleteUi();
             });
         }
 
@@ -662,6 +939,7 @@
     function init() {
         refreshStaffMode();
         bindEvents();
+        updateBulkDeleteUi();
         load();
     }
 

@@ -83,9 +83,15 @@ window.RATIB_PARTNER_DOCS_STAFF = {
 
     <div id="ppDocsError" class="partner-portal-error glass-card is-hidden" hidden></div>
 
+    <div id="ppDocsStatusCards" class="partner-portal-docs-status-cards glass-card" hidden aria-live="polite">
+        <div id="ppDocsStatusCardsInner" class="partner-portal-docs-status-cards-row"></div>
+    </div>
+
     <div class="glass-card partner-portal-docs-toolbar">
-        <input type="search" id="ppDocsSearch" class="partner-portal-input partner-portal-docs-search" placeholder="Search title, file name, worker, or type…" aria-label="Search documents">
+        <input type="search" id="ppDocsSearch" class="partner-portal-input partner-portal-docs-search" placeholder="Search title, file name, worker, type, or status…" aria-label="Search documents">
         <div class="partner-portal-docs-toolbar-right">
+            <span id="ppDocsSelectedCount" class="partner-portal-docs-selected-count" hidden></span>
+            <button type="button" class="muted-btn partner-portal-docs-bulk-delete" id="ppDocsDeleteSelected" hidden>Delete selected</button>
             <label class="partner-portal-docs-rows-label">
                 Rows
                 <select id="ppDocsPageSize" class="partner-portal-input partner-portal-docs-select" aria-label="Rows per page">
@@ -104,8 +110,12 @@ window.RATIB_PARTNER_DOCS_STAFF = {
             <table class="partnerships-table partner-portal-docs-table" aria-label="Partner documents and CVs">
                 <thead>
                     <tr>
+                        <th scope="col" class="pp-docs-select-col">
+                            <input type="checkbox" id="ppDocsSelectAll" class="pp-docs-select-all" title="Select all on this page" aria-label="Select all on this page">
+                        </th>
                         <th scope="col" class="col-num"><button type="button" class="partner-portal-sort-btn" data-sort="idx">#</button></th>
                         <th scope="col" class="col-source"><button type="button" class="partner-portal-sort-btn" data-sort="source">Source</button></th>
+                        <th scope="col" class="col-status"><button type="button" class="partner-portal-sort-btn" data-sort="portal_status">Status</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="title">Title</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="original_filename">File name</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="mime_type">Type</button></th>
