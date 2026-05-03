@@ -236,6 +236,70 @@
     line-height: 1.45;
 }
 
+.partner-portal-dash-ledger-preview {
+    margin-top: 0.25rem;
+    padding: 1rem 1.15rem 1.1rem;
+    border: 1px solid rgba(94, 234, 212, 0.22);
+}
+
+.partner-portal-dash-ledger-preview-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.65rem 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.partner-portal-dash-ledger-preview-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.partner-portal-dash-ledger-preview-link {
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.partner-portal-dash-ledger-preview-lead {
+    margin: 0 0 0.85rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #94a3b8;
+    max-width: 52rem;
+}
+
+.partner-portal-dash-ledger-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+    gap: 0.65rem;
+}
+
+.partner-portal-dash-ledger-kpi {
+    padding: 0.55rem 0.65rem;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.partner-portal-dash-ledger-kpi-lbl {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #94a3b8;
+    margin-bottom: 0.2rem;
+}
+
+.partner-portal-dash-ledger-kpi-val {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #5eead4;
+    font-variant-numeric: tabular-nums;
+}
+
 .partner-portal-overview-stack {
     display: flex;
     flex-direction: column;

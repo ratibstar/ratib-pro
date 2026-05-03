@@ -121,6 +121,17 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <button type="button" class="muted-btn partner-portal-dash-card__btn" id="ppDashOpenProfile">View profile</button>
             </div>
         </div>
+
+        <div id="ppDashLedgerPreview" class="partner-portal-dash-ledger-preview glass-card" aria-labelledby="ppDashLedgerPreviewTitle">
+            <div class="partner-portal-dash-ledger-preview-head">
+                <h3 id="ppDashLedgerPreviewTitle" class="partner-portal-dash-ledger-preview-title">
+                    <span aria-hidden="true">📊</span> Account statement (Ratib Pro)
+                </h3>
+                <a class="muted-btn partner-portal-dash-ledger-preview-link" href="<?php echo $ppAccountingPage; ?>">Full statement →</a>
+            </div>
+            <p id="ppDashLedgerPreviewLead" class="partner-portal-dash-ledger-preview-lead">Loading ledger…</p>
+            <div id="ppDashLedgerPreviewKpis" class="partner-portal-dash-ledger-kpis is-hidden" hidden></div>
+        </div>
     </section>
 
     <div id="partner-portal-section-overview" class="partner-portal-overview-stack partner-portal-anchor-target">

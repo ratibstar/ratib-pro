@@ -165,6 +165,9 @@
         }
     }
 
+    /**
+     * @returns {Promise<Record<string, unknown>|null>}
+     */
     async function loadOverviewLedger() {
         const sum = document.getElementById('ppOvAcctSummary');
         const filters = document.getElementById('ppOvAcctFilters');
@@ -215,7 +218,7 @@
                     hintEl.classList.remove('is-hidden');
                     hintEl.hidden = false;
                 }
-                return;
+                return json;
             }
 
             const code = json.account_code || '';
@@ -259,12 +262,80 @@
             }
 
             ppOvRenderLedgerChart(json.chart_by_month);
+            return json;
         } catch (e) {
             ppOvDestroyLedgerChart();
             if (sum) {
                 sum.textContent = e && e.message ? e.message : 'Could not load account statement.';
             }
+            return null;
         }
+    }
+
+    /** Dashboard strip — same data as Agency & contracts ledger (English). */
+    function renderDashboardLedgerPreview(json) {
+        const lead = document.getElementById('ppDashLedgerPreviewLead');
+        const kpis = document.getElementById('ppDashLedgerPreviewKpis');
+        const valEl = document.getElementById('ppDashAccounting');
+        const hintEl = document.getElementById('ppDashAccountingHint');
+        if (!lead || !kpis) return;
+
+        if (!json) {
+            lead.textContent = 'Could not load account statement. Use Full statement to retry.';
+            kpis.classList.add('is-hidden');
+            kpis.hidden = true;
+            kpis.innerHTML = '';
+            if (valEl) valEl.textContent = '—';
+            if (hintEl) hintEl.textContent = 'Same Ratib Pro ledger your office uses';
+            return;
+        }
+        if (json.success === false) {
+            lead.textContent = json.message || 'Could not load account statement. Use Full statement to retry.';
+            kpis.classList.add('is-hidden');
+            kpis.hidden = true;
+            kpis.innerHTML = '';
+            if (valEl) valEl.textContent = '—';
+            if (hintEl) hintEl.textContent = 'Same Ratib Pro ledger your office uses';
+            return;
+        }
+
+        if (!json.linked) {
+            lead.textContent =
+                json.message ||
+                'Not linked yet. Ask your office to connect this agency to accounting — then figures will show here and under Agency & contracts.';
+            kpis.classList.add('is-hidden');
+            kpis.hidden = true;
+            kpis.innerHTML = '';
+            if (valEl) valEl.textContent = '—';
+            if (hintEl) hintEl.textContent = 'Waiting for office to link chart account';
+            return;
+        }
+
+        const code = json.account_code || '';
+        const aname = json.account_name || '';
+        if (valEl) valEl.textContent = code || 'Linked';
+        if (hintEl) {
+            hintEl.textContent =
+                code && aname
+                    ? `${aname} · closing ${formatMoneyAmount(json.closing_balance)}`
+                    : `Closing ${formatMoneyAmount(json.closing_balance)}`;
+        }
+
+        lead.textContent =
+            code && aname
+                ? `Chart account ${code} — ${aname}. Figures below use the same dates as Agency & contracts.`
+                : 'Linked to your office chart of accounts.';
+
+        const nLines = Array.isArray(json.lines) ? json.lines.length : 0;
+        kpis.innerHTML = `
+            <div class="partner-portal-dash-ledger-kpi"><span class="partner-portal-dash-ledger-kpi-lbl">Opening</span><span class="partner-portal-dash-ledger-kpi-val">${escapeHtml(formatMoneyAmount(json.opening_balance))}</span></div>
+            <div class="partner-portal-dash-ledger-kpi"><span class="partner-portal-dash-ledger-kpi-lbl">Closing</span><span class="partner-portal-dash-ledger-kpi-val">${escapeHtml(formatMoneyAmount(json.closing_balance))}</span></div>
+            <div class="partner-portal-dash-ledger-kpi"><span class="partner-portal-dash-ledger-kpi-lbl">Debits</span><span class="partner-portal-dash-ledger-kpi-val">${escapeHtml(formatMoneyAmount(json.total_debit))}</span></div>
+            <div class="partner-portal-dash-ledger-kpi"><span class="partner-portal-dash-ledger-kpi-lbl">Credits</span><span class="partner-portal-dash-ledger-kpi-val">${escapeHtml(formatMoneyAmount(json.total_credit))}</span></div>
+        `;
+        kpis.classList.remove('is-hidden');
+        kpis.hidden = false;
+        lead.textContent += ` ${nLines} row${nLines === 1 ? '' : 's'} in table (including opening line).`;
     }
 
     function statusClassForDeployment(status) {
@@ -673,6 +744,7 @@
                     errEl.hidden = false;
                     errEl.classList.remove('is-hidden');
                 }
+                renderDashboardLedgerPreview(null);
                 return;
             }
             if (errEl) {
@@ -740,7 +812,8 @@
             const shared = Array.isArray(data.shared_worker_documents) ? data.shared_worker_documents : [];
             renderSharedWorkerDocs(shared);
             updateDashboard(agency, cvs, shared);
-            await loadOverviewLedger();
+            const stmtJson = await loadOverviewLedger();
+            renderDashboardLedgerPreview(stmtJson);
             scrollToPartnerPortalHash();
             schedulePartnerNavSpy();
         } catch (e) {
@@ -749,6 +822,7 @@
                 errEl.hidden = false;
                 errEl.classList.remove('is-hidden');
             }
+            renderDashboardLedgerPreview(null);
         }
     }
 
@@ -853,7 +927,10 @@
 
         const ovAcctRefresh = document.getElementById('ppOvAcctRefreshBtn');
         if (ovAcctRefresh) {
-            ovAcctRefresh.addEventListener('click', () => loadOverviewLedger());
+            ovAcctRefresh.addEventListener('click', async () => {
+                const j = await loadOverviewLedger();
+                renderDashboardLedgerPreview(j);
+            });
         }
 
         document.addEventListener('keydown', (e) => {
