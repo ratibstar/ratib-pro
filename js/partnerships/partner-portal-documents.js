@@ -418,7 +418,7 @@
             '<div class="pp-worker-docs-split">' +
             '<div class="pp-worker-docs-table-scroll">' +
             '<table class="pp-worker-docs-list-table">' +
-            '<thead><tr><th scope="col">Document type</th><th scope="col">File</th><th scope="col">Status</th><th scope="col" class="pp-worker-docs-actions-col">Actions</th></tr></thead>' +
+            '<thead><tr><th scope="col">Document type</th><th scope="col">File</th><th scope="col">Status</th><th scope="col" class="pp-worker-docs-actions-col">Preview</th></tr></thead>' +
             '<tbody id="ppWorkerDocsListTbody"></tbody>' +
             '</table>' +
             '</div>' +
@@ -448,19 +448,6 @@
             if (e.target === wrap) closeAll();
         });
         wrap.addEventListener('click', (e) => {
-            const uploadBtn = e.target && e.target.closest ? e.target.closest('[data-pp-worker-docs-slot-upload]') : null;
-            if (uploadBtn && staffMode) {
-                e.preventDefault();
-                const wid = parseInt(String(uploadBtn.getAttribute('data-worker-id') || ''), 10);
-                const docType = String(uploadBtn.getAttribute('data-doc-type') || '').trim().toLowerCase();
-                const fin = $('ppStaffWorkerDocUploadInput');
-                if (!fin || !Number.isFinite(wid) || wid <= 0 || !WORKER_DOCUMENT_UPLOAD_TYPES.has(docType)) return;
-                fin.dataset.ppUploadWorkerId = String(wid);
-                fin.dataset.ppUploadDocType = docType;
-                fin.value = '';
-                fin.click();
-                return;
-            }
             const prevB = e.target && e.target.closest ? e.target.closest('[data-pp-worker-docs-slot-preview]') : null;
             if (prevB) {
                 e.preventDefault();
@@ -474,7 +461,7 @@
                 return;
             }
             const row = e.target && e.target.closest ? e.target.closest('tr[data-pp-worker-docs-row-preview]') : null;
-            if (row && !(e.target && e.target.closest && e.target.closest('a,button'))) {
+            if (row && !(e.target && e.target.closest && e.target.closest('button'))) {
                 const enc = row.getAttribute('data-pp-worker-docs-row-preview');
                 if (!enc) return;
                 try {
@@ -501,8 +488,6 @@
                 statusLabel: st ? st.replace(/_/g, ' ') : '—',
                 hasFile,
                 previewUrl,
-                openUrl: previewUrl,
-                downloadUrl: previewUrl,
             };
         });
     }
@@ -524,7 +509,6 @@
             const hasFile = !!r._hasFile;
             const sid = r._shareId != null ? r._shareId : r.id;
             const previewUrl = hasFile && sid != null && String(sid).trim() !== '' ? partnerShareInlineDownloadUrl(String(sid)) : '';
-            const dl = downloadHref(r);
             const typeLabel =
                 r._document_label && String(r._document_label).trim() !== ''
                     ? String(r._document_label).trim()
@@ -539,13 +523,11 @@
                 statusLabel: formatPortalStatusLabel(selectThemeSlugForRow(r)),
                 hasFile,
                 previewUrl,
-                openUrl: dl,
-                downloadUrl: dl,
             };
         });
     }
 
-    function renderWorkerDocsListTableRows(workerId, tableRows) {
+    function renderWorkerDocsListTableRows(tableRows) {
         const tbody = $('ppWorkerDocsListTbody');
         if (!tbody) return;
         if (!tableRows.length) {
@@ -564,20 +546,6 @@
                     row.hasFile && row.previewUrl
                         ? `<button type="button" class="muted-btn pp-worker-docs-action-btn" data-pp-worker-docs-slot-preview="${prevEnc}">Preview</button>`
                         : '<span class="muted-label">—</span>';
-                const openBtn =
-                    row.hasFile && row.openUrl
-                        ? `<a class="muted-btn pp-worker-docs-action-btn" href="${escapeHtml(row.openUrl)}" target="_blank" rel="noopener">Open</a>`
-                        : '';
-                const dlBtn =
-                    row.hasFile && row.downloadUrl
-                        ? `<a class="neon-btn pp-worker-docs-action-btn" href="${escapeHtml(row.downloadUrl)}" download>Download</a>`
-                        : '';
-                const upBtn =
-                    staffMode && WORKER_DOCUMENT_UPLOAD_TYPES.has(row.docType)
-                        ? `<button type="button" class="muted-btn pp-worker-docs-action-btn" data-pp-worker-docs-slot-upload data-worker-id="${String(
-                              workerId
-                          )}" data-doc-type="${escapeHtml(row.docType)}">Upload</button>`
-                        : '';
                 return (
                     `<tr${rowPreviewAttr}>` +
                     `<td><strong>${escapeHtml(row.typeLabel)}</strong><div class="pp-worker-docs-slug muted-label">${escapeHtml(
@@ -585,7 +553,7 @@
                     )}</div></td>` +
                     `<td class="pp-worker-docs-file-cell">${escapeHtml(row.fileName)}</td>` +
                     `<td>${escapeHtml(row.statusLabel)}</td>` +
-                    `<td class="pp-worker-docs-actions-cell"><span class="pp-worker-docs-actions-inner">${previewBtn}${openBtn}${dlBtn}${upBtn}</span></td>` +
+                    `<td class="pp-worker-docs-actions-cell"><span class="pp-worker-docs-actions-inner">${previewBtn}</span></td>` +
                     `</tr>`
                 );
             })
@@ -637,7 +605,7 @@
         } else {
             rows = buildPartnerWorkerDocSlotsForTable(wid);
         }
-        renderWorkerDocsListTableRows(wid, rows);
+        renderWorkerDocsListTableRows(rows);
     }
 
     function ensureCvModal() {
