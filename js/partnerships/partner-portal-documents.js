@@ -418,7 +418,7 @@
             '<div class="pp-worker-docs-split">' +
             '<div class="pp-worker-docs-table-scroll">' +
             '<table class="pp-worker-docs-list-table">' +
-            '<thead><tr><th scope="col">Document type</th><th scope="col">File</th><th scope="col">Status</th><th scope="col" class="pp-worker-docs-actions-col">Actions</th></tr></thead>' +
+            '<thead><tr><th scope="col" class="pp-worker-docs-th-type">Document type</th><th scope="col" class="pp-worker-docs-th-file">File</th><th scope="col" class="pp-worker-docs-th-status">Status</th><th scope="col" class="pp-worker-docs-actions-col pp-worker-docs-th-actions">Actions</th></tr></thead>' +
             '<tbody id="ppWorkerDocsListTbody"></tbody>' +
             '</table>' +
             '</div>' +
@@ -1211,11 +1211,35 @@
                         : '';
                 const actions = `<span class="partner-portal-docs-actions-btns">${cvBtn}${previewBtn}${viewBtn}${editBtn}${deleteBtn}${fileActions}</span>`;
 
+                let fileCellHtml = '';
+                if (isWorkerRow) {
+                    if (
+                        r._hasFile &&
+                        r.original_filename &&
+                        String(r.original_filename).trim() !== '' &&
+                        r.original_filename !== '—'
+                    ) {
+                        fileCellHtml = escapeHtml(String(r.original_filename));
+                    } else {
+                        fileCellHtml = `<span class="muted-label">${escapeHtml(WORKER_SHARE_NO_FILE.fileLabel)}</span>`;
+                    }
+                } else if (
+                    r.original_filename &&
+                    String(r.original_filename).trim() !== '' &&
+                    r.original_filename !== '—'
+                ) {
+                    fileCellHtml = escapeHtml(String(r.original_filename));
+                } else {
+                    fileCellHtml = '—';
+                }
+                const fileTd = `<td class="col-file partner-portal-docs-file-cell">${fileCellHtml}</td>`;
+
                 return `<tr>
                     ${selectCell}
                     <td class="col-num">${refId}</td>
                     ${statusTd}
                     <td>${title}</td>
+                    ${fileTd}
                     <td class="col-worker-type">${workerTypeCell}</td>
                     <td>${when}</td>
                     <td class="col-actions partner-portal-docs-actions">${actions}</td>

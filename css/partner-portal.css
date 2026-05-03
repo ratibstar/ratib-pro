@@ -981,9 +981,20 @@
 }
 
 .partner-portal-docs-table {
-    min-width: 960px;
+    min-width: 1040px;
     margin: 0;
     table-layout: auto;
+}
+
+.partner-portal-docs-table .col-file,
+.partner-portal-docs-table .partner-portal-docs-file-cell {
+    min-width: 7.5rem;
+    max-width: 16rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    font-size: 0.88rem;
+    color: #cbd5e1;
+    vertical-align: middle;
 }
 
 .partner-portal-docs-table .col-worker-type {
@@ -1448,9 +1459,9 @@ iframe.partner-portal-cv-frame {
     padding: 0.55rem 0.65rem;
     color: #94a3b8;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    font-size: 0.72rem;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    font-size: 0.8rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     white-space: nowrap;
 }

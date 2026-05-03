@@ -128,6 +128,7 @@ window.RATIB_PARTNER_DOCS_STAFF = {
                         <th scope="col" class="col-num"><button type="button" class="partner-portal-sort-btn" data-sort="idx">CV ref</button></th>
                         <th scope="col" class="col-status"><button type="button" class="partner-portal-sort-btn" data-sort="portal_status">Status</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="title">Title</button></th>
+                        <th scope="col" class="col-file"><button type="button" class="partner-portal-sort-btn" data-sort="original_filename">File</button></th>
                         <th scope="col" class="col-worker-type"><button type="button" class="partner-portal-sort-btn" data-sort="worker_type">Worker type</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="created_at">Uploaded</button></th>
                         <th scope="col" class="col-actions">Actions</th>
