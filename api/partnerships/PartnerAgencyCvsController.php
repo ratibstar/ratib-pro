@@ -14,14 +14,63 @@ class PartnerAgencyCvsController
         $this->conn = $conn;
     }
 
+    /**
+     * Root folder for partner agency CV files (under …/partner_agency_cvs/{agencyId}/).
+     * Override with define('RATIB_UPLOADS_BASE', '/absolute/path') or env RATIB_UPLOADS_BASE.
+     * If project uploads/ exists but is not writable (typical on shared hosting), uses
+     * {parent of project}/ratib_uploads when that can be created and written.
+     */
     public static function uploadsBaseDir(): string
     {
-        $root = realpath(__DIR__ . '/../../uploads');
-        if ($root !== false) {
-            return $root;
+        return self::resolveUploadsBaseDir();
+    }
+
+    private static function resolveUploadsBaseDir(): string
+    {
+        if (defined('RATIB_UPLOADS_BASE')) {
+            $v = constant('RATIB_UPLOADS_BASE');
+            if (is_string($v) && trim($v) !== '') {
+                return rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, trim($v)), DIRECTORY_SEPARATOR);
+            }
+        }
+        $env = getenv('RATIB_UPLOADS_BASE');
+        if ($env !== false && trim((string) $env) !== '') {
+            return rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, trim((string) $env)), DIRECTORY_SEPARATOR);
         }
 
-        return __DIR__ . '/../../uploads';
+        $projectRoot = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..');
+        if ($projectRoot === false) {
+            $projectRoot = dirname(__DIR__, 2);
+        }
+        $default = $projectRoot . DIRECTORY_SEPARATOR . 'uploads';
+
+        if (!is_dir($default)) {
+            return $default;
+        }
+        if (@is_writable($default)) {
+            $rp = realpath($default);
+
+            return $rp !== false ? $rp : $default;
+        }
+
+        $parent = dirname($projectRoot);
+        if ($parent !== '' && $parent !== '.' && $parent !== $projectRoot) {
+            $fallback = $parent . DIRECTORY_SEPARATOR . 'ratib_uploads';
+            if (!is_dir($fallback)) {
+                @mkdir($fallback, 0775, true);
+            }
+            if (is_dir($fallback) && @is_writable($fallback)) {
+                $rp = realpath($fallback);
+                $use = $rp !== false ? $rp : $fallback;
+                error_log('PartnerAgencyCvsController: project uploads/ not writable; using ' . $use);
+
+                return $use;
+            }
+        }
+
+        $rp = realpath($default);
+
+        return $rp !== false ? $rp : $default;
     }
 
     public static function agencyCvDir(int $agencyId): string
@@ -63,7 +112,11 @@ class PartnerAgencyCvsController
                 @chmod($path, 0777);
             }
             if (!is_writable($path)) {
-                throw new RuntimeException('Directory is not writable: ' . $path);
+                throw new RuntimeException(
+                    'Directory is not writable: ' . $path
+                    . ' — fix permissions (e.g. chmod 775 or chown to the PHP user), or set RATIB_UPLOADS_BASE'
+                    . ' in config/env to an absolute path outside public_html that the server can write.'
+                );
             }
 
             return;

@@ -28,6 +28,12 @@ define('OBSERVABILITY_DASHBOARD_ENABLED', true);
 define('ADMIN_CONTROL_CENTER_ENABLED', true);
 
 /*
+ * Optional: if public_html/uploads is not writable by PHP, partner agency file uploads use
+ * ../ratib_uploads automatically, or set an absolute path:
+ *   define('RATIB_UPLOADS_BASE', '/home/outratib/ratib_uploads');
+ */
+
+/*
  * N-Genius Saudi (KSA) LIVE configuration.
  * Live host: https://api-gateway.ksa.ngenius-payments.com
  * Live realm: networkinternational
