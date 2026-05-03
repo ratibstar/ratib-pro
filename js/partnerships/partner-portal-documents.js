@@ -661,6 +661,26 @@
 
         if (links) {
             const canDl = !isWorker || r._hasFile;
+            let previewFileBtn = '';
+            if (canDl && isWorker && r._worker_id) {
+                const dtype = String(r._document_type || '').trim().toLowerCase();
+                if (WORKER_DOCUMENT_UPLOAD_TYPES.has(dtype)) {
+                    let previewUrl = '';
+                    if (staffMode) {
+                        previewUrl = workerDocStaffPreviewUrl(r._worker_id, dtype);
+                    } else {
+                        const sid = r._shareId != null ? r._shareId : r.id;
+                        if (sid != null && String(sid).trim() !== '') {
+                            previewUrl = partnerShareInlineDownloadUrl(String(sid));
+                        }
+                    }
+                    if (previewUrl) {
+                        previewFileBtn = `<button type="button" class="neon-btn partner-portal-docs-action" data-pp-modal-inline-preview-url="${encodeURIComponent(
+                            previewUrl
+                        )}">Preview file</button>`;
+                    }
+                }
+            }
             const cvOpenBtn =
                 isWorker && r._worker_id
                     ? `<button type="button" class="neon-btn partner-portal-docs-action" data-pp-cv-worker="${String(r._worker_id)}">View CV</button>`
@@ -678,9 +698,9 @@
                 : '';
             if (canDl) {
                 const href = escapeHtml(downloadHref(r));
-                links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}${editWorkerLink}${modalDeleteBtn}</span><a class="neon-btn partner-portal-docs-action" href="${href}">Open file</a><a class="muted-btn partner-portal-docs-action" href="${href}" download>Download</a>`;
+                links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}${editWorkerLink}${modalDeleteBtn}</span>${previewFileBtn}<a class="neon-btn partner-portal-docs-action" href="${href}">Open file</a><a class="muted-btn partner-portal-docs-action" href="${href}" download>Download</a>`;
             } else {
-                links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}${editWorkerLink}${modalDeleteBtn}</span>`;
+                links.innerHTML = `<span class="partner-portal-docs-modal-links-btns">${cvOpenBtn}${fullPageLink}${editWorkerLink}${modalDeleteBtn}</span>${previewFileBtn}`;
             }
         }
 
@@ -1354,6 +1374,19 @@
         if (bc) bc.addEventListener('click', closeDoc);
         if (docModal) {
             docModal.addEventListener('click', (e) => {
+                const prevM = e.target && e.target.closest ? e.target.closest('[data-pp-modal-inline-preview-url]') : null;
+                if (prevM) {
+                    e.preventDefault();
+                    const enc = prevM.getAttribute('data-pp-modal-inline-preview-url');
+                    if (enc) {
+                        try {
+                            openInlineDocPreview(decodeURIComponent(enc));
+                        } catch (_e) {
+                            /* ignore */
+                        }
+                    }
+                    return;
+                }
                 if (e.target === docModal) closeDoc();
             });
         }

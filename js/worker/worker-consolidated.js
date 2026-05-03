@@ -2747,7 +2747,33 @@ function mapDocumentsModalFileInputIdToDocType(inputId) {
     return getDocumentTypeFromElementId(String(inputId || '').replace(/File$/, 'CurrentFile'));
 }
 
-// Uploaded Files modal — uses per-worker storage (same as api/workers/documents/upload.php)
+function mapDocTypeToFileInputId(documentType) {
+    const m = {
+        identity: 'identityFile',
+        passport: 'passportFile',
+        police: 'policeFile',
+        medical: 'medicalFile',
+        visa: 'visaFile',
+        ticket: 'ticketFile',
+        training_certificate: 'trainingCertificateFile',
+    };
+    return m[documentType] || null;
+}
+
+function currentFileElementIdFromDocType(documentType) {
+    const m = {
+        identity: 'identityCurrentFile',
+        passport: 'passportCurrentFile',
+        police: 'policeCurrentFile',
+        medical: 'medicalCurrentFile',
+        visa: 'visaCurrentFile',
+        ticket: 'ticketCurrentFile',
+        training_certificate: 'trainingCertificateCurrentFile',
+    };
+    return m[documentType] || (documentType ? `${documentType}CurrentFile` : 'identityCurrentFile');
+}
+
+// Uploaded Files modal — same storage as card Upload (api/workers/documents/upload.php); can upload/replace here too
 async function showAllFilesForType(elementId) {
     debug.log('showAllFilesForType called with elementId:', elementId);
     const documentType = getDocumentTypeFromElementId(elementId);
@@ -2768,33 +2794,61 @@ async function showAllFilesForType(elementId) {
         return;
     }
 
+    document.querySelectorAll('.files-modal').forEach((m) => m.remove());
+
+    const esc = (s) =>
+        String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+
     try {
         const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
         const response = await fetch(`${workersApi}/documents/get.php?id=${workerId}`, { credentials: 'same-origin' });
         const data = await response.json();
         debug.log('documents/get response:', data);
 
-        const slot = data.success && data.data && data.data[documentType] ? data.data[documentType] : null;
-        const fileName = slot && slot.file ? String(slot.file).trim() : '';
-        if (!fileName) {
+        if (!data.success) {
             if (typeof SimpleAlert !== 'undefined') {
-                SimpleAlert.show(
-                    'No Files',
-                    `No file on record for this worker’s ${documentType.replace(/_/g, ' ')}. Upload a PDF, JPG, or PNG first.`,
-                    'info'
-                );
+                SimpleAlert.show('Error', String(data.message || 'Could not load document metadata.'), 'error');
             }
             return;
         }
 
+        const slot = data.data && data.data[documentType] ? data.data[documentType] : null;
+        const fileName = slot && slot.file ? String(slot.file).trim() : '';
         const viewUrl = `${workersApi}/documents/view.php?id=${workerId}&type=${encodeURIComponent(documentType)}`;
-        const esc = (s) =>
-            String(s)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
-        const ext = (fileName.split('.').pop() || '').toUpperCase();
+        const viewUrlAttr = encodeURIComponent(viewUrl);
+        const ext = fileName ? (fileName.split('.').pop() || '').toUpperCase() : '';
+        const pickId = `ratibWorkerFilesPick_${workerId}_${documentType}`;
+        const refreshElementId = currentFileElementIdFromDocType(documentType);
+
+        const fileCardHtml = fileName
+            ? `
+                        <div class="files-grid">
+                            <div class="file-card modern-file-card">
+                                <div class="file-icon">
+                                    <i class="fas fa-file-image"></i>
+                                </div>
+                                <div class="file-info">
+                                    <div class="file-name">${esc(fileName)}</div>
+                                    <div class="file-type">${esc(ext)}</div>
+                                </div>
+                                <div class="file-actions modern-actions">
+                                    <button type="button" class="action-btn view-btn" data-action="view-worker-doc" data-view-url="${viewUrlAttr}" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button type="button" class="action-btn print-btn" data-action="print-worker-doc" data-view-url="${viewUrlAttr}" title="Print">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`
+            : `
+                        <p class="files-modal-empty-msg" style="margin:0 0 1rem;color:#ccc;">
+                            No file on record for this slot yet. PDF, JPG, or PNG — same as the card <strong>Upload</strong> button.
+                        </p>`;
 
         const modal = document.createElement('div');
         modal.className = 'files-modal modern-files-modal';
@@ -2808,32 +2862,18 @@ async function showAllFilesForType(elementId) {
                             <h3>Uploaded Files</h3>
                             <p>${esc(documentType.replace(/_/g, ' ').toUpperCase())}</p>
                         </div>
-                        <div class="header-actions">
+                        <div class="header-actions" style="display:flex;align-items:center;gap:0.5rem;">
+                            <input type="file" id="${pickId}" class="ratib-uploaded-files-pick" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" data-ratib-doc-type="${esc(documentType)}" style="position:absolute;width:1px;height:1px;opacity:0;left:-9999px;" tabindex="-1" aria-hidden="true">
+                            <button type="button" class="action-btn view-btn" data-action="trigger-uploaded-files-modal-input" data-for-input="${esc(pickId)}" title="Upload or replace file">
+                                <i class="fas fa-upload"></i>
+                            </button>
                             <button class="close-files-modal modern-close-btn" data-action="close-files-modal" type="button" aria-label="Close">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
                     <div class="files-modal-body modern-modal-body">
-                        <div class="files-grid">
-                            <div class="file-card modern-file-card">
-                                <div class="file-icon">
-                                    <i class="fas fa-file-image"></i>
-                                </div>
-                                <div class="file-info">
-                                    <div class="file-name">${esc(fileName)}</div>
-                                    <div class="file-type">${esc(ext)}</div>
-                                </div>
-                                <div class="file-actions modern-actions">
-                                    <button type="button" class="action-btn view-btn" data-action="view-worker-doc" data-view-url="${esc(viewUrl)}" title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button type="button" class="action-btn print-btn" data-action="print-worker-doc" data-view-url="${esc(viewUrl)}" title="Print">
-                                        <i class="fas fa-print"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        ${fileCardHtml}
                     </div>
                 </div>
             `;
@@ -2847,6 +2887,15 @@ async function showAllFilesForType(elementId) {
         document.body.appendChild(modal);
         modal.classList.add('modal-visible');
 
+        const decodeViewUrl = (raw) => {
+            if (!raw) return '';
+            try {
+                return decodeURIComponent(raw);
+            } catch (e) {
+                return raw;
+            }
+        };
+
         modal.querySelectorAll('[data-action="close-files-modal"]').forEach((btn) => {
             btn.addEventListener('click', () => {
                 if (typeof closeFilesModal === 'function') {
@@ -2855,9 +2904,30 @@ async function showAllFilesForType(elementId) {
             });
         });
 
+        modal.querySelectorAll('[data-action="trigger-uploaded-files-modal-input"]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-for-input');
+                const inp = id ? document.getElementById(id) : null;
+                if (inp) inp.click();
+            });
+        });
+
+        modal.querySelectorAll('.ratib-uploaded-files-pick').forEach((inp) => {
+            inp.addEventListener('change', async (e) => {
+                const f = e.target.files && e.target.files[0];
+                const dt = e.target.getAttribute('data-ratib-doc-type');
+                if (!f || !dt) return;
+                const ok = await uploadFile(f, dt);
+                e.target.value = '';
+                if (ok && typeof showAllFilesForType === 'function') {
+                    showAllFilesForType(refreshElementId);
+                }
+            });
+        });
+
         modal.querySelectorAll('[data-action="view-worker-doc"]').forEach((btn) => {
             btn.addEventListener('click', function () {
-                const url = this.getAttribute('data-view-url');
+                const url = decodeViewUrl(this.getAttribute('data-view-url'));
                 if (url && typeof openFileInModal === 'function') {
                     openFileInModal(url);
                 }
@@ -2866,7 +2936,7 @@ async function showAllFilesForType(elementId) {
 
         modal.querySelectorAll('[data-action="print-worker-doc"]').forEach((btn) => {
             btn.addEventListener('click', function () {
-                const url = this.getAttribute('data-view-url');
+                const url = decodeViewUrl(this.getAttribute('data-view-url'));
                 if (!url) return;
                 const w = window.open(url, '_blank', 'width=900,height=700,scrollbars=yes,resizable=yes');
                 if (w) {
@@ -2874,8 +2944,8 @@ async function showAllFilesForType(elementId) {
                         setTimeout(() => {
                             try {
                                 w.print();
-                            } catch (e) {
-                                debug.log('Print skipped:', e);
+                            } catch (err) {
+                                debug.log('Print skipped:', err);
                             }
                         }, 800);
                     });
@@ -2915,7 +2985,7 @@ async function uploadFile(file, documentType) {
         if (typeof SimpleAlert !== 'undefined') {
             SimpleAlert.show('Worker', 'Worker ID missing. Re-open documents from the worker list.', 'warning');
         }
-        return;
+        return false;
     }
     const formData = new FormData();
     formData.append('id', String(workerId));
@@ -2935,19 +3005,33 @@ async function uploadFile(file, documentType) {
             if (typeof showNotification === 'function') {
                 showNotification(result.message || 'Document uploaded.', 'success');
             }
-        } else {
-            debug.error('Upload failed:', result.message);
-            if (typeof showNotification === 'function') {
-                showNotification(result.message || 'Upload failed.', 'error');
-            } else if (typeof SimpleAlert !== 'undefined') {
-                SimpleAlert.show('Upload failed', String(result.message || 'Upload failed.'), 'error');
+            const slotInputId = mapDocTypeToFileInputId(documentType);
+            if (slotInputId) {
+                const fi = document.getElementById(slotInputId);
+                if (fi) fi.value = '';
             }
+            const cfId = currentFileElementIdFromDocType(documentType);
+            if (cfId && typeof updateCurrentFile === 'function') {
+                updateCurrentFile(cfId, null);
+            }
+            if (typeof updateDocumentProgress === 'function') {
+                updateDocumentProgress();
+            }
+            return true;
         }
+        debug.error('Upload failed:', result.message);
+        if (typeof showNotification === 'function') {
+            showNotification(result.message || 'Upload failed.', 'error');
+        } else if (typeof SimpleAlert !== 'undefined') {
+            SimpleAlert.show('Upload failed', String(result.message || 'Upload failed.'), 'error');
+        }
+        return false;
     } catch (error) {
         debug.error('Upload error:', error);
         if (typeof showNotification === 'function') {
             showNotification('Upload error: ' + (error && error.message ? error.message : 'Unknown'), 'error');
         }
+        return false;
     }
 }
 
