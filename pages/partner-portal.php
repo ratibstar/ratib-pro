@@ -55,7 +55,7 @@ $partnerPortalNavActive = 'home';
 include __DIR__ . '/../includes/partner-portal-header.php';
 ?>
 
-<div class="partner-portal-wrap" dir="ltr" lang="en">
+<div class="partner-portal-wrap agency-detail-page" dir="ltr" lang="en">
     <header class="partner-portal-header-mega glass-card">
         <?php include __DIR__ . '/../includes/partner-portal-marketing-strip.php'; ?>
         <div class="partner-portal-top partner-portal-top--identity">

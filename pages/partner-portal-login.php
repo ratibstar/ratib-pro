@@ -8,13 +8,14 @@ $pageTitle = 'Partner portal sign-in';
 $v = time();
 $pageCss = [
     asset('css/partnerships.css') . '?v=' . $v,
+    asset('css/partnerships-agency-detail.css') . '?v=' . $v,
     asset('css/partner-portal.css') . '?v=' . $v,
 ];
 $pageJs = [asset('js/partnerships/partner-portal-login.js') . '?v=' . $v];
 include __DIR__ . '/../includes/partner-portal-header.php';
 ?>
 
-<div class="partner-portal-wrap partner-portal-login-page">
+<div class="partner-portal-wrap partner-portal-login-page agency-detail-page">
     <header class="partner-portal-header-mega glass-card partner-portal-header-mega--login-only">
         <?php include __DIR__ . '/../includes/partner-portal-marketing-strip.php'; ?>
     </header>

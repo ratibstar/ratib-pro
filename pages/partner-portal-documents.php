@@ -23,7 +23,7 @@ $ppPortalHome = htmlspecialchars(pageUrl('partner-portal.php'), ENT_QUOTES, 'UTF
 include __DIR__ . '/../includes/partner-portal-header.php';
 ?>
 
-<div class="partner-portal-wrap partner-portal-docs-page" dir="ltr" lang="en">
+<div class="partner-portal-wrap partner-portal-docs-page agency-detail-page" dir="ltr" lang="en">
     <header class="partner-portal-header-mega glass-card">
         <?php include __DIR__ . '/../includes/partner-portal-marketing-strip.php'; ?>
         <div class="partner-portal-docs-page-intro">
