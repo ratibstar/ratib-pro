@@ -89,6 +89,64 @@
         return `${x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`;
     }
 
+    function renderDeployGlStaffPanel(json) {
+        const w = document.getElementById('agencyAccountingDeployGlWrap');
+        const t = document.getElementById('agencyAccountingDeployGlTbody');
+        const n = document.getElementById('agencyAccountingDeployGlNote');
+        if (!w || !t) return;
+        if (!json || !json.linked) {
+            w.classList.add('is-hidden');
+            w.hidden = true;
+            t.innerHTML = '';
+            if (n) {
+                n.textContent = '';
+                n.hidden = true;
+                n.classList.add('is-hidden');
+            }
+            return;
+        }
+        const activity = Array.isArray(json.deployment_activity) ? json.deployment_activity : [];
+        const note = String(json.deployment_activity_note || '').trim();
+        if (activity.length === 0) {
+            w.classList.add('is-hidden');
+            w.hidden = true;
+            t.innerHTML = '';
+            if (n) {
+                n.textContent = '';
+                n.hidden = true;
+                n.classList.add('is-hidden');
+            }
+            return;
+        }
+        t.innerHTML = activity
+            .map((r) => {
+                const idDisp =
+                    r.deployment_id != null && r.deployment_id !== '' ? escapeHtml(String(r.deployment_id)) : '—';
+                const name = escapeHtml(displayValue(r.worker_name));
+                const st = escapeHtml(displayValue(r.status));
+                const start = escapeHtml(formatCalendarDate(r.contract_start || ''));
+                const dr = escapeHtml(formatMoneyAmount(r.period_debit));
+                const cr = escapeHtml(formatMoneyAmount(r.period_credit));
+                const net = escapeHtml(formatMoneyAmount(r.period_net));
+                const trCls = r.is_other ? ' class="partner-portal-deploy-gl-other"' : '';
+                return `<tr${trCls}><td>${idDisp}</td><td>${name}</td><td>${st}</td><td>${start}</td><td class="num">${dr}</td><td class="num">${cr}</td><td class="num">${net}</td></tr>`;
+            })
+            .join('');
+        if (n) {
+            if (note) {
+                n.textContent = note;
+                n.hidden = false;
+                n.classList.remove('is-hidden');
+            } else {
+                n.textContent = '';
+                n.hidden = true;
+                n.classList.add('is-hidden');
+            }
+        }
+        w.classList.remove('is-hidden');
+        w.hidden = false;
+    }
+
     /** @type {{ destroy?: () => void } | null} */
     let agencyAccountingChartInst = null;
 
@@ -260,6 +318,7 @@
         const canView = panel.getAttribute('data-can-view-chart') === '1';
         if (!canView) {
             destroyAccountingChart();
+            renderDeployGlStaffPanel({ linked: false });
             if (foot) {
                 foot.classList.add('is-hidden');
                 foot.hidden = true;
@@ -304,6 +363,7 @@
 
             if (!json.linked) {
                 destroyAccountingChart();
+                renderDeployGlStaffPanel({ linked: false });
                 if (foot) {
                     foot.classList.add('is-hidden');
                     foot.hidden = true;
@@ -365,9 +425,11 @@
                 foot.hidden = false;
             }
 
+            renderDeployGlStaffPanel(json);
             renderAccountingChart(json.chart_by_month);
         } catch (e) {
             destroyAccountingChart();
+            renderDeployGlStaffPanel({ linked: false });
             const footCatch = document.getElementById('agencyAccountingTableFootnote');
             if (footCatch) {
                 footCatch.classList.add('is-hidden');
