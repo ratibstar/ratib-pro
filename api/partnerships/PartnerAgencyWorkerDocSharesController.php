@@ -450,6 +450,89 @@ class PartnerAgencyWorkerDocSharesController
             'UPDATE partner_agency_worker_document_shares SET display_status = ? WHERE id = ? AND partner_agency_id = ?'
         );
         $stmt->execute([$toStore, $shareId, $partnerAgencyId]);
+
+        $widStmt = $this->conn->prepare(
+            'SELECT worker_id FROM partner_agency_worker_document_shares WHERE id = ? AND partner_agency_id = ? LIMIT 1'
+        );
+        $widStmt->execute([$shareId, $partnerAgencyId]);
+        $workerId = (int) ($widStmt->fetchColumn() ?: 0);
+        $this->syncDeploymentWithPortalDisplay($workerId, $partnerAgencyId, $toStore);
+    }
+
+    /**
+     * When staff sets an explicit portal display status, mirror it to worker_deployments
+     * so the Partner Agencies → Placements table lists the worker.
+     *
+     * @param string|null $portalSlug null = automatic (no deployment change here)
+     */
+    private function syncDeploymentWithPortalDisplay(int $workerId, int $partnerAgencyId, ?string $portalSlug): void
+    {
+        if ($workerId <= 0 || $partnerAgencyId <= 0 || $portalSlug === null || $portalSlug === '') {
+            return;
+        }
+        $slug = strtolower(trim($portalSlug));
+        $toDep = null;
+        switch ($slug) {
+            case 'waiting':
+            case 'processing':
+                $toDep = 'processing';
+                break;
+            case 'ready':
+                $toDep = 'deployed';
+                break;
+            case 'issues':
+                $toDep = 'issue';
+                break;
+            case 'returned':
+                $toDep = 'returned';
+                break;
+            case 'transferred':
+                $toDep = 'transferred';
+                break;
+            default:
+                return;
+        }
+
+        $w = $this->fetchWorkerRow($workerId);
+        if (!$w) {
+            return;
+        }
+        $country = trim((string) ($w['country'] ?? ''));
+        if ($country === '') {
+            $country = '—';
+        }
+        $jobTitle = trim((string) ($w['job_title'] ?? ''));
+        if ($jobTitle === '') {
+            $jobTitle = 'Worker';
+        }
+        $country = mb_substr($country, 0, 100);
+        $jobTitle = mb_substr($jobTitle, 0, 255);
+
+        $sel = $this->conn->prepare(
+            'SELECT id FROM worker_deployments WHERE worker_id = ? AND partner_agency_id = ? LIMIT 1'
+        );
+        $sel->execute([$workerId, $partnerAgencyId]);
+        $depId = (int) ($sel->fetchColumn() ?: 0);
+        if ($depId > 0) {
+            try {
+                $up = $this->conn->prepare('UPDATE worker_deployments SET status = ? WHERE id = ?');
+                $up->execute([$toDep, $depId]);
+            } catch (Throwable $e) {
+                error_log('syncDeploymentWithPortalDisplay update: ' . $e->getMessage());
+            }
+
+            return;
+        }
+        try {
+            $ins = $this->conn->prepare(
+                'INSERT INTO worker_deployments
+                 (worker_id, partner_agency_id, country, job_title, salary, contract_start, contract_end, status, notes)
+                 VALUES (?, ?, ?, ?, NULL, NULL, NULL, ?, NULL)'
+            );
+            $ins->execute([$workerId, $partnerAgencyId, $country, $jobTitle, $toDep]);
+        } catch (Throwable $e) {
+            error_log('syncDeploymentWithPortalDisplay insert: ' . $e->getMessage());
+        }
     }
 
     /**

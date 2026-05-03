@@ -381,7 +381,6 @@
     function updateBulkDeleteUi() {
         const btn = $('ppDocsDeleteSelected');
         const cnt = $('ppDocsSelectedCount');
-        const wrap = $('ppDocsBulkStatusWrap');
         const bulkSel = $('ppDocsBulkStatusSelect');
         if (!staffMode) return;
         const n = selectedDocKeys.size;
@@ -389,11 +388,15 @@
             btn.hidden = n === 0;
             btn.disabled = n === 0;
         }
-        if (wrap) {
-            wrap.hidden = n === 0;
+        if (bulkSel) {
+            bulkSel.disabled = n === 0;
+            if (n === 0) {
+                bulkSel.selectedIndex = 0;
+            }
         }
-        if (bulkSel && n === 0) {
-            bulkSel.selectedIndex = 0;
+        const bulkBtn = $('ppDocsApplyStatusSelected');
+        if (bulkBtn) {
+            bulkBtn.disabled = n === 0;
         }
         if (cnt) {
             cnt.hidden = n === 0;
@@ -704,11 +707,11 @@
                 );
                 const statusLabel = escapeHtml(formatPortalStatusLabel(statusSlug));
                 const statusInner = staffMode
-                    ? `<div class="pp-doc-status-staff-wrap"><span class="pp-doc-status pp-doc-status--${escapeHtml(
+                    ? `<select class="partner-portal-input pp-docs-status-select pp-doc-status-select-solo pp-doc-status-select-solo--${escapeHtml(
                           statusSlug
-                      )}" title="Current label shown to partner">${statusLabel}</span><span class="pp-docs-status-set-label">Set for partner</span><select class="partner-portal-input pp-docs-status-select" data-pp-doc-key="${dkey}" aria-label="Portal status shown to partner">${buildPortalStatusSelectOptions(
+                      )}" data-pp-doc-key="${dkey}" aria-label="Portal status shown to partner" title="Status shown on partner portal">${buildPortalStatusSelectOptions(
                           r.display_status
-                      )}</select></div>`
+                      )}</select>`
                     : `<span class="pp-doc-status pp-doc-status--${escapeHtml(statusSlug)}">${statusLabel}</span>`;
                 const statusTd = `<td class="col-status">${statusInner}</td>`;
                 const noFile = r._kind === 'worker_share' && !r._hasFile;
@@ -1079,7 +1082,10 @@
         if (bulkApply && bulkStatusSel && staffMode) {
             bulkApply.addEventListener('click', async () => {
                 const keys = Array.from(selectedDocKeys);
-                if (keys.length === 0) return;
+                if (keys.length === 0) {
+                    setError('Select at least one row first.');
+                    return;
+                }
                 const raw = String(bulkStatusSel.value || '');
                 if (raw === '') {
                     setError('Choose a status (or Auto) before applying.');

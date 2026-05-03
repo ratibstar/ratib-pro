@@ -138,7 +138,179 @@
 }
 
 .partner-portal-anchor-target {
-    scroll-margin-top: 1.25rem;
+    scroll-margin-top: 4.5rem;
+}
+
+/* ——— Partner portal main navbar (shared with documents page) ——— */
+.partner-portal-main-nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    padding: 0;
+    overflow: hidden;
+}
+
+.partner-portal-main-nav__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.25rem;
+    padding: 0.55rem 1rem 0.55rem 1.1rem;
+}
+
+.partner-portal-main-nav__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.partner-portal-main-nav__title-icon {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.partner-portal-main-nav__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.15rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.partner-portal-main-nav__link {
+    display: inline-block;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.partner-portal-main-nav__link:hover {
+    color: #f8fafc;
+    background: rgba(15, 23, 42, 0.65);
+    border-color: rgba(94, 234, 212, 0.25);
+}
+
+.partner-portal-main-nav__link:focus-visible {
+    outline: 2px solid rgba(94, 234, 212, 0.85);
+    outline-offset: 2px;
+}
+
+.partner-portal-main-nav__link.is-active {
+    color: #042f2e;
+    background: linear-gradient(135deg, #5eead4 0%, #2dd4bf 100%);
+    border-color: rgba(45, 212, 191, 0.65);
+    box-shadow: 0 0 20px rgba(45, 212, 191, 0.25);
+}
+
+/* ——— Dashboard cards ——— */
+.partner-portal-dashboard {
+    margin-top: 0.15rem;
+}
+
+.partner-portal-dashboard-heading {
+    margin: 0 0 0.25rem;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #f8fafc;
+}
+
+.partner-portal-dashboard-lead {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    color: #94a3b8;
+    max-width: 42rem;
+    line-height: 1.45;
+}
+
+.partner-portal-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15.5rem), 1fr));
+    gap: 0.85rem;
+}
+
+.partner-portal-dash-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    padding: 1.05rem 1.1rem 1rem;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+}
+
+.partner-portal-dash-card--link:hover {
+    border-color: rgba(94, 234, 212, 0.45);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    transform: translateY(-2px);
+}
+
+.partner-portal-dash-card--link:focus-visible {
+    outline: 2px solid rgba(94, 234, 212, 0.85);
+    outline-offset: 3px;
+}
+
+.partner-portal-dash-card--static {
+    cursor: default;
+}
+
+.partner-portal-dash-card__icon {
+    font-size: 1.35rem;
+    line-height: 1;
+    margin-bottom: 0.15rem;
+    opacity: 0.95;
+}
+
+.partner-portal-dash-card__value {
+    font-size: 1.85rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #f8fafc;
+    line-height: 1.1;
+}
+
+.partner-portal-dash-card__label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.partner-portal-dash-card__hint {
+    font-size: 0.82rem;
+    color: #cbd5e1;
+    line-height: 1.4;
+    min-height: 2.5rem;
+}
+
+.partner-portal-dash-card__cta {
+    margin-top: auto;
+    padding-top: 0.35rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #5eead4;
+}
+
+.partner-portal-dash-card__btn {
+    margin-top: auto;
+    align-self: flex-start;
 }
 
 .partner-portal-cvs-block {
@@ -853,28 +1025,51 @@
     font-weight: 600;
 }
 
-.pp-doc-status-staff-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.35rem;
-    min-width: 7.5rem;
-    max-width: 11rem;
-}
-
-.pp-docs-status-set-label {
-    font-size: 0.62rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #94a3b8;
-}
-
-.pp-doc-status-staff-wrap .pp-docs-status-select {
-    font-size: 0.72rem;
-    padding: 0.25rem 0.4rem;
-    margin: 0;
+.pp-doc-status-select-solo {
+    display: block;
     width: 100%;
+    max-width: 12.5rem;
+    font-size: 0.78rem;
+    padding: 0.38rem 0.55rem;
+    margin: 0;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    background: rgba(30, 41, 59, 0.85);
+    color: #e2e8f0;
+}
+
+.pp-doc-status-select-solo--processing {
+    border-color: rgba(245, 158, 11, 0.55);
+    background: rgba(120, 53, 15, 0.35);
+    color: #fde68a;
+}
+
+.pp-doc-status-select-solo--waiting {
+    border-color: rgba(148, 163, 184, 0.45);
+}
+
+.pp-doc-status-select-solo--ready {
+    border-color: rgba(34, 197, 94, 0.55);
+    background: rgba(20, 83, 45, 0.35);
+    color: #bbf7d0;
+}
+
+.pp-doc-status-select-solo--issues {
+    border-color: rgba(248, 113, 113, 0.55);
+    background: rgba(127, 29, 29, 0.35);
+    color: #fecaca;
+}
+
+.pp-doc-status-select-solo--returned {
+    border-color: rgba(59, 130, 246, 0.55);
+    background: rgba(30, 58, 138, 0.35);
+    color: #bfdbfe;
+}
+
+.pp-doc-status-select-solo--transferred {
+    border-color: rgba(168, 85, 247, 0.55);
+    background: rgba(88, 28, 135, 0.35);
+    color: #e9d5ff;
 }
 
 .partner-portal-docs-table .pp-docs-file-placeholder {

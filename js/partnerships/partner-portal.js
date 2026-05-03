@@ -144,6 +144,138 @@
         line.textContent = `${n} document${n === 1 ? '' : 's'} on file — open the full table to search, sort, and download.`;
     }
 
+    function setDashText(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    }
+
+    /** Deep links (e.g. from main nav) — re-run after async render so layout matches scroll. */
+    function scrollToPartnerPortalHash() {
+        const raw = window.location.hash || '';
+        if (raw.length < 2) return;
+        const id = raw.slice(1);
+        if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(id)) return;
+        const el = document.getElementById(id);
+        if (!el) return;
+        requestAnimationFrame(() => {
+            el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        });
+    }
+
+    const PP_NAV_SPY_ORDER = [
+        ['dashboard', 'partner-portal-dashboard'],
+        ['overview', 'partner-portal-section-overview'],
+        ['documents', 'partner-portal-section-documents'],
+        ['worker-docs', 'partner-portal-section-worker-docs'],
+    ];
+
+    /** Highlight main nav from scroll position (partner home only; sections must exist). */
+    function syncPartnerNavSpy() {
+        const nav = document.querySelector('.partner-portal-main-nav');
+        if (!nav) return;
+        const links = nav.querySelectorAll('a[data-pp-nav-spy]');
+        if (!links.length) return;
+        const dash = document.getElementById('partner-portal-dashboard');
+        if (!dash) return;
+
+        const activationY = Math.min(120, Math.max(72, (nav.offsetHeight || 56) + 24));
+        let activeSpy = 'dashboard';
+        for (const [spy, domId] of PP_NAV_SPY_ORDER) {
+            const el = document.getElementById(domId);
+            if (!el) continue;
+            if (el.getBoundingClientRect().top <= activationY) activeSpy = spy;
+        }
+
+        links.forEach((a) => {
+            if (a.getAttribute('data-pp-nav-spy') === activeSpy) a.classList.add('is-active');
+            else a.classList.remove('is-active');
+        });
+    }
+
+    let partnerNavSpyRaf = 0;
+    function schedulePartnerNavSpy() {
+        if (partnerNavSpyRaf) return;
+        partnerNavSpyRaf = requestAnimationFrame(() => {
+            partnerNavSpyRaf = 0;
+            syncPartnerNavSpy();
+        });
+    }
+
+    function initPartnerNavSpy() {
+        const nav = document.querySelector('.partner-portal-main-nav');
+        if (!nav || !document.getElementById('partner-portal-dashboard')) return;
+        window.addEventListener('scroll', schedulePartnerNavSpy, { passive: true });
+        window.addEventListener('resize', schedulePartnerNavSpy);
+        syncPartnerNavSpy();
+        schedulePartnerNavSpy();
+    }
+
+    function updateDashboard(agency, cvs, shared) {
+        const sent = Array.isArray(agency && agency.sent_workers) ? agency.sent_workers : [];
+        const nDep = sent.length;
+        let nProcessing = 0;
+        let nDeployed = 0;
+        let nReturned = 0;
+        let nIssue = 0;
+        let nTransferred = 0;
+        sent.forEach((w) => {
+            const s = String(w.status || 'processing').toLowerCase();
+            if (s === 'processing') nProcessing++;
+            else if (s === 'deployed') nDeployed++;
+            else if (s === 'returned') nReturned++;
+            else if (s === 'issue') nIssue++;
+            else if (s === 'transferred') nTransferred++;
+        });
+        setDashText('ppDashDeployments', String(nDep));
+        const depHint = document.getElementById('ppDashDeploymentsHint');
+        if (depHint) {
+            if (nDep === 0) {
+                depHint.textContent = 'No deployment rows yet — your office adds placements here.';
+            } else {
+                const parts = [];
+                if (nProcessing) parts.push(`${nProcessing} processing`);
+                if (nDeployed) parts.push(`${nDeployed} deployed`);
+                if (nReturned) parts.push(`${nReturned} returned`);
+                if (nIssue) parts.push(`${nIssue} issue`);
+                if (nTransferred) parts.push(`${nTransferred} transferred`);
+                depHint.textContent = parts.length ? parts.join(' · ') : 'Status mix — see list below';
+            }
+        }
+
+        const nCv = Array.isArray(cvs) ? cvs.length : 0;
+        const nSh = Array.isArray(shared) ? shared.length : 0;
+        const nLib = nCv + nSh;
+        setDashText('ppDashDocTotal', String(nLib));
+        const docHint = document.getElementById('ppDashDocHint');
+        if (docHint) {
+            docHint.textContent =
+                nLib === 0
+                    ? 'Nothing on file yet — your office will upload or share documents.'
+                    : `${nCv} agency file${nCv === 1 ? '' : 's'} · ${nSh} worker row${nSh === 1 ? '' : 's'}`;
+        }
+
+        setDashText('ppDashWorkerShares', String(nSh));
+        const wHint = document.getElementById('ppDashWorkerHint');
+        if (wHint) {
+            const ready = Array.isArray(shared) ? shared.filter((r) => r && r.has_file).length : 0;
+            wHint.textContent =
+                nSh === 0
+                    ? 'When your office shares worker files, they appear here and in the table.'
+                    : `${ready} with downloadable file${ready === 1 ? '' : 's'}`;
+        }
+
+        const st = String((agency && agency.status) || 'inactive').toLowerCase();
+        const stLabel = st.charAt(0).toUpperCase() + st.slice(1);
+        setDashText('ppDashAgencyStatus', stLabel);
+        const agHint = document.getElementById('ppDashAgencyHint');
+        if (agHint) {
+            agHint.textContent =
+                st === 'active'
+                    ? 'You can use all portal sections while this partnership is active.'
+                    : 'Contact your office if you need this partnership reactivated.';
+        }
+    }
+
     function profileViewSectionsHtml(agency) {
         const blocks = [
             [
@@ -373,6 +505,9 @@
 
             const shared = Array.isArray(data.shared_worker_documents) ? data.shared_worker_documents : [];
             renderSharedWorkerDocs(shared);
+            updateDashboard(agency, cvs, shared);
+            scrollToPartnerPortalHash();
+            schedulePartnerNavSpy();
         } catch (e) {
             if (errEl) {
                 errEl.textContent = e && e.message ? e.message : 'Failed to load.';
@@ -395,6 +530,8 @@
             const b = document.getElementById(id);
             if (b) b.addEventListener('click', () => openProfileModal('view'));
         });
+        const dashProfile = document.getElementById('ppDashOpenProfile');
+        if (dashProfile) dashProfile.addEventListener('click', () => openProfileModal('view'));
         const editBtns = [
             'ppBtnEditAgency',
             'ppBtnEditContact',
@@ -488,6 +625,11 @@
 
     function init() {
         bindProfileAndContractUi();
+        window.addEventListener('hashchange', () => {
+            scrollToPartnerPortalHash();
+            schedulePartnerNavSpy();
+        });
+        initPartnerNavSpy();
         load();
     }
 

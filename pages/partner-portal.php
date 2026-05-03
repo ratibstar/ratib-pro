@@ -47,6 +47,7 @@ $pageCss = [
 ];
 $pageJs = [asset('js/partnerships/partner-portal.js') . '?v=' . $v];
 $partnerPortalMinimal = true;
+$partnerPortalNavActive = 'home';
 include __DIR__ . '/../includes/partner-portal-header.php';
 ?>
 
@@ -74,12 +75,42 @@ include __DIR__ . '/../includes/partner-portal-header.php';
 
     <div id="ppError" class="partner-portal-error glass-card is-hidden" hidden></div>
 
-    <nav class="partner-portal-section-nav glass-card" aria-label="Page sections">
-        <span class="partner-portal-section-nav-label">Jump to</span>
-        <a href="#partner-portal-section-overview">Agency &amp; contracts</a>
-        <a href="<?php echo htmlspecialchars(pageUrl('partner-portal-documents.php'), ENT_QUOTES, 'UTF-8'); ?>">Documents &amp; CVs</a>
-        <a href="#partner-portal-section-worker-docs">Worker documents shared</a>
-    </nav>
+    <?php include __DIR__ . '/../includes/partner-portal-nav.php'; ?>
+
+    <section id="partner-portal-dashboard" class="partner-portal-dashboard partner-portal-anchor-target" aria-labelledby="ppDashboardHeading">
+        <h2 id="ppDashboardHeading" class="partner-portal-dashboard-heading">Dashboard</h2>
+        <p class="partner-portal-dashboard-lead">Quick view of your activity with this office.</p>
+        <div class="partner-portal-dashboard-grid">
+            <a href="#partner-portal-section-overview" class="partner-portal-dash-card glass-card partner-portal-dash-card--link">
+                <span class="partner-portal-dash-card__icon" aria-hidden="true">📄</span>
+                <span class="partner-portal-dash-card__value" id="ppDashDeployments">—</span>
+                <span class="partner-portal-dash-card__label">Deployments</span>
+                <span class="partner-portal-dash-card__hint" id="ppDashDeploymentsHint">Workers on record for your agency</span>
+                <span class="partner-portal-dash-card__cta">View placements →</span>
+            </a>
+            <a href="<?php echo htmlspecialchars(pageUrl('partner-portal-documents.php'), ENT_QUOTES, 'UTF-8'); ?>" class="partner-portal-dash-card glass-card partner-portal-dash-card--link">
+                <span class="partner-portal-dash-card__icon" aria-hidden="true">📎</span>
+                <span class="partner-portal-dash-card__value" id="ppDashDocTotal">—</span>
+                <span class="partner-portal-dash-card__label">Documents &amp; CVs</span>
+                <span class="partner-portal-dash-card__hint" id="ppDashDocHint">Agency files + shared worker files</span>
+                <span class="partner-portal-dash-card__cta">Open full table →</span>
+            </a>
+            <a href="#partner-portal-section-worker-docs" class="partner-portal-dash-card glass-card partner-portal-dash-card--link">
+                <span class="partner-portal-dash-card__icon" aria-hidden="true">👤</span>
+                <span class="partner-portal-dash-card__value" id="ppDashWorkerShares">—</span>
+                <span class="partner-portal-dash-card__label">Worker document rows</span>
+                <span class="partner-portal-dash-card__hint" id="ppDashWorkerHint">Shared slots visible on this portal</span>
+                <span class="partner-portal-dash-card__cta">Jump to list →</span>
+            </a>
+            <div class="partner-portal-dash-card glass-card partner-portal-dash-card--static">
+                <span class="partner-portal-dash-card__icon" aria-hidden="true">🏢</span>
+                <span class="partner-portal-dash-card__value" id="ppDashAgencyStatus">—</span>
+                <span class="partner-portal-dash-card__label">Partnership</span>
+                <span class="partner-portal-dash-card__hint" id="ppDashAgencyHint">Your listing status with Ratib</span>
+                <button type="button" class="muted-btn partner-portal-dash-card__btn" id="ppDashOpenProfile">View profile</button>
+            </div>
+        </div>
+    </section>
 
     <div id="partner-portal-section-overview" class="agency-detail-grid partner-portal-anchor-target">
         <div class="agency-detail-main-col">

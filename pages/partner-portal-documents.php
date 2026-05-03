@@ -18,6 +18,7 @@ $pageCss = [
 ];
 $pageJs = [asset('js/partnerships/partner-portal-documents.js') . '?v=' . $v];
 $partnerPortalMinimal = true;
+$partnerPortalNavActive = 'documents';
 $ppPortalHome = htmlspecialchars(pageUrl('partner-portal.php'), ENT_QUOTES, 'UTF-8');
 include __DIR__ . '/../includes/partner-portal-header.php';
 ?>
@@ -34,6 +35,8 @@ include __DIR__ . '/../includes/partner-portal-header.php';
             </div>
         </div>
     </header>
+
+    <?php include __DIR__ . '/../includes/partner-portal-nav.php'; ?>
 
     <div id="ppDocsError" class="partner-portal-error glass-card is-hidden" hidden></div>
 

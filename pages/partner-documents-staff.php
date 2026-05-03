@@ -91,10 +91,10 @@ window.RATIB_PARTNER_DOCS_STAFF = {
         <input type="search" id="ppDocsSearch" class="partner-portal-input partner-portal-docs-search" placeholder="Search title, worker, CV ref, worker type, or status…" aria-label="Search documents">
         <div class="partner-portal-docs-toolbar-right">
             <span id="ppDocsSelectedCount" class="partner-portal-docs-selected-count" hidden></span>
-            <div class="partner-portal-docs-bulk-status-wrap" id="ppDocsBulkStatusWrap" hidden>
+            <div class="partner-portal-docs-bulk-status-wrap" id="ppDocsBulkStatusWrap">
                 <label class="partner-portal-docs-bulk-status-label" for="ppDocsBulkStatusSelect">Status for selected</label>
-                <select id="ppDocsBulkStatusSelect" class="partner-portal-input partner-portal-docs-select" aria-label="Portal status to apply to selected rows"></select>
-                <button type="button" class="neon-btn partner-portal-docs-bulk-status-btn" id="ppDocsApplyStatusSelected">Apply status</button>
+                <select id="ppDocsBulkStatusSelect" class="partner-portal-input partner-portal-docs-select" aria-label="Portal status to apply to selected rows" disabled></select>
+                <button type="button" class="neon-btn partner-portal-docs-bulk-status-btn" id="ppDocsApplyStatusSelected" disabled>Apply status</button>
             </div>
             <button type="button" class="muted-btn partner-portal-docs-bulk-delete" id="ppDocsDeleteSelected" hidden>Delete selected</button>
             <label class="partner-portal-docs-rows-label">
@@ -122,9 +122,9 @@ window.RATIB_PARTNER_DOCS_STAFF = {
     </div>
 
     <p class="partner-portal-docs-staff-status-help">
-        To change what the <strong>partner portal</strong> shows, use the <strong>Status</strong> dropdown
-        <strong>under the colored pill</strong> on each row, or tick several rows and use <strong>Status for selected</strong> → <strong>Apply status</strong>.
-        Choose <strong>Auto (file + assignment)</strong> to clear a manual value and go back to automatic rules.
+        Use the <strong>Status</strong> dropdown on each row (or select rows + <strong>Apply status</strong>) to set what the partner portal shows.
+        <strong>Processing</strong> (and other explicit statuses) also update <strong>Placements / Deployments</strong> on Partner Agencies so the worker appears there.
+        Choose <strong>Auto (file + assignment)</strong> to clear a manual portal label and use automatic rules again.
     </p>
 
     <div class="glass-card partner-portal-docs-table-shell">

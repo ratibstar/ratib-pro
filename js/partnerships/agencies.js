@@ -599,16 +599,9 @@
 
         const row = allRows.find((r) => String(r.id) === String(partnerAgencyId));
         const embedded = row?.sent_workers;
-        const countHint = Number(row?.workers_sent || 0);
 
         if (Array.isArray(embedded) && embedded.length > 0) {
             setWorkersSentDataset(embedded, partnerAgencyId);
-            return;
-        }
-        if (!countHint) {
-            resetWorkersSentFilters();
-            resetWorkersSentPaginationOnly();
-            workersModalBody.innerHTML = `<tr><td colspan="${workersSentColspan}">No workers sent yet.</td></tr>`;
             return;
         }
 
