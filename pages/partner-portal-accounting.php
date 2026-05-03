@@ -61,6 +61,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
     <div id="ppAcctChartWrap" class="agency-accounting-chart-wrap glass-card is-hidden" hidden lang="en">
         <h3 class="agency-accounting-chart-heading">Monthly debit and credit (SAR)</h3>
         <p class="agency-accounting-chart-note">Summary of posted journal lines on your linked chart account.</p>
+        <p id="ppAcctChartEmpty" class="agency-accounting-chart-empty" hidden></p>
         <div class="agency-accounting-chart-canvas">
             <canvas id="ppAcctChart" aria-label="Monthly debit and credit"></canvas>
         </div>

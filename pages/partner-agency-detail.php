@@ -150,6 +150,7 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
         <div id="agencyAccountingChartWrap" class="agency-accounting-chart-wrap glass-card is-hidden" hidden lang="en">
             <h3 class="agency-accounting-chart-heading">Monthly debit and credit (SAR)</h3>
             <p class="agency-accounting-chart-note">English summary of journal activity in the selected date range.</p>
+            <p id="agencyAccountingChartEmpty" class="agency-accounting-chart-empty" hidden></p>
             <div class="agency-accounting-chart-canvas">
                 <canvas id="agencyAccountingChart" aria-label="Partner ledger debit and credit by month"></canvas>
             </div>
@@ -169,6 +170,9 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
                 <tbody id="agencyAccountingTbody"></tbody>
             </table>
         </div>
+        <p id="agencyAccountingTableFootnote" class="agency-detail-note agency-accounting-table-foot glass-card is-hidden" hidden>
+            The first row is <strong>opening balance</strong> at the start of the dates you picked. Extra lines only appear after journal entries are posted to this chart account in <strong>Accounting</strong> (same as Ratib Pro ledger).
+        </p>
         <div id="agencyAccountingHint" class="agency-detail-note agency-accounting-hint glass-card is-hidden" hidden></div>
         <div id="agencyAccountingError" class="agency-detail-error glass-card is-hidden" hidden></div>
     </div>

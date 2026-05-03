@@ -192,6 +192,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
             <div id="ppOvAcctChartWrap" class="agency-accounting-chart-wrap glass-card partner-portal-ledger-chart is-hidden" hidden lang="en">
                 <h3 class="agency-accounting-chart-heading">Monthly debit and credit (SAR)</h3>
                 <p class="agency-accounting-chart-note">English summary for the selected range.</p>
+                <p id="ppOvAcctChartEmpty" class="agency-accounting-chart-empty" hidden></p>
                 <div class="agency-accounting-chart-canvas partner-portal-ledger-chart-canvas">
                     <canvas id="ppOvAcctChart" aria-label="Monthly debit and credit"></canvas>
                 </div>

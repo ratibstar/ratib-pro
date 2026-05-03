@@ -20,6 +20,19 @@
         return `${x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`;
     }
 
+    function formatCalendarDate(s) {
+        if (s == null || s === '') return '—';
+        const str = String(s).trim();
+        const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) {
+            const d = new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+            if (!Number.isNaN(d.getTime())) {
+                return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            }
+        }
+        return str;
+    }
+
     function destroyChartInstanceOnly() {
         if (chartInst && typeof chartInst.destroy === 'function') {
             chartInst.destroy();
@@ -27,8 +40,19 @@
         chartInst = null;
     }
 
+    function resetChartEmptyUi() {
+        const emptyEl = document.getElementById('ppAcctChartEmpty');
+        const canvas = document.getElementById('ppAcctChart');
+        if (emptyEl) {
+            emptyEl.textContent = '';
+            emptyEl.hidden = true;
+        }
+        if (canvas) canvas.hidden = false;
+    }
+
     function destroyChart() {
         destroyChartInstanceOnly();
+        resetChartEmptyUi();
         const wrap = document.getElementById('ppAcctChartWrap');
         if (wrap) {
             wrap.classList.add('is-hidden');
@@ -39,6 +63,7 @@
     function renderChart(monthRows) {
         const wrap = document.getElementById('ppAcctChartWrap');
         const canvas = document.getElementById('ppAcctChart');
+        const emptyEl = document.getElementById('ppAcctChartEmpty');
         if (!wrap || !canvas) return;
         if (typeof Chart === 'undefined') {
             wrap.classList.add('is-hidden');
@@ -47,9 +72,22 @@
         }
         const rows = Array.isArray(monthRows) ? monthRows : [];
         if (rows.length === 0) {
-            destroyChart();
+            destroyChartInstanceOnly();
+            if (emptyEl) {
+                emptyEl.textContent =
+                    'No posted debit or credit by month in this range yet. Your office posts journal lines to this chart account in Accounting → Journal entries.';
+                emptyEl.hidden = false;
+            }
+            canvas.hidden = true;
+            wrap.classList.remove('is-hidden');
+            wrap.hidden = false;
             return;
         }
+        if (emptyEl) {
+            emptyEl.textContent = '';
+            emptyEl.hidden = true;
+        }
+        canvas.hidden = false;
         wrap.classList.remove('is-hidden');
         wrap.hidden = false;
         destroyChartInstanceOnly();
@@ -204,7 +242,7 @@
             if (tbody) {
                 tbody.innerHTML = lines
                     .map((row) => {
-                        const d = escapeHtml(String(row.date || ''));
+                        const d = escapeHtml(formatCalendarDate(row.date || ''));
                         const ref = escapeHtml(String(row.reference || ''));
                         const desc = escapeHtml(String(row.description || ''));
                         const dr = escapeHtml(formatMoneyAmount(row.debit));

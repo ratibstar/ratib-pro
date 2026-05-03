@@ -49,8 +49,19 @@
         ppOvLedgerChartInst = null;
     }
 
+    function ppOvResetLedgerChartEmptyUi() {
+        const emptyEl = document.getElementById('ppOvAcctChartEmpty');
+        const canvas = document.getElementById('ppOvAcctChart');
+        if (emptyEl) {
+            emptyEl.textContent = '';
+            emptyEl.hidden = true;
+        }
+        if (canvas) canvas.hidden = false;
+    }
+
     function ppOvDestroyLedgerChart() {
         ppOvDestroyLedgerChartInstanceOnly();
+        ppOvResetLedgerChartEmptyUi();
         const wrap = document.getElementById('ppOvAcctChartWrap');
         if (wrap) {
             wrap.classList.add('is-hidden');
@@ -61,6 +72,7 @@
     function ppOvRenderLedgerChart(monthRows) {
         const wrap = document.getElementById('ppOvAcctChartWrap');
         const canvas = document.getElementById('ppOvAcctChart');
+        const emptyEl = document.getElementById('ppOvAcctChartEmpty');
         if (!wrap || !canvas) return;
         if (typeof Chart === 'undefined') {
             wrap.classList.add('is-hidden');
@@ -69,9 +81,22 @@
         }
         const rows = Array.isArray(monthRows) ? monthRows : [];
         if (rows.length === 0) {
-            ppOvDestroyLedgerChart();
+            ppOvDestroyLedgerChartInstanceOnly();
+            if (emptyEl) {
+                emptyEl.textContent =
+                    'No posted debit or credit by month in this range yet. Your office adds activity in Ratib Pro → Accounting → Journal entries.';
+                emptyEl.hidden = false;
+            }
+            canvas.hidden = true;
+            wrap.classList.remove('is-hidden');
+            wrap.hidden = false;
             return;
         }
+        if (emptyEl) {
+            emptyEl.textContent = '';
+            emptyEl.hidden = true;
+        }
+        canvas.hidden = false;
         wrap.classList.remove('is-hidden');
         wrap.hidden = false;
         ppOvDestroyLedgerChartInstanceOnly();
@@ -218,7 +243,7 @@
             if (tbody) {
                 tbody.innerHTML = lines
                     .map((row) => {
-                        const d = escapeHtml(String(row.date || ''));
+                        const d = escapeHtml(formatCalendarDate(row.date || ''));
                         const ref = escapeHtml(String(row.reference || ''));
                         const desc = escapeHtml(String(row.description || ''));
                         const dr = escapeHtml(formatMoneyAmount(row.debit));

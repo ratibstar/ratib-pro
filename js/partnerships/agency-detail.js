@@ -99,8 +99,19 @@
         agencyAccountingChartInst = null;
     }
 
+    function resetAgencyAccountingChartEmptyUi() {
+        const emptyEl = document.getElementById('agencyAccountingChartEmpty');
+        const canvas = document.getElementById('agencyAccountingChart');
+        if (emptyEl) {
+            emptyEl.textContent = '';
+            emptyEl.hidden = true;
+        }
+        if (canvas) canvas.hidden = false;
+    }
+
     function destroyAccountingChart() {
         destroyAccountingChartInstanceOnly();
+        resetAgencyAccountingChartEmptyUi();
         const wrap = document.getElementById('agencyAccountingChartWrap');
         if (wrap) {
             wrap.classList.add('is-hidden');
@@ -115,6 +126,7 @@
     function renderAccountingChart(monthRows) {
         const wrap = document.getElementById('agencyAccountingChartWrap');
         const canvas = document.getElementById('agencyAccountingChart');
+        const emptyEl = document.getElementById('agencyAccountingChartEmpty');
         if (!wrap || !canvas) return;
         if (typeof Chart === 'undefined') {
             wrap.classList.add('is-hidden');
@@ -123,9 +135,22 @@
         }
         const rows = Array.isArray(monthRows) ? monthRows : [];
         if (rows.length === 0) {
-            destroyAccountingChart();
+            destroyAccountingChartInstanceOnly();
+            if (emptyEl) {
+                emptyEl.textContent =
+                    'No posted debit or credit by month in this range yet. When your office posts journal entries to this chart account (Accounting → Journal entries), monthly bars will appear here.';
+                emptyEl.hidden = false;
+            }
+            canvas.hidden = true;
+            wrap.classList.remove('is-hidden');
+            wrap.hidden = false;
             return;
         }
+        if (emptyEl) {
+            emptyEl.textContent = '';
+            emptyEl.hidden = true;
+        }
+        canvas.hidden = false;
         wrap.classList.remove('is-hidden');
         wrap.hidden = false;
         destroyAccountingChartInstanceOnly();
@@ -231,9 +256,14 @@
             hintEl.hidden = true;
         }
 
+        const foot = document.getElementById('agencyAccountingTableFootnote');
         const canView = panel.getAttribute('data-can-view-chart') === '1';
         if (!canView) {
             destroyAccountingChart();
+            if (foot) {
+                foot.classList.add('is-hidden');
+                foot.hidden = true;
+            }
             if (hintEl) {
                 hintEl.textContent =
                     'You need chart-of-accounts permission to view this statement. Ask an administrator for “View Chart of Accounts”.';
@@ -274,6 +304,10 @@
 
             if (!json.linked) {
                 destroyAccountingChart();
+                if (foot) {
+                    foot.classList.add('is-hidden');
+                    foot.hidden = true;
+                }
                 if (filters) filters.hidden = true;
                 if (balances) {
                     balances.classList.add('is-hidden');
@@ -312,7 +346,7 @@
             if (tbody) {
                 tbody.innerHTML = lines
                     .map((row) => {
-                        const d = escapeHtml(String(row.date || ''));
+                        const d = escapeHtml(formatCalendarDate(row.date || ''));
                         const ref = escapeHtml(String(row.reference || ''));
                         const desc = escapeHtml(String(row.description || ''));
                         const dr = escapeHtml(formatMoneyAmount(row.debit));
@@ -326,10 +360,19 @@
                 wrap.classList.remove('is-hidden');
                 wrap.hidden = false;
             }
+            if (foot) {
+                foot.classList.remove('is-hidden');
+                foot.hidden = false;
+            }
 
             renderAccountingChart(json.chart_by_month);
         } catch (e) {
             destroyAccountingChart();
+            const footCatch = document.getElementById('agencyAccountingTableFootnote');
+            if (footCatch) {
+                footCatch.classList.add('is-hidden');
+                footCatch.hidden = true;
+            }
             if (errEl) {
                 errEl.textContent = e && e.message ? e.message : 'Could not load statement.';
                 errEl.classList.remove('is-hidden');

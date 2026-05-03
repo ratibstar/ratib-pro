@@ -223,6 +223,17 @@ function partnerAgencyStmtBuildForAccount(PDO $conn, int $linkedId, string $star
         ];
     }
 
+    // Always show at least one table row so the statement does not look "blank" when there are no journals.
+    array_unshift($lines, [
+        'date' => $start,
+        'reference' => '—',
+        'entry_number' => '',
+        'description' => 'Opening balance (start of selected range)',
+        'debit' => 0.0,
+        'credit' => 0.0,
+        'balance' => round($openingPeriod, 2),
+    ]);
+
     return [
         'account_id' => $linkedId,
         'account_code' => $fa['account_code'] ?? null,

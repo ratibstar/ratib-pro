@@ -782,6 +782,13 @@
     background: rgba(94, 234, 212, 0.06);
 }
 
+.agency-accounting-table-foot {
+    padding: 0.65rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.84rem;
+    color: #94a3b8;
+}
+
 .agency-accounting-hint {
     padding: 1rem 1.15rem;
 }
@@ -802,6 +809,17 @@
     margin: 0 0 0.85rem;
     font-size: 0.82rem;
     color: #94a3b8;
+}
+
+.agency-accounting-chart-empty {
+    margin: 0 0 0.75rem;
+    padding: 0.75rem 0.85rem;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: #cbd5e1;
+    background: rgba(15, 23, 42, 0.45);
+    border-radius: 8px;
+    border: 1px dashed rgba(148, 163, 184, 0.35);
 }
 
 .agency-accounting-chart-canvas {
