@@ -34,9 +34,7 @@ $ppNavAccounting = pageUrl('partner-portal-accounting.php');
             </li>
             <li>
                 <a class="partner-portal-main-nav__link<?php echo $ppNavActive === 'accounting' ? ' is-active' : ''; ?>"
-                   href="<?php echo htmlspecialchars($ppNavAccounting, ENT_QUOTES, 'UTF-8'); ?>"
-                   target="_blank"
-                   rel="noopener noreferrer">Account statement</a>
+                   href="<?php echo htmlspecialchars($ppNavAccounting, ENT_QUOTES, 'UTF-8'); ?>">Account statement</a>
             </li>
         </ul>
     </div>

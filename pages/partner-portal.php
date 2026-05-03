@@ -106,10 +106,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <span class="partner-portal-dash-card__hint" id="ppDashWorkerHint">Shared slots visible on this portal</span>
                 <span class="partner-portal-dash-card__cta">Jump to list →</span>
             </a>
-            <a href="<?php echo htmlspecialchars(pageUrl('partner-portal-accounting.php'), ENT_QUOTES, 'UTF-8'); ?>"
-                class="partner-portal-dash-card glass-card partner-portal-dash-card--link"
-                target="_blank"
-                rel="noopener noreferrer">
+            <a href="<?php echo htmlspecialchars(pageUrl('partner-portal-accounting.php'), ENT_QUOTES, 'UTF-8'); ?>" class="partner-portal-dash-card glass-card partner-portal-dash-card--link">
                 <span class="partner-portal-dash-card__icon" aria-hidden="true">📊</span>
                 <span class="partner-portal-dash-card__value" id="ppDashAccounting">GL</span>
                 <span class="partner-portal-dash-card__label">Account statement</span>
@@ -130,9 +127,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <h3 id="ppDashLedgerPreviewTitle" class="partner-portal-dash-ledger-preview-title">
                     <span aria-hidden="true">📊</span> Account statement (Ratib Pro)
                 </h3>
-                <a class="muted-btn partner-portal-dash-ledger-preview-link" href="<?php echo $ppAccountingPage; ?>"
-                    target="_blank"
-                    rel="noopener noreferrer">Full statement →</a>
+                <a class="muted-btn partner-portal-dash-ledger-preview-link" href="<?php echo $ppAccountingPage; ?>">Full statement →</a>
             </div>
             <p id="ppDashLedgerPreviewLead" class="partner-portal-dash-ledger-preview-lead">Loading ledger…</p>
             <div id="ppDashLedgerPreviewKpis" class="partner-portal-dash-ledger-kpis is-hidden" hidden></div>
@@ -195,9 +190,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <h2 id="ppOvAcctHeading" class="agency-detail-card-title">
                     <span class="agency-detail-card-icon" aria-hidden="true">📊</span> Account statement (Ratib Pro)
                 </h2>
-                <a class="muted-btn partner-portal-ledger-full-link" href="<?php echo $ppAccountingPage; ?>"
-                    target="_blank"
-                    rel="noopener noreferrer">Full screen →</a>
+                <a class="muted-btn partner-portal-ledger-full-link" href="<?php echo $ppAccountingPage; ?>">Full screen →</a>
             </div>
             <p class="agency-detail-note">Posted journal lines on the chart account your office linked to this partnership. Read-only; same data your office sees in accounting.</p>
             <p id="ppOvAcctSummary" class="agency-detail-note partner-portal-ledger-summary">Loading…</p>
