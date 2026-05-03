@@ -654,8 +654,13 @@
 }
 
 .partner-portal-docs-table {
-    min-width: 860px;
+    min-width: 960px;
     margin: 0;
+}
+
+.partner-portal-docs-table .col-source {
+    width: 1%;
+    white-space: nowrap;
 }
 
 .partner-portal-docs-table .col-num {
@@ -713,6 +718,29 @@
     padding: 0.3rem 0.55rem;
     text-decoration: none;
     border-radius: 8px;
+}
+
+.partner-portal-docs-no-file {
+    font-size: 0.78rem;
+    color: #64748b;
+    cursor: help;
+}
+
+.partner-portal-docs-modal-footer {
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.partner-portal-docs-modal-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+    margin-right: auto;
+}
+
+.partner-portal-docs-modal-links:empty {
+    display: none;
 }
 
 .partner-portal-docs-pagination {

@@ -306,6 +306,29 @@ class PartnerAgencyController
     }
 
     /**
+     * Minimal id + name for lightweight partner portal endpoints (no deployments hydration).
+     *
+     * @return array{id: int, name: string}
+     */
+    public function portalSummary(int $id): array
+    {
+        if ($id <= 0) {
+            throw new InvalidArgumentException('Invalid agency id');
+        }
+        $stmt = $this->conn->prepare('SELECT id, name FROM partner_agencies WHERE id = ? LIMIT 1');
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) {
+            throw new RuntimeException('Agency not found');
+        }
+
+        return [
+            'id' => (int) ($row['id'] ?? 0),
+            'name' => trim((string) ($row['name'] ?? '')),
+        ];
+    }
+
+    /**
      * Strip secrets; add booleans for UI. Keeps sent_workers and list fields.
      *
      * @param array<string, mixed> $row

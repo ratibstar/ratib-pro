@@ -38,7 +38,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
     <div id="ppDocsError" class="partner-portal-error glass-card is-hidden" hidden></div>
 
     <div class="glass-card partner-portal-docs-toolbar">
-        <input type="search" id="ppDocsSearch" class="partner-portal-input partner-portal-docs-search" placeholder="Search title or file name…" aria-label="Search documents">
+        <input type="search" id="ppDocsSearch" class="partner-portal-input partner-portal-docs-search" placeholder="Search title, file name, worker, or type…" aria-label="Search documents">
         <div class="partner-portal-docs-toolbar-right">
             <label class="partner-portal-docs-rows-label">
                 Rows
@@ -55,10 +55,11 @@ include __DIR__ . '/../includes/partner-portal-header.php';
 
     <div class="glass-card partner-portal-docs-table-shell">
         <div class="partner-portal-docs-table-scroll">
-            <table class="partnerships-table partner-portal-docs-table" aria-label="Agency documents">
+            <table class="partnerships-table partner-portal-docs-table" aria-label="Partner documents and CVs">
                 <thead>
                     <tr>
                         <th scope="col" class="col-num"><button type="button" class="partner-portal-sort-btn" data-sort="idx">#</button></th>
+                        <th scope="col" class="col-source"><button type="button" class="partner-portal-sort-btn" data-sort="source">Source</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="title">Title</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="original_filename">File name</button></th>
                         <th scope="col"><button type="button" class="partner-portal-sort-btn" data-sort="mime_type">Type</button></th>
@@ -70,13 +71,28 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <tbody id="ppDocsBody"></tbody>
             </table>
         </div>
-        <p id="ppDocsEmpty" class="agency-detail-empty partner-portal-docs-empty" hidden>No documents uploaded yet.</p>
+        <p id="ppDocsEmpty" class="agency-detail-empty partner-portal-docs-empty" hidden>No documents yet.</p>
     </div>
 
     <div class="partner-portal-docs-pagination glass-card">
         <button type="button" class="muted-btn" id="ppDocsPrev">Prev</button>
         <span id="ppDocsPageInfo" class="partner-portal-docs-page-info">Page 1 / 1</span>
         <button type="button" class="muted-btn" id="ppDocsNext">Next</button>
+    </div>
+</div>
+
+<div id="ppDocModal" class="modal-wrap partner-portal-modal" aria-hidden="true">
+    <div class="modal-card glass-card partner-portal-modal-card partner-portal-modal-card--compact" role="dialog" aria-modal="true" aria-labelledby="ppDocModalTitle">
+        <div class="partner-portal-modal-head">
+            <h3 id="ppDocModalTitle" class="partner-portal-modal-title">Document</h3>
+            <button type="button" class="icon-btn" id="ppDocModalCloseX" aria-label="Close">×</button>
+        </div>
+        <p id="ppDocModalLead" class="partner-portal-modal-lead"></p>
+        <dl class="agency-detail-dl partner-portal-contract-dl" id="ppDocModalDl"></dl>
+        <div class="partner-portal-modal-footer partner-portal-docs-modal-footer">
+            <div id="ppDocModalFileLinks" class="partner-portal-docs-modal-links"></div>
+            <button type="button" class="muted-btn" id="ppDocModalCloseBtn">Close</button>
+        </div>
     </div>
 </div>
 
