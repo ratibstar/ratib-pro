@@ -912,6 +912,11 @@
     white-space: nowrap;
 }
 
+#ppDocsBulkStatusSelect.partner-portal-docs-select {
+    min-width: 12rem;
+    max-width: min(100%, 18rem);
+}
+
 .partner-portal-docs-staff-upload-wrap {
     padding: 0.75rem 1rem;
     margin-bottom: 0.65rem;
@@ -1005,8 +1010,11 @@
 }
 
 .partner-portal-docs-table .col-status {
-    width: 1%;
+    min-width: 12.5rem;
+    width: 12.5rem;
+    max-width: 14rem;
     white-space: nowrap;
+    vertical-align: middle;
 }
 
 .partner-portal-docs-staff-status-help {
@@ -1025,50 +1033,124 @@
     font-weight: 600;
 }
 
-.pp-doc-status-select-solo {
+/* Portal row status <select>: same visual language as #workersModal select.deployment-status */
+.partner-portal-docs-table select.pp-doc-status-select-solo.partner-portal-input,
+.partner-portal-docs-table select.pp-doc-status-select-solo {
+    --dm-border: rgba(148, 163, 184, 0.45);
+    --dm-bg: rgba(2, 6, 23, 0.96);
+    --dm-fg: #e2e8f0;
+    --dm-chevron: #93c5fd;
+    --dm-accent: #64748b;
     display: block;
+    box-sizing: border-box;
     width: 100%;
-    max-width: 12.5rem;
-    font-size: 0.78rem;
-    padding: 0.38rem 0.55rem;
+    min-width: 10.75rem;
+    max-width: none;
     margin: 0;
-    border-radius: 10px;
-    border: 1px solid rgba(148, 163, 184, 0.45);
-    background: rgba(30, 41, 59, 0.85);
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.25;
+    padding: 0.4rem 1.85rem 0.4rem 0.55rem;
+    appearance: none;
+    -webkit-appearance: none;
+    text-transform: capitalize;
+    border: 1px solid var(--dm-border) !important;
+    border-left: 4px solid var(--dm-accent);
+    border-radius: 8px;
+    background-color: var(--dm-bg) !important;
+    color: var(--dm-fg) !important;
+    background-image: linear-gradient(45deg, transparent 50%, var(--dm-chevron) 50%),
+        linear-gradient(135deg, var(--dm-chevron) 50%, transparent 50%);
+    background-position: calc(100% - 12px) calc(50% - 2px), calc(100% - 7px) calc(50% - 2px);
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+}
+
+.partner-portal-docs-table select.pp-doc-status-select-solo--waiting {
+    --dm-border: rgba(100, 116, 139, 0.55);
+    --dm-bg: rgba(30, 41, 59, 0.88);
+    --dm-fg: #e2e8f0;
+    --dm-chevron: #94a3b8;
+    --dm-accent: #64748b;
+}
+
+.partner-portal-docs-table select.pp-doc-status-select-solo--processing {
+    --dm-border: rgba(245, 158, 11, 0.55);
+    --dm-bg: rgba(120, 53, 15, 0.42);
+    --dm-fg: #fde68a;
+    --dm-chevron: #fcd34d;
+    --dm-accent: #f59e0b;
+}
+
+.partner-portal-docs-table select.pp-doc-status-select-solo--ready {
+    --dm-border: rgba(34, 197, 94, 0.55);
+    --dm-bg: rgba(20, 83, 45, 0.42);
+    --dm-fg: #bbf7d0;
+    --dm-chevron: #86efac;
+    --dm-accent: #22c55e;
+}
+
+.partner-portal-docs-table select.pp-doc-status-select-solo--issues {
+    --dm-border: rgba(248, 113, 113, 0.55);
+    --dm-bg: rgba(127, 29, 29, 0.42);
+    --dm-fg: #fecaca;
+    --dm-chevron: #fca5a5;
+    --dm-accent: #ef4444;
+}
+
+.partner-portal-docs-table select.pp-doc-status-select-solo--returned {
+    --dm-border: rgba(59, 130, 246, 0.55);
+    --dm-bg: rgba(30, 58, 138, 0.42);
+    --dm-fg: #bfdbfe;
+    --dm-chevron: #93c5fd;
+    --dm-accent: #3b82f6;
+}
+
+.partner-portal-docs-table select.pp-doc-status-select-solo--transferred {
+    --dm-border: rgba(168, 85, 247, 0.55);
+    --dm-bg: rgba(88, 28, 135, 0.42);
+    --dm-fg: #e9d5ff;
+    --dm-chevron: #d8b4fe;
+    --dm-accent: #a855f7;
+}
+
+.partner-portal-docs-table select.pp-doc-status-select-solo option {
+    background: #0f172a;
     color: #e2e8f0;
 }
 
-.pp-doc-status-select-solo--processing {
-    border-color: rgba(245, 158, 11, 0.55);
-    background: rgba(120, 53, 15, 0.35);
+.partner-portal-docs-table select.pp-doc-status-select-solo option[value=''] {
+    background: #0f172a;
+    color: #94a3b8;
+}
+
+.partner-portal-docs-table select.pp-doc-status-select-solo option[value='waiting'] {
+    background: #1e293b;
+    color: #e2e8f0;
+}
+
+.partner-portal-docs-table select.pp-doc-status-select-solo option[value='processing'] {
+    background: #78350f;
     color: #fde68a;
 }
 
-.pp-doc-status-select-solo--waiting {
-    border-color: rgba(148, 163, 184, 0.45);
-}
-
-.pp-doc-status-select-solo--ready {
-    border-color: rgba(34, 197, 94, 0.55);
-    background: rgba(20, 83, 45, 0.35);
+.partner-portal-docs-table select.pp-doc-status-select-solo option[value='ready'] {
+    background: #14532d;
     color: #bbf7d0;
 }
 
-.pp-doc-status-select-solo--issues {
-    border-color: rgba(248, 113, 113, 0.55);
-    background: rgba(127, 29, 29, 0.35);
+.partner-portal-docs-table select.pp-doc-status-select-solo option[value='issues'] {
+    background: #7f1d1d;
     color: #fecaca;
 }
 
-.pp-doc-status-select-solo--returned {
-    border-color: rgba(59, 130, 246, 0.55);
-    background: rgba(30, 58, 138, 0.35);
+.partner-portal-docs-table select.pp-doc-status-select-solo option[value='returned'] {
+    background: #1e3a8a;
     color: #bfdbfe;
 }
 
-.pp-doc-status-select-solo--transferred {
-    border-color: rgba(168, 85, 247, 0.55);
-    background: rgba(88, 28, 135, 0.35);
+.partner-portal-docs-table select.pp-doc-status-select-solo option[value='transferred'] {
+    background: #581c87;
     color: #e9d5ff;
 }
 
