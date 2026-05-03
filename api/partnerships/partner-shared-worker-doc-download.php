@@ -103,12 +103,14 @@ try {
     }
 
     $downloadName = $fn;
+    $inline = isset($_GET['inline']) && (string) $_GET['inline'] === '1';
     if (ob_get_length()) {
         ob_clean();
     }
     header('Content-Type: ' . $mime);
     header('Content-Length: ' . (string) filesize($real));
-    header('Content-Disposition: attachment; filename="' . basename($downloadName) . '"');
+    $disp = $inline ? 'inline' : 'attachment';
+    header('Content-Disposition: ' . $disp . '; filename="' . basename($downloadName) . '"');
     header('Cache-Control: private, no-store');
     readfile($real);
     exit;

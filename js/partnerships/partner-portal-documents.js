@@ -199,6 +199,14 @@
         return `../api/partnerships/partner-agency-cv-download.php?id=${encodeURIComponent(String(id))}`;
     }
 
+    function workerDocStaffPreviewUrl(workerId, docType) {
+        return `../api/workers/documents/view.php?id=${encodeURIComponent(String(workerId))}&type=${encodeURIComponent(docType)}`;
+    }
+
+    function partnerShareInlineDownloadUrl(shareId) {
+        return `../api/partnerships/partner-shared-worker-doc-download.php?share_id=${encodeURIComponent(String(shareId))}&inline=1`;
+    }
+
     function workerProfileHref(workerId) {
         const wid = workerId != null ? String(workerId).trim() : '';
         if (!wid) return 'Worker.php';
@@ -238,8 +246,74 @@
             modal.setAttribute('aria-hidden', 'true');
         }
         if (!$('ppDocModal') || !$('ppDocModal').classList.contains('open')) {
+            const inline = $('ppInlineDocViewerModal');
+            if (!inline || !inline.classList.contains('open')) {
+                document.body.style.overflow = '';
+            }
+        }
+    }
+
+    function closeInlineDocPreview() {
+        const modal = $('ppInlineDocViewerModal');
+        const frame = $('ppInlineDocViewerFrame');
+        if (frame) {
+            frame.src = 'about:blank';
+        }
+        if (modal) {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+        const cvOpen = $('ppCvModal') && $('ppCvModal').classList.contains('open');
+        const docOpen = $('ppDocModal') && $('ppDocModal').classList.contains('open');
+        if (!cvOpen && !docOpen) {
             document.body.style.overflow = '';
         }
+    }
+
+    function ensureInlineDocViewerModal() {
+        if ($('ppInlineDocViewerModal')) {
+            return;
+        }
+        const wrap = document.createElement('div');
+        wrap.id = 'ppInlineDocViewerModal';
+        wrap.className = 'modal-wrap partner-portal-modal partner-portal-modal--cv';
+        wrap.setAttribute('aria-hidden', 'true');
+        wrap.innerHTML =
+            '<div class="modal-card glass-card partner-portal-modal-card partner-portal-modal-card--cv" role="dialog" aria-modal="true" aria-labelledby="ppInlineDocViewerTitle">' +
+            '<div class="partner-portal-modal-head">' +
+            '<h3 id="ppInlineDocViewerTitle" class="partner-portal-modal-title">Document preview</h3>' +
+            '<button type="button" class="icon-btn" id="ppInlineDocViewerCloseX" aria-label="Close">×</button>' +
+            '</div>' +
+            '<div class="partner-portal-cv-frame-shell">' +
+            '<iframe id="ppInlineDocViewerFrame" class="partner-portal-cv-frame" title="Document preview"></iframe>' +
+            '</div>' +
+            '<div class="partner-portal-modal-footer partner-portal-modal-footer--cv">' +
+            '<button type="button" class="muted-btn" id="ppInlineDocViewerCloseBtn">Close</button>' +
+            '</div>' +
+            '</div>';
+        document.body.appendChild(wrap);
+        const closeFn = () => closeInlineDocPreview();
+        const bx = $('ppInlineDocViewerCloseX');
+        const bc = $('ppInlineDocViewerCloseBtn');
+        if (bx) bx.addEventListener('click', closeFn);
+        if (bc) bc.addEventListener('click', closeFn);
+        wrap.addEventListener('click', (e) => {
+            if (e.target === wrap) closeFn();
+        });
+    }
+
+    function openInlineDocPreview(url) {
+        if (!url) return;
+        closeDocModal();
+        closeCvModal();
+        ensureInlineDocViewerModal();
+        const modal = $('ppInlineDocViewerModal');
+        const frame = $('ppInlineDocViewerFrame');
+        if (!modal || !frame) return;
+        frame.src = url;
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
     }
 
     function ensureCvModal() {
@@ -275,6 +349,7 @@
     }
 
     function openCvModal(workerId) {
+        closeInlineDocPreview();
         closeDocModal();
         ensureCvModal();
         const modal = $('ppCvModal');
@@ -503,10 +578,15 @@
             modal.classList.remove('open');
             modal.setAttribute('aria-hidden', 'true');
         }
-        document.body.style.overflow = '';
+        const cvOpen = $('ppCvModal') && $('ppCvModal').classList.contains('open');
+        const inlineOpen = $('ppInlineDocViewerModal') && $('ppInlineDocViewerModal').classList.contains('open');
+        if (!cvOpen && !inlineOpen) {
+            document.body.style.overflow = '';
+        }
     }
 
     function openDocModal(r) {
+        closeInlineDocPreview();
         const modal = $('ppDocModal');
         const titleEl = $('ppDocModalTitle');
         const lead = $('ppDocModalLead');
@@ -776,6 +856,22 @@
                           r._worker_id
                       )}" data-doc-type="${escapeHtml(docTypeSlug)}">Upload</button>`
                     : '';
+                const shareIdForPrev = r._shareId != null ? r._shareId : r.id;
+                const canPreviewSlot =
+                    isWorkerRow &&
+                    !noFile &&
+                    WORKER_DOCUMENT_UPLOAD_TYPES.has(docTypeSlug) &&
+                    r._worker_id &&
+                    (staffMode || (shareIdForPrev != null && String(shareIdForPrev).trim() !== ''));
+                const previewBtn = canPreviewSlot
+                    ? staffMode
+                        ? `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-worker-doc-preview="1" data-worker-id="${String(
+                              r._worker_id
+                          )}" data-doc-type="${escapeHtml(docTypeSlug)}">Preview</button>`
+                        : `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-partner-doc-preview="${String(
+                              shareIdForPrev
+                          )}">Preview</button>`
+                    : '';
                 const cvBtn =
                     r._kind === 'worker_share' && r._worker_id
                         ? `<button type="button" class="neon-btn partner-portal-docs-action" data-pp-cv-worker="${String(r._worker_id)}">View CV</button>`
@@ -791,7 +887,7 @@
                 const fileActions = noFile
                     ? ''
                     : `<a class="muted-btn partner-portal-docs-action" href="${dl}">Open</a><a class="neon-btn partner-portal-docs-action" href="${dl}" download>Download</a>`;
-                const actions = `<span class="partner-portal-docs-actions-btns">${cvBtn}${uploadBtn}${viewBtn}${editBtn}${deleteBtn}${fileActions}</span>`;
+                const actions = `<span class="partner-portal-docs-actions-btns">${cvBtn}${previewBtn}${uploadBtn}${viewBtn}${editBtn}${deleteBtn}${fileActions}</span>`;
 
                 return `<tr>
                     ${selectCell}
@@ -1084,6 +1180,23 @@
                 });
             }
             tbody.addEventListener('click', (e) => {
+                const prevStaff = e.target && e.target.closest ? e.target.closest('[data-pp-worker-doc-preview]') : null;
+                if (prevStaff && staffMode) {
+                    e.preventDefault();
+                    const wid = parseInt(String(prevStaff.getAttribute('data-worker-id') || ''), 10);
+                    const docType = String(prevStaff.getAttribute('data-doc-type') || '').trim().toLowerCase();
+                    if (!Number.isFinite(wid) || wid <= 0 || !WORKER_DOCUMENT_UPLOAD_TYPES.has(docType)) return;
+                    openInlineDocPreview(workerDocStaffPreviewUrl(wid, docType));
+                    return;
+                }
+                const prevPartner = e.target && e.target.closest ? e.target.closest('[data-pp-partner-doc-preview]') : null;
+                if (prevPartner && !staffMode) {
+                    e.preventDefault();
+                    const sid = prevPartner.getAttribute('data-pp-partner-doc-preview');
+                    if (!sid) return;
+                    openInlineDocPreview(partnerShareInlineDownloadUrl(sid));
+                    return;
+                }
                 const uploadBtn = e.target && e.target.closest ? e.target.closest('[data-pp-worker-doc-upload]') : null;
                 if (uploadBtn && staffMode) {
                     e.preventDefault();
@@ -1250,6 +1363,12 @@
             if (cvModal && cvModal.classList.contains('open')) {
                 e.preventDefault();
                 closeCvModal();
+                return;
+            }
+            const inlinePrev = $('ppInlineDocViewerModal');
+            if (inlinePrev && inlinePrev.classList.contains('open')) {
+                e.preventDefault();
+                closeInlineDocPreview();
                 return;
             }
             if (docModal && docModal.classList.contains('open')) {

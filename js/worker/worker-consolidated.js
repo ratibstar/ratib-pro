@@ -2730,28 +2730,75 @@ function showAvailableFilesForType(elementId, element) {
     }
 }
 
-// Function to show all files for a document type
+// Map Worker Documents modal file input id → API document_type slug
+function mapDocumentsModalFileInputIdToDocType(inputId) {
+    const m = {
+        identityFile: 'identity',
+        passportFile: 'passport',
+        policeFile: 'police',
+        medicalFile: 'medical',
+        visaFile: 'visa',
+        ticketFile: 'ticket',
+        trainingCertificateFile: 'training_certificate',
+    };
+    if (m[inputId]) {
+        return m[inputId];
+    }
+    return getDocumentTypeFromElementId(String(inputId || '').replace(/File$/, 'CurrentFile'));
+}
+
+// Uploaded Files modal — uses per-worker storage (same as api/workers/documents/upload.php)
 async function showAllFilesForType(elementId) {
     debug.log('showAllFilesForType called with elementId:', elementId);
     const documentType = getDocumentTypeFromElementId(elementId);
     debug.log('Document type determined:', documentType);
-    
+
+    const widEl = document.getElementById('documentsWorkerIdField');
+    const workerId = widEl ? parseInt(String(widEl.value || ''), 10) : 0;
+    if (!workerId) {
+        if (typeof SimpleAlert !== 'undefined') {
+            SimpleAlert.show('Worker', 'Open the documents modal from a worker row first.', 'warning');
+        }
+        return;
+    }
+    if (documentType === 'main') {
+        if (typeof SimpleAlert !== 'undefined') {
+            SimpleAlert.show('Documents', 'Could not determine document type for this slot.', 'info');
+        }
+        return;
+    }
+
     try {
-        // Fetch files dynamically from server
         const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
-        const apiUrl = `${workersApi}/get-files.php?type=${documentType}`;
-        debug.log('Fetching files from API:', apiUrl);
-        
-        const response = await fetch(apiUrl);
+        const response = await fetch(`${workersApi}/documents/get.php?id=${workerId}`, { credentials: 'same-origin' });
         const data = await response.json();
-        debug.log('API response:', data);
-        
-        if (data.success && data.files.length > 0) {
-            debug.log('Files found:', data.files.length);
-            // Create a modern modal to show all files
-            const modal = document.createElement('div');
-            modal.className = 'files-modal modern-files-modal';
-            modal.innerHTML = `
+        debug.log('documents/get response:', data);
+
+        const slot = data.success && data.data && data.data[documentType] ? data.data[documentType] : null;
+        const fileName = slot && slot.file ? String(slot.file).trim() : '';
+        if (!fileName) {
+            if (typeof SimpleAlert !== 'undefined') {
+                SimpleAlert.show(
+                    'No Files',
+                    `No file on record for this worker’s ${documentType.replace(/_/g, ' ')}. Upload a PDF, JPG, or PNG first.`,
+                    'info'
+                );
+            }
+            return;
+        }
+
+        const viewUrl = `${workersApi}/documents/view.php?id=${workerId}&type=${encodeURIComponent(documentType)}`;
+        const esc = (s) =>
+            String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        const ext = (fileName.split('.').pop() || '').toUpperCase();
+
+        const modal = document.createElement('div');
+        modal.className = 'files-modal modern-files-modal';
+        modal.innerHTML = `
                 <div class="files-modal-content modern-modal-content">
                     <div class="files-modal-header modern-modal-header">
                         <div class="header-icon">
@@ -2759,144 +2806,91 @@ async function showAllFilesForType(elementId) {
                         </div>
                         <div class="header-text">
                             <h3>Uploaded Files</h3>
-                            <p>${documentType.toUpperCase()} Documents</p>
+                            <p>${esc(documentType.replace(/_/g, ' ').toUpperCase())}</p>
                         </div>
                         <div class="header-actions">
-                            <button type="button" class="btn-select-all" data-action="select-all-files" data-document-type="${documentType}" title="Select All">
-                                <i class="fas fa-square"></i>
-                            </button>
-                            <button type="button" class="btn-delete-all" data-action="delete-selected-files" data-document-type="${documentType}" title="Delete Selected">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                            <button class="close-files-modal modern-close-btn" data-action="close-files-modal">
+                            <button class="close-files-modal modern-close-btn" data-action="close-files-modal" type="button" aria-label="Close">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
                     </div>
                     <div class="files-modal-body modern-modal-body">
                         <div class="files-grid">
-                            ${data.files.map(file => `
-                                <div class="file-card modern-file-card" data-file-name="${file.name}">
-                                    <div class="file-checkbox">
-                                        <input type="checkbox" class="file-select-checkbox" value="${file.name}" data-action="update-select-all">
-                                    </div>
-                                    <div class="file-icon">
-                                        <i class="fas fa-file-image"></i>
-                                    </div>
-                                    <div class="file-info">
-                                        <div class="file-name">${file.name}</div>
-                                        <div class="file-type">${file.name.split('.').pop().toUpperCase()}</div>
-                                    </div>
-                                    <div class="file-actions modern-actions">
-                                        <button type="button" class="action-btn view-btn" data-action="view-file" data-file-name="${file.name.replace(/'/g, "&#39;").replace(/"/g, "&quot;")}" title="View File">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button type="button" class="action-btn print-btn" data-action="print-file" data-file-name="${file.name.replace(/'/g, "&#39;").replace(/"/g, "&quot;")}" title="Print File">
-                                            <i class="fas fa-print"></i>
-                                        </button>
-                                        <button type="button" class="action-btn delete-btn" data-action="delete-file" data-file-name="${file.name.replace(/'/g, "&#39;").replace(/"/g, "&quot;")}" data-document-type="${documentType}" title="Delete File">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
+                            <div class="file-card modern-file-card">
+                                <div class="file-icon">
+                                    <i class="fas fa-file-image"></i>
                                 </div>
-                            `).join('')}
+                                <div class="file-info">
+                                    <div class="file-name">${esc(fileName)}</div>
+                                    <div class="file-type">${esc(ext)}</div>
+                                </div>
+                                <div class="file-actions modern-actions">
+                                    <button type="button" class="action-btn view-btn" data-action="view-worker-doc" data-view-url="${esc(viewUrl)}" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button type="button" class="action-btn print-btn" data-action="print-worker-doc" data-view-url="${esc(viewUrl)}" title="Print">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
-            
-            // Add click outside to close
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeFilesModal();
+            }
+        });
+
+        document.body.appendChild(modal);
+        modal.classList.add('modal-visible');
+
+        modal.querySelectorAll('[data-action="close-files-modal"]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if (typeof closeFilesModal === 'function') {
                     closeFilesModal();
                 }
             });
-            
-            // Append modal to document and show it
-            document.body.appendChild(modal);
-            modal.classList.add('modal-visible');
-            
-            // Add event listeners for modal buttons (replaces inline onclick handlers)
-            modal.querySelectorAll('[data-action="select-all-files"]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const docType = this.getAttribute('data-document-type');
-                    if (typeof toggleSelectAll === 'function') {
-                        toggleSelectAll(docType);
-                    }
-                });
+        });
+
+        modal.querySelectorAll('[data-action="view-worker-doc"]').forEach((btn) => {
+            btn.addEventListener('click', function () {
+                const url = this.getAttribute('data-view-url');
+                if (url && typeof openFileInModal === 'function') {
+                    openFileInModal(url);
+                }
             });
-            
-            modal.querySelectorAll('[data-action="delete-selected-files"]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const docType = this.getAttribute('data-document-type');
-                    if (typeof deleteSelectedFiles === 'function') {
-                        deleteSelectedFiles(docType);
-                    }
-                });
+        });
+
+        modal.querySelectorAll('[data-action="print-worker-doc"]').forEach((btn) => {
+            btn.addEventListener('click', function () {
+                const url = this.getAttribute('data-view-url');
+                if (!url) return;
+                const w = window.open(url, '_blank', 'width=900,height=700,scrollbars=yes,resizable=yes');
+                if (w) {
+                    w.addEventListener('load', () => {
+                        setTimeout(() => {
+                            try {
+                                w.print();
+                            } catch (e) {
+                                debug.log('Print skipped:', e);
+                            }
+                        }, 800);
+                    });
+                }
             });
-            
-            modal.querySelectorAll('[data-action="close-files-modal"]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    if (typeof closeFilesModal === 'function') {
-                        closeFilesModal();
-                    }
-                });
-            });
-            
-            modal.querySelectorAll('[data-action="view-file"]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const fileName = this.getAttribute('data-file-name');
-                    this.classList.add('pressed');
-                    if (typeof viewDocument === 'function') {
-                        viewDocument(fileName);
-                    }
-                    setTimeout(() => this.classList.remove('pressed'), 1000);
-                });
-            });
-            
-            modal.querySelectorAll('[data-action="print-file"]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const fileName = this.getAttribute('data-file-name');
-                    this.classList.add('pressed');
-                    if (typeof printDocument === 'function') {
-                        printDocument(fileName);
-                    }
-                    setTimeout(() => this.classList.remove('pressed'), 1000);
-                });
-            });
-            
-            modal.querySelectorAll('[data-action="delete-file"]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const fileName = this.getAttribute('data-file-name');
-                    const docType = this.getAttribute('data-document-type');
-                    this.classList.add('pressed');
-                    if (typeof deleteDocument === 'function') {
-                        deleteDocument(fileName, docType, this);
-                    }
-                    setTimeout(() => this.classList.remove('pressed'), 1000);
-                });
-            });
-            
-            modal.querySelectorAll('[data-action="update-select-all"]').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    if (typeof updateSelectAllButton === 'function') {
-                        updateSelectAllButton();
-                    }
-                });
-            });
-            
-            // Trigger smooth animation
-            setTimeout(() => {
-                modal.classList.add('show');
-            }, 10);
-        } else {
-            debug.log('No files found for document type:', documentType);
-            // Show a message that no files are available
-            SimpleAlert.show('No Files', `No files found for ${documentType.toUpperCase()} documents.`, 'info');
-        }
+        });
+
+        setTimeout(() => {
+            modal.classList.add('show');
+        }, 10);
     } catch (error) {
-        debug.error('Error fetching files:', error);
-        // Error loading files - no alert needed
+        debug.error('Error loading worker document file:', error);
+        if (typeof SimpleAlert !== 'undefined') {
+            SimpleAlert.show('Error', 'Could not load file information.', 'error');
+        }
     }
 }
 
@@ -2913,30 +2907,47 @@ function closeFilesModal() {
     }
 }
 
-// Function to upload file immediately
+// Upload from Worker Documents modal — same endpoint as partner staff row upload
 async function uploadFile(file, documentType) {
+    const widEl = document.getElementById('documentsWorkerIdField');
+    const workerId = widEl ? parseInt(String(widEl.value || ''), 10) : 0;
+    if (!workerId) {
+        if (typeof SimpleAlert !== 'undefined') {
+            SimpleAlert.show('Worker', 'Worker ID missing. Re-open documents from the worker list.', 'warning');
+        }
+        return;
+    }
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('documentType', documentType);
-    
+    formData.append('id', String(workerId));
+    formData.append('document_type', documentType);
+    formData.append('document', file, file.name);
+
     try {
         const workersApi = window.WORKERS_API || ((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || '') + '/api/workers';
-        const response = await fetch(`${workersApi}/upload-file.php`, {
+        const response = await fetch(`${workersApi}/documents/upload.php`, {
             method: 'POST',
-            body: formData
+            body: formData,
+            credentials: 'same-origin',
         });
-        
-        const result = await response.json();
-        if (result.success) {
-            debug.log('File uploaded successfully:', result.fileName);
-            // Show success message
-            // File uploaded successfully - no alert needed
+        const result = await response.json().catch(() => ({}));
+        if (response.ok && result.success) {
+            debug.log('Document uploaded:', result.data);
+            if (typeof showNotification === 'function') {
+                showNotification(result.message || 'Document uploaded.', 'success');
+            }
         } else {
             debug.error('Upload failed:', result.message);
+            if (typeof showNotification === 'function') {
+                showNotification(result.message || 'Upload failed.', 'error');
+            } else if (typeof SimpleAlert !== 'undefined') {
+                SimpleAlert.show('Upload failed', String(result.message || 'Upload failed.'), 'error');
+            }
         }
     } catch (error) {
         debug.error('Upload error:', error);
-        // Upload error - no alert needed
+        if (typeof showNotification === 'function') {
+            showNotification('Upload error: ' + (error && error.message ? error.message : 'Unknown'), 'error');
+        }
     }
 }
 
@@ -3058,12 +3069,17 @@ async function deleteDocument(fileName, documentType, buttonElement) {
 }
 
 function getDocumentTypeFromElementId(elementId) {
-    if (elementId.includes('identity')) return 'identity';
-    if (elementId.includes('passport')) return 'passport';
-    if (elementId.includes('police')) return 'police';
-    if (elementId.includes('medical')) return 'medical';
-    if (elementId.includes('visa')) return 'visa';
-    if (elementId.includes('ticket')) return 'ticket';
+    const id = String(elementId || '');
+    if (id.includes('trainingCertificate') || id.includes('training_certificate')) return 'training_certificate';
+    if (id.includes('contractSigned') || id.includes('contract_signed')) return 'contract_signed';
+    if (id.includes('exitPermit') || id.includes('exit_permit')) return 'exit_permit';
+    if (id.includes('identity')) return 'identity';
+    if (id.includes('passport')) return 'passport';
+    if (id.includes('police')) return 'police';
+    if (id.includes('medical')) return 'medical';
+    if (id.includes('insurance')) return 'insurance';
+    if (id.includes('visa')) return 'visa';
+    if (id.includes('ticket')) return 'ticket';
     return 'main';
 }
 
@@ -3773,11 +3789,10 @@ function initializeFileUploads() {
         input.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
-                const fileName = file.name;
                 const currentFileElement = document.getElementById(e.target.id.replace('File', 'CurrentFile'));
                 if (currentFileElement) {
-                    // Upload the file immediately
-                    uploadFile(file, e.target.id.replace('File', ''));
+                    const docType = mapDocumentsModalFileInputIdToDocType(e.target.id);
+                    uploadFile(file, docType);
                 }
             }
         });

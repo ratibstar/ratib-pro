@@ -3,10 +3,15 @@
  * EN: Handles API endpoint/business logic in `api/workers/documents/get.php`.
  * AR: يدير منطق واجهات API والعمليات الخلفية في `api/workers/documents/get.php`.
  */
+require_once __DIR__ . '/../../../includes/config.php';
 require_once __DIR__ . '/../../core/Database.php';
 require_once __DIR__ . '/../../utils/response.php';
 
 try {
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+        sendResponse(['success' => false, 'message' => 'Not authenticated'], 401);
+    }
+
     $workerId = isset($_GET['id']) ? (int)$_GET['id'] : null;
     
     if (!$workerId) {
@@ -20,7 +25,7 @@ try {
     $query = "
         SELECT *
         FROM workers
-        WHERE id = ? AND status != 'deleted'
+        WHERE id = ? AND (status IS NULL OR status = '' OR status != 'deleted')
     ";
     
     $stmt = $conn->prepare($query);
