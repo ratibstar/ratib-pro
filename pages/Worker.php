@@ -338,6 +338,10 @@ include '../includes/header.php';
                         <i class="fas fa-trash"></i> <!-- Icon for delete action -->
                         <span>Delete</span> <!-- Button label -->
                     </button>
+                    <button id="bulkSendToPartnerBtn" class="bulk-btn bulk-send-partner" type="button" disabled data-permission="view_partner_agencies,view_workers">
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Send CVs bulk</span>
+                    </button>
                 </div>
             </div>
 

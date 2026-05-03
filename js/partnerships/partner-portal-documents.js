@@ -1036,6 +1036,44 @@
             });
         }
 
+        const staffCvForm = $('ppStaffAgencyCvForm');
+        if (staffCvForm && staffMode && staffCfg) {
+            staffCvForm.addEventListener('submit', async (ev) => {
+                ev.preventDefault();
+                const titleEl = $('ppStaffAgencyCvTitle');
+                const fileEl = $('ppStaffAgencyCvFile');
+                const title = titleEl ? String(titleEl.value || '').trim() : '';
+                const file = fileEl && fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
+                if (!title || !file) return;
+                const fd = new FormData();
+                fd.append('partner_agency_id', String(staffCfg.partner_agency_id));
+                fd.append('title', title);
+                fd.append('file', file);
+                const subBtn = $('ppStaffAgencyCvSubmit');
+                try {
+                    if (subBtn) subBtn.disabled = true;
+                    const res = await fetch('../api/partnerships/partner-agency-cvs.php', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        body: fd,
+                    });
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok || !json.success) {
+                        setError(json.message || 'Upload failed.');
+                        return;
+                    }
+                    setError('');
+                    if (titleEl) titleEl.value = '';
+                    if (fileEl) fileEl.value = '';
+                    await load();
+                } catch (e) {
+                    setError(e && e.message ? e.message : 'Upload failed.');
+                } finally {
+                    if (subBtn) subBtn.disabled = false;
+                }
+            });
+        }
+
         const bulkDel = $('ppDocsDeleteSelected');
         if (bulkDel && staffMode) {
             bulkDel.addEventListener('click', async () => {

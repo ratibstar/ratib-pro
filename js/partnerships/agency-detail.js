@@ -1,5 +1,5 @@
 /**
- * Partner agency detail page — load one agency, portal controls, CVs.
+ * Partner agency detail page — load one agency, portal controls, deployment summary.
  */
 (function () {
     function escapeHtml(s) {
@@ -71,7 +71,7 @@
             btn.classList.toggle('is-active', on);
             btn.setAttribute('aria-selected', on ? 'true' : 'false');
         });
-        ['basic', 'attachments', 'account'].forEach((id) => {
+        ['basic', 'account'].forEach((id) => {
             const panel = document.getElementById(`panel-${id}`);
             if (!panel) return;
             const on = id === name;
@@ -168,371 +168,17 @@
         }
     }
 
-    function renderWorkerProfileDocs(profileWorkers) {
-        const grid = document.getElementById('workerProfileDocsGrid');
-        const profileEmpty = document.getElementById('workerProfileDocsEmpty');
-        if (!grid) return;
-        const rows = Array.isArray(profileWorkers) ? profileWorkers : [];
-        if (rows.length === 0) {
-            grid.innerHTML = '';
-            if (profileEmpty) profileEmpty.hidden = false;
-            return;
-        }
-        if (profileEmpty) profileEmpty.hidden = true;
-        grid.innerHTML = rows
-            .map((w) => {
-                const wid = w.id != null ? String(w.id) : '';
-                const name = displayValue(w.worker_name);
-                const pw = displayValue(w.passport_number);
-                const docs = Array.isArray(w.documents) ? w.documents : [];
-                const chips = docs
-                    .map((doc) => {
-                        const dt = String(doc.type || '');
-                        const lab = displayValue(doc.label || dt);
-                        const hasFile = !!doc.has_file;
-                        const shared = !!doc.shared_on_portal;
-                        const shareId = doc.share_id != null ? String(doc.share_id) : '';
-                        if (!hasFile) {
-                            return `<span class="agency-doc-chip agency-doc-chip--missing" title="No file saved on worker profile">${escapeHtml(lab)}</span>`;
-                        }
-                        if (shared && shareId !== '') {
-                            return `<span class="agency-doc-chip agency-doc-chip--on-portal">
-                                <span class="agency-doc-chip-label">${escapeHtml(lab)} · Partner portal</span>
-                                <button type="button" class="muted-btn agency-doc-unshare-btn" data-share-id="${escapeHtml(shareId)}">Remove</button>
-                            </span>`;
-                        }
-                        return `<button type="button" class="agency-doc-chip agency-doc-share-btn neon-btn" data-worker-id="${escapeHtml(wid)}" data-doc-type="${escapeHtml(dt)}">
-                            + ${escapeHtml(lab)}
-                        </button>`;
-                    })
-                    .join('');
-                return `<div class="agency-worker-profile-block">
-                    <h4 class="agency-worker-profile-heading">${escapeHtml(name)} <span class="agency-worker-profile-meta">#${escapeHtml(wid)} · Passport: ${escapeHtml(pw)}</span></h4>
-                    <p class="agency-worker-profile-hint">Same document slots as on the Worker page for this person.</p>
-                    <div class="agency-worker-doc-chips">${chips}</div>
-                </div>`;
-            })
-            .join('');
-    }
 
-    function bindWorkerProfileDocsGridOnce() {
-        const grid = document.getElementById('workerProfileDocsGrid');
-        if (!grid || grid.dataset.bound === '1') return;
-        grid.dataset.bound = '1';
-        grid.addEventListener('click', async (e) => {
-            const aid =
-                agencySnapshot && agencySnapshot.id != null ? Number(agencySnapshot.id) : 0;
-            if (!aid) return;
-
-            const addBtn = e.target.closest('.agency-doc-share-btn');
-            if (addBtn) {
-                const wid = parseInt(addBtn.getAttribute('data-worker-id') || '0', 10);
-                const dt = addBtn.getAttribute('data-doc-type') || '';
-                if (!wid || !dt) return;
-                try {
-                    const res = await fetch(withContext('../api/partnerships/partner-agency-worker-shares.php'), {
-                        method: 'POST',
-                        credentials: 'same-origin',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            partner_agency_id: aid,
-                            worker_id: wid,
-                            document_type: dt,
-                        }),
-                    });
-                    const j = await res.json().catch(() => ({}));
-                    if (!res.ok || !j.success) throw new Error(j.message || 'Could not add to portal');
-                    await loadWorkerSharesForAgency(aid);
-                } catch (err) {
-                    showError(err && err.message ? err.message : 'Could not share document.');
-                }
-                return;
-            }
-
-            const unBtn = e.target.closest('.agency-doc-unshare-btn');
-            if (unBtn) {
-                const sid = unBtn.getAttribute('data-share-id');
-                if (!sid) return;
-                if (!window.confirm('Remove this document from the partner portal?')) return;
-                try {
-                    const url = withContext(
-                        `../api/partnerships/partner-agency-worker-shares.php?id=${encodeURIComponent(
-                            sid
-                        )}&partner_agency_id=${encodeURIComponent(String(aid))}`
-                    );
-                    const r = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
-                    const j = await r.json().catch(() => ({}));
-                    if (!r.ok || !j.success) throw new Error(j.message || 'Remove failed');
-                    await loadWorkerSharesForAgency(aid);
-                } catch (err) {
-                    showError(err && err.message ? err.message : 'Could not remove.');
-                }
-            }
-        });
-    }
-
-    async function loadWorkerSharesForAgency(agencyId) {
-        const list = document.getElementById('workerShareList');
-        const empty = document.getElementById('workerShareEmpty');
-        const wSel = document.getElementById('shareWorkerSelect');
-        const dSel = document.getElementById('shareDocTypeSelect');
-        if (!list) return;
-        try {
-            const res = await fetch(
-                withContext(
-                    `../api/partnerships/partner-agency-worker-shares.php?partner_agency_id=${encodeURIComponent(String(agencyId))}`
-                ),
-                { credentials: 'same-origin' }
-            );
-            const json = await res.json().catch(() => ({}));
-            if (!res.ok || !json.success) {
-                list.innerHTML = '';
-                const grid = document.getElementById('workerProfileDocsGrid');
-                const pe = document.getElementById('workerProfileDocsEmpty');
-                if (grid) grid.innerHTML = '';
-                if (pe) pe.hidden = true;
-                return;
-            }
-            const d = json.data || {};
-            const shares = Array.isArray(d.shares) ? d.shares : [];
-            const workers = Array.isArray(d.deployment_workers) ? d.deployment_workers : [];
-            const types = Array.isArray(d.document_types) ? d.document_types : [];
-            const labels = d.document_labels && typeof d.document_labels === 'object' ? d.document_labels : {};
-            const profileWorkers = Array.isArray(d.workers_profile_documents) ? d.workers_profile_documents : [];
-
-            renderWorkerProfileDocs(profileWorkers);
-
-            if (wSel) {
-                wSel.innerHTML = '<option value="">Select worker (deployments)…</option>';
-                workers.forEach((w) => {
-                    const o = document.createElement('option');
-                    o.value = String(w.id);
-                    const p = w.passport_number ? String(w.passport_number).trim() : '';
-                    o.textContent = `${w.worker_name || 'Worker'} (#${w.id})${p ? ' · ' + p : ''}`;
-                    wSel.appendChild(o);
-                });
-            }
-            if (dSel) {
-                dSel.innerHTML = '<option value="">Document type…</option>';
-                types.forEach((t) => {
-                    const o = document.createElement('option');
-                    o.value = t;
-                    o.textContent = labels[t] || t;
-                    dSel.appendChild(o);
-                });
-            }
-
-            if (shares.length === 0) {
-                list.innerHTML = '';
-                if (empty) empty.hidden = false;
-            } else {
-            if (empty) empty.hidden = true;
-            const dlBase = `../api/partnerships/partner-shared-worker-doc-download.php`;
-            list.innerHTML = shares
-                .map((s) => {
-                    const sid = s.id;
-                    const name = displayValue(s.worker_name);
-                    const docLab = displayValue(s.document_label || s.document_type);
-                    const curType = String(s.document_type || '');
-                    const hasFile = !!s.has_file;
-                    const href = withContext(`${dlBase}?share_id=${encodeURIComponent(String(sid))}`);
-                    const dl = hasFile
-                        ? `<a class="muted-btn" href="${escapeHtml(href)}" target="_blank" rel="noopener">Download</a>`
-                        : '<span class="agency-share-no-file">No file on worker</span>';
-
-                    const opts = types
-                        .map((t) => {
-                            const lab = labels[t] || t;
-                            const sel = t === curType ? ' selected' : '';
-
-                            return `<option value="${escapeHtml(t)}"${sel}>${escapeHtml(lab)}</option>`;
-                        })
-                        .join('');
-
-                    return `<li class="agency-worker-share-item" data-share-id="${String(sid)}">
-                        <div class="agency-share-row-main">
-                            <div>
-                                <strong>${escapeHtml(name)}</strong>
-                                <div class="agency-cv-admin-meta">${escapeHtml(docLab)} · ${escapeHtml(
-                        formatCalendarDate(s.created_at)
-                    )}</div>
-                            </div>
-                            <div class="agency-worker-share-actions">
-                                ${dl}
-                                <button type="button" class="muted-btn agency-worker-share-edit" data-share-id="${String(
-                        sid
-                    )}">Edit</button>
-                                <button type="button" class="muted-btn agency-worker-share-remove" data-share-id="${String(
-                        sid
-                    )}">Remove</button>
-                            </div>
-                        </div>
-                        <div class="agency-share-edit-panel" hidden>
-                            <label class="agency-share-edit-label">Document type
-                                <select class="agency-share-edit-select" aria-label="Document type">${opts}</select>
-                            </label>
-                            <button type="button" class="muted-btn agency-share-save" data-share-id="${String(
-                        sid
-                    )}">Save</button>
-                            <button type="button" class="muted-btn agency-share-cancel" data-share-id="${String(
-                        sid
-                    )}">Cancel</button>
-                        </div>
-                    </li>`;
-                })
-                .join('');
-            }
-        } catch (e) {
-            list.innerHTML = '';
-            const grid = document.getElementById('workerProfileDocsGrid');
-            const pe = document.getElementById('workerProfileDocsEmpty');
-            if (grid) grid.innerHTML = '';
-            if (pe) pe.hidden = true;
-        }
-    }
-
-    function bindWorkerShareListActions() {
-        const list = document.getElementById('workerShareList');
-        if (!list || list.dataset.shareActionsBound === '1') return;
-        list.dataset.shareActionsBound = '1';
-        list.addEventListener('click', async (e) => {
-            const aid =
-                agencySnapshot && agencySnapshot.id != null ? Number(agencySnapshot.id) : 0;
-            if (!aid) return;
-
-            const editBtn = e.target.closest('.agency-worker-share-edit');
-            if (editBtn) {
-                const li = editBtn.closest('.agency-worker-share-item');
-                if (!li) return;
-                const main = li.querySelector('.agency-share-row-main');
-                const panel = li.querySelector('.agency-share-edit-panel');
-                if (main) main.hidden = true;
-                if (panel) panel.hidden = false;
-                return;
-            }
-
-            const cancelBtn = e.target.closest('.agency-share-cancel');
-            if (cancelBtn) {
-                const li = cancelBtn.closest('.agency-worker-share-item');
-                if (!li) return;
-                const main = li.querySelector('.agency-share-row-main');
-                const panel = li.querySelector('.agency-share-edit-panel');
-                if (main) main.hidden = false;
-                if (panel) panel.hidden = true;
-                return;
-            }
-
-            const saveBtn = e.target.closest('.agency-share-save');
-            if (saveBtn) {
-                const sid = saveBtn.getAttribute('data-share-id');
-                const li = saveBtn.closest('.agency-worker-share-item');
-                const sel = li ? li.querySelector('.agency-share-edit-select') : null;
-                const docType = sel ? String(sel.value || '').trim() : '';
-                if (!sid || !docType) return;
-                try {
-                    const res = await fetch(withContext('../api/partnerships/partner-agency-worker-shares.php'), {
-                        method: 'PUT',
-                        credentials: 'same-origin',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            id: parseInt(sid, 10),
-                            partner_agency_id: aid,
-                            document_type: docType,
-                        }),
-                    });
-                    const j = await res.json().catch(() => ({}));
-                    if (!res.ok || !j.success) throw new Error(j.message || 'Update failed');
-                    await loadWorkerSharesForAgency(aid);
-                } catch (err) {
-                    showError(err && err.message ? err.message : 'Could not update.');
-                }
-                return;
-            }
-
-            const removeBtn = e.target.closest('.agency-worker-share-remove');
-            if (removeBtn) {
-                const shareId = removeBtn.getAttribute('data-share-id');
-                if (!shareId) return;
-                if (!window.confirm('Remove this share? Partners will no longer see it.')) return;
-                try {
-                    const url = withContext(
-                        `../api/partnerships/partner-agency-worker-shares.php?id=${encodeURIComponent(
-                            shareId
-                        )}&partner_agency_id=${encodeURIComponent(String(aid))}`
-                    );
-                    const r = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
-                    const j = await r.json().catch(() => ({}));
-                    if (!r.ok || !j.success) throw new Error(j.message || 'Remove failed');
-                    await loadWorkerSharesForAgency(aid);
-                } catch (err) {
-                    showError(err && err.message ? err.message : 'Could not remove.');
-                }
-            }
-        });
-    }
-
-    async function loadCvsForAgency(agencyId) {
-        const list = document.getElementById('cvAdminList');
-        const empty = document.getElementById('cvAdminEmpty');
-        if (!list) return;
-        try {
-            const res = await fetch(
-                withContext(`../api/partnerships/partner-agency-cvs.php?partner_agency_id=${encodeURIComponent(String(agencyId))}`),
-                { credentials: 'same-origin' }
-            );
-            const json = await res.json().catch(() => ({}));
-            if (!res.ok || !json.success) {
-                list.innerHTML = '';
-                return;
-            }
-            const rows = Array.isArray(json.data) ? json.data : [];
-            if (rows.length === 0) {
-                list.innerHTML = '';
-                if (empty) empty.hidden = false;
-                return;
-            }
-            if (empty) empty.hidden = true;
-            const dlBase = `../api/partnerships/partner-agency-cv-download.php`;
-            list.innerHTML = rows
-                .map((c) => {
-                    const id = c.id;
-                    const title = displayValue(c.title);
-                    const fn = displayValue(c.original_filename);
-                    const href = escapeHtml(withContext(`${dlBase}?id=${encodeURIComponent(String(id))}`));
-
-                    return `<li class="agency-cv-admin-item">
-                        <div>
-                            <strong>${escapeHtml(title)}</strong>
-                            <div class="agency-cv-admin-meta">${escapeHtml(fn)} · ${escapeHtml(formatCalendarDate(c.created_at))}</div>
-                        </div>
-                        <div>
-                            <a class="muted-btn" href="${href}" target="_blank" rel="noopener">Download</a>
-                            <button type="button" class="muted-btn agency-cv-delete" data-cv-id="${String(id)}">Delete</button>
-                        </div>
-                    </li>`;
-                })
-                .join('');
-
-            list.querySelectorAll('.agency-cv-delete').forEach((btn) => {
-                btn.addEventListener('click', async () => {
-                    const cvId = btn.getAttribute('data-cv-id');
-                    if (!cvId || !agencySnapshot?.id) return;
-                    if (!window.confirm('Remove this document?')) return;
-                    try {
-                        const url = withContext(
-                            `../api/partnerships/partner-agency-cvs.php?id=${encodeURIComponent(cvId)}&partner_agency_id=${encodeURIComponent(String(agencySnapshot.id))}`
-                        );
-                        const r = await fetch(url, { method: 'DELETE', credentials: 'same-origin' });
-                        const j = await r.json().catch(() => ({}));
-                        if (!r.ok || !j.success) throw new Error(j.message || 'Delete failed');
-                        await loadCvsForAgency(Number(agencySnapshot.id));
-                    } catch (err) {
-                        showError(err && err.message ? err.message : 'Could not delete.');
-                    }
-                });
-            });
-        } catch (e) {
-            list.innerHTML = '';
+    function wirePartnerTableLinks(agencyId) {
+        const aid = agencyId != null ? Number(agencyId) : 0;
+        const docs = document.getElementById('agencyOpenDocsTable');
+        const placements = document.getElementById('agencyOpenPlacementsTable');
+        if (aid > 0) {
+            if (docs) docs.href = withContext('partner-documents-staff.php?partner_agency_id=' + encodeURIComponent(String(aid)));
+            if (placements) placements.href = withContext('partner-agencies.php?open_sent_workers=' + encodeURIComponent(String(aid)));
+        } else {
+            if (docs) docs.setAttribute('href', '#');
+            if (placements) placements.setAttribute('href', '#');
         }
     }
 
@@ -676,11 +322,7 @@
         };
 
         applyPortalUi(agency);
-        if (agency.id != null) {
-            const aid = Number(agency.id);
-            loadCvsForAgency(aid);
-            loadWorkerSharesForAgency(aid);
-        }
+        wirePartnerTableLinks(agency.id);
     }
 
     async function load() {
@@ -704,14 +346,14 @@
             }
             applyAgency(json.data || {});
             const tabWant = (params.get('tab') || '').toLowerCase();
-            if (tabWant === 'attachments' || tabWant === 'account' || tabWant === 'basic') {
+            if (tabWant === 'account' || tabWant === 'basic') {
                 setTabActive(tabWant);
-                if (tabWant === 'attachments') {
-                    requestAnimationFrame(() => {
-                        const panel = document.getElementById('panel-attachments');
-                        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    });
-                }
+            } else if (tabWant === 'attachments') {
+                setTabActive('basic');
+                requestAnimationFrame(() => {
+                    const card = document.getElementById('agencyPartnerTablesCard');
+                    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
             }
         } catch (e) {
             showError(e && e.message ? e.message : 'Network error loading agency.');
@@ -788,82 +430,10 @@
             });
         }
 
-        const form = document.getElementById('cvUploadForm');
-        if (form) {
-            form.addEventListener('submit', async (ev) => {
-                ev.preventDefault();
-                const aid = id();
-                if (!aid) return;
-                const titleEl = document.getElementById('cvTitle');
-                const fileEl = document.getElementById('cvFile');
-                const title = titleEl ? String(titleEl.value || '').trim() : '';
-                const file = fileEl && fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
-                if (!title || !file) return;
-                const fd = new FormData();
-                fd.append('partner_agency_id', String(aid));
-                fd.append('title', title);
-                fd.append('file', file);
-                try {
-                    const res = await fetch(withContext('../api/partnerships/partner-agency-cvs.php'), {
-                        method: 'POST',
-                        credentials: 'same-origin',
-                        body: fd,
-                    });
-                    const json = await res.json().catch(() => ({}));
-                    if (!res.ok || !json.success) throw new Error(json.message || 'Upload failed');
-                    if (titleEl) titleEl.value = '';
-                    if (fileEl) fileEl.value = '';
-                    await loadCvsForAgency(aid);
-                } catch (e) {
-                    showError(e && e.message ? e.message : 'Upload failed.');
-                }
-            });
-        }
-
-        const shareAdd = document.getElementById('shareDocAddBtn');
-        if (shareAdd) {
-            shareAdd.addEventListener('click', async () => {
-                const aid = id();
-                if (!aid) return;
-                const wSel = document.getElementById('shareWorkerSelect');
-                const manual = document.getElementById('shareWorkerIdManual');
-                const dSel = document.getElementById('shareDocTypeSelect');
-                let wid = wSel && wSel.value ? parseInt(String(wSel.value), 10) : 0;
-                if (!Number.isFinite(wid) || wid <= 0) {
-                    const m = manual && String(manual.value || '').trim();
-                    if (m) wid = parseInt(m, 10);
-                }
-                const docType = dSel ? String(dSel.value || '').trim() : '';
-                if (!Number.isFinite(wid) || wid <= 0 || !docType) {
-                    showError('Choose a worker (or enter worker ID) and a document type.');
-                    return;
-                }
-                try {
-                    const res = await fetch(withContext('../api/partnerships/partner-agency-worker-shares.php'), {
-                        method: 'POST',
-                        credentials: 'same-origin',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            partner_agency_id: aid,
-                            worker_id: wid,
-                            document_type: docType,
-                        }),
-                    });
-                    const json = await res.json().catch(() => ({}));
-                    if (!res.ok || !json.success) throw new Error(json.message || 'Could not add share');
-                    if (manual) manual.value = '';
-                    await loadWorkerSharesForAgency(aid);
-                } catch (e) {
-                    showError(e && e.message ? e.message : 'Could not add share.');
-                }
-            });
-        }
     }
 
     function init() {
         initTabs();
-        bindWorkerShareListActions();
-        bindWorkerProfileDocsGridOnce();
         initPortalControls();
         load();
     }

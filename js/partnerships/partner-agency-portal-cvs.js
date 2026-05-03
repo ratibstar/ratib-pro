@@ -138,7 +138,7 @@
         const detail = document.getElementById('pacvDetailLink');
         const bcLink = document.getElementById('pacvBreadcrumbAgencyLink');
         if (manage) {
-            manage.href = withContext(`partner-agency-detail.php?id=${encodeURIComponent(id)}&tab=attachments`);
+            manage.href = withContext(`partner-documents-staff.php?partner_agency_id=${encodeURIComponent(id)}`);
         }
         if (detail) {
             detail.href = withContext(`partner-agency-detail.php?id=${encodeURIComponent(id)}`);

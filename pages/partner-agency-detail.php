@@ -54,7 +54,6 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
 
     <div class="agency-detail-tabs glass-card" role="tablist" aria-label="Agency sections">
         <button type="button" class="agency-detail-tab is-active" role="tab" aria-selected="true" data-tab="basic">Basic data</button>
-        <button type="button" class="agency-detail-tab" role="tab" aria-selected="false" data-tab="attachments">Attachments &amp; updates</button>
         <button type="button" class="agency-detail-tab" role="tab" aria-selected="false" data-tab="account">Account statement</button>
     </div>
 
@@ -76,7 +75,7 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
                 </section>
                 <section class="agency-detail-card glass-card agency-portal-card" id="partnerPortalCard">
                     <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">🔗</span> Partner portal (baby link)</h2>
-                    <p class="agency-detail-note">Give this agency a private link to view only their deployments and the documents you upload here. Treat the link like a password.</p>
+                    <p class="agency-detail-note">Give this agency a private link to view deployments and the documents your office exposes on the partner <strong>Documents &amp; CVs</strong> table. Treat the link like a password.</p>
                     <div class="agency-portal-row">
                         <label class="agency-portal-check"><input type="checkbox" id="portalEnabled"> Enable partner portal</label>
                     </div>
@@ -98,6 +97,15 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
                     </div>
                     <p class="agency-detail-note">Partner sign-in page: <a href="<?php echo htmlspecialchars(pageUrl('partner-portal-login.php'), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">partner-portal-login.php</a></p>
                 </section>
+                <section class="agency-detail-card glass-card" id="agencyPartnerTablesCard">
+                    <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📎</span> Documents &amp; placements</h2>
+                    <p class="agency-detail-note">Use the staff <strong>Documents &amp; CVs</strong> table to upload agency files, adjust partner-visible status, and manage shared worker rows. Use <strong>Partner Agencies</strong> → <strong>Placements</strong> for deployment status and contracts.</p>
+                    <p class="agency-detail-note">Bulk-share worker files to this partner from <strong>Workers</strong> → select workers → <strong>Send CVs bulk</strong>, then pick this agency.</p>
+                    <div class="agency-portal-actions">
+                        <a class="neon-btn" id="agencyOpenDocsTable" href="#">Documents &amp; CVs (table)</a>
+                        <a class="muted-btn" id="agencyOpenPlacementsTable" href="#">Placements &amp; deployments</a>
+                    </div>
+                </section>
             </div>
             <aside class="agency-detail-side-col">
                 <section class="agency-detail-card glass-card agency-detail-contracts-card">
@@ -110,40 +118,6 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
                 </section>
             </aside>
         </div>
-    </div>
-
-    <div id="panel-attachments" class="agency-detail-panels is-hidden" role="tabpanel" hidden>
-        <section class="agency-detail-card glass-card">
-            <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📎</span> Documents &amp; CVs (partner portal)</h2>
-            <p class="agency-detail-note">Files you upload here and worker documents you share below are the only items this partner can open from their portal (plus their deployment list on the portal home).</p>
-            <form id="cvUploadForm" class="agency-cv-upload-form">
-                <input type="text" id="cvTitle" placeholder="Title (e.g. Company profile 2026)" required maxlength="255">
-                <input type="file" id="cvFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" required>
-                <button type="submit" class="neon-btn" id="cvUploadBtn">Upload</button>
-            </form>
-            <ul id="cvAdminList" class="agency-cv-admin-list"></ul>
-            <p id="cvAdminEmpty" class="agency-detail-empty" hidden>No documents uploaded yet.</p>
-        </section>
-
-        <section class="agency-detail-card glass-card agency-share-worker-docs">
-            <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">👤</span> Worker documents on partner portal</h2>
-            <p class="agency-detail-note">Documents listed below come from each worker’s profile (same files as on the Worker page). Use <strong>+</strong> to put a file on the partner portal; partners only see what you enable here.</p>
-            <div id="workerProfileDocsGrid" class="agency-worker-profile-docs-root"></div>
-            <p id="workerProfileDocsEmpty" class="agency-detail-empty" hidden>No deployed workers for this agency yet — add a deployment first, or use “Or worker ID” below.</p>
-            <h3 class="agency-worker-docs-subtitle">Manual add (worker not in list)</h3>
-            <div class="agency-share-docs-toolbar">
-                <select id="shareWorkerSelect" aria-label="Worker">
-                    <option value="">Select worker (deployments)…</option>
-                </select>
-                <input type="number" id="shareWorkerIdManual" class="agency-share-worker-id" min="1" placeholder="Or worker ID" aria-label="Worker ID">
-                <select id="shareDocTypeSelect" aria-label="Document type">
-                    <option value="">Document type…</option>
-                </select>
-                <button type="button" class="neon-btn" id="shareDocAddBtn">Add</button>
-            </div>
-            <ul id="workerShareList" class="agency-worker-share-list"></ul>
-            <p id="workerShareEmpty" class="agency-detail-empty" hidden>No worker documents shared yet.</p>
-        </section>
     </div>
 
     <div id="panel-account" class="agency-detail-panels is-hidden" role="tabpanel" hidden>

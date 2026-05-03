@@ -105,6 +105,17 @@ window.RATIB_PARTNER_DOCS_STAFF = {
         </div>
     </div>
 
+    <div class="glass-card partner-portal-docs-staff-upload-wrap">
+        <p class="partner-portal-docs-staff-upload-hint">
+            Upload an <strong>agency-only</strong> file for this partner (PDF, Word, or image). Worker CV slots: select workers on the Workers page → <strong>Send CVs bulk</strong> → choose this agency.
+        </p>
+        <form id="ppStaffAgencyCvForm" class="partner-portal-docs-staff-upload-form">
+            <input type="text" id="ppStaffAgencyCvTitle" class="partner-portal-input" placeholder="Title (e.g. Company profile 2026)" maxlength="255" required>
+            <input type="file" id="ppStaffAgencyCvFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" required>
+            <button type="submit" class="neon-btn" id="ppStaffAgencyCvSubmit">Upload agency file</button>
+        </form>
+    </div>
+
     <p class="partner-portal-docs-staff-status-help">
         To change what the <strong>partner portal</strong> shows for a row, use the <strong>Status</strong> menu
         <strong>under the colored pill</strong> (Waiting, Ready, …). Choose <strong>Auto (file + assignment)</strong> to clear a manual value and go back to automatic rules.

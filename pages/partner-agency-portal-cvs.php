@@ -46,7 +46,7 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
             <h1 id="pacvPageTitle" class="agency-detail-title">Documents &amp; CVs</h1>
             <p class="partner-agency-portal-cvs-lead">This is what the partner sees for downloads. To upload files or change which worker documents are shared, use the link below.</p>
             <p class="partner-agency-portal-cvs-actions">
-                <a id="pacvManageLink" class="neon-btn" href="#">Manage uploads &amp; worker sharing</a>
+                <a id="pacvManageLink" class="neon-btn" href="#">Open staff Documents &amp; CVs table</a>
                 <a id="pacvDetailLink" class="muted-btn" href="#">Open full agency details</a>
             </p>
         </div>
