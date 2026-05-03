@@ -4976,6 +4976,14 @@ window.saveWorker = async function(event) {
                 if (form) {
                     form.reset();
                 }
+
+                if (typeof window.ratibGetPartnerDocumentsStaffReturnUrl === 'function') {
+                    const partnerDocsStaffHref = window.ratibGetPartnerDocumentsStaffReturnUrl();
+                    if (partnerDocsStaffHref) {
+                        window.location.assign(partnerDocsStaffHref);
+                        return;
+                    }
+                }
                 
                 // Refresh worker table in background (don't block - alert shows immediately)
                 if (window.workerTable) {

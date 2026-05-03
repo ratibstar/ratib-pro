@@ -258,12 +258,28 @@
         return x ? `${base}&${x}` : base;
     }
 
-    function workerEditHref(workerId) {
+    /**
+     * @param {string|number} workerId
+     * @param {string} [workerNameForReturn] — optional; when set on staff partner-docs, closing Worker.php returns here and reopens the worker-documents modal.
+     */
+    function workerEditHref(workerId, workerNameForReturn) {
         const wid = workerId != null ? String(workerId).trim() : '';
         if (!wid) return 'Worker.php';
-        const base = `Worker.php?edit=${encodeURIComponent(wid)}`;
+        let base = `Worker.php?edit=${encodeURIComponent(wid)}`;
         const x = staffCfg && staffCfg.worker_profile_extra_query ? String(staffCfg.worker_profile_extra_query) : '';
-        return x ? `${base}&${x}` : base;
+        if (x) base += `&${x}`;
+        if (staffMode && staffCfg && staffCfg.partner_agency_id) {
+            const aid = parseInt(String(staffCfg.partner_agency_id), 10);
+            if (Number.isFinite(aid) && aid > 0) {
+                base += `&return_partner_documents=${encodeURIComponent(String(aid))}`;
+                base += `&return_partner_documents_worker=${encodeURIComponent(wid)}`;
+                const nm = workerNameForReturn != null ? String(workerNameForReturn).trim() : '';
+                if (nm) {
+                    base += `&return_partner_documents_worker_name=${encodeURIComponent(nm)}`;
+                }
+            }
+        }
+        return base;
     }
 
     /** Same-origin URL loaded in the CV iframe (staff: Worker.php embed; partner: portal CV page). */
@@ -814,7 +830,7 @@
         return 'pp-worker-docs-status-badge pp-worker-docs-status-badge--neutral';
     }
 
-    function renderWorkerDocsListTableRows(workerId, tableRows) {
+    function renderWorkerDocsListTableRows(workerId, tableRows, workerDisplayName) {
         const tbody = $('ppWorkerDocsListTbody');
         if (!tbody) return;
         if (!tableRows.length) {
@@ -873,7 +889,7 @@
                         ? (() => {
                               const widStr = String(workerId);
                               const editL = `<a class="muted-btn pp-worker-docs-row-action-btn" href="${escapeHtml(
-                                  workerEditHref(workerId)
+                                  workerEditHref(workerId, workerDisplayName)
                               )}">Edit</a>`;
                               const deleteB = row.hasFile
                                   ? `<button type="button" class="muted-btn pp-worker-docs-row-action-btn" data-pp-worker-docs-row-delete="1" data-worker-id="${widStr}" data-doc-type="${escapeHtml(
@@ -967,7 +983,7 @@
         } else {
             rows = buildPartnerWorkerDocSlotsForTable(wid);
         }
-        renderWorkerDocsListTableRows(wid, rows);
+        renderWorkerDocsListTableRows(wid, rows, namePart);
         const selAllRows = $('ppWorkerDocsSelectAllRows');
         if (selAllRows) {
             selAllRows.checked = false;
@@ -1350,7 +1366,7 @@
                     : '';
             const editWorkerLink =
                 staffMode && isWorker && r._worker_id
-                    ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerEditHref(r._worker_id))}">Edit</a>`
+                    ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerEditHref(r._worker_id, r._worker_name))}">Edit</a>`
                     : '';
             const modalDeleteBtn = staffMode
                 ? `<button type="button" class="muted-btn partner-portal-docs-action pp-docs-delete-one" data-pp-doc-delete="${docKeyEsc}">Delete</button>`
@@ -1558,7 +1574,7 @@
                     : '';
                 const editBtn =
                     staffMode && r._kind === 'worker_share' && r._worker_id
-                        ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerEditHref(r._worker_id))}">Edit</a>`
+                        ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerEditHref(r._worker_id, r._worker_name))}">Edit</a>`
                         : '';
                 const deleteBtn = staffMode
                     ? `<button type="button" class="muted-btn partner-portal-docs-action pp-docs-delete-one" data-pp-doc-delete="${dkey}">Delete</button>`
@@ -2098,12 +2114,33 @@
         });
     }
 
-    function init() {
+    async function maybeReopenWorkerDocsFromUrl() {
+        refreshStaffMode();
+        if (!staffMode) return;
+        try {
+            const u = new URL(window.location.href);
+            const rw = u.searchParams.get('pp_reopen_worker_docs');
+            const wname = u.searchParams.get('pp_reopen_worker_name') || '';
+            const wid = parseInt(String(rw || ''), 10);
+            if (!Number.isFinite(wid) || wid <= 0) return;
+            u.searchParams.delete('pp_reopen_worker_docs');
+            u.searchParams.delete('pp_reopen_worker_name');
+            const qs = u.searchParams.toString();
+            const clean = u.pathname + (qs ? `?${qs}` : '') + u.hash;
+            window.history.replaceState({}, '', clean);
+            await openWorkerDocumentsListModal(wid, wname);
+        } catch (_e) {
+            /* ignore */
+        }
+    }
+
+    async function init() {
         refreshStaffMode();
         initBulkStatusSelect();
         bindEvents();
         updateBulkDeleteUi();
-        load();
+        await load();
+        await maybeReopenWorkerDocsFromUrl();
     }
 
     if (document.readyState === 'loading') {

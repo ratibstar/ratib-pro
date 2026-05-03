@@ -966,6 +966,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    /** Staff Documents & CVs: return to partner-documents-staff.php and reopen the worker-documents modal. */
+    function getPartnerDocumentsStaffReturnUrl() {
+        try {
+            const u = new URL(window.location.href);
+            const retAid = u.searchParams.get('return_partner_documents');
+            const retWid = u.searchParams.get('return_partner_documents_worker');
+            const retNm = u.searchParams.get('return_partner_documents_worker_name') || '';
+            if (!retAid || !/^\d+$/.test(retAid) || parseInt(retAid, 10) <= 0) {
+                return null;
+            }
+            if (!retWid || !/^\d+$/.test(retWid) || parseInt(retWid, 10) <= 0) {
+                return null;
+            }
+            const q = new URLSearchParams();
+            q.set('partner_agency_id', String(parseInt(retAid, 10)));
+            q.set('pp_reopen_worker_docs', String(parseInt(retWid, 10)));
+            if (retNm) {
+                q.set('pp_reopen_worker_name', retNm);
+            }
+            ['control', 'agency_id'].forEach((k) => {
+                if (u.searchParams.has(k)) {
+                    q.set(k, u.searchParams.get(k));
+                }
+            });
+            return `partner-documents-staff.php?${q.toString()}`;
+        } catch (e) {
+            debugForm.warn('getPartnerDocumentsStaffReturnUrl', e);
+            return null;
+        }
+    }
+    window.ratibGetPartnerDocumentsStaffReturnUrl = getPartnerDocumentsStaffReturnUrl;
+
     // Function to actually close the form (called after confirmation)
     function performClose() {
         let partnerAgenciesReturnUrl = null;
@@ -1003,6 +1035,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             // Reset user interaction flag
             userHasInteracted = false;
+        }
+
+        const partnerDocsStaffHref = getPartnerDocumentsStaffReturnUrl();
+        if (partnerDocsStaffHref) {
+            window.location.assign(partnerDocsStaffHref);
+            return;
         }
 
         if (partnerAgenciesReturnUrl && returnPartnerAgencyId) {
@@ -1061,10 +1099,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const u = new URL(window.location.href);
-            if (u.searchParams.has('view') || u.searchParams.has('edit') || u.searchParams.has('return_partner_agency')) {
+            if (
+                u.searchParams.has('view') ||
+                u.searchParams.has('edit') ||
+                u.searchParams.has('return_partner_agency') ||
+                u.searchParams.has('return_partner_documents')
+            ) {
                 u.searchParams.delete('view');
                 u.searchParams.delete('edit');
                 u.searchParams.delete('return_partner_agency');
+                u.searchParams.delete('return_partner_documents');
+                u.searchParams.delete('return_partner_documents_worker');
+                u.searchParams.delete('return_partner_documents_worker_name');
                 window.history.replaceState({}, '', u.pathname + u.search + u.hash);
             }
         } catch (e) {
