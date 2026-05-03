@@ -283,7 +283,7 @@ try {
                 if (!defined('ENTITY_SECTIONS_ONLY')) define('ENTITY_SECTIONS_ONLY', 1);
                 require_once __DIR__ . '/entities.php';
                 $out = buildEntityAccountSections($conn, true);
-                $prefixMap = ['agent' => '43', 'subagent' => '44', 'worker' => '45', 'hr' => '46', 'accounting' => '47'];
+                $prefixMap = ['agent' => '43', 'subagent' => '44', 'worker' => '45', 'hr' => '46', 'accounting' => '47', 'partner_agency' => '48'];
                 foreach ($out['sections'] as $section) {
                     $et = $section['entity_type'] ?? '';
                     $entities = $section['entities'] ?? [];
@@ -322,6 +322,7 @@ try {
                     'agent' => ['table' => 'agents', 'nameCols' => ['agent_name', 'full_name', 'name'], 'idCol' => 'id'],
                     'subagent' => ['table' => 'subagents', 'nameCols' => ['subagent_name', 'full_name', 'name'], 'idCol' => 'id'],
                     'worker' => ['table' => 'workers', 'nameCols' => ['worker_name', 'full_name', 'name'], 'idCol' => 'id'],
+                    'partner_agency' => ['table' => 'partner_agencies', 'nameCols' => ['name'], 'idCol' => 'id'],
                     'hr' => ['table' => 'employees', 'nameCols' => ['name', 'employee_name', 'full_name'], 'idCol' => 'id'],
                     'accounting' => ['table' => 'users', 'nameCols' => ['username'], 'idCol' => 'user_id']
                 ] as $et => $cfg) {
@@ -354,7 +355,7 @@ try {
                         continue;
                     }
                     $rowCount = $res->num_rows;
-                    $prefixMap = ['agent' => '43', 'subagent' => '44', 'worker' => '45', 'hr' => '46', 'accounting' => '47'];
+                    $prefixMap = ['agent' => '43', 'subagent' => '44', 'worker' => '45', 'hr' => '46', 'accounting' => '47', 'partner_agency' => '48'];
                     $prefix = $prefixMap[$et] ?? '49';
                     $createdCount = 0;
                     $skippedCount = 0;
@@ -463,7 +464,7 @@ try {
             $et = $row['entity_type'];
             $eid = (int)$row['entity_id'];
             $entityName = null;
-            $tableMap = ['agent' => ['agents', ['agent_name'], 'id'], 'subagent' => ['subagents', ['subagent_name'], 'id'], 'worker' => ['workers', ['worker_name','full_name','name'], 'id'], 'hr' => ['employees', ['name','employee_name','full_name'], 'id'], 'accounting' => ['users', ['username'], 'user_id']];
+            $tableMap = ['agent' => ['agents', ['agent_name'], 'id'], 'subagent' => ['subagents', ['subagent_name'], 'id'], 'worker' => ['workers', ['worker_name','full_name','name'], 'id'], 'partner_agency' => ['partner_agencies', ['name'], 'id'], 'hr' => ['employees', ['name','employee_name','full_name'], 'id'], 'accounting' => ['users', ['username'], 'user_id']];
             if (isset($tableMap[$et])) {
                 list($tbl, $nameCols, $pkCol) = array_pad((array)$tableMap[$et], 3, 'id');
                 $tblCheck = $conn->query("SHOW TABLES LIKE '" . $conn->real_escape_string($tbl) . "'");
@@ -531,7 +532,7 @@ try {
                 ]);
             }
         } else {
-            $entityCounts = ['agent' => 0, 'subagent' => 0, 'worker' => 0, 'hr' => 0, 'accounting' => 0];
+            $entityCounts = ['agent' => 0, 'subagent' => 0, 'worker' => 0, 'partner_agency' => 0, 'hr' => 0, 'accounting' => 0];
             $entityAccountDetails = [];
             foreach ($accounts as $acc) {
                 if (isset($acc['entity_type']) && isset($entityCounts[$acc['entity_type']])) {
@@ -552,7 +553,7 @@ try {
             $diagnostics = [];
             if ($ensureEntityAccounts) {
                 // Check entity tables
-                $entityTables = ['workers', 'employees', 'agents', 'subagents'];
+                $entityTables = ['workers', 'employees', 'agents', 'subagents', 'partner_agencies'];
                 foreach ($entityTables as $tbl) {
                     $tblCheck = $conn->query("SHOW TABLES LIKE '$tbl'");
                     $exists = ($tblCheck && $tblCheck->num_rows > 0);
@@ -613,7 +614,7 @@ try {
         $entityId = isset($data['entity_id']) ? (intval($data['entity_id']) ?: null) : null;
 
         // When creating an account for an entity (Agent/SubAgent/Worker/HR/Accounting), allow auto-generate code/name
-        if ($entityType && $entityId && in_array($entityType, ['agent', 'subagent', 'worker', 'hr', 'accounting'])) {
+        if ($entityType && $entityId && in_array($entityType, ['agent', 'subagent', 'worker', 'partner_agency', 'hr', 'accounting'])) {
             $ec = $conn->query("SHOW COLUMNS FROM financial_accounts");
             $hasEt = $hasEid = false;
             if ($ec) while ($c = $ec->fetch_assoc()) { if ($c['Field'] === 'entity_type') $hasEt = true; if ($c['Field'] === 'entity_id') $hasEid = true; }
@@ -627,7 +628,7 @@ try {
                 }
                 $ex->close();
                 if (empty($accountCode)) {
-                    $prefixMap = ['agent' => '43', 'subagent' => '44', 'worker' => '45', 'hr' => '46', 'accounting' => '47'];
+                    $prefixMap = ['agent' => '43', 'subagent' => '44', 'worker' => '45', 'hr' => '46', 'accounting' => '47', 'partner_agency' => '48'];
                     $prefix = $prefixMap[$entityType] ?? '49';
                     $maxRes = $conn->query("SELECT MAX(CAST(SUBSTRING(account_code, 3) AS UNSIGNED)) AS mx FROM financial_accounts WHERE account_code LIKE '" . $conn->real_escape_string($prefix) . "%' AND LENGTH(account_code) >= 4");
                     $nextNum = 1;
@@ -635,9 +636,9 @@ try {
                     $accountCode = $prefix . str_pad((string)$nextNum, 2, '0', STR_PAD_LEFT);
                 }
                 if (empty($accountName)) {
-                    $tables = ['agent' => 'agents', 'subagent' => 'subagents', 'worker' => 'workers', 'hr' => 'employees', 'accounting' => 'users'];
-                    $nameCols = ['agent' => 'agent_name', 'subagent' => 'subagent_name', 'worker' => 'worker_name', 'hr' => 'name', 'accounting' => 'username'];
-                    $pkCols = ['agent' => 'id', 'subagent' => 'id', 'worker' => 'id', 'hr' => 'id', 'accounting' => 'user_id'];
+                    $tables = ['agent' => 'agents', 'subagent' => 'subagents', 'worker' => 'workers', 'partner_agency' => 'partner_agencies', 'hr' => 'employees', 'accounting' => 'users'];
+                    $nameCols = ['agent' => 'agent_name', 'subagent' => 'subagent_name', 'worker' => 'worker_name', 'partner_agency' => 'name', 'hr' => 'name', 'accounting' => 'username'];
+                    $pkCols = ['agent' => 'id', 'subagent' => 'id', 'worker' => 'id', 'partner_agency' => 'id', 'hr' => 'id', 'accounting' => 'user_id'];
                     $t = $tables[$entityType];
                     $nc = $nameCols[$entityType];
                     $pk = $pkCols[$entityType];

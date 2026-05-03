@@ -658,3 +658,149 @@
 .agency-detail-breadcrumb a.agency-detail-breadcrumb-agency:hover {
     text-decoration: underline;
 }
+
+/* Partner agency — accounting tab */
+.agency-accounting-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.15rem;
+    margin-bottom: 1rem;
+}
+
+.agency-accounting-title {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.agency-accounting-summary {
+    margin: 0;
+    max-width: 42rem;
+}
+
+.agency-accounting-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.agency-accounting-ac-link {
+    text-decoration: none;
+}
+
+.agency-accounting-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.85rem 1.25rem;
+    padding: 0.85rem 1.15rem;
+    margin-bottom: 1rem;
+}
+
+.agency-accounting-date-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.82rem;
+    color: #94a3b8;
+}
+
+.agency-accounting-date-input {
+    padding: 0.45rem 0.55rem;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(15, 23, 42, 0.65);
+    color: #e2e8f0;
+}
+
+.agency-accounting-balances {
+    padding: 0.85rem 1.15rem;
+    margin-bottom: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0.65rem 1rem;
+    font-size: 0.88rem;
+    color: #cbd5e1;
+}
+
+.agency-accounting-balance-val {
+    display: block;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #5eead4;
+    margin-top: 0.15rem;
+}
+
+.agency-accounting-table-wrap {
+    overflow-x: auto;
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.agency-accounting-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+}
+
+.agency-accounting-table thead th {
+    text-align: left;
+    padding: 0.65rem 0.85rem;
+    background: rgba(15, 23, 42, 0.85);
+    color: #94a3b8;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.agency-accounting-table thead th.num {
+    text-align: right;
+}
+
+.agency-accounting-table tbody td {
+    padding: 0.55rem 0.85rem;
+    border-bottom: 1px solid rgba(51, 65, 85, 0.45);
+    color: #e2e8f0;
+}
+
+.agency-accounting-table tbody td.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.agency-accounting-table tbody tr:hover td {
+    background: rgba(94, 234, 212, 0.06);
+}
+
+.agency-accounting-hint {
+    padding: 1rem 1.15rem;
+}
+
+.agency-accounting-chart-wrap {
+    padding: 1rem 1.15rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.agency-accounting-chart-heading {
+    margin: 0 0 0.35rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.agency-accounting-chart-note {
+    margin: 0 0 0.85rem;
+    font-size: 0.82rem;
+    color: #94a3b8;
+}
+
+.agency-accounting-chart-canvas {
+    position: relative;
+    width: 100%;
+    min-height: 240px;
+    max-height: 320px;
+}

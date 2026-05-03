@@ -78,6 +78,314 @@
             panel.classList.toggle('is-hidden', !on);
             panel.hidden = !on;
         });
+        if (name === 'account') {
+            loadAccountingTabContent();
+        }
+    }
+
+    function formatMoneyAmount(n) {
+        const x = Number(n);
+        if (Number.isNaN(x)) return '—';
+        return `${x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SAR`;
+    }
+
+    /** @type {{ destroy?: () => void } | null} */
+    let agencyAccountingChartInst = null;
+
+    function destroyAccountingChartInstanceOnly() {
+        if (agencyAccountingChartInst && typeof agencyAccountingChartInst.destroy === 'function') {
+            agencyAccountingChartInst.destroy();
+        }
+        agencyAccountingChartInst = null;
+    }
+
+    function destroyAccountingChart() {
+        destroyAccountingChartInstanceOnly();
+        const wrap = document.getElementById('agencyAccountingChartWrap');
+        if (wrap) {
+            wrap.classList.add('is-hidden');
+            wrap.hidden = true;
+        }
+    }
+
+    /**
+     * English Chart.js bar chart — monthly debit vs credit from Ratib Pro GL.
+     * @param {Array<{ label?: string, key?: string, debit?: number, credit?: number }>|undefined} monthRows
+     */
+    function renderAccountingChart(monthRows) {
+        const wrap = document.getElementById('agencyAccountingChartWrap');
+        const canvas = document.getElementById('agencyAccountingChart');
+        if (!wrap || !canvas) return;
+        if (typeof Chart === 'undefined') {
+            wrap.classList.add('is-hidden');
+            wrap.hidden = true;
+            return;
+        }
+        const rows = Array.isArray(monthRows) ? monthRows : [];
+        if (rows.length === 0) {
+            destroyAccountingChart();
+            return;
+        }
+        wrap.classList.remove('is-hidden');
+        wrap.hidden = false;
+        destroyAccountingChartInstanceOnly();
+        const labels = rows.map((r) => (r && r.label) || (r && r.key) || '');
+        const debits = rows.map((r) => (Number(r && r.debit) ? Number(r.debit) : 0));
+        const credits = rows.map((r) => (Number(r && r.credit) ? Number(r.credit) : 0));
+        agencyAccountingChartInst = new Chart(canvas.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'Debit (SAR)',
+                        data: debits,
+                        backgroundColor: 'rgba(45, 212, 191, 0.65)',
+                        borderColor: 'rgba(45, 212, 191, 1)',
+                        borderWidth: 1,
+                    },
+                    {
+                        label: 'Credit (SAR)',
+                        data: credits,
+                        backgroundColor: 'rgba(99, 102, 241, 0.55)',
+                        borderColor: 'rgba(165, 180, 252, 1)',
+                        borderWidth: 1,
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#cbd5e1' } },
+                    title: {
+                        display: true,
+                        text: 'Partner ledger — monthly movement (English)',
+                        color: '#e2e8f0',
+                        font: { size: 14 },
+                    },
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                    },
+                    y: {
+                        ticks: { color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                    },
+                },
+            },
+        });
+    }
+
+    function updateAccountingSummaryFromAgency(agency) {
+        const sum = document.getElementById('agencyAccountingLinkSummary');
+        const ensureBtn = document.getElementById('agencyAccountingEnsureBtn');
+        const coa = document.getElementById('agencyAccountingOpenCoa');
+        const panel = document.getElementById('panel-account');
+        if (!sum || !panel) return;
+
+        const canView = panel.getAttribute('data-can-view-chart') === '1';
+        const canEnsure = panel.getAttribute('data-can-ensure') === '1';
+        const linked = !!agency.accounting_linked;
+        const code = agency.linked_account_code || '';
+        const aname = agency.linked_account_name || '';
+
+        if (linked && code) {
+            sum.textContent = `Linked to chart account ${code} — ${aname}.`;
+        } else if (linked) {
+            sum.textContent = 'Linked to chart of accounts.';
+        } else {
+            sum.textContent =
+                'Not linked yet. Create a ledger account to record journal activity against this partner.';
+        }
+
+        if (ensureBtn) {
+            ensureBtn.hidden = !(canEnsure && !linked);
+        }
+        if (coa) {
+            coa.hidden = !canView;
+            coa.href = withContext('accounting.php');
+        }
+    }
+
+    async function loadAccountingTabContent() {
+        const panel = document.getElementById('panel-account');
+        const errEl = document.getElementById('agencyAccountingError');
+        const hintEl = document.getElementById('agencyAccountingHint');
+        const filters = document.getElementById('agencyAccountingFilters');
+        const balances = document.getElementById('agencyAccountingBalances');
+        const wrap = document.getElementById('agencyAccountingTableWrap');
+        const tbody = document.getElementById('agencyAccountingTbody');
+
+        if (!panel || !agencySnapshot || agencySnapshot.id == null) return;
+
+        if (errEl) {
+            errEl.textContent = '';
+            errEl.classList.add('is-hidden');
+            errEl.hidden = true;
+        }
+        if (hintEl) {
+            hintEl.classList.add('is-hidden');
+            hintEl.hidden = true;
+        }
+
+        const canView = panel.getAttribute('data-can-view-chart') === '1';
+        if (!canView) {
+            destroyAccountingChart();
+            if (hintEl) {
+                hintEl.textContent =
+                    'You need chart-of-accounts permission to view this statement. Ask an administrator for “View Chart of Accounts”.';
+                hintEl.classList.remove('is-hidden');
+                hintEl.hidden = false;
+            }
+            if (filters) filters.hidden = true;
+            if (balances) {
+                balances.classList.add('is-hidden');
+                balances.hidden = true;
+            }
+            if (wrap) {
+                wrap.classList.add('is-hidden');
+                wrap.hidden = true;
+            }
+            return;
+        }
+
+        const id = Number(agencySnapshot.id);
+        if (!Number.isFinite(id) || id <= 0) return;
+
+        const startEl = document.getElementById('agencyAccountingStart');
+        const endEl = document.getElementById('agencyAccountingEnd');
+        const qs = new URLSearchParams();
+        qs.set('partner_agency_id', String(id));
+        if (startEl && startEl.value) qs.set('start_date', startEl.value);
+        if (endEl && endEl.value) qs.set('end_date', endEl.value);
+
+        try {
+            const res = await fetch(
+                withContext(`../api/partnerships/partner-agency-account-statement.php?${qs.toString()}`),
+                { credentials: 'same-origin' }
+            );
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok || json.success === false) {
+                throw new Error(json.message || `Statement failed (${res.status})`);
+            }
+
+            if (!json.linked) {
+                destroyAccountingChart();
+                if (filters) filters.hidden = true;
+                if (balances) {
+                    balances.classList.add('is-hidden');
+                    balances.hidden = true;
+                }
+                if (wrap) {
+                    wrap.classList.add('is-hidden');
+                    wrap.hidden = true;
+                }
+                if (hintEl && json.message) {
+                    hintEl.textContent = json.message;
+                    hintEl.classList.remove('is-hidden');
+                    hintEl.hidden = false;
+                }
+                return;
+            }
+
+            if (hintEl) {
+                hintEl.classList.add('is-hidden');
+                hintEl.hidden = true;
+            }
+            if (filters) filters.hidden = false;
+
+            if (balances) {
+                balances.innerHTML = `
+            <div><span>Opening</span><span class="agency-accounting-balance-val">${escapeHtml(formatMoneyAmount(json.opening_balance))}</span></div>
+            <div><span>Closing</span><span class="agency-accounting-balance-val">${escapeHtml(formatMoneyAmount(json.closing_balance))}</span></div>
+            <div><span>Period debits</span><span class="agency-accounting-balance-val">${escapeHtml(formatMoneyAmount(json.total_debit))}</span></div>
+            <div><span>Period credits</span><span class="agency-accounting-balance-val">${escapeHtml(formatMoneyAmount(json.total_credit))}</span></div>
+        `;
+                balances.classList.remove('is-hidden');
+                balances.hidden = false;
+            }
+
+            const lines = Array.isArray(json.lines) ? json.lines : [];
+            if (tbody) {
+                tbody.innerHTML = lines
+                    .map((row) => {
+                        const d = escapeHtml(String(row.date || ''));
+                        const ref = escapeHtml(String(row.reference || ''));
+                        const desc = escapeHtml(String(row.description || ''));
+                        const dr = escapeHtml(formatMoneyAmount(row.debit));
+                        const cr = escapeHtml(formatMoneyAmount(row.credit));
+                        const bal = escapeHtml(formatMoneyAmount(row.balance));
+                        return `<tr><td>${d}</td><td>${ref}</td><td>${desc}</td><td class="num">${dr}</td><td class="num">${cr}</td><td class="num">${bal}</td></tr>`;
+                    })
+                    .join('');
+            }
+            if (wrap) {
+                wrap.classList.remove('is-hidden');
+                wrap.hidden = false;
+            }
+
+            renderAccountingChart(json.chart_by_month);
+        } catch (e) {
+            destroyAccountingChart();
+            if (errEl) {
+                errEl.textContent = e && e.message ? e.message : 'Could not load statement.';
+                errEl.classList.remove('is-hidden');
+                errEl.hidden = false;
+            }
+        }
+    }
+
+    function initAccountingTab() {
+        const ensureBtn = document.getElementById('agencyAccountingEnsureBtn');
+        const refreshBtn = document.getElementById('agencyAccountingRefreshBtn');
+        const coa = document.getElementById('agencyAccountingOpenCoa');
+        if (coa) coa.href = withContext('accounting.php');
+
+        if (ensureBtn) {
+            ensureBtn.addEventListener('click', async () => {
+                const sid = agencySnapshot && agencySnapshot.id != null ? Number(agencySnapshot.id) : 0;
+                if (!Number.isFinite(sid) || sid <= 0) return;
+                ensureBtn.disabled = true;
+                try {
+                    const res = await fetch(withContext('../api/partnerships/partner-agency-account-link.php'), {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ partner_agency_id: sid }),
+                    });
+                    const json = await res.json().catch(() => ({}));
+                    if (!res.ok || !json.success) {
+                        throw new Error(json.message || `Could not create link (${res.status})`);
+                    }
+                    await load();
+                    loadAccountingTabContent();
+                } catch (e) {
+                    showError(e && e.message ? e.message : 'Could not create ledger account.');
+                } finally {
+                    ensureBtn.disabled = false;
+                }
+            });
+        }
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => loadAccountingTabContent());
+        }
+
+        const startEl = document.getElementById('agencyAccountingStart');
+        const endEl = document.getElementById('agencyAccountingEnd');
+        if (startEl && !startEl.value) {
+            const now = new Date();
+            const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+            startEl.value = start.toISOString().slice(0, 10);
+        }
+        if (endEl && !endEl.value) {
+            const now = new Date();
+            const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            endEl.value = end.toISOString().slice(0, 10);
+        }
     }
 
     function withContext(url) {
@@ -323,6 +631,7 @@
 
         applyPortalUi(agency);
         wirePartnerTableLinks(agency.id);
+        updateAccountingSummaryFromAgency(agency);
     }
 
     async function load() {
@@ -435,6 +744,7 @@
     function init() {
         initTabs();
         initPortalControls();
+        initAccountingTab();
         load();
     }
 

@@ -153,11 +153,13 @@ class PartnerAgencyController
             'INSERT INTO partner_agencies (
                 name, name_ar, agency_code, country, city, city_ar, contact_person, email, phone, phone2, fax,
                 address_ar, address_en, license, status,
-                passport_no, passport_issue_place, passport_issue_date, sending_bank, account_number, mobile, license_owner, notes
+                passport_no, passport_issue_place, passport_issue_date, sending_bank, account_number, mobile, license_owner, notes,
+                financial_account_id
             ) VALUES (
                 :name, :name_ar, :agency_code, :country, :city, :city_ar, :contact_person, :email, :phone, :phone2, :fax,
                 :address_ar, :address_en, :license, :status,
-                :passport_no, :passport_issue_place, :passport_issue_date, :sending_bank, :account_number, :mobile, :license_owner, :notes
+                :passport_no, :passport_issue_place, :passport_issue_date, :sending_bank, :account_number, :mobile, :license_owner, :notes,
+                :financial_account_id
             )'
         );
         $stmt->execute($data);
@@ -175,6 +177,12 @@ class PartnerAgencyController
     public function update(int $id, array $payload): array
     {
         $this->assertExists($id);
+        if (!array_key_exists('financial_account_id', $payload)) {
+            $cur = $this->find($id);
+            $payload['financial_account_id'] = array_key_exists('financial_account_id', $cur)
+                ? $cur['financial_account_id']
+                : null;
+        }
         $data = $this->validate($payload, true);
         $data['id'] = $id;
         $stmt = $this->conn->prepare(
@@ -183,7 +191,8 @@ class PartnerAgencyController
                 contact_person = :contact_person, email = :email, phone = :phone, phone2 = :phone2, fax = :fax,
                 address_ar = :address_ar, address_en = :address_en, license = :license, status = :status,
                 passport_no = :passport_no, passport_issue_place = :passport_issue_place, passport_issue_date = :passport_issue_date,
-                sending_bank = :sending_bank, account_number = :account_number, mobile = :mobile, license_owner = :license_owner, notes = :notes
+                sending_bank = :sending_bank, account_number = :account_number, mobile = :mobile, license_owner = :license_owner, notes = :notes,
+                financial_account_id = :financial_account_id
              WHERE id = :id'
         );
         $stmt->execute($data);
@@ -306,6 +315,109 @@ class PartnerAgencyController
     }
 
     /**
+     * Resolved chart-of-accounts id for this partner: explicit financial_account_id, else entity-linked row.
+     */
+    public function resolveLinkedFinancialAccountId(int $agencyId): ?int
+    {
+        if ($agencyId <= 0) {
+            return null;
+        }
+        try {
+            $explicit = 0;
+            try {
+                $stmt = $this->conn->prepare(
+                    'SELECT financial_account_id FROM partner_agencies WHERE id = ? LIMIT 1'
+                );
+                $stmt->execute([$agencyId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row && array_key_exists('financial_account_id', $row)) {
+                    $explicit = (int) $row['financial_account_id'];
+                }
+            } catch (Throwable $inner) {
+                error_log('PartnerAgencyController::resolveLinkedFinancialAccountId explicit column: ' . $inner->getMessage());
+            }
+
+            if ($explicit > 0 && $this->financialAccountRowExists($explicit)) {
+                return $explicit;
+            }
+
+            $stmt = $this->conn->prepare(
+                "SELECT id FROM financial_accounts WHERE entity_type = 'partner_agency' AND entity_id = ? AND is_active = 1 LIMIT 1"
+            );
+            $stmt->execute([$agencyId]);
+            $fa = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $fa ? (int) $fa['id'] : null;
+        } catch (Throwable $e) {
+            error_log('PartnerAgencyController::resolveLinkedFinancialAccountId: ' . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * Create a chart-of-accounts row for this agency (prefix 48 — same family as entity accounts) when missing.
+     *
+     * @return array{financial_account_id: int, created: bool, account_code?: string}
+     */
+    public function ensureFinancialAccount(int $agencyId): array
+    {
+        if ($agencyId <= 0) {
+            throw new InvalidArgumentException('Invalid agency id');
+        }
+        $this->assertExists($agencyId);
+
+        $existing = $this->resolveLinkedFinancialAccountId($agencyId);
+        if ($existing !== null) {
+            return ['financial_account_id' => $existing, 'created' => false];
+        }
+
+        if (!$this->financialAccountsTableExists()) {
+            throw new RuntimeException('Chart of accounts is not available on this database.');
+        }
+
+        $this->ensureFinancialAccountsEntityColumns();
+
+        $partner = $this->find($agencyId);
+        $name = trim((string) ($partner['name'] ?? ''));
+        if ($name === '') {
+            throw new InvalidArgumentException('Agency name is required to create a ledger account');
+        }
+
+        $prefix = '48';
+        $sql = "SELECT COALESCE(MAX(CAST(SUBSTRING(account_code, 3) AS UNSIGNED)), 0) AS mx
+                FROM financial_accounts WHERE account_code LIKE ? AND LENGTH(account_code) >= 4";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([$prefix . '%']);
+        $mxRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        $nextNum = (int) ($mxRow['mx'] ?? 0) + 1;
+        $accountCode = $prefix . str_pad((string) $nextNum, 2, '0', STR_PAD_LEFT);
+
+        $accountType = 'Expense';
+        $normalBalance = 'Debit';
+
+        $ins = $this->conn->prepare(
+            'INSERT INTO financial_accounts (account_code, account_name, account_type, normal_balance, opening_balance, current_balance, is_active, entity_type, entity_id)
+             VALUES (?, ?, ?, ?, 0, 0, 1, ?, ?)'
+        );
+        $ins->execute([$accountCode, $name, $accountType, $normalBalance, 'partner_agency', $agencyId]);
+        $newId = (int) $this->conn->lastInsertId();
+
+        try {
+            $u = $this->conn->prepare('UPDATE partner_agencies SET financial_account_id = ? WHERE id = ?');
+            $u->execute([$newId, $agencyId]);
+        } catch (Throwable $e) {
+            error_log('PartnerAgencyController::ensureFinancialAccount partner_agencies update: ' . $e->getMessage());
+        }
+
+        return [
+            'financial_account_id' => $newId,
+            'created' => true,
+            'account_code' => $accountCode,
+        ];
+    }
+
+    /**
      * Minimal id + name for lightweight partner portal endpoints (no deployments hydration).
      *
      * @return array{id: int, name: string}
@@ -342,6 +454,30 @@ class PartnerAgencyController
         $row['portal_enabled'] = !empty($row['portal_enabled']);
         $row['portal_has_token'] = $token !== '';
         $row['portal_has_password'] = $hash !== '';
+
+        $aid = (int) ($row['id'] ?? 0);
+        if ($aid > 0) {
+            $linkedId = $this->resolveLinkedFinancialAccountId($aid);
+            $row['linked_financial_account_id'] = $linkedId;
+            $row['accounting_linked'] = $linkedId !== null;
+            $row['linked_account_code'] = null;
+            $row['linked_account_name'] = null;
+            if ($linkedId !== null && $this->financialAccountsTableExists()) {
+                try {
+                    $st = $this->conn->prepare(
+                        'SELECT account_code, account_name FROM financial_accounts WHERE id = ? LIMIT 1'
+                    );
+                    $st->execute([$linkedId]);
+                    $fa = $st->fetch(PDO::FETCH_ASSOC);
+                    if ($fa) {
+                        $row['linked_account_code'] = $fa['account_code'] ?? null;
+                        $row['linked_account_name'] = $fa['account_name'] ?? null;
+                    }
+                } catch (Throwable $e) {
+                    error_log('PartnerAgencyController::toPublicRow FA meta: ' . $e->getMessage());
+                }
+            }
+        }
 
         return $row;
     }
@@ -561,7 +697,84 @@ class PartnerAgencyController
             'mobile' => mb_substr(trim((string) ($payload['mobile'] ?? '')), 0, 50),
             'license_owner' => mb_substr(trim((string) ($payload['license_owner'] ?? '')), 0, 255),
             'notes' => trim((string) ($payload['notes'] ?? '')) === '' ? null : mb_substr(trim((string) ($payload['notes'] ?? '')), 0, 65535),
+            'financial_account_id' => $this->normalizeFinancialAccountId($payload['financial_account_id'] ?? null),
         ];
+    }
+
+    private function normalizeFinancialAccountId($raw): ?int
+    {
+        if ($raw === null || $raw === '' || $raw === false) {
+            return null;
+        }
+        $id = (int) $raw;
+        if ($id <= 0) {
+            return null;
+        }
+        $this->assertFinancialAccountExists($id);
+
+        return $id;
+    }
+
+    private function assertFinancialAccountExists(int $id): void
+    {
+        if (!$this->financialAccountsTableExists()) {
+            throw new InvalidArgumentException('Chart of accounts is not available');
+        }
+        $stmt = $this->conn->prepare('SELECT id FROM financial_accounts WHERE id = ? LIMIT 1');
+        $stmt->execute([$id]);
+        if (!$stmt->fetch(PDO::FETCH_ASSOC)) {
+            throw new InvalidArgumentException('Financial account not found');
+        }
+    }
+
+    private function financialAccountRowExists(int $id): bool
+    {
+        if (!$this->financialAccountsTableExists() || $id <= 0) {
+            return false;
+        }
+        try {
+            $stmt = $this->conn->prepare('SELECT id FROM financial_accounts WHERE id = ? LIMIT 1');
+            $stmt->execute([$id]);
+
+            return (bool) $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    private function financialAccountsTableExists(): bool
+    {
+        try {
+            $stmt = $this->conn->query("SHOW TABLES LIKE 'financial_accounts'");
+
+            return $stmt && $stmt->fetch() !== false;
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+
+    private function ensureFinancialAccountsEntityColumns(): void
+    {
+        try {
+            $chk = $this->conn->query("SHOW COLUMNS FROM financial_accounts LIKE 'entity_type'");
+            if (!$chk || !$chk->fetch()) {
+                $this->conn->exec(
+                    'ALTER TABLE financial_accounts ADD COLUMN entity_type VARCHAR(50) NULL DEFAULT NULL'
+                );
+            }
+        } catch (Throwable $e) {
+            error_log('PartnerAgencyController ensure entity_type: ' . $e->getMessage());
+        }
+        try {
+            $chk = $this->conn->query("SHOW COLUMNS FROM financial_accounts LIKE 'entity_id'");
+            if (!$chk || !$chk->fetch()) {
+                $this->conn->exec(
+                    'ALTER TABLE financial_accounts ADD COLUMN entity_id INT(11) NULL DEFAULT NULL'
+                );
+            }
+        } catch (Throwable $e) {
+            error_log('PartnerAgencyController ensure entity_id: ' . $e->getMessage());
+        }
     }
 }
 

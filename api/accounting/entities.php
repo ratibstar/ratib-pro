@@ -24,9 +24,10 @@ function buildEntityAccountSections($conn, $includeInactive) {
         'agent' => ['table' => 'agents', 'nameCol' => 'agent_name', 'title' => 'Agent', 'statusWhere' => $includeInactive ? '' : " AND status = 'active' "],
         'subagent' => ['table' => 'subagents', 'nameCol' => 'subagent_name', 'title' => 'SubAgent', 'statusWhere' => $includeInactive ? '' : " AND status = 'active' "],
         'worker' => ['table' => 'workers', 'nameCol' => 'worker_name', 'title' => 'Worker', 'statusWhere' => $includeInactive ? '' : " AND (status = 'active' OR status = 'approved' OR status = 'deployed') "],
+        'partner_agency' => ['table' => 'partner_agencies', 'nameCol' => 'name', 'title' => 'Partner Agency', 'statusWhere' => $includeInactive ? '' : " AND status = 'active' "],
         'hr' => ['table' => 'employees', 'nameCol' => 'name', 'title' => 'HR', 'statusWhere' => $includeInactive ? '' : " AND (UPPER(TRIM(COALESCE(status,''))) = 'ACTIVE' OR status IS NULL) "],
     ];
-    $nameColCandidates = ['worker' => ['worker_name', 'full_name', 'name'], 'hr' => ['name', 'employee_name', 'full_name']];
+    $nameColCandidates = ['worker' => ['worker_name', 'full_name', 'name'], 'partner_agency' => ['name'], 'hr' => ['name', 'employee_name', 'full_name']];
     foreach ($typeConfig as $et => $cfg) {
         $tableCheck = $conn->query("SHOW TABLES LIKE '" . $conn->real_escape_string($cfg['table']) . "'");
         if (!$tableCheck || $tableCheck->num_rows === 0) {

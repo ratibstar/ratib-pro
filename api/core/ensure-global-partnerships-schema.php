@@ -153,6 +153,7 @@ function ratibEnsurePartnerAgencyExtendedProfileColumns(PDO $conn): void
         'ALTER TABLE `partner_agencies` ADD COLUMN `mobile` VARCHAR(50) DEFAULT NULL',
         'ALTER TABLE `partner_agencies` ADD COLUMN `license_owner` VARCHAR(255) DEFAULT NULL',
         'ALTER TABLE `partner_agencies` ADD COLUMN `notes` TEXT DEFAULT NULL',
+        'ALTER TABLE `partner_agencies` ADD COLUMN `financial_account_id` INT NULL DEFAULT NULL',
     ];
     foreach ($alters as $sql) {
         try {
@@ -161,6 +162,15 @@ function ratibEnsurePartnerAgencyExtendedProfileColumns(PDO $conn): void
             if (stripos($e->getMessage(), 'Duplicate column') === false) {
                 error_log('ratibEnsurePartnerAgencyExtendedProfileColumns: ' . $e->getMessage());
             }
+        }
+    }
+
+    try {
+        $conn->exec('ALTER TABLE `partner_agencies` ADD INDEX `idx_partner_agencies_financial_account` (`financial_account_id`)');
+    } catch (Throwable $e) {
+        $msg = $e->getMessage();
+        if (stripos($msg, 'Duplicate key name') === false && stripos($msg, 'check that column/key exists') === false) {
+            error_log('ratibEnsurePartnerAgencyExtendedProfileColumns index financial_account_id: ' . $msg);
         }
     }
 

@@ -850,6 +850,20 @@ try {
                                         if ($nameRow = $nameResult->fetch_assoc()) {
                                             $entityName = $nameRow['name'] ?? null;
                                         }
+                                    } elseif ($entry['entity_type'] === 'partner_agency') {
+                                        $pchk = $conn->query("SHOW TABLES LIKE 'partner_agencies'");
+                                        if ($pchk && $pchk->num_rows > 0) {
+                                            $nameStmt = $conn->prepare('SELECT name AS name FROM partner_agencies WHERE id = ? LIMIT 1');
+                                            $nameStmt->bind_param('i', $entry['entity_id']);
+                                            $nameStmt->execute();
+                                            $nameResult = $nameStmt->get_result();
+                                            if ($nameRow = $nameResult->fetch_assoc()) {
+                                                $entityName = $nameRow['name'] ?? null;
+                                            }
+                                        }
+                                        if ($pchk) {
+                                            $pchk->free();
+                                        }
                                     } elseif ($entry['entity_type'] === 'accounting') {
                                         $nameStmt = $conn->prepare("SELECT username as name FROM users WHERE user_id = ? LIMIT 1");
                                         $nameStmt->bind_param('i', $entry['entity_id']);
@@ -1102,7 +1116,16 @@ try {
                 }
             }
         }
-        
+
+        $partnerAgencyTableCheckFt = $conn->query("SHOW TABLES LIKE 'partner_agencies'");
+        $hasPartnerAgenciesTableFt = ($partnerAgencyTableCheckFt && $partnerAgencyTableCheckFt->num_rows > 0);
+        if ($partnerAgencyTableCheckFt) {
+            $partnerAgencyTableCheckFt->free();
+        }
+        $partnerAgencyCaseSqlFt = $hasPartnerAgenciesTableFt
+            ? " WHEN et.entity_type = 'partner_agency' THEN COALESCE(pa.name, '') "
+            : '';
+
         // Build query for financial_transactions
         $ftQuery = "
             SELECT 
@@ -1124,6 +1147,7 @@ try {
                     WHEN et.entity_type = 'subagent' THEN COALESCE(sa.`{$subagentNameCol}`, '')
                     WHEN et.entity_type = 'worker' THEN COALESCE(w.`{$workerNameCol}`, '')
                     WHEN et.entity_type = 'hr' AND {$hasHrTable} THEN COALESCE(emp.`{$hrNameCol}`, '')
+                    {$partnerAgencyCaseSqlFt}
                     WHEN et.entity_type = 'accounting' THEN COALESCE(u_ent.username, '')
                     ELSE ''
                 END as entity_name
@@ -1155,6 +1179,7 @@ try {
                         WHEN et.entity_type = 'subagent' THEN COALESCE(sa.`{$subagentNameCol}`, '')
                         WHEN et.entity_type = 'worker' THEN COALESCE(w.`{$workerNameCol}`, '')
                         WHEN et.entity_type = 'hr' AND {$hasHrTable} THEN COALESCE(emp.`{$hrNameCol}`, '')
+                        {$partnerAgencyCaseSqlFt}
                         WHEN et.entity_type = 'accounting' THEN COALESCE(u_ent.username, '')
                         ELSE ''
                     END as entity_name
@@ -1176,6 +1201,9 @@ try {
             ";
             if ($hasHrTable) {
                 $ftQuery .= " LEFT JOIN employees emp ON et.entity_type = 'hr' AND et.entity_id = emp.id ";
+            }
+            if ($hasPartnerAgenciesTableFt) {
+                $ftQuery .= " LEFT JOIN partner_agencies pa ON et.entity_type = 'partner_agency' AND et.entity_id = pa.id ";
             }
         }
         
@@ -1444,8 +1472,31 @@ try {
                 if ($nameRow = $nameResult->fetch_assoc()) {
                     $entityName = $nameRow['name'] ?? '';
                 }
+            } elseif ($entityType === 'partner_agency') {
+                $pchk = $conn->query("SHOW TABLES LIKE 'partner_agencies'");
+                if ($pchk && $pchk->num_rows > 0) {
+                    $nameQuery = 'SELECT name AS name FROM partner_agencies WHERE id = ? LIMIT 1';
+                    $nameStmt = $conn->prepare($nameQuery);
+                    $nameStmt->bind_param('i', $entityId);
+                    $nameStmt->execute();
+                    $nameResult = $nameStmt->get_result();
+                    if ($nameRow = $nameResult->fetch_assoc()) {
+                        $entityName = $nameRow['name'] ?? '';
+                    }
+                }
+                if ($pchk) {
+                    $pchk->free();
+                }
+            } elseif ($entityType === 'accounting') {
+                $nameStmt = $conn->prepare('SELECT username AS name FROM users WHERE user_id = ? LIMIT 1');
+                $nameStmt->bind_param('i', $entityId);
+                $nameStmt->execute();
+                $nameResult = $nameStmt->get_result();
+                if ($nameRow = $nameResult->fetch_assoc()) {
+                    $entityName = $nameRow['name'] ?? '';
+                }
             }
-            
+
             $entry['entity_name'] = $entityName;
         }
     }
