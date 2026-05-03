@@ -926,8 +926,9 @@ include '../includes/header.php';
                             <input type="hidden" name="training_certificate_status" value="pending">
                         </div>
                     </div>
+                    <?php endif; ?>
 
-                    <!-- Signed Contract -->
+                    <!-- Signed Contract (all programs — was only in non-Indonesia branch, so Indonesia saves never updated status) -->
                     <div class="doc-row contract-signed indonesia-compliance-field" data-workflow-stage="contract" data-stage-label="Contract">
                         <div class="doc-group">
                             <label class="form-label">Signed Contract</label>
@@ -946,7 +947,7 @@ include '../includes/header.php';
                         </div>
                     </div>
 
-                    <!-- Insurance -->
+                    <!-- Insurance (all programs) -->
                     <div class="doc-row insurance indonesia-compliance-field" data-workflow-stage="government" data-stage-label="Government Registration">
                         <div class="doc-group">
                             <label class="form-label">Insurance</label>
@@ -964,7 +965,6 @@ include '../includes/header.php';
                             <input type="hidden" name="insurance_status" value="pending">
                         </div>
                     </div>
-                    <?php endif; ?>
                     
 
                     <!-- Police Clearance -->

@@ -874,6 +874,12 @@ if (!function_exists('ratib_workflow_compute_document_statuses')) {
         }
 
         foreach ($docStatusMap as $statusField => $meta) {
+            $incoming = array_key_exists($statusField, $payload) ? trim((string) $payload[$statusField]) : '';
+            $incomingLower = strtolower($incoming);
+            // Never overwrite an explicit editor choice (ok / not_ok / approved / etc.) — empty ticket_number must still allow "OK".
+            if ($incoming !== '' && $incomingLower !== 'pending') {
+                continue;
+            }
             $field = $meta['number_field'];
             $value = trim((string)($workerLike[$field] ?? ''));
             if ($value === '') {
