@@ -113,8 +113,8 @@ window.RATIB_PARTNER_DOCS_STAFF = {
     <input type="file" id="ppStaffWorkerDocUploadInput" name="pp_staff_worker_document" class="partner-portal-docs-hidden-file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" tabindex="-1" aria-hidden="true" title="Worker document file">
 
     <p class="partner-portal-docs-staff-status-help">
-        <strong>Preview</strong> on the table opens the worker documents window: only <strong>File</strong> and <strong>Status</strong> columns — click a row with a file to open the side preview (Download / Upload there), or an empty row to upload (PDF, JPG, or PNG).
-        Use <strong>Status</strong> or bulk <strong>Apply status</strong> for what the partner portal shows; <strong>Auto</strong> clears a manual label.
+        <strong>Preview</strong> opens the worker documents window with <strong>File</strong>, <strong>Status</strong>, and <strong>Actions</strong> (checkbox + View / Download / Upload). Use <strong>Select all</strong> and <strong>Download selected</strong> for multiple files. The right panel still shows inline preview and toolbar actions.
+        Use <strong>Status</strong> or bulk <strong>Apply status</strong> on the main table for what the partner portal shows; <strong>Auto</strong> clears a manual label.
     </p>
 
     <div class="glass-card partner-portal-docs-table-shell">

@@ -482,7 +482,7 @@
         const existing = $('ppWorkerDocsListModal');
         if (existing) {
             const hr = existing.querySelector('.pp-worker-docs-list-table thead tr');
-            if (hr && hr.querySelectorAll('th').length === 2) {
+            if (hr && hr.querySelectorAll('th').length === 3) {
                 return;
             }
             existing.remove();
@@ -503,8 +503,15 @@
             '<p id="ppWorkerDocsListHint" class="pp-worker-docs-list-hint muted-label"></p>' +
             '<div class="pp-worker-docs-split">' +
             '<div class="pp-worker-docs-table-scroll">' +
+            '<div id="ppWorkerDocsBulkBar" class="pp-worker-docs-bulk-bar">' +
+            '<label class="pp-worker-docs-bulk-select-all"><input type="checkbox" id="ppWorkerDocsSelectAllRows" title="Select all rows"> <span>Select all</span></label>' +
+            '<div class="pp-worker-docs-bulk-actions">' +
+            '<button type="button" class="muted-btn pp-worker-docs-bulk-btn" id="ppWorkerDocsBulkView">View first selected</button>' +
+            '<button type="button" class="neon-btn pp-worker-docs-bulk-btn" id="ppWorkerDocsBulkDownload">Download selected</button>' +
+            '<button type="button" class="muted-btn pp-worker-docs-bulk-btn" id="ppWorkerDocsBulkClear">Clear selection</button>' +
+            '</div></div>' +
             '<table class="pp-worker-docs-list-table">' +
-            '<thead><tr><th scope="col" class="pp-worker-docs-th-file">File</th><th scope="col" class="pp-worker-docs-th-status">Status</th></tr></thead>' +
+            '<thead><tr><th scope="col" class="pp-worker-docs-th-file">File</th><th scope="col" class="pp-worker-docs-th-status">Status</th><th scope="col" class="pp-worker-docs-th-actions">Actions</th></tr></thead>' +
             '<tbody id="ppWorkerDocsListTbody"></tbody>' +
             '</table>' +
             '</div>' +
@@ -553,7 +560,11 @@
         }
         wrap.addEventListener('click', (e) => {
             const uploadSlotRow = e.target && e.target.closest ? e.target.closest('tr[data-pp-worker-docs-upload-slot]') : null;
-            if (uploadSlotRow && staffMode && !(e.target && e.target.closest && e.target.closest('button'))) {
+            if (
+                uploadSlotRow &&
+                staffMode &&
+                !(e.target && e.target.closest && e.target.closest('button,.pp-worker-docs-select-actions'))
+            ) {
                 e.preventDefault();
                 const wid = parseInt(String(uploadSlotRow.getAttribute('data-worker-id') || ''), 10);
                 const docType = String(uploadSlotRow.getAttribute('data-doc-type') || '').trim().toLowerCase();
@@ -561,8 +572,32 @@
                 showWorkerDocsSlotUploadPane(wid, docType);
                 return;
             }
+            const viewBtn = e.target && e.target.closest ? e.target.closest('[data-pp-worker-docs-row-view]') : null;
+            if (viewBtn) {
+                e.preventDefault();
+                const enc = viewBtn.getAttribute('data-pp-worker-docs-row-view');
+                if (!enc) return;
+                try {
+                    showWorkerDocsListPreviewPane(decodeURIComponent(enc));
+                } catch (_errV) {
+                    /* ignore */
+                }
+                return;
+            }
+            const rowUp = e.target && e.target.closest ? e.target.closest('[data-pp-worker-docs-row-upload]') : null;
+            if (rowUp && staffMode) {
+                e.preventDefault();
+                const wid = parseInt(String(rowUp.getAttribute('data-worker-id') || ''), 10);
+                const docType = String(rowUp.getAttribute('data-doc-type') || '').trim().toLowerCase();
+                if (!Number.isFinite(wid) || wid <= 0 || !WORKER_DOCUMENT_UPLOAD_TYPES.has(docType)) return;
+                showWorkerDocsSlotUploadPane(wid, docType);
+                return;
+            }
             const row = e.target && e.target.closest ? e.target.closest('tr[data-pp-worker-docs-row-preview]') : null;
-            if (row && !(e.target && e.target.closest && e.target.closest('a,button'))) {
+            if (
+                row &&
+                !(e.target && e.target.closest && e.target.closest('a,button,input,label,.pp-worker-docs-select-actions'))
+            ) {
                 const enc = row.getAttribute('data-pp-worker-docs-row-preview');
                 if (!enc) return;
                 try {
@@ -571,6 +606,86 @@
                     /* ignore */
                 }
             }
+        });
+        bindWorkerDocsBulkBarOnce();
+    }
+
+    function bindWorkerDocsBulkBarOnce() {
+        const bar = $('ppWorkerDocsBulkBar');
+        if (!bar || bar.dataset.ppWorkerDocsBulkBound === '1') return;
+        bar.dataset.ppWorkerDocsBulkBound = '1';
+        const selAll = $('ppWorkerDocsSelectAllRows');
+        const bulkDl = $('ppWorkerDocsBulkDownload');
+        const bulkView = $('ppWorkerDocsBulkView');
+        const bulkClr = $('ppWorkerDocsBulkClear');
+        const syncSelectAllIndeterminate = () => {
+            if (!selAll) return;
+            const boxes = Array.from(document.querySelectorAll('#ppWorkerDocsListTbody .pp-worker-docs-row-check[data-preview-enc]'));
+            const n = boxes.filter((b) => b.checked).length;
+            selAll.checked = boxes.length > 0 && n === boxes.length;
+            selAll.indeterminate = n > 0 && n < boxes.length;
+        };
+        if (selAll) {
+            selAll.addEventListener('change', () => {
+                const boxes = Array.from(document.querySelectorAll('#ppWorkerDocsListTbody .pp-worker-docs-row-check[data-preview-enc]'));
+                boxes.forEach((cb) => {
+                    cb.checked = selAll.checked;
+                });
+            });
+        }
+        if (bulkClr) {
+            bulkClr.addEventListener('click', () => {
+                if (selAll) {
+                    selAll.checked = false;
+                    selAll.indeterminate = false;
+                }
+                document.querySelectorAll('#ppWorkerDocsListTbody .pp-worker-docs-row-check').forEach((cb) => {
+                    cb.checked = false;
+                });
+            });
+        }
+        if (bulkView) {
+            bulkView.addEventListener('click', () => {
+                const first = document.querySelector('#ppWorkerDocsListTbody .pp-worker-docs-row-check:checked[data-preview-enc]');
+                if (!first) return;
+                const enc = first.getAttribute('data-preview-enc');
+                if (!enc) return;
+                try {
+                    showWorkerDocsListPreviewPane(decodeURIComponent(enc));
+                } catch (_e) {
+                    /* ignore */
+                }
+            });
+        }
+        if (bulkDl) {
+            bulkDl.addEventListener('click', () => {
+                const hrefs = Array.from(document.querySelectorAll('#ppWorkerDocsListTbody .pp-worker-docs-row-check:checked[data-download]'))
+                    .map((cb) => cb.getAttribute('data-download'))
+                    .filter((h) => h && String(h).trim() !== '');
+                if (hrefs.length === 0) return;
+                let idx = 0;
+                const step = () => {
+                    if (idx >= hrefs.length) return;
+                    const href = hrefs[idx];
+                    idx += 1;
+                    const a = document.createElement('a');
+                    a.href = href;
+                    a.setAttribute('download', '');
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(step, 450);
+                };
+                step();
+            });
+        }
+        document.addEventListener('change', (e) => {
+            const t = e.target;
+            if (!t || !t.classList || !t.classList.contains('pp-worker-docs-row-check')) return;
+            if (!document.getElementById('ppWorkerDocsListModal') || !document.getElementById('ppWorkerDocsListModal').contains(t)) return;
+            syncSelectAllIndeterminate();
         });
     }
 
@@ -589,6 +704,7 @@
                 statusLabel: st ? st.replace(/_/g, ' ') : '—',
                 hasFile,
                 previewUrl,
+                downloadUrl: hasFile ? workerDocStaffPreviewUrl(workerId, docType) : '',
             };
         });
     }
@@ -610,6 +726,10 @@
             const hasFile = !!r._hasFile;
             const sid = r._shareId != null ? r._shareId : r.id;
             const previewUrl = hasFile && sid != null && String(sid).trim() !== '' ? partnerShareInlineDownloadUrl(String(sid)) : '';
+            const downloadUrl =
+                hasFile && sid != null && String(sid).trim() !== ''
+                    ? `../api/partnerships/partner-shared-worker-doc-download.php?share_id=${encodeURIComponent(String(sid))}`
+                    : '';
             const typeLabel =
                 r._document_label && String(r._document_label).trim() !== ''
                     ? String(r._document_label).trim()
@@ -624,6 +744,7 @@
                 statusLabel: formatPortalStatusLabel(selectThemeSlugForRow(r)),
                 hasFile,
                 previewUrl,
+                downloadUrl,
             };
         });
     }
@@ -649,7 +770,7 @@
         if (!tbody) return;
         if (!tableRows.length) {
             tbody.innerHTML =
-                '<tr><td colspan="2" class="pp-worker-docs-empty-cell">No document slots for this worker in the current list.</td></tr>';
+                '<tr><td colspan="3" class="pp-worker-docs-empty-cell">No document slots for this worker in the current list.</td></tr>';
             return;
         }
         tbody.innerHTML = tableRows
@@ -671,6 +792,39 @@
                         : '';
                 const trAttrs = rowPreviewAttr || uploadSlotAttr;
                 const stBadgeClass = workerDocsStatusBadgeClass(row.statusLabel);
+                const downHref = row.hasFile && row.downloadUrl ? String(row.downloadUrl) : '';
+                let chk =
+                    `<input type="checkbox" class="pp-worker-docs-row-check" aria-label="Select this document row"`;
+                if (row.hasFile && prevEnc && downHref) {
+                    chk += ` data-preview-enc="${prevEnc}" data-download="${escapeHtml(downHref)}"`;
+                } else {
+                    chk += ` disabled title="Select rows that have a file for bulk download"`;
+                }
+                chk += `>`;
+                const viewBtn =
+                    row.hasFile && prevEnc
+                        ? `<button type="button" class="muted-btn pp-worker-docs-row-action-btn" data-pp-worker-docs-row-view="${prevEnc}">View</button>`
+                        : '';
+                const dlA =
+                    row.hasFile && downHref
+                        ? `<a class="neon-btn pp-worker-docs-row-action-btn" href="${escapeHtml(downHref)}" download>Download</a>`
+                        : '';
+                const upB =
+                    staffMode &&
+                    !row.hasFile &&
+                    WORKER_DOCUMENT_UPLOAD_TYPES.has(row.docType) &&
+                    Number.isFinite(Number(workerId)) &&
+                    Number(workerId) > 0
+                        ? `<button type="button" class="muted-btn pp-worker-docs-row-action-btn" data-pp-worker-docs-row-upload data-worker-id="${String(
+                              workerId
+                          )}" data-doc-type="${escapeHtml(row.docType)}">Upload</button>`
+                        : '';
+                const actionsCell =
+                    `<td class="pp-worker-docs-actions-col">` +
+                    `<div class="pp-worker-docs-select-actions">` +
+                    chk +
+                    `<span class="pp-worker-docs-action-btns">${viewBtn}${dlA}${upB}</span>` +
+                    `</div></td>`;
                 const fileCell =
                     `<div class="pp-worker-docs-file-stack">` +
                     `<div class="pp-worker-docs-file-type">` +
@@ -683,6 +837,7 @@
                     `<tr${trAttrs}>` +
                     `<td class="pp-worker-docs-file-cell">${fileCell}</td>` +
                     `<td class="pp-worker-docs-status-cell"><span class="${stBadgeClass}">${escapeHtml(row.statusLabel)}</span></td>` +
+                    `${actionsCell}` +
                     `</tr>`
                 );
             })
@@ -710,15 +865,15 @@
         modal.dataset.ppWorkerModalName = namePart;
         modal.dataset.ppWorkerModalId = String(wid);
         tbody.innerHTML =
-            '<tr><td colspan="2" class="pp-worker-docs-empty-cell">Loading…</td></tr>';
+            '<tr><td colspan="3" class="pp-worker-docs-empty-cell">Loading…</td></tr>';
         modal.classList.add('open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
         const hint = $('ppWorkerDocsListHint');
         if (hint) {
             hint.textContent = staffMode
-                ? 'Click a row with a file to preview, or an empty row to upload. Download and Upload / replace are in the panel beside the table.'
-                : 'Click a row with a file to preview. Download is in the panel beside the table.';
+                ? 'Use checkboxes + bulk buttons for multiple downloads. Row actions: View, Download, Upload. Preview panel on the right for inline view.'
+                : 'Use checkboxes + bulk download. Row actions: View, Download. Preview panel on the right.';
         }
 
         let rows = [];
@@ -730,19 +885,24 @@
                 const json = await res.json().catch(() => ({}));
                 if (!res.ok || !json.success || !json.data) {
                     tbody.innerHTML =
-                        '<tr><td colspan="2" class="pp-worker-docs-empty-cell">Could not load worker documents. Check permissions.</td></tr>';
+                        '<tr><td colspan="3" class="pp-worker-docs-empty-cell">Could not load worker documents. Check permissions.</td></tr>';
                     return;
                 }
                 rows = buildStaffWorkerDocTableRows(wid, json.data);
             } catch (_e) {
                 tbody.innerHTML =
-                    '<tr><td colspan="2" class="pp-worker-docs-empty-cell">Failed to load documents.</td></tr>';
+                    '<tr><td colspan="3" class="pp-worker-docs-empty-cell">Failed to load documents.</td></tr>';
                 return;
             }
         } else {
             rows = buildPartnerWorkerDocSlotsForTable(wid);
         }
         renderWorkerDocsListTableRows(wid, rows);
+        const selAllRows = $('ppWorkerDocsSelectAllRows');
+        if (selAllRows) {
+            selAllRows.checked = false;
+            selAllRows.indeterminate = false;
+        }
     }
 
     function ensureCvModal() {
@@ -1277,8 +1437,14 @@
                     ? `<td class="pp-docs-select-col"><input type="checkbox" class="pp-docs-row-check" data-pp-doc-key="${dkey}" aria-label="Select row"${chk}></td>`
                     : '';
                 const refId = escapeHtml(formatCvTableId(r.__idx));
-                const dl = escapeHtml(downloadHref(r));
                 const isWorkerRow = r._kind === 'worker_share';
+                const noFile = r._kind === 'worker_share' && !r._hasFile;
+                const docTypeSlug = String(r._document_type || '').trim().toLowerCase();
+                const dl = escapeHtml(downloadHref(r));
+                let workerTableDlHref = dl;
+                if (staffMode && isWorkerRow && !noFile && r._worker_id && docTypeSlug) {
+                    workerTableDlHref = escapeHtml(workerDocStaffPreviewUrl(r._worker_id, docTypeSlug));
+                }
                 const title = escapeHtml(r.title || '—');
                 const when = escapeHtml(formatDate(r.created_at));
                 const workerTypeCell = escapeHtml(String(r.worker_type != null ? r.worker_type : '—'));
@@ -1293,7 +1459,6 @@
                           formatPortalStatusLabel(statusSlug)
                       )}</span>`;
                 const statusTd = `<td class="col-status">${statusInner}</td>`;
-                const noFile = r._kind === 'worker_share' && !r._hasFile;
                 const wnameShort = String(r._worker_name || '').trim() || '';
                 const wnameAttr = escapeHtml(wnameShort || 'Worker');
                 const canWorkerDocsTablePreview = isWorkerRow && r._worker_id;
@@ -1307,6 +1472,20 @@
                         ? `<button type="button" class="neon-btn partner-portal-docs-action" data-pp-cv-worker="${String(r._worker_id)}">View CV</button>`
                         : '';
                 const viewBtn = `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-doc-key="${dkey}" data-pp-doc-action="view">View</button>`;
+                const workerDownloadBtn =
+                    isWorkerRow && !noFile
+                        ? `<a class="neon-btn partner-portal-docs-action" href="${workerTableDlHref}" download>Download</a>`
+                        : '';
+                const canRowUpload =
+                    staffMode &&
+                    isWorkerRow &&
+                    r._worker_id &&
+                    WORKER_DOCUMENT_UPLOAD_TYPES.has(docTypeSlug);
+                const workerUploadBtn = canRowUpload
+                    ? `<button type="button" class="muted-btn partner-portal-docs-action" data-pp-worker-doc-upload="1" data-worker-id="${String(
+                          r._worker_id
+                      )}" data-doc-type="${escapeHtml(docTypeSlug)}">Upload</button>`
+                    : '';
                 const editBtn =
                     staffMode && r._kind === 'worker_share' && r._worker_id
                         ? `<a class="muted-btn partner-portal-docs-action" href="${escapeHtml(workerEditHref(r._worker_id))}">Edit</a>`
@@ -1318,7 +1497,7 @@
                     !isWorkerRow && !noFile
                         ? `<a class="muted-btn partner-portal-docs-action" href="${dl}">Open</a><a class="neon-btn partner-portal-docs-action" href="${dl}" download>Download</a>`
                         : '';
-                const actions = `<span class="partner-portal-docs-actions-btns">${cvBtn}${previewBtn}${viewBtn}${editBtn}${deleteBtn}${fileActions}</span>`;
+                const actions = `<span class="partner-portal-docs-actions-btns">${cvBtn}${previewBtn}${viewBtn}${workerDownloadBtn}${workerUploadBtn}${editBtn}${deleteBtn}${fileActions}</span>`;
 
                 let fileCellHtml = '';
                 if (isWorkerRow) {
@@ -1642,6 +1821,19 @@
                     const wn = String(prevAll.getAttribute('data-worker-name') || '').trim();
                     if (!Number.isFinite(wid) || wid <= 0) return;
                     openWorkerDocumentsListModal(wid, wn);
+                    return;
+                }
+                const uploadBtn = e.target && e.target.closest ? e.target.closest('[data-pp-worker-doc-upload]') : null;
+                if (uploadBtn && staffMode && uploadBtn.getAttribute('data-pp-worker-doc-upload')) {
+                    e.preventDefault();
+                    const wid = parseInt(String(uploadBtn.getAttribute('data-worker-id') || ''), 10);
+                    const docType = String(uploadBtn.getAttribute('data-doc-type') || '').trim().toLowerCase();
+                    const fin = $('ppStaffWorkerDocUploadInput');
+                    if (!fin || !Number.isFinite(wid) || wid <= 0 || !WORKER_DOCUMENT_UPLOAD_TYPES.has(docType)) return;
+                    fin.dataset.ppUploadWorkerId = String(wid);
+                    fin.dataset.ppUploadDocType = docType;
+                    fin.value = '';
+                    fin.click();
                     return;
                 }
                 const btn = e.target && e.target.closest ? e.target.closest('[data-pp-doc-action="view"]') : null;

@@ -1538,6 +1538,49 @@ iframe.partner-portal-cv-frame {
     }
 }
 
+.pp-worker-docs-bulk-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem;
+    padding: 0.55rem 0.75rem;
+    margin-bottom: 0.65rem;
+    border-radius: 10px;
+    border: 1px solid rgba(129, 140, 248, 0.28);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(45, 212, 191, 0.06) 100%);
+}
+
+.pp-worker-docs-bulk-select-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.84rem;
+    color: #e2e8f0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.pp-worker-docs-bulk-select-all input {
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: #818cf8;
+    cursor: pointer;
+}
+
+.pp-worker-docs-bulk-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.pp-worker-docs-bulk-btn {
+    font-size: 0.8rem;
+    padding: 0.32rem 0.7rem;
+    border-radius: 8px;
+}
+
 .pp-worker-docs-file-stack {
     display: flex;
     flex-direction: column;
@@ -1637,9 +1680,17 @@ iframe.partner-portal-cv-frame {
     background: linear-gradient(180deg, rgba(79, 70, 229, 0.2) 0%, rgba(30, 41, 59, 0.4) 100%);
 }
 
-.pp-worker-docs-list-table thead th:last-child {
+.pp-worker-docs-list-table thead th:nth-child(2) {
+    width: 18%;
     text-align: right;
-    width: 28%;
+    white-space: nowrap;
+}
+
+.pp-worker-docs-list-table thead th.pp-worker-docs-th-actions {
+    width: 30%;
+    min-width: 11.5rem;
+    text-align: right;
+    white-space: normal;
 }
 
 .pp-worker-docs-list-table tbody td {
@@ -1672,7 +1723,53 @@ iframe.partner-portal-cv-frame {
 
 .pp-worker-docs-file-cell {
     word-break: break-word;
-    width: 72%;
+    width: 52%;
+}
+
+.pp-worker-docs-actions-col {
+    vertical-align: middle;
+    text-align: right;
+}
+
+.pp-worker-docs-select-actions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.pp-worker-docs-row-check {
+    width: 1.05rem;
+    height: 1.05rem;
+    flex-shrink: 0;
+    accent-color: #818cf8;
+    cursor: pointer;
+}
+
+.pp-worker-docs-row-check:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.pp-worker-docs-action-btns {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem;
+}
+
+.pp-worker-docs-row-action-btn {
+    font-size: 0.76rem;
+    padding: 0.28rem 0.5rem;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+
+.pp-worker-docs-row-action-btn.neon-btn {
+    font-size: 0.76rem;
 }
 
 .pp-worker-docs-slug {
