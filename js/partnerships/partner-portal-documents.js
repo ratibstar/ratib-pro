@@ -332,11 +332,18 @@
         );
     }
 
-    function applySoloStatusSelectTheme(selectEl, row) {
+    /** Updates themed <select> and the colored status chip in the same cell (staff table). */
+    function syncSoloStatusRowUi(selectEl, row) {
         if (!selectEl || !row || !selectEl.classList || !selectEl.classList.contains('pp-docs-status-select')) return;
         const slug = selectVisualSlugFromControl(row, selectEl);
         selectEl.className =
             'partner-portal-input pp-docs-status-select pp-doc-status-select-solo pp-doc-status-select-solo--' + slug;
+        const cell = selectEl.closest('.pp-docs-status-cell');
+        if (!cell) return;
+        const chip = cell.querySelector('[data-pp-doc-status-chip]');
+        if (!chip) return;
+        chip.textContent = formatPortalStatusLabel(slug);
+        chip.className = 'pp-doc-status pp-doc-status--' + slug;
     }
 
     function buildPortalStatusSelectOptions(displayStatusField) {
@@ -734,11 +741,13 @@
                 const statusSlug = selectThemeSlugForRow(r);
                 const statusLabel = escapeHtml(formatPortalStatusLabel(statusSlug));
                 const statusInner = staffMode
-                    ? `<select class="partner-portal-input pp-docs-status-select pp-doc-status-select-solo pp-doc-status-select-solo--${escapeHtml(
+                    ? `<div class="pp-docs-status-cell"><span class="pp-doc-status pp-doc-status--${escapeHtml(
+                          statusSlug
+                      )}" data-pp-doc-status-chip="${dkey}" role="status">${statusLabel}</span><select class="partner-portal-input pp-docs-status-select pp-doc-status-select-solo pp-doc-status-select-solo--${escapeHtml(
                           statusSlug
                       )}" data-pp-doc-key="${dkey}" aria-label="Portal status shown to partner" title="Status shown on partner portal">${buildPortalStatusSelectOptions(
                           r.display_status
-                      )}</select>`
+                      )}</select></div>`
                     : `<span class="pp-doc-status pp-doc-status--${escapeHtml(statusSlug)}">${statusLabel}</span>`;
                 const statusTd = `<td class="col-status">${statusInner}</td>`;
                 const noFile = r._kind === 'worker_share' && !r._hasFile;
@@ -1016,7 +1025,7 @@
                                 ? normalizePortalStatusSlug(row.display_status, PORTAL_STATUS_CARD_ORDER[0])
                                 : '';
                         if (String(t.value || '') === prev) return;
-                        applySoloStatusSelectTheme(t, row);
+                        syncSoloStatusRowUi(t, row);
                         t.disabled = true;
                         const ok = await patchDocumentDisplayStatus(row, t.value);
                         t.disabled = false;
@@ -1026,7 +1035,7 @@
                         } else {
                             setError('Could not update status. Check permissions and try again.');
                             t.value = prev;
-                            applySoloStatusSelectTheme(t, row);
+                            syncSoloStatusRowUi(t, row);
                         }
                         return;
                     }
@@ -1040,6 +1049,13 @@
                     }
                     updateBulkDeleteUi();
                     syncSelectAllCheckbox(getPageSlice().slice);
+                });
+                tbody.addEventListener('input', (e) => {
+                    const t = e.target;
+                    if (!t || !t.classList || !t.classList.contains('pp-docs-status-select')) return;
+                    const key = t.getAttribute('data-pp-doc-key');
+                    const row = findRowByKey(key);
+                    if (row) syncSoloStatusRowUi(t, row);
                 });
             }
             tbody.addEventListener('click', (e) => {

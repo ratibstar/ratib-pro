@@ -1010,11 +1010,26 @@
 }
 
 .partner-portal-docs-table .col-status {
-    min-width: 12.5rem;
-    width: 12.5rem;
-    max-width: 14rem;
+    min-width: 13rem;
+    width: 13rem;
+    max-width: 15rem;
     white-space: nowrap;
     vertical-align: middle;
+}
+
+.partner-portal-docs-table .pp-docs-status-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.partner-portal-docs-table .pp-docs-status-cell .pp-doc-status {
+    align-self: flex-start;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.75rem;
+    text-transform: capitalize;
 }
 
 .partner-portal-docs-staff-status-help {
