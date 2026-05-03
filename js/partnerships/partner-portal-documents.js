@@ -716,7 +716,7 @@
                     <td>${title}</td>
                     <td>${fnCell}</td>
                     <td><span class="table-tag tag-muted" title="${mimeTitle}">${mimeShort}</span></td>
-                    <td>${escapeHtml(sz)}</td>
+                    <td>${sz}</td>
                     <td>${when}</td>
                     <td class="col-actions partner-portal-docs-actions">${actions}</td>
                 </tr>`;
