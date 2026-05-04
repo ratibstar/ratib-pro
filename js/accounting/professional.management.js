@@ -4501,6 +4501,213 @@
                 tbodyEl.innerHTML = '<tr><td colspan="8" class="text-center"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading entries</p><p class="text-muted">' + this.escapeHtml(errMsg) + '</p></div></td></tr>';
                 this.showToast('Failed to load entries: ' + errMsg, 'error');
             }
+        },
+
+        async approveSelectedEntries() {
+            const modal = document.getElementById('entryApprovalModal');
+            if (!modal) return;
+            const checked = Array.from(modal.querySelectorAll('.entry-checkbox:checked:not(:disabled)'))
+                .map((cb) => parseInt(cb.value, 10))
+                .filter((id) => id > 0);
+            if (checked.length === 0) {
+                this.showToast('Please select entries to approve', 'warning');
+                return;
+            }
+            const confirmed = await this.showConfirmDialog(
+                'Approve Entries',
+                `Are you sure you want to approve ${checked.length} entry(ies)?`,
+                'Approve',
+                'Cancel',
+                'success'
+            );
+            if (!confirmed) return;
+            await this.approveEntries(checked);
+        },
+
+        async rejectSelectedEntries() {
+            const modal = document.getElementById('entryApprovalModal');
+            if (!modal) return;
+            const checked = Array.from(modal.querySelectorAll('.entry-checkbox:checked:not(:disabled)'))
+                .map((cb) => parseInt(cb.value, 10))
+                .filter((id) => id > 0);
+            if (checked.length === 0) {
+                this.showToast('Please select entries to reject', 'warning');
+                return;
+            }
+            const confirmed = await this.showConfirmDialog(
+                'Reject Entries',
+                `Are you sure you want to reject ${checked.length} entry(ies)?`,
+                'Continue',
+                'Cancel',
+                'warning'
+            );
+            if (!confirmed) return;
+            const reason = await this.showPrompt(
+                'Rejection Reason',
+                `Please enter the reason for rejecting ${checked.length} entry(ies):`,
+                '',
+                'Enter rejection reason...',
+                'text'
+            );
+            if (!reason || !reason.trim()) {
+                if (reason !== null) {
+                    this.showToast('Rejection reason is required', 'error');
+                }
+                return;
+            }
+            await this.rejectEntries(checked, reason.trim());
+        },
+
+        async approveEntries(ids) {
+            if (!ids || ids.length === 0) return;
+            this.showToast('Processing approval...', 'info');
+            try {
+                const response = await fetch(`${this.apiBase}/entry-approval.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ action: 'approve', ids: ids })
+                });
+                const data = await response.json().catch(() => ({ success: false, message: 'Invalid response' }));
+                if (!response.ok || !data.success) {
+                    this.showToast(data.message || 'Failed to approve entries', 'error');
+                    return;
+                }
+                this.showToast(data.message || `${ids.length} entry(ies) approved successfully`, 'success');
+                const filterSelect = document.getElementById('entryApprovalStatusFilter');
+                const currentFilter = filterSelect ? filterSelect.value : 'all';
+                await this.loadEntryApproval(currentFilter);
+                if (typeof this.loadModalJournalEntries === 'function') {
+                    setTimeout(() => this.loadModalJournalEntries(), 500);
+                }
+                if (typeof this.loadJournalEntries === 'function') {
+                    setTimeout(() => this.loadJournalEntries(), 600);
+                }
+                if (typeof this.loadDashboard === 'function') {
+                    setTimeout(() => this.loadDashboard(), 700);
+                }
+            } catch (error) {
+                this.showToast('Error approving entries: ' + (error && error.message ? error.message : error), 'error');
+            }
+        },
+
+        async rejectEntries(ids, rejectionReason = null) {
+            if (!ids || ids.length === 0) return;
+            if (!rejectionReason) {
+                rejectionReason = await this.showPrompt(
+                    'Rejection Reason',
+                    'Please enter the reason for rejecting this entry:',
+                    '',
+                    'Enter rejection reason...',
+                    'text'
+                );
+                if (!rejectionReason || !rejectionReason.trim()) {
+                    if (rejectionReason !== null) {
+                        this.showToast('Rejection reason is required', 'error');
+                    }
+                    return;
+                }
+                rejectionReason = rejectionReason.trim();
+            }
+            this.showToast('Processing rejection...', 'info');
+            try {
+                const response = await fetch(`${this.apiBase}/entry-approval.php`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        action: 'reject',
+                        ids: ids,
+                        rejection_reason: rejectionReason
+                    })
+                });
+                const data = await response.json().catch(() => ({ success: false, message: 'Invalid response' }));
+                if (!response.ok || !data.success) {
+                    console.error('Rejection error response:', data);
+                    this.showToast(data.message || `HTTP error (${response.status})`, 'error');
+                    return;
+                }
+                this.showToast(data.message || `${ids.length} entry(ies) rejected successfully`, 'success');
+                await new Promise((resolve) => setTimeout(resolve, 500));
+                const filterSelect = document.getElementById('entryApprovalStatusFilter');
+                if (filterSelect) {
+                    if (filterSelect.value === 'pending') {
+                        filterSelect.value = 'all';
+                    }
+                    await this.loadEntryApproval(filterSelect.value);
+                } else {
+                    await this.loadEntryApproval('all');
+                }
+            } catch (error) {
+                console.error('Error rejecting entries:', error);
+                this.showToast('Error rejecting entries: ' + (error && error.message ? error.message : error), 'error');
+            }
+        },
+
+        openEntryApprovalForm(id) {
+            this.loadEntryApprovalData(id);
+        },
+
+        async openEntryDetailsModal(entryId) {
+            try {
+                const response = await fetch(`${this.apiBase}/entry-approval.php?id=${entryId}`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (!data.success || !data.entry) {
+                    this.showToast('Entry not found', 'error');
+                    return;
+                }
+                const entry = data.entry;
+                const modalContent = `
+                <div class="entry-details-view">
+                    <div class="detail-row">
+                        <label>Entry Number:</label>
+                        <span>${this.escapeHtml(entry.entry_number)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <label>Date:</label>
+                        <span>${this.formatDate(entry.entry_date)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <label>Description:</label>
+                        <span>${this.escapeHtml(entry.description || 'N/A')}</span>
+                    </div>
+                    <div class="detail-row">
+                        <label>Amount:</label>
+                        <span>${this.formatCurrency(entry.amount)} ${this.escapeHtml(entry.currency || '')}</span>
+                    </div>
+                    <div class="detail-row">
+                        <label>Status:</label>
+                        <span class="status-badge ${entry.status === 'approved' ? 'status-posted' : entry.status === 'rejected' ? 'status-rejected' : 'status-pending'}">${entry.status === 'approved' ? 'Approved' : entry.status === 'rejected' ? 'Rejected' : 'Pending'}</span>
+                    </div>
+                    ${entry.entity_name ? `
+                    <div class="detail-row">
+                        <label>Entity:</label>
+                        <span>${this.escapeHtml(entry.entity_name)} (${this.escapeHtml(entry.entity_type || '')})</span>
+                    </div>
+                    ` : ''}
+                    <div class="detail-row">
+                        <label>Created By:</label>
+                        <span>${this.escapeHtml(entry.created_by_name || 'N/A')}</span>
+                    </div>
+                    ${entry.approved_by_name ? `
+                    <div class="detail-row">
+                        <label>Approved By:</label>
+                        <span>${this.escapeHtml(entry.approved_by_name)}</span>
+                    </div>
+                    ` : ''}
+                    ${entry.rejection_reason ? `
+                    <div class="detail-row">
+                        <label>Rejection Reason:</label>
+                        <span>${this.escapeHtml(entry.rejection_reason)}</span>
+                    </div>
+                    ` : ''}
+                </div>`;
+                this.showModal('Entry Details', modalContent, 'normal', 'entryDetailsModal');
+            } catch (error) {
+                this.showToast('Error loading entry details: ' + (error && error.message ? error.message : error), 'error');
+            }
         }
     };
     Object.assign(ProfessionalAccounting.prototype, methods);
