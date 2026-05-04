@@ -339,7 +339,9 @@ function patchPaymentVoucherDropdowns() {
                 allOptions.push({ value: 'vendor_' + v.id, label: v.vendor_name || 'Vendor ' + v.id });
             });
             accounts.forEach(function(a) {
-                allOptions.push({ value: 'gl_' + a.id, label: (a.account_code ? a.account_code + ' ' : '') + (a.account_name || 'Account ' + a.id) });
+                var liveName = (a && typeof a === 'object' && a.entity_name) ? a.entity_name : null;
+                var accountLabelName = liveName || a.account_name || ('Account ' + a.id);
+                allOptions.push({ value: 'gl_' + a.id, label: (a.account_code ? a.account_code + ' ' : '') + accountLabelName });
             });
             var fillSelect = function(sel, placeholder) {
                 sel.innerHTML = '<option value="">' + placeholder + '</option>';

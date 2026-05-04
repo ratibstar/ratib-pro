@@ -213,7 +213,7 @@ try {
             if (!empty($cols['is_active'])) {
                 $where = ' WHERE (`is_active` = 1 OR `is_active` = \'1\') ';
             } elseif (!empty($cols['status'])) {
-                $where = " WHERE (`status` = 'active' OR `status` = '1' OR `status` = 1) ";
+                $where = " WHERE (LOWER(TRIM(COALESCE(`status`, ''))) = 'active' OR `status` = '1' OR `status` = 1) ";
             }
         }
         $order = !empty($cols['display_order']) ? '`display_order` ASC, `code` ASC' : '`code` ASC';

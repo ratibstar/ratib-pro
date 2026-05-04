@@ -32,7 +32,7 @@ function getEntityOptions($conn, $entityType = null) {
             }
             
             if ($nameCol) {
-                $result = $conn->query("SELECT id, $nameCol as name FROM agents WHERE status = 'Active' ORDER BY $nameCol");
+                $result = $conn->query("SELECT id, $nameCol as name FROM agents WHERE LOWER(TRIM(COALESCE(status, ''))) = 'active' OR status = '1' OR status = 1 ORDER BY $nameCol");
                 while ($row = $result->fetch_assoc()) {
                     $entities[] = [
                         'type' => 'agent',
@@ -60,7 +60,7 @@ function getEntityOptions($conn, $entityType = null) {
             }
             
             if ($nameCol) {
-                $result = $conn->query("SELECT id, $nameCol as name FROM subagents WHERE status = 'Active' ORDER BY $nameCol");
+                $result = $conn->query("SELECT id, $nameCol as name FROM subagents WHERE LOWER(TRIM(COALESCE(status, ''))) = 'active' OR status = '1' OR status = 1 ORDER BY $nameCol");
                 while ($row = $result->fetch_assoc()) {
                     $entities[] = [
                         'type' => 'subagent',

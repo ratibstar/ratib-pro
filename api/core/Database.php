@@ -318,6 +318,21 @@ class Database {
 
             $this->execute($sql, $params);
             $updatedRecord = $this->getAgentById($id);
+            
+            // Keep linked accounting entity account names in sync after agent rename.
+            if (isset($data['full_name'])) {
+                $newName = trim((string)$data['full_name']);
+                if ($newName !== '') {
+                    try {
+                        $this->execute(
+                            "UPDATE financial_accounts SET account_name = ? WHERE entity_type = 'agent' AND entity_id = ?",
+                            [$newName, (int)$id]
+                        );
+                    } catch (Exception $syncError) {
+                        error_log('Database::updateAgent account sync failed: ' . $syncError->getMessage());
+                    }
+                }
+            }
 
             // Log history
             $helperPath = __DIR__ . '/global-history-helper.php';

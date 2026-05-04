@@ -37,21 +37,21 @@ function getHRApiBaseForForms() {
 // Create compact employee form
 function createEmployeeForm() {
     return `
-        <form id="employeeForm" class="hr-form" dir="ltr" lang="en">
+        <form id="employeeForm" class="hr-form" dir="ltr" lang="en" autocomplete="off">
             <div class="form-content">
                 <div class="form-group">
                     <label for="name">Full Name *</label>
-                    <input type="text" class="form-control" id="name" name="name" required dir="ltr" lang="en">
+                    <input type="text" class="form-control" id="name" name="name" required dir="ltr" lang="en" autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label for="email">Email *</label>
-                    <input type="text" class="form-control" id="email" name="email" required dir="ltr" lang="en" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"
+                    <input type="text" class="form-control" id="email" name="email" required dir="ltr" lang="en" autocomplete="off" inputmode="email" autocapitalize="off" spellcheck="false"
                         pattern=".+@.+\..+"
                         title="Valid email: name@company.com (domain must contain a dot). No spaces or slashes.">
                 </div>
                 <div class="form-group">
                     <label for="phone">Phone *</label>
-                    <input type="tel" class="form-control" id="phone" name="phone" required dir="ltr" lang="en">
+                    <input type="tel" class="form-control" id="phone" name="phone" required dir="ltr" lang="en" autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label for="birthdate">Birth Date</label>
@@ -166,7 +166,7 @@ function createEmployeeForm() {
                 </div>
                 <div class="form-group form-group-full">
                     <label for="address">Address *</label>
-                    <textarea class="form-control" id="address" name="address" rows="2" required dir="ltr" lang="en"></textarea>
+                    <textarea class="form-control" id="address" name="address" rows="2" required dir="ltr" lang="en" autocomplete="off"></textarea>
                 </div>
             </div>
             <div class="form-actions">
