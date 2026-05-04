@@ -3498,6 +3498,21 @@ ProfessionalAccounting.prototype.exportFollowup = async function(followupId) {
     }
 
     // Missing Methods Implementation
+
+ProfessionalAccounting.prototype.updateTransactionsModalStatusCards = function(stats) {
+        const dc = (typeof this.getDefaultCurrencySync === 'function') ? this.getDefaultCurrencySync() : 'SAR';
+        const rawCur = stats && stats.currency ? String(stats.currency).trim().toUpperCase() : '';
+        const cur = /^[A-Z]{3}$/.test(rawCur) ? rawCur : dc;
+        const fmt = (amt) => (typeof this.formatCurrency === 'function') ? this.formatCurrency(amt, cur) : String(amt);
+        const te = document.getElementById('totalEntriesCount');
+        const ti = document.getElementById('totalIncomeAmount');
+        const tx = document.getElementById('totalExpenseAmount');
+        const pc = document.getElementById('postedCount');
+        if (te) te.textContent = String(stats && stats.total_entries != null ? stats.total_entries : 0);
+        if (ti) ti.textContent = fmt(stats && stats.total_income != null ? stats.total_income : 0);
+        if (tx) tx.textContent = fmt(stats && stats.total_expenses != null ? stats.total_expenses : 0);
+        if (pc) pc.textContent = String(stats && stats.posted_count != null ? stats.posted_count : 0);
+    };
     
 ProfessionalAccounting.prototype.loadModalTransactions = async function() {
         const tbody = document.getElementById('modalEntityTransactionsTable')?.querySelector('tbody');
@@ -3547,10 +3562,20 @@ ProfessionalAccounting.prototype.loadModalTransactions = async function() {
                 throw new Error(data.message || 'Failed to load transactions');
             }
 
-            // Update pagination
-            this.transactionsTotalCount = data.total || data.transactions.length;
+            // Update pagination (server returns filtered total as total / total_count)
+            const totalFromApi = data.total != null ? Number(data.total) : (data.total_count != null ? Number(data.total_count) : NaN);
+            this.transactionsTotalCount = Number.isFinite(totalFromApi) ? totalFromApi : data.transactions.length;
             this.transactionsTotalPages = Math.ceil(this.transactionsTotalCount / perPage);
             this.transactionsPerPage = perPage;
+
+            if (typeof this.updateTransactionsModalStatusCards === 'function') {
+                this.updateTransactionsModalStatusCards(data.stats || {
+                    total_entries: this.transactionsTotalCount,
+                    total_income: 0,
+                    total_expenses: 0,
+                    posted_count: 0
+                });
+            }
 
             // Render transactions
             if (data.transactions.length === 0) {
@@ -3576,8 +3601,8 @@ ProfessionalAccounting.prototype.loadModalTransactions = async function() {
                             <td><span class="badge badge-info">${entityTypeName}</span></td>
                             <td>${this.escapeHtml(trans.reference_number || '')}</td>
                             <td>${this.escapeHtml(trans.description || '')}</td>
-                            <td class="text-right">${this.formatCurrency(trans.debit || 0, trans.currency || this.getDefaultCurrencySync())}</td>
-                            <td class="text-right">${this.formatCurrency(trans.credit || 0, trans.currency || this.getDefaultCurrencySync())}</td>
+                            <td class="text-right">${this.formatCurrency(parseFloat(trans.debit ?? trans.debit_amount) || 0, trans.currency || this.getDefaultCurrencySync())}</td>
+                            <td class="text-right">${this.formatCurrency(parseFloat(trans.credit ?? trans.credit_amount) || 0, trans.currency || this.getDefaultCurrencySync())}</td>
                             <td><span class="badge ${statusBadge}">${trans.status || 'draft'}</span></td>
                             <td class="checkbox-col">
                                 <input type="checkbox" class="checkbox-modern" data-id="${trans.id}">
@@ -3598,6 +3623,14 @@ ProfessionalAccounting.prototype.loadModalTransactions = async function() {
             // Update pagination controls
             this.updateModalTransactionsPagination();
         } catch (error) {
+            if (typeof this.updateTransactionsModalStatusCards === 'function') {
+                this.updateTransactionsModalStatusCards({
+                    total_entries: 0,
+                    total_income: 0,
+                    total_expenses: 0,
+                    posted_count: 0
+                });
+            }
             const tbody = document.getElementById('modalEntityTransactionsTable')?.querySelector('tbody');
             if (tbody) {
                 tbody.innerHTML = `

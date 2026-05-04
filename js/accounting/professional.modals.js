@@ -1672,8 +1672,8 @@
                                 <td><span class="badge badge-info">${entityTypeName}</span></td>
                                 <td>${this.escapeHtml(trans.reference_number || '')}</td>
                                 <td>${this.escapeHtml(trans.description || '')}</td>
-                                <td class="text-right">${this.formatCurrency(trans.debit || 0, trans.currency || this.getDefaultCurrencySync())}</td>
-                                <td class="text-right">${this.formatCurrency(trans.credit || 0, trans.currency || this.getDefaultCurrencySync())}</td>
+                                <td class="text-right">${this.formatCurrency(parseFloat(trans.debit ?? trans.debit_amount) || 0, trans.currency || this.getDefaultCurrencySync())}</td>
+                                <td class="text-right">${this.formatCurrency(parseFloat(trans.credit ?? trans.credit_amount) || 0, trans.currency || this.getDefaultCurrencySync())}</td>
                                 <td><span class="badge ${statusBadge}">${trans.status || 'draft'}</span></td>
                                 <td class="checkbox-col">
                                     <input type="checkbox" class="checkbox-modern" data-id="${trans.id}">

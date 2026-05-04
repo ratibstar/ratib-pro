@@ -254,6 +254,8 @@ try {
         // Ensure all required fields have defaults
         $row['entity_id'] = $row['entity_id'] ?? null;
         $row['category'] = $row['category'] ?? 'other';
+        $row['debit'] = floatval($row['debit_amount'] ?? 0);
+        $row['credit'] = floatval($row['credit_amount'] ?? 0);
         $transactions[] = $row;
     }
     
@@ -290,12 +292,116 @@ try {
         }
     }
     
-    $totalCount = 0;
-    $countResult = $conn->query("SELECT COUNT(*) as total FROM financial_transactions");
-    if ($countResult) {
-        $totalCount = intval($countResult->fetch_assoc()['total']);
+    $stats = array(
+        'total_entries' => 0,
+        'total_income' => 0.0,
+        'total_expenses' => 0.0,
+        'posted_count' => 0,
+        'currency' => 'SAR',
+    );
+    $filteredTotal = 0;
+
+    try {
+    if ($hasEntityTable) {
+        if ($entityType || $entityId) {
+            $inner = "
+                SELECT ft.id, ft.transaction_type, ft.status, ft.currency,
+                    COALESCE(ft.debit_amount, CASE WHEN ft.transaction_type = 'Expense' THEN ft.total_amount ELSE 0 END) AS debit_amount,
+                    COALESCE(ft.credit_amount, CASE WHEN ft.transaction_type = 'Income' THEN ft.total_amount ELSE 0 END) AS credit_amount
+                FROM financial_transactions ft
+                INNER JOIN entity_transactions et ON ft.id = et.transaction_id
+                WHERE ft.status IN ('Posted', 'Approved')
+            ";
+            $p = array();
+            $t = '';
+            if ($entityType) {
+                $inner .= " AND LOWER(et.entity_type) = LOWER(?)";
+                $p[] = $entityType;
+                $t .= 's';
+            }
+            if ($entityId && $entityId > 0) {
+                $inner .= " AND et.entity_id = ?";
+                $p[] = $entityId;
+                $t .= 'i';
+            }
+            $inner .= " GROUP BY ft.id";
+            $agg = "SELECT COUNT(*) AS total_entries,
+                COALESCE(SUM(CASE WHEN i.transaction_type = 'Income' THEN i.credit_amount ELSE 0 END), 0) AS total_income,
+                COALESCE(SUM(CASE WHEN i.transaction_type = 'Expense' THEN i.debit_amount ELSE 0 END), 0) AS total_expenses,
+                COALESCE(SUM(CASE WHEN LOWER(TRIM(i.status)) = 'posted' THEN 1 ELSE 0 END), 0) AS posted_count
+                FROM ($inner) i";
+            $st = $conn->prepare($agg);
+            if ($st) {
+                if ($t !== '') {
+                    $st->bind_param($t, ...$p);
+                }
+                if ($st->execute()) {
+                    $r = $st->get_result();
+                    if ($r && ($a = $r->fetch_assoc())) {
+                        $filteredTotal = (int) ($a['total_entries'] ?? 0);
+                        $stats['total_entries'] = $filteredTotal;
+                        $stats['total_income'] = floatval($a['total_income'] ?? 0);
+                        $stats['total_expenses'] = floatval($a['total_expenses'] ?? 0);
+                        $stats['posted_count'] = (int) ($a['posted_count'] ?? 0);
+                    }
+                }
+                $st->close();
+            }
+        } else {
+            $inner = "
+                SELECT ft.id, ft.transaction_type, ft.status, ft.currency,
+                    COALESCE(ft.debit_amount, CASE WHEN ft.transaction_type = 'Expense' THEN ft.total_amount ELSE 0 END) AS debit_amount,
+                    COALESCE(ft.credit_amount, CASE WHEN ft.transaction_type = 'Income' THEN ft.total_amount ELSE 0 END) AS credit_amount
+                FROM financial_transactions ft
+                LEFT JOIN entity_transactions et ON ft.id = et.transaction_id
+                WHERE ft.status IN ('Posted', 'Approved')
+                GROUP BY ft.id
+            ";
+            $agg = "SELECT COUNT(*) AS total_entries,
+                COALESCE(SUM(CASE WHEN i.transaction_type = 'Income' THEN i.credit_amount ELSE 0 END), 0) AS total_income,
+                COALESCE(SUM(CASE WHEN i.transaction_type = 'Expense' THEN i.debit_amount ELSE 0 END), 0) AS total_expenses,
+                COALESCE(SUM(CASE WHEN LOWER(TRIM(i.status)) = 'posted' THEN 1 ELSE 0 END), 0) AS posted_count
+                FROM ($inner) i";
+            $r = $conn->query($agg);
+            if ($r && ($a = $r->fetch_assoc())) {
+                $filteredTotal = (int) ($a['total_entries'] ?? 0);
+                $stats['total_entries'] = $filteredTotal;
+                $stats['total_income'] = floatval($a['total_income'] ?? 0);
+                $stats['total_expenses'] = floatval($a['total_expenses'] ?? 0);
+                $stats['posted_count'] = (int) ($a['posted_count'] ?? 0);
+            }
+        }
+    } else {
+        $inner = "
+            SELECT ft.id, ft.transaction_type, ft.status, ft.currency,
+                COALESCE(ft.debit_amount, CASE WHEN ft.transaction_type = 'Expense' THEN ft.total_amount ELSE 0 END) AS debit_amount,
+                COALESCE(ft.credit_amount, CASE WHEN ft.transaction_type = 'Income' THEN ft.total_amount ELSE 0 END) AS credit_amount
+            FROM financial_transactions ft
+            LEFT JOIN users u ON ft.created_by = u.user_id
+            GROUP BY ft.id
+        ";
+        $agg = "SELECT COUNT(*) AS total_entries,
+            COALESCE(SUM(CASE WHEN i.transaction_type = 'Income' THEN i.credit_amount ELSE 0 END), 0) AS total_income,
+            COALESCE(SUM(CASE WHEN i.transaction_type = 'Expense' THEN i.debit_amount ELSE 0 END), 0) AS total_expenses,
+            COALESCE(SUM(CASE WHEN LOWER(TRIM(i.status)) = 'posted' THEN 1 ELSE 0 END), 0) AS posted_count
+            FROM ($inner) i";
+        $r = $conn->query($agg);
+        if ($r && ($a = $r->fetch_assoc())) {
+            $filteredTotal = (int) ($a['total_entries'] ?? 0);
+            $stats['total_entries'] = $filteredTotal;
+            $stats['total_income'] = floatval($a['total_income'] ?? 0);
+            $stats['total_expenses'] = floatval($a['total_expenses'] ?? 0);
+            $stats['posted_count'] = (int) ($a['posted_count'] ?? 0);
+        }
     }
-    
+    } catch (Throwable $eStats) {
+        error_log('transactions.php stats aggregate: ' . $eStats->getMessage());
+    }
+
+    if ($filteredTotal <= 0 && count($transactions) > 0) {
+        $filteredTotal = (int) count($transactions);
+    }
+
     echo json_encode([
         'success' => true,
         'transactions' => $transactions,
@@ -304,7 +410,9 @@ try {
         'limit' => $limit,
         'page' => $page,
         'offset' => $offset,
-        'total_count' => $totalCount,
+        'total' => $filteredTotal,
+        'total_count' => $filteredTotal,
+        'stats' => $stats,
         'filters' => [
             'entity_type' => $entityType,
             'entity_id' => $entityId

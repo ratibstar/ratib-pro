@@ -613,7 +613,7 @@ include '../includes/header.php';
                                     <th>Date</th>
                                     <th>Type</th>
                                     <th>Description</th>
-                                    image.png                                    <th>Account</th>
+                                    <th>Account</th>
                                     <th>Debit</th>
                                     <th>Credit</th>
                                     <th>Status</th>
