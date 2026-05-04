@@ -3062,6 +3062,61 @@
                     });
                 }
 
+                // Capture-phase Save Draft / Create Entry on journal modal only — runs before inner
+                // overlays/stacking can swallow the click (common cause of "buttons do nothing").
+                if (modal.id === 'journalEntryModal' && !modal.hasAttribute('data-je-action-capture')) {
+                    modal.setAttribute('data-je-action-capture', '1');
+                    modal.addEventListener('click', async (ev) => {
+                        if (ev.target.closest('#journalEntryDebugBar')) return;
+                        const draftHit = ev.target.closest('#journalSaveDraftBtn');
+                        const submitHit = ev.target.closest('#journalSubmitBtn');
+                        if (!draftHit && !submitHit) return;
+                        const formEl = modal.querySelector('#journalEntryForm');
+                        if (!formEl || !(formEl.contains(draftHit) || formEl.contains(submitHit))) return;
+                        if (submitHit && submitHit.disabled) return;
+                        ev.preventDefault();
+                        ev.stopImmediatePropagation();
+                        if (this._journalEntrySaveInFlight) return;
+                        this._journalEntrySaveInFlight = true;
+                        const entryIdAttr = formEl.getAttribute('data-entry-id');
+                        const jid = entryIdAttr && entryIdAttr !== 'null' ? parseInt(entryIdAttr, 10) : null;
+                        const submitBtn = formEl.querySelector('button[type="submit"]');
+                        const draftEl = formEl.querySelector('#journalSaveDraftBtn');
+                        const origSubmit = submitBtn ? submitBtn.textContent : '';
+                        const origDraft = draftEl ? draftEl.textContent : '';
+                        try {
+                            if (submitHit && submitBtn) {
+                                submitBtn.disabled = true;
+                                submitBtn.textContent = jid !== null ? 'Updating...' : 'Creating...';
+                            }
+                            if (draftHit && draftEl) {
+                                draftEl.disabled = true;
+                                draftEl.textContent = 'Saving...';
+                            }
+                            const result = await this.saveJournalEntry(jid);
+                            if (result === true && draftHit) {
+                                this.showToast('Draft saved successfully!', 'success');
+                                setTimeout(() => {
+                                    const m = formEl.closest('.accounting-modal');
+                                    if (m) this.closeModal(m.id, false);
+                                }, 500);
+                            }
+                        } catch (err) {
+                            console.error('Journal entry capture handler:', err);
+                        } finally {
+                            this._journalEntrySaveInFlight = false;
+                            if (submitHit && submitBtn && submitBtn.isConnected) {
+                                submitBtn.disabled = false;
+                                submitBtn.textContent = origSubmit;
+                            }
+                            if (draftHit && draftEl && draftEl.isConnected) {
+                                draftEl.disabled = false;
+                                draftEl.textContent = origDraft || 'Save Draft';
+                            }
+                        }
+                    }, true);
+                }
+
                 // Journal entry debug toolbar (once per modal instance)
                 (() => {
                     const jeForm = modal.querySelector('#journalEntryForm');

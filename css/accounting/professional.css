@@ -85,7 +85,7 @@
 
 /* Only hide modals without visible class AND without data attribute AND without inline display style */
 /* BUT exclude specific modal IDs that should always be visible when created */
-.accounting-modal:not(.accounting-modal-visible):not(.show-modal):not([data-modal-visible="true"]):not([style*="display"]):not(#accountingModalProfessional):not(#generalLedgerModal):not(#viewVoucherModal):not(#paymentVoucherModal):not(#receiptVoucherModal):not(#bankTransactionModal):not(#bankAccountFormModal) {
+.accounting-modal:not(.accounting-modal-visible):not(.show-modal):not([data-modal-visible="true"]):not([style*="display"]):not(#accountingModalProfessional):not(#generalLedgerModal):not(#journalEntryModal):not(#viewVoucherModal):not(#paymentVoucherModal):not(#receiptVoucherModal):not(#bankTransactionModal):not(#bankAccountFormModal) {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
@@ -10413,6 +10413,13 @@ body:not(.agent-page) .stat-value.balance-negative {
     background: rgba(2, 6, 23, 0.68) !important;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
+}
+
+/* Clicks must reach the form: dimmer sits under content in hit-testing (content stays above in z-order). */
+#journalEntryModal.accounting-modal-visible > .accounting-modal-overlay,
+#journalEntryModal.show-modal > .accounting-modal-overlay,
+#journalEntryModal[data-modal-visible="true"] > .accounting-modal-overlay {
+    pointer-events: none !important;
 }
 
 #journalEntryModal .accounting-modal-content {
