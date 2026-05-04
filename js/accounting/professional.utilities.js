@@ -225,6 +225,13 @@
     };
 
     P.getDefaultCurrencySync = function() {
+        // accounting.php sets this from tenant DB before any bundle runs — beats polluted localStorage / bad JS order.
+        const serverCodeRaw = typeof window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__ === 'string'
+            ? String(window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__).trim().toUpperCase()
+            : '';
+        if (/^[A-Z]{3}$/.test(serverCodeRaw)) {
+            return serverCodeRaw;
+        }
         const storedCurrency = localStorage.getItem('accounting_default_currency');
         const normalizedStored = storedCurrency ? String(storedCurrency).trim().toUpperCase() : '';
         const activeListRaw = localStorage.getItem('accounting_active_currencies');
@@ -705,6 +712,11 @@
             resolvedCurrency = serverHint;
         } else if (activeCurrencies.length > 0) {
             resolvedCurrency = activeCurrencies[0];
+        }
+
+        // While accounting.php bootstrapped a tenant default, do not let a mismatched settings API / currency list overwrite it.
+        if (window.__ACCOUNTING_SERVER_BOOTSTRAPPED__ === true && serverHint) {
+            resolvedCurrency = serverHint;
         }
 
         localStorage.setItem('accounting_default_currency', resolvedCurrency);

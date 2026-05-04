@@ -886,6 +886,7 @@
                             localStorage.setItem('accounting_default_currency', selectedCode);
                             try {
                                 window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__ = selectedCode;
+                                window.__ACCOUNTING_SERVER_BOOTSTRAPPED__ = false;
                             } catch (e) {}
                         }
                     }

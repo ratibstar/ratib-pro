@@ -1121,6 +1121,7 @@ include '../includes/header.php';
         c = 'SAR';
     }
     window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__ = c;
+    window.__ACCOUNTING_SERVER_BOOTSTRAPPED__ = true;
     try {
         localStorage.setItem('accounting_default_currency', c);
         localStorage.removeItem('accounting_active_currencies');
