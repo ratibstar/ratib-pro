@@ -681,6 +681,25 @@
     };
 
     P.getDefaultCurrency = async function(forceRefresh = false) {
+        const serverHintRaw = typeof window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__ === 'string'
+            ? String(window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__).trim().toUpperCase()
+            : '';
+        const serverHint = /^[A-Z]{3}$/.test(serverHintRaw) ? serverHintRaw : '';
+
+        // accounting.php inline sets this before any bundle: must win over settings API / active list (fixes BDT drift).
+        if (window.__ACCOUNTING_SERVER_BOOTSTRAPPED__ === true && serverHint) {
+            const activeCurrencies = await this.fetchActiveCurrencies(forceRefresh);
+            try {
+                localStorage.setItem('accounting_active_currencies', JSON.stringify(activeCurrencies || []));
+            } catch (e) {
+                // Ignore storage quota/write errors.
+            }
+            try {
+                localStorage.setItem('accounting_default_currency', serverHint);
+            } catch (e) {}
+            return serverHint;
+        }
+
         const activeCurrencies = await this.fetchActiveCurrencies(forceRefresh);
         try {
             localStorage.setItem('accounting_active_currencies', JSON.stringify(activeCurrencies || []));
@@ -694,13 +713,7 @@
         const rawStored = localStorage.getItem('accounting_default_currency');
         const preferredFromStorage = rawStored ? String(rawStored).trim().toUpperCase() : '';
         const normalizedPreferredFromStorage = /^[A-Z]{3}$/.test(preferredFromStorage) ? preferredFromStorage : '';
-        const serverHintRaw = typeof window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__ === 'string'
-            ? String(window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__).trim().toUpperCase()
-            : '';
-        const serverHint = /^[A-Z]{3}$/.test(serverHintRaw) ? serverHintRaw : '';
 
-        // Avoid SAR→BDT flicker: do not jump to activeCurrencies[0] when localStorage/default was set
-        // from PHP bootstrap or accounting_settings but the JS active list omits that code or orders BDT first.
         let resolvedCurrency = 'SAR';
         if (preferredFromSetting && /^[A-Z]{3}$/.test(preferredFromSetting)) {
             resolvedCurrency = preferredFromSetting;
@@ -712,11 +725,6 @@
             resolvedCurrency = serverHint;
         } else if (activeCurrencies.length > 0) {
             resolvedCurrency = activeCurrencies[0];
-        }
-
-        // While accounting.php bootstrapped a tenant default, do not let a mismatched settings API / currency list overwrite it.
-        if (window.__ACCOUNTING_SERVER_BOOTSTRAPPED__ === true && serverHint) {
-            resolvedCurrency = serverHint;
         }
 
         localStorage.setItem('accounting_default_currency', resolvedCurrency);

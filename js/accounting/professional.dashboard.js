@@ -132,7 +132,11 @@
                     limit: 5,
                     page: 1
                 });
-                const response = await fetch(`${this.apiBase}/transactions.php?${params.toString()}`);
+                const response = await fetch(`${this.apiBase}/transactions.php?${params.toString()}`, {
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
                 let data;
                 try {
                     data = await response.json();
@@ -1402,7 +1406,11 @@
             }
             
             try {
-                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`);
+                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
                 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => null);
@@ -1442,7 +1450,11 @@
                 this._loadingFinancialOverview = false;
                 // Fallback to overview API
                 try {
-                    const overviewResponse = await fetch(`${this.apiBase}/overview.php`);
+                    const overviewResponse = await fetch(`${this.apiBase}/overview.php`, {
+                        credentials: 'include',
+                        cache: 'no-cache',
+                        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                    });
                     
                     if (!overviewResponse.ok) {
                         const errorData = await overviewResponse.json().catch(() => null);
@@ -1501,7 +1513,11 @@
         async refreshAllModules() {
             // Refresh all accounting modules with unified calculations
             try {
-                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`);
+                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
                 let data;
                 try {
                     data = await response.json();
@@ -1635,7 +1651,11 @@
                     await this.initDefaultCurrency();
                 }
                 // Refresh overview cards
-                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`);
+                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
                 const data = await response.json();
                 if (data.success && data.dashboard) {
                     this.updateOverviewCards({

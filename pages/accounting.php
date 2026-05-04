@@ -20,6 +20,8 @@ if (!hasPermission('view_chart_accounts')) {
 
 // Bust browser/CDN caches after deploy: changes whenever this file is saved on the server.
 $accountingAssetDeploy = (int) @filemtime(__DIR__ . '/accounting.php');
+$acctUtilitiesVer = (int) @filemtime(__DIR__ . '/../js/accounting/professional.utilities.js');
+$acctDashboardVer = (int) @filemtime(__DIR__ . '/../js/accounting/professional.dashboard.js');
 
 // Tenant DB default for accounting UI (fixes stale localStorage e.g. BDT from another agency/session).
 $ratibAccountingBootstrapCurrency = 'SAR';
@@ -40,6 +42,12 @@ if (isset($conn) && $conn instanceof mysqli) {
     }
     // No accounting_settings row: keep SAR (do not infer from `currencies` first active — that
     // often produced BDT on the KPI row while the tenant expected SAR).
+}
+if (defined('ACCOUNTING_UI_DEFAULT_CURRENCY')) {
+    $acctUiCur = strtoupper(trim((string) constant('ACCOUNTING_UI_DEFAULT_CURRENCY')));
+    if (preg_match('/^[A-Z]{3}$/', $acctUiCur)) {
+        $ratibAccountingBootstrapCurrency = $acctUiCur;
+    }
 }
 $ratibAccountingBootstrapCurrencyJson = json_encode($ratibAccountingBootstrapCurrency, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 $ratibAccountingBootstrapCurrencyEsc = htmlspecialchars($ratibAccountingBootstrapCurrency, ENT_QUOTES, 'UTF-8');
@@ -1106,13 +1114,13 @@ include '../includes/header.php';
 <!-- Core: Class definition and constructor -->
 <script src="<?php echo htmlspecialchars(asset('js/accounting/professional.core.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Utilities: Formatting and utility methods -->
-<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.utilities.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.utilities.js') . '?v=' . (int) $acctUtilitiesVer . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Part 1: setupEventListeners, ensureTabButtonsClickable, switchTab, handleNavClick, etc. -->
 <script src="<?php echo htmlspecialchars(asset('js/accounting/professional.part1.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.part1.js') . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Accounts: Account-related methods -->
 <script src="<?php echo htmlspecialchars(asset('js/accounting/professional.accounts.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Dashboard: Dashboard methods -->
-<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.dashboard.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.dashboard.js') . '?v=' . (int) $acctDashboardVer . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Management: Management methods (cost centers, bank guarantees, vouchers, etc.) - Must load before modals.tables -->
 <script src="<?php echo htmlspecialchars(asset('js/accounting/professional.management.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.management.js') . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Part 5: Payment/Receipt voucher modals, getPaymentVoucherModalContent, savePaymentVoucher - Must load before modals.tables -->

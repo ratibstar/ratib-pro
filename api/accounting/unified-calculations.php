@@ -31,6 +31,13 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
 $roleId = $_SESSION['role_id'] ?? 0;
 
 try {
+    $stubDashboardCurrency = 'SAR';
+    if (defined('ACCOUNTING_UI_DEFAULT_CURRENCY')) {
+        $sc = strtoupper(trim((string) constant('ACCOUNTING_UI_DEFAULT_CURRENCY')));
+        if (preg_match('/^[A-Z]{3}$/', $sc)) {
+            $stubDashboardCurrency = $sc;
+        }
+    }
     $tableCheck = $conn->query("SHOW TABLES LIKE 'financial_transactions'");
     if (!$tableCheck || $tableCheck->num_rows === 0) {
         echo json_encode([
@@ -48,7 +55,7 @@ try {
                 'expense_change' => 0,
                 'profit_change' => 0,
                 'balance_change' => 0,
-                'currency' => 'SAR',
+                'currency' => $stubDashboardCurrency,
             ],
             'timestamp' => date('Y-m-d H:i:s'),
         ]);
@@ -71,6 +78,12 @@ try {
     }
     if ($curRes instanceof mysqli_result) {
         $curRes->free();
+    }
+    if (defined('ACCOUNTING_UI_DEFAULT_CURRENCY')) {
+        $acctUi = strtoupper(trim((string) constant('ACCOUNTING_UI_DEFAULT_CURRENCY')));
+        if (preg_match('/^[A-Z]{3}$/', $acctUi)) {
+            $baseCurrency = $acctUi;
+        }
     }
     
     // ============================================

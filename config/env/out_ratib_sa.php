@@ -23,6 +23,10 @@ define('APP_NAME', 'Ratib Program');
 define('APP_VERSION', '1.0.0');
 define('BASE_URL', '');
 define('NO_BANGLA', true);
+if (!defined('ACCOUNTING_UI_DEFAULT_CURRENCY')) {
+    /** KPI + accounting UI default ISO code (overrides `accounting_settings.default_currency` for this host). */
+    define('ACCOUNTING_UI_DEFAULT_CURRENCY', 'SAR');
+}
 // Internal observability dashboard gate for this host.
 define('OBSERVABILITY_DASHBOARD_ENABLED', true);
 define('ADMIN_CONTROL_CENTER_ENABLED', true);

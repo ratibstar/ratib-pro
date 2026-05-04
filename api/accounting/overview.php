@@ -51,6 +51,12 @@ try {
     if ($curRes instanceof mysqli_result) {
         $curRes->free();
     }
+    if (defined('ACCOUNTING_UI_DEFAULT_CURRENCY')) {
+        $acctUi = strtoupper(trim((string) constant('ACCOUNTING_UI_DEFAULT_CURRENCY')));
+        if (preg_match('/^[A-Z]{3}$/', $acctUi)) {
+            $data['currency'] = $acctUi;
+        }
+    }
 
     $stmt = $conn->prepare("SELECT COALESCE(SUM(total_amount), 0) as total_revenue FROM financial_transactions WHERE transaction_type = 'Income' AND status IN ('Approved', 'Posted') AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
     if ($stmt) { $stmt->execute(); $result = $stmt->get_result()->fetch_assoc(); $data['total_revenue'] = floatval($result['total_revenue'] ?? 0); $stmt->close(); }
