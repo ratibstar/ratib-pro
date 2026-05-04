@@ -56,7 +56,7 @@ function partnerAgencyStmtJeColumnFlags(PDO $conn): array
 /** @return array<string, bool> */
 function partnerAgencyStmtJelColumnFlags(PDO $conn): array
 {
-    $out = ['description' => false, 'entity_type' => false, 'entity_id' => false];
+    $out = ['description' => false];
     try {
         $st = $conn->query('SHOW COLUMNS FROM journal_entry_lines');
         if (!$st) {
@@ -67,170 +67,12 @@ function partnerAgencyStmtJelColumnFlags(PDO $conn): array
             if ($f === 'description') {
                 $out['description'] = true;
             }
-            if ($f === 'entity_type') {
-                $out['entity_type'] = true;
-            }
-            if ($f === 'entity_id') {
-                $out['entity_id'] = true;
-            }
         }
     } catch (Throwable $e) {
         error_log('partnerAgencyStmtJelColumnFlags: ' . $e->getMessage());
     }
 
     return $out;
-}
-
-/**
- * Deployments for a partner agency with worker display name (same shape as portal needs).
- *
- * @return list<array<string, mixed>>
- */
-function partnerAgencyStmtListDeployments(PDO $conn, int $partnerAgencyId): array
-{
-    if ($partnerAgencyId <= 0) {
-        return [];
-    }
-    try {
-        $st = $conn->prepare(
-            'SELECT wd.id AS deployment_id, wd.worker_id, wd.status, wd.contract_start, wd.contract_end,
-                    wd.country, wd.job_title, wd.salary,
-                    COALESCE(NULLIF(TRIM(w.worker_name), \'\'), CONCAT(\'Worker #\', wd.worker_id)) AS worker_name
-             FROM worker_deployments wd
-             LEFT JOIN workers w ON w.id = wd.worker_id
-             WHERE wd.partner_agency_id = ?
-             ORDER BY wd.id DESC'
-        );
-        $st->execute([$partnerAgencyId]);
-        $rows = $st->fetchAll(PDO::FETCH_ASSOC);
-
-        return is_array($rows) ? $rows : [];
-    } catch (Throwable $e) {
-        error_log('partnerAgencyStmtListDeployments: ' . $e->getMessage());
-
-        return [];
-    }
-}
-
-/**
- * Roll up journal lines on the linked account (date range) to each deployment using worker entity tags.
- * Multiple placements for the same worker split that worker's tagged amounts evenly across those rows.
- *
- * @param list<array<string, mixed>> $rawLines Lines as stored before opening-balance row is prepended
- * @return array{0: list<array<string, mixed>>, 1: string}
- */
-function partnerAgencyStmtBuildDeploymentActivity(
-    PDO $conn,
-    int $partnerAgencyId,
-    array $rawLines,
-    string $normal,
-    float $totalDebit,
-    float $totalCredit
-): array {
-    $note = '';
-    $deployments = partnerAgencyStmtListDeployments($conn, $partnerAgencyId);
-    if ($deployments === []) {
-        return [[], ''];
-    }
-
-    $jelFlags = partnerAgencyStmtJelColumnFlags($conn);
-    if (!$jelFlags['entity_type'] || !$jelFlags['entity_id']) {
-        $note = 'Per-worker amounts appear when journal lines include entity type “worker” and the worker id (Accounting → Journal entries).';
-        $rows = [];
-        foreach ($deployments as $d) {
-            $depId = (int) ($d['deployment_id'] ?? 0);
-            $wid = (int) ($d['worker_id'] ?? 0);
-            $rows[] = [
-                'deployment_id' => $depId,
-                'worker_id' => $wid,
-                'worker_name' => (string) ($d['worker_name'] ?? ''),
-                'status' => (string) ($d['status'] ?? ''),
-                'contract_start' => $d['contract_start'] ?? null,
-                'job_title' => (string) ($d['job_title'] ?? ''),
-                'country' => (string) ($d['country'] ?? ''),
-                'salary' => $d['salary'] ?? null,
-                'period_debit' => 0.0,
-                'period_credit' => 0.0,
-                'period_net' => 0.0,
-            ];
-        }
-
-        return [$rows, $note];
-    }
-
-    $workerTotals = [];
-    foreach ($rawLines as $ln) {
-        $et = strtolower(trim((string) ($ln['entity_type'] ?? '')));
-        $eid = (int) ($ln['entity_id'] ?? 0);
-        if ($et !== 'worker' || $eid <= 0) {
-            continue;
-        }
-        if (!isset($workerTotals[$eid])) {
-            $workerTotals[$eid] = ['dr' => 0.0, 'cr' => 0.0];
-        }
-        $workerTotals[$eid]['dr'] += (float) ($ln['debit'] ?? 0);
-        $workerTotals[$eid]['cr'] += (float) ($ln['credit'] ?? 0);
-    }
-
-    $countByWorker = [];
-    foreach ($deployments as $d) {
-        $wid = (int) ($d['worker_id'] ?? 0);
-        if ($wid > 0) {
-            $countByWorker[$wid] = ($countByWorker[$wid] ?? 0) + 1;
-        }
-    }
-
-    $rows = [];
-    foreach ($deployments as $d) {
-        $depId = (int) ($d['deployment_id'] ?? 0);
-        $wid = (int) ($d['worker_id'] ?? 0);
-        $n = $wid > 0 ? max(1, (int) ($countByWorker[$wid] ?? 1)) : 1;
-        $wt = $wid > 0 && isset($workerTotals[$wid]) ? $workerTotals[$wid] : ['dr' => 0.0, 'cr' => 0.0];
-        $dr = round($wt['dr'] / $n, 2);
-        $cr = round($wt['cr'] / $n, 2);
-        $net = strtoupper($normal) === 'CREDIT' ? round($cr - $dr, 2) : round($dr - $cr, 2);
-        $rows[] = [
-            'deployment_id' => $depId,
-            'worker_id' => $wid,
-            'worker_name' => (string) ($d['worker_name'] ?? ''),
-            'status' => (string) ($d['status'] ?? ''),
-            'contract_start' => $d['contract_start'] ?? null,
-            'job_title' => (string) ($d['job_title'] ?? ''),
-            'country' => (string) ($d['country'] ?? ''),
-            'salary' => $d['salary'] ?? null,
-            'period_debit' => $dr,
-            'period_credit' => $cr,
-            'period_net' => $net,
-        ];
-    }
-
-    $sumRowDr = 0.0;
-    $sumRowCr = 0.0;
-    foreach ($rows as $r) {
-        $sumRowDr += (float) ($r['period_debit'] ?? 0);
-        $sumRowCr += (float) ($r['period_credit'] ?? 0);
-    }
-    $gapDr = round($totalDebit - $sumRowDr, 2);
-    $gapCr = round($totalCredit - $sumRowCr, 2);
-    if (abs($gapDr) >= 0.01 || abs($gapCr) >= 0.01) {
-        $netOther = strtoupper($normal) === 'CREDIT' ? round($gapCr - $gapDr, 2) : round($gapDr - $gapCr, 2);
-        $rows[] = [
-            'deployment_id' => null,
-            'worker_id' => null,
-            'worker_name' => 'Other on linked account',
-            'status' => '',
-            'contract_start' => null,
-            'job_title' => '',
-            'country' => '',
-            'salary' => null,
-            'period_debit' => $gapDr,
-            'period_credit' => $gapCr,
-            'period_net' => $netOther,
-            'is_other' => true,
-        ];
-    }
-
-    return [$rows, $note];
 }
 
 function partnerAgencyStmtJePostedSql(array $flags): string
@@ -251,7 +93,7 @@ function partnerAgencyStmtJePostedSql(array $flags): string
 /**
  * @return array<string, mixed>
  */
-function partnerAgencyStmtBuildForAccount(PDO $conn, int $linkedId, string $start, string $end, ?int $partnerAgencyId = null): array
+function partnerAgencyStmtBuildForAccount(PDO $conn, int $linkedId, string $start, string $end): array
 {
     if ($linkedId <= 0) {
         throw new InvalidArgumentException('Invalid account id');
@@ -298,11 +140,6 @@ function partnerAgencyStmtBuildForAccount(PDO $conn, int $linkedId, string $star
         $numField = $jeFlags['entry_number'] ? 'je.entry_number' : "CONCAT('JE-', je.id)";
         $lineDesc = $jelFlags['description'] ? 'jel.description' : "''";
 
-        $entitySel = '';
-        if (!empty($jelFlags['entity_type']) && !empty($jelFlags['entity_id'])) {
-            $entitySel = ", COALESCE(jel.entity_type,'') AS jel_entity_type, COALESCE(jel.entity_id,0) AS jel_entity_id";
-        }
-
         $baseFrom = " FROM journal_entry_lines jel
             INNER JOIN journal_entries je ON je.id = jel.journal_entry_id
             WHERE jel.account_id = ? {$postedSql} ";
@@ -318,7 +155,6 @@ function partnerAgencyStmtBuildForAccount(PDO $conn, int $linkedId, string $star
         $sel = "SELECT je.entry_date AS d, {$numField} AS entry_no, {$refField} AS ref_no,
                 COALESCE(NULLIF(TRIM({$lineDesc}),''), NULLIF(TRIM(je.description),''), '') AS memo,
                 COALESCE(jel.debit_amount,0) AS debit_amount, COALESCE(jel.credit_amount,0) AS credit_amount
-                {$entitySel}
                 " . $baseFrom . ' AND je.entry_date >= ? AND je.entry_date <= ?
                 ORDER BY je.entry_date ASC, je.id ASC, jel.id ASC';
         $stL = $conn->prepare($sel);
@@ -335,8 +171,6 @@ function partnerAgencyStmtBuildForAccount(PDO $conn, int $linkedId, string $star
                 'description' => (string) ($row['memo'] ?? ''),
                 'debit' => $dr,
                 'credit' => $cr,
-                'entity_type' => isset($row['jel_entity_type']) ? (string) $row['jel_entity_type'] : '',
-                'entity_id' => isset($row['jel_entity_id']) ? (int) $row['jel_entity_id'] : 0,
             ];
         }
     }
@@ -389,19 +223,6 @@ function partnerAgencyStmtBuildForAccount(PDO $conn, int $linkedId, string $star
         ];
     }
 
-    $deploymentActivity = [];
-    $deploymentNote = '';
-    if ($partnerAgencyId !== null && $partnerAgencyId > 0) {
-        list($deploymentActivity, $deploymentNote) = partnerAgencyStmtBuildDeploymentActivity(
-            $conn,
-            $partnerAgencyId,
-            $lines,
-            $normal,
-            $totalDebit,
-            $totalCredit
-        );
-    }
-
     // Always show at least one table row so the statement does not look "blank" when there are no journals.
     array_unshift($lines, [
         'date' => $start,
@@ -411,8 +232,6 @@ function partnerAgencyStmtBuildForAccount(PDO $conn, int $linkedId, string $star
         'debit' => 0.0,
         'credit' => 0.0,
         'balance' => round($openingPeriod, 2),
-        'entity_type' => '',
-        'entity_id' => 0,
     ]);
 
     return [
@@ -428,7 +247,5 @@ function partnerAgencyStmtBuildForAccount(PDO $conn, int $linkedId, string $star
         'total_credit' => round($totalCredit, 2),
         'lines' => $lines,
         'chart_by_month' => $chartByMonth,
-        'deployment_activity' => $deploymentActivity,
-        'deployment_activity_note' => $deploymentNote,
     ];
 }

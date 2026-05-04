@@ -118,24 +118,6 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <button type="button" class="neon-btn agency-accounting-refresh" id="ppOvAcctRefreshBtn">Refresh</button>
             </div>
             <div id="ppOvAcctBalances" class="agency-accounting-balances glass-card partner-portal-ledger-balances is-hidden" hidden></div>
-            <div id="ppOvDeployGlWrap" class="agency-accounting-table-wrap glass-card partner-portal-ledger-table is-hidden" hidden>
-                <h3 class="agency-accounting-chart-heading">Deployments — amounts on linked account (this range)</h3>
-                <p id="ppOvDeployGlNote" class="agency-detail-note partner-portal-deploy-gl-note is-hidden" hidden></p>
-                <table class="agency-accounting-table" id="ppOvDeployGlTable">
-                    <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Worker</th>
-                            <th scope="col">Status</th>
-                            <th scope="col">Start</th>
-                            <th scope="col" class="num">Period debit</th>
-                            <th scope="col" class="num">Period credit</th>
-                            <th scope="col" class="num">Net</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ppOvDeployGlTbody"></tbody>
-                </table>
-            </div>
             <div id="ppOvAcctChartWrap" class="agency-accounting-chart-wrap glass-card partner-portal-ledger-chart is-hidden" hidden lang="en">
                 <h3 class="agency-accounting-chart-heading">Monthly debit and credit (SAR)</h3>
                 <p class="agency-accounting-chart-note">English summary for the selected range.</p>

@@ -58,25 +58,6 @@ include __DIR__ . '/../includes/partner-portal-header.php';
 
     <div id="ppAcctBalances" class="agency-accounting-balances glass-card is-hidden" hidden></div>
 
-    <div id="ppAcctDeployGlWrap" class="agency-accounting-table-wrap glass-card is-hidden" hidden>
-        <h3 class="agency-accounting-chart-heading">Deployments — amounts on linked account (this range)</h3>
-        <p id="ppAcctDeployGlNote" class="agency-detail-note partner-portal-deploy-gl-note is-hidden" hidden></p>
-        <table class="agency-accounting-table" id="ppAcctDeployGlTable">
-            <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Worker</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Start</th>
-                    <th scope="col" class="num">Period debit</th>
-                    <th scope="col" class="num">Period credit</th>
-                    <th scope="col" class="num">Net</th>
-                </tr>
-            </thead>
-            <tbody id="ppAcctDeployGlTbody"></tbody>
-        </table>
-    </div>
-
     <div id="ppAcctChartWrap" class="agency-accounting-chart-wrap glass-card is-hidden" hidden lang="en">
         <h3 class="agency-accounting-chart-heading">Monthly debit and credit (SAR)</h3>
         <p class="agency-accounting-chart-note">Summary of posted journal lines on your linked chart account.</p>

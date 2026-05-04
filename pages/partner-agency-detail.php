@@ -147,24 +147,6 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
             <button type="button" class="neon-btn agency-accounting-refresh" id="agencyAccountingRefreshBtn">Refresh</button>
         </div>
         <div id="agencyAccountingBalances" class="agency-accounting-balances glass-card is-hidden" hidden></div>
-        <div id="agencyAccountingDeployGlWrap" class="agency-accounting-table-wrap glass-card is-hidden" hidden>
-            <h3 class="agency-accounting-chart-heading">Deployments — amounts on linked account (this range)</h3>
-            <p id="agencyAccountingDeployGlNote" class="agency-detail-note agency-accounting-deploy-note is-hidden" hidden></p>
-            <table class="agency-accounting-table" id="agencyAccountingDeployGlTable">
-                <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">Worker</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Start</th>
-                        <th scope="col" class="num">Period debit</th>
-                        <th scope="col" class="num">Period credit</th>
-                        <th scope="col" class="num">Net</th>
-                    </tr>
-                </thead>
-                <tbody id="agencyAccountingDeployGlTbody"></tbody>
-            </table>
-        </div>
         <div id="agencyAccountingChartWrap" class="agency-accounting-chart-wrap glass-card is-hidden" hidden lang="en">
             <h3 class="agency-accounting-chart-heading">Monthly debit and credit (SAR)</h3>
             <p class="agency-accounting-chart-note">English summary of journal activity in the selected date range.</p>
@@ -189,7 +171,7 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
             </table>
         </div>
         <p id="agencyAccountingTableFootnote" class="agency-detail-note agency-accounting-table-foot glass-card is-hidden" hidden>
-            The first row is <strong>opening balance</strong> at the start of the dates you picked. Extra lines only appear after journal entries are posted to this chart account in <strong>Accounting</strong> (same as Ratib Pro ledger). The <strong>Deployments</strong> table above rolls up lines on this account tagged with entity type <strong>worker</strong> and the worker id; multiple placements for the same worker split that worker’s tagged amounts evenly.
+            The first row is <strong>opening balance</strong> at the start of the dates you picked. Extra lines only appear after journal entries are posted to this chart account in <strong>Accounting</strong> (same as Ratib Pro ledger).
         </p>
         <div id="agencyAccountingHint" class="agency-detail-note agency-accounting-hint glass-card is-hidden" hidden></div>
         <div id="agencyAccountingError" class="agency-detail-error glass-card is-hidden" hidden></div>

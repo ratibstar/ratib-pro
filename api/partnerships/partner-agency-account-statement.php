@@ -55,7 +55,7 @@ if ($linkedId === null) {
 );
 
 try {
-    $body = partnerAgencyStmtBuildForAccount($conn, $linkedId, $start, $end, $pid);
+    $body = partnerAgencyStmtBuildForAccount($conn, $linkedId, $start, $end);
     partnerAgencyStmtJson(array_merge(['success' => true, 'linked' => true], $body));
 } catch (Throwable $e) {
     error_log('partner-agency-account-statement: ' . $e->getMessage());
