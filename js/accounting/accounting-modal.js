@@ -35,6 +35,43 @@ class AccountingModal {
         return this.baseUrl + '/pages/' + page;
     }
 
+    getStoredDefaultCurrency() {
+        const code = String(localStorage.getItem('accounting_default_currency') || '').trim().toUpperCase();
+        return /^[A-Z]{3}$/.test(code) ? code : 'SAR';
+    }
+
+    setStoredDefaultCurrency(code) {
+        const normalizedCode = String(code || '').trim().toUpperCase();
+        if (/^[A-Z]{3}$/.test(normalizedCode)) {
+            localStorage.setItem('accounting_last_currency', normalizedCode);
+            localStorage.setItem('accounting_default_currency', normalizedCode);
+        }
+    }
+
+    async resolveDefaultCurrency(forceRefresh = false) {
+        const stored = this.getStoredDefaultCurrency();
+        if (!window.currencyUtils || typeof window.currencyUtils.fetchCurrencies !== 'function') {
+            return stored;
+        }
+
+        try {
+            const currencies = await window.currencyUtils.fetchCurrencies(forceRefresh);
+            const activeCodes = Array.isArray(currencies)
+                ? currencies
+                    .map(c => String(c && c.code ? c.code : '').trim().toUpperCase())
+                    .filter(code => /^[A-Z]{3}$/.test(code))
+                : [];
+            if (activeCodes.length === 0) {
+                return stored;
+            }
+            const resolved = activeCodes.includes(stored) ? stored : activeCodes[0];
+            this.setStoredDefaultCurrency(resolved);
+            return resolved;
+        } catch (e) {
+            return stored;
+        }
+    }
+
     init() {
         this.createModalHTML();
         this.setupEventListeners();
@@ -711,7 +748,7 @@ class AccountingModal {
                 }
                 
                 // Get default currency from system settings
-                const defaultCurrency = localStorage.getItem('accounting_default_currency') || 'SAR';
+                const defaultCurrency = await this.resolveDefaultCurrency(true);
                 
                 // Populate journal currency (if in journal mode)
                 if (this.currentEntity === 'journal') {
@@ -2041,8 +2078,8 @@ class AccountingModal {
                 </td>
                 <td>${this.escapeHtml(transaction.description || '')}</td>
                 <td><span class="category-badge">${transaction.category || 'other'}</span></td>
-                <td class="debit-cell">${debitAmount > 0 ? this.formatCurrency(debitAmount, transaction.currency || (localStorage.getItem('accounting_default_currency') || 'SAR')) : '<span class="text-muted">-</span>'}</td>
-                <td class="credit-cell">${creditAmount > 0 ? this.formatCurrency(creditAmount, transaction.currency || (localStorage.getItem('accounting_default_currency') || 'SAR')) : '<span class="text-muted">-</span>'}</td>
+                <td class="debit-cell">${debitAmount > 0 ? this.formatCurrency(debitAmount, transaction.currency || this.getStoredDefaultCurrency()) : '<span class="text-muted">-</span>'}</td>
+                <td class="credit-cell">${creditAmount > 0 ? this.formatCurrency(creditAmount, transaction.currency || this.getStoredDefaultCurrency()) : '<span class="text-muted">-</span>'}</td>
                 <td>
                     <span class="status-badge ${(transaction.status || 'Posted').toLowerCase()}">
                         ${transaction.status || 'Posted'}
@@ -2282,8 +2319,8 @@ class AccountingModal {
                     <td>Journal Entry</td>
                     <td>${entry.description || 'N/A'}</td>
                     <td>-</td>
-                    <td class="debit-cell">${debit > 0 ? this.formatCurrency(debit, entry.currency || (localStorage.getItem('accounting_default_currency') || 'SAR')) : '<span class="text-muted">-</span>'}</td>
-                    <td class="credit-cell">${credit > 0 ? this.formatCurrency(credit, entry.currency || (localStorage.getItem('accounting_default_currency') || 'SAR')) : '<span class="text-muted">-</span>'}</td>
+                    <td class="debit-cell">${debit > 0 ? this.formatCurrency(debit, entry.currency || this.getStoredDefaultCurrency()) : '<span class="text-muted">-</span>'}</td>
+                    <td class="credit-cell">${credit > 0 ? this.formatCurrency(credit, entry.currency || this.getStoredDefaultCurrency()) : '<span class="text-muted">-</span>'}</td>
                     <td><span class="status-badge status-${(entry.status || 'Posted').toLowerCase()}">${entry.status || 'Posted'}</span></td>
                     <td>
                         <div class="action-buttons">
@@ -2810,16 +2847,15 @@ class AccountingModal {
                 const currencySelect = document.getElementById('transactionCurrency');
                 if (currencySelect) {
                     // Ensure currency dropdown is populated before setting value
-                    const defaultCurrency = localStorage.getItem('accounting_default_currency') || 'SAR';
+                    const defaultCurrency = await this.resolveDefaultCurrency(true);
                     if (window.currencyUtils) {
                         await window.currencyUtils.populateCurrencySelect(currencySelect, trans.currency || defaultCurrency);
                     } else {
                         currencySelect.value = trans.currency || defaultCurrency;
                     }
                     // Save currency to localStorage when editing
-                    const currency = trans.currency || localStorage.getItem('accounting_default_currency') || 'SAR';
-                    localStorage.setItem('accounting_last_currency', currency);
-                    localStorage.setItem('accounting_default_currency', currency);
+                    const currency = (trans.currency || await this.resolveDefaultCurrency());
+                    this.setStoredDefaultCurrency(currency);
                 }
                 document.getElementById('transactionDescription').value = trans.description;
                 const transactionDateField = document.getElementById('transactionDate');
@@ -2941,7 +2977,7 @@ class AccountingModal {
             
             if (currencyField) {
                 // Normalize currency value - extract code if format is "CODE - Name"
-                let currencyValue = entry.currency || (localStorage.getItem('accounting_default_currency') || 'SAR');
+                let currencyValue = entry.currency || this.getStoredDefaultCurrency();
                 if (typeof currencyValue === 'string' && currencyValue.includes(' - ')) {
                     currencyValue = currencyValue.split(' - ')[0].trim();
                 }
@@ -2957,7 +2993,7 @@ class AccountingModal {
                         currencyField.value = currencyOption.value;
                     } else {
                         // Value doesn't match any option, default to system currency
-                        currencyField.value = localStorage.getItem('accounting_default_currency') || 'SAR';
+                        currencyField.value = this.getStoredDefaultCurrency();
                     }
                 }
             }
@@ -3154,18 +3190,26 @@ class AccountingModal {
         this.currentTransaction = null;
         
         // Load default currency from system settings
-        const defaultCurrency = localStorage.getItem('accounting_default_currency') || localStorage.getItem('accounting_last_currency') || 'SAR';
+        const defaultCurrency = this.getStoredDefaultCurrency();
         const currencySelect = document.getElementById('transactionCurrency');
         if (currencySelect) {
             currencySelect.value = defaultCurrency;
+            this.resolveDefaultCurrency(true).then((resolvedCurrency) => {
+                if (resolvedCurrency && currencySelect) {
+                    currencySelect.value = resolvedCurrency;
+                }
+            }).catch(() => {});
             
             // Save currency when changed (only add listener once)
             if (!currencySelect.hasAttribute('data-currency-listener')) {
                 currencySelect.setAttribute('data-currency-listener', 'true');
                 currencySelect.addEventListener('change', function() {
                     // Update both last currency (for form memory) and default currency (for system-wide use)
-                    localStorage.setItem('accounting_last_currency', this.value);
-                    localStorage.setItem('accounting_default_currency', this.value);
+                    const selected = String(this.value || '').trim().toUpperCase();
+                    if (/^[A-Z]{3}$/.test(selected)) {
+                        localStorage.setItem('accounting_last_currency', selected);
+                        localStorage.setItem('accounting_default_currency', selected);
+                    }
                 });
             }
         }
@@ -3211,7 +3255,7 @@ class AccountingModal {
     formatCurrency(amount, currency = null) {
         // Get default currency from system settings if not provided
         if (!currency) {
-            currency = localStorage.getItem('accounting_default_currency') || 'SAR';
+            currency = this.getStoredDefaultCurrency();
         }
         
         // Use Intl.NumberFormat for proper currency formatting
@@ -3224,7 +3268,7 @@ class AccountingModal {
             }).format(parseFloat(amount || 0));
         } catch (e) {
             // Fallback if currency code is invalid
-            const defaultCurrency = localStorage.getItem('accounting_default_currency') || 'SAR';
+            const defaultCurrency = this.getStoredDefaultCurrency();
             return `${defaultCurrency} ${parseFloat(amount || 0).toLocaleString('en-SA', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2

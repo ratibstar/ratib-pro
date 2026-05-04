@@ -879,6 +879,16 @@
                 ));
                 const allSuccess = results.every(r => r.ok);
                 if (allSuccess) {
+                    const selectedCurrencyInput = document.querySelector('#accountingSettingsModal [data-setting-key="default_currency"]');
+                    if (selectedCurrencyInput) {
+                        const selectedCode = String(selectedCurrencyInput.value || '').trim().toUpperCase();
+                        if (/^[A-Z]{3}$/.test(selectedCode)) {
+                            localStorage.setItem('accounting_default_currency', selectedCode);
+                        }
+                    }
+                    if (typeof this.initDefaultCurrency === 'function') {
+                        await this.initDefaultCurrency();
+                    }
                     this.showToast('Settings saved successfully!', 'success');
                     settingInputs.forEach(input => input.classList.remove('setting-changed'));
                 } else {

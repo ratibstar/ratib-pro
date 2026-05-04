@@ -226,7 +226,10 @@
 
     P.getDefaultCurrencySync = function() {
         const storedCurrency = localStorage.getItem('accounting_default_currency');
-        return storedCurrency && storedCurrency.length === 3 ? storedCurrency : 'SAR';
+        if (storedCurrency && /^[A-Z]{3}$/.test(String(storedCurrency).trim().toUpperCase())) {
+            return String(storedCurrency).trim().toUpperCase();
+        }
+        return 'SAR';
     };
 
     P.createStatCard = function(type, icon, value, label) {
@@ -502,21 +505,90 @@
         });
     };
 
-    P.getDefaultCurrency = async function(forceRefresh = false) {
+    P.fetchActiveCurrencies = async function(forceRefresh = false) {
+        const normalizeCode = (code) => String(code || '').trim().toUpperCase();
+        const addUnique = (list, code) => {
+            if (!/^[A-Z]{3}$/.test(code)) return;
+            if (!list.includes(code)) list.push(code);
+        };
+
+        const activeCodes = [];
+
+        try {
+            const appApiBase = ((window.APP_CONFIG && window.APP_CONFIG.apiBase) || window.API_BASE || '').replace(/\/$/, '');
+            const url = (appApiBase || '') + '/settings/currencies-api.php?_t=' + Date.now();
+            const res = await fetch(url, {
+                credentials: 'include',
+                cache: 'no-cache',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
+            const data = await res.json().catch(() => null);
+            if (res.ok && data && data.success && Array.isArray(data.currencies)) {
+                data.currencies.forEach((c) => addUnique(activeCodes, normalizeCode(c && c.code)));
+            }
+        } catch (e) {
+            // Ignore direct API failure and fallback to currencyUtils.
+        }
+
+        if (activeCodes.length > 0) {
+            return activeCodes;
+        }
+
         try {
             if (window.currencyUtils && typeof window.currencyUtils.fetchCurrencies === 'function') {
                 const currencies = await window.currencyUtils.fetchCurrencies(forceRefresh);
-                if (currencies && currencies.length > 0) {
-                    const defaultCurrency = currencies[0].code;
-                    localStorage.setItem('accounting_default_currency', defaultCurrency);
-                    return defaultCurrency;
+                if (Array.isArray(currencies)) {
+                    currencies.forEach((c) => addUnique(activeCodes, normalizeCode(c && c.code)));
                 }
             }
         } catch (error) {
-            console.error('Error fetching default currency:', error);
+            console.error('Error loading currencies for accounting:', error);
         }
-        const storedCurrency = localStorage.getItem('accounting_default_currency');
-        return (storedCurrency && storedCurrency.length === 3) ? storedCurrency : 'SAR';
+
+        return activeCodes;
+    };
+
+    P.fetchAccountingDefaultCurrencySetting = async function() {
+        try {
+            const response = await fetch(`${this.apiBase}/settings.php?key=default_currency`, {
+                credentials: 'include',
+                cache: 'no-cache'
+            });
+            const data = await response.json().catch(() => null);
+            if (response.ok && data && data.success && data.setting && data.setting.value) {
+                const code = String(data.setting.value).trim().toUpperCase();
+                return /^[A-Z]{3}$/.test(code) ? code : null;
+            }
+        } catch (error) {
+            // Not fatal; we'll fallback to storage/active list.
+        }
+        return null;
+    };
+
+    P.getDefaultCurrency = async function(forceRefresh = false) {
+        const activeCurrencies = await this.fetchActiveCurrencies(forceRefresh);
+        const activeSet = new Set(activeCurrencies);
+        const preferredFromSetting = await this.fetchAccountingDefaultCurrencySetting();
+        const preferredFromStorage = this.getDefaultCurrencySync();
+
+        let resolvedCurrency = 'SAR';
+        if (preferredFromSetting && activeSet.has(preferredFromSetting)) {
+            resolvedCurrency = preferredFromSetting;
+        } else if (preferredFromStorage && activeSet.has(preferredFromStorage)) {
+            resolvedCurrency = preferredFromStorage;
+        } else if (activeCurrencies.length > 0) {
+            resolvedCurrency = activeCurrencies[0];
+        } else if (preferredFromSetting) {
+            resolvedCurrency = preferredFromSetting;
+        } else if (preferredFromStorage) {
+            resolvedCurrency = preferredFromStorage;
+        }
+
+        localStorage.setItem('accounting_default_currency', resolvedCurrency);
+        return resolvedCurrency;
     };
 
     P.initDefaultCurrency = async function() {
