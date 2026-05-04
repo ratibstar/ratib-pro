@@ -3333,8 +3333,31 @@
                 try { for (const form of forms) { if (this.hasFormChanges(form)) { hasUnsavedChanges = true; break; } } } catch (e) {}
                 if (hasUnsavedChanges) {
                     try {
-                        const confirmed = await this.showConfirmDialog('Unsaved Changes', 'You have unsaved changes. Are you sure you want to close without saving?', 'Discard Changes', 'Cancel', 'warning');
-                        if (!confirmed) { this._closingModal = false; return; }
+                        const costCenterForm = modalToClose.querySelector('#costCenterForm');
+                        if (costCenterForm) {
+                            const saveChoice = await this.showConfirmDialog(
+                                'Unsaved Changes',
+                                'You have unsaved changes. Choose Save to keep them, or Don\'t save to close and discard.',
+                                'Save',
+                                'Don\'t save',
+                                'warning'
+                            );
+                            if (saveChoice === true) {
+                                try {
+                                    if (typeof costCenterForm.requestSubmit === 'function') {
+                                        costCenterForm.requestSubmit();
+                                    } else {
+                                        costCenterForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                                    }
+                                } catch (e) {}
+                                this._closingModal = false;
+                                return;
+                            }
+                            // false = don't save: fall through and close
+                        } else {
+                            const confirmed = await this.showConfirmDialog('Unsaved Changes', 'You have unsaved changes. Are you sure you want to close without saving?', 'Discard Changes', 'Cancel', 'warning');
+                            if (!confirmed) { this._closingModal = false; return; }
+                        }
                     } catch (e) {}
                 }
                 const modalId = modalToClose.id || modalToClose.getAttribute('id') || null;
