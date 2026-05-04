@@ -370,7 +370,7 @@ function tableExists($conn, $tableName) {
         $allowedTables = [
             'financial_accounts', 'journal_entries', 'journal_entry_lines',
             'accounts_receivable', 'accounts_payable', 'financial_transactions',
-            'transaction_lines', 'payment_receipts', 'payment_payments',
+            'transaction_lines', 'payment_receipts', 'payment_payments', 'payment_vouchers',
             'accounting_banks', 'accounting_bank_transactions', 'entity_transactions'
         ];
         
@@ -452,7 +452,7 @@ function columnExists($conn, $tableName, $columnName) {
         $allowedTables = [
             'financial_accounts', 'journal_entries', 'journal_entry_lines',
             'accounts_receivable', 'accounts_payable', 'financial_transactions',
-            'transaction_lines', 'payment_receipts', 'payment_payments',
+            'transaction_lines', 'payment_receipts', 'payment_payments', 'payment_vouchers',
             'accounting_banks', 'accounting_bank_transactions', 'entity_transactions'
         ];
         
@@ -2397,6 +2397,36 @@ function generateExpenseStatement($conn, $startDate = null, $endDate = null) {
                 $row['total_amount'] = floatval($row['total_amount']);
                 $report['expenses'][] = $row;
             }
+        }
+    }
+
+    // Posted payment vouchers (Expenses module) — same data as Expenses table, not in financial_transactions
+    if (tableExists($conn, 'payment_vouchers')) {
+        $pvFilter = "AND pv.voucher_date >= '{$escapedStartDate}' AND pv.voucher_date <= '{$escapedEndDate}'";
+        $pvStmt = $conn->query("
+            SELECT 
+                'Payment Vouchers' AS category,
+                CONCAT(
+                    'Voucher ',
+                    IFNULL(NULLIF(TRIM(pv.voucher_number), ''), CONCAT('#', pv.id)),
+                    IF(pv.description IS NOT NULL AND CHAR_LENGTH(TRIM(pv.description)) > 0,
+                       CONCAT(' — ', SUBSTRING(TRIM(pv.description), 1, 120)),
+                       '')
+                ) AS description,
+                pv.voucher_date AS transaction_date,
+                pv.amount AS total_amount,
+                1 AS transaction_count
+            FROM payment_vouchers pv
+            WHERE pv.status = 'Posted' AND pv.amount > 0 {$pvFilter}
+            ORDER BY pv.voucher_date DESC, pv.id DESC
+            LIMIT 200
+        ");
+        if ($pvStmt) {
+            while ($row = $pvStmt->fetch_assoc()) {
+                $row['total_amount'] = floatval($row['total_amount']);
+                $report['expenses'][] = $row;
+            }
+            $pvStmt->free();
         }
     }
     
