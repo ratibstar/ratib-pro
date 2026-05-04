@@ -2027,7 +2027,8 @@ try {
                         if (!$approvalStmt) {
                             throw new Exception('Failed to prepare entry approval insert (with entity and journal link): ' . $conn->error);
                         }
-                        $approvalStmt->bind_param('sssdssiii', $approvalEntryNumber, $entryDate, $description, $approvalAmount, $currency, $entryId, $approvalEntityType, $approvalEntityId, $userId);
+                        // Types: entry_number(s), entry_date(s), description(s), amount(d), currency(s), journal_entry_id(i), entity_type(s), entity_id(i), created_by(i)
+                        $approvalStmt->bind_param('sssdsisii', $approvalEntryNumber, $entryDate, $description, $approvalAmount, $currency, $entryId, $approvalEntityType, $approvalEntityId, $userId);
                     } else {
                         $approvalStmt = $conn->prepare("
                             INSERT INTO entry_approval (entry_number, entry_date, description, amount, currency, status, journal_entry_id, created_by)

@@ -666,7 +666,20 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
         // Validate required fields
         const entryDate = form.querySelector('#journalEntryDate')?.value;
         const branchId = form.querySelector('#journalBranchSelect')?.value;
-        const description = form.querySelector('textarea[name="description"]')?.value?.trim();
+        let description = form.querySelector('textarea[name="description"]')?.value?.trim() ?? '';
+        // Users often describe rows only; mirror that into the header so save isn't blocked.
+        if (!description) {
+            const lineDescParts = [];
+            [...debitLines, ...creditLines].forEach((line) => {
+                const d = (line.description || '').trim();
+                if (d) lineDescParts.push(d);
+            });
+            description = lineDescParts.join(' / ');
+            const descTa = form.querySelector('textarea[name="description"]');
+            if (descTa && description && !(descTa.value || '').trim()) {
+                descTa.value = description;
+            }
+        }
         
         if (!entryDate) {
             this.showToast('Please select a journal date', 'error');
@@ -677,7 +690,7 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
             return false;
         }
         if (!description) {
-            this.showToast('Please enter a description', 'error');
+            this.showToast('Please enter a journal description (header or line descriptions)', 'error');
             return false;
         }
         if (debitLines.length === 0 && creditLines.length === 0) {
@@ -725,7 +738,16 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
             credit: firstCreditLine ? Math.round(firstCreditLine.amount * 100) / 100 : 0,
             total_debit: totalDebit,
             total_credit: totalCredit,
-            currency: 'SAR', // Default currency - can be made configurable later
+            currency: (() => {
+                const sel = form.querySelector('select[name="currency"]');
+                let c = sel && sel.value ? String(sel.value).trim() : '';
+                if (c.includes(' - ')) c = c.split(' - ')[0].trim();
+                if (!c && typeof this.getDefaultCurrencySync === 'function') {
+                    c = String(this.getDefaultCurrencySync() || '').trim();
+                    if (c.includes(' - ')) c = c.split(' - ')[0].trim();
+                }
+                return (c || 'SAR').toUpperCase();
+            })(),
             debit_lines: debitLines, // Include for future API support
             credit_lines: creditLines, // Include for future API support
             cost_center_id: primaryLine.cost_center_id || null
