@@ -324,8 +324,9 @@
 
     P.showConfirmDialog = function(title, message, confirmText = 'Confirm', cancelText = 'Cancel', type = 'warning') {
         return new Promise((resolve) => {
-            const existingDialogs = document.querySelectorAll('.accounting-confirm-dialog');
-            existingDialogs.forEach(dialog => dialog.remove());
+            document.querySelectorAll('.accounting-confirm-overlay').forEach((el) => el.remove());
+            document.body.classList.remove('body-no-scroll');
+
             const overlay = document.createElement('div');
             overlay.className = 'accounting-confirm-overlay';
             const dialog = document.createElement('div');
@@ -345,23 +346,31 @@
                     dialog.offsetHeight;
                 });
             });
-            const handleConfirm = () => {
-                overlay.classList.remove('confirm-overlay-visible');
-                dialog.classList.remove('confirm-dialog-visible');
-                setTimeout(() => { overlay.remove(); document.body.classList.remove('body-no-scroll'); }, 300);
-                resolve(true);
+            let settled = false;
+            const tearDown = () => {
+                document.removeEventListener('keydown', escHandler);
             };
-            const handleCancel = () => {
-                overlay.classList.remove('confirm-overlay-visible');
-                dialog.classList.remove('confirm-dialog-visible');
-                setTimeout(() => { overlay.remove(); document.body.classList.remove('body-no-scroll'); }, 300);
-                resolve(false);
+            const finish = (value) => {
+                if (settled) return;
+                settled = true;
+                tearDown();
+                overlay.classList.remove('confirm-overlay-visible', 'confirm-overlay-active');
+                dialog.classList.remove('confirm-dialog-visible', 'confirm-dialog-active');
+                setTimeout(() => {
+                    if (overlay.parentElement) overlay.remove();
+                    document.body.classList.remove('body-no-scroll');
+                    const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
+                    if (parentModal) document.body.classList.add('body-no-scroll');
+                    resolve(value);
+                }, 200);
             };
+            const handleConfirm = () => finish(true);
+            const handleCancel = () => finish(false);
             dialog.querySelector('[data-action="confirm-ok"]').addEventListener('click', handleConfirm);
             dialog.querySelector('[data-action="confirm-cancel"]').addEventListener('click', handleCancel);
             overlay.addEventListener('click', (e) => { if (e.target === overlay) handleCancel(); });
             const escHandler = (e) => {
-                if (e.key === 'Escape') { handleCancel(); document.removeEventListener('keydown', escHandler); }
+                if (e.key === 'Escape') handleCancel();
             };
             document.addEventListener('keydown', escHandler);
         });
@@ -369,8 +378,9 @@
 
     P.showPrompt = function(title, message, defaultValue = '', placeholder = '', inputType = 'text') {
         return new Promise((resolve) => {
-            const existingDialogs = document.querySelectorAll('.accounting-prompt-dialog');
-            existingDialogs.forEach(dialog => dialog.remove());
+            document.querySelectorAll('.accounting-confirm-overlay').forEach((el) => el.remove());
+            document.body.classList.remove('body-no-scroll');
+
             const overlay = document.createElement('div');
             overlay.className = 'accounting-confirm-overlay';
             const dialog = document.createElement('div');
@@ -391,25 +401,35 @@
                     if (input) { input.focus(); input.select(); }
                 });
             });
+            let settled = false;
+            const tearDown = () => {
+                document.removeEventListener('keydown', escHandler);
+            };
+            const finish = (value) => {
+                if (settled) return;
+                settled = true;
+                tearDown();
+                overlay.classList.remove('confirm-overlay-visible', 'confirm-overlay-active');
+                dialog.classList.remove('confirm-dialog-visible', 'confirm-dialog-active');
+                setTimeout(() => {
+                    if (overlay.parentElement) overlay.remove();
+                    document.body.classList.remove('body-no-scroll');
+                    const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
+                    if (parentModal) document.body.classList.add('body-no-scroll');
+                    resolve(value);
+                }, 200);
+            };
             const handleConfirm = () => {
-                const input = dialog.querySelector('#promptInput');
-                const value = input ? input.value.trim() : '';
-                const errorDiv = dialog.querySelector('#promptError');
+                const inputEl = dialog.querySelector('#promptInput');
+                const value = inputEl ? inputEl.value.trim() : '';
+                const errDiv = dialog.querySelector('#promptError');
                 if (!value) {
-                    if (errorDiv) { errorDiv.textContent = 'This field is required'; errorDiv.classList.add('error-visible'); errorDiv.classList.remove('error-hidden'); }
+                    if (errDiv) { errDiv.textContent = 'This field is required'; errDiv.classList.add('error-visible'); errDiv.classList.remove('error-hidden'); }
                     return;
                 }
-                overlay.classList.remove('confirm-overlay-visible');
-                dialog.classList.remove('confirm-dialog-visible');
-                setTimeout(() => { overlay.remove(); document.body.classList.remove('body-no-scroll'); }, 300);
-                resolve(value);
+                finish(value);
             };
-            const handleCancel = () => {
-                overlay.classList.remove('confirm-overlay-visible');
-                dialog.classList.remove('confirm-dialog-visible');
-                setTimeout(() => { overlay.remove(); document.body.classList.remove('body-no-scroll'); }, 300);
-                resolve(null);
-            };
+            const handleCancel = () => finish(null);
             const okBtn = dialog.querySelector('[data-action="prompt-ok"]');
             const cancelBtn = dialog.querySelector('[data-action="prompt-cancel"]');
             const input = dialog.querySelector('#promptInput');
@@ -432,7 +452,7 @@
             }
             overlay.addEventListener('click', (e) => { if (e.target === overlay) handleCancel(); });
             const escHandler = (e) => {
-                if (e.key === 'Escape') { handleCancel(); document.removeEventListener('keydown', escHandler); }
+                if (e.key === 'Escape') handleCancel();
             };
             document.addEventListener('keydown', escHandler);
         });

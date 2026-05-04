@@ -1819,9 +1819,8 @@ ProfessionalAccounting.prototype.showToast = function(message, type = 'info', du
 
 ProfessionalAccounting.prototype.showConfirmDialog = function(title, message, confirmText = 'Confirm', cancelText = 'Cancel', type = 'warning') {
         return new Promise((resolve) => {
-            // Remove existing dialogs
-            const existingDialogs = document.querySelectorAll('.accounting-confirm-dialog');
-            existingDialogs.forEach(dialog => dialog.remove());
+            document.querySelectorAll('.accounting-confirm-overlay').forEach((el) => el.remove());
+            document.body.classList.remove('body-no-scroll');
 
             // Create dialog overlay
             const overlay = document.createElement('div');
