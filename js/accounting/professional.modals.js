@@ -2866,6 +2866,24 @@
                                 totalCredit += value;
                             }
                         });
+
+                        // Every row with amount > 0 must have an account (server rejects otherwise — felt like "dead" buttons)
+                        const rowAmount = (row, sel) => {
+                            const inp = row.querySelector(sel);
+                            const v = inp ? parseFloat(inp.value || 0) : 0;
+                            return !isNaN(v) ? v : 0;
+                        };
+                        const rowAccountId = (row) => {
+                            const acc = row.querySelector('.account-select');
+                            return acc ? parseInt(acc.value, 10) || 0 : 0;
+                        };
+                        let accountsComplete = true;
+                        journalEntryForm.querySelectorAll('#journalDebitLinesBody .ledger-line-row').forEach((row) => {
+                            if (rowAmount(row, '.debit-amount') > 0 && rowAccountId(row) <= 0) accountsComplete = false;
+                        });
+                        journalEntryForm.querySelectorAll('#journalCreditLinesBody .ledger-line-row').forEach((row) => {
+                            if (rowAmount(row, '.credit-amount') > 0 && rowAccountId(row) <= 0) accountsComplete = false;
+                        });
                         
                         const totalDebitEl = document.getElementById('journalTotalDebit');
                         const totalCreditEl = document.getElementById('journalTotalCredit');
@@ -2873,6 +2891,7 @@
                         const balanceIndicator = document.getElementById('journalBalanceIndicator');
                         const balanceDifference = document.getElementById('journalBalanceDifference');
                         const submitBtn = journalEntryForm.querySelector('#journalSubmitBtn');
+                        const saveDraftBtn = journalEntryForm.querySelector('#journalSaveDraftBtn');
                         const balanceFooter = document.getElementById('journalBalanceFooter');
                         
                         if (totalDebitEl) totalDebitEl.textContent = totalDebit.toFixed(2);
@@ -2880,29 +2899,40 @@
                         if (balanceAmountEl) balanceAmountEl.textContent = Math.abs(totalDebit - totalCredit).toFixed(2);
                         
                         const difference = Math.abs(totalDebit - totalCredit);
-                        const isBalanced = difference < 0.01 && totalDebit > 0 && totalCredit > 0;
+                        const totalsBalanced = difference < 0.01 && totalDebit > 0 && totalCredit > 0;
+                        const readyToSave = totalsBalanced && accountsComplete;
                         
                         if (balanceDifference) {
                             balanceDifference.textContent = difference.toFixed(2);
                         }
                         
                         if (balanceIndicator && balanceFooter) {
-                            if (isBalanced) {
+                            if (readyToSave) {
                                 balanceIndicator.className = 'balance-indicator balanced';
                                 balanceIndicator.innerHTML = '<span class="icon">✓</span><span class="balance-text">BALANCED</span>';
                                 balanceFooter.className = 'balance-validation-footer sticky-footer balanced';
                                 if (submitBtn) submitBtn.disabled = false;
+                                if (saveDraftBtn) saveDraftBtn.disabled = false;
+                            } else if (totalsBalanced && !accountsComplete) {
+                                balanceIndicator.className = 'balance-indicator unbalanced';
+                                balanceIndicator.innerHTML = '<span class="icon">⚠</span><span class="balance-text">SELECT ACCOUNTS</span>';
+                                balanceFooter.className = 'balance-validation-footer sticky-footer unbalanced';
+                                if (submitBtn) submitBtn.disabled = true;
+                                if (saveDraftBtn) saveDraftBtn.disabled = true;
                             } else {
                                 balanceIndicator.className = 'balance-indicator unbalanced';
                                 balanceIndicator.innerHTML = '<span class="icon">⚠</span><span class="balance-text">UNBALANCED: <span id="journalBalanceDifference">' + difference.toFixed(2) + '</span></span>';
                                 balanceFooter.className = 'balance-validation-footer sticky-footer unbalanced';
                                 if (submitBtn) submitBtn.disabled = true;
+                                if (saveDraftBtn) saveDraftBtn.disabled = true;
                             }
                         } else if (submitBtn) {
                             // Footer nodes missing (DOM mismatch): still toggle Create Entry from totals.
-                            submitBtn.disabled = !isBalanced;
+                            submitBtn.disabled = !readyToSave;
+                            if (saveDraftBtn) saveDraftBtn.disabled = !readyToSave;
                         }
                     };
+                    journalEntryForm._jeUpdateBalance = updateBalance;
                     
                     // Add event listeners to all amount inputs (delegation for dynamic lines)
                     journalEntryForm.addEventListener('input', (e) => {
@@ -2912,7 +2942,8 @@
                     });
                     
                     journalEntryForm.addEventListener('change', (e) => {
-                        if (e.target.classList.contains('debit-amount') || e.target.classList.contains('credit-amount')) {
+                        if (e.target.classList.contains('debit-amount') || e.target.classList.contains('credit-amount') ||
+                            e.target.classList.contains('account-select')) {
                             updateBalance();
                         }
                     });
@@ -3074,6 +3105,7 @@
                         const formEl = modal.querySelector('#journalEntryForm');
                         if (!formEl || !(formEl.contains(draftHit) || formEl.contains(submitHit))) return;
                         if (submitHit && submitHit.disabled) return;
+                        if (draftHit && draftHit.disabled) return;
                         ev.preventDefault();
                         ev.stopImmediatePropagation();
                         if (this._journalEntrySaveInFlight) return;
@@ -3113,6 +3145,9 @@
                                 draftEl.disabled = false;
                                 draftEl.textContent = origDraft || 'Save Draft';
                             }
+                            try {
+                                if (typeof formEl._jeUpdateBalance === 'function') formEl._jeUpdateBalance();
+                            } catch (x) {}
                         }
                     }, true);
                 }
