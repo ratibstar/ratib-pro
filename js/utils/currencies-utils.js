@@ -87,8 +87,12 @@ class CurrencyUtils {
             }
         } catch (error) {
             console.error('❌ Error fetching currencies:', error);
-            // Return default currencies if API fails
-            return this.getDefaultCurrencies();
+            // Strict mode: do not inject hardcoded currencies when API fails.
+            // This keeps forms aligned with System Settings > Currency Management.
+            if (Array.isArray(this.currenciesCache) && this.currenciesCache.length > 0) {
+                return this.currenciesCache;
+            }
+            return [];
         }
     }
 
