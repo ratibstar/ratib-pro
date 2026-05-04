@@ -2533,58 +2533,6 @@
             this.showToast(`${accounts.length} account(s) exported successfully`, 'success');
         },
 
-        async saveJournalEntry(entryId = null) {
-            const form = document.getElementById('journalEntryForm');
-            if (!form) { this.showToast('Form not found', 'error'); return false; }
-            const debitLines = []; const creditLines = [];
-            form.querySelectorAll('#journalDebitLinesBody .ledger-line-row').forEach((row) => {
-                const accountSelect = row.querySelector('.account-select');
-                const amountInput = row.querySelector('.debit-amount');
-                const accountId = accountSelect ? parseInt(accountSelect.value) : 0;
-                const amount = amountInput ? parseFloat(amountInput.value || 0) : 0;
-                if (accountId > 0 && amount > 0) {
-                    debitLines.push({ account_id: accountId, cost_center_id: row.querySelector('.cost-center-select') ? (parseInt(row.querySelector('.cost-center-select').value) || null) : null, description: row.querySelector('.line-description')?.value?.trim() || '', vat_report: row.querySelector('.vat-checkbox')?.checked || false, amount });
-                }
-            });
-            form.querySelectorAll('#journalCreditLinesBody .ledger-line-row').forEach((row) => {
-                const accountSelect = row.querySelector('.account-select');
-                const amountInput = row.querySelector('.credit-amount');
-                const accountId = accountSelect ? parseInt(accountSelect.value) : 0;
-                const amount = amountInput ? parseFloat(amountInput.value || 0) : 0;
-                if (accountId > 0 && amount > 0) {
-                    creditLines.push({ account_id: accountId, cost_center_id: row.querySelector('.cost-center-select') ? (parseInt(row.querySelector('.cost-center-select').value) || null) : null, description: row.querySelector('.line-description')?.value?.trim() || '', vat_report: row.querySelector('.vat-checkbox')?.checked || false, amount });
-                }
-            });
-            const entryDate = form.querySelector('#journalEntryDate')?.value;
-            const branchId = form.querySelector('#journalBranchSelect')?.value;
-            const description = form.querySelector('textarea[name="description"]')?.value?.trim();
-            if (!entryDate) { this.showToast('Please select a journal date', 'error'); return false; }
-            if (!branchId) { this.showToast('Please select a branch', 'error'); return false; }
-            if (!description) { this.showToast('Please enter a description', 'error'); return false; }
-            if (debitLines.length === 0 && creditLines.length === 0) { this.showToast('Please add at least one debit or credit line', 'error'); return false; }
-            const totalDebit = debitLines.reduce((s, l) => s + l.amount, 0); const totalCredit = creditLines.reduce((s, l) => s + l.amount, 0);
-            if (Math.abs(totalDebit - totalCredit) > 0.01) { this.showToast('Entry is not balanced', 'error'); return false; }
-            const firstDebit = debitLines[0] || null; const firstCredit = creditLines[0] || null; const primary = firstDebit || firstCredit;
-            if (!primary) { this.showToast('Please add at least one line', 'error'); return false; }
-            const data = { entry_date: entryDate, branch_id: parseInt(branchId) || branchId, description, account_id: primary.account_id, debit: firstDebit ? firstDebit.amount : 0, credit: firstCredit ? firstCredit.amount : 0, total_debit: totalDebit, total_credit: totalCredit, currency: 'SAR', debit_lines: debitLines, credit_lines: creditLines, cost_center_id: primary.cost_center_id || null };
-            try {
-                const url = entryId ? `${this.apiBase}/journal-entries.php?id=${entryId}` : `${this.apiBase}/journal-entries.php`;
-                const controller = new AbortController(); setTimeout(() => controller.abort(), 20000);
-                const response = await fetch(url, { method: entryId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data), signal: controller.signal });
-                const responseData = JSON.parse(await response.text().catch(() => '{}'));
-                if (response.ok && responseData?.success) {
-                    form.setAttribute('data-saved', 'true');
-                    this.showToast(`Journal entry ${entryId ? 'updated' : 'created'} successfully!`, 'success');
-                    const modal = form.closest('.accounting-modal'); if (modal) { modal.classList.remove('accounting-modal-visible', 'show-modal'); modal.classList.add('accounting-modal-hidden'); if (this.activeModal === modal) this.activeModal = null; document.body.classList.remove('body-no-scroll'); }
-                    setTimeout(async () => { if (!entryId) this.modalLedgerCurrentPage = 1; await this.loadModalJournalEntries(); await this.loadJournalEntries(); this.refreshAllModules(); }, 500);
-                    return true;
-                }
-                this.showToast(responseData?.message || 'Failed to save', 'error'); return false;
-            } catch (e) {
-                this.showToast(e?.name === 'AbortError' ? 'Request timeout' : (e?.message || 'Error saving'), 'error'); return false;
-            }
-        },
-
         async saveInvoice(invoiceId = null) {
             const form = document.getElementById('invoiceForm'); if (!form) { this.showToast('Invoice form not found', 'error'); return; }
             const formData = new FormData(form); const data = Object.fromEntries(formData);
@@ -2950,6 +2898,9 @@
                                 balanceFooter.className = 'balance-validation-footer sticky-footer unbalanced';
                                 if (submitBtn) submitBtn.disabled = true;
                             }
+                        } else if (submitBtn) {
+                            // Footer nodes missing (DOM mismatch): still toggle Create Entry from totals.
+                            submitBtn.disabled = !isBalanced;
                         }
                     };
                     
@@ -3316,7 +3267,7 @@
                         });
                     }
                 });
-            }, 200);
+            }, 0); // next task: journal Save/Create listeners (200ms felt like dead buttons)
         },
 
         async closeModalWithConfirmation(modalElement = null) {

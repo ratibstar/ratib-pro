@@ -10859,8 +10859,10 @@ input.date-input {
     border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
-/* Action buttons (scoped variants) */
+/* Action buttons (scoped variants) — sit above sticky balance bar so clicks reach Save / Create */
 #journalEntryModal .accounting-modal-actions {
+    position: relative;
+    z-index: 25;
     border-top: 1px solid var(--je-border) !important;
 }
 
