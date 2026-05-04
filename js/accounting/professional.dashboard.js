@@ -9,6 +9,15 @@
 (function(){
     if (typeof ProfessionalAccounting === 'undefined') return;
     const methods = {
+        /** Currency for KPI amounts when API includes `currency` (matches server default_currency). */
+        _overviewCardCurrency(data) {
+            if (data && Object.prototype.hasOwnProperty.call(data, 'currency')) {
+                const c = this.normalizeCurrencyCode(data.currency);
+                if (c) return c;
+            }
+            return this.getDefaultCurrencySync();
+        },
+
         updateOverviewCards(data) {
             const setPctChange = (elementId, rawValue, tone /* 'upGood' | 'upBad' */) => {
                 const el = document.getElementById(elementId);
@@ -23,25 +32,27 @@
                 el.className = `card-change ${positive ? 'positive' : 'negative'}`;
             };
 
+            const cardCur = this._overviewCardCurrency(data);
+
             // Revenue
             const revenueEl = document.getElementById('totalRevenue');
-            if (revenueEl) revenueEl.textContent = this.formatCurrency(data.total_revenue || 0);
+            if (revenueEl) revenueEl.textContent = this.formatCurrency(data.total_revenue || 0, cardCur);
             
             // Expenses
             const expenseEl = document.getElementById('totalExpense');
-            if (expenseEl) expenseEl.textContent = this.formatCurrency(data.total_expenses || 0);
+            if (expenseEl) expenseEl.textContent = this.formatCurrency(data.total_expenses || 0, cardCur);
             
             // Net Profit
             const profitEl = document.getElementById('netProfit');
-            if (profitEl) profitEl.textContent = this.formatCurrency(data.net_profit || 0);
+            if (profitEl) profitEl.textContent = this.formatCurrency(data.net_profit || 0, cardCur);
             
             // Cash Balance
             const balanceEl = document.getElementById('cashBalance');
-            if (balanceEl) balanceEl.textContent = this.formatCurrency(data.cash_balance || 0);
+            if (balanceEl) balanceEl.textContent = this.formatCurrency(data.cash_balance || 0, cardCur);
             
             // Receivables
             const receivablesEl = document.getElementById('totalReceivables');
-            if (receivablesEl) receivablesEl.textContent = this.formatCurrency(data.total_receivables || 0);
+            if (receivablesEl) receivablesEl.textContent = this.formatCurrency(data.total_receivables || 0, cardCur);
             
             const receivablesCount = document.getElementById('receivablesCount');
             if (receivablesCount) {
@@ -50,7 +61,7 @@
             
             // Payables
             const payablesEl = document.getElementById('totalPayables');
-            if (payablesEl) payablesEl.textContent = this.formatCurrency(data.total_payables || 0);
+            if (payablesEl) payablesEl.textContent = this.formatCurrency(data.total_payables || 0, cardCur);
             
             const payablesCount = document.getElementById('payablesCount');
             if (payablesCount) {
@@ -1419,7 +1430,8 @@
                         revenue_change: data.dashboard.revenue_change,
                         expense_change: data.dashboard.expense_change,
                         profit_change: data.dashboard.profit_change,
-                        balance_change: data.dashboard.balance_change
+                        balance_change: data.dashboard.balance_change,
+                        currency: data.dashboard.currency
                     });
                     this._loadingFinancialOverview = false;
                     return; // Success
@@ -1460,7 +1472,8 @@
                             revenue_change: 0,
                             expense_change: 0,
                             profit_change: 0,
-                            balance_change: 0
+                            balance_change: 0,
+                            currency: this.getDefaultCurrencySync()
                         });
                     }
                     this._loadingFinancialOverview = false;
@@ -1477,7 +1490,8 @@
                         revenue_change: 0,
                         expense_change: 0,
                         profit_change: 0,
-                        balance_change: 0
+                        balance_change: 0,
+                        currency: this.getDefaultCurrencySync()
                     });
                     this._loadingFinancialOverview = false;
                 }
@@ -1510,7 +1524,8 @@
                             revenue_change: data.dashboard.revenue_change,
                             expense_change: data.dashboard.expense_change,
                             profit_change: data.dashboard.profit_change,
-                            balance_change: data.dashboard.balance_change
+                            balance_change: data.dashboard.balance_change,
+                            currency: data.dashboard.currency
                         });
                     }
                     // Refresh Receivables summary if on Receivables tab
@@ -1635,7 +1650,8 @@
                         revenue_change: data.dashboard.revenue_change,
                         expense_change: data.dashboard.expense_change,
                         profit_change: data.dashboard.profit_change,
-                        balance_change: data.dashboard.balance_change
+                        balance_change: data.dashboard.balance_change,
+                        currency: data.dashboard.currency
                     });
                 }
                 

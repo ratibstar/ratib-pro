@@ -28,6 +28,7 @@ try {
         'expense_change' => 0,
         'profit_change' => 0,
         'balance_change' => 0,
+        'currency' => 'SAR',
     ];
     if (!isset($conn) || !$conn) {
         echo json_encode(array_merge($data, ['success' => true]));
@@ -37,6 +38,18 @@ try {
     if (!$ftCheck || $ftCheck->num_rows === 0) {
         echo json_encode(array_merge($data, ['success' => true]));
         exit;
+    }
+
+    $data['currency'] = 'SAR';
+    $curRes = @$conn->query("SELECT setting_value FROM accounting_settings WHERE setting_key = 'default_currency' LIMIT 1");
+    if ($curRes && ($curRow = $curRes->fetch_assoc())) {
+        $cv = strtoupper(trim((string) ($curRow['setting_value'] ?? '')));
+        if (preg_match('/^[A-Z]{3}$/', $cv)) {
+            $data['currency'] = $cv;
+        }
+    }
+    if ($curRes instanceof mysqli_result) {
+        $curRes->free();
     }
 
     $stmt = $conn->prepare("SELECT COALESCE(SUM(total_amount), 0) as total_revenue FROM financial_transactions WHERE transaction_type = 'Income' AND status IN ('Approved', 'Posted') AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
@@ -183,6 +196,7 @@ try {
             'expense_change' => 0,
             'profit_change' => 0,
             'balance_change' => 0,
+            'currency' => 'SAR',
         ]
     ]);
 }

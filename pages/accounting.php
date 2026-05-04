@@ -38,28 +38,8 @@ if (isset($conn) && $conn instanceof mysqli) {
     if ($fromSettings !== null) {
         $ratibAccountingBootstrapCurrency = $fromSettings;
     }
-    // When no explicit accounting_settings row: infer from first active currency (if any).
-    // IMPORTANT: If default_currency IS set (e.g. SAR), keep it even when that code is missing
-    // from the active `currencies` rows — otherwise the UI was forced to BDT (first active).
-    if ($fromSettings === null) {
-        $tbl = @$conn->query("SHOW TABLES LIKE 'currencies'");
-        $hasCurrencies = ($tbl && $tbl->num_rows > 0);
-        if ($tbl instanceof mysqli_result) {
-            $tbl->free();
-        }
-        if ($hasCurrencies) {
-            $r3 = @$conn->query("SELECT UPPER(TRIM(code)) AS c FROM currencies WHERE (is_active = 1 OR is_active = '1') ORDER BY display_order ASC, code ASC LIMIT 1");
-            if ($r3 && ($row3 = $r3->fetch_assoc())) {
-                $v3 = strtoupper(trim((string) ($row3['c'] ?? '')));
-                if (preg_match('/^[A-Z]{3}$/', $v3)) {
-                    $ratibAccountingBootstrapCurrency = $v3;
-                }
-            }
-            if ($r3 instanceof mysqli_result) {
-                $r3->free();
-            }
-        }
-    }
+    // No accounting_settings row: keep SAR (do not infer from `currencies` first active — that
+    // often produced BDT on the KPI row while the tenant expected SAR).
 }
 $ratibAccountingBootstrapCurrencyJson = json_encode($ratibAccountingBootstrapCurrency, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 $ratibAccountingBootstrapCurrencyEsc = htmlspecialchars($ratibAccountingBootstrapCurrency, ENT_QUOTES, 'UTF-8');

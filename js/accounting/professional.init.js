@@ -166,7 +166,8 @@ function patchApiCredentials() {
                     revenue_change: data.dashboard.revenue_change,
                     expense_change: data.dashboard.expense_change,
                     profit_change: data.dashboard.profit_change,
-                    balance_change: data.dashboard.balance_change
+                    balance_change: data.dashboard.balance_change,
+                    currency: data.dashboard.currency
                 });
             }
             if (typeof this.loadCashFlowSummary === 'function') this.loadCashFlowSummary();

@@ -48,6 +48,7 @@ try {
                 'expense_change' => 0,
                 'profit_change' => 0,
                 'balance_change' => 0,
+                'currency' => 'SAR',
             ],
             'timestamp' => date('Y-m-d H:i:s'),
         ]);
@@ -60,8 +61,17 @@ try {
     $response = [];
     $requestType = $_GET['type'] ?? 'all';
     
-    // Get base currency (default SAR)
     $baseCurrency = 'SAR';
+    $curRes = @$conn->query("SELECT setting_value FROM accounting_settings WHERE setting_key = 'default_currency' LIMIT 1");
+    if ($curRes && ($curRow = $curRes->fetch_assoc())) {
+        $cv = strtoupper(trim((string) ($curRow['setting_value'] ?? '')));
+        if (preg_match('/^[A-Z]{3}$/', $cv)) {
+            $baseCurrency = $cv;
+        }
+    }
+    if ($curRes instanceof mysqli_result) {
+        $curRes->free();
+    }
     
     // ============================================
     // 1. DASHBOARD CALCULATIONS
@@ -74,7 +84,7 @@ try {
                 COUNT(*) as revenue_count
             FROM financial_transactions 
             WHERE transaction_type = 'Income' 
-            AND status = 'Posted'
+            AND status IN ('Approved', 'Posted')
             AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         ");
         $stmt->execute();
@@ -87,7 +97,7 @@ try {
                 COUNT(*) as expense_count
             FROM financial_transactions 
             WHERE transaction_type = 'Expense' 
-            AND status = 'Posted'
+            AND status IN ('Approved', 'Posted')
             AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         ");
         $stmt->execute();
@@ -99,7 +109,7 @@ try {
             SELECT COALESCE(SUM(total_amount), 0) AS total_revenue
             FROM financial_transactions
             WHERE transaction_type = 'Income'
-            AND status = 'Posted'
+            AND status IN ('Approved', 'Posted')
             AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 60 DAY)
             AND transaction_date < DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         ");
@@ -114,7 +124,7 @@ try {
             SELECT COALESCE(SUM(total_amount), 0) AS total_expenses
             FROM financial_transactions
             WHERE transaction_type = 'Expense'
-            AND status = 'Posted'
+            AND status IN ('Approved', 'Posted')
             AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 60 DAY)
             AND transaction_date < DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         ");
