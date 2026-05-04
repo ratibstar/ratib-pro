@@ -117,8 +117,14 @@ class ProfessionalAccounting {
         // Disabled cleanup to prevent modals from being removed
         // this.cleanupStrayOverlays();
         
-        // Initialize default currency from system settings
-        this.initDefaultCurrency();
+        // Initialize default currency from system settings and only then render UI,
+        // so dashboard/cards don't briefly show stale localStorage currency.
+        Promise.resolve(this.initDefaultCurrency())
+            .catch(() => {})
+            .finally(() => {
+                this.loadDashboard();
+                this.loadFinancialOverview();
+            });
         
         // Listen for storage changes (when currency is updated in another tab/window)
         window.addEventListener('storage', (e) => {
@@ -189,8 +195,6 @@ class ProfessionalAccounting {
         });
         this.setupEventListeners();
         this.setupRecentTransactionsPaginationControls();
-        this.loadDashboard();
-        this.loadFinancialOverview();
         this.initializeDates();
         
         // Auto-generate alerts on page load (once per day)

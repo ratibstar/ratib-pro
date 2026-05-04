@@ -226,8 +226,28 @@
 
     P.getDefaultCurrencySync = function() {
         const storedCurrency = localStorage.getItem('accounting_default_currency');
-        if (storedCurrency && /^[A-Z]{3}$/.test(String(storedCurrency).trim().toUpperCase())) {
-            return String(storedCurrency).trim().toUpperCase();
+        const normalizedStored = storedCurrency ? String(storedCurrency).trim().toUpperCase() : '';
+        const activeListRaw = localStorage.getItem('accounting_active_currencies');
+        if (activeListRaw) {
+            try {
+                const activeList = JSON.parse(activeListRaw);
+                if (Array.isArray(activeList)) {
+                    const normalizedActive = activeList
+                        .map((c) => String(c || '').trim().toUpperCase())
+                        .filter((c) => /^[A-Z]{3}$/.test(c));
+                    if (normalizedActive.length > 0) {
+                        if (normalizedStored && normalizedActive.includes(normalizedStored)) {
+                            return normalizedStored;
+                        }
+                        return normalizedActive[0];
+                    }
+                }
+            } catch (e) {
+                // Ignore malformed cache and fallback to stored/default.
+            }
+        }
+        if (normalizedStored && /^[A-Z]{3}$/.test(normalizedStored)) {
+            return normalizedStored;
         }
         return 'SAR';
     };
@@ -635,6 +655,11 @@
 
     P.getDefaultCurrency = async function(forceRefresh = false) {
         const activeCurrencies = await this.fetchActiveCurrencies(forceRefresh);
+        try {
+            localStorage.setItem('accounting_active_currencies', JSON.stringify(activeCurrencies || []));
+        } catch (e) {
+            // Ignore storage quota/write errors.
+        }
         const activeSet = new Set(activeCurrencies);
         const preferredFromSetting = await this.fetchAccountingDefaultCurrencySetting();
         const preferredFromStorage = this.getDefaultCurrencySync();
