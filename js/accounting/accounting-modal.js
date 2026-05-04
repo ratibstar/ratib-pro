@@ -49,6 +49,18 @@ class AccountingModal {
     }
 
     async resolveDefaultCurrency(forceRefresh = false) {
+        if (window.professionalAccounting && typeof window.professionalAccounting.getDefaultCurrency === 'function') {
+            try {
+                const code = await window.professionalAccounting.getDefaultCurrency(forceRefresh);
+                if (code && /^[A-Z]{3}$/.test(String(code).trim())) {
+                    const normalized = String(code).trim().toUpperCase();
+                    this.setStoredDefaultCurrency(normalized);
+                    return normalized;
+                }
+            } catch (e) {
+                // Fall through to legacy resolution.
+            }
+        }
         const stored = this.getStoredDefaultCurrency();
         if (!window.currencyUtils || typeof window.currencyUtils.fetchCurrencies !== 'function') {
             return stored;

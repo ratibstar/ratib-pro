@@ -21,6 +21,54 @@ if (!hasPermission('view_chart_accounts')) {
 // Bust browser/CDN caches after deploy: changes whenever this file is saved on the server.
 $accountingAssetDeploy = (int) @filemtime(__DIR__ . '/accounting.php');
 
+// Tenant DB default for accounting UI (fixes stale localStorage e.g. BDT from another agency/session).
+$ratibAccountingBootstrapCurrency = 'SAR';
+if (isset($conn) && $conn instanceof mysqli) {
+    $fromSettings = null;
+    $res = @$conn->query("SELECT setting_value FROM accounting_settings WHERE setting_key = 'default_currency' LIMIT 1");
+    if ($res && ($row = $res->fetch_assoc())) {
+        $v = strtoupper(trim((string) ($row['setting_value'] ?? '')));
+        if (preg_match('/^[A-Z]{3}$/', $v)) {
+            $fromSettings = $v;
+        }
+    }
+    if ($res instanceof mysqli_result) {
+        $res->free();
+    }
+    if ($fromSettings !== null) {
+        $ratibAccountingBootstrapCurrency = $fromSettings;
+    }
+    $tbl = @$conn->query("SHOW TABLES LIKE 'currencies'");
+    $hasCurrencies = ($tbl && $tbl->num_rows > 0);
+    if ($tbl instanceof mysqli_result) {
+        $tbl->free();
+    }
+    if ($hasCurrencies) {
+        $codeEsc = $conn->real_escape_string($ratibAccountingBootstrapCurrency);
+        $inActive = false;
+        $r2 = @$conn->query("SELECT 1 AS ok FROM currencies WHERE (is_active = 1 OR is_active = '1') AND UPPER(TRIM(code)) = '{$codeEsc}' LIMIT 1");
+        if ($r2 && $r2->num_rows > 0) {
+            $inActive = true;
+        }
+        if ($r2 instanceof mysqli_result) {
+            $r2->free();
+        }
+        if (!$inActive) {
+            $r3 = @$conn->query("SELECT UPPER(TRIM(code)) AS c FROM currencies WHERE (is_active = 1 OR is_active = '1') ORDER BY display_order ASC, code ASC LIMIT 1");
+            if ($r3 && ($row3 = $r3->fetch_assoc())) {
+                $v3 = strtoupper(trim((string) ($row3['c'] ?? '')));
+                if (preg_match('/^[A-Z]{3}$/', $v3)) {
+                    $ratibAccountingBootstrapCurrency = $v3;
+                }
+            }
+            if ($r3 instanceof mysqli_result) {
+                $r3->free();
+            }
+        }
+    }
+}
+$ratibAccountingBootstrapCurrencyJson = json_encode($ratibAccountingBootstrapCurrency, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+
 $pageTitle = "Professional Accounting System";
 $pageCss = [
     asset('css/accounting/professional.css') . "?v=" . time()
@@ -1065,6 +1113,19 @@ include '../includes/header.php';
     </div>
 </div>
 
+<script>
+(function () {
+    var c = <?php echo $ratibAccountingBootstrapCurrencyJson; ?>;
+    if (typeof c !== 'string' || !/^[A-Z]{3}$/.test(c)) {
+        c = 'SAR';
+    }
+    window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__ = c;
+    try {
+        localStorage.setItem('accounting_default_currency', c);
+        localStorage.removeItem('accounting_active_currencies');
+    } catch (e) {}
+})();
+</script>
 <script src="<?php echo htmlspecialchars(asset('js/utils/currencies-utils.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Core: Class definition and constructor -->
 <script src="<?php echo htmlspecialchars(asset('js/accounting/professional.core.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>

@@ -884,6 +884,9 @@
                         const selectedCode = String(selectedCurrencyInput.value || '').trim().toUpperCase();
                         if (/^[A-Z]{3}$/.test(selectedCode)) {
                             localStorage.setItem('accounting_default_currency', selectedCode);
+                            try {
+                                window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__ = selectedCode;
+                            } catch (e) {}
                         }
                     }
                     if (typeof this.initDefaultCurrency === 'function') {
