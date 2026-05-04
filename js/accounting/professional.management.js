@@ -292,6 +292,12 @@
                     this.loadEntryApproval(statusFilter ? statusFilter.value : 'all');
                 });
             }
+            const syncVouchersBtn = document.getElementById('entryApprovalSyncPostedVouchers');
+            if (syncVouchersBtn) {
+                syncVouchersBtn.onclick = () => {
+                    void this.syncPostedVouchersToEntryApproval();
+                };
+            }
             // Pagination handlers
             const prevBtn = document.getElementById('entryApprovalPrevBtn');
             const nextBtn = document.getElementById('entryApprovalNextBtn');
@@ -616,6 +622,19 @@
             
             // Re-attach event handlers
             this.setupEntryApprovalEventHandlers();
+
+            const all = this.entryApprovalData || [];
+            const pend = all.filter((e) => (e.status || '').toLowerCase() === 'pending').length;
+            const appr = all.filter((e) => (e.status || '').toLowerCase() === 'approved').length;
+            const rej = all.filter((e) => (e.status || '').toLowerCase() === 'rejected').length;
+            const totEl = document.getElementById('entryApprovalTotalCount');
+            const pEl = document.getElementById('entryApprovalPendingCount');
+            const aEl = document.getElementById('entryApprovalApprovedCount');
+            const rEl = document.getElementById('entryApprovalRejectedCount');
+            if (totEl) totEl.textContent = String(all.length);
+            if (pEl) pEl.textContent = String(pend);
+            if (aEl) aEl.textContent = String(appr);
+            if (rEl) rEl.textContent = String(rej);
         },
 
         updateEntryApprovalPagination() {
@@ -4500,6 +4519,58 @@
                 var errMsg = (error && typeof error.message === 'string') ? error.message : 'Unknown error';
                 tbodyEl.innerHTML = '<tr><td colspan="8" class="text-center"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading entries</p><p class="text-muted">' + this.escapeHtml(errMsg) + '</p></div></td></tr>';
                 this.showToast('Failed to load entries: ' + errMsg, 'error');
+            }
+        },
+
+        async syncPostedVouchersToEntryApproval() {
+            const confirmed = await this.showConfirmDialog(
+                'Sync posted vouchers',
+                'This adds Entry Approval rows for payment/receipt vouchers that were posted earlier but never mirrored to Entry Approval. You can run it again safely; existing rows are skipped.',
+                'Run sync',
+                'Cancel',
+                'info'
+            );
+            if (!confirmed) return;
+            const btn = document.getElementById('entryApprovalSyncPostedVouchers');
+            const prevHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> …';
+            }
+            try {
+                const response = await fetch(`${this.apiBase}/migrate-voucher-entry-approval.php`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { Accept: 'application/json' }
+                });
+                const raw = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(raw);
+                } catch (e) {
+                    throw new Error(raw && raw.length < 300 ? raw : 'Invalid JSON from server');
+                }
+                if (!response.ok || data.success === false) {
+                    const msg = (data && data.message) || ('HTTP ' + response.status);
+                    throw new Error(msg);
+                }
+                const n = typeof data.total_inserted === 'number' ? data.total_inserted : 0;
+                this.showToast(
+                    n > 0
+                        ? `Synced ${n} voucher row(s) into Entry Approval.`
+                        : 'Nothing to sync (all posted vouchers already have rows).',
+                    n > 0 ? 'success' : 'info'
+                );
+                const statusFilter = document.getElementById('entryApprovalStatusFilter');
+                await this.loadEntryApproval(statusFilter ? statusFilter.value : 'all');
+            } catch (err) {
+                const m = err && err.message ? err.message : 'Sync failed';
+                this.showToast(m, 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = prevHtml;
+                }
             }
         },
 

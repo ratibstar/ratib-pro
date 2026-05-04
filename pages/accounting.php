@@ -1063,7 +1063,7 @@ include '../includes/header.php';
 <!-- Dashboard: Dashboard methods -->
 <script src="<?php echo asset('js/accounting/professional.dashboard.js'); ?>"></script>
 <!-- Management: Management methods (cost centers, bank guarantees, vouchers, etc.) - Must load before modals.tables -->
-<script src="<?php echo asset('js/accounting/professional.management.js'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.management.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.management.js'), ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Part 5: Payment/Receipt voucher modals, getPaymentVoucherModalContent, savePaymentVoucher - Must load before modals.tables -->
 <script src="<?php echo htmlspecialchars(asset('js/accounting/professional.part5.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.part5.js'), ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Modals: Modal-related methods -->

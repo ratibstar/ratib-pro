@@ -525,18 +525,26 @@ try {
             $params = [];
             $types = '';
             
-            // Show entries based on status filter
+            // Status filter: explicit value filters; "all" / empty = every status (pending, approved, rejected)
             if ($status && $status !== 'all') {
                 $query .= " AND ea.status = ?";
                 $params[] = $status;
                 $types .= 's';
-            } else if (!$status || $status === 'all') {
-                // By default, exclude approved entries from Entry Approval table
-                // Approved entries are already processed and don't need approval workflow
-                $query .= " AND ea.status != 'approved'";
             }
-            // If status='all', show all non-approved entries (pending and rejected only)
-            
+
+            $dateFrom = isset($_GET['date_from']) ? trim((string)$_GET['date_from']) : '';
+            $dateTo = isset($_GET['date_to']) ? trim((string)$_GET['date_to']) : '';
+            if ($dateFrom !== '') {
+                $query .= " AND ea.entry_date >= ?";
+                $params[] = $dateFrom;
+                $types .= 's';
+            }
+            if ($dateTo !== '') {
+                $query .= " AND ea.entry_date <= ?";
+                $params[] = $dateTo;
+                $types .= 's';
+            }
+
             $query .= " ORDER BY ea.entry_date DESC, ea.created_at DESC, ea.entry_number";
             
             // Check if entity linking columns exist

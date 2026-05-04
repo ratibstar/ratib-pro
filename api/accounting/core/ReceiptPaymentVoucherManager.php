@@ -918,6 +918,9 @@ class ReceiptPaymentVoucherManager {
             if (!$ledgerResult['success']) {
                 throw new Exception('Failed to post to General Ledger: ' . $ledgerResult['message']);
             }
+
+            // Unify with Entry Approval / audit trail (already posted — record as approved, linked to JE)
+            $this->syncEntryApprovalForPostedVoucher($voucherData, $journalEntryId);
             
             // Log audit trail
             $this->logAuditTrail('POST', $voucherId, $voucherData, ['journal_entry_id' => $journalEntryId], "Voucher posted: {$voucherData['voucher_number']}");
@@ -1708,6 +1711,101 @@ class ReceiptPaymentVoucherManager {
         }
         
         throw new Exception('postJournalEntryToLedger function not available');
+    }
+
+    /**
+     * Insert entry_approval row for a voucher that was just posted (journal + GL already done).
+     * Status is "approved" and approver is the posting user — matches reality; inbox uses status=pending.
+     */
+    private function syncEntryApprovalForPostedVoucher(array $voucherData, int $journalEntryId): void {
+        try {
+            $chk = $this->pdo->query("SHOW TABLES LIKE 'entry_approval'");
+            if (!$chk || $chk->rowCount() === 0) {
+                return;
+            }
+
+            $dup = $this->pdo->prepare('SELECT id FROM entry_approval WHERE journal_entry_id = ? LIMIT 1');
+            $dup->execute([$journalEntryId]);
+            if ($dup->fetchColumn()) {
+                return;
+            }
+
+            $jeStmt = $this->pdo->prepare('SELECT entry_number, description, total_debit, total_credit, currency FROM journal_entries WHERE id = ? LIMIT 1');
+            $jeStmt->execute([$journalEntryId]);
+            $je = $jeStmt->fetch(PDO::FETCH_ASSOC);
+            if (!$je) {
+                return;
+            }
+
+            $vnum = trim((string)($voucherData['voucher_number'] ?? ''));
+            $entryNumber = $vnum !== '' ? ('APP-' . $vnum) : ('APP-' . preg_replace('/^APP-/i', '', (string)($je['entry_number'] ?? 'JE')));
+            $description = (string)($je['description'] ?? '');
+            $amt = max(
+                (float)($je['total_debit'] ?? 0),
+                (float)($je['total_credit'] ?? 0),
+                (float)($voucherData['amount'] ?? 0)
+            );
+            $cur = strtoupper(trim((string)($voucherData['currency'] ?? $je['currency'] ?? 'SAR')));
+            if (strpos($cur, ' - ') !== false) {
+                $cur = trim(explode(' - ', $cur)[0]);
+            }
+            $entryDate = $voucherData['voucher_date'] ?? date('Y-m-d');
+            $uid = (int)$this->userId;
+
+            $colStmt = $this->pdo->query('SHOW COLUMNS FROM entry_approval');
+            $have = [];
+            if ($colStmt) {
+                while ($c = $colStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $have[$c['Field']] = true;
+                }
+            }
+
+            $fields = ['entry_number', 'entry_date', 'description', 'amount', 'currency', 'status', 'journal_entry_id', 'created_by'];
+            $place = ['?', '?', '?', '?', '?', "'approved'", '?', '?'];
+            $bind = [$entryNumber, $entryDate, $description, $amt, $cur, $journalEntryId, $uid];
+
+            if (!empty($have['approved_by'])) {
+                $fields[] = 'approved_by';
+                $place[] = '?';
+                $bind[] = $uid;
+            }
+            if (!empty($have['approved_at'])) {
+                $fields[] = 'approved_at';
+                $place[] = 'NOW()';
+            }
+            if (!empty($have['cost_center_id']) && !empty($voucherData['cost_center_id'])) {
+                $fields[] = 'cost_center_id';
+                $place[] = '?';
+                $bind[] = (int)$voucherData['cost_center_id'];
+            }
+            if (!empty($have['debit_amount'])) {
+                $fields[] = 'debit_amount';
+                $place[] = '?';
+                $bind[] = (float)($je['total_debit'] ?? 0);
+            }
+            if (!empty($have['credit_amount'])) {
+                $fields[] = 'credit_amount';
+                $place[] = '?';
+                $bind[] = (float)($je['total_credit'] ?? 0);
+            }
+            if (!empty($have['entity_type'])) {
+                $fields[] = 'entity_type';
+                $place[] = '?';
+                $bind[] = $this->voucherType === 'receipt' ? 'receipt_voucher' : 'payment_voucher';
+            }
+            if (!empty($have['entity_id']) && !empty($voucherData['id'])) {
+                $fields[] = 'entity_id';
+                $place[] = '?';
+                $bind[] = (int)$voucherData['id'];
+            }
+
+            $sql = 'INSERT INTO entry_approval (`' . implode('`,`', $fields) . '`) VALUES (' . implode(',', $place) . ')';
+            $ins = $this->pdo->prepare($sql);
+            $ins->execute($bind);
+        } catch (Exception $e) {
+            error_log('ReceiptPaymentVoucherManager::syncEntryApprovalForPostedVoucher: ' . $e->getMessage());
+            // Non-fatal: voucher post + GL already committed path should not fail solely on approval mirror
+        }
     }
     
     /**

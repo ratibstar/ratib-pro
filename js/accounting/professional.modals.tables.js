@@ -1736,8 +1736,9 @@
                                 <div class="filter-group filter-group-compact">
                                     <label>Status:</label>
                                     <select id="entryApprovalStatusFilter" class="filter-select filter-select-compact">
-                                        <option value="all" selected>All Entries</option>
+                                        <option value="all" selected>All statuses</option>
                                         <option value="pending">Pending</option>
+                                        <option value="approved">Approved</option>
                                         <option value="rejected">Rejected</option>
                                     </select>
                                 </div>
@@ -1754,6 +1755,11 @@
                                 <div class="filter-group filter-group-compact">
                                     <button class="btn btn-primary btn-sm" id="entryApprovalApplyFilters">
                                         <i class="fas fa-filter"></i> Apply
+                                    </button>
+                                </div>
+                                <div class="filter-group filter-group-compact" title="Adds missing Entry Approval rows for vouchers already posted before sync existed. Safe to run more than once.">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="entryApprovalSyncPostedVouchers">
+                                        <i class="fas fa-link"></i> Sync posted vouchers
                                     </button>
                                 </div>
                             </div>
