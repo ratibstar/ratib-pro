@@ -239,6 +239,11 @@
                         if (normalizedStored && normalizedActive.includes(normalizedStored)) {
                             return normalizedStored;
                         }
+                        // Do not replace a valid stored default (e.g. SAR from PHP bootstrap / accounting_settings)
+                        // with activeCodes[0] when the API list omits that code or uses a different order (BDT flash).
+                        if (normalizedStored && /^[A-Z]{3}$/.test(normalizedStored)) {
+                            return normalizedStored;
+                        }
                         return normalizedActive[0];
                     }
                     // Empty active list was persisted (e.g. API returned none): avoid trusting stale storage.

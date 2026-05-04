@@ -68,6 +68,7 @@ if (isset($conn) && $conn instanceof mysqli) {
     }
 }
 $ratibAccountingBootstrapCurrencyJson = json_encode($ratibAccountingBootstrapCurrency, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+$ratibAccountingBootstrapCurrencyEsc = htmlspecialchars($ratibAccountingBootstrapCurrency, ENT_QUOTES, 'UTF-8');
 
 $pageTitle = "Professional Accounting System";
 $pageCss = [
@@ -119,7 +120,7 @@ include '../includes/header.php';
                             <i class="fas fa-arrow-up"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="totalRevenue">SAR 0.00</h3>
+                            <h3 id="totalRevenue"><?php echo $ratibAccountingBootstrapCurrencyEsc; ?> 0.00</h3>
                             <p>Total Revenue</p>
                             <span class="card-change positive" id="revenueChange">+0%</span>
                         </div>
@@ -129,7 +130,7 @@ include '../includes/header.php';
                             <i class="fas fa-arrow-down"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="totalExpense">SAR 0.00</h3>
+                            <h3 id="totalExpense"><?php echo $ratibAccountingBootstrapCurrencyEsc; ?> 0.00</h3>
                             <p>Total Expenses</p>
                             <span class="card-change negative" id="expenseChange">+0%</span>
                         </div>
@@ -139,7 +140,7 @@ include '../includes/header.php';
                             <i class="fas fa-chart-line"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="netProfit">SAR 0.00</h3>
+                            <h3 id="netProfit"><?php echo $ratibAccountingBootstrapCurrencyEsc; ?> 0.00</h3>
                             <p>Net Profit</p>
                             <span class="card-change" id="profitChange">+0%</span>
                         </div>
@@ -149,7 +150,7 @@ include '../includes/header.php';
                             <i class="fas fa-wallet"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="cashBalance">SAR 0.00</h3>
+                            <h3 id="cashBalance"><?php echo $ratibAccountingBootstrapCurrencyEsc; ?> 0.00</h3>
                             <p>Cash Balance</p>
                             <span class="card-change" id="balanceChange">+0%</span>
                         </div>
@@ -159,7 +160,7 @@ include '../includes/header.php';
                             <i class="fas fa-file-invoice-dollar"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="totalReceivables">SAR 0.00</h3>
+                            <h3 id="totalReceivables"><?php echo $ratibAccountingBootstrapCurrencyEsc; ?> 0.00</h3>
                             <p>Accounts Receivable</p>
                             <span class="card-badge" id="receivablesCount">0 invoices</span>
                         </div>
@@ -169,7 +170,7 @@ include '../includes/header.php';
                             <i class="fas fa-file-invoice"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="totalPayables">SAR 0.00</h3>
+                            <h3 id="totalPayables"><?php echo $ratibAccountingBootstrapCurrencyEsc; ?> 0.00</h3>
                             <p>Accounts Payable</p>
                             <span class="card-badge" id="payablesCount">0 bills</span>
                         </div>
