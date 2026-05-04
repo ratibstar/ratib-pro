@@ -38,22 +38,16 @@ if (isset($conn) && $conn instanceof mysqli) {
     if ($fromSettings !== null) {
         $ratibAccountingBootstrapCurrency = $fromSettings;
     }
-    $tbl = @$conn->query("SHOW TABLES LIKE 'currencies'");
-    $hasCurrencies = ($tbl && $tbl->num_rows > 0);
-    if ($tbl instanceof mysqli_result) {
-        $tbl->free();
-    }
-    if ($hasCurrencies) {
-        $codeEsc = $conn->real_escape_string($ratibAccountingBootstrapCurrency);
-        $inActive = false;
-        $r2 = @$conn->query("SELECT 1 AS ok FROM currencies WHERE (is_active = 1 OR is_active = '1') AND UPPER(TRIM(code)) = '{$codeEsc}' LIMIT 1");
-        if ($r2 && $r2->num_rows > 0) {
-            $inActive = true;
+    // When no explicit accounting_settings row: infer from first active currency (if any).
+    // IMPORTANT: If default_currency IS set (e.g. SAR), keep it even when that code is missing
+    // from the active `currencies` rows — otherwise the UI was forced to BDT (first active).
+    if ($fromSettings === null) {
+        $tbl = @$conn->query("SHOW TABLES LIKE 'currencies'");
+        $hasCurrencies = ($tbl && $tbl->num_rows > 0);
+        if ($tbl instanceof mysqli_result) {
+            $tbl->free();
         }
-        if ($r2 instanceof mysqli_result) {
-            $r2->free();
-        }
-        if (!$inActive) {
+        if ($hasCurrencies) {
             $r3 = @$conn->query("SELECT UPPER(TRIM(code)) AS c FROM currencies WHERE (is_active = 1 OR is_active = '1') ORDER BY display_order ASC, code ASC LIMIT 1");
             if ($r3 && ($row3 = $r3->fetch_assoc())) {
                 $v3 = strtoupper(trim((string) ($row3['c'] ?? '')));
