@@ -55,15 +55,30 @@ function currencies_api_bootstrap_env()
 }
 
 /**
- * @return mysqli|null
+ * @return array{conn: mysqli|null, owned: bool}
  */
-// EN: Establish mysqli connection for broad shared-host compatibility.
-// AR: إنشاء اتصال mysqli لتوافق أعلى مع بيئات الاستضافة المشتركة.
+// EN: Prefer tenant-aware app connection; fallback to env mysqli connection.
+// AR: تفضيل اتصال التطبيق الخاص بالوكالة/المستأجر ثم الرجوع لاتصال env عند الحاجة.
 function currencies_api_connect_mysqli()
 {
+    // 1) Try main app bootstrap first (can select agency-specific DB in multi-DB setups).
+    $cfg = __DIR__ . '/../../includes/config.php';
+    if (is_file($cfg)) {
+        try {
+            require_once $cfg;
+            if (isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli) {
+                $GLOBALS['conn']->set_charset('utf8mb4');
+                return array('conn' => $GLOBALS['conn'], 'owned' => false);
+            }
+        } catch (Throwable $e) {
+            error_log('currencies-api config bootstrap failed: ' . $e->getMessage());
+        }
+    }
+
+    // 2) Fallback to env constants.
     currencies_api_bootstrap_env();
     if (!defined('DB_HOST') || !defined('DB_USER') || !defined('DB_NAME')) {
-        return null;
+        return array('conn' => null, 'owned' => false);
     }
     $port = defined('DB_PORT') ? (int) DB_PORT : 3306;
     $pass = defined('DB_PASS') ? DB_PASS : '';
@@ -71,10 +86,10 @@ function currencies_api_connect_mysqli()
     $m = @new mysqli(DB_HOST, DB_USER, $pass, DB_NAME, $port);
     if ($m->connect_error) {
         error_log('currencies-api mysqli: ' . $m->connect_error);
-        return null;
+        return array('conn' => null, 'owned' => false);
     }
     $m->set_charset('utf8mb4');
-    return $m;
+    return array('conn' => $m, 'owned' => true);
 }
 
 /**
@@ -122,7 +137,9 @@ try {
         currencies_api_send_json(array('success' => false, 'message' => 'Unauthorized'), 401);
     }
 
-    $conn = currencies_api_connect_mysqli();
+    $connMeta = currencies_api_connect_mysqli();
+    $conn = isset($connMeta['conn']) ? $connMeta['conn'] : null;
+    $ownedConn = !empty($connMeta['owned']);
     if (!$conn instanceof mysqli) {
         currencies_api_send_json(array('success' => false, 'message' => 'Database connection failed'), 500);
     }
@@ -250,7 +267,9 @@ try {
         }
     }
 
-    $conn->close();
+    if ($ownedConn) {
+        $conn->close();
+    }
 
     currencies_api_send_json(array('success' => true, 'currencies' => $currencies));
 } catch (Exception $e) {
