@@ -148,6 +148,9 @@ function patchApiCredentials() {
     if (!orig) return;
     ProfessionalAccounting.prototype.refreshDashboardCards = async function() {
         try {
+            if (typeof this.initDefaultCurrency === 'function') {
+                await this.initDefaultCurrency();
+            }
             var response = await fetch(this.apiBase + '/unified-calculations.php?type=all', { credentials: 'include' });
             var data = await response.json();
             if (data.success && data.dashboard) {

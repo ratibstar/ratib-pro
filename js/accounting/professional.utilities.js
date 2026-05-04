@@ -608,7 +608,14 @@
         const activeCodes = [];
 
         try {
-            const appApiBase = ((window.APP_CONFIG && window.APP_CONFIG.apiBase) || window.API_BASE || '').replace(/\/$/, '');
+            let appApiBase = ((window.APP_CONFIG && window.APP_CONFIG.apiBase) || window.API_BASE || '').replace(/\/$/, '');
+            if (!appApiBase && typeof this.apiBase === 'string') {
+                const acct = this.apiBase.replace(/\/$/, '');
+                const m = acct.match(/^(.*\/api)\/accounting$/i);
+                if (m) {
+                    appApiBase = m[1];
+                }
+            }
             const url = (appApiBase || '') + '/settings/currencies-api.php?_t=' + Date.now();
             const res = await fetch(url, {
                 credentials: 'include',

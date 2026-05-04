@@ -246,7 +246,11 @@ try {
         $tryQueries[] = 'SELECT `currency_code` AS `code`, `currency_name` AS `name`, ' . $selSym . ' FROM `currencies`' . $w . ' ORDER BY `currency_code` ASC';
     }
 
-    $tryQueries[] = 'SELECT `code`, `name`, `symbol` FROM `currencies` ORDER BY `code` ASC';
+    // Never fall back to "all currencies" when caller asked for active only — that mislabels dashboards
+    // (inactive rows still in the table) and breaks default-currency resolution on the frontend.
+    if (!$activeOnly) {
+        $tryQueries[] = 'SELECT `code`, `name`, `symbol` FROM `currencies` ORDER BY `code` ASC';
+    }
 
     $currencies = array();
     foreach ($tryQueries as $sql) {

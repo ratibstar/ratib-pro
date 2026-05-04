@@ -1363,6 +1363,12 @@
                 return;
             }
             this._loadingFinancialOverview = true;
+
+            if (typeof this.initDefaultCurrency === 'function') {
+                try {
+                    await this.initDefaultCurrency();
+                } catch (e) {}
+            }
             
             try {
                 const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`);
@@ -1574,6 +1580,9 @@
 
         async refreshDashboardCards() {
             try {
+                if (typeof this.initDefaultCurrency === 'function') {
+                    await this.initDefaultCurrency();
+                }
                 // Refresh overview cards
                 const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`);
                 const data = await response.json();
