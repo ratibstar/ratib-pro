@@ -10,6 +10,40 @@
     if (typeof ProfessionalAccounting === 'undefined') return;
     const P = ProfessionalAccounting.prototype;
 
+    /** Remove all custom confirm layers + stray Bootstrap backdrops (footer loads Bootstrap globally). */
+    function ratibAccountingConfirmSweep() {
+        document.querySelectorAll('.accounting-confirm-overlay').forEach((el) => {
+            try {
+                el.style.cssText = 'display:none!important;pointer-events:none!important;opacity:0!important;visibility:hidden!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important';
+                el.remove();
+            } catch (e) {}
+        });
+        if (!document.querySelector('.modal.show')) {
+            document.querySelectorAll('body > .modal-backdrop').forEach((el) => {
+                try { el.remove(); } catch (e2) {}
+            });
+            document.body.classList.remove('modal-open');
+        }
+    }
+
+    function ratibRestoreAccountingModalFocus() {
+        const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
+        if (!parentModal) return;
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                const target = parentModal.querySelector('.accounting-modal-close, [data-action="add-cost-center"], button.btn-primary, [data-action="close-modal"]');
+                try {
+                    if (target && typeof target.focus === 'function') {
+                        target.focus({ preventScroll: true });
+                    } else if (typeof parentModal.focus === 'function') {
+                        if (!parentModal.hasAttribute('tabindex')) parentModal.setAttribute('tabindex', '-1');
+                        parentModal.focus({ preventScroll: true });
+                    }
+                } catch (e) {}
+            });
+        });
+    }
+
     P.formatDate = function(dateString) {
         if (!dateString) return '-';
         try {
@@ -324,7 +358,7 @@
 
     P.showConfirmDialog = function(title, message, confirmText = 'Confirm', cancelText = 'Cancel', type = 'warning') {
         return new Promise((resolve) => {
-            document.querySelectorAll('.accounting-confirm-overlay').forEach((el) => el.remove());
+            ratibAccountingConfirmSweep();
             document.body.classList.remove('body-no-scroll');
 
             const overlay = document.createElement('div');
@@ -354,15 +388,20 @@
                 if (settled) return;
                 settled = true;
                 tearDown();
-                overlay.classList.remove('confirm-overlay-visible', 'confirm-overlay-active');
-                dialog.classList.remove('confirm-dialog-visible', 'confirm-dialog-active');
-                setTimeout(() => {
-                    if (overlay.parentElement) overlay.remove();
-                    document.body.classList.remove('body-no-scroll');
-                    const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
-                    if (parentModal) document.body.classList.add('body-no-scroll');
-                    resolve(value);
-                }, 200);
+                try {
+                    overlay.classList.remove('confirm-overlay-visible', 'confirm-overlay-active');
+                    dialog.classList.remove('confirm-dialog-visible', 'confirm-dialog-active');
+                } catch (e) {}
+                try {
+                    overlay.style.cssText = 'display:none!important;pointer-events:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important';
+                    dialog.style.display = 'none';
+                } catch (e2) {}
+                ratibAccountingConfirmSweep();
+                document.body.classList.remove('body-no-scroll');
+                const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
+                if (parentModal) document.body.classList.add('body-no-scroll');
+                ratibRestoreAccountingModalFocus();
+                resolve(value);
             };
             const handleConfirm = () => finish(true);
             const handleCancel = () => finish(false);
@@ -378,7 +417,7 @@
 
     P.showPrompt = function(title, message, defaultValue = '', placeholder = '', inputType = 'text') {
         return new Promise((resolve) => {
-            document.querySelectorAll('.accounting-confirm-overlay').forEach((el) => el.remove());
+            ratibAccountingConfirmSweep();
             document.body.classList.remove('body-no-scroll');
 
             const overlay = document.createElement('div');
@@ -409,15 +448,20 @@
                 if (settled) return;
                 settled = true;
                 tearDown();
-                overlay.classList.remove('confirm-overlay-visible', 'confirm-overlay-active');
-                dialog.classList.remove('confirm-dialog-visible', 'confirm-dialog-active');
-                setTimeout(() => {
-                    if (overlay.parentElement) overlay.remove();
-                    document.body.classList.remove('body-no-scroll');
-                    const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
-                    if (parentModal) document.body.classList.add('body-no-scroll');
-                    resolve(value);
-                }, 200);
+                try {
+                    overlay.classList.remove('confirm-overlay-visible', 'confirm-overlay-active');
+                    dialog.classList.remove('confirm-dialog-visible', 'confirm-dialog-active');
+                } catch (e) {}
+                try {
+                    overlay.style.cssText = 'display:none!important;pointer-events:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important';
+                    dialog.style.display = 'none';
+                } catch (e2) {}
+                ratibAccountingConfirmSweep();
+                document.body.classList.remove('body-no-scroll');
+                const parentModal = document.querySelector('.accounting-modal[data-modal-visible="true"], .accounting-modal.accounting-modal-visible');
+                if (parentModal) document.body.classList.add('body-no-scroll');
+                ratibRestoreAccountingModalFocus();
+                resolve(value);
             };
             const handleConfirm = () => {
                 const inputEl = dialog.querySelector('#promptInput');
@@ -548,4 +592,7 @@
             donutBorderColor: root.getPropertyValue('--chart-donut-border-color').trim()
         };
     };
+
+    window.ratibAccountingConfirmSweepGlobal = ratibAccountingConfirmSweep;
+    window.ratibRestoreAccountingModalFocusGlobal = ratibRestoreAccountingModalFocus;
 })();
