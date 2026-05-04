@@ -3347,7 +3347,7 @@
                                 </div>
                                 <div class="accounting-modal-form-group">
                                     <label>Amount</label>
-                                    <p class="voucher-view-value">${this.formatCurrency(v.amount || 0, v.currency || this.getDefaultCurrencySync?.() || 'SAR')}</p>
+                                    <p class="voucher-view-value">${this.formatCurrency(v.amount || 0, v.currency || this.getDefaultCurrencySync())}</p>
                                 </div>
                             </div>
                             <div class="accounting-modal-form-row">
@@ -4280,7 +4280,7 @@
             if (form.querySelector('[name="amount"]')) form.querySelector('[name="amount"]').value = receipt.amount || '';
             if (form.querySelector('[name="cost_center_id"]')) form.querySelector('[name="cost_center_id"]').value = receipt.cost_center_id || '';
             if (form.querySelector('[name="payment_method"]')) form.querySelector('[name="payment_method"]').value = receipt.payment_method || 'Cash';
-            if (form.querySelector('[name="currency"]')) form.querySelector('[name="currency"]').value = receipt.currency || 'SAR';
+            if (form.querySelector('[name="currency"]')) form.querySelector('[name="currency"]').value = receipt.currency || this.getDefaultCurrencySync();
             if (form.querySelector('[name="notes"]')) form.querySelector('[name="notes"]').value = receipt.notes || receipt.description || '';
             const vatCheckbox = form.querySelector('#receiptVoucherVatCheckbox');
             if (vatCheckbox) vatCheckbox.checked = receipt.vat_report === '1' || receipt.vat_report === true || receipt.vat_report === 1;

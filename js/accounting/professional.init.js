@@ -553,7 +553,7 @@ function initProfessionalAccounting() {
                     reference_number: referenceNumber,
                     bank_name: bankName,
                     amount: amount,
-                    currency: currency || 'SAR',
+                    currency: currency || this.getDefaultCurrencySync(),
                     issue_date: issueDate,
                     expiry_date: expiryDate,
                     status: (status && ['active','expired','cancelled'].indexOf(status) >= 0) ? status : 'active',
@@ -936,7 +936,7 @@ if (document.readyState !== 'loading') initProfessionalAccounting();
         if (window.currencyUtils && typeof window.currencyUtils.getCurrencyOptionsHTML === 'function') {
             return await window.currencyUtils.getCurrencyOptionsHTML(selectedCurrency || this.getDefaultCurrencySync());
         }
-        var c = selectedCurrency || this.getDefaultCurrencySync() || 'SAR';
+        var c = selectedCurrency || this.getDefaultCurrencySync();
         return '<option value="' + c + '">' + c + '</option>';
     };
 

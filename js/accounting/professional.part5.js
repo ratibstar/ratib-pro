@@ -756,7 +756,7 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
                     c = String(this.getDefaultCurrencySync() || '').trim();
                     if (c.includes(' - ')) c = c.split(' - ')[0].trim();
                 }
-                return (c || 'SAR').toUpperCase();
+                return (c || this.getDefaultCurrencySync()).toUpperCase();
             })(),
             debit_lines: debitLines, // Include for future API support
             credit_lines: creditLines, // Include for future API support
@@ -3813,7 +3813,7 @@ ProfessionalAccounting.prototype.loadSupportPayments = async function() {
                         <td>${v.voucher_date || v.payment_date || 'N/A'}</td>
                         <td><span class="badge badge-danger">Payment</span></td>
                         <td>${this.escapeHtml(v.reference_number || '-')}</td>
-                        <td>${this.formatCurrency(parseFloat(v.amount) || 0, v.currency || 'SAR')}</td>
+                        <td>${this.formatCurrency(parseFloat(v.amount) || 0, v.currency || this.getDefaultCurrencySync())}</td>
                         <td>
                             <span class="badge badge-${(v.status || 'Draft') === 'Draft' ? 'secondary' : (v.status === 'Cleared' || v.status === 'Deposited' || v.status === 'Posted') ? 'success' : 'warning'}">
                                 ${this.escapeHtml(v.status || 'Draft')}
@@ -4420,7 +4420,7 @@ ProfessionalAccounting.prototype.applyPaymentVoucherDataToForm = function(vouche
         if (amtInput) { amtInput.setAttribute('dir', 'ltr'); amtInput.setAttribute('lang', 'en'); }
         set('[name="payment_method"]', str(voucher.payment_method || 'Cash'));
         set('[name="cost_center_id"]', num(voucher.cost_center_id));
-        set('[name="currency"]', str(voucher.currency || 'SAR'));
+        set('[name="currency"]', str(voucher.currency || this.getDefaultCurrencySync()));
         set('[name="status"]', str(voucher.status || 'Draft'));
         set('[name="notes"]', str(voucher.notes || voucher.description || ''));
         const cashEl = form.querySelector('#paymentVoucherCashAccount');
@@ -5099,7 +5099,7 @@ ProfessionalAccounting.prototype.applyReceiptDataToEditForm = function(receipt, 
         if (form.querySelector('[name="amount"]')) form.querySelector('[name="amount"]').value = receipt.amount || '';
         if (form.querySelector('[name="cost_center_id"]')) form.querySelector('[name="cost_center_id"]').value = receipt.cost_center_id || '';
         if (form.querySelector('[name="payment_method"]')) form.querySelector('[name="payment_method"]').value = receipt.payment_method || 'Cash';
-        if (form.querySelector('[name="currency"]')) form.querySelector('[name="currency"]').value = receipt.currency || 'SAR';
+        if (form.querySelector('[name="currency"]')) form.querySelector('[name="currency"]').value = receipt.currency || this.getDefaultCurrencySync();
         if (form.querySelector('[name="notes"]')) form.querySelector('[name="notes"]').value = receipt.notes || receipt.description || '';
         const vatCheckbox = form.querySelector('#receiptVoucherVatCheckbox');
         if (vatCheckbox) vatCheckbox.checked = receipt.vat_report === '1' || receipt.vat_report === true || receipt.vat_report === 1;
@@ -5191,7 +5191,7 @@ ProfessionalAccounting.prototype.loadReceiptVoucherData = async function(receipt
                     form.querySelector('[name="payment_method"]').value = receipt.payment_method || 'Cash';
                 }
                 if (form.querySelector('[name="currency"]')) {
-                    form.querySelector('[name="currency"]').value = receipt.currency || 'SAR';
+                    form.querySelector('[name="currency"]').value = receipt.currency || this.getDefaultCurrencySync();
                 }
                 if (form.querySelector('[name="notes"]')) {
                     form.querySelector('[name="notes"]').value = receipt.notes || receipt.description || '';

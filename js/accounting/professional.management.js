@@ -3615,7 +3615,7 @@
                             const description = this.escapeHtml(receipt.description || receipt.notes || '');
                             const customerName = this.escapeHtml(receipt.customer_name || 'N/A');
                             const bankAccountName = this.escapeHtml(receipt.bank_account_name || 'Cash');
-                            const amount = this.formatCurrency(parseFloat(receipt.amount || 0), receipt.currency || 'SAR');
+                            const amount = this.formatCurrency(parseFloat(receipt.amount || 0), receipt.currency || this.getDefaultCurrencySync());
                             const costCenter = this.escapeHtml(receipt.cost_center_name || '');
                             return `
                                 <tr>
@@ -4339,7 +4339,7 @@
                                 reference: v.voucher_number || v.reference_number || 'N/A',
                                 referenceNumber: v.reference_number || '',
                                 amount: v.amount,
-                                currency: v.currency || 'SAR',
+                                currency: v.currency || this.getDefaultCurrencySync(),
                                 status: v.status,
                                 voucherType: 'payment'
                             });
@@ -4362,7 +4362,7 @@
                                 reference: v.voucher_number || v.reference_number || 'N/A',
                                 referenceNumber: v.reference_number || '',
                                 amount: v.amount,
-                                currency: v.currency || 'SAR',
+                                currency: v.currency || this.getDefaultCurrencySync(),
                                 status: v.status,
                                 voucherType: 'payment'
                             });
@@ -4377,7 +4377,7 @@
                                 reference: v.voucher_number || v.reference_number || 'N/A',
                                 referenceNumber: v.reference_number || '',
                                 amount: v.amount,
-                                currency: v.currency || 'SAR',
+                                currency: v.currency || this.getDefaultCurrencySync(),
                                 status: v.status,
                                 voucherType: 'receipt'
                             });

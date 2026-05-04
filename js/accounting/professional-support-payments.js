@@ -102,7 +102,7 @@
                         <td>${v.voucher_date || v.payment_date || 'N/A'}</td>
                         <td><span class="badge badge-danger">Payment</span></td>
                         <td>${this.escapeHtml(v.reference_number || '-')}</td>
-                        <td>${this.formatCurrency(parseFloat(v.amount) || 0, v.currency || 'SAR')}</td>
+                        <td>${this.formatCurrency(parseFloat(v.amount) || 0, v.currency || this.getDefaultCurrencySync())}</td>
                         <td>
                             <span class="badge badge-${(v.status || 'Draft') === 'Draft' ? 'secondary' : (v.status === 'Cleared' || v.status === 'Deposited' || v.status === 'Posted') ? 'success' : 'warning'}">
                                 ${this.escapeHtml(v.status || 'Draft')}

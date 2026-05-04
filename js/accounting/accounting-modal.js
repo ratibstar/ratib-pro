@@ -3262,7 +3262,7 @@ class AccountingModal {
         try {
             return new Intl.NumberFormat('en-US', {
                 style: 'currency',
-                currency: currency || 'SAR',
+                currency: currency || this.getStoredDefaultCurrency(),
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             }).format(parseFloat(amount || 0));
