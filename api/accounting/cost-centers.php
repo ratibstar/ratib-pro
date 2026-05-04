@@ -62,6 +62,8 @@ try {
     }
 
     if ($method === 'GET') {
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        header('Pragma: no-cache');
         $id = isset($_GET['id']) ? intval($_GET['id']) : null;
         $status = isset($_GET['status']) ? $_GET['status'] : null;
         

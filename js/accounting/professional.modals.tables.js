@@ -2314,8 +2314,10 @@
                     codeInput.value = `CC${String(next).padStart(5, '0')}`;
                 };
                 try {
-                    const response = await fetch(`${apiBase}/cost-centers.php`, {
-                        credentials: 'include'
+                    const bust = `_ccgen=${Date.now()}`;
+                    const response = await fetch(`${apiBase}/cost-centers.php?${bust}`, {
+                        credentials: 'include',
+                        cache: 'no-store'
                     });
                     const data = await response.json();
                     if (data.success && Array.isArray(data.cost_centers)) {
@@ -2331,8 +2333,9 @@
 
             const loadCostCenterData = async (ccId) => {
                 try {
-                    const response = await fetch(`${apiBase}/cost-centers.php?id=${ccId}`, {
-                        credentials: 'include'
+                    const response = await fetch(`${apiBase}/cost-centers.php?id=${ccId}&_=${Date.now()}`, {
+                        credentials: 'include',
+                        cache: 'no-store'
                     });
                     const data = await response.json();
                     if (data.success && data.cost_center) {
@@ -2368,7 +2371,7 @@
                     return;
                 }
 
-                if (!saveId && !String(codeEl.value || '').trim()) {
+                if (!saveId) {
                     await generateCostCenterCode(codeEl);
                 }
 
@@ -2403,13 +2406,14 @@
                     let response = await doFetch();
                     let data = await response.json().catch(() => ({}));
 
-                    if (!saveId && data && data.success === false && /already exists/i.test(String(data.message || ''))) {
+                    let dupTries = 0;
+                    while (!saveId && data && data.success === false && /already exists/i.test(String(data.message || '')) && dupTries < 4) {
+                        dupTries++;
                         await generateCostCenterCode(codeEl);
                         ({ code, name, description, status } = readPayload());
-                        if (code && name) {
-                            response = await doFetch();
-                            data = await response.json().catch(() => ({}));
-                        }
+                        if (!code || !name) break;
+                        response = await doFetch();
+                        data = await response.json().catch(() => ({}));
                     }
 
                     if (data.success) {
