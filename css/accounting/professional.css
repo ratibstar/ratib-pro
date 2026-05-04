@@ -3460,6 +3460,49 @@ body:not(.agent-page) .table-container {
    Accounting Settings Modal - Professional Styles
    ============================================ */
 
+.accounting-settings-tablist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.accounting-settings-tablist .settings-tab-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: var(--radius-md);
+    padding: 0.45rem 1rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: border-color var(--transition-base), color var(--transition-base), background var(--transition-base);
+}
+
+.accounting-settings-tablist .settings-tab-btn:hover {
+    border-color: var(--accent-blue);
+    color: var(--text-primary);
+}
+
+.accounting-settings-tablist .settings-tab-btn.active {
+    background: linear-gradient(135deg, rgba(88, 101, 242, 0.25), rgba(139, 92, 246, 0.2));
+    border-color: var(--accent-blue);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.settings-tab-panel[hidden] {
+    display: none !important;
+}
+
+.settings-tab-hint {
+    font-size: 0.875rem;
+    line-height: 1.45;
+    margin-bottom: var(--spacing-md);
+    opacity: 0.9;
+}
+
 /* Settings Summary Cards */
 .settings-summary-cards {
     display: grid;

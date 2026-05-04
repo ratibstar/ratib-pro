@@ -50,6 +50,7 @@ function attachNavHandlers() {
                 else if (tabName === 'accounts-payable') { this.openPayablesModal(); this.switchTab('dashboard'); }
                 else if (['electronic-invoices','invoices','accounts-receivable'].indexOf(tabName) >= 0) { this.openReceivablesModal(); this.switchTab('dashboard'); }
                 else if (tabName === 'entry-approval') { this.openEntryApprovalModal(); this.switchTab('dashboard'); }
+                else if (tabName === 'accounting-settings' || tabName === 'settings') { this.openSettingsModal(); this.switchTab('dashboard'); }
                 else if (['bank-reconciliation','banking-cash','banking'].indexOf(tabName) >= 0) { this.loadBankingCashModal(); this.switchTab('dashboard'); }
                 else if (tabName === 'financial-reports' || tabName === 'reports') { this.openReportsModal(); this.switchTab('dashboard'); }
                 else this.switchTab(tabName);
@@ -948,18 +949,30 @@ if (document.readyState !== 'loading') initProfessionalAccounting();
             '<button class="btn btn-sm btn-primary" data-action="save-settings" type="button"><i class="fas fa-save"></i> Save All Settings</button>' +
             '<button class="btn btn-sm btn-secondary" data-action="reset-settings" type="button"><i class="fas fa-undo"></i> Reset</button>' +
             '<button class="btn btn-sm btn-secondary" data-action="export-settings" type="button"><i class="fas fa-download"></i> Export</button></div></div>' +
-            '<div class="module-content"><div class="settings-summary-cards"><div class="settings-summary-card"><div class="summary-card-icon"><i class="fas fa-percent"></i></div><div class="summary-card-content"><h4 id="modalSettingsTaxRate">15%</h4><p>Tax Rate</p></div></div>' +
+            '<div class="module-content">' +
+            '<div class="accounting-settings-tablist" role="tablist" aria-label="Accounting settings sections">' +
+            '<button type="button" class="settings-tab-btn active" data-settings-tab="general" role="tab" aria-selected="true">General</button>' +
+            '<button type="button" class="settings-tab-btn" data-settings-tab="tax" role="tab" aria-selected="false">Tax &amp; fiscal</button>' +
+            '</div>' +
+            '<div class="settings-sections-container" id="modalSettingsSectionsContainer">' +
+            '<div class="settings-tab-panel" data-settings-panel="general" id="settingsPanelGeneral">' +
+            '<div class="settings-summary-cards"><div class="settings-summary-card"><div class="summary-card-icon"><i class="fas fa-percent"></i></div><div class="summary-card-content"><h4 id="modalSettingsTaxRate">15%</h4><p>Tax Rate</p></div></div>' +
             '<div class="settings-summary-card"><div class="summary-card-icon"><i class="fas fa-calculator"></i></div><div class="summary-card-content"><h4 id="modalSettingsTaxMethod">Inclusive</h4><p>Tax Method</p></div></div>' +
             '<div class="settings-summary-card"><div class="summary-card-icon"><i class="fas fa-dollar-sign"></i></div><div class="summary-card-content"><h4 id="modalSettingsCurrency">SAR</h4><p>Default Currency</p></div></div>' +
-            '<div class="settings-summary-card"><div class="summary-card-icon"><i class="fas fa-calendar-alt"></i></div><div class="summary-card-content"><h4 id="modalSettingsFiscalYear">' + today.getFullYear() + '</h4><p>Fiscal Year</p></div></div></div></div>' +
+            '<div class="settings-summary-card"><div class="summary-card-icon"><i class="fas fa-calendar-alt"></i></div><div class="summary-card-content"><h4 id="modalSettingsFiscalYear">' + today.getFullYear() + '</h4><p>Fiscal Year</p></div></div></div>' +
             '<div class="settings-search-bar"><div class="search-input-wrapper"><i class="fas fa-search"></i><input type="text" id="modalSettingsSearch" class="settings-search-input" placeholder="Search settings..."></div></div>' +
-            '<div class="settings-sections-container" id="modalSettingsSectionsContainer"><div class="settings-grid">' +
-            '<div class="setting-item"><label for="defaultTaxRate">Default Tax Rate (%)</label><input type="number" id="defaultTaxRate" step="0.01" min="0" max="100" value="15" data-setting-key="default_tax_rate" data-setting-type="number"></div>' +
-            '<div class="setting-item"><label for="taxMethod">Tax Method</label><select id="taxMethod" data-setting-key="tax_calculation_method" data-setting-type="text"><option value="inclusive">Tax Inclusive</option><option value="exclusive">Tax Exclusive</option></select></div>' +
+            '<div class="settings-grid">' +
             '<div class="setting-item"><label for="fiscalYearStart">Fiscal Year Start</label><input type="text" id="fiscalYearStart" class="date-input" value="' + fiscalYearStart + '" data-setting-key="fiscal_year_start" data-setting-type="date" placeholder="MM/DD/YYYY"></div>' +
             '<div class="setting-item"><label for="fiscalYearEnd">Fiscal Year End</label><input type="text" id="fiscalYearEnd" class="date-input" value="' + fiscalYearEnd + '" data-setting-key="fiscal_year_end" data-setting-type="date" placeholder="MM/DD/YYYY"></div>' +
             '<div class="setting-item"><label for="defaultCurrency">Default Currency</label><select id="defaultCurrency" data-setting-key="default_currency" data-setting-type="text">' + currencyOptionsHTML + '</select></div>' +
-            '</div></div></div></div>';
+            '</div></div>' +
+            '<div class="settings-tab-panel" data-settings-panel="tax" id="settingsPanelTax" hidden>' +
+            '<p class="settings-tab-hint text-muted">Defaults for tax on new transactions. App-wide users &amp; permissions: use <strong>System Settings</strong> in the main sidebar.</p>' +
+            '<div class="settings-grid">' +
+            '<div class="setting-item"><label for="defaultTaxRate">Default Tax Rate (%)</label><input type="number" id="defaultTaxRate" step="0.01" min="0" max="100" value="15" data-setting-key="default_tax_rate" data-setting-type="number"></div>' +
+            '<div class="setting-item"><label for="taxMethod">Tax Method</label><select id="taxMethod" data-setting-key="tax_calculation_method" data-setting-type="text"><option value="inclusive">Tax Inclusive</option><option value="exclusive">Tax Exclusive</option></select></div>' +
+            '</div></div>' +
+            '</div></div></div>';
         this.showModal('Accounting Settings', content, 'large', 'accountingSettingsModal');
         setTimeout(async function() {
             await self.loadSettings();

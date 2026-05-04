@@ -57,6 +57,9 @@ include '../includes/header.php';
                  <button class="tab-btn active" data-tab="dashboard" data-permission="view_chart_accounts">
                      <i class="fas fa-tachometer-alt"></i> Control Panel
                  </button>
+                 <button class="tab-btn" data-tab="accounting-settings" data-permission="view_chart_accounts" type="button" title="Default currency, fiscal year, tax defaults">
+                     <i class="fas fa-sliders-h"></i> Accounting Settings
+                 </button>
             </div>
 
             <!-- Dashboard Tab Content -->
@@ -217,6 +220,13 @@ include '../includes/header.php';
                             <a href="#" class="top-nav-link" data-tab="financial-reports" data-permission="view_chart_accounts">
                                 <i class="fas fa-chart-bar"></i>
                                 <span>Financial Reports</span>
+                            </a>
+                        </li>
+                        <!-- Accounting Settings (same modal as Quick Actions → Settings) -->
+                        <li class="top-nav-item">
+                            <a href="#" class="top-nav-link" data-tab="accounting-settings" data-permission="view_chart_accounts">
+                                <i class="fas fa-sliders-h"></i>
+                                <span>Accounting Settings</span>
                             </a>
                         </li>
                     </ul>

@@ -191,7 +191,7 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                         } else if (tabName === 'financial-reports' || tabName === 'reports') {
                             self.openReportsModal();
                             self.switchTab('dashboard');
-                        } else if (tabName === 'settings') {
+                        } else if (tabName === 'settings' || tabName === 'accounting-settings') {
                             self.openSettingsModal();
                             self.switchTab('dashboard');
                         } else if (tabName === 'follow-up') {
@@ -333,7 +333,7 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                         } else if (tabName === 'financial-reports' || tabName === 'reports') {
                             self.openReportsModal();
                             self.switchTab('dashboard');
-                        } else if (tabName === 'settings') {
+                        } else if (tabName === 'settings' || tabName === 'accounting-settings') {
                             self.openSettingsModal();
                             self.switchTab('dashboard');
                         } else if (tabName === 'follow-up') {
@@ -438,7 +438,7 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                     } else if (tabName === 'financial-reports' || tabName === 'reports') {
                         self.openReportsModal();
                         self.switchTab('dashboard');
-                    } else if (tabName === 'settings') {
+                    } else if (tabName === 'settings' || tabName === 'accounting-settings') {
                         self.openSettingsModal();
                         self.switchTab('dashboard');
                     } else {
@@ -508,7 +508,7 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                 } else if (tabName === 'financial-reports' || tabName === 'reports') {
                     self.openReportsModal();
                     self.switchTab('dashboard');
-                } else if (tabName === 'settings') {
+                } else if (tabName === 'settings' || tabName === 'accounting-settings') {
                     self.openSettingsModal();
                     self.switchTab('dashboard');
                 } else if (tabName === 'follow-up') {

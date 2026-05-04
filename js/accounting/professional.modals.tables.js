@@ -771,6 +771,29 @@
         setupSettingsHandlers() {
             const modal = document.getElementById('accountingSettingsModal');
             if (!modal) return;
+
+            if (!modal.dataset.settingsTabsBound) {
+                modal.dataset.settingsTabsBound = 'true';
+                modal.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.settings-tab-btn[data-settings-tab]');
+                    if (!btn || !modal.contains(btn)) return;
+                    e.preventDefault();
+                    const tab = btn.getAttribute('data-settings-tab');
+                    modal.querySelectorAll('.settings-tab-btn[data-settings-tab]').forEach((b) => {
+                        const on = b === btn;
+                        b.classList.toggle('active', on);
+                        b.setAttribute('aria-selected', on ? 'true' : 'false');
+                    });
+                    modal.querySelectorAll('[data-settings-panel]').forEach((panel) => {
+                        const show = panel.getAttribute('data-settings-panel') === tab;
+                        if (show) {
+                            panel.removeAttribute('hidden');
+                        } else {
+                            panel.setAttribute('hidden', 'hidden');
+                        }
+                    });
+                });
+            }
             
             // Save button
             const saveBtn = modal.querySelector('[data-action="save-settings"]');
