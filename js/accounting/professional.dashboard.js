@@ -10,6 +10,19 @@
     if (typeof ProfessionalAccounting === 'undefined') return;
     const methods = {
         updateOverviewCards(data) {
+            const setPctChange = (elementId, rawValue, tone /* 'upGood' | 'upBad' */) => {
+                const el = document.getElementById(elementId);
+                if (!el || rawValue === undefined || rawValue === null || rawValue === '') return;
+                const n = Number(rawValue);
+                if (Number.isNaN(n)) return;
+                el.textContent = `${n > 0 ? '+' : ''}${n.toFixed(1)}%`;
+                let positive = n >= 0;
+                if (tone === 'upBad') {
+                    positive = n <= 0;
+                }
+                el.className = `card-change ${positive ? 'positive' : 'negative'}`;
+            };
+
             // Revenue
             const revenueEl = document.getElementById('totalRevenue');
             if (revenueEl) revenueEl.textContent = this.formatCurrency(data.total_revenue || 0);
@@ -43,11 +56,18 @@
             if (payablesCount) {
                 payablesCount.textContent = `${data.payables_count || 0} bills`;
             }
-            // Changes (if available)
-            const revenueChange = document.getElementById('revenueChange');
-            if (revenueChange && data.revenue_change) {
-                revenueChange.textContent = `${data.revenue_change > 0 ? '+' : ''}${data.revenue_change.toFixed(1)}%`;
-                revenueChange.className = `card-change ${data.revenue_change >= 0 ? 'positive' : 'negative'}`;
+
+            if (Object.prototype.hasOwnProperty.call(data, 'revenue_change')) {
+                setPctChange('revenueChange', data.revenue_change, 'upGood');
+            }
+            if (Object.prototype.hasOwnProperty.call(data, 'expense_change')) {
+                setPctChange('expenseChange', data.expense_change, 'upBad');
+            }
+            if (Object.prototype.hasOwnProperty.call(data, 'profit_change')) {
+                setPctChange('profitChange', data.profit_change, 'upGood');
+            }
+            if (Object.prototype.hasOwnProperty.call(data, 'balance_change')) {
+                setPctChange('balanceChange', data.balance_change, 'upGood');
             }
         },
 
@@ -1395,7 +1415,11 @@
                         total_receivables: data.dashboard.total_receivables,
                         total_payables: data.dashboard.total_payables,
                         receivables_count: data.dashboard.receivables_count,
-                        payables_count: data.dashboard.payables_count
+                        payables_count: data.dashboard.payables_count,
+                        revenue_change: data.dashboard.revenue_change,
+                        expense_change: data.dashboard.expense_change,
+                        profit_change: data.dashboard.profit_change,
+                        balance_change: data.dashboard.balance_change
                     });
                     this._loadingFinancialOverview = false;
                     return; // Success
@@ -1432,7 +1456,11 @@
                             total_receivables: 0,
                             total_payables: 0,
                             receivables_count: 0,
-                            payables_count: 0
+                            payables_count: 0,
+                            revenue_change: 0,
+                            expense_change: 0,
+                            profit_change: 0,
+                            balance_change: 0
                         });
                     }
                     this._loadingFinancialOverview = false;
@@ -1445,7 +1473,11 @@
                         total_receivables: 0,
                         total_payables: 0,
                         receivables_count: 0,
-                        payables_count: 0
+                        payables_count: 0,
+                        revenue_change: 0,
+                        expense_change: 0,
+                        profit_change: 0,
+                        balance_change: 0
                     });
                     this._loadingFinancialOverview = false;
                 }
@@ -1474,7 +1506,11 @@
                             total_receivables: data.dashboard.total_receivables,
                             total_payables: data.dashboard.total_payables,
                             receivables_count: data.dashboard.receivables_count,
-                            payables_count: data.dashboard.payables_count
+                            payables_count: data.dashboard.payables_count,
+                            revenue_change: data.dashboard.revenue_change,
+                            expense_change: data.dashboard.expense_change,
+                            profit_change: data.dashboard.profit_change,
+                            balance_change: data.dashboard.balance_change
                         });
                     }
                     // Refresh Receivables summary if on Receivables tab
@@ -1595,7 +1631,11 @@
                         total_receivables: data.dashboard.total_receivables,
                         total_payables: data.dashboard.total_payables,
                         receivables_count: data.dashboard.receivables_count,
-                        payables_count: data.dashboard.payables_count
+                        payables_count: data.dashboard.payables_count,
+                        revenue_change: data.dashboard.revenue_change,
+                        expense_change: data.dashboard.expense_change,
+                        profit_change: data.dashboard.profit_change,
+                        balance_change: data.dashboard.balance_change
                     });
                 }
                 

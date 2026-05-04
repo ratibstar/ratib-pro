@@ -33,7 +33,24 @@ $roleId = $_SESSION['role_id'] ?? 0;
 try {
     $tableCheck = $conn->query("SHOW TABLES LIKE 'financial_transactions'");
     if (!$tableCheck || $tableCheck->num_rows === 0) {
-        echo json_encode(['success' => true, 'dashboard' => ['total_revenue' => 0, 'total_expenses' => 0, 'net_profit' => 0, 'cash_balance' => 0], 'timestamp' => date('Y-m-d H:i:s')]);
+        echo json_encode([
+            'success' => true,
+            'dashboard' => [
+                'total_revenue' => 0,
+                'total_expenses' => 0,
+                'net_profit' => 0,
+                'cash_balance' => 0,
+                'total_receivables' => 0,
+                'total_payables' => 0,
+                'receivables_count' => 0,
+                'payables_count' => 0,
+                'revenue_change' => 0,
+                'expense_change' => 0,
+                'profit_change' => 0,
+                'balance_change' => 0,
+            ],
+            'timestamp' => date('Y-m-d H:i:s'),
+        ]);
         exit;
     }
     $columnCheck = $conn->query("SHOW COLUMNS FROM financial_transactions LIKE 'currency'");
@@ -75,12 +92,45 @@ try {
         ");
         $stmt->execute();
         $expenses = $stmt->get_result()->fetch_assoc();
+
+        // Prior rolling 30-day window (days 31–60 ago) for % change vs current 30 days
+        $prevRevenue = 0.0;
+        $stmt = $conn->prepare("
+            SELECT COALESCE(SUM(total_amount), 0) AS total_revenue
+            FROM financial_transactions
+            WHERE transaction_type = 'Income'
+            AND status = 'Posted'
+            AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 60 DAY)
+            AND transaction_date < DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        ");
+        if ($stmt) {
+            $stmt->execute();
+            $pr = $stmt->get_result()->fetch_assoc();
+            $prevRevenue = floatval($pr['total_revenue'] ?? 0);
+            $stmt->close();
+        }
+        $prevExpenses = 0.0;
+        $stmt = $conn->prepare("
+            SELECT COALESCE(SUM(total_amount), 0) AS total_expenses
+            FROM financial_transactions
+            WHERE transaction_type = 'Expense'
+            AND status = 'Posted'
+            AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 60 DAY)
+            AND transaction_date < DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        ");
+        if ($stmt) {
+            $stmt->execute();
+            $pe = $stmt->get_result()->fetch_assoc();
+            $prevExpenses = floatval($pe['total_expenses'] ?? 0);
+            $stmt->close();
+        }
         
         // Net Profit
         $netProfit = floatval($revenue['total_revenue']) - floatval($expenses['total_expenses']);
         
         // Cash Balance (ERP COMPLIANCE: Calculate from GL only)
         $cashBalance = 0;
+        $cashBalancePrev = 0.0;
         $tableCheck = $conn->query("SHOW TABLES LIKE 'accounting_banks'");
         if ($tableCheck && $tableCheck->num_rows > 0) {
             $tableCheck->free();
@@ -103,6 +153,19 @@ try {
                 
                 $banksResult->free();
                 $banksStmt->close();
+
+                $asOfPrev = date('Y-m-d', strtotime('-30 days'));
+                $banksStmtPrev = $conn->prepare("SELECT id FROM accounting_banks WHERE is_active = 1");
+                if ($banksStmtPrev) {
+                    $banksStmtPrev->execute();
+                    $banksPrevRes = $banksStmtPrev->get_result();
+                    while ($bankRow = $banksPrevRes->fetch_assoc()) {
+                        $bankId = intval($bankRow['id']);
+                        $cashBalancePrev += getBankBalanceFromGL($conn, $bankId, $asOfPrev);
+                    }
+                    $banksPrevRes->free();
+                    $banksStmtPrev->close();
+                }
             }
         } else {
             if ($tableCheck) $tableCheck->free();
@@ -171,6 +234,24 @@ try {
                 }
             }
         }
+
+        $currRev = floatval($revenue['total_revenue'] ?? 0);
+        $currExp = floatval($expenses['total_expenses'] ?? 0);
+        $revenue_change = $prevRevenue > 0
+            ? (($currRev - $prevRevenue) / $prevRevenue) * 100.0
+            : ($currRev > 0 ? 100.0 : 0.0);
+        $expense_change = $prevExpenses > 0
+            ? (($currExp - $prevExpenses) / $prevExpenses) * 100.0
+            : ($currExp > 0 ? 100.0 : 0.0);
+        $prevProfit = $prevRevenue - $prevExpenses;
+        if (abs($prevProfit) >= 0.0000001) {
+            $profit_change = (($netProfit - $prevProfit) / abs($prevProfit)) * 100.0;
+        } else {
+            $profit_change = abs($netProfit) < 0.0000001 ? 0.0 : ($netProfit > 0 ? 100.0 : -100.0);
+        }
+        $balance_change = $cashBalancePrev > 0
+            ? (($cashBalance - $cashBalancePrev) / $cashBalancePrev) * 100.0
+            : ($cashBalance > 0 ? 100.0 : 0.0);
         
         $response['dashboard'] = [
             'total_revenue' => floatval($revenue['total_revenue'] ?? 0),
@@ -183,6 +264,10 @@ try {
             'expense_count' => intval($expenses['expense_count'] ?? 0),
             'receivables_count' => intval($receivables['receivables_count'] ?? 0),
             'payables_count' => intval($payables['payables_count'] ?? 0),
+            'revenue_change' => round($revenue_change, 1),
+            'expense_change' => round($expense_change, 1),
+            'profit_change' => round($profit_change, 1),
+            'balance_change' => round($balance_change, 1),
             'currency' => $baseCurrency
         ];
     }

@@ -15,7 +15,20 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
 }
 
 try {
-    $data = ['total_revenue' => 0, 'total_expenses' => 0, 'net_profit' => 0, 'cash_balance' => 0, 'total_receivables' => 0, 'receivables_count' => 0, 'total_payables' => 0, 'payables_count' => 0, 'revenue_change' => 0];
+    $data = [
+        'total_revenue' => 0,
+        'total_expenses' => 0,
+        'net_profit' => 0,
+        'cash_balance' => 0,
+        'total_receivables' => 0,
+        'receivables_count' => 0,
+        'total_payables' => 0,
+        'payables_count' => 0,
+        'revenue_change' => 0,
+        'expense_change' => 0,
+        'profit_change' => 0,
+        'balance_change' => 0,
+    ];
     if (!isset($conn) || !$conn) {
         echo json_encode(array_merge($data, ['success' => true]));
         exit;
@@ -35,6 +48,7 @@ try {
     $data['net_profit'] = $data['total_revenue'] - $data['total_expenses'];
 
     $bankBalance = 0;
+    $bankBalancePrev = 0.0;
     $tableCheck = $conn->query("SHOW TABLES LIKE 'accounting_banks'");
     if ($tableCheck && $tableCheck->num_rows > 0 && file_exists(__DIR__ . '/core/bank-transaction-gl-helper.php')) {
         $tableCheck->free();
@@ -52,6 +66,18 @@ try {
             
             $banksResult->free();
             $banksStmt->close();
+
+            $asOfPrev = date('Y-m-d', strtotime('-30 days'));
+            $banksStmtPrev = $conn->prepare("SELECT id FROM accounting_banks WHERE is_active = 1");
+            if ($banksStmtPrev) {
+                $banksStmtPrev->execute();
+                $banksPrevRes = $banksStmtPrev->get_result();
+                while ($bankRow = $banksPrevRes->fetch_assoc()) {
+                    $bankBalancePrev += getBankBalanceFromGL($conn, intval($bankRow['id']), $asOfPrev);
+                }
+                $banksPrevRes->free();
+                $banksStmtPrev->close();
+            }
         }
     } else {
         if ($tableCheck) $tableCheck->free();
@@ -120,6 +146,22 @@ try {
     if ($stmt) { $stmt->execute(); $r = $stmt->get_result()->fetch_assoc(); $previousRevenue = floatval($r['previous_revenue'] ?? 0); $stmt->close(); }
     $data['revenue_change'] = $previousRevenue > 0 ? (($data['total_revenue'] - $previousRevenue) / $previousRevenue) * 100 : ($data['total_revenue'] > 0 ? 100 : 0);
 
+    $previousExpenses = 0;
+    $stmt = $conn->prepare("SELECT COALESCE(SUM(total_amount), 0) as previous_expenses FROM financial_transactions WHERE transaction_type = 'Expense' AND status IN ('Approved', 'Posted') AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND transaction_date < DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+    if ($stmt) { $stmt->execute(); $r = $stmt->get_result()->fetch_assoc(); $previousExpenses = floatval($r['previous_expenses'] ?? 0); $stmt->close(); }
+    $data['expense_change'] = $previousExpenses > 0 ? (($data['total_expenses'] - $previousExpenses) / $previousExpenses) * 100 : ($data['total_expenses'] > 0 ? 100 : 0);
+
+    $previousProfit = $previousRevenue - $previousExpenses;
+    if (abs($previousProfit) >= 0.0000001) {
+        $data['profit_change'] = (($data['net_profit'] - $previousProfit) / abs($previousProfit)) * 100;
+    } else {
+        $data['profit_change'] = abs($data['net_profit']) < 0.0000001 ? 0 : ($data['net_profit'] > 0 ? 100 : -100);
+    }
+
+    $data['balance_change'] = $bankBalancePrev > 0
+        ? (($bankBalance - $bankBalancePrev) / $bankBalancePrev) * 100
+        : ($bankBalance > 0 ? 100 : 0);
+
     echo json_encode(['success' => true, 'data' => $data]);
 
 } catch (Throwable $e) {
@@ -128,7 +170,20 @@ try {
     echo json_encode([
         'success' => false,
         'message' => 'Error fetching overview data: ' . $e->getMessage(),
-        'data' => ['total_revenue' => 0, 'total_expenses' => 0, 'net_profit' => 0, 'cash_balance' => 0, 'total_receivables' => 0, 'receivables_count' => 0, 'total_payables' => 0, 'payables_count' => 0, 'revenue_change' => 0]
+        'data' => [
+            'total_revenue' => 0,
+            'total_expenses' => 0,
+            'net_profit' => 0,
+            'cash_balance' => 0,
+            'total_receivables' => 0,
+            'receivables_count' => 0,
+            'total_payables' => 0,
+            'payables_count' => 0,
+            'revenue_change' => 0,
+            'expense_change' => 0,
+            'profit_change' => 0,
+            'balance_change' => 0,
+        ]
     ]);
 }
 ?>

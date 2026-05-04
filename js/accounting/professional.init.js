@@ -162,7 +162,11 @@ function patchApiCredentials() {
                     total_receivables: data.dashboard.total_receivables,
                     total_payables: data.dashboard.total_payables,
                     receivables_count: data.dashboard.receivables_count,
-                    payables_count: data.dashboard.payables_count
+                    payables_count: data.dashboard.payables_count,
+                    revenue_change: data.dashboard.revenue_change,
+                    expense_change: data.dashboard.expense_change,
+                    profit_change: data.dashboard.profit_change,
+                    balance_change: data.dashboard.balance_change
                 });
             }
             if (typeof this.loadCashFlowSummary === 'function') this.loadCashFlowSummary();
