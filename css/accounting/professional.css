@@ -10888,6 +10888,49 @@ input.date-input {
     box-shadow: none !important;
 }
 
+/* Journal entry — in-form debug strip (below actions) */
+#journalEntryModal .journal-entry-debug-bar {
+    position: relative;
+    z-index: 26;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px dashed rgba(245, 158, 11, 0.45);
+    background: rgba(245, 158, 11, 0.08);
+    color: #fde68a;
+    font-size: 12px;
+}
+#journalEntryModal .journal-entry-debug-bar-title {
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: 0.03em;
+    color: #fcd34d;
+}
+#journalEntryModal .journal-entry-debug-bar-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+#journalEntryModal .journal-entry-debug-bar .btn-sm {
+    font-size: 11px;
+    padding: 4px 8px;
+}
+#journalEntryModal .journal-entry-debug-out {
+    margin: 10px 0 0;
+    max-height: 140px;
+    overflow: auto;
+    font-size: 10px;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: #e2e8f0;
+    background: rgba(2, 6, 23, 0.45);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    padding: 8px;
+}
+
 /* ============================================
    GENERAL LEDGER MODAL - COLUMN ALIGNMENT FIX
    Ensures headers line up with row fields (8 columns)

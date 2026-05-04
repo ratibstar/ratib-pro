@@ -3061,6 +3061,112 @@
                         }
                     });
                 }
+
+                // Journal entry debug toolbar (once per modal instance)
+                (() => {
+                    const jeForm = modal.querySelector('#journalEntryForm');
+                    const debugBar = jeForm ? jeForm.querySelector('#journalEntryDebugBar') : null;
+                    if (!jeForm || !debugBar || modal.hasAttribute('data-je-debug-ui-wired')) return;
+                    modal.setAttribute('data-je-debug-ui-wired', '1');
+                    const out = debugBar.querySelector('#journalEntryDebugOut');
+                    const setOut = (text) => {
+                        if (out) out.textContent = text;
+                    };
+                    const log = (...args) => {
+                        const line = `[JE ${new Date().toISOString()}] ${args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')}`;
+                        console.log('[JournalEntry DEBUG]', ...args);
+                        if (out) {
+                            out.textContent = (out.textContent ? out.textContent + '\n' : '') + line;
+                            out.scrollTop = out.scrollHeight;
+                        }
+                    };
+                    debugBar.addEventListener('click', async (ev) => {
+                        const btn = ev.target.closest('[data-je-debug]');
+                        if (!btn || !debugBar.contains(btn)) return;
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        const kind = btn.getAttribute('data-je-debug');
+                        if (kind === 'log') {
+                            const forms = document.querySelectorAll('#journalEntryForm');
+                            const draftBtn = jeForm.querySelector('#journalSaveDraftBtn');
+                            const subBtn = jeForm.querySelector('#journalSubmitBtn');
+                            const debitN = jeForm.querySelectorAll('#journalDebitLinesBody .ledger-line-row').length;
+                            const creditN = jeForm.querySelectorAll('#journalCreditLinesBody .ledger-line-row').length;
+                            log({
+                                modalId: modal.id,
+                                activeModalId: this.activeModal && this.activeModal.id,
+                                formSameAsActive: !!(this.activeModal && jeForm.closest('.accounting-modal') === this.activeModal),
+                                journalFormsInDocument: forms.length,
+                                dataHandlerAttached: jeForm.getAttribute('data-handler-attached'),
+                                saveInFlight: !!this._journalEntrySaveInFlight,
+                                saveJournalEntryType: typeof this.saveJournalEntry,
+                                apiBase: this.apiBase,
+                                entryIdAttr: jeForm.getAttribute('data-entry-id'),
+                                submitDisabled: subBtn ? subBtn.disabled : null,
+                                draftDisplay: draftBtn ? window.getComputedStyle(draftBtn).display : null,
+                                debitRows: debitN,
+                                creditRows: creditN
+                            });
+                            if (this.showToast) this.showToast('State logged to console + box below', 'info');
+                            return;
+                        }
+                        if (kind === 'trysave') {
+                            log('Calling saveJournalEntry…');
+                            try {
+                                const entryId = jeForm.getAttribute('data-entry-id');
+                                const id = entryId && entryId !== 'null' ? parseInt(entryId, 10) : null;
+                                const r = await this.saveJournalEntry(id);
+                                log('saveJournalEntry returned', r);
+                                if (this.showToast) this.showToast(`saveJournalEntry → ${String(r)}`, r === true ? 'success' : 'warning');
+                            } catch (err) {
+                                log('saveJournalEntry threw', err && err.message ? err.message : err);
+                                if (this.showToast) this.showToast('saveJournalEntry threw (see console)', 'error');
+                            }
+                            return;
+                        }
+                        if (kind === 'requestsubmit') {
+                            log('requestSubmit() on #journalEntryForm');
+                            try {
+                                if (typeof jeForm.requestSubmit === 'function') {
+                                    jeForm.requestSubmit();
+                                } else {
+                                    jeForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                                }
+                            } catch (err2) {
+                                log('requestSubmit error', err2 && err2.message ? err2.message : err2);
+                            }
+                            if (this.showToast) this.showToast('requestSubmit dispatched', 'info');
+                            return;
+                        }
+                        if (kind === 'syntheticdraft') {
+                            const draftBtn = jeForm.querySelector('#journalSaveDraftBtn');
+                            log('Synthetic MouseEvent click on Save Draft', !!draftBtn);
+                            if (draftBtn) draftBtn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+                            if (this.showToast) this.showToast('Synthetic click dispatched', 'info');
+                            return;
+                        }
+                        if (kind === 'pointer') {
+                            const actions = jeForm.querySelector('.accounting-modal-actions');
+                            const draftBtn = jeForm.querySelector('#journalSaveDraftBtn');
+                            const subBtn = jeForm.querySelector('#journalSubmitBtn');
+                            const probe = (label, el) => {
+                                if (!el) return log(label, 'element missing');
+                                const r = el.getBoundingClientRect();
+                                const cx = r.left + r.width / 2;
+                                const cy = r.top + r.height / 2;
+                                const top = document.elementFromPoint(cx, cy);
+                                log(label, {
+                                    rect: { w: r.width, h: r.height, top: r.top, left: r.left },
+                                    elementFromPointCenter: top ? (top.tagName + (top.id ? '#' + top.id : '') + (top.className ? '.' + String(top.className).split(/\s+/).slice(0, 3).join('.') : '')) : null
+                                });
+                            };
+                            probe('actionsRow', actions);
+                            probe('saveDraft', draftBtn);
+                            probe('createEntry', subBtn);
+                            if (this.showToast) this.showToast('Pointer probe logged', 'info');
+                        }
+                    });
+                })();
                 
                 // Setup invoice form submit handler
                 const invoiceForm = modal.querySelector('#invoiceForm');
@@ -3624,6 +3730,17 @@
                         <button type="button" class="btn btn-secondary" data-action="close-modal">Cancel</button>
                         <button type="button" class="btn btn-secondary" id="journalSaveDraftBtn" data-action="save-draft" style="display: ${isEdit ? 'none' : 'inline-block'};">Save Draft</button>
                         <button type="submit" class="btn btn-primary" id="journalSubmitBtn" disabled>${isEdit ? 'Update' : 'Create'} Entry</button>
+                    </div>
+                    <div class="journal-entry-debug-bar" id="journalEntryDebugBar" aria-label="Journal entry debug tools">
+                        <div class="journal-entry-debug-bar-title">Debug</div>
+                        <div class="journal-entry-debug-bar-btns">
+                            <button type="button" class="btn btn-secondary btn-sm" data-je-debug="log">Log state</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-je-debug="trysave">Try saveJournalEntry</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-je-debug="requestsubmit">requestSubmit()</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-je-debug="syntheticdraft">Synthetic save-draft click</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-je-debug="pointer">Pointer probe</button>
+                        </div>
+                        <pre class="journal-entry-debug-out" id="journalEntryDebugOut"></pre>
                     </div>
                 </form>
             `;
