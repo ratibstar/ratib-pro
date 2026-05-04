@@ -2292,33 +2292,40 @@
             const pa = this;
             const apiBase = pa.apiBase;
             const editId = id;
+            const modalRoot = () => document.getElementById('costCenterFormModal');
+            const formEl = () => {
+                const root = modalRoot();
+                return root ? root.querySelector('#costCenterForm') : document.getElementById('costCenterForm');
+            };
 
             const generateCostCenterCode = async (codeInput) => {
+                if (!codeInput) return;
+                const assignNext = (list) => {
+                    let maxFromDb = 0;
+                    (list || []).forEach(cc => {
+                        const m = String(cc.code || '').match(/^CC(\d+)$/i);
+                        if (m) {
+                            const n = parseInt(m[1], 10);
+                            if (!isNaN(n) && n > maxFromDb) maxFromDb = n;
+                        }
+                    });
+                    const floor = 30000;
+                    const next = Math.max(maxFromDb, floor) + 1;
+                    codeInput.value = `CC${String(next).padStart(5, '0')}`;
+                };
                 try {
                     const response = await fetch(`${apiBase}/cost-centers.php`, {
                         credentials: 'include'
                     });
                     const data = await response.json();
-
-                    if (data.success && data.cost_centers) {
-                        let maxNumber = 30000;
-                        data.cost_centers.forEach(cc => {
-                            const match = cc.code.match(/^CC(\d+)$/i);
-                            if (match) {
-                                const num = parseInt(match[1], 10);
-                                if (!isNaN(num) && num >= 30000 && num > maxNumber) {
-                                    maxNumber = num;
-                                }
-                            }
-                        });
-                        const nextNumber = maxNumber + 1;
-                        codeInput.value = `CC${nextNumber.toString().padStart(5, '0')}`;
+                    if (data.success && Array.isArray(data.cost_centers)) {
+                        assignNext(data.cost_centers);
                     } else {
-                        codeInput.value = 'CC30000';
+                        assignNext([]);
                     }
                 } catch (error) {
                     console.error('Error generating cost center code:', error);
-                    codeInput.value = 'CC30000';
+                    assignNext([]);
                 }
             };
 
@@ -2329,46 +2336,94 @@
                     });
                     const data = await response.json();
                     if (data.success && data.cost_center) {
-                        document.getElementById('costCenterCode').value = data.cost_center.code;
-                        document.getElementById('costCenterName').value = data.cost_center.name;
-                        document.getElementById('costCenterDescription').value = data.cost_center.description || '';
-                        document.getElementById('costCenterStatus').value = data.cost_center.status;
+                        const form = formEl();
+                        const set = (sel, val) => {
+                            const el = form ? form.querySelector(sel) : document.querySelector(sel);
+                            if (el) el.value = val;
+                        };
+                        set('#costCenterCode', data.cost_center.code);
+                        set('#costCenterName', data.cost_center.name);
+                        set('#costCenterDescription', data.cost_center.description || '');
+                        set('#costCenterStatus', data.cost_center.status);
                     }
                 } catch (error) {
                     pa.showToast('Failed to load cost center data', 'error');
                 }
             };
 
+            let saveLocked = false;
             const saveCostCenter = async (saveId = null) => {
-                const code = document.getElementById('costCenterCode').value.trim();
-                const name = document.getElementById('costCenterName').value.trim();
-                const description = document.getElementById('costCenterDescription').value.trim();
-                const status = document.getElementById('costCenterStatus').value;
+                if (saveLocked) return;
+                const form = formEl();
+                if (!form) {
+                    pa.showToast('Form not found. Close and reopen the dialog.', 'error');
+                    return;
+                }
+                const codeEl = form.querySelector('#costCenterCode') || form.querySelector('[name="code"]');
+                const nameEl = form.querySelector('#costCenterName') || form.querySelector('[name="name"]');
+                const descEl = form.querySelector('#costCenterDescription') || form.querySelector('[name="description"]');
+                const statusEl = form.querySelector('#costCenterStatus') || form.querySelector('[name="status"]');
+                if (!codeEl || !nameEl) {
+                    pa.showToast('Cost center fields are missing.', 'error');
+                    return;
+                }
 
+                if (!saveId && !String(codeEl.value || '').trim()) {
+                    await generateCostCenterCode(codeEl);
+                }
+
+                const readPayload = () => ({
+                    code: String(codeEl.value || '').trim(),
+                    name: String(nameEl.value || '').trim(),
+                    description: String(descEl ? descEl.value || '' : '').trim(),
+                    status: String(statusEl ? statusEl.value || 'active' : 'active')
+                });
+
+                let { code, name, description, status } = readPayload();
                 if (!code || !name) {
                     pa.showToast('Code and name are required', 'error');
                     return;
                 }
 
+                const submitBtn = form.querySelector('button[type="submit"]');
+                saveLocked = true;
+                if (submitBtn) submitBtn.disabled = true;
+
                 try {
                     const url = saveId ? `${apiBase}/cost-centers.php?id=${saveId}` : `${apiBase}/cost-centers.php`;
                     const method = saveId ? 'PUT' : 'POST';
-                    const response = await fetch(url, {
+
+                    const doFetch = () => fetch(url, {
                         method: method,
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
                         body: JSON.stringify({ code, name, description, status })
                     });
-                    const data = await response.json();
+
+                    let response = await doFetch();
+                    let data = await response.json().catch(() => ({}));
+
+                    if (!saveId && data && data.success === false && /already exists/i.test(String(data.message || ''))) {
+                        await generateCostCenterCode(codeEl);
+                        ({ code, name, description, status } = readPayload());
+                        if (code && name) {
+                            response = await doFetch();
+                            data = await response.json().catch(() => ({}));
+                        }
+                    }
+
                     if (data.success) {
                         pa.showToast(data.message || (saveId ? 'Cost center updated' : 'Cost center created'), 'success');
-                        await pa.closeModalWithConfirmation(document.getElementById('costCenterFormModal'));
+                        await pa.closeModalWithConfirmation(modalRoot());
                         pa.loadCostCenters();
                     } else {
-                        pa.showToast(data.message || 'Failed to save cost center', 'error');
+                        pa.showToast(data.message || `Could not save (${response.status})`, 'error');
                     }
                 } catch (error) {
                     pa.showToast('Error saving cost center', 'error');
+                } finally {
+                    saveLocked = false;
+                    if (submitBtn) submitBtn.disabled = false;
                 }
             };
 
@@ -2402,7 +2457,8 @@
                 void loadCostCenterData(editId);
             } else {
                 setTimeout(async () => {
-                    const codeInput = document.getElementById('costCenterCode');
+                    const root = modalRoot();
+                    const codeInput = root ? root.querySelector('#costCenterCode') : null;
                     if (codeInput) {
                         await generateCostCenterCode(codeInput);
                     }
@@ -2410,7 +2466,7 @@
             }
 
             setTimeout(() => {
-                const form = document.getElementById('costCenterForm');
+                const form = formEl();
                 if (form) {
                     form.addEventListener('submit', async (e) => {
                         e.preventDefault();
