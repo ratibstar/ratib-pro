@@ -696,14 +696,19 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
         if (!branchId) {
             return jeFail('validation', 'Please select a branch');
         }
-        if (!description) {
-            return jeFail('validation', 'Please enter a journal description (header or line descriptions)');
-        }
         if (debitLines.length === 0 && creditLines.length === 0) {
             return jeFail('validation', 'Please add at least one debit or credit line with an account and amount', {
                 debitRowCount: debitRows.length,
                 creditRowCount: creditRows.length
             });
+        }
+        // Allow save with no narrative when lines are valid (header + line descriptions all blank).
+        if (!description) {
+            description = `Journal entry — ${entryDate}`;
+            const descTa = form.querySelector('textarea[name="description"]');
+            if (descTa && !(descTa.value || '').trim()) {
+                descTa.value = description;
+            }
         }
         
         // Calculate totals (round to 2 decimals to avoid float noise)
