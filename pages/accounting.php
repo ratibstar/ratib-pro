@@ -1071,7 +1071,7 @@ include '../includes/header.php';
 <!-- Utilities: Formatting and utility methods -->
 <script src="<?php echo htmlspecialchars(asset('js/accounting/professional.utilities.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Part 1: setupEventListeners, ensureTabButtonsClickable, switchTab, handleNavClick, etc. -->
-<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.part1.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.part1.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.part1.js') . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Accounts: Account-related methods -->
 <script src="<?php echo htmlspecialchars(asset('js/accounting/professional.accounts.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Dashboard: Dashboard methods -->
@@ -1088,7 +1088,7 @@ include '../includes/header.php';
 <!-- Extensions: Additional features -->
 <script src="<?php echo htmlspecialchars(asset('js/accounting/professional-support-payments.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Patches: Must load last - patches existing methods -->
-<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.init.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.init.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.init.js') . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars(asset('js/accounting/accounting-modal.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 
 <?php include '../includes/footer.php'; ?>
