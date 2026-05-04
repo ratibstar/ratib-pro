@@ -130,6 +130,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <a class="muted-btn partner-portal-dash-ledger-preview-link" href="<?php echo $ppAccountingPage; ?>">Full statement →</a>
             </div>
             <p id="ppDashLedgerPreviewLead" class="partner-portal-dash-ledger-preview-lead">Loading ledger…</p>
+            <p class="agency-detail-note partner-portal-dash-ledger-footnote">Figures include <strong>posted</strong> activity only — not vouchers or journals left in <strong>Draft</strong>.</p>
             <div id="ppDashLedgerPreviewKpis" class="partner-portal-dash-ledger-kpis is-hidden" hidden></div>
         </div>
     </section>

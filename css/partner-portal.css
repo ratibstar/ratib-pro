@@ -287,6 +287,20 @@
     max-width: 52rem;
 }
 
+.partner-portal-dash-ledger-footnote {
+    margin: -0.35rem 0 0.75rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: #94a3b8;
+    max-width: 52rem;
+}
+
+.partner-portal-acct-posted-note {
+    margin-top: 0.5rem;
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+
 .partner-portal-dash-ledger-kpis {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));

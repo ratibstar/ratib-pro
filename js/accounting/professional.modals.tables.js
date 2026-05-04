@@ -2339,6 +2339,91 @@
             }, 100);
         },
 
+        async generateCostCenterCode(codeInput) {
+            try {
+                const response = await fetch(`${this.apiBase}/cost-centers.php`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (data.success && data.cost_centers) {
+                    let maxNumber = 30000;
+
+                    data.cost_centers.forEach(cc => {
+                        const match = cc.code.match(/^CC(\d+)$/i);
+                        if (match) {
+                            const num = parseInt(match[1], 10);
+                            if (!isNaN(num) && num >= 30000 && num > maxNumber) {
+                                maxNumber = num;
+                            }
+                        }
+                    });
+
+                    const nextNumber = maxNumber + 1;
+                    codeInput.value = `CC${nextNumber.toString().padStart(5, '0')}`;
+                } else {
+                    codeInput.value = 'CC30000';
+                }
+            } catch (error) {
+                console.error('Error generating cost center code:', error);
+                codeInput.value = 'CC30000';
+            }
+        },
+
+        async loadCostCenterData(id) {
+            try {
+                const response = await fetch(`${this.apiBase}/cost-centers.php?id=${id}`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (data.success && data.cost_center) {
+                    document.getElementById('costCenterCode').value = data.cost_center.code;
+                    document.getElementById('costCenterName').value = data.cost_center.name;
+                    document.getElementById('costCenterDescription').value = data.cost_center.description || '';
+                    document.getElementById('costCenterStatus').value = data.cost_center.status;
+                }
+            } catch (error) {
+                this.showToast('Failed to load cost center data', 'error');
+            }
+        },
+
+        async saveCostCenter(id = null) {
+            const code = document.getElementById('costCenterCode').value.trim();
+            const name = document.getElementById('costCenterName').value.trim();
+            const description = document.getElementById('costCenterDescription').value.trim();
+            const status = document.getElementById('costCenterStatus').value;
+
+            if (!code || !name) {
+                this.showToast('Code and name are required', 'error');
+                return;
+            }
+
+            try {
+                const url = id ? `${this.apiBase}/cost-centers.php?id=${id}` : `${this.apiBase}/cost-centers.php`;
+                const method = id ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ code, name, description, status })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.showToast(data.message || (id ? 'Cost center updated' : 'Cost center created'), 'success');
+                    await this.closeModalWithConfirmation(document.getElementById('costCenterFormModal'));
+                    this.loadCostCenters();
+                } else {
+                    this.showToast(data.message || 'Failed to save cost center', 'error');
+                }
+            } catch (error) {
+                this.showToast('Error saving cost center', 'error');
+            }
+        },
+
         openBankGuaranteeForm(id = null) {
             const isEdit = id !== null;
             const formContent = `

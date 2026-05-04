@@ -47,6 +47,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
         <div class="agency-accounting-toolbar-text">
             <p class="agency-accounting-title">Ledger link</p>
             <p id="ppAcctLinkSummary" class="agency-detail-note agency-accounting-summary">Loading…</p>
+            <p class="agency-detail-note agency-accounting-summary partner-portal-acct-posted-note">Only <strong>posted</strong> amounts appear. Payment vouchers and journal entries still in <strong>Draft</strong> are excluded until your office posts them.</p>
         </div>
     </div>
 
