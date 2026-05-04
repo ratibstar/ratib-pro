@@ -1922,7 +1922,8 @@ try {
             }
             if ($hasVatReportCol) {
                 $lineCols[] = 'vat_report';
-                $lineVals[] = 'NULLIF(?, 0)';
+                // Must bind 0 or 1 only — NULLIF(?,0) turns 0 into NULL and breaks NOT NULL columns
+                $lineVals[] = '?';
                 $lineTypes .= 'i';
             }
 
