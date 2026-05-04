@@ -53,6 +53,23 @@ jobs:
             exit 0
           fi
 
+          CPANEL_BASE_URL="https://${{ secrets.CPANEL_HOST }}:2083"
+          AUTH_HEADER="Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}"
+
+          call_cpanel_api() {
+            local endpoint="$1"
+            shift
+            curl -fsSL --get \
+              --retry 5 \
+              --retry-all-errors \
+              --retry-delay 3 \
+              --connect-timeout 15 \
+              --max-time 90 \
+              -H "$AUTH_HEADER" \
+              "$@" \
+              "${CPANEL_BASE_URL}/execute/${endpoint}"
+          }
+
           CLEAN_REPO_ROOT="$(printf '%s' "${{ secrets.CPANEL_REPO_ROOT }}" | tr -d '\r\n' | xargs)"
           if [ -z "$CLEAN_REPO_ROOT" ]; then
             echo "CPANEL_REPO_ROOT is empty after trimming whitespace."
@@ -64,11 +81,9 @@ jobs:
             CLEAN_BRANCH="main"
           fi
 
-          SYNC_RESPONSE="$(curl -fsSL --get \
-            -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
+          SYNC_RESPONSE="$(call_cpanel_api "VersionControl/update" \
             --data-urlencode "repository_root=$CLEAN_REPO_ROOT" \
-            --data-urlencode "branch=$CLEAN_BRANCH" \
-            "https://${{ secrets.CPANEL_HOST }}:2083/execute/VersionControl/update")"
+            --data-urlencode "branch=$CLEAN_BRANCH")"
 
           echo "cPanel sync API response:"
           echo "$SYNC_RESPONSE"
@@ -79,10 +94,9 @@ jobs:
             exit 1
           fi
 
-          RESPONSE="$(curl -fsSL --get \
-            -H "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}" \
+          RESPONSE="$(call_cpanel_api "VersionControlDeployment/create" \
             --data-urlencode "repository_root=$CLEAN_REPO_ROOT" \
-            "https://${{ secrets.CPANEL_HOST }}:2083/execute/VersionControlDeployment/create")"
+            )"
 
           echo "cPanel API response:"
           echo "$RESPONSE"
