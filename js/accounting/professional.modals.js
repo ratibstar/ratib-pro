@@ -2678,6 +2678,14 @@
                     window.initializeEnglishDatePickers(modal);
                 }
             }, 200);
+
+            // Global currency hookup: ensure every accounting modal currency field
+            // is populated from Currency Management (active currencies).
+            setTimeout(async () => {
+                if (typeof this.populateCurrencyFieldsInContainer === 'function') {
+                    await this.populateCurrencyFieldsInContainer(modal, this.getDefaultCurrencySync(), true);
+                }
+            }, 120);
             
             // Mark creation time to prevent cleanup from removing it
             modal.setAttribute('data-created', Date.now().toString());

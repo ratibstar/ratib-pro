@@ -232,6 +232,71 @@
         return 'SAR';
     };
 
+    P.normalizeCurrencyCode = function(value) {
+        let code = String(value || '').trim();
+        if (code.includes(' - ')) {
+            code = code.split(' - ')[0].trim();
+        }
+        code = code.toUpperCase();
+        return /^[A-Z]{3}$/.test(code) ? code : '';
+    };
+
+    P.populateCurrencyFieldsInContainer = async function(container, preferredCurrency = null, forceRefresh = false) {
+        const scope = container || document;
+        const currencySelectors = [
+            'select[name="currency"]',
+            'select[name="journal_currency"]',
+            '#transactionCurrency',
+            '#journalCurrency',
+            '#entityTransactionCurrency',
+            '#entryApprovalCurrency',
+            '#bgCurrency'
+        ];
+        const selectMap = new Map();
+        currencySelectors.forEach((selector) => {
+            scope.querySelectorAll(selector).forEach((el) => {
+                if (el && el.tagName === 'SELECT' && el.id !== 'defaultCurrency') {
+                    selectMap.set(el, true);
+                }
+            });
+        });
+        const selects = Array.from(selectMap.keys());
+        if (selects.length === 0) return;
+
+        const preferred = this.normalizeCurrencyCode(preferredCurrency) || this.getDefaultCurrencySync();
+
+        if (window.currencyUtils && typeof window.currencyUtils.populateCurrencySelect === 'function') {
+            for (const select of selects) {
+                const current = this.normalizeCurrencyCode(select.value);
+                const target = current || preferred;
+                try {
+                    await window.currencyUtils.populateCurrencySelect(select, target);
+                } catch (e) {
+                    // Keep graceful fallback below.
+                    if (!select.value) {
+                        select.value = target;
+                    }
+                }
+            }
+            return;
+        }
+
+        // Fallback when currencyUtils is unavailable: ensure at least default currency exists.
+        for (const select of selects) {
+            const current = this.normalizeCurrencyCode(select.value);
+            const target = current || preferred;
+            if (!target) continue;
+            const hasOption = Array.from(select.options || []).some((o) => this.normalizeCurrencyCode(o.value) === target);
+            if (!hasOption) {
+                const opt = document.createElement('option');
+                opt.value = target;
+                opt.textContent = target;
+                select.appendChild(opt);
+            }
+            select.value = target;
+        }
+    };
+
     P.createStatCard = function(type, icon, value, label) {
         const typeClass = `stat-card-${type}`;
         const iconClass = `stat-icon-${type}`;
