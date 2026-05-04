@@ -1557,8 +1557,14 @@ try {
             throw new Exception('Invalid request data');
         }
         
-        // Convert entry_date from MM/DD/YYYY to YYYY-MM-DD for database
-        $entryDate = isset($data['entry_date']) ? formatDateForDatabase($data['entry_date']) : date('Y-m-d');
+        // Convert entry_date from MM/DD/YYYY to YYYY-MM-DD for database (never leave NULL — breaks NOT NULL / binds)
+        $entryDate = null;
+        if (!empty($data['entry_date'])) {
+            $entryDate = formatDateForDatabase($data['entry_date']);
+        }
+        if ($entryDate === null || $entryDate === '') {
+            $entryDate = date('Y-m-d');
+        }
         $description = $data['description'] ?? '';
         $accountId = intval($data['account_id'] ?? 0);
         $debit = floatval($data['debit'] ?? 0);

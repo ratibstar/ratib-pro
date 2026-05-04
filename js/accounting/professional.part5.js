@@ -591,6 +591,16 @@ ProfessionalAccounting.prototype.getTaxSettingsModalContent = function() {
 
     // Save methods
 ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = null) {
+        this._journalSaveLastError = null;
+        const jeFail = (stage, message, extra) => {
+            this._journalSaveLastError = Object.assign(
+                { stage, message: message || '', at: new Date().toISOString() },
+                extra && typeof extra === 'object' ? extra : {}
+            );
+            if (message) this.showToast(message, 'error');
+            return false;
+        };
+
         // Prefer the visible journal modal form — getElementById can match a stale/hidden duplicate and save empty lines.
         let form = null;
         try {
@@ -607,8 +617,7 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
             form = document.getElementById('journalEntryForm');
         }
         if (!form) {
-            this.showToast('Form not found', 'error');
-            return false;
+            return jeFail('validation', 'Form not found');
         }
         
         // Collect all debit and credit lines
@@ -622,10 +631,10 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
             const costCenterSelect = row.querySelector('.cost-center-select');
             const descriptionInput = row.querySelector('.line-description');
             const vatCheckbox = row.querySelector('.vat-checkbox');
-            const amountInput = row.querySelector('.debit-amount');
+            const amountInput = row.querySelector('input.debit-amount, input.line-amount.debit-amount, .debit-amount');
             
-            const accountId = accountSelect ? parseInt(accountSelect.value) : 0;
-            const amount = amountInput ? parseFloat(amountInput.value || 0) : 0;
+            const accountId = accountSelect ? parseInt(String(accountSelect.value || '').trim(), 10) : 0;
+            const amount = amountInput ? parseFloat(String(amountInput.value || '').replace(',', '.')) : 0;
             
             // Only include lines with account and amount > 0 (round amount to 2 decimals)
             if (accountId > 0 && amount > 0) {
@@ -646,10 +655,10 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
             const costCenterSelect = row.querySelector('.cost-center-select');
             const descriptionInput = row.querySelector('.line-description');
             const vatCheckbox = row.querySelector('.vat-checkbox');
-            const amountInput = row.querySelector('.credit-amount');
+            const amountInput = row.querySelector('input.credit-amount, input.line-amount.credit-amount, .credit-amount');
             
-            const accountId = accountSelect ? parseInt(accountSelect.value) : 0;
-            const amount = amountInput ? parseFloat(amountInput.value || 0) : 0;
+            const accountId = accountSelect ? parseInt(String(accountSelect.value || '').trim(), 10) : 0;
+            const amount = amountInput ? parseFloat(String(amountInput.value || '').replace(',', '.')) : 0;
             
             // Only include lines with account and amount > 0 (round amount to 2 decimals)
             if (accountId > 0 && amount > 0) {
@@ -664,8 +673,8 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
         });
         
         // Validate required fields
-        const entryDate = form.querySelector('#journalEntryDate')?.value;
-        const branchId = form.querySelector('#journalBranchSelect')?.value;
+        const entryDate = (form.querySelector('#journalEntryDate')?.value || '').trim();
+        const branchId = (form.querySelector('#journalBranchSelect')?.value || '').trim();
         let description = form.querySelector('textarea[name="description"]')?.value?.trim() ?? '';
         // Users often describe rows only; mirror that into the header so save isn't blocked.
         if (!description) {
@@ -682,20 +691,19 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
         }
         
         if (!entryDate) {
-            this.showToast('Please select a journal date', 'error');
-            return false;
+            return jeFail('validation', 'Please select a journal date');
         }
         if (!branchId) {
-            this.showToast('Please select a branch', 'error');
-            return false;
+            return jeFail('validation', 'Please select a branch');
         }
         if (!description) {
-            this.showToast('Please enter a journal description (header or line descriptions)', 'error');
-            return false;
+            return jeFail('validation', 'Please enter a journal description (header or line descriptions)');
         }
         if (debitLines.length === 0 && creditLines.length === 0) {
-            this.showToast('Please add at least one debit or credit line with an account and amount', 'error');
-            return false;
+            return jeFail('validation', 'Please add at least one debit or credit line with an account and amount', {
+                debitRowCount: debitRows.length,
+                creditRowCount: creditRows.length
+            });
         }
         
         // Calculate totals (round to 2 decimals to avoid float noise)
@@ -707,13 +715,11 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
         // Validate balance (tolerance 0.01 for rounding)
         const difference = Math.abs(totalDebit - totalCredit);
         if (difference > 0.01) {
-            this.showToast(`Entry is not balanced. Debit: ${totalDebit.toFixed(2)}, Credit: ${totalCredit.toFixed(2)}, Difference: ${difference.toFixed(2)}`, 'error');
-            return false;
+            return jeFail('validation', `Entry is not balanced. Debit: ${totalDebit.toFixed(2)}, Credit: ${totalCredit.toFixed(2)}, Difference: ${difference.toFixed(2)}`);
         }
         
         if (totalDebit === 0 && totalCredit === 0) {
-            this.showToast('Please enter amounts for at least one line', 'error');
-            return false;
+            return jeFail('validation', 'Please enter amounts for at least one line');
         }
         
         // Build data object
@@ -725,8 +731,7 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
         // Use first debit line if available, otherwise use first credit line
         const primaryLine = firstDebitLine || firstCreditLine;
         if (!primaryLine) {
-            this.showToast('Please add at least one line with an account and amount', 'error');
-            return false;
+            return jeFail('validation', 'Please add at least one line with an account and amount');
         }
         
         const data = {
@@ -794,8 +799,9 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
                 responseData = { success: false, message: errorMsg };
             }
             
+            const apiSuccessFlag = responseData && (responseData.success === true || responseData.success === 1 || responseData.success === '1' || responseData.success === 'true');
             // Log the actual response for debugging
-            if (!response.ok || !responseData.success) {
+            if (!response.ok || !apiSuccessFlag) {
                 console.error('Journal entry API response:', {
                     status: response.status,
                     statusText: response.statusText,
@@ -804,8 +810,9 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
                 });
             }
             
-            const isSuccess = response.ok && !!(responseData && responseData.success);
+            const isSuccess = response.ok && !!apiSuccessFlag;
             if (isSuccess) {
+                this._journalSaveLastError = null;
                 // Mark form as saved to prevent confirmation dialog (same scoped form as above)
                 if (form) {
                     form.setAttribute('data-saved', 'true');
@@ -851,19 +858,20 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
                 return true;
             } else {
                 const errorMsg = responseData.message || responseData.error || `Failed to save journal entry (HTTP ${response.status}). Please try again.`;
-                this.showToast(errorMsg, 'error');
-                return false;
+                return jeFail('api', errorMsg, {
+                    httpStatus: response.status,
+                    responseData: responseData,
+                    responsePreview: responseText.substring(0, 500)
+                });
             }
         } catch (error) {
             // Handle timeout explicitly
             if (error && (error.name === 'AbortError' || error.code === 20)) {
-                this.showToast('Saving is taking too long. Please try again.', 'error');
-                return false;
+                return jeFail('network', 'Saving is taking too long. Please try again.', { name: 'AbortError' });
             }
             const errorMsg = error.message || 'Error saving journal entry. Please check your connection and try again.';
-            this.showToast(errorMsg, 'error');
             console.error('Journal entry save error:', error);
-            return false;
+            return jeFail('network', errorMsg, { name: error && error.name });
         }
     }
 

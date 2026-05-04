@@ -3206,7 +3206,7 @@
                                 const entryId = jeForm.getAttribute('data-entry-id');
                                 const id = entryId && entryId !== 'null' ? parseInt(entryId, 10) : null;
                                 const r = await this.saveJournalEntry(id);
-                                log('saveJournalEntry returned', r);
+                                log('saveJournalEntry returned', r, this._journalSaveLastError || null);
                                 if (this.showToast) this.showToast(`saveJournalEntry → ${String(r)}`, r === true ? 'success' : 'warning');
                             } catch (err) {
                                 log('saveJournalEntry threw', err && err.message ? err.message : err);
