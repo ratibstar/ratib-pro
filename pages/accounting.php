@@ -18,6 +18,9 @@ if (!hasPermission('view_chart_accounts')) {
     exit;
 }
 
+// Bust browser/CDN caches after deploy: changes whenever this file is saved on the server.
+$accountingAssetDeploy = (int) @filemtime(__DIR__ . '/accounting.php');
+
 $pageTitle = "Professional Accounting System";
 $pageCss = [
     asset('css/accounting/professional.css') . "?v=" . time()
@@ -33,6 +36,7 @@ include '../includes/header.php';
 ?>
 
 <div class="accounting-container">
+    <!-- acctd=<?php echo (int) $accountingAssetDeploy; ?> View source / DevTools: if this number does not change after upload, the server is not serving the new accounting.php. -->
     <!-- Header -->
     <div class="accounting-header">
         <div class="header-left">
@@ -1051,31 +1055,31 @@ include '../includes/header.php';
     </div>
 </div>
 
-<script src="<?php echo asset('js/utils/currencies-utils.js'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/utils/currencies-utils.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Core: Class definition and constructor -->
-<script src="<?php echo asset('js/accounting/professional.core.js'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.core.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Utilities: Formatting and utility methods -->
-<script src="<?php echo asset('js/accounting/professional.utilities.js'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.utilities.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Part 1: setupEventListeners, ensureTabButtonsClickable, switchTab, handleNavClick, etc. -->
-<script src="<?php echo asset('js/accounting/professional.part1.js'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.part1.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Accounts: Account-related methods -->
-<script src="<?php echo asset('js/accounting/professional.accounts.js'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.accounts.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Dashboard: Dashboard methods -->
-<script src="<?php echo asset('js/accounting/professional.dashboard.js'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.dashboard.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Management: Management methods (cost centers, bank guarantees, vouchers, etc.) - Must load before modals.tables -->
-<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.management.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.management.js'), ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.management.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.management.js') . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Part 5: Payment/Receipt voucher modals, getPaymentVoucherModalContent, savePaymentVoucher - Must load before modals.tables -->
-<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.part5.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.part5.js'), ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.part5.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.part5.js') . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Modals: Modal-related methods -->
-<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.modals.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.modals.js'), ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.modals.tables.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.modals.tables.js'), ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.modals.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.modals.js') . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.modals.tables.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.modals.tables.js') . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Reports: Report methods -->
-<script src="<?php echo asset('js/accounting/professional.reports.js'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.reports.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Extensions: Additional features -->
-<script src="<?php echo asset('js/accounting/professional-support-payments.js'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional-support-payments.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Patches: Must load last - patches existing methods -->
-<script src="<?php echo asset('js/accounting/professional.init.js'); ?>"></script>
-<script src="<?php echo asset('js/accounting/accounting-modal.js'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.init.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/accounting-modal.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 
 <?php include '../includes/footer.php'; ?>
 
