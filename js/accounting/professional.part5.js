@@ -591,7 +591,21 @@ ProfessionalAccounting.prototype.getTaxSettingsModalContent = function() {
 
     // Save methods
 ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = null) {
-        const form = document.getElementById('journalEntryForm');
+        // Prefer the visible journal modal form — getElementById can match a stale/hidden duplicate and save empty lines.
+        let form = null;
+        try {
+            if (this.activeModal && this.activeModal.querySelector && this.activeModal.querySelector('#journalEntryForm')) {
+                form = this.activeModal.querySelector('#journalEntryForm');
+            }
+        } catch (e) {}
+        if (!form) {
+            form = document.querySelector('#journalEntryModal:not(.accounting-modal-hidden) #journalEntryForm')
+                || document.querySelector('.accounting-modal[data-modal-visible="true"] #journalEntryForm')
+                || document.querySelector('.accounting-modal:not(.accounting-modal-hidden) #journalEntryForm');
+        }
+        if (!form) {
+            form = document.getElementById('journalEntryForm');
+        }
         if (!form) {
             this.showToast('Form not found', 'error');
             return false;
@@ -770,8 +784,7 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
             
             const isSuccess = response.ok && !!(responseData && responseData.success);
             if (isSuccess) {
-                // Mark form as saved to prevent confirmation dialog
-                const form = document.getElementById('journalEntryForm');
+                // Mark form as saved to prevent confirmation dialog (same scoped form as above)
                 if (form) {
                     form.setAttribute('data-saved', 'true');
                 }

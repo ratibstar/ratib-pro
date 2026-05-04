@@ -4662,10 +4662,16 @@
             
             // Load accounts dropdown and entities
             setTimeout(async () => {
+                const journalShell = document.getElementById('journalEntryModal');
+                const form = (journalShell && journalShell.querySelector('#journalEntryForm'))
+                    || document.querySelector('.accounting-modal:not(.accounting-modal-hidden) #journalEntryForm')
+                    || document.getElementById('journalEntryForm');
                 // Ensure Branch has a valid selected value (required field).
                 // Some deployments may still render an empty-value placeholder option; this prevents
                 // the browser from blocking submit with "Please select an item in the list."
-                const branchSelect = document.getElementById('journalBranchSelect');
+                const branchSelect = (form && form.querySelector('#journalBranchSelect'))
+                    || (journalShell && journalShell.querySelector('#journalBranchSelect'))
+                    || document.getElementById('journalBranchSelect');
                 if (branchSelect) {
                     const currentVal = (branchSelect.value || '').toString().trim();
                     if (!currentVal) {
@@ -4683,8 +4689,10 @@
                     }
                 }
                 // Populate currency dropdown first
-                const currencySelect = document.querySelector('#journalEntryForm select[name="currency"]') || document.getElementById('journalEntryCurrencySelect');
-                            if (currencySelect && window.currencyUtils) {
+                const currencySelect = (form && form.querySelector('select[name="currency"]'))
+                    || (journalShell && journalShell.querySelector('#journalEntryCurrencySelect'))
+                    || document.getElementById('journalEntryCurrencySelect');
+                if (currencySelect && window.currencyUtils) {
                     try {
                         // Get default currency from system settings or use stored preference
                         const defaultCurrency = this.getDefaultCurrencySync();
@@ -4695,7 +4703,6 @@
                 }
                 
                 // Load accounts and cost centers for all debit and credit line selects
-                const form = document.getElementById('journalEntryForm');
                 if (form) {
                     const debitAccountSelects = form.querySelectorAll('#journalDebitLinesBody .account-select');
                     const creditAccountSelects = form.querySelectorAll('#journalCreditLinesBody .account-select');

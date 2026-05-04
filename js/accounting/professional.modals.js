@@ -2919,6 +2919,37 @@
                     
                     // Setup add line buttons - use event delegation for dynamically added buttons
                     journalEntryForm.addEventListener('click', async (e) => {
+                        const saveDraftEl = e.target.closest('[data-action="save-draft"], #journalSaveDraftBtn');
+                        if (saveDraftEl && journalEntryForm.contains(saveDraftEl)) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (this._journalEntrySaveInFlight) return;
+                            this._journalEntrySaveInFlight = true;
+                            const entryId = journalEntryForm.getAttribute('data-entry-id');
+                            const id = entryId && entryId !== 'null' ? parseInt(entryId, 10) : null;
+                            const prevText = saveDraftEl.textContent;
+                            saveDraftEl.disabled = true;
+                            saveDraftEl.textContent = 'Saving...';
+                            try {
+                                const result = await this.saveJournalEntry(id);
+                                if (result === true) {
+                                    this.showToast('Draft saved successfully!', 'success');
+                                    setTimeout(() => {
+                                        const m = journalEntryForm.closest('.accounting-modal');
+                                        if (m) this.closeModal(m.id, false);
+                                    }, 500);
+                                }
+                            } catch (err) {
+                                console.error('Error saving draft:', err);
+                            } finally {
+                                this._journalEntrySaveInFlight = false;
+                                if (saveDraftEl.isConnected) {
+                                    saveDraftEl.disabled = false;
+                                    saveDraftEl.textContent = prevText || 'Save Draft';
+                                }
+                            }
+                            return;
+                        }
                         // Check if clicked on button or icon inside button
                         const addDebitBtn = e.target.closest('[data-action="add-debit-line"]') || 
                                            (e.target.closest('.btn-add-line') && e.target.closest('.btn-add-line').dataset.side === 'debit');
@@ -2989,50 +3020,14 @@
                         });
                     }
                     
-                    // Setup Save Draft button handler
-                    const saveDraftBtn = document.getElementById('journalSaveDraftBtn');
-                    if (saveDraftBtn) {
-                        saveDraftBtn.addEventListener('click', async (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            
-                            // Save as draft (status will be Draft, which is default)
-                            const entryId = journalEntryForm.getAttribute('data-entry-id');
-                            const id = entryId && entryId !== 'null' ? parseInt(entryId) : null;
-                            
-                            // Disable button to prevent double submission
-                            saveDraftBtn.disabled = true;
-                            saveDraftBtn.textContent = 'Saving...';
-                            
-                            try {
-                                const result = await this.saveJournalEntry(id);
-                                if (result === true) {
-                                    this.showToast('Draft saved successfully!', 'success');
-                                    // Close modal after save
-                                    setTimeout(() => {
-                                        const modal = journalEntryForm.closest('.accounting-modal');
-                                        if (modal) {
-                                            this.closeModal(modal.id, false);
-                                        }
-                                    }, 500);
-                                }
-                            } catch (error) {
-                                console.error('Error saving draft:', error);
-                            } finally {
-                                if (saveDraftBtn && saveDraftBtn.isConnected) {
-                                    saveDraftBtn.disabled = false;
-                                    saveDraftBtn.textContent = 'Save Draft';
-                                }
-                            }
-                        });
-                    }
-                    
                     journalEntryForm.addEventListener('submit', async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        if (this._journalEntrySaveInFlight) return;
+                        this._journalEntrySaveInFlight = true;
                         
                         const entryId = journalEntryForm.getAttribute('data-entry-id');
-                        const id = entryId && entryId !== 'null' ? parseInt(entryId) : null;
+                        const id = entryId && entryId !== 'null' ? parseInt(entryId, 10) : null;
                         
                         // Disable submit button to prevent double submission
                         const submitBtn = journalEntryForm.querySelector('button[type="submit"]');
@@ -3054,6 +3049,8 @@
                         } catch (error) {
                             // Error is already handled in saveJournalEntry
                             console.error('Error in journal entry form submit:', error);
+                        } finally {
+                            this._journalEntrySaveInFlight = false;
                         }
                         
                         // Only re-enable button if validation failed (saveJournalEntry returned false)
