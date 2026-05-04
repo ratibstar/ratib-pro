@@ -2412,6 +2412,13 @@
 
                     if (data.success) {
                         pa.showToast(data.message || (saveId ? 'Cost center updated' : 'Cost center created'), 'success');
+                        if (!saveId && data.code && codeEl) {
+                            codeEl.value = data.code;
+                        }
+                        const formAfterSave = formEl();
+                        if (formAfterSave && typeof pa.markFormAsSaved === 'function') {
+                            pa.markFormAsSaved(formAfterSave);
+                        }
                         await pa.closeModalWithConfirmation(modalRoot());
                         pa.loadCostCenters();
                     } else {
