@@ -142,9 +142,10 @@ try {
     
     // Check if financial_transactions table exists (only for reports that need it)
     // Some reports like trial-balance and general-ledger work with financial_accounts only
+    // Reports that truly require financial_transactions (not income/expense statement — those use GL / vouchers / AP).
     $reportsNeedingTransactions = [
-        'income-statement', 'profit-loss', 'cash-flow', 'cash-book', 'bank-book',
-        'expense-statement', 'value-added', 'entries-by-year', 'changes-equity',
+        'cash-flow', 'cash-book', 'bank-book',
+        'value-added', 'entries-by-year', 'changes-equity',
         'financial-performance', 'comparative-report'
     ];
     
@@ -2334,46 +2335,46 @@ function generateExpenseStatement($conn, $startDate = null, $endDate = null) {
         'expenses' => []
     ];
 
-    if (!tableExists($conn, 'financial_transactions')) {
-        return $report;
-    }
+    // Legacy financial_transactions (optional). Do not return early if this table is missing —
+    // bills and posted payment_vouchers below must still load.
+    if (tableExists($conn, 'financial_transactions')) {
+        // Check if status column exists
+        $hasStatus = columnExists($conn, 'financial_transactions', 'status');
+        $statusFilter = $hasStatus ? "AND status = 'Posted'" : "";
 
-    // Check if status column exists
-    $hasStatus = columnExists($conn, 'financial_transactions', 'status');
-    $statusFilter = $hasStatus ? "AND status = 'Posted'" : "";
-    
-    $categoryField = columnExists($conn, 'financial_transactions', 'category') ? "COALESCE(category, 'Uncategorized')" : "'Uncategorized'";
-    $descriptionField = columnExists($conn, 'financial_transactions', 'description') ? "COALESCE(description, '')" : "CONCAT('Transaction #', ft.id)";
-    $dateField = columnExists($conn, 'financial_transactions', 'transaction_date')
-        ? 'transaction_date'
-        : (columnExists($conn, 'financial_transactions', 'created_at') ? 'created_at' : 'NULL');
-    $amountField = columnExists($conn, 'financial_transactions', 'total_amount')
-        ? 'COALESCE(total_amount, 0)'
-        : (columnExists($conn, 'financial_transactions', 'amount') ? 'COALESCE(amount, 0)' : '0');
-    $typeCondition = columnExists($conn, 'financial_transactions', 'transaction_type') ? "transaction_type = 'Expense'" : "1 = 1";
-    $dateFilter = "AND {$dateField} >= '{$escapedStartDate}' AND {$dateField} <= '{$escapedEndDate}'";
+        $categoryField = columnExists($conn, 'financial_transactions', 'category') ? "COALESCE(category, 'Uncategorized')" : "'Uncategorized'";
+        $descriptionField = columnExists($conn, 'financial_transactions', 'description') ? "COALESCE(description, '')" : "CONCAT('Transaction #', ft.id)";
+        $dateField = columnExists($conn, 'financial_transactions', 'transaction_date')
+            ? 'transaction_date'
+            : (columnExists($conn, 'financial_transactions', 'created_at') ? 'created_at' : 'NULL');
+        $amountField = columnExists($conn, 'financial_transactions', 'total_amount')
+            ? 'COALESCE(total_amount, 0)'
+            : (columnExists($conn, 'financial_transactions', 'amount') ? 'COALESCE(amount, 0)' : '0');
+        $typeCondition = columnExists($conn, 'financial_transactions', 'transaction_type') ? "transaction_type = 'Expense'" : "1 = 1";
+        $dateFilter = "AND {$dateField} >= '{$escapedStartDate}' AND {$dateField} <= '{$escapedEndDate}'";
 
-    // Get expenses grouped by category or description
-    $stmt = $conn->query("
-        SELECT 
-            {$categoryField} as category,
-            {$descriptionField} as description,
-            {$dateField} as transaction_date,
-            SUM({$amountField}) as total_amount,
-            COUNT(*) as transaction_count
-        FROM financial_transactions ft
-        WHERE {$typeCondition} {$statusFilter} {$dateFilter}
-        GROUP BY {$categoryField}, {$descriptionField}, {$dateField}
-        ORDER BY total_amount DESC
-        LIMIT 200
-    ");
-    
-    if ($stmt) {
-        while ($row = $stmt->fetch_assoc()) {
-            $row['total_amount'] = floatval($row['total_amount']);
-            $report['expenses'][] = $row;
+        // Get expenses grouped by category or description
+        $stmt = $conn->query("
+            SELECT 
+                {$categoryField} as category,
+                {$descriptionField} as description,
+                {$dateField} as transaction_date,
+                SUM({$amountField}) as total_amount,
+                COUNT(*) as transaction_count
+            FROM financial_transactions ft
+            WHERE {$typeCondition} {$statusFilter} {$dateFilter}
+            GROUP BY {$categoryField}, {$descriptionField}, {$dateField}
+            ORDER BY total_amount DESC
+            LIMIT 200
+        ");
+
+        if ($stmt) {
+            while ($row = $stmt->fetch_assoc()) {
+                $row['total_amount'] = floatval($row['total_amount']);
+                $report['expenses'][] = $row;
+            }
+            $stmt->free(); // Free result set
         }
-        $stmt->free(); // Free result set
     }
     
     // Get expenses from bills
@@ -2403,6 +2404,14 @@ function generateExpenseStatement($conn, $startDate = null, $endDate = null) {
     // Posted payment vouchers (Expenses module) — same data as Expenses table, not in financial_transactions
     if (tableExists($conn, 'payment_vouchers')) {
         $pvFilter = "AND pv.voucher_date >= '{$escapedStartDate}' AND pv.voucher_date <= '{$escapedEndDate}'";
+        $pvPostedParts = ["pv.status = 'Posted'"];
+        if (columnExists($conn, 'payment_vouchers', 'posting_status')) {
+            $pvPostedParts[] = "LOWER(TRIM(COALESCE(pv.posting_status,''))) = 'posted'";
+        }
+        if (columnExists($conn, 'payment_vouchers', 'is_posted')) {
+            $pvPostedParts[] = 'COALESCE(pv.is_posted,0) = 1';
+        }
+        $pvPostedSql = '(' . implode(' OR ', $pvPostedParts) . ')';
         $pvStmt = $conn->query("
             SELECT 
                 'Payment Vouchers' AS category,
@@ -2417,7 +2426,7 @@ function generateExpenseStatement($conn, $startDate = null, $endDate = null) {
                 pv.amount AS total_amount,
                 1 AS transaction_count
             FROM payment_vouchers pv
-            WHERE pv.status = 'Posted' AND pv.amount > 0 {$pvFilter}
+            WHERE {$pvPostedSql} AND pv.amount > 0 {$pvFilter}
             ORDER BY pv.voucher_date DESC, pv.id DESC
             LIMIT 200
         ");
