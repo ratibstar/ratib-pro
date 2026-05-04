@@ -366,7 +366,7 @@
                             </span>
                         </td>
                         <td>
-                            <input type="checkbox" class="cost-center-checkbox" value="${cc.id}">
+                            <input type="checkbox" class="cost-center-checkbox" name="cost_center_selected[]" id="cost-center-cb-${cc.id}" value="${cc.id}" aria-label="Select ${this.escapeHtml(cc.code || '')}">
                         </td>
                         <td>
                             <button class="btn-icon btn-edit" data-action="edit-cost-center" data-id="${cc.id}" title="Edit">
@@ -381,9 +381,24 @@
             }
             // Update pagination UI
             this.updateCostCentersPagination();
-            
+            this.updateCostCentersStatusCards();
+
             // Re-attach event handlers
             this.setupCostCentersEventHandlers();
+        },
+
+        updateCostCentersStatusCards() {
+            const data = Array.isArray(this.costCentersData) ? this.costCentersData : [];
+            const total = data.length;
+            const active = data.filter(cc => String(cc.status || '').toLowerCase() === 'active').length;
+            const inactive = data.filter(cc => String(cc.status || '').toLowerCase() === 'inactive').length;
+            const setText = (id, v) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = String(v);
+            };
+            setText('costCentersTotalCount', total);
+            setText('costCentersActiveCount', active);
+            setText('costCentersInactiveCount', inactive);
         },
 
         updateCostCentersPagination() {

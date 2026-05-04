@@ -1447,11 +1447,11 @@
                             <div class="filters-bar filters-bar-compact">
                                 <div class="filter-group filter-group-compact">
                                     <label><i class="fas fa-search"></i> Search:</label>
-                                    <input type="text" id="costCentersSearch" class="filter-input filter-input-compact" placeholder="Search cost centers...">
+                                    <input type="text" id="costCentersSearch" name="cost_centers_search" class="filter-input filter-input-compact" placeholder="Search cost centers..." autocomplete="off">
                                 </div>
                                 <div class="filter-group filter-group-compact">
                                     <label>Status:</label>
-                                    <select id="costCentersStatusFilter" class="filter-select filter-select-compact">
+                                    <select id="costCentersStatusFilter" name="cost_centers_status" class="filter-select filter-select-compact" autocomplete="off">
                                         <option value="">All Status</option>
                                         <option value="active">Active</option>
                                         <option value="inactive">Inactive</option>
@@ -1459,7 +1459,7 @@
                                 </div>
                                 <div class="filter-group filter-group-compact">
                                     <label>Show:</label>
-                                    <select id="costCentersPageSize" class="filter-select filter-select-compact">
+                                    <select id="costCentersPageSize" name="cost_centers_page_size" class="filter-select filter-select-compact" autocomplete="off">
                                         <option value="5" selected>5</option>
                                         <option value="10">10</option>
                                         <option value="25">25</option>
@@ -1482,7 +1482,7 @@
                                         <th>Name</th>
                                         <th>Description</th>
                                         <th>Status</th>
-                                        <th><input type="checkbox" id="selectAllCostCenters"></th>
+                                        <th><input type="checkbox" id="selectAllCostCenters" name="select_all_cost_centers" aria-label="Select all cost centers"></th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -2366,24 +2366,24 @@
                 const nameEl = form.querySelector('#costCenterName') || form.querySelector('[name="name"]');
                 const descEl = form.querySelector('#costCenterDescription') || form.querySelector('[name="description"]');
                 const statusEl = form.querySelector('#costCenterStatus') || form.querySelector('[name="status"]');
-                if (!codeEl || !nameEl) {
+                if (!nameEl || (saveId && !codeEl)) {
                     pa.showToast('Cost center fields are missing.', 'error');
                     return;
                 }
 
-                if (!saveId) {
-                    await generateCostCenterCode(codeEl);
-                }
-
                 const readPayload = () => ({
-                    code: String(codeEl.value || '').trim(),
+                    code: codeEl ? String(codeEl.value || '').trim() : '',
                     name: String(nameEl.value || '').trim(),
                     description: String(descEl ? descEl.value || '' : '').trim(),
                     status: String(statusEl ? statusEl.value || 'active' : 'active')
                 });
 
-                let { code, name, description, status } = readPayload();
-                if (!code || !name) {
+                const { code, name, description, status } = readPayload();
+                if (!name) {
+                    pa.showToast('Name is required', 'error');
+                    return;
+                }
+                if (saveId && !code) {
                     pa.showToast('Code and name are required', 'error');
                     return;
                 }
@@ -2395,26 +2395,17 @@
                 try {
                     const url = saveId ? `${apiBase}/cost-centers.php?id=${saveId}` : `${apiBase}/cost-centers.php`;
                     const method = saveId ? 'PUT' : 'POST';
+                    const bodyObj = saveId
+                        ? { code, name, description, status }
+                        : { server_assigned_code: true, name, description, status };
 
-                    const doFetch = () => fetch(url, {
+                    const response = await fetch(url, {
                         method: method,
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
-                        body: JSON.stringify({ code, name, description, status })
+                        body: JSON.stringify(bodyObj)
                     });
-
-                    let response = await doFetch();
-                    let data = await response.json().catch(() => ({}));
-
-                    let dupTries = 0;
-                    while (!saveId && data && data.success === false && /already exists/i.test(String(data.message || '')) && dupTries < 4) {
-                        dupTries++;
-                        await generateCostCenterCode(codeEl);
-                        ({ code, name, description, status } = readPayload());
-                        if (!code || !name) break;
-                        response = await doFetch();
-                        data = await response.json().catch(() => ({}));
-                    }
+                    const data = await response.json().catch(() => ({}));
 
                     if (data.success) {
                         pa.showToast(data.message || (saveId ? 'Cost center updated' : 'Cost center created'), 'success');
@@ -2436,8 +2427,8 @@
                 <form id="costCenterForm">
                     <div class="accounting-modal-form-group">
                         <label for="costCenterCode">Code <span class="required">*</span></label>
-                        <input type="text" id="costCenterCode" name="code" class="form-control" required ${isEdit ? '' : 'readonly'} placeholder="Auto-generated" title="${isEdit ? 'Cost center code' : 'Cost center code is auto-generated'}">
-                        ${isEdit ? '' : '<small class="form-help-text">Code will be auto-generated</small>'}
+                        <input type="text" id="costCenterCode" name="code" class="form-control" ${isEdit ? 'required' : 'readonly'} placeholder="${isEdit ? '' : 'Assigned on save'}" title="${isEdit ? 'Cost center code' : 'Code is assigned on the server when you create'}">
+                        ${isEdit ? '' : '<small class="form-help-text">Code is assigned when you save</small>'}
                     </div>
                     <div class="accounting-modal-form-group">
                         <label for="costCenterName">Name <span class="required">*</span></label>

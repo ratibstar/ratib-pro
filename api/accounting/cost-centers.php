@@ -41,6 +41,39 @@ if (isset($MODULE_PERMISSIONS['cost_centers'])) {
     }
 }
 
+/**
+ * Allocate next CC##### code from live DB (avoids stale client / duplicate POST).
+ */
+function ratib_allocate_next_cost_center_code(mysqli $conn): string
+{
+    $maxFromDb = 0;
+    $res = $conn->query('SELECT code FROM cost_centers');
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $c = $row['code'] ?? '';
+            if (preg_match('/^CC(\d+)$/i', $c, $m)) {
+                $n = (int) $m[1];
+                if ($n > $maxFromDb) {
+                    $maxFromDb = $n;
+                }
+            }
+        }
+    }
+    $floor = 30000;
+    $next = max($maxFromDb, $floor) + 1;
+    for ($attempt = 0; $attempt < 200; $attempt++) {
+        $code = 'CC' . str_pad((string) $next, 5, '0', STR_PAD_LEFT);
+        $check = $conn->prepare('SELECT id FROM cost_centers WHERE code = ?');
+        $check->bind_param('s', $code);
+        $check->execute();
+        if ($check->get_result()->num_rows === 0) {
+            return $code;
+        }
+        $next++;
+    }
+    throw new Exception('Could not allocate a unique cost center code');
+}
+
 try {
     // Check if cost_centers table exists, create if not
     $tableCheck = $conn->query("SHOW TABLES LIKE 'cost_centers'");
@@ -171,37 +204,48 @@ try {
         if (!$data) {
             $data = $_POST;
         }
-        
-        $code = trim($data['code'] ?? '');
+
         $name = trim($data['name'] ?? '');
         $description = trim($data['description'] ?? '');
         $status = $data['status'] ?? 'active';
+        if (!in_array($status, ['active', 'inactive'], true)) {
+            $status = 'active';
+        }
         $createdBy = $_SESSION['user_id'] ?? null;
-        
-        if (empty($code) || empty($name)) {
-            throw new Exception('Code and name are required');
+
+        if ($name === '') {
+            throw new Exception('Name is required');
         }
-        
-        // Check if code already exists
-        $checkStmt = $conn->prepare("SELECT id FROM cost_centers WHERE code = ?");
-        $checkStmt->bind_param('s', $code);
-        $checkStmt->execute();
-        if ($checkStmt->get_result()->num_rows > 0) {
-            throw new Exception('Cost center code already exists');
+
+        $serverAssigned = !empty($data['server_assigned_code']);
+        if ($serverAssigned) {
+            $code = ratib_allocate_next_cost_center_code($conn);
+        } else {
+            $code = trim($data['code'] ?? '');
+            if ($code === '') {
+                throw new Exception('Code and name are required');
+            }
+            $checkStmt = $conn->prepare('SELECT id FROM cost_centers WHERE code = ?');
+            $checkStmt->bind_param('s', $code);
+            $checkStmt->execute();
+            if ($checkStmt->get_result()->num_rows > 0) {
+                throw new Exception('Cost center code already exists');
+            }
         }
-        
-        $stmt = $conn->prepare("
+
+        $stmt = $conn->prepare('
             INSERT INTO cost_centers (code, name, description, status, created_by)
             VALUES (?, ?, ?, ?, ?)
-        ");
+        ');
         $stmt->bind_param('ssssi', $code, $name, $description, $status, $createdBy);
         $stmt->execute();
         $costCenterId = $conn->insert_id;
-        
+
         echo json_encode([
             'success' => true,
             'message' => 'Cost center created successfully',
-            'cost_center_id' => $costCenterId
+            'cost_center_id' => $costCenterId,
+            'code' => $code,
         ]);
     } elseif ($method === 'PUT') {
         // Update cost center
@@ -216,11 +260,14 @@ try {
         $name = trim($data['name'] ?? '');
         $description = trim($data['description'] ?? '');
         $status = $data['status'] ?? 'active';
-        
+        if (!in_array($status, ['active', 'inactive'], true)) {
+            $status = 'active';
+        }
+
         if (empty($code) || empty($name)) {
             throw new Exception('Code and name are required');
         }
-        
+
         // Check if code already exists for another cost center
         $checkStmt = $conn->prepare("SELECT id FROM cost_centers WHERE code = ? AND id != ?");
         $checkStmt->bind_param('si', $code, $id);
