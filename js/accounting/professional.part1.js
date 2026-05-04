@@ -1806,6 +1806,7 @@ ProfessionalAccounting.prototype.handleNavClick = function(tabName) {
         else if (tabName === 'accounts-payable') { this.openPayablesModal(); this.switchTab('dashboard'); }
         else if (['electronic-invoices','invoices','accounts-receivable'].includes(tabName)) { this.openReceivablesModal(); this.switchTab('dashboard'); }
         else if (tabName === 'entry-approval') { this.openEntryApprovalModal(); this.switchTab('dashboard'); }
+        else if (tabName === 'settings' || tabName === 'accounting-settings') { this.openSettingsModal(); this.switchTab('dashboard'); }
         else if (['bank-reconciliation','banking-cash','banking'].includes(tabName)) { this.loadBankingCashModal(); this.switchTab('dashboard'); }
         else if (tabName === 'financial-reports' || tabName === 'reports') { this.openReportsModal(); this.switchTab('dashboard'); }
         else this.switchTab(tabName);
