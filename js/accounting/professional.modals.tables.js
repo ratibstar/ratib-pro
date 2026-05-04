@@ -1941,50 +1941,53 @@
         setupCostCentersEventHandlers() {
             const modal = document.getElementById('costCentersModal');
             if (!modal) return;
-            // Select all checkbox
             const selectAll = modal.querySelector('#selectAllCostCenters');
-            if (selectAll) {
+            if (selectAll && !selectAll.dataset.ccHandlersBound) {
+                selectAll.dataset.ccHandlersBound = '1';
                 selectAll.addEventListener('change', (e) => {
                     const checkboxes = modal.querySelectorAll('.cost-center-checkbox');
-                    checkboxes.forEach(cb => cb.checked = e.target.checked);
+                    checkboxes.forEach(cb => { cb.checked = e.target.checked; });
                     this.toggleDeleteButton(modal, '.cost-center-checkbox', '[data-action="delete-selected-cost-centers"]');
                 });
             }
-            // Individual checkboxes
             modal.querySelectorAll('.cost-center-checkbox').forEach(cb => {
+                if (cb.dataset.ccRowBound) return;
+                cb.dataset.ccRowBound = '1';
                 cb.addEventListener('change', () => {
                     this.toggleDeleteButton(modal, '.cost-center-checkbox', '[data-action="delete-selected-cost-centers"]');
                     const allChecked = Array.from(modal.querySelectorAll('.cost-center-checkbox')).every(c => c.checked);
                     if (selectAll) selectAll.checked = allChecked;
                 });
             });
-            // Add button
             const addBtn = modal.querySelector('[data-action="add-cost-center"]');
-            if (addBtn) {
+            if (addBtn && !addBtn.dataset.ccHandlersBound) {
+                addBtn.dataset.ccHandlersBound = '1';
                 addBtn.addEventListener('click', () => this.openCostCenterForm());
             }
-            // Edit buttons
             modal.querySelectorAll('[data-action="edit-cost-center"]').forEach(btn => {
+                if (btn.dataset.ccHandlersBound) return;
+                btn.dataset.ccHandlersBound = '1';
                 btn.addEventListener('click', (e) => {
-                    const id = parseInt(e.target.closest('button').dataset.id);
+                    const id = parseInt(e.target.closest('button').dataset.id, 10);
                     this.openCostCenterForm(id);
                 });
             });
-            // Delete buttons
             modal.querySelectorAll('[data-action="delete-cost-center"]').forEach(btn => {
+                if (btn.dataset.ccHandlersBound) return;
+                btn.dataset.ccHandlersBound = '1';
                 btn.addEventListener('click', (e) => {
-                    const id = parseInt(e.target.closest('button').dataset.id);
+                    const id = parseInt(e.target.closest('button').dataset.id, 10);
                     this.deleteCostCenter(id);
                 });
             });
-            // Delete selected
             const deleteSelectedBtn = modal.querySelector('[data-action="delete-selected-cost-centers"]');
-            if (deleteSelectedBtn) {
+            if (deleteSelectedBtn && !deleteSelectedBtn.dataset.ccHandlersBound) {
+                deleteSelectedBtn.dataset.ccHandlersBound = '1';
                 deleteSelectedBtn.addEventListener('click', () => this.deleteSelectedCostCenters());
             }
-            // Search input handler
             const searchInput = document.getElementById('costCentersSearch');
-            if (searchInput) {
+            if (searchInput && !searchInput.dataset.ccHandlersBound) {
+                searchInput.dataset.ccHandlersBound = '1';
                 let searchTimeout;
                 searchInput.addEventListener('input', (e) => {
                     clearTimeout(searchTimeout);
@@ -1995,36 +1998,35 @@
                     }, 300);
                 });
             }
-            // Status filter handler
             const statusFilter = document.getElementById('costCentersStatusFilter');
-            if (statusFilter) {
+            if (statusFilter && !statusFilter.dataset.ccHandlersBound) {
+                statusFilter.dataset.ccHandlersBound = '1';
                 statusFilter.addEventListener('change', () => {
                     this.costCentersCurrentPage = 1;
                     this.renderCostCentersTable();
                 });
             }
-            // Page size handler
             const pageSize = document.getElementById('costCentersPageSize');
-            if (pageSize) {
+            if (pageSize && !pageSize.dataset.ccHandlersBound) {
+                pageSize.dataset.ccHandlersBound = '1';
                 pageSize.addEventListener('change', (e) => {
-                    this.costCentersPerPage = parseInt(e.target.value);
+                    this.costCentersPerPage = parseInt(e.target.value, 10);
                     this.costCentersCurrentPage = 1;
                     this.renderCostCentersTable();
                 });
             }
-            // Apply filters button
             const applyFiltersBtn = document.getElementById('costCentersApplyFilters');
-            if (applyFiltersBtn) {
+            if (applyFiltersBtn && !applyFiltersBtn.dataset.ccHandlersBound) {
+                applyFiltersBtn.dataset.ccHandlersBound = '1';
                 applyFiltersBtn.addEventListener('click', () => {
                     this.costCentersCurrentPage = 1;
                     this.renderCostCentersTable();
                 });
             }
-            // Pagination handlers
             const prevBtn = document.getElementById('costCentersPrevBtn');
             const nextBtn = document.getElementById('costCentersNextBtn');
-            
-            if (prevBtn) {
+            if (prevBtn && !prevBtn.dataset.ccHandlersBound) {
+                prevBtn.dataset.ccHandlersBound = '1';
                 prevBtn.addEventListener('click', () => {
                     if (this.costCentersCurrentPage > 1) {
                         this.costCentersCurrentPage--;
@@ -2032,8 +2034,8 @@
                     }
                 });
             }
-            
-            if (nextBtn) {
+            if (nextBtn && !nextBtn.dataset.ccHandlersBound) {
+                nextBtn.dataset.ccHandlersBound = '1';
                 nextBtn.addEventListener('click', () => {
                     if (this.costCentersCurrentPage < this.costCentersTotalPages) {
                         this.costCentersCurrentPage++;
@@ -2356,7 +2358,7 @@
 
             let saveLocked = false;
             const saveCostCenter = async (saveId = null) => {
-                if (saveLocked) return;
+                if (saveLocked || pa._costCenterSaveInFlight) return;
                 const form = formEl();
                 if (!form) {
                     pa.showToast('Form not found. Close and reopen the dialog.', 'error');
@@ -2390,6 +2392,7 @@
 
                 const submitBtn = form.querySelector('button[type="submit"]');
                 saveLocked = true;
+                pa._costCenterSaveInFlight = true;
                 if (submitBtn) submitBtn.disabled = true;
 
                 try {
@@ -2418,6 +2421,7 @@
                     pa.showToast('Error saving cost center', 'error');
                 } finally {
                     saveLocked = false;
+                    pa._costCenterSaveInFlight = false;
                     if (submitBtn) submitBtn.disabled = false;
                 }
             };
@@ -2462,7 +2466,8 @@
 
             setTimeout(() => {
                 const form = formEl();
-                if (form) {
+                if (form && !form.dataset.ccSubmitBound) {
+                    form.dataset.ccSubmitBound = '1';
                     form.addEventListener('submit', async (e) => {
                         e.preventDefault();
                         await saveCostCenter(isEdit ? editId : null);

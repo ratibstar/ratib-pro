@@ -5095,7 +5095,10 @@ ProfessionalAccounting.prototype.renderCostCentersTable = function() {
 
         // Update pagination UI
         this.updateCostCentersPagination();
-        
+        if (typeof this.updateCostCentersStatusCards === 'function') {
+            this.updateCostCentersStatusCards();
+        }
+
         // Re-attach event handlers
         this.setupCostCentersEventHandlers();
     }
