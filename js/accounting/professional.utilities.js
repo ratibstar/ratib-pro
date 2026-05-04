@@ -682,18 +682,24 @@
         const rawStored = localStorage.getItem('accounting_default_currency');
         const preferredFromStorage = rawStored ? String(rawStored).trim().toUpperCase() : '';
         const normalizedPreferredFromStorage = /^[A-Z]{3}$/.test(preferredFromStorage) ? preferredFromStorage : '';
+        const serverHintRaw = typeof window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__ === 'string'
+            ? String(window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__).trim().toUpperCase()
+            : '';
+        const serverHint = /^[A-Z]{3}$/.test(serverHintRaw) ? serverHintRaw : '';
 
+        // Avoid SAR→BDT flicker: do not jump to activeCurrencies[0] when localStorage/default was set
+        // from PHP bootstrap or accounting_settings but the JS active list omits that code or orders BDT first.
         let resolvedCurrency = 'SAR';
-        if (preferredFromSetting && activeSet.has(preferredFromSetting)) {
+        if (preferredFromSetting && /^[A-Z]{3}$/.test(preferredFromSetting)) {
             resolvedCurrency = preferredFromSetting;
         } else if (normalizedPreferredFromStorage && activeSet.has(normalizedPreferredFromStorage)) {
             resolvedCurrency = normalizedPreferredFromStorage;
+        } else if (normalizedPreferredFromStorage && !activeSet.has(normalizedPreferredFromStorage)) {
+            resolvedCurrency = normalizedPreferredFromStorage;
+        } else if (serverHint) {
+            resolvedCurrency = serverHint;
         } else if (activeCurrencies.length > 0) {
             resolvedCurrency = activeCurrencies[0];
-        } else if (preferredFromSetting) {
-            resolvedCurrency = preferredFromSetting;
-        } else if (normalizedPreferredFromStorage) {
-            resolvedCurrency = normalizedPreferredFromStorage;
         }
 
         localStorage.setItem('accounting_default_currency', resolvedCurrency);
