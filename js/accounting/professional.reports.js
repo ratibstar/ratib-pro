@@ -1249,6 +1249,7 @@
                 const defaultStartDate = new Date();
                 defaultStartDate.setMonth(defaultStartDate.getMonth() - 1);
                 const defaultEndDate = new Date();
+                defaultEndDate.setMonth(defaultEndDate.getMonth() + 1, 0);
                 
                 html += `
                     <div class="filter-group filter-group-compact">
@@ -1347,6 +1348,7 @@
                 const defaultStartDate = new Date();
                 defaultStartDate.setMonth(defaultStartDate.getMonth() - 1);
                 const defaultEndDate = new Date();
+                defaultEndDate.setMonth(defaultEndDate.getMonth() + 1, 0);
                 startDateInput.value = this.formatDateForInput(defaultStartDate.toISOString());
                 endDateInput.value = this.formatDateForInput(defaultEndDate.toISOString());
             }
@@ -1655,11 +1657,15 @@
                 const searchTerm = this.reportSearchTerm.toLowerCase().trim();
                 revenue = revenue.filter(item => {
                     const month = (item.month || '').toLowerCase();
-                    return month.includes(searchTerm);
+                    const code = (item.account_code || '').toLowerCase();
+                    const name = (item.account_name || '').toLowerCase();
+                    return month.includes(searchTerm) || code.includes(searchTerm) || name.includes(searchTerm);
                 });
                 expenses = expenses.filter(item => {
                     const month = (item.month || '').toLowerCase();
-                    return month.includes(searchTerm);
+                    const code = (item.account_code || '').toLowerCase();
+                    const name = (item.account_name || '').toLowerCase();
+                    return month.includes(searchTerm) || code.includes(searchTerm) || name.includes(searchTerm);
                 });
             }
             
@@ -1673,14 +1679,16 @@
             html += '</div>';
             html += '<div class="professional-report-table-wrapper">';
             html += '<table class="professional-report-table">';
-            html += '<thead><tr><th class="report-col-period">Period</th><th class="report-col-amount text-right">Total Revenue</th></tr></thead>';
+            html += '<thead><tr><th class="report-col-period">Account / Period</th><th class="report-col-amount text-right">Total Revenue</th></tr></thead>';
             html += '<tbody>';
             
             if (revenue.length > 0) {
                 revenue.forEach((item, index) => {
+                    const label = item.month || [item.account_code, item.account_name].filter(Boolean).join(' - ') || 'Revenue';
+                    const value = item.total_revenue ?? item.revenue_amount ?? item.amount ?? 0;
                     html += `<tr class="report-data-row ${index % 2 === 0 ? 'even' : 'odd'}">`;
-                    html += `<td class="report-col-period">${this.escapeHtml(item.month || '')}</td>`;
-                    html += `<td class="report-col-amount text-right credit-cell">${this.formatCurrency(parseFloat(item.total_revenue || 0))}</td>`;
+                    html += `<td class="report-col-period">${this.escapeHtml(label)}</td>`;
+                    html += `<td class="report-col-amount text-right credit-cell">${this.formatCurrency(parseFloat(value || 0))}</td>`;
                     html += '</tr>';
                 });
             } else {
@@ -1696,14 +1704,16 @@
             html += '</div>';
             html += '<div class="professional-report-table-wrapper">';
             html += '<table class="professional-report-table">';
-            html += '<thead><tr><th class="report-col-period">Period</th><th class="report-col-amount text-right">Total Expenses</th></tr></thead>';
+            html += '<thead><tr><th class="report-col-period">Account / Period</th><th class="report-col-amount text-right">Total Expenses</th></tr></thead>';
             html += '<tbody>';
             
             if (expenses.length > 0) {
                 expenses.forEach((item, index) => {
+                    const label = item.month || [item.account_code, item.account_name].filter(Boolean).join(' - ') || 'Expense';
+                    const value = item.total_expenses ?? item.expense_amount ?? item.amount ?? 0;
                     html += `<tr class="report-data-row ${index % 2 === 0 ? 'even' : 'odd'}">`;
-                    html += `<td class="report-col-period">${this.escapeHtml(item.month || '')}</td>`;
-                    html += `<td class="report-col-amount text-right debit-cell">${this.formatCurrency(parseFloat(item.total_expenses || 0))}</td>`;
+                    html += `<td class="report-col-period">${this.escapeHtml(label)}</td>`;
+                    html += `<td class="report-col-amount text-right debit-cell">${this.formatCurrency(parseFloat(value || 0))}</td>`;
                     html += '</tr>';
                 });
             } else {
