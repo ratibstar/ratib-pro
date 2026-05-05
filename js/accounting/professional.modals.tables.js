@@ -420,22 +420,22 @@
                                 <div class="summary-entity-card">
                                     <h4>Balance Reports</h4>
                                     <p id="modalReportsBalanceCount">3</p>
-                                    <span class="entity-amount">Trial Balance, Balance Sheet, Cash Flow Report</span>
+                                    <span class="entity-amount" id="modalReportsBalanceHint">Trial Balance, Balance Sheet, Cash Flow Report</span>
                                 </div>
                                 <div class="summary-entity-card">
                                     <h4>Transaction Reports</h4>
                                     <p id="modalReportsTransactionCount">5</p>
-                                    <span class="entity-amount">Cash Book, Bank Book, Ledger, Account Statement, Chart</span>
+                                    <span class="entity-amount" id="modalReportsTransactionHint">Cash Book, Bank Book, Ledger, Account Statement, Chart</span>
                                 </div>
                                 <div class="summary-entity-card">
                                     <h4>Aging Reports</h4>
                                     <p id="modalReportsAgingCount">2</p>
-                                    <span class="entity-amount">Debt Receivable, Credit Receivable</span>
+                                    <span class="entity-amount" id="modalReportsAgingHint">Debt Receivable, Credit Receivable</span>
                                 </div>
                                 <div class="summary-entity-card">
                                     <h4>Analysis Reports</h4>
                                     <p id="modalReportsAnalysisCount">6</p>
-                                    <span class="entity-amount">Income, Expense, Performance, Equity, Comparative</span>
+                                    <span class="entity-amount" id="modalReportsAnalysisHint">Income, Expense, Performance, Equity, Comparative</span>
                                 </div>
                             </div>
                         </div>
@@ -576,7 +576,75 @@
                 this.setupReportsFilters();
                 // Update counts on initial load
                 this.filterReports();
+                this.loadReportsConnectionSummary();
+                this.startReportsConnectionWatcher();
             }, 100);
+        },
+
+        stopReportsConnectionWatcher() {
+            if (this._reportsConnectionInterval) {
+                clearInterval(this._reportsConnectionInterval);
+                this._reportsConnectionInterval = null;
+            }
+        },
+
+        startReportsConnectionWatcher() {
+            this.stopReportsConnectionWatcher();
+            this._reportsConnectionInterval = setInterval(() => {
+                const modalStillOpen = !!document.getElementById('modalReportsGrid');
+                if (!modalStillOpen) {
+                    this.stopReportsConnectionWatcher();
+                    return;
+                }
+                this.loadReportsConnectionSummary();
+            }, 20000);
+        },
+
+        async loadReportsConnectionSummary() {
+            try {
+                const summaryRes = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
+                const summary = await summaryRes.json().catch(() => null);
+                if (!summary || !summary.success) return;
+
+                const cur = this.normalizeCurrencyCode(summary?.dashboard?.currency) || this.getDefaultCurrencySync();
+                const cash = Number(summary?.dashboard?.cash_balance || 0);
+                const receivables = Number(summary?.dashboard?.total_receivables || 0);
+                const payables = Number(summary?.dashboard?.total_payables || 0);
+                const income = Number(summary?.dashboard?.total_revenue || 0);
+                const expense = Number(summary?.dashboard?.total_expenses || 0);
+                const profit = Number(summary?.dashboard?.net_profit || 0);
+
+                const balanceHint = document.getElementById('modalReportsBalanceHint');
+                if (balanceHint) {
+                    balanceHint.textContent = `Cash ${this.formatCurrency(cash, cur)} | Net ${this.formatCurrency(profit, cur)}`;
+                }
+                const agingHint = document.getElementById('modalReportsAgingHint');
+                if (agingHint) {
+                    agingHint.textContent = `AR ${this.formatCurrency(receivables, cur)} | AP ${this.formatCurrency(payables, cur)}`;
+                }
+                const analysisHint = document.getElementById('modalReportsAnalysisHint');
+                if (analysisHint) {
+                    analysisHint.textContent = `Revenue ${this.formatCurrency(income, cur)} | Expense ${this.formatCurrency(expense, cur)}`;
+                }
+
+                const txHint = document.getElementById('modalReportsTransactionHint');
+                if (txHint) {
+                    const txRes = await fetch(`${this.apiBase}/transactions.php?limit=1&page=1`, {
+                        credentials: 'include',
+                        cache: 'no-cache',
+                        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                    });
+                    const tx = await txRes.json().catch(() => null);
+                    const totalEntries = Number(tx?.total_count || tx?.total || tx?.count || 0);
+                    txHint.textContent = `${totalEntries} transaction entries available`;
+                }
+            } catch (e) {
+                // Keep the modal usable even if summary endpoints fail.
+            }
         },
 
         setupReportsFilters() {
