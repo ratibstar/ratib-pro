@@ -12,6 +12,7 @@ class CurrencyUtils {
         this.currenciesCache = null;
         this.cacheTimestamp = null;
         this.cacheDuration = 5 * 60 * 1000; // 5 minutes cache
+        this._warnedNoActiveCurrencies = false;
         const el = typeof document !== 'undefined' ? document.getElementById('app-config') : null;
         const cpHr = (window.APP_CONFIG && window.APP_CONFIG.controlHrApiBase) || (el && el.getAttribute('data-control-hr-api-base'));
         const controlPath = (window.APP_CONFIG && window.APP_CONFIG.controlApiPath) || (el && el.getAttribute('data-control-api-path'));
@@ -79,7 +80,13 @@ class CurrencyUtils {
                 this.currenciesCache = formattedCurrencies;
                 this.cacheTimestamp = Date.now();
                 if (formattedCurrencies.length === 0) {
-                    console.warn('⚠️ No active currencies found! Please activate currencies in System Settings.');
+                    // Avoid console spam when multiple modules request currencies in a loop.
+                    if (!this._warnedNoActiveCurrencies) {
+                        console.warn('⚠️ No active currencies found! Please activate currencies in System Settings.');
+                        this._warnedNoActiveCurrencies = true;
+                    }
+                } else {
+                    this._warnedNoActiveCurrencies = false;
                 }
                 return formattedCurrencies;
             } else {
@@ -173,7 +180,8 @@ class CurrencyUtils {
 
         try {
             // Fetch active currencies from API (only active currencies are returned)
-            const currencies = await this.fetchCurrencies(true); // Force refresh to get latest active currencies
+            // Prefer cache to prevent repeated API calls + repeated warning logs.
+            const currencies = await this.fetchCurrencies(false);
             
             // Build options HTML
             let normalizedCurrency = selectedCurrency;
@@ -212,6 +220,7 @@ class CurrencyUtils {
     clearCache() {
         this.currenciesCache = null;
         this.cacheTimestamp = null;
+        this._warnedNoActiveCurrencies = false;
     }
 }
 
