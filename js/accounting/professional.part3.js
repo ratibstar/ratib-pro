@@ -5180,7 +5180,9 @@ ProfessionalAccounting.prototype.openReportsModal = function() {
         setTimeout(() => {
             this.attachReportCardListeners();
             this.setupReportsFilters();
-            // Update counts on initial load
+            // Default to live summary mode; never prefill top cards with catalog counts.
+            this._reportsSummaryUsesCatalogCounts = false;
+            // Apply card visibility filtering only.
             this.filterReports();
             this.loadReportsConnectionSummary();
             this.startReportsConnectionWatcher();
@@ -5253,6 +5255,9 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             const receivablesCount = Number(summary?.dashboard?.receivables_count || 0);
             const payablesCount = Number(summary?.dashboard?.payables_count || 0);
 
+            // Always keep top summary cards in live-metrics mode.
+            this._reportsSummaryUsesCatalogCounts = false;
+
             // If summary is all zeros but vouchers exist, compute per-agency fallback.
             if (income === 0 && expense === 0 && profit === 0) {
                 try {
@@ -5289,6 +5294,18 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             if (analysisHint) {
                 analysisHint.textContent = `Revenue ${this.formatCurrency(income, cur)} | Expense ${this.formatCurrency(expense, cur)}${suffix}`;
             }
+
+            // Update financial cards independently from transactions endpoint.
+            const financialEl = document.getElementById('modalReportsFinancial');
+            const operationalEl = document.getElementById('modalReportsOperational');
+            const balanceCountEl = document.getElementById('modalReportsBalanceCount');
+            const agingCountEl = document.getElementById('modalReportsAgingCount');
+            const analysisCountEl = document.getElementById('modalReportsAnalysisCount');
+            if (financialEl) financialEl.textContent = this.formatCurrency(income, cur);
+            if (operationalEl) operationalEl.textContent = this.formatCurrency(expense, cur);
+            if (balanceCountEl) balanceCountEl.textContent = this.formatCurrency(cash, cur);
+            if (agingCountEl) agingCountEl.textContent = String(receivablesCount + payablesCount);
+            if (analysisCountEl) analysisCountEl.textContent = this.formatCurrency(profit, cur);
 
             let totalEntries = 0;
             if (txHint) {
@@ -5355,22 +5372,10 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                 txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
             }
 
-            // Use agency-specific accounting metrics for top cards (not static catalog counts).
-            this._reportsSummaryUsesCatalogCounts = false;
             const totalEl = document.getElementById('modalReportsTotal');
-            const financialEl = document.getElementById('modalReportsFinancial');
-            const operationalEl = document.getElementById('modalReportsOperational');
-            const balanceCountEl = document.getElementById('modalReportsBalanceCount');
             const transactionCountEl = document.getElementById('modalReportsTransactionCount');
-            const agingCountEl = document.getElementById('modalReportsAgingCount');
-            const analysisCountEl = document.getElementById('modalReportsAnalysisCount');
             if (totalEl) totalEl.textContent = String(totalEntries);
-            if (financialEl) financialEl.textContent = this.formatCurrency(income, cur);
-            if (operationalEl) operationalEl.textContent = this.formatCurrency(expense, cur);
-            if (balanceCountEl) balanceCountEl.textContent = this.formatCurrency(cash, cur);
             if (transactionCountEl) transactionCountEl.textContent = String(totalEntries);
-            if (agingCountEl) agingCountEl.textContent = String(receivablesCount + payablesCount);
-            if (analysisCountEl) analysisCountEl.textContent = this.formatCurrency(profit, cur);
         } catch (e) {
             // Keep the modal usable even if summary endpoints fail.
         }
