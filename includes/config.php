@@ -1186,8 +1186,42 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
         }
         $sessionLoggedIn = !empty($_SESSION['logged_in']);
         $controlLoggedIn = !empty($_SESSION['control_logged_in']);
+        $reqUriTenant = (string)($_SERVER['REQUEST_URI'] ?? '');
+        $isApiReqTenant = strpos($reqUriTenant, '/api/') !== false;
         $getControl = !empty($_GET['control']) && (string)$_GET['control'] === '1';
         $getAgencyId = isset($_GET['agency_id']) && ctype_digit((string)$_GET['agency_id']) ? (int)$_GET['agency_id'] : 0;
+        $getCountryId = isset($_GET['country_id']) && ctype_digit((string)$_GET['country_id']) ? (int)$_GET['country_id'] : 0;
+
+        // API hardening: if control/agency context is missing on API requests, recover it
+        // from same-origin referrer query (accounting.php?control=1&agency_id=...).
+        if ($singleUrlMode && $isApiReqTenant && ($getAgencyId <= 0 || !$getControl)) {
+            $ref = (string)($_SERVER['HTTP_REFERER'] ?? '');
+            if ($ref !== '') {
+                $refQuery = (string)parse_url($ref, PHP_URL_QUERY);
+                if ($refQuery !== '') {
+                    parse_str($refQuery, $refParams);
+                    $refControl = !empty($refParams['control']) && (string)$refParams['control'] === '1';
+                    $refAgencyId = isset($refParams['agency_id']) && ctype_digit((string)$refParams['agency_id'])
+                        ? (int)$refParams['agency_id']
+                        : 0;
+                    $refCountryId = isset($refParams['country_id']) && ctype_digit((string)$refParams['country_id'])
+                        ? (int)$refParams['country_id']
+                        : 0;
+                    if ($getAgencyId <= 0 && $refAgencyId > 0) {
+                        $getAgencyId = $refAgencyId;
+                        $_GET['agency_id'] = (string)$refAgencyId;
+                    }
+                    if (!$getControl && $refControl) {
+                        $getControl = true;
+                        $_GET['control'] = '1';
+                    }
+                    if ($getCountryId <= 0 && $refCountryId > 0) {
+                        $getCountryId = $refCountryId;
+                        $_GET['country_id'] = (string)$refCountryId;
+                    }
+                }
+            }
+        }
         $openAgencyContext = $singleUrlMode && $getControl && $getAgencyId > 0;
 
         // Control "Open" passes ?control=1&agency_id=X — that must win over a stale session from another agency.
