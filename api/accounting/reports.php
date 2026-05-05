@@ -2447,6 +2447,37 @@ function generateExpenseStatement($conn, $startDate = null, $endDate = null) {
         }
     }
 
+    // Legacy payments table source (used by some deployments/UI flows).
+    if (tableExists($conn, 'payment_payments')) {
+        $ppStmt = $conn->query("
+            SELECT
+                'Payment Vouchers' AS category,
+                CONCAT(
+                    'Payment ',
+                    COALESCE(NULLIF(TRIM(payment_number), ''), CONCAT('#', id)),
+                    IF(reference_number IS NOT NULL AND CHAR_LENGTH(TRIM(reference_number)) > 0,
+                       CONCAT(' — Ref ', TRIM(reference_number)),
+                       '')
+                ) AS description,
+                payment_date AS transaction_date,
+                COALESCE(amount, 0) AS total_amount,
+                1 AS transaction_count
+            FROM payment_payments
+            WHERE LOWER(TRIM(COALESCE(status, ''))) IN ('cleared', 'sent', 'posted', 'approved')
+              AND DATE(payment_date) BETWEEN '{$escapedStartDate}' AND '{$escapedEndDate}'
+              AND COALESCE(amount, 0) > 0
+            ORDER BY payment_date DESC, id DESC
+            LIMIT 300
+        ");
+        if ($ppStmt) {
+            while ($row = $ppStmt->fetch_assoc()) {
+                $row['total_amount'] = floatval($row['total_amount']);
+                $report['expenses'][] = $row;
+            }
+            $ppStmt->free();
+        }
+    }
+
     // Fallback/source-of-truth: expense-side entries from general ledger + chart of accounts.
     // This keeps Expense Statement connected to actual accounting postings.
     if (tableExists($conn, 'general_ledger') && tableExists($conn, 'financial_accounts')) {
