@@ -602,7 +602,15 @@
 
         async loadReportsConnectionSummary() {
             try {
-                const summaryRes = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
+                const tenantParams = new URLSearchParams();
+                const currentParams = new URLSearchParams(window.location.search || '');
+                ['control', 'agency_id', 'country_id'].forEach((key) => {
+                    const val = currentParams.get(key);
+                    if (val !== null && val !== '') tenantParams.set(key, val);
+                });
+                const tenantQuery = tenantParams.toString();
+                const summaryUrl = `${this.apiBase}/unified-calculations.php?type=all${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                const summaryRes = await fetch(summaryUrl, {
                     credentials: 'include',
                     cache: 'no-cache',
                     headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
@@ -633,7 +641,8 @@
 
                 const txHint = document.getElementById('modalReportsTransactionHint');
                 if (txHint) {
-                    const txRes = await fetch(`${this.apiBase}/transactions.php?limit=1&page=1`, {
+                    const txUrl = `${this.apiBase}/transactions.php?limit=1&page=1${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                    const txRes = await fetch(txUrl, {
                         credentials: 'include',
                         cache: 'no-cache',
                         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
