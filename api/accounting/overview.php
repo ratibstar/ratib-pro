@@ -51,9 +51,19 @@ try {
     if ($curRes instanceof mysqli_result) {
         $curRes->free();
     }
-    if ($data['currency'] === 'SAR') {
-        $tblC = @$conn->query("SHOW TABLES LIKE 'currencies'");
-        if ($tblC && $tblC->num_rows > 0) {
+    // Enforce active currencies for overview currency field.
+    $tblC = @$conn->query("SHOW TABLES LIKE 'currencies'");
+    if ($tblC && $tblC->num_rows > 0) {
+        $codeEsc = $conn->real_escape_string($data['currency']);
+        $isActive = false;
+        $r2 = @$conn->query("SELECT 1 AS ok FROM currencies WHERE (is_active = 1 OR is_active = '1') AND UPPER(TRIM(code)) = '{$codeEsc}' LIMIT 1");
+        if ($r2 && $r2->num_rows > 0) {
+            $isActive = true;
+        }
+        if ($r2 instanceof mysqli_result) {
+            $r2->free();
+        }
+        if (!$isActive) {
             $rC = @$conn->query("SELECT UPPER(TRIM(code)) AS c FROM currencies WHERE (is_active = 1 OR is_active = '1') ORDER BY display_order ASC, code ASC LIMIT 1");
             if ($rC && ($rowC = $rC->fetch_assoc())) {
                 $vC = strtoupper(trim((string) ($rowC['c'] ?? '')));
@@ -65,9 +75,9 @@ try {
                 $rC->free();
             }
         }
-        if ($tblC instanceof mysqli_result) {
-            $tblC->free();
-        }
+    }
+    if ($tblC instanceof mysqli_result) {
+        $tblC->free();
     }
 
     $stmt = $conn->prepare("SELECT COALESCE(SUM(total_amount), 0) as total_revenue FROM financial_transactions WHERE transaction_type = 'Income' AND status IN ('Approved', 'Posted') AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
