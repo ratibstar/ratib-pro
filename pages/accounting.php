@@ -24,7 +24,7 @@ $acctUtilitiesVer = (int) @filemtime(__DIR__ . '/../js/accounting/professional.u
 $acctDashboardVer = (int) @filemtime(__DIR__ . '/../js/accounting/professional.dashboard.js');
 
 // Tenant DB default for accounting UI (fixes stale localStorage e.g. BDT from another agency/session).
-$ratibAccountingBootstrapCurrency = 'SAR';
+$ratibAccountingBootstrapCurrency = '';
 if (isset($conn) && $conn instanceof mysqli) {
     $fromSettings = null;
     $res = @$conn->query("SELECT setting_value FROM accounting_settings WHERE setting_key = 'default_currency' LIMIT 1");
@@ -64,8 +64,8 @@ if (isset($conn) && $conn instanceof mysqli) {
                     $ratibAccountingBootstrapCurrency = $v3;
                 }
             } else {
-                // No active currencies at all: never keep inactive/stale code in UI.
-                $ratibAccountingBootstrapCurrency = 'SAR';
+                // No active currencies at all: show no currency code in KPI cards.
+                $ratibAccountingBootstrapCurrency = '';
             }
             if ($r3 instanceof mysqli_result) {
                 $r3->free();
@@ -75,6 +75,7 @@ if (isset($conn) && $conn instanceof mysqli) {
 }
 $ratibAccountingBootstrapCurrencyJson = json_encode($ratibAccountingBootstrapCurrency, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 $ratibAccountingBootstrapCurrencyEsc = htmlspecialchars($ratibAccountingBootstrapCurrency, ENT_QUOTES, 'UTF-8');
+$ratibAccountingBootstrapPrefix = $ratibAccountingBootstrapCurrencyEsc !== '' ? ($ratibAccountingBootstrapCurrencyEsc . ' ') : '';
 
 $pageTitle = "Professional Accounting System";
 $pageCss = [
@@ -126,7 +127,7 @@ include '../includes/header.php';
                             <i class="fas fa-arrow-up"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="totalRevenue"><?php echo $ratibAccountingBootstrapCurrencyEsc; ?> 0.00</h3>
+                            <h3 id="totalRevenue"><?php echo $ratibAccountingBootstrapPrefix; ?>0.00</h3>
                             <p>Total Revenue</p>
                             <span class="card-change positive" id="revenueChange">+0%</span>
                         </div>
@@ -136,7 +137,7 @@ include '../includes/header.php';
                             <i class="fas fa-arrow-down"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="totalExpense"><?php echo $ratibAccountingBootstrapCurrencyEsc; ?> 0.00</h3>
+                            <h3 id="totalExpense"><?php echo $ratibAccountingBootstrapPrefix; ?>0.00</h3>
                             <p>Total Expenses</p>
                             <span class="card-change negative" id="expenseChange">+0%</span>
                         </div>
@@ -146,7 +147,7 @@ include '../includes/header.php';
                             <i class="fas fa-chart-line"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="netProfit"><?php echo $ratibAccountingBootstrapCurrencyEsc; ?> 0.00</h3>
+                            <h3 id="netProfit"><?php echo $ratibAccountingBootstrapPrefix; ?>0.00</h3>
                             <p>Net Profit</p>
                             <span class="card-change" id="profitChange">+0%</span>
                         </div>
@@ -156,7 +157,7 @@ include '../includes/header.php';
                             <i class="fas fa-wallet"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="cashBalance"><?php echo $ratibAccountingBootstrapCurrencyEsc; ?> 0.00</h3>
+                            <h3 id="cashBalance"><?php echo $ratibAccountingBootstrapPrefix; ?>0.00</h3>
                             <p>Cash Balance</p>
                             <span class="card-change" id="balanceChange">+0%</span>
                         </div>
@@ -166,7 +167,7 @@ include '../includes/header.php';
                             <i class="fas fa-file-invoice-dollar"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="totalReceivables"><?php echo $ratibAccountingBootstrapCurrencyEsc; ?> 0.00</h3>
+                            <h3 id="totalReceivables"><?php echo $ratibAccountingBootstrapPrefix; ?>0.00</h3>
                             <p>Accounts Receivable</p>
                             <span class="card-badge" id="receivablesCount">0 invoices</span>
                         </div>
@@ -176,7 +177,7 @@ include '../includes/header.php';
                             <i class="fas fa-file-invoice"></i>
                         </div>
                         <div class="card-content">
-                            <h3 id="totalPayables"><?php echo $ratibAccountingBootstrapCurrencyEsc; ?> 0.00</h3>
+                            <h3 id="totalPayables"><?php echo $ratibAccountingBootstrapPrefix; ?>0.00</h3>
                             <p>Accounts Payable</p>
                             <span class="card-badge" id="payablesCount">0 bills</span>
                         </div>
@@ -1123,13 +1124,17 @@ include '../includes/header.php';
 <script>
 (function () {
     var c = <?php echo $ratibAccountingBootstrapCurrencyJson; ?>;
-    if (typeof c !== 'string' || !/^[A-Z]{3}$/.test(c)) {
-        c = 'SAR';
+    if (typeof c !== 'string') {
+        c = '';
     }
     window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__ = c;
     window.__ACCOUNTING_SERVER_BOOTSTRAPPED__ = true;
     try {
-        localStorage.setItem('accounting_default_currency', c);
+        if (/^[A-Z]{3}$/.test(c)) {
+            localStorage.setItem('accounting_default_currency', c);
+        } else {
+            localStorage.removeItem('accounting_default_currency');
+        }
         localStorage.removeItem('accounting_active_currencies');
     } catch (e) {}
 })();

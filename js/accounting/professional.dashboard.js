@@ -12,7 +12,9 @@
         /** Currency for KPI amounts when API includes `currency` (matches server default_currency). */
         _overviewCardCurrency(data) {
             if (data && Object.prototype.hasOwnProperty.call(data, 'currency')) {
-                const c = this.normalizeCurrencyCode(data.currency);
+                const raw = String(data.currency == null ? '' : data.currency).trim();
+                if (raw === '') return '';
+                const c = this.normalizeCurrencyCode(raw);
                 if (c) return c;
             }
             return this.getDefaultCurrencySync();
@@ -55,28 +57,37 @@
                 }
                 el.className = `card-change ${positive ? 'positive' : 'negative'}`;
             };
+            const formatAmountForCard = (amount, currencyCode) => {
+                if (!currencyCode) {
+                    const n = Number(amount || 0);
+                    return Number.isFinite(n)
+                        ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : '0.00';
+                }
+                return this.formatCurrency(amount || 0, currencyCode);
+            };
 
             const cardCur = this._overviewCardCurrency(data);
 
             // Revenue
             const revenueEl = document.getElementById('totalRevenue');
-            if (revenueEl) revenueEl.textContent = this.formatCurrency(data.total_revenue || 0, cardCur);
+            if (revenueEl) revenueEl.textContent = formatAmountForCard(data.total_revenue || 0, cardCur);
             
             // Expenses
             const expenseEl = document.getElementById('totalExpense');
-            if (expenseEl) expenseEl.textContent = this.formatCurrency(data.total_expenses || 0, cardCur);
+            if (expenseEl) expenseEl.textContent = formatAmountForCard(data.total_expenses || 0, cardCur);
             
             // Net Profit
             const profitEl = document.getElementById('netProfit');
-            if (profitEl) profitEl.textContent = this.formatCurrency(data.net_profit || 0, cardCur);
+            if (profitEl) profitEl.textContent = formatAmountForCard(data.net_profit || 0, cardCur);
             
             // Cash Balance
             const balanceEl = document.getElementById('cashBalance');
-            if (balanceEl) balanceEl.textContent = this.formatCurrency(data.cash_balance || 0, cardCur);
+            if (balanceEl) balanceEl.textContent = formatAmountForCard(data.cash_balance || 0, cardCur);
             
             // Receivables
             const receivablesEl = document.getElementById('totalReceivables');
-            if (receivablesEl) receivablesEl.textContent = this.formatCurrency(data.total_receivables || 0, cardCur);
+            if (receivablesEl) receivablesEl.textContent = formatAmountForCard(data.total_receivables || 0, cardCur);
             
             const receivablesCount = document.getElementById('receivablesCount');
             if (receivablesCount) {
@@ -85,7 +96,7 @@
             
             // Payables
             const payablesEl = document.getElementById('totalPayables');
-            if (payablesEl) payablesEl.textContent = this.formatCurrency(data.total_payables || 0, cardCur);
+            if (payablesEl) payablesEl.textContent = formatAmountForCard(data.total_payables || 0, cardCur);
             
             const payablesCount = document.getElementById('payablesCount');
             if (payablesCount) {

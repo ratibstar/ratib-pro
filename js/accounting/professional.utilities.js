@@ -249,8 +249,8 @@
                         // Stored/default currency is not active anymore: follow active currency list.
                         return normalizedActive[0];
                     }
-                    // No active currencies: never keep stale/inactive stored currency.
-                    return 'SAR';
+                    // No active currencies: return empty currency code.
+                    return '';
                 }
             } catch (e) {
                 // Ignore malformed cache and fallback to stored/default.
@@ -259,7 +259,7 @@
         if (normalizedStored && /^[A-Z]{3}$/.test(normalizedStored)) {
             return normalizedStored;
         }
-        return 'SAR';
+        return '';
     };
 
     P.normalizeCurrencyCode = function(value) {
@@ -693,7 +693,7 @@
             }
             const activeSet = new Set(activeCurrencies || []);
             const chosen = activeSet.size === 0
-                ? 'SAR'
+                ? ''
                 : (activeSet.has(serverHint) ? serverHint : activeCurrencies[0]);
             try {
                 localStorage.setItem('accounting_default_currency', chosen);
@@ -715,11 +715,11 @@
         const preferredFromStorage = rawStored ? String(rawStored).trim().toUpperCase() : '';
         const normalizedPreferredFromStorage = /^[A-Z]{3}$/.test(preferredFromStorage) ? preferredFromStorage : '';
 
-        let resolvedCurrency = 'SAR';
+        let resolvedCurrency = '';
         if (preferredFromSetting && /^[A-Z]{3}$/.test(preferredFromSetting) && activeSet.size > 0 && activeSet.has(preferredFromSetting)) {
             resolvedCurrency = preferredFromSetting;
         } else if (preferredFromSetting && /^[A-Z]{3}$/.test(preferredFromSetting) && activeSet.size === 0) {
-            resolvedCurrency = 'SAR';
+            resolvedCurrency = '';
         } else if (preferredFromSetting && /^[A-Z]{3}$/.test(preferredFromSetting) && activeSet.size > 0 && !activeSet.has(preferredFromSetting)) {
             resolvedCurrency = activeCurrencies[0];
         } else if (normalizedPreferredFromStorage && activeSet.has(normalizedPreferredFromStorage)) {
@@ -727,13 +727,13 @@
         } else if (normalizedPreferredFromStorage && !activeSet.has(normalizedPreferredFromStorage) && activeSet.size > 0) {
             resolvedCurrency = activeCurrencies[0];
         } else if (normalizedPreferredFromStorage && !activeSet.has(normalizedPreferredFromStorage) && activeSet.size === 0) {
-            resolvedCurrency = 'SAR';
+            resolvedCurrency = '';
         } else if (serverHint) {
             resolvedCurrency = serverHint;
         } else if (activeCurrencies.length > 0) {
             resolvedCurrency = activeCurrencies[0];
         } else if (activeSet.size === 0) {
-            resolvedCurrency = 'SAR';
+            resolvedCurrency = '';
         }
 
         localStorage.setItem('accounting_default_currency', resolvedCurrency);

@@ -28,7 +28,7 @@ try {
         'expense_change' => 0,
         'profit_change' => 0,
         'balance_change' => 0,
-        'currency' => 'SAR',
+        'currency' => '',
     ];
     if (!isset($conn) || !$conn) {
         echo json_encode(array_merge($data, ['success' => true]));
@@ -40,7 +40,7 @@ try {
         exit;
     }
 
-    $data['currency'] = 'SAR';
+    $data['currency'] = '';
     $curRes = @$conn->query("SELECT setting_value FROM accounting_settings WHERE setting_key = 'default_currency' LIMIT 1");
     if ($curRes && ($curRow = $curRes->fetch_assoc())) {
         $cv = strtoupper(trim((string) ($curRow['setting_value'] ?? '')));
@@ -71,8 +71,8 @@ try {
                     $data['currency'] = $vC;
                 }
             } else {
-                // No active currencies: do not expose inactive/stale code.
-                $data['currency'] = 'SAR';
+                // No active currencies: show no currency code.
+                $data['currency'] = '';
             }
             if ($rC instanceof mysqli_result) {
                 $rC->free();

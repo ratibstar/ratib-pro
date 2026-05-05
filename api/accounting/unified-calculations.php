@@ -31,7 +31,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
 $roleId = $_SESSION['role_id'] ?? 0;
 
 try {
-    $stubDashboardCurrency = 'SAR';
+    $stubDashboardCurrency = '';
     $tableCheck = $conn->query("SHOW TABLES LIKE 'financial_transactions'");
     if (!$tableCheck || $tableCheck->num_rows === 0) {
         echo json_encode([
@@ -72,7 +72,7 @@ try {
     $response = [];
     $requestType = $_GET['type'] ?? 'all';
     
-    $baseCurrency = 'SAR';
+    $baseCurrency = '';
     $curRes = @$conn->query("SELECT setting_value FROM accounting_settings WHERE setting_key = 'default_currency' LIMIT 1");
     if ($curRes && ($curRow = $curRes->fetch_assoc())) {
         $cv = strtoupper(trim((string) ($curRow['setting_value'] ?? '')));
@@ -103,8 +103,8 @@ try {
                     $baseCurrency = $vC;
                 }
             } else {
-                // No active currencies: do not expose inactive/stale code.
-                $baseCurrency = 'SAR';
+                // No active currencies: show no currency code.
+                $baseCurrency = '';
             }
             if ($rC instanceof mysqli_result) {
                 $rC->free();
