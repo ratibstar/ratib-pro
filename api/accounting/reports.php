@@ -2340,7 +2340,7 @@ function generateExpenseStatement($conn, $startDate = null, $endDate = null) {
     if (tableExists($conn, 'financial_transactions')) {
         // Check if status column exists
         $hasStatus = columnExists($conn, 'financial_transactions', 'status');
-        $statusFilter = $hasStatus ? "AND status = 'Posted'" : "";
+        $statusFilter = $hasStatus ? "AND status IN ('Approved', 'Posted')" : "";
 
         $categoryField = columnExists($conn, 'financial_transactions', 'category') ? "COALESCE(category, 'Uncategorized')" : "'Uncategorized'";
         $descriptionField = columnExists($conn, 'financial_transactions', 'description') ? "COALESCE(description, '')" : "CONCAT('Transaction #', ft.id)";
@@ -2404,9 +2404,9 @@ function generateExpenseStatement($conn, $startDate = null, $endDate = null) {
     // Posted payment vouchers (Expenses module) — same data as Expenses table, not in financial_transactions
     if (tableExists($conn, 'payment_vouchers')) {
         $pvFilter = "AND pv.voucher_date >= '{$escapedStartDate}' AND pv.voucher_date <= '{$escapedEndDate}'";
-        $pvPostedParts = ["pv.status = 'Posted'"];
+        $pvPostedParts = ["pv.status IN ('Approved', 'Posted')"];
         if (columnExists($conn, 'payment_vouchers', 'posting_status')) {
-            $pvPostedParts[] = "LOWER(TRIM(COALESCE(pv.posting_status,''))) = 'posted'";
+            $pvPostedParts[] = "LOWER(TRIM(COALESCE(pv.posting_status,''))) IN ('approved', 'posted')";
         }
         if (columnExists($conn, 'payment_vouchers', 'is_posted')) {
             $pvPostedParts[] = 'COALESCE(pv.is_posted,0) = 1';
