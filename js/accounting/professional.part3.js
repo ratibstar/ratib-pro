@@ -635,6 +635,17 @@ ProfessionalAccounting.prototype.formatGeneralLedgerReport = function(reportData
                            hasMatchingTransaction;
                 });
             }
+
+            // Keep connected data visible first: accounts with transactions should appear
+            // before empty accounts so page 1 is meaningful.
+            filteredAccounts = [...filteredAccounts].sort((a, b) => {
+                const aTxn = Array.isArray(a?.transactions) ? a.transactions.length : 0;
+                const bTxn = Array.isArray(b?.transactions) ? b.transactions.length : 0;
+                if (bTxn !== aTxn) return bTxn - aTxn;
+                const aCode = String(a?.account_code || '');
+                const bCode = String(b?.account_code || '');
+                return aCode.localeCompare(bCode);
+            });
             
             // Apply pagination to filtered accounts (if perPage is 999999, show all)
             let paginatedAccounts = filteredAccounts;
