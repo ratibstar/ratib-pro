@@ -52,12 +52,12 @@ function normalizeReportDate($value) {
         if ($b > 12 && checkdate($a, $b, $y)) {
             return sprintf('%04d-%02d-%02d', $y, $a, $b);
         }
-        // Ambiguous (<=12 both): default to mm/dd to match existing UI behavior.
-        if (checkdate($a, $b, $y)) {
-            return sprintf('%04d-%02d-%02d', $y, $a, $b);
-        }
+        // Ambiguous (<=12 both): default to dd/mm for this deployment UI.
         if (checkdate($b, $a, $y)) {
             return sprintf('%04d-%02d-%02d', $y, $b, $a);
+        }
+        if (checkdate($a, $b, $y)) {
+            return sprintf('%04d-%02d-%02d', $y, $a, $b);
         }
     }
 
