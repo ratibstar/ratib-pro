@@ -187,16 +187,23 @@ try {
         $journalResult = null;
         if (in_array($status, ['Cleared', 'Sent'])) {
             try {
-                $invoiceId = null; // Can be linked via payment_allocations
                 $costCenterId = isset($data['cost_center_id']) && $data['cost_center_id'] ? intval($data['cost_center_id']) : null;
-                $journalResult = createPaymentJournalEntry(
+                $expenseAccountId = null;
+                if (!empty($data['expense_account_id'])) {
+                    $expenseAccountId = intval($data['expense_account_id']);
+                } elseif (!empty($data['account_id'])) {
+                    $expenseAccountId = intval($data['account_id']);
+                } elseif (!empty($data['debit_account_id'])) {
+                    $expenseAccountId = intval($data['debit_account_id']);
+                }
+                $journalResult = createExpenseJournalEntry(
                     $conn,
                     $paymentId,
                     $paymentNumber,
                     $paymentDate,
                     $amount,
+                    $expenseAccountId,
                     $bankAccountId,
-                    $invoiceId,
                     $costCenterId,
                     $notes
                 );
@@ -279,16 +286,23 @@ try {
             if (in_array($newStatus, ['Cleared', 'Sent']) && !in_array($oldStatus, ['Cleared', 'Sent'])) {
                 try {
                     $paymentNumber = $oldPayment['payment_number'] ?? $data['payment_number'] ?? '';
-                    $invoiceId = null;
                     $costCenterId = isset($data['cost_center_id']) && $data['cost_center_id'] ? intval($data['cost_center_id']) : null;
-                    $journalResult = createPaymentJournalEntry(
+                    $expenseAccountId = null;
+                    if (!empty($data['expense_account_id'])) {
+                        $expenseAccountId = intval($data['expense_account_id']);
+                    } elseif (!empty($data['account_id'])) {
+                        $expenseAccountId = intval($data['account_id']);
+                    } elseif (!empty($data['debit_account_id'])) {
+                        $expenseAccountId = intval($data['debit_account_id']);
+                    }
+                    $journalResult = createExpenseJournalEntry(
                         $conn,
                         $paymentId,
                         $paymentNumber,
                         $paymentDate,
                         $amount,
+                        $expenseAccountId,
                         $bankAccountId,
-                        $invoiceId,
                         $costCenterId,
                         $notes
                     );

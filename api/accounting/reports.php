@@ -404,7 +404,7 @@ function tableExists($conn, $tableName) {
         $allowedTables = [
             'financial_accounts', 'journal_entries', 'journal_entry_lines',
             'accounts_receivable', 'accounts_payable', 'financial_transactions',
-            'transaction_lines', 'payment_receipts', 'payment_payments', 'payment_vouchers',
+            'transaction_lines', 'payment_receipts', 'receipt_vouchers', 'payment_payments', 'payment_vouchers',
             'accounting_banks', 'accounting_bank_transactions', 'entity_transactions'
         ];
         
@@ -486,7 +486,7 @@ function columnExists($conn, $tableName, $columnName) {
         $allowedTables = [
             'financial_accounts', 'journal_entries', 'journal_entry_lines',
             'accounts_receivable', 'accounts_payable', 'financial_transactions',
-            'transaction_lines', 'payment_receipts', 'payment_payments', 'payment_vouchers',
+            'transaction_lines', 'payment_receipts', 'receipt_vouchers', 'payment_payments', 'payment_vouchers',
             'accounting_banks', 'accounting_bank_transactions', 'entity_transactions'
         ];
         
