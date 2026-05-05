@@ -2340,7 +2340,7 @@ function generateExpenseStatement($conn, $startDate = null, $endDate = null) {
     if (tableExists($conn, 'financial_transactions')) {
         // Check if status column exists
         $hasStatus = columnExists($conn, 'financial_transactions', 'status');
-        $statusFilter = $hasStatus ? "AND status IN ('Approved', 'Posted')" : "";
+        $statusFilter = $hasStatus ? "AND LOWER(TRIM(COALESCE(status,''))) IN ('approved', 'posted')" : "";
 
         $categoryField = columnExists($conn, 'financial_transactions', 'category') ? "COALESCE(category, 'Uncategorized')" : "'Uncategorized'";
         $descriptionField = columnExists($conn, 'financial_transactions', 'description') ? "COALESCE(description, '')" : "CONCAT('Transaction #', ft.id)";
@@ -2351,7 +2351,11 @@ function generateExpenseStatement($conn, $startDate = null, $endDate = null) {
             ? 'COALESCE(total_amount, 0)'
             : (columnExists($conn, 'financial_transactions', 'amount') ? 'COALESCE(amount, 0)' : '0');
         $typeCondition = columnExists($conn, 'financial_transactions', 'transaction_type') ? "transaction_type = 'Expense'" : "1 = 1";
-        $dateFilter = "AND {$dateField} >= '{$escapedStartDate}' AND {$dateField} <= '{$escapedEndDate}'";
+        $dateFilter = "AND (
+            DATE({$dateField}) BETWEEN '{$escapedStartDate}' AND '{$escapedEndDate}'
+            OR STR_TO_DATE({$dateField}, '%d/%m/%Y') BETWEEN '{$escapedStartDate}' AND '{$escapedEndDate}'
+            OR STR_TO_DATE({$dateField}, '%m/%d/%Y') BETWEEN '{$escapedStartDate}' AND '{$escapedEndDate}'
+        )";
 
         // Get expenses grouped by category or description
         $stmt = $conn->query("
@@ -2403,8 +2407,12 @@ function generateExpenseStatement($conn, $startDate = null, $endDate = null) {
 
     // Posted payment vouchers (Expenses module) — same data as Expenses table, not in financial_transactions
     if (tableExists($conn, 'payment_vouchers')) {
-        $pvFilter = "AND pv.voucher_date >= '{$escapedStartDate}' AND pv.voucher_date <= '{$escapedEndDate}'";
-        $pvPostedParts = ["pv.status IN ('Approved', 'Posted')"];
+        $pvFilter = "AND (
+            DATE(pv.voucher_date) BETWEEN '{$escapedStartDate}' AND '{$escapedEndDate}'
+            OR STR_TO_DATE(pv.voucher_date, '%d/%m/%Y') BETWEEN '{$escapedStartDate}' AND '{$escapedEndDate}'
+            OR STR_TO_DATE(pv.voucher_date, '%m/%d/%Y') BETWEEN '{$escapedStartDate}' AND '{$escapedEndDate}'
+        )";
+        $pvPostedParts = ["LOWER(TRIM(COALESCE(pv.status,''))) IN ('approved', 'posted')"];
         if (columnExists($conn, 'payment_vouchers', 'posting_status')) {
             $pvPostedParts[] = "LOWER(TRIM(COALESCE(pv.posting_status,''))) IN ('approved', 'posted')";
         }
