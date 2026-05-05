@@ -446,10 +446,14 @@ if (!function_exists('ratib_nav_url')) {
         if ($extraQuery !== '') {
             $u .= (strpos($u, '?') !== false ? '&' : '?') . $extraQuery;
         }
-        if (!ratib_control_pro_bridge()) {
+        $aid = (int) ($_SESSION['agency_id'] ?? 0);
+        if ($aid <= 0) {
+            $aid = (int) ($_SESSION['control_agency_id'] ?? 0);
+        }
+        $controlContext = ratib_control_pro_bridge() || (!empty($_SESSION['control_logged_in']) && $aid > 0);
+        if (!$controlContext) {
             return $u;
         }
-        $aid = (int) ($_SESSION['agency_id'] ?? 0);
         if ($aid <= 0) {
             return $u;
         }
@@ -1167,8 +1171,21 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
         // Single URL mode: switch to tenant DB from session OR from ?control=1&agency_id= (Control "Open" before login).
         $singleUrlMode = defined('SINGLE_URL_MODE') && SINGLE_URL_MODE;
         $sessionCountryId = isset($_SESSION['country_id']) ? (int)$_SESSION['country_id'] : 0;
+        if ($sessionCountryId <= 0 && isset($_SESSION['control_country_id'])) {
+            $sessionCountryId = (int)$_SESSION['control_country_id'];
+        }
+        if ($sessionCountryId <= 0 && isset($_COOKIE['ratib_last_country_id']) && ctype_digit((string)$_COOKIE['ratib_last_country_id'])) {
+            $sessionCountryId = (int)$_COOKIE['ratib_last_country_id'];
+        }
         $sessionAgencyId = isset($_SESSION['agency_id']) ? (int)$_SESSION['agency_id'] : 0;
+        if ($sessionAgencyId <= 0 && isset($_SESSION['control_agency_id'])) {
+            $sessionAgencyId = (int)$_SESSION['control_agency_id'];
+        }
+        if ($sessionAgencyId <= 0 && isset($_COOKIE['ratib_last_agency_id']) && ctype_digit((string)$_COOKIE['ratib_last_agency_id'])) {
+            $sessionAgencyId = (int)$_COOKIE['ratib_last_agency_id'];
+        }
         $sessionLoggedIn = !empty($_SESSION['logged_in']);
+        $controlLoggedIn = !empty($_SESSION['control_logged_in']);
         $getControl = !empty($_GET['control']) && (string)$_GET['control'] === '1';
         $getAgencyId = isset($_GET['agency_id']) && ctype_digit((string)$_GET['agency_id']) ? (int)$_GET['agency_id'] : 0;
         $openAgencyContext = $singleUrlMode && $getControl && $getAgencyId > 0;
@@ -1204,7 +1221,7 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
             ? $getAgencyId
             : ($sessionAgencyId > 0 ? $sessionAgencyId : 0);
         $mustUseAgencyDb = $singleUrlMode && (
-            ($sessionLoggedIn && ($sessionAgencyId > 0 || $sessionCountryId > 0))
+            (($sessionLoggedIn || $controlLoggedIn) && ($sessionAgencyId > 0 || $sessionCountryId > 0))
             || ($openAgencyContext && $effectiveAgencyId > 0)
         );
         if ($mustUseAgencyDb && $conn instanceof mysqli) {
@@ -1337,6 +1354,16 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                     if ($openAgencyContext && !$sessionLoggedIn && $effectiveAgencyId > 0 && !empty($_SESSION['control_logged_in'])
                         && $conn instanceof mysqli) {
                         ratib_control_panel_try_program_sso($conn, $effectiveAgencyId, (int)($row['country_id'] ?? 0));
+                    }
+                    // Keep program-session tenant context synced when control session is active.
+                    if ($effectiveAgencyId > 0 && (int)($_SESSION['agency_id'] ?? 0) <= 0) {
+                        $_SESSION['agency_id'] = $effectiveAgencyId;
+                    }
+                    if ((int)($_SESSION['country_id'] ?? 0) <= 0) {
+                        $resolvedCountryId = (int)($row['country_id'] ?? 0);
+                        if ($resolvedCountryId > 0) {
+                            $_SESSION['country_id'] = $resolvedCountryId;
+                        }
                     }
                 } else {
                     if ($effectiveAgencyId > 0) {
