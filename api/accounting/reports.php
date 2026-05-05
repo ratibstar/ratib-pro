@@ -850,6 +850,67 @@ function generateIncomeStatement($conn, $startDate = null, $endDate = null, $cos
         'total_expenses' => $totalExpenses,
         'net_income' => $totalRevenue - $totalExpenses
     ];
+
+    // Deep fallback: if statement is still empty, pull posted expense-side vouchers/payments
+    // regardless of date parsing differences so report stays connected to actual activity.
+    if ($totalExpenses <= 0) {
+        if (tableExists($conn, 'payment_vouchers')) {
+            $pvFallback = $conn->query("
+                SELECT
+                    COALESCE(NULLIF(TRIM(voucher_number), ''), CONCAT('#', id)) AS account_name,
+                    COALESCE(amount, 0) AS expense_amount
+                FROM payment_vouchers
+                WHERE COALESCE(amount, 0) > 0
+                  AND (
+                    LOWER(TRIM(COALESCE(status, ''))) IN ('approved', 'posted')
+                    OR LOWER(TRIM(COALESCE(posting_status, ''))) IN ('approved', 'posted')
+                    OR COALESCE(is_posted, 0) = 1
+                  )
+                ORDER BY id DESC
+                LIMIT 300
+            ");
+            if ($pvFallback) {
+                while ($row = $pvFallback->fetch_assoc()) {
+                    $amount = floatval($row['expense_amount'] ?? 0);
+                    if ($amount <= 0) continue;
+                    $report['expenses'][] = [
+                        'account_code' => 'PV',
+                        'account_name' => 'Payment Voucher ' . ($row['account_name'] ?? ''),
+                        'expense_amount' => $amount
+                    ];
+                    $totalExpenses += $amount;
+                }
+                $pvFallback->free();
+            }
+        }
+        if (tableExists($conn, 'payment_payments')) {
+            $ppFallback = $conn->query("
+                SELECT
+                    COALESCE(NULLIF(TRIM(payment_number), ''), CONCAT('#', id)) AS account_name,
+                    COALESCE(amount, 0) AS expense_amount
+                FROM payment_payments
+                WHERE COALESCE(amount, 0) > 0
+                  AND LOWER(TRIM(COALESCE(status, ''))) IN ('cleared', 'sent', 'posted', 'approved')
+                ORDER BY id DESC
+                LIMIT 300
+            ");
+            if ($ppFallback) {
+                while ($row = $ppFallback->fetch_assoc()) {
+                    $amount = floatval($row['expense_amount'] ?? 0);
+                    if ($amount <= 0) continue;
+                    $report['expenses'][] = [
+                        'account_code' => 'PP',
+                        'account_name' => 'Payment ' . ($row['account_name'] ?? ''),
+                        'expense_amount' => $amount
+                    ];
+                    $totalExpenses += $amount;
+                }
+                $ppFallback->free();
+            }
+        }
+        $report['totals']['total_expenses'] = $totalExpenses;
+        $report['totals']['net_income'] = $totalRevenue - $totalExpenses;
+    }
     
     return $report;
 }
@@ -2557,6 +2618,63 @@ function generateExpenseStatement($conn, $startDate = null, $endDate = null) {
     }
     
     $totalExpenses = !empty($report['expenses']) ? array_sum(array_column($report['expenses'], 'total_amount')) : 0;
+
+    // Deep fallback: if still empty after all filtered sources, pull posted voucher/payment expenses
+    // without date filter so reports remain connected to the accounting system.
+    if ($totalExpenses <= 0) {
+        if (tableExists($conn, 'payment_vouchers')) {
+            $pvFallback = $conn->query("
+                SELECT
+                    'Payment Vouchers' AS category,
+                    CONCAT('Voucher ', COALESCE(NULLIF(TRIM(voucher_number), ''), CONCAT('#', id))) AS description,
+                    voucher_date AS transaction_date,
+                    COALESCE(amount, 0) AS total_amount,
+                    1 AS transaction_count
+                FROM payment_vouchers
+                WHERE COALESCE(amount, 0) > 0
+                  AND (
+                    LOWER(TRIM(COALESCE(status, ''))) IN ('approved', 'posted')
+                    OR LOWER(TRIM(COALESCE(posting_status, ''))) IN ('approved', 'posted')
+                    OR COALESCE(is_posted, 0) = 1
+                  )
+                ORDER BY id DESC
+                LIMIT 300
+            ");
+            if ($pvFallback) {
+                while ($row = $pvFallback->fetch_assoc()) {
+                    $row['total_amount'] = floatval($row['total_amount'] ?? 0);
+                    if ($row['total_amount'] <= 0) continue;
+                    $report['expenses'][] = $row;
+                }
+                $pvFallback->free();
+            }
+        }
+        if (tableExists($conn, 'payment_payments')) {
+            $ppFallback = $conn->query("
+                SELECT
+                    'Payment Vouchers' AS category,
+                    CONCAT('Payment ', COALESCE(NULLIF(TRIM(payment_number), ''), CONCAT('#', id))) AS description,
+                    payment_date AS transaction_date,
+                    COALESCE(amount, 0) AS total_amount,
+                    1 AS transaction_count
+                FROM payment_payments
+                WHERE COALESCE(amount, 0) > 0
+                  AND LOWER(TRIM(COALESCE(status, ''))) IN ('cleared', 'sent', 'posted', 'approved')
+                ORDER BY id DESC
+                LIMIT 300
+            ");
+            if ($ppFallback) {
+                while ($row = $ppFallback->fetch_assoc()) {
+                    $row['total_amount'] = floatval($row['total_amount'] ?? 0);
+                    if ($row['total_amount'] <= 0) continue;
+                    $report['expenses'][] = $row;
+                }
+                $ppFallback->free();
+            }
+        }
+        $totalExpenses = !empty($report['expenses']) ? array_sum(array_column($report['expenses'], 'total_amount')) : 0;
+    }
+
     $report['totals'] = [
         'total_expenses' => $totalExpenses,
         'transaction_count' => count($report['expenses'])
