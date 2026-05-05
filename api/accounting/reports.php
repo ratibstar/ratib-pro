@@ -29,6 +29,45 @@ function escapeDate($conn, $date) {
     return $conn->real_escape_string($date);
 }
 
+// Normalize multiple UI date formats to Y-m-d for SQL safety/consistency.
+function normalizeReportDate($value) {
+    if ($value === null) return null;
+    $raw = trim((string)$value);
+    if ($raw === '') return null;
+
+    // Already normalized
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $raw)) {
+        return $raw;
+    }
+
+    // Common UI formats: dd/mm/yyyy or mm/dd/yyyy
+    if (preg_match('/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/', $raw, $m)) {
+        $a = intval($m[1]);
+        $b = intval($m[2]);
+        $y = intval($m[3]);
+        // Prefer dd/mm when unambiguous (>12 in first part), otherwise mm/dd.
+        if ($a > 12 && checkdate($b, $a, $y)) {
+            return sprintf('%04d-%02d-%02d', $y, $b, $a);
+        }
+        if ($b > 12 && checkdate($a, $b, $y)) {
+            return sprintf('%04d-%02d-%02d', $y, $a, $b);
+        }
+        // Ambiguous (<=12 both): default to mm/dd to match existing UI behavior.
+        if (checkdate($a, $b, $y)) {
+            return sprintf('%04d-%02d-%02d', $y, $a, $b);
+        }
+        if (checkdate($b, $a, $y)) {
+            return sprintf('%04d-%02d-%02d', $y, $b, $a);
+        }
+    }
+
+    $ts = strtotime($raw);
+    if ($ts !== false) {
+        return date('Y-m-d', $ts);
+    }
+    return null;
+}
+
 // Helper function to safely execute queries - prevents unbound placeholder errors
 function safeQuery($conn, $query, $params = []) {
     if (strpos($query, '?') !== false) {
@@ -73,9 +112,9 @@ try {
     }
     
     // Get optional date range parameters
-    $startDate = isset($_GET['start_date']) ? $_GET['start_date'] : null;
-    $endDate = isset($_GET['end_date']) ? $_GET['end_date'] : null;
-    $asOfDate = isset($_GET['as_of']) ? $_GET['as_of'] : null;
+    $startDate = isset($_GET['start_date']) ? normalizeReportDate($_GET['start_date']) : null;
+    $endDate = isset($_GET['end_date']) ? normalizeReportDate($_GET['end_date']) : null;
+    $asOfDate = isset($_GET['as_of']) ? normalizeReportDate($_GET['as_of']) : null;
     $accountId = isset($_GET['account_id']) && $_GET['account_id'] !== '' ? intval($_GET['account_id']) : null;
     $costCenterId = isset($_GET['cost_center_id']) && $_GET['cost_center_id'] !== '' ? intval($_GET['cost_center_id']) : null;
     // Validate cost_center_id must be a positive integer
@@ -85,15 +124,9 @@ try {
     $searchTerm = isset($_GET['search_term']) && $_GET['search_term'] !== '' ? trim($_GET['search_term']) : null;
     
     // Validate dates if provided (dates are validated and will be used in prepared statements)
-    if ($startDate && !strtotime($startDate)) {
-        $startDate = null;
-    }
-    if ($endDate && !strtotime($endDate)) {
-        $endDate = null;
-    }
-    if ($asOfDate && !strtotime($asOfDate)) {
-        $asOfDate = null;
-    }
+    if ($startDate && !strtotime($startDate)) $startDate = null;
+    if ($endDate && !strtotime($endDate)) $endDate = null;
+    if ($asOfDate && !strtotime($asOfDate)) $asOfDate = null;
     
     // Escape dates for use in SQL queries (defense in depth - dates are already validated)
     // Note: Dates are validated above with strtotime(), but escaping provides additional security
