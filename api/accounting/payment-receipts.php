@@ -70,10 +70,17 @@ if (!isset($_SESSION['user_id']) || $_SESSION['logged_in'] !== true) {
 
 // Get PDO connection
 try {
+    $tenantDb = (isset($GLOBALS['agency_db']) && is_array($GLOBALS['agency_db'])) ? $GLOBALS['agency_db'] : [];
+    $pdoHost = isset($tenantDb['host']) && $tenantDb['host'] !== '' ? $tenantDb['host'] : DB_HOST;
+    $pdoPort = isset($tenantDb['port']) && (int)$tenantDb['port'] > 0 ? (int)$tenantDb['port'] : (defined('DB_PORT') ? (int)DB_PORT : 3306);
+    $pdoName = isset($tenantDb['db']) && $tenantDb['db'] !== '' ? $tenantDb['db'] : DB_NAME;
+    $pdoUser = isset($tenantDb['user']) && $tenantDb['user'] !== '' ? $tenantDb['user'] : DB_USER;
+    $pdoPass = array_key_exists('pass', $tenantDb) ? (string)$tenantDb['pass'] : DB_PASS;
+
     $pdo = new PDO(
-        "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
-        DB_USER,
-        DB_PASS,
+        "mysql:host=" . $pdoHost . ";port=" . $pdoPort . ";dbname=" . $pdoName . ";charset=utf8mb4",
+        $pdoUser,
+        $pdoPass,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
