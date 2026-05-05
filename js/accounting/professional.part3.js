@@ -5178,6 +5178,8 @@ ProfessionalAccounting.prototype.openReportsModal = function() {
         `;
         this.showModal('Financial Reports', content, 'large');
         setTimeout(() => {
+            const reportsGrid = document.getElementById('modalReportsGrid');
+            if (reportsGrid) reportsGrid.setAttribute('data-live-summary-lock', '1');
             this.attachReportCardListeners();
             this.setupReportsFilters();
             // Default to live summary mode; never prefill top cards with catalog counts.
@@ -5328,6 +5330,8 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             const summaryKey = agencyId || 'default';
             this._reportsLastGoodSummary = this._reportsLastGoodSummary || {};
             const previous = this._reportsLastGoodSummary[summaryKey] || null;
+            const reportsGrid = document.getElementById('modalReportsGrid');
+            if (reportsGrid) reportsGrid.setAttribute('data-live-summary-lock', '1');
             const hasNonZeroNow =
                 totalEntries > 0 ||
                 income !== 0 ||
@@ -5459,7 +5463,8 @@ ProfessionalAccounting.prototype.filterReports = function() {
         const agingCountEl = document.getElementById('modalReportsAgingCount');
         const analysisCountEl = document.getElementById('modalReportsAnalysisCount');
         
-        if (this._reportsSummaryUsesCatalogCounts !== false) {
+        const liveSummaryLocked = !!document.querySelector('#modalReportsGrid[data-live-summary-lock="1"]');
+        if (this._reportsSummaryUsesCatalogCounts !== false && !liveSummaryLocked) {
             if (totalEl) totalEl.textContent = visibleCount;
             if (financialEl) financialEl.textContent = financialCount;
             if (operationalEl) operationalEl.textContent = operationalCount;
