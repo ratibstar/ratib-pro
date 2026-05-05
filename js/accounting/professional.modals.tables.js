@@ -602,6 +602,10 @@
 
         async loadReportsConnectionSummary() {
             try {
+                const reqId = (this._reportsSummaryReqSeq || 0) + 1;
+                this._reportsSummaryReqSeq = reqId;
+                const isStale = () => reqId !== this._reportsSummaryReqSeq || !document.getElementById('modalReportsGrid');
+
                 const tenantParams = new URLSearchParams();
                 const currentParams = new URLSearchParams(window.location.search || '');
                 ['control', 'agency_id', 'country_id'].forEach((key) => {
@@ -628,7 +632,9 @@
                     cache: 'no-cache',
                     headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                 });
+                if (isStale()) return;
                 const summary = await summaryRes.json().catch(() => null);
+                if (isStale()) return;
                 if (!summary || !summary.success) return;
 
                 const cur = this.normalizeCurrencyCode(summary?.dashboard?.currency) || this.getDefaultCurrencySync();
@@ -650,8 +656,10 @@
                             fetch(receiptsUrl, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } }),
                             fetch(paymentsUrl, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } })
                         ]);
+                        if (isStale()) return;
                         const rc = await rcRes.json().catch(() => null);
                         const py = await pyRes.json().catch(() => null);
+                        if (isStale()) return;
                         const receiptVouchers = Array.isArray(rc?.vouchers) ? rc.vouchers : [];
                         const paymentVouchers = Array.isArray(py?.vouchers) ? py.vouchers : [];
                         const receiptSum = receiptVouchers.reduce((sum, v) => sum + Number(v?.amount || 0), 0);
@@ -683,8 +691,36 @@
                         cache: 'no-cache',
                         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                     });
+                    if (isStale()) return;
                     const tx = await txRes.json().catch(() => null);
+                    if (isStale()) return;
                     const totalEntries = Number(tx?.total_count || tx?.total || tx?.count || 0);
+                    const summaryKey = agencyId || 'default';
+                    this._reportsLastGoodSummary = this._reportsLastGoodSummary || {};
+                    const previous = this._reportsLastGoodSummary[summaryKey] || null;
+                    const hasNonZeroNow =
+                        totalEntries > 0 ||
+                        income !== 0 ||
+                        expense !== 0 ||
+                        profit !== 0 ||
+                        cash !== 0 ||
+                        receivablesCount > 0 ||
+                        payablesCount > 0;
+
+                    if (!hasNonZeroNow && previous) {
+                        cash = Number(previous.cash || 0);
+                        income = Number(previous.income || 0);
+                        expense = Number(previous.expense || 0);
+                        profit = Number(previous.profit || 0);
+                    } else if (hasNonZeroNow) {
+                        this._reportsLastGoodSummary[summaryKey] = {
+                            cash,
+                            income,
+                            expense,
+                            profit
+                        };
+                    }
+
                     txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
 
                     // Use agency-specific accounting metrics for top cards (not static catalog counts).
