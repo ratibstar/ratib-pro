@@ -2289,7 +2289,48 @@ ProfessionalAccounting.prototype.generateReport = async function(reportType) {
             }
 
             // Always display report table, even if data is empty
-            const reportData = (data.success && data.report) ? data.report : {};
+            let reportData = (data.success && data.report) ? data.report : {};
+
+            // Hard client fallback: if income/expense report is empty, pull directly from
+            // the same voucher source used by Expenses screens.
+            const isIncomeOrExpense = reportType === 'income-statement' || reportType === 'expense-statement' || reportType === 'profit-loss';
+            const hasIncomeRows = Array.isArray(reportData?.revenue) && reportData.revenue.length > 0;
+            const hasExpenseRows = Array.isArray(reportData?.expenses) && reportData.expenses.length > 0;
+            if (isIncomeOrExpense && !hasIncomeRows && !hasExpenseRows) {
+                try {
+                    const fallbackRes = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=payment`, { credentials: 'include' });
+                    const fallbackData = await fallbackRes.json().catch(() => null);
+                    const vouchers = Array.isArray(fallbackData?.vouchers) ? fallbackData.vouchers : [];
+                    const posted = vouchers.filter(v => {
+                        const status = String(v?.status || '').trim().toLowerCase();
+                        const posting = String(v?.posting_status || '').trim().toLowerCase();
+                        return status === 'posted' || status === 'approved' || posting === 'posted' || posting === 'approved' || Number(v?.is_posted || 0) === 1;
+                    });
+                    if (posted.length > 0) {
+                        const fallbackExpenses = posted.map(v => ({
+                            category: 'Payment Vouchers',
+                            description: `Voucher ${v.voucher_number || v.reference_number || v.id || ''}`,
+                            transaction_date: v.voucher_date || v.payment_date || '',
+                            total_amount: Number(v.amount || 0),
+                            transaction_count: 1
+                        })).filter(r => r.total_amount > 0);
+                        const totalExpenses = fallbackExpenses.reduce((sum, r) => sum + Number(r.total_amount || 0), 0);
+                        reportData = {
+                            ...reportData,
+                            expenses: fallbackExpenses,
+                            revenue: Array.isArray(reportData?.revenue) ? reportData.revenue : [],
+                            totals: {
+                                ...(reportData?.totals || {}),
+                                total_revenue: Number(reportData?.totals?.total_revenue || 0),
+                                total_expenses: totalExpenses,
+                                net_income: Number(reportData?.totals?.total_revenue || 0) - totalExpenses
+                            }
+                        };
+                    }
+                } catch (fallbackErr) {
+                    // Keep primary report response if fallback fails.
+                }
+            }
             
             // Log debug information to console - ALWAYS LOG
             console.log('🔍 Report Type:', reportType);
