@@ -5327,6 +5327,23 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                     };
                 }
 
+                const readNumber = (id) => {
+                    const el = document.getElementById(id);
+                    if (!el) return 0;
+                    const cleaned = String(el.textContent || '').replace(/[^\d.-]/g, '');
+                    const n = Number(cleaned);
+                    return Number.isFinite(n) ? n : 0;
+                };
+                const currentVisibleHasData =
+                    readNumber('modalReportsTotal') > 0 ||
+                    readNumber('modalReportsFinancial') !== 0 ||
+                    readNumber('modalReportsOperational') !== 0 ||
+                    readNumber('modalReportsBalanceCount') !== 0 ||
+                    readNumber('modalReportsAnalysisCount') !== 0;
+                if (!hasNonZeroNow && !previous && currentVisibleHasData) {
+                    return;
+                }
+
                 txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
 
                 // Use agency-specific accounting metrics for top cards (not static catalog counts).
