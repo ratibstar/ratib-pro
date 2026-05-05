@@ -638,6 +638,8 @@
                 const income = Number(summary?.dashboard?.total_revenue || 0);
                 const expense = Number(summary?.dashboard?.total_expenses || 0);
                 const profit = Number(summary?.dashboard?.net_profit || 0);
+                const receivablesCount = Number(summary?.dashboard?.receivables_count || 0);
+                const payablesCount = Number(summary?.dashboard?.payables_count || 0);
                 if (balanceHint) {
                     balanceHint.textContent = `Cash ${this.formatCurrency(cash, cur)} | Net ${this.formatCurrency(profit, cur)}${suffix}`;
                 }
@@ -658,6 +660,23 @@
                     const tx = await txRes.json().catch(() => null);
                     const totalEntries = Number(tx?.total_count || tx?.total || tx?.count || 0);
                     txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
+
+                    // Use agency-specific accounting metrics for top cards (not static catalog counts).
+                    this._reportsSummaryUsesCatalogCounts = false;
+                    const totalEl = document.getElementById('modalReportsTotal');
+                    const financialEl = document.getElementById('modalReportsFinancial');
+                    const operationalEl = document.getElementById('modalReportsOperational');
+                    const balanceCountEl = document.getElementById('modalReportsBalanceCount');
+                    const transactionCountEl = document.getElementById('modalReportsTransactionCount');
+                    const agingCountEl = document.getElementById('modalReportsAgingCount');
+                    const analysisCountEl = document.getElementById('modalReportsAnalysisCount');
+                    if (totalEl) totalEl.textContent = String(totalEntries);
+                    if (financialEl) financialEl.textContent = this.formatCurrency(income, cur);
+                    if (operationalEl) operationalEl.textContent = this.formatCurrency(expense, cur);
+                    if (balanceCountEl) balanceCountEl.textContent = this.formatCurrency(cash, cur);
+                    if (transactionCountEl) transactionCountEl.textContent = String(totalEntries);
+                    if (agingCountEl) agingCountEl.textContent = String(receivablesCount + payablesCount);
+                    if (analysisCountEl) analysisCountEl.textContent = this.formatCurrency(profit, cur);
                 }
             } catch (e) {
                 // Keep the modal usable even if summary endpoints fail.
@@ -742,13 +761,15 @@
             const agingCountEl = document.getElementById('modalReportsAgingCount');
             const analysisCountEl = document.getElementById('modalReportsAnalysisCount');
             
-            if (totalEl) totalEl.textContent = visibleCount;
-            if (financialEl) financialEl.textContent = financialCount;
-            if (operationalEl) operationalEl.textContent = operationalCount;
-            if (balanceCountEl) balanceCountEl.textContent = balanceCount;
-            if (transactionCountEl) transactionCountEl.textContent = transactionCount;
-            if (agingCountEl) agingCountEl.textContent = agingCount;
-            if (analysisCountEl) analysisCountEl.textContent = analysisCount;
+            if (this._reportsSummaryUsesCatalogCounts !== false) {
+                if (totalEl) totalEl.textContent = visibleCount;
+                if (financialEl) financialEl.textContent = financialCount;
+                if (operationalEl) operationalEl.textContent = operationalCount;
+                if (balanceCountEl) balanceCountEl.textContent = balanceCount;
+                if (transactionCountEl) transactionCountEl.textContent = transactionCount;
+                if (agingCountEl) agingCountEl.textContent = agingCount;
+                if (analysisCountEl) analysisCountEl.textContent = analysisCount;
+            }
         },
 
         setupSettingsFilters() {
