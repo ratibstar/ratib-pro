@@ -2296,7 +2296,9 @@ ProfessionalAccounting.prototype.generateReport = async function(reportType) {
             const isIncomeOrExpense = reportType === 'income-statement' || reportType === 'expense-statement' || reportType === 'profit-loss';
             const hasIncomeRows = Array.isArray(reportData?.revenue) && reportData.revenue.length > 0;
             const hasExpenseRows = Array.isArray(reportData?.expenses) && reportData.expenses.length > 0;
-            if (isIncomeOrExpense && !hasIncomeRows && !hasExpenseRows) {
+            const needsIncomeFallback = (reportType === 'income-statement' || reportType === 'profit-loss') && !hasIncomeRows;
+            const needsExpenseFallback = reportType === 'expense-statement' && !hasExpenseRows;
+            if (isIncomeOrExpense && (needsIncomeFallback || needsExpenseFallback)) {
                 try {
                     const [paymentRes, receiptRes] = await Promise.all([
                         fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=payment`, { credentials: 'include' }),
