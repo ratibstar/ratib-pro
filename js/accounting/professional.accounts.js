@@ -2314,11 +2314,7 @@ ProfessionalAccounting.prototype.generateReport = async function(reportType) {
                         const posting = String(v?.posting_status || '').trim().toLowerCase();
                         return status === 'posted' || status === 'approved' || posting === 'posted' || posting === 'approved' || Number(v?.is_posted || 0) === 1;
                     });
-                    const postedReceipts = receiptVouchers.filter(v => {
-                        const status = String(v?.status || '').trim().toLowerCase();
-                        const posting = String(v?.posting_status || '').trim().toLowerCase();
-                        return status === 'posted' || status === 'approved' || status === 'cleared' || status === 'deposited' || posting === 'posted' || posting === 'approved' || Number(v?.is_posted || 0) === 1;
-                    });
+                    const postedReceipts = receiptVouchers.filter(v => Number(v?.amount || 0) > 0);
 
                     if (postedPayments.length > 0 || postedReceipts.length > 0) {
                         const fallbackExpenses = postedPayments.map(v => ({
