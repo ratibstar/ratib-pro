@@ -657,7 +657,7 @@
                 }
             }
         } catch (error) {
-            console.error('Error loading currencies for accounting:', error);
+            // Silent in production.
         }
 
         return activeCodes;
@@ -738,11 +738,11 @@
             }
             const defaultCurrency = await this.getDefaultCurrency(true);
             localStorage.setItem('accounting_default_currency', defaultCurrency);
-            if (this.currentTab === 'dashboard' && typeof this.refreshDashboardCards === 'function') {
-                this.refreshDashboardCards();
-            }
+            // Do not trigger refreshDashboardCards() here.
+            // refreshDashboardCards() itself calls initDefaultCurrency(), so invoking it again
+            // from this function causes a recursive refresh loop and repeated API requests.
         } catch (error) {
-            console.error('Error initializing default currency:', error);
+            // Silent in production.
         }
     };
 
