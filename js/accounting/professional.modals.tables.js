@@ -5222,32 +5222,51 @@
                 const hasExpenseRows = Array.isArray(reportData?.expenses) && reportData.expenses.length > 0;
                 if (isIncomeOrExpense && !hasIncomeRows && !hasExpenseRows) {
                     try {
-                        const fallbackRes = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=payment`, { credentials: 'include' });
-                        const fallbackData = await fallbackRes.json().catch(() => null);
-                        const vouchers = Array.isArray(fallbackData?.vouchers) ? fallbackData.vouchers : [];
-                        const posted = vouchers.filter(v => {
+                        const [paymentRes, receiptRes] = await Promise.all([
+                            fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=payment`, { credentials: 'include' }),
+                            fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=receipt`, { credentials: 'include' })
+                        ]);
+                        const paymentData = await paymentRes.json().catch(() => null);
+                        const receiptData = await receiptRes.json().catch(() => null);
+                        const paymentVouchers = Array.isArray(paymentData?.vouchers) ? paymentData.vouchers : [];
+                        const receiptVouchers = Array.isArray(receiptData?.vouchers) ? receiptData.vouchers : [];
+
+                        const postedPayments = paymentVouchers.filter(v => {
                             const status = String(v?.status || '').trim().toLowerCase();
                             const posting = String(v?.posting_status || '').trim().toLowerCase();
                             return status === 'posted' || status === 'approved' || posting === 'posted' || posting === 'approved' || Number(v?.is_posted || 0) === 1;
                         });
-                        if (posted.length > 0) {
-                            const fallbackExpenses = posted.map(v => ({
+                        const postedReceipts = receiptVouchers.filter(v => {
+                            const status = String(v?.status || '').trim().toLowerCase();
+                            const posting = String(v?.posting_status || '').trim().toLowerCase();
+                            return status === 'posted' || status === 'approved' || status === 'cleared' || status === 'deposited' || posting === 'posted' || posting === 'approved' || Number(v?.is_posted || 0) === 1;
+                        });
+
+                        if (postedPayments.length > 0 || postedReceipts.length > 0) {
+                            const fallbackExpenses = postedPayments.map(v => ({
                                 category: 'Payment Vouchers',
                                 description: `Voucher ${v.voucher_number || v.reference_number || v.id || ''}`,
                                 transaction_date: v.voucher_date || v.payment_date || '',
                                 total_amount: Number(v.amount || 0),
                                 transaction_count: 1
                             })).filter(r => r.total_amount > 0);
+                            const fallbackRevenue = postedReceipts.map(v => ({
+                                account_code: 'RV',
+                                account_name: `Receipt ${v.voucher_number || v.reference_number || v.id || ''}`,
+                                revenue_amount: Number(v.amount || 0),
+                                amount: Number(v.amount || 0)
+                            })).filter(r => r.revenue_amount > 0);
+                            const totalRevenue = fallbackRevenue.reduce((sum, r) => sum + Number(r.revenue_amount || 0), 0);
                             const totalExpenses = fallbackExpenses.reduce((sum, r) => sum + Number(r.total_amount || 0), 0);
                             reportData = {
                                 ...reportData,
                                 expenses: fallbackExpenses,
-                                revenue: Array.isArray(reportData?.revenue) ? reportData.revenue : [],
+                                revenue: fallbackRevenue,
                                 totals: {
                                     ...(reportData?.totals || {}),
-                                    total_revenue: Number(reportData?.totals?.total_revenue || 0),
+                                    total_revenue: totalRevenue,
                                     total_expenses: totalExpenses,
-                                    net_income: Number(reportData?.totals?.total_revenue || 0) - totalExpenses
+                                    net_income: totalRevenue - totalExpenses
                                 }
                             };
                         }
