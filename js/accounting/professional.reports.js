@@ -1647,12 +1647,6 @@
 
         formatIncomeStatement(reportData) {
             let html = '<div class="professional-report-sections">';
-            const dbg = reportData?.__reportFallbackDebug || null;
-            if (dbg) {
-                html += `<div class="report-info-banner" style="margin:8px 0;padding:6px 10px;border:1px dashed #3b82f6;border-radius:6px;color:#93c5fd;font-size:12px;">
-                    debug: receipt API rows ${Number(dbg.receipt_rows || 0)} | payment API rows ${Number(dbg.payment_rows || 0)} | fallback revenue rows ${Number(dbg.fallback_revenue_rows || 0)} | fallback expense rows ${Number(dbg.fallback_expense_rows || 0)}
-                </div>`;
-            }
             
             // Get revenue and expenses, apply search filter
             let revenue = reportData.revenue || [];

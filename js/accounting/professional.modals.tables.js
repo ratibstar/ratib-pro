@@ -5260,12 +5260,6 @@
                                 ...reportData,
                                 expenses: fallbackExpenses,
                                 revenue: fallbackRevenue,
-                            __reportFallbackDebug: {
-                                payment_rows: paymentVouchers.length,
-                                receipt_rows: receiptVouchers.length,
-                                fallback_expense_rows: fallbackExpenses.length,
-                                fallback_revenue_rows: fallbackRevenue.length
-                            },
                                 totals: {
                                     ...(reportData?.totals || {}),
                                     total_revenue: totalRevenue,

@@ -2283,7 +2283,6 @@ ProfessionalAccounting.prototype.generateReport = async function(reportType) {
             let data;
             try {
                 data = await response.json();
-                console.log('📥 Report API Response:', data); // Always log the response
             } catch (e) {
                 throw new Error('Invalid JSON response from report API');
             }
@@ -2336,12 +2335,6 @@ ProfessionalAccounting.prototype.generateReport = async function(reportType) {
                             ...reportData,
                             expenses: fallbackExpenses,
                             revenue: fallbackRevenue,
-                            __reportFallbackDebug: {
-                                payment_rows: paymentVouchers.length,
-                                receipt_rows: receiptVouchers.length,
-                                fallback_expense_rows: fallbackExpenses.length,
-                                fallback_revenue_rows: fallbackRevenue.length
-                            },
                             totals: {
                                 ...(reportData?.totals || {}),
                                 total_revenue: totalRevenue,
@@ -2355,57 +2348,14 @@ ProfessionalAccounting.prototype.generateReport = async function(reportType) {
                 }
             }
             
-            // Log debug information to console - ALWAYS LOG
-            console.log('🔍 Report Type:', reportType);
-            console.log('📊 Report Data Keys:', Object.keys(reportData));
-            
             // Different report types use different data structures
             const reportsWithAccounts = ['trial-balance', 'general-ledger'];
             const hasAccounts = reportData.accounts && Array.isArray(reportData.accounts);
             
             if (reportsWithAccounts.includes(reportType)) {
                 // These reports should have accounts array
-                console.log('📋 Accounts Array:', hasAccounts ? `${reportData.accounts.length} items` : 'Not present');
-                if (!hasAccounts) {
-                    console.warn('⚠️ ' + reportType + ' report missing accounts array');
-                } else if (reportData.accounts.length === 0) {
-                    console.warn('⚠️ Report returned 0 accounts. Accounts array is empty.');
-                } else {
-                    console.log(`✅ Report returned ${reportData.accounts.length} accounts`);
-                }
             } else {
-                // Other reports use different structures - check what they have
-                if (reportType === 'income-statement') {
-                    const hasRevenue = reportData.revenue && (Array.isArray(reportData.revenue) || Object.keys(reportData.revenue).length > 0);
-                    const hasExpenses = reportData.expenses && (Array.isArray(reportData.expenses) || Object.keys(reportData.expenses).length > 0);
-                    console.log('💰 Revenue data:', hasRevenue ? 'Present' : 'Missing');
-                    console.log('💸 Expenses data:', hasExpenses ? 'Present' : 'Missing');
-                } else if (reportType === 'cash-flow') {
-                    const hasOperating = reportData.operating && (Array.isArray(reportData.operating) || Object.keys(reportData.operating).length > 0);
-                    console.log('💵 Operating activities:', hasOperating ? 'Present' : 'Missing');
-                } else if (reportType === 'balance-sheet') {
-                    const hasAssets = reportData.assets && (Array.isArray(reportData.assets) || Object.keys(reportData.assets).length > 0);
-                    const hasLiabilities = reportData.liabilities && (Array.isArray(reportData.liabilities) || Object.keys(reportData.liabilities).length > 0);
-                    const hasEquity = reportData.equity && (Array.isArray(reportData.equity) || Object.keys(reportData.equity).length > 0);
-                    console.log('🏦 Assets data:', hasAssets ? 'Present' : 'Missing');
-                    console.log('📊 Liabilities data:', hasLiabilities ? 'Present' : 'Missing');
-                    console.log('💼 Equity data:', hasEquity ? 'Present' : 'Missing');
-                }
-            }
-            
-            if (data.debug) {
-                console.log('📊 Report Debug Info:', JSON.stringify(data.debug, null, 2));
-                if (data.debug.total_accounts_in_db !== undefined) {
-                    console.log(`📋 Total accounts in database: ${data.debug.total_accounts_in_db}`);
-                }
-                if (data.debug.accounts_count !== undefined) {
-                    console.log(`📊 Accounts in report: ${data.debug.accounts_count}`);
-                }
-                if (data.debug.table_exists_check !== undefined) {
-                    console.log(`✅ Table exists check: ${data.debug.table_exists_check}`);
-                }
-            } else {
-                console.warn('⚠️ No debug info in response');
+                // Other reports use different structures.
             }
             
             // Setup handlers after report is displayed
