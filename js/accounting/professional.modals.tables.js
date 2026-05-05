@@ -609,6 +609,19 @@
                     if (val !== null && val !== '') tenantParams.set(key, val);
                 });
                 const tenantQuery = tenantParams.toString();
+                const agencyId = tenantParams.get('agency_id') || '';
+                const suffix = agencyId ? ` (agency_id=${agencyId})` : '';
+
+                // Prevent stale values when switching agencies or when API fails.
+                const balanceHint = document.getElementById('modalReportsBalanceHint');
+                const agingHint = document.getElementById('modalReportsAgingHint');
+                const analysisHint = document.getElementById('modalReportsAnalysisHint');
+                const txHint = document.getElementById('modalReportsTransactionHint');
+                if (balanceHint) balanceHint.textContent = `Cash — | Net —${suffix}`;
+                if (agingHint) agingHint.textContent = `AR — | AP —${suffix}`;
+                if (analysisHint) analysisHint.textContent = `Revenue — | Expense —${suffix}`;
+                if (txHint) txHint.textContent = `— transaction entries available${suffix}`;
+
                 const summaryUrl = `${this.apiBase}/unified-calculations.php?type=all${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
                 const summaryRes = await fetch(summaryUrl, {
                     credentials: 'include',
@@ -625,21 +638,16 @@
                 const income = Number(summary?.dashboard?.total_revenue || 0);
                 const expense = Number(summary?.dashboard?.total_expenses || 0);
                 const profit = Number(summary?.dashboard?.net_profit || 0);
-
-                const balanceHint = document.getElementById('modalReportsBalanceHint');
                 if (balanceHint) {
-                    balanceHint.textContent = `Cash ${this.formatCurrency(cash, cur)} | Net ${this.formatCurrency(profit, cur)}`;
+                    balanceHint.textContent = `Cash ${this.formatCurrency(cash, cur)} | Net ${this.formatCurrency(profit, cur)}${suffix}`;
                 }
-                const agingHint = document.getElementById('modalReportsAgingHint');
                 if (agingHint) {
-                    agingHint.textContent = `AR ${this.formatCurrency(receivables, cur)} | AP ${this.formatCurrency(payables, cur)}`;
+                    agingHint.textContent = `AR ${this.formatCurrency(receivables, cur)} | AP ${this.formatCurrency(payables, cur)}${suffix}`;
                 }
-                const analysisHint = document.getElementById('modalReportsAnalysisHint');
                 if (analysisHint) {
-                    analysisHint.textContent = `Revenue ${this.formatCurrency(income, cur)} | Expense ${this.formatCurrency(expense, cur)}`;
+                    analysisHint.textContent = `Revenue ${this.formatCurrency(income, cur)} | Expense ${this.formatCurrency(expense, cur)}${suffix}`;
                 }
 
-                const txHint = document.getElementById('modalReportsTransactionHint');
                 if (txHint) {
                     const txUrl = `${this.apiBase}/transactions.php?limit=1&page=1${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
                     const txRes = await fetch(txUrl, {
@@ -649,7 +657,7 @@
                     });
                     const tx = await txRes.json().catch(() => null);
                     const totalEntries = Number(tx?.total_count || tx?.total || tx?.count || 0);
-                    txHint.textContent = `${totalEntries} transaction entries available`;
+                    txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
                 }
             } catch (e) {
                 // Keep the modal usable even if summary endpoints fail.
