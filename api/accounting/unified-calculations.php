@@ -119,7 +119,7 @@ try {
     // 1. DASHBOARD CALCULATIONS
     // ============================================
     if ($requestType === 'all' || $requestType === 'dashboard') {
-        // Total Revenue (Income transactions - Posted status only)
+        // Total Revenue (Income transactions - Posted/Approved status, full history)
         $stmt = $conn->prepare("
             SELECT 
                 COALESCE(SUM(total_amount), 0) as total_revenue,
@@ -127,12 +127,11 @@ try {
             FROM financial_transactions 
             WHERE transaction_type = 'Income' 
             AND status IN ('Approved', 'Posted')
-            AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         ");
         $stmt->execute();
         $revenue = $stmt->get_result()->fetch_assoc();
         
-        // Total Expenses (Expense transactions - Posted status only)
+        // Total Expenses (Expense transactions - Posted/Approved status, full history)
         $stmt = $conn->prepare("
             SELECT 
                 COALESCE(SUM(total_amount), 0) as total_expenses,
@@ -140,10 +139,73 @@ try {
             FROM financial_transactions 
             WHERE transaction_type = 'Expense' 
             AND status IN ('Approved', 'Posted')
-            AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         ");
         $stmt->execute();
         $expenses = $stmt->get_result()->fetch_assoc();
+
+        // Server-side fallback: if financial_transactions are empty/zero, derive from
+        // voucher tables in the current tenant DB (receipt_vouchers/payment_vouchers).
+        $currentRevenue = floatval($revenue['total_revenue'] ?? 0);
+        $currentExpenses = floatval($expenses['total_expenses'] ?? 0);
+        if ($currentRevenue == 0.0 && $currentExpenses == 0.0) {
+            $voucherRevenue = 0.0;
+            $voucherExpenses = 0.0;
+
+            $rvTable = $conn->query("SHOW TABLES LIKE 'receipt_vouchers'");
+            if ($rvTable && $rvTable->num_rows > 0) {
+                $rvSql = "
+                    SELECT COALESCE(SUM(amount), 0) AS total_revenue
+                    FROM receipt_vouchers
+                    WHERE COALESCE(amount, 0) > 0
+                      AND (
+                        status IS NULL
+                        OR status = ''
+                        OR status NOT IN ('Cancelled', 'Voided', 'Reversed')
+                      )
+                ";
+                $rvStmt = $conn->prepare($rvSql);
+                if ($rvStmt) {
+                    $rvStmt->execute();
+                    $rv = $rvStmt->get_result()->fetch_assoc();
+                    $voucherRevenue = floatval($rv['total_revenue'] ?? 0);
+                    $rvStmt->close();
+                }
+            }
+            if ($rvTable instanceof mysqli_result) {
+                $rvTable->free();
+            }
+
+            $pvTable = $conn->query("SHOW TABLES LIKE 'payment_vouchers'");
+            if ($pvTable && $pvTable->num_rows > 0) {
+                $pvSql = "
+                    SELECT COALESCE(SUM(amount), 0) AS total_expenses
+                    FROM payment_vouchers
+                    WHERE COALESCE(amount, 0) > 0
+                      AND (
+                        status IS NULL
+                        OR status = ''
+                        OR status NOT IN ('Cancelled', 'Voided', 'Reversed')
+                      )
+                ";
+                $pvStmt = $conn->prepare($pvSql);
+                if ($pvStmt) {
+                    $pvStmt->execute();
+                    $pv = $pvStmt->get_result()->fetch_assoc();
+                    $voucherExpenses = floatval($pv['total_expenses'] ?? 0);
+                    $pvStmt->close();
+                }
+            }
+            if ($pvTable instanceof mysqli_result) {
+                $pvTable->free();
+            }
+
+            if ($voucherRevenue > 0 || $voucherExpenses > 0) {
+                $revenue['total_revenue'] = $voucherRevenue;
+                $expenses['total_expenses'] = $voucherExpenses;
+                $revenue['revenue_count'] = intval($voucherRevenue > 0 ? 1 : 0);
+                $expenses['expense_count'] = intval($voucherExpenses > 0 ? 1 : 0);
+            }
+        }
 
         // Prior rolling 30-day window (days 31–60 ago) for % change vs current 30 days
         $prevRevenue = 0.0;
