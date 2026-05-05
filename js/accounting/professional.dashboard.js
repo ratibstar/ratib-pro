@@ -18,6 +18,30 @@
             return this.getDefaultCurrencySync();
         },
 
+        async _fetchUnifiedCalculationsAll() {
+            if (this._unifiedCalculationsUnavailable === true) {
+                return null;
+            }
+            try {
+                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
+                if (!response.ok) {
+                    // Endpoint missing on this deployment: stop retry storm.
+                    if (response.status === 404) {
+                        this._unifiedCalculationsUnavailable = true;
+                    }
+                    return null;
+                }
+                const data = await response.json().catch(() => null);
+                return data || null;
+            } catch (e) {
+                return null;
+            }
+        },
+
         updateOverviewCards(data) {
             const setPctChange = (elementId, rawValue, tone /* 'upGood' | 'upBad' */) => {
                 const el = document.getElementById(elementId);
@@ -264,13 +288,7 @@
 
         async loadCashFlowSummary() {
             try {
-                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
-                    credentials: 'include',
-                    cache: 'no-cache',
-                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-                });
-                if (!response.ok) return;
-                const data = await response.json().catch(() => null);
+                const data = await this._fetchUnifiedCalculationsAll();
                 if (!data || !data.success || !data.dashboard) return;
                 const cashIn = parseFloat(data.dashboard.total_revenue || 0);
                 const cashOut = parseFloat(data.dashboard.total_expenses || 0);
@@ -290,13 +308,7 @@
 
         async loadFinancialSummary() {
             try {
-                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
-                    credentials: 'include',
-                    cache: 'no-cache',
-                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-                });
-                if (!response.ok) return;
-                const data = await response.json().catch(() => null);
+                const data = await this._fetchUnifiedCalculationsAll();
                 if (!data || !data.success || !data.dashboard) return;
                 // Calculate assets (cash balance + receivables)
                 const assets = parseFloat(data.dashboard.cash_balance || 0) + parseFloat(data.dashboard.total_receivables || 0);
@@ -1394,23 +1406,9 @@
             }
             
             try {
-                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
-                    credentials: 'include',
-                    cache: 'no-cache',
-                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => null);
-                    throw new Error(`HTTP ${response.status}: ${errorData?.message || errorData?.error || 'Unknown error'}`);
-                }
-                
-                let data;
-                try {
-                    data = await response.json();
-                } catch (jsonError) {
-                    console.error('Error parsing response in loadFinancialOverview:', jsonError);
-                    throw new Error('Invalid JSON response from server');
+                const data = await this._fetchUnifiedCalculationsAll();
+                if (!data) {
+                    throw new Error('Unified calculations unavailable');
                 }
                 if (data.success && data.dashboard) {
                     // Update dashboard cards with unified data
@@ -1501,18 +1499,8 @@
         async refreshAllModules() {
             // Refresh all accounting modules with unified calculations
             try {
-                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
-                    credentials: 'include',
-                    cache: 'no-cache',
-                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-                });
-                let data;
-                try {
-                    data = await response.json();
-                } catch (jsonError) {
-                    console.error('Error parsing response in refreshAllModules:', jsonError);
-                    return; // Silently fail if JSON parsing fails
-                }
+                const data = await this._fetchUnifiedCalculationsAll();
+                if (!data) return;
                 if (data.success) {
                     // Refresh Dashboard
                     if (data.dashboard) {
@@ -1639,15 +1627,7 @@
                     await this.initDefaultCurrency();
                 }
                 // Refresh overview cards
-                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
-                    credentials: 'include',
-                    cache: 'no-cache',
-                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-                });
-                if (!response.ok) {
-                    return;
-                }
-                const data = await response.json().catch(() => null);
+                const data = await this._fetchUnifiedCalculationsAll();
                 if (!data) {
                     return;
                 }
