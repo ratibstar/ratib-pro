@@ -57,6 +57,8 @@
                 const prev = Number(this._entryApprovalPendingLast || 0);
                 const count = Number.isFinite(pendingCount) ? pendingCount : 0;
                 this._entryApprovalPendingLast = count;
+                const isFirstSnapshot = this._entryApprovalAlertInitialized !== true;
+                this._entryApprovalAlertInitialized = true;
 
                 link.classList.remove('entry-approval-has-pending', 'entry-approval-trend-up', 'entry-approval-trend-down');
                 indicator.textContent = '';
@@ -69,6 +71,10 @@
                 if (count > prev) {
                     link.classList.add('entry-approval-trend-up');
                     indicator.textContent = `▲ ${count}`;
+                    if (!isFirstSnapshot && typeof this.showToast === 'function') {
+                        const delta = count - prev;
+                        this.showToast(`${delta} new voucher(s) need Entry Approval`, 'info');
+                    }
                 } else if (count < prev) {
                     link.classList.add('entry-approval-trend-down');
                     indicator.textContent = `▼ ${count}`;
