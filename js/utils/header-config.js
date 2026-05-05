@@ -135,7 +135,22 @@
         var originalFetch = window.fetch;
         window.fetch = function(url, options) {
             var urlStr = typeof url === 'string' ? url : (url && url.url) || '';
-            return originalFetch.apply(this, arguments).then(function(response) {
+            // Backward compatibility for stale bundles that call ?typ=all by mistake.
+            // Normalize to ?type=all before request leaves the browser.
+            if (urlStr && /(?:\?|&)typ=all(?:&|$)/.test(urlStr)) {
+                var fixed = urlStr.replace(/([?&])typ=all([&]?)/g, function(_, sep, tail) {
+                    return sep + 'type=all' + (tail || '');
+                });
+                if (typeof url === 'string') {
+                    url = fixed;
+                } else if (url && typeof Request !== 'undefined' && url instanceof Request) {
+                    url = new Request(fixed, url);
+                } else {
+                    urlStr = fixed;
+                }
+                urlStr = fixed;
+            }
+            return originalFetch.call(this, url, options).then(function(response) {
                 if (response.status === 401 && shouldRedirectOn401(urlStr)) {
                     redirectToLogout();
                     return new Promise(function() {}); // Never resolves - prevents caller error handling
