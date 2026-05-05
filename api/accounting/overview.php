@@ -57,6 +57,10 @@ try {
             $data['currency'] = $acctUi;
         }
     }
+    $acctHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    if ($acctHost !== '' && strpos($acctHost, 'ratib.sa') !== false) {
+        $data['currency'] = 'SAR';
+    }
 
     $stmt = $conn->prepare("SELECT COALESCE(SUM(total_amount), 0) as total_revenue FROM financial_transactions WHERE transaction_type = 'Income' AND status IN ('Approved', 'Posted') AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
     if ($stmt) { $stmt->execute(); $result = $stmt->get_result()->fetch_assoc(); $data['total_revenue'] = floatval($result['total_revenue'] ?? 0); $stmt->close(); }

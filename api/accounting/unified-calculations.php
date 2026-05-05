@@ -38,6 +38,10 @@ try {
             $stubDashboardCurrency = $sc;
         }
     }
+    $stubHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    if ($stubHost !== '' && strpos($stubHost, 'ratib.sa') !== false) {
+        $stubDashboardCurrency = 'SAR';
+    }
     $tableCheck = $conn->query("SHOW TABLES LIKE 'financial_transactions'");
     if (!$tableCheck || $tableCheck->num_rows === 0) {
         echo json_encode([
@@ -84,6 +88,10 @@ try {
         if (preg_match('/^[A-Z]{3}$/', $acctUi)) {
             $baseCurrency = $acctUi;
         }
+    }
+    $acctHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    if ($acctHost !== '' && strpos($acctHost, 'ratib.sa') !== false) {
+        $baseCurrency = 'SAR';
     }
     
     // ============================================

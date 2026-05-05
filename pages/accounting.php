@@ -49,6 +49,10 @@ if (defined('ACCOUNTING_UI_DEFAULT_CURRENCY')) {
         $ratibAccountingBootstrapCurrency = $acctUiCur;
     }
 }
+$acctHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+if ($acctHost !== '' && strpos($acctHost, 'ratib.sa') !== false) {
+    $ratibAccountingBootstrapCurrency = 'SAR';
+}
 $ratibAccountingBootstrapCurrencyJson = json_encode($ratibAccountingBootstrapCurrency, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 $ratibAccountingBootstrapCurrencyEsc = htmlspecialchars($ratibAccountingBootstrapCurrency, ENT_QUOTES, 'UTF-8');
 
