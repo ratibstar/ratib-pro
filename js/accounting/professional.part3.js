@@ -5238,14 +5238,40 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             if (!summary || !summary.success) return;
 
             const cur = this.normalizeCurrencyCode(summary?.dashboard?.currency) || this.getDefaultCurrencySync();
-            const cash = Number(summary?.dashboard?.cash_balance || 0);
+            let cash = Number(summary?.dashboard?.cash_balance || 0);
             const receivables = Number(summary?.dashboard?.total_receivables || 0);
             const payables = Number(summary?.dashboard?.total_payables || 0);
-            const income = Number(summary?.dashboard?.total_revenue || 0);
-            const expense = Number(summary?.dashboard?.total_expenses || 0);
-            const profit = Number(summary?.dashboard?.net_profit || 0);
+            let income = Number(summary?.dashboard?.total_revenue || 0);
+            let expense = Number(summary?.dashboard?.total_expenses || 0);
+            let profit = Number(summary?.dashboard?.net_profit || 0);
             const receivablesCount = Number(summary?.dashboard?.receivables_count || 0);
             const payablesCount = Number(summary?.dashboard?.payables_count || 0);
+
+            // If summary is all zeros but vouchers exist, compute per-agency fallback.
+            if (income === 0 && expense === 0 && profit === 0) {
+                try {
+                    const receiptsUrl = `${this.apiBase}/receipt-payment-vouchers.php?type=receipt${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                    const paymentsUrl = `${this.apiBase}/receipt-payment-vouchers.php?type=payment${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                    const [rcRes, pyRes] = await Promise.all([
+                        fetch(receiptsUrl, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } }),
+                        fetch(paymentsUrl, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } })
+                    ]);
+                    const rc = await rcRes.json().catch(() => null);
+                    const py = await pyRes.json().catch(() => null);
+                    const receiptVouchers = Array.isArray(rc?.vouchers) ? rc.vouchers : [];
+                    const paymentVouchers = Array.isArray(py?.vouchers) ? py.vouchers : [];
+                    const receiptSum = receiptVouchers.reduce((sum, v) => sum + Number(v?.amount || 0), 0);
+                    const paymentSum = paymentVouchers.reduce((sum, v) => sum + Number(v?.amount || 0), 0);
+                    if (receiptSum > 0 || paymentSum > 0) {
+                        income = receiptSum;
+                        expense = paymentSum;
+                        profit = income - expense;
+                        if (cash === 0) cash = profit;
+                    }
+                } catch (_) {
+                    // Keep base summary values on fallback failure.
+                }
+            }
             if (balanceHint) {
                 balanceHint.textContent = `Cash ${this.formatCurrency(cash, cur)} | Net ${this.formatCurrency(profit, cur)}${suffix}`;
             }
