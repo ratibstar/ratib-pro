@@ -862,8 +862,8 @@ function generateIncomeStatement($conn, $startDate = null, $endDate = null, $cos
                 FROM receipt_vouchers
                 WHERE COALESCE(amount, 0) > 0
                   AND (
-                    LOWER(TRIM(COALESCE(status, ''))) IN ('approved', 'posted')
-                    OR LOWER(TRIM(COALESCE(posting_status, ''))) IN ('approved', 'posted')
+                    LOWER(TRIM(COALESCE(status, ''))) IN ('draft', 'approved', 'posted', 'cleared', 'deposited')
+                    OR LOWER(TRIM(COALESCE(posting_status, ''))) IN ('draft', 'approved', 'posted')
                     OR COALESCE(is_posted, 0) = 1
                   )
                 ORDER BY id DESC
@@ -890,7 +890,7 @@ function generateIncomeStatement($conn, $startDate = null, $endDate = null, $cos
                     COALESCE(amount, 0) AS revenue_amount
                 FROM payment_receipts
                 WHERE COALESCE(amount, 0) > 0
-                  AND LOWER(TRIM(COALESCE(status, ''))) IN ('cleared', 'deposited', 'posted', 'approved')
+                  AND LOWER(TRIM(COALESCE(status, ''))) IN ('draft', 'cleared', 'deposited', 'posted', 'approved', 'received')
                 ORDER BY id DESC
                 LIMIT 300
             ");
