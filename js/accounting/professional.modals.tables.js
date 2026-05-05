@@ -684,79 +684,87 @@
                     analysisHint.textContent = `Revenue ${this.formatCurrency(income, cur)} | Expense ${this.formatCurrency(expense, cur)}${suffix}`;
                 }
 
+                let totalEntries = 0;
                 if (txHint) {
-                    const txUrl = `${this.apiBase}/transactions.php?limit=1&page=1${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
-                    const txRes = await fetch(txUrl, {
-                        credentials: 'include',
-                        cache: 'no-cache',
-                        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-                    });
-                    if (isStale()) return;
-                    const tx = await txRes.json().catch(() => null);
-                    if (isStale()) return;
-                    const totalEntries = Number(tx?.total_count || tx?.total || tx?.count || 0);
-                    const summaryKey = agencyId || 'default';
-                    this._reportsLastGoodSummary = this._reportsLastGoodSummary || {};
-                    const previous = this._reportsLastGoodSummary[summaryKey] || null;
-                    const hasNonZeroNow =
-                        totalEntries > 0 ||
-                        income !== 0 ||
-                        expense !== 0 ||
-                        profit !== 0 ||
-                        cash !== 0 ||
-                        receivablesCount > 0 ||
-                        payablesCount > 0;
-
-                    if (!hasNonZeroNow && previous) {
-                        cash = Number(previous.cash || 0);
-                        income = Number(previous.income || 0);
-                        expense = Number(previous.expense || 0);
-                        profit = Number(previous.profit || 0);
-                    } else if (hasNonZeroNow) {
-                        this._reportsLastGoodSummary[summaryKey] = {
-                            cash,
-                            income,
-                            expense,
-                            profit
-                        };
+                    try {
+                        const txUrl = `${this.apiBase}/transactions.php?limit=1&page=1${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                        const txRes = await fetch(txUrl, {
+                            credentials: 'include',
+                            cache: 'no-cache',
+                            headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                        });
+                        if (isStale()) return;
+                        const tx = await txRes.json().catch(() => null);
+                        if (isStale()) return;
+                        totalEntries = Number(tx?.total_count || tx?.total || tx?.count || 0);
+                    } catch (_) {
+                        totalEntries = 0;
                     }
-
-                    const readNumber = (id) => {
-                        const el = document.getElementById(id);
-                        if (!el) return 0;
-                        const cleaned = String(el.textContent || '').replace(/[^\d.-]/g, '');
-                        const n = Number(cleaned);
-                        return Number.isFinite(n) ? n : 0;
-                    };
-                    const currentVisibleHasData =
-                        readNumber('modalReportsTotal') > 0 ||
-                        readNumber('modalReportsFinancial') !== 0 ||
-                        readNumber('modalReportsOperational') !== 0 ||
-                        readNumber('modalReportsBalanceCount') !== 0 ||
-                        readNumber('modalReportsAnalysisCount') !== 0;
-                    if (!hasNonZeroNow && !previous && currentVisibleHasData) {
-                        return;
-                    }
-
-                    txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
-
-                    // Use agency-specific accounting metrics for top cards (not static catalog counts).
-                    this._reportsSummaryUsesCatalogCounts = false;
-                    const totalEl = document.getElementById('modalReportsTotal');
-                    const financialEl = document.getElementById('modalReportsFinancial');
-                    const operationalEl = document.getElementById('modalReportsOperational');
-                    const balanceCountEl = document.getElementById('modalReportsBalanceCount');
-                    const transactionCountEl = document.getElementById('modalReportsTransactionCount');
-                    const agingCountEl = document.getElementById('modalReportsAgingCount');
-                    const analysisCountEl = document.getElementById('modalReportsAnalysisCount');
-                    if (totalEl) totalEl.textContent = String(totalEntries);
-                    if (financialEl) financialEl.textContent = this.formatCurrency(income, cur);
-                    if (operationalEl) operationalEl.textContent = this.formatCurrency(expense, cur);
-                    if (balanceCountEl) balanceCountEl.textContent = this.formatCurrency(cash, cur);
-                    if (transactionCountEl) transactionCountEl.textContent = String(totalEntries);
-                    if (agingCountEl) agingCountEl.textContent = String(receivablesCount + payablesCount);
-                    if (analysisCountEl) analysisCountEl.textContent = this.formatCurrency(profit, cur);
                 }
+
+                const summaryKey = agencyId || 'default';
+                this._reportsLastGoodSummary = this._reportsLastGoodSummary || {};
+                const previous = this._reportsLastGoodSummary[summaryKey] || null;
+                const hasNonZeroNow =
+                    totalEntries > 0 ||
+                    income !== 0 ||
+                    expense !== 0 ||
+                    profit !== 0 ||
+                    cash !== 0 ||
+                    receivablesCount > 0 ||
+                    payablesCount > 0;
+
+                if (!hasNonZeroNow && previous) {
+                    cash = Number(previous.cash || 0);
+                    income = Number(previous.income || 0);
+                    expense = Number(previous.expense || 0);
+                    profit = Number(previous.profit || 0);
+                } else if (hasNonZeroNow) {
+                    this._reportsLastGoodSummary[summaryKey] = {
+                        cash,
+                        income,
+                        expense,
+                        profit
+                    };
+                }
+
+                const readNumber = (id) => {
+                    const el = document.getElementById(id);
+                    if (!el) return 0;
+                    const cleaned = String(el.textContent || '').replace(/[^\d.-]/g, '');
+                    const n = Number(cleaned);
+                    return Number.isFinite(n) ? n : 0;
+                };
+                const currentVisibleHasData =
+                    readNumber('modalReportsTotal') > 0 ||
+                    readNumber('modalReportsFinancial') !== 0 ||
+                    readNumber('modalReportsOperational') !== 0 ||
+                    readNumber('modalReportsBalanceCount') !== 0 ||
+                    readNumber('modalReportsAnalysisCount') !== 0;
+                if (!hasNonZeroNow && !previous && currentVisibleHasData) {
+                    return;
+                }
+
+                if (txHint) {
+                    txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
+                }
+
+                // Use agency-specific accounting metrics for top cards (not static catalog counts).
+                this._reportsSummaryUsesCatalogCounts = false;
+                const totalEl = document.getElementById('modalReportsTotal');
+                const financialEl = document.getElementById('modalReportsFinancial');
+                const operationalEl = document.getElementById('modalReportsOperational');
+                const balanceCountEl = document.getElementById('modalReportsBalanceCount');
+                const transactionCountEl = document.getElementById('modalReportsTransactionCount');
+                const agingCountEl = document.getElementById('modalReportsAgingCount');
+                const analysisCountEl = document.getElementById('modalReportsAnalysisCount');
+                if (totalEl) totalEl.textContent = String(totalEntries);
+                if (financialEl) financialEl.textContent = this.formatCurrency(income, cur);
+                if (operationalEl) operationalEl.textContent = this.formatCurrency(expense, cur);
+                if (balanceCountEl) balanceCountEl.textContent = this.formatCurrency(cash, cur);
+                if (transactionCountEl) transactionCountEl.textContent = String(totalEntries);
+                if (agingCountEl) agingCountEl.textContent = String(receivablesCount + payablesCount);
+                if (analysisCountEl) analysisCountEl.textContent = this.formatCurrency(profit, cur);
             } catch (e) {
                 // Keep the modal usable even if summary endpoints fail.
             }
