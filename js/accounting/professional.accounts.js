@@ -4931,9 +4931,9 @@ ProfessionalAccounting.prototype.getChartOfAccountsStatusCards = function(report
 
 
 ProfessionalAccounting.prototype.getValueAddedStatusCards = function(reportData) {
-        const revenue = parseFloat(reportData?.revenue || 0);
-        const cogs = parseFloat(reportData?.cogs || 0);
-        const valueAdded = revenue - cogs;
+        const revenue = parseFloat(reportData?.totals?.total_revenue || reportData?.revenue || 0);
+        const cogs = parseFloat(reportData?.totals?.cost_of_goods_sold || reportData?.cogs || 0);
+        const valueAdded = parseFloat(reportData?.totals?.value_added || (revenue - cogs));
         
         let html = '<div class="report-status-cards">';
         html += this.createStatCard('success', 'fa-arrow-up', this.formatCurrency(revenue), 'Revenue');
@@ -4946,9 +4946,13 @@ ProfessionalAccounting.prototype.getValueAddedStatusCards = function(reportData)
 
 ProfessionalAccounting.prototype.getFixedAssetsStatusCards = function(reportData) {
         const assets = reportData?.assets || [];
-        const totalValue = parseFloat(reportData?.totals?.total_value || 0);
+        const totalValue = parseFloat(
+            reportData?.totals?.total_value ||
+            reportData?.totals?.total_assets ||
+            assets.reduce((sum, asset) => sum + parseFloat(asset.balance || 0), 0)
+        );
         const totalDepreciation = parseFloat(reportData?.totals?.total_depreciation || 0);
-        const netValue = totalValue - totalDepreciation;
+        const netValue = parseFloat(reportData?.totals?.net_value || (totalValue - totalDepreciation));
         
         let html = '<div class="report-status-cards">';
         html += this.createStatCard('primary', 'fa-building', assets.length, 'Assets');
@@ -5005,8 +5009,16 @@ ProfessionalAccounting.prototype.getStatisticalPositionStatusCards = function(re
 
 ProfessionalAccounting.prototype.getChangesInEquityStatusCards = function(reportData) {
         const changes = reportData?.equity_changes || [];
-        const opening = parseFloat(reportData?.totals?.opening_equity || 0);
-        const closing = parseFloat(reportData?.totals?.closing_equity || 0);
+        const fallbackClosing = (reportData?.equity_changes || []).reduce(
+            (sum, row) => sum + parseFloat(row.current_balance || 0),
+            0
+        );
+        const totalChangeAmount = (reportData?.data || []).reduce(
+            (sum, row) => sum + parseFloat(row.change_amount || 0),
+            0
+        );
+        const closing = parseFloat(reportData?.totals?.closing_equity || reportData?.totals?.total_equity || fallbackClosing || 0);
+        const opening = parseFloat(reportData?.totals?.opening_equity || (closing - totalChangeAmount));
         const netChange = closing - opening;
         
         let html = '<div class="report-status-cards">';
@@ -5036,8 +5048,16 @@ ProfessionalAccounting.prototype.getFinancialPerformanceStatusCards = function(r
 
 
 ProfessionalAccounting.prototype.getComparativeReportStatusCards = function(reportData) {
-        const currentRevenue = parseFloat(reportData?.current_period?.revenue || 0);
-        const previousRevenue = parseFloat(reportData?.previous_period?.revenue || 0);
+        const currentRevenue = parseFloat(
+            reportData?.comparisons?.revenue?.current ??
+            reportData?.current_period?.revenue ??
+            0
+        );
+        const previousRevenue = parseFloat(
+            reportData?.comparisons?.revenue?.previous ??
+            reportData?.previous_period?.revenue ??
+            0
+        );
         const revenueChange = currentRevenue - previousRevenue;
         const revenueChangePercent = previousRevenue > 0 ? ((revenueChange / previousRevenue) * 100).toFixed(1) + '%' : '0%';
         
