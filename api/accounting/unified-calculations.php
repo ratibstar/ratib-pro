@@ -207,6 +207,62 @@ try {
             }
         }
 
+        // Final fallback: derive revenue/expense directly from General Ledger account classes
+        // (REVENUE/EXPENSE) when financial_transactions and voucher totals are both zero.
+        $currentRevenue = floatval($revenue['total_revenue'] ?? 0);
+        $currentExpenses = floatval($expenses['total_expenses'] ?? 0);
+        if ($currentRevenue == 0.0 && $currentExpenses == 0.0) {
+            $glRevenue = 0.0;
+            $glExpenses = 0.0;
+
+            $glTable = $conn->query("SHOW TABLES LIKE 'general_ledger'");
+            $faTable = $conn->query("SHOW TABLES LIKE 'financial_accounts'");
+            if ($glTable && $glTable->num_rows > 0 && $faTable && $faTable->num_rows > 0) {
+                $revSql = "
+                    SELECT COALESCE(SUM(gl.credit - gl.debit), 0) AS total_revenue
+                    FROM general_ledger gl
+                    INNER JOIN financial_accounts fa ON gl.account_id = fa.id
+                    WHERE fa.account_type = 'REVENUE'
+                      AND fa.is_active = 1
+                ";
+                $revStmt = $conn->prepare($revSql);
+                if ($revStmt) {
+                    $revStmt->execute();
+                    $revRow = $revStmt->get_result()->fetch_assoc();
+                    $glRevenue = floatval($revRow['total_revenue'] ?? 0);
+                    $revStmt->close();
+                }
+
+                $expSql = "
+                    SELECT COALESCE(SUM(gl.debit - gl.credit), 0) AS total_expenses
+                    FROM general_ledger gl
+                    INNER JOIN financial_accounts fa ON gl.account_id = fa.id
+                    WHERE fa.account_type = 'EXPENSE'
+                      AND fa.is_active = 1
+                ";
+                $expStmt = $conn->prepare($expSql);
+                if ($expStmt) {
+                    $expStmt->execute();
+                    $expRow = $expStmt->get_result()->fetch_assoc();
+                    $glExpenses = floatval($expRow['total_expenses'] ?? 0);
+                    $expStmt->close();
+                }
+            }
+            if ($glTable instanceof mysqli_result) {
+                $glTable->free();
+            }
+            if ($faTable instanceof mysqli_result) {
+                $faTable->free();
+            }
+
+            if ($glRevenue > 0 || $glExpenses > 0) {
+                $revenue['total_revenue'] = $glRevenue;
+                $expenses['total_expenses'] = $glExpenses;
+                $revenue['revenue_count'] = intval($glRevenue > 0 ? 1 : 0);
+                $expenses['expense_count'] = intval($glExpenses > 0 ? 1 : 0);
+            }
+        }
+
         // Prior rolling 30-day window (days 31–60 ago) for % change vs current 30 days
         $prevRevenue = 0.0;
         $stmt = $conn->prepare("
