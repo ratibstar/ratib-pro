@@ -102,6 +102,9 @@ try {
                 if (preg_match('/^[A-Z]{3}$/', $vC)) {
                     $baseCurrency = $vC;
                 }
+            } else {
+                // No active currencies: do not expose inactive/stale code.
+                $baseCurrency = 'SAR';
             }
             if ($rC instanceof mysqli_result) {
                 $rC->free();

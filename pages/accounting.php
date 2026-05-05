@@ -63,6 +63,9 @@ if (isset($conn) && $conn instanceof mysqli) {
                 if (preg_match('/^[A-Z]{3}$/', $v3)) {
                     $ratibAccountingBootstrapCurrency = $v3;
                 }
+            } else {
+                // No active currencies at all: never keep inactive/stale code in UI.
+                $ratibAccountingBootstrapCurrency = 'SAR';
             }
             if ($r3 instanceof mysqli_result) {
                 $r3->free();

@@ -249,7 +249,8 @@
                         // Stored/default currency is not active anymore: follow active currency list.
                         return normalizedActive[0];
                     }
-                    // Empty active list was persisted (e.g. API returned none): avoid trusting stale storage.
+                    // No active currencies: never keep stale/inactive stored currency.
+                    return 'SAR';
                 }
             } catch (e) {
                 // Ignore malformed cache and fallback to stored/default.
@@ -691,9 +692,9 @@
                 // Ignore storage quota/write errors.
             }
             const activeSet = new Set(activeCurrencies || []);
-            const chosen = (activeSet.size > 0 && !activeSet.has(serverHint))
-                ? activeCurrencies[0]
-                : serverHint;
+            const chosen = activeSet.size === 0
+                ? 'SAR'
+                : (activeSet.has(serverHint) ? serverHint : activeCurrencies[0]);
             try {
                 localStorage.setItem('accounting_default_currency', chosen);
             } catch (e) {}
@@ -718,7 +719,7 @@
         if (preferredFromSetting && /^[A-Z]{3}$/.test(preferredFromSetting) && activeSet.size > 0 && activeSet.has(preferredFromSetting)) {
             resolvedCurrency = preferredFromSetting;
         } else if (preferredFromSetting && /^[A-Z]{3}$/.test(preferredFromSetting) && activeSet.size === 0) {
-            resolvedCurrency = preferredFromSetting;
+            resolvedCurrency = 'SAR';
         } else if (preferredFromSetting && /^[A-Z]{3}$/.test(preferredFromSetting) && activeSet.size > 0 && !activeSet.has(preferredFromSetting)) {
             resolvedCurrency = activeCurrencies[0];
         } else if (normalizedPreferredFromStorage && activeSet.has(normalizedPreferredFromStorage)) {
@@ -726,11 +727,13 @@
         } else if (normalizedPreferredFromStorage && !activeSet.has(normalizedPreferredFromStorage) && activeSet.size > 0) {
             resolvedCurrency = activeCurrencies[0];
         } else if (normalizedPreferredFromStorage && !activeSet.has(normalizedPreferredFromStorage) && activeSet.size === 0) {
-            resolvedCurrency = normalizedPreferredFromStorage;
+            resolvedCurrency = 'SAR';
         } else if (serverHint) {
             resolvedCurrency = serverHint;
         } else if (activeCurrencies.length > 0) {
             resolvedCurrency = activeCurrencies[0];
+        } else if (activeSet.size === 0) {
+            resolvedCurrency = 'SAR';
         }
 
         localStorage.setItem('accounting_default_currency', resolvedCurrency);
