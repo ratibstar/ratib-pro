@@ -20,6 +20,74 @@
             return this.getDefaultCurrencySync();
         },
 
+        _getEntryApprovalNavLink() {
+            return document.querySelector('.top-nav-link[data-tab="entry-approval"]');
+        },
+
+        _ensureEntryApprovalIndicator(link) {
+            if (!link) return null;
+            let indicator = link.querySelector('.entry-approval-indicator');
+            if (!indicator) {
+                indicator = document.createElement('span');
+                indicator.className = 'entry-approval-indicator';
+                indicator.setAttribute('aria-hidden', 'true');
+                link.appendChild(indicator);
+            }
+            return indicator;
+        },
+
+        async refreshEntryApprovalTabAlert() {
+            const link = this._getEntryApprovalNavLink();
+            if (!link) return;
+            const indicator = this._ensureEntryApprovalIndicator(link);
+            if (!indicator) return;
+            try {
+                const response = await fetch(`${this.apiBase}/entry-approval.php?status=pending`, {
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
+                if (!response.ok) return;
+                const data = await response.json().catch(() => null);
+                if (!data || !data.success) return;
+
+                const pendingCount = Array.isArray(data.entries)
+                    ? data.entries.length
+                    : Number(data.count || 0);
+                const prev = Number(this._entryApprovalPendingLast || 0);
+                const count = Number.isFinite(pendingCount) ? pendingCount : 0;
+                this._entryApprovalPendingLast = count;
+
+                link.classList.remove('entry-approval-has-pending', 'entry-approval-trend-up', 'entry-approval-trend-down');
+                indicator.textContent = '';
+
+                if (count <= 0) {
+                    return;
+                }
+
+                link.classList.add('entry-approval-has-pending');
+                if (count > prev) {
+                    link.classList.add('entry-approval-trend-up');
+                    indicator.textContent = `▲ ${count}`;
+                } else if (count < prev) {
+                    link.classList.add('entry-approval-trend-down');
+                    indicator.textContent = `▼ ${count}`;
+                } else {
+                    indicator.textContent = `• ${count}`;
+                }
+            } catch (e) {
+                // Silent in production.
+            }
+        },
+
+        startEntryApprovalAlertWatcher() {
+            this.refreshEntryApprovalTabAlert();
+            if (this._entryApprovalAlertTimer) return;
+            this._entryApprovalAlertTimer = setInterval(() => {
+                this.refreshEntryApprovalTabAlert();
+            }, 20000);
+        },
+
         async _fetchUnifiedCalculationsAll() {
             if (this._unifiedCalculationsUnavailable === true) {
                 return null;
@@ -1614,6 +1682,7 @@
             try {
                 // Ensure Quick Actions are visible
                 this.ensureQuickActionsVisible();
+                this.startEntryApprovalAlertWatcher();
                 
             this.loadRecentTransactions();
             this.loadCashFlowSummary();
@@ -1637,6 +1706,7 @@
                 if (typeof this.initDefaultCurrency === 'function') {
                     await this.initDefaultCurrency();
                 }
+                this.startEntryApprovalAlertWatcher();
                 // Refresh overview cards
                 const data = await this._fetchUnifiedCalculationsAll();
                 if (!data) {
