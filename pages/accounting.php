@@ -1158,7 +1158,7 @@ include '../includes/header.php';
 <script src="<?php echo htmlspecialchars(asset('js/accounting/professional.modals.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.modals.js') . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars(asset('js/accounting/professional.modals.tables.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.modals.tables.js') . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Reports: Report methods -->
-<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.reports.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars(asset('js/accounting/professional.reports.js') . '?v=' . (int)@filemtime(__DIR__ . '/../js/accounting/professional.reports.js') . '&acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Extensions: Additional features -->
 <script src="<?php echo htmlspecialchars(asset('js/accounting/professional-support-payments.js') . '?acctd=' . (int) $accountingAssetDeploy, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <!-- Patches: Must load last - patches existing methods -->
