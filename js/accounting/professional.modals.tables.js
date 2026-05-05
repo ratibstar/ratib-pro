@@ -5154,14 +5154,14 @@
                 
                 if (needsDateRange) {
                     if (startDateInput && startDateInput.value) {
-                        params.append('start_date', startDateInput.value);
+                        params.append('start_date', this.formatDateForAPI(startDateInput.value));
                     }
                     if (endDateInput && endDateInput.value) {
-                        params.append('end_date', endDateInput.value);
+                        params.append('end_date', this.formatDateForAPI(endDateInput.value));
                     }
                 } else if (needsAsOfDate) {
                     if (asOfDateInput && asOfDateInput.value) {
-                        params.append('as_of', asOfDateInput.value);
+                        params.append('as_of', this.formatDateForAPI(asOfDateInput.value));
                     }
                 }
                 
