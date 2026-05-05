@@ -12,7 +12,6 @@ class CurrencyUtils {
         this.currenciesCache = null;
         this.cacheTimestamp = null;
         this.cacheDuration = 5 * 60 * 1000; // 5 minutes cache
-        this._warnedNoActiveCurrencies = false;
         const el = typeof document !== 'undefined' ? document.getElementById('app-config') : null;
         const cpHr = (window.APP_CONFIG && window.APP_CONFIG.controlHrApiBase) || (el && el.getAttribute('data-control-hr-api-base'));
         const controlPath = (window.APP_CONFIG && window.APP_CONFIG.controlApiPath) || (el && el.getAttribute('data-control-api-path'));
@@ -79,21 +78,12 @@ class CurrencyUtils {
                 }));
                 this.currenciesCache = formattedCurrencies;
                 this.cacheTimestamp = Date.now();
-                if (formattedCurrencies.length === 0) {
-                    // Avoid console spam when multiple modules request currencies in a loop.
-                    if (!this._warnedNoActiveCurrencies) {
-                        console.warn('⚠️ No active currencies found! Please activate currencies in System Settings.');
-                        this._warnedNoActiveCurrencies = true;
-                    }
-                } else {
-                    this._warnedNoActiveCurrencies = false;
-                }
                 return formattedCurrencies;
             } else {
                 throw new Error(data.message || 'Failed to fetch currencies');
             }
         } catch (error) {
-            console.error('❌ Error fetching currencies:', error);
+            // Silent in production; keep UX stable via empty list + UI hints where needed.
             // Strict mode: do not inject hardcoded currencies when API fails.
             // This keeps forms aligned with System Settings > Currency Management.
             if (Array.isArray(this.currenciesCache) && this.currenciesCache.length > 0) {
@@ -180,7 +170,7 @@ class CurrencyUtils {
 
         try {
             // Fetch active currencies from API (only active currencies are returned)
-            // Prefer cache to prevent repeated API calls + repeated warning logs.
+            // Prefer cache to keep selects responsive and avoid noisy retries.
             const currencies = await this.fetchCurrencies(false);
             
             // Build options HTML
@@ -195,7 +185,17 @@ class CurrencyUtils {
                 const isSelected = normalizedCurrency && normalizedCurrency === c.code ? 'selected' : '';
                 return `<option value="${c.code}" ${isSelected}>${c.label}</option>`;
             }).join('');
-            
+
+            // Show "no active currencies" hint only inside settings UI.
+            const inSettingsModal = !!select.closest('#accountingSettingsModal');
+            const isSettingsDefault = select.id === 'defaultCurrency' || select.getAttribute('data-setting-key') === 'default_currency';
+            const showSettingsHint = currencies.length === 0 && (inSettingsModal || isSettingsDefault);
+
+            if (showSettingsHint) {
+                select.innerHTML = '<option value="">No active currencies found. Please activate currencies in System Settings.</option>';
+                return;
+            }
+
             // Set innerHTML with default option + currency options
             select.innerHTML = '<option value="">Select Currency</option>' + optionsHTML;
             
@@ -207,10 +207,14 @@ class CurrencyUtils {
                 select.value = normalizedCurrency;
             }
         } catch (error) {
-            console.error('❌ Error populating currency select:', error);
-            // Don't use fallback - show empty dropdown if API fails
-            // This ensures users know they need to activate currencies
-            select.innerHTML = '<option value="">No active currencies found. Please activate currencies in System Settings.</option>';
+            // Silent in production. Show hint only in settings modal/default currency control.
+            const inSettingsModal = !!select.closest('#accountingSettingsModal');
+            const isSettingsDefault = select.id === 'defaultCurrency' || select.getAttribute('data-setting-key') === 'default_currency';
+            if (inSettingsModal || isSettingsDefault) {
+                select.innerHTML = '<option value="">No active currencies found. Please activate currencies in System Settings.</option>';
+            } else {
+                select.innerHTML = '<option value="">Select Currency</option>';
+            }
         }
     }
 
@@ -220,7 +224,6 @@ class CurrencyUtils {
     clearCache() {
         this.currenciesCache = null;
         this.cacheTimestamp = null;
-        this._warnedNoActiveCurrencies = false;
     }
 }
 
