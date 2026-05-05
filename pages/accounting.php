@@ -40,18 +40,26 @@ if (isset($conn) && $conn instanceof mysqli) {
     if ($fromSettings !== null) {
         $ratibAccountingBootstrapCurrency = $fromSettings;
     }
-    // No accounting_settings row: keep SAR (do not infer from `currencies` first active — that
-    // often produced BDT on the KPI row while the tenant expected SAR).
-}
-if (defined('ACCOUNTING_UI_DEFAULT_CURRENCY')) {
-    $acctUiCur = strtoupper(trim((string) constant('ACCOUNTING_UI_DEFAULT_CURRENCY')));
-    if (preg_match('/^[A-Z]{3}$/', $acctUiCur)) {
-        $ratibAccountingBootstrapCurrency = $acctUiCur;
+    // If no explicit default currency setting, fall back to first active currency.
+    if ($fromSettings === null) {
+        $tbl = @$conn->query("SHOW TABLES LIKE 'currencies'");
+        $hasCurrencies = ($tbl && $tbl->num_rows > 0);
+        if ($tbl instanceof mysqli_result) {
+            $tbl->free();
+        }
+        if ($hasCurrencies) {
+            $r3 = @$conn->query("SELECT UPPER(TRIM(code)) AS c FROM currencies WHERE (is_active = 1 OR is_active = '1') ORDER BY display_order ASC, code ASC LIMIT 1");
+            if ($r3 && ($row3 = $r3->fetch_assoc())) {
+                $v3 = strtoupper(trim((string) ($row3['c'] ?? '')));
+                if (preg_match('/^[A-Z]{3}$/', $v3)) {
+                    $ratibAccountingBootstrapCurrency = $v3;
+                }
+            }
+            if ($r3 instanceof mysqli_result) {
+                $r3->free();
+            }
+        }
     }
-}
-$acctHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
-if ($acctHost !== '' && strpos($acctHost, 'ratib.sa') !== false) {
-    $ratibAccountingBootstrapCurrency = 'SAR';
 }
 $ratibAccountingBootstrapCurrencyJson = json_encode($ratibAccountingBootstrapCurrency, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 $ratibAccountingBootstrapCurrencyEsc = htmlspecialchars($ratibAccountingBootstrapCurrency, ENT_QUOTES, 'UTF-8');

@@ -32,16 +32,6 @@ $roleId = $_SESSION['role_id'] ?? 0;
 
 try {
     $stubDashboardCurrency = 'SAR';
-    if (defined('ACCOUNTING_UI_DEFAULT_CURRENCY')) {
-        $sc = strtoupper(trim((string) constant('ACCOUNTING_UI_DEFAULT_CURRENCY')));
-        if (preg_match('/^[A-Z]{3}$/', $sc)) {
-            $stubDashboardCurrency = $sc;
-        }
-    }
-    $stubHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
-    if ($stubHost !== '' && strpos($stubHost, 'ratib.sa') !== false) {
-        $stubDashboardCurrency = 'SAR';
-    }
     $tableCheck = $conn->query("SHOW TABLES LIKE 'financial_transactions'");
     if (!$tableCheck || $tableCheck->num_rows === 0) {
         echo json_encode([
@@ -69,6 +59,16 @@ try {
     if ($columnCheck && $columnCheck->num_rows === 0) {
         @$conn->query("ALTER TABLE financial_transactions ADD COLUMN currency VARCHAR(3) DEFAULT 'SAR' AFTER total_amount");
     }
+    $curResEarly = @$conn->query("SELECT setting_value FROM accounting_settings WHERE setting_key = 'default_currency' LIMIT 1");
+    if ($curResEarly && ($curEarlyRow = $curResEarly->fetch_assoc())) {
+        $cvEarly = strtoupper(trim((string) ($curEarlyRow['setting_value'] ?? '')));
+        if (preg_match('/^[A-Z]{3}$/', $cvEarly)) {
+            $stubDashboardCurrency = $cvEarly;
+        }
+    }
+    if ($curResEarly instanceof mysqli_result) {
+        $curResEarly->free();
+    }
     $response = [];
     $requestType = $_GET['type'] ?? 'all';
     
@@ -83,15 +83,23 @@ try {
     if ($curRes instanceof mysqli_result) {
         $curRes->free();
     }
-    if (defined('ACCOUNTING_UI_DEFAULT_CURRENCY')) {
-        $acctUi = strtoupper(trim((string) constant('ACCOUNTING_UI_DEFAULT_CURRENCY')));
-        if (preg_match('/^[A-Z]{3}$/', $acctUi)) {
-            $baseCurrency = $acctUi;
+    if ($baseCurrency === 'SAR') {
+        $tblC = @$conn->query("SHOW TABLES LIKE 'currencies'");
+        if ($tblC && $tblC->num_rows > 0) {
+            $rC = @$conn->query("SELECT UPPER(TRIM(code)) AS c FROM currencies WHERE (is_active = 1 OR is_active = '1') ORDER BY display_order ASC, code ASC LIMIT 1");
+            if ($rC && ($rowC = $rC->fetch_assoc())) {
+                $vC = strtoupper(trim((string) ($rowC['c'] ?? '')));
+                if (preg_match('/^[A-Z]{3}$/', $vC)) {
+                    $baseCurrency = $vC;
+                }
+            }
+            if ($rC instanceof mysqli_result) {
+                $rC->free();
+            }
         }
-    }
-    $acctHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
-    if ($acctHost !== '' && strpos($acctHost, 'ratib.sa') !== false) {
-        $baseCurrency = 'SAR';
+        if ($tblC instanceof mysqli_result) {
+            $tblC->free();
+        }
     }
     
     // ============================================

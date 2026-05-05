@@ -51,15 +51,23 @@ try {
     if ($curRes instanceof mysqli_result) {
         $curRes->free();
     }
-    if (defined('ACCOUNTING_UI_DEFAULT_CURRENCY')) {
-        $acctUi = strtoupper(trim((string) constant('ACCOUNTING_UI_DEFAULT_CURRENCY')));
-        if (preg_match('/^[A-Z]{3}$/', $acctUi)) {
-            $data['currency'] = $acctUi;
+    if ($data['currency'] === 'SAR') {
+        $tblC = @$conn->query("SHOW TABLES LIKE 'currencies'");
+        if ($tblC && $tblC->num_rows > 0) {
+            $rC = @$conn->query("SELECT UPPER(TRIM(code)) AS c FROM currencies WHERE (is_active = 1 OR is_active = '1') ORDER BY display_order ASC, code ASC LIMIT 1");
+            if ($rC && ($rowC = $rC->fetch_assoc())) {
+                $vC = strtoupper(trim((string) ($rowC['c'] ?? '')));
+                if (preg_match('/^[A-Z]{3}$/', $vC)) {
+                    $data['currency'] = $vC;
+                }
+            }
+            if ($rC instanceof mysqli_result) {
+                $rC->free();
+            }
         }
-    }
-    $acctHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
-    if ($acctHost !== '' && strpos($acctHost, 'ratib.sa') !== false) {
-        $data['currency'] = 'SAR';
+        if ($tblC instanceof mysqli_result) {
+            $tblC->free();
+        }
     }
 
     $stmt = $conn->prepare("SELECT COALESCE(SUM(total_amount), 0) as total_revenue FROM financial_transactions WHERE transaction_type = 'Income' AND status IN ('Approved', 'Posted') AND transaction_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
