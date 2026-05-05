@@ -5273,33 +5273,6 @@
                     }
                 }
                 
-                // Different report types use different data structures
-                const reportsWithAccounts = ['trial-balance', 'general-ledger'];
-                const hasAccounts = reportData.accounts && Array.isArray(reportData.accounts);
-                
-                if (reportsWithAccounts.includes(reportType)) {
-                    if (!hasAccounts) {
-                        console.warn(reportType + ' report missing accounts array');
-                    } else if (reportData.accounts.length === 0) {
-                        console.warn('Report returned 0 accounts.');
-                    }
-                } else {
-                    // Other reports use different structures - check what they have
-                }
-                
-                if (data.debug) {
-                    // debug available but not logged to reduce console noise
-                    if (data.debug.total_accounts_in_db !== undefined) {
-                        // not logged to reduce console noise
-                    }
-                    if (data.debug.accounts_count !== undefined) {
-                        // not logged to reduce console noise
-                    }
-                    if (data.debug.table_exists_check !== undefined) {
-                        // not logged to reduce console noise
-                    }
-                }
-                
                 // Setup handlers after report is displayed
                 setTimeout(() => {
                     this.displayReportInPopupSmooth(reportType, reportName, reportData, existingModal);

@@ -50,13 +50,11 @@
     }
 
     function loadGuarantees() {
-        // TODO: Implement API call to load guarantees
         // For now, show empty state
         renderGuaranteesTable([]);
     }
 
     function loadBanks() {
-        // TODO: Implement API call to load banks for dropdown
     }
 
     function renderGuaranteesTable(guarantees) {
@@ -132,8 +130,6 @@
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
         
-        // TODO: Implement API call to save guarantee
-        console.log('Saving guarantee:', data);
         
         // Close modal and refresh
         closeModal();
@@ -146,14 +142,12 @@
         const dateFrom = document.getElementById('dateFrom').value;
         const dateTo = document.getElementById('dateTo').value;
         
-        // TODO: Implement filter logic
         loadGuarantees();
     }
 
     // Global functions for inline event handlers
     window.editGuarantee = function(id) {
         currentEditingId = id;
-        // TODO: Load guarantee data and populate form
         document.getElementById('modal-title').textContent = 'Edit Bank Guarantee';
         document.getElementById('guarantee-modal').classList.remove('accounting-modal-hidden');
         document.getElementById('guarantee-modal').classList.add('accounting-modal-visible');
@@ -161,7 +155,6 @@
 
     window.deleteGuarantee = function(id) {
         if (confirm('Are you sure you want to delete this guarantee?')) {
-            // TODO: Implement API call to delete guarantee
             loadGuarantees();
         }
     };

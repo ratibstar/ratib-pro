@@ -3376,7 +3376,6 @@ class AccountingModal {
         const alert = document.getElementById('modernAlert');
         if (!alert) {
             // Fallback to basic alert if modern alert not available
-            console.warn('Modern alert element not found, using fallback');
             if (type === 'error' || type === 'warning') {
                 // Try to use subagentManager's modern alert if available
                 if (window.subagentManager && typeof window.subagentManager.showModernAlert === 'function') {

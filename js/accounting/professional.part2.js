@@ -950,26 +950,19 @@ ProfessionalAccounting.prototype.loadChartOfAccounts = async function() {
             try {
                 // Log diagnostic info
                 if (data.diagnostics) {
-                    console.log('[Chart of Accounts] Diagnostics:', data.diagnostics);
                 }
                 if (data.entity_accounts_count) {
-                    console.log('[Chart of Accounts] Entity accounts:', data.entity_accounts_count);
                 }
                 if (data.entity_accounts_details) {
-                    console.log('[Chart of Accounts] Entity accounts details:', data.entity_accounts_details);
                 }
                 if (data.query_info) {
-                    console.log('[Chart of Accounts] Query info:', data.query_info);
                 }
                 if (data.diagnostics && data.diagnostics.entity_accounts_in_db) {
-                    console.log('[Chart of Accounts] Entity accounts in database:', data.diagnostics.entity_accounts_in_db);
                 }
-                console.log('[Chart of Accounts] Total accounts received:', data.accounts ? data.accounts.length : 0);
                 
                 // Log entity accounts separately for debugging
                 if (data.accounts && Array.isArray(data.accounts)) {
                     const entityAccounts = data.accounts.filter(a => a.entity_type);
-                    console.log(`[Chart of Accounts] Found ${entityAccounts.length} entity accounts in response:`, entityAccounts.map(a => `${a.entity_type}:${a.entity_id} - ${a.account_code} ${a.account_name}`));
                 }
             } catch (logErr) {
                 console.error('Error in loadChartOfAccounts logging:', logErr);
@@ -1010,7 +1003,6 @@ ProfessionalAccounting.prototype.loadChartOfAccounts = async function() {
                         });
                         // If search filtered out all accounts, show warning
                         if (beforeFilterCount > 0 && filteredAccounts.length === 0) {
-                            console.warn(`[Chart of Accounts] Search "${search}" filtered out all ${beforeFilterCount} accounts. Clear search to see all accounts.`);
                         }
                     }
                 }
@@ -2921,66 +2913,12 @@ ProfessionalAccounting.prototype.generateReport = async function(reportType) {
             let data;
             try {
                 data = await response.json();
-                console.log('📥 Report API Response:', data); // Always log the response
             } catch (e) {
                 throw new Error('Invalid JSON response from report API');
             }
 
             // Always display report table, even if data is empty
             const reportData = (data.success && data.report) ? data.report : {};
-            
-            // Log debug information to console - ALWAYS LOG
-            console.log('🔍 Report Type:', reportType);
-            console.log('📊 Report Data Keys:', Object.keys(reportData));
-            
-            // Different report types use different data structures
-            const reportsWithAccounts = ['trial-balance', 'general-ledger'];
-            const hasAccounts = reportData.accounts && Array.isArray(reportData.accounts);
-            
-            if (reportsWithAccounts.includes(reportType)) {
-                // These reports should have accounts array
-                console.log('📋 Accounts Array:', hasAccounts ? `${reportData.accounts.length} items` : 'Not present');
-                if (!hasAccounts) {
-                    console.warn('⚠️ ' + reportType + ' report missing accounts array');
-                } else if (reportData.accounts.length === 0) {
-                    console.warn('⚠️ Report returned 0 accounts. Accounts array is empty.');
-                } else {
-                    console.log(`✅ Report returned ${reportData.accounts.length} accounts`);
-                }
-            } else {
-                // Other reports use different structures - check what they have
-                if (reportType === 'income-statement') {
-                    const hasRevenue = reportData.revenue && (Array.isArray(reportData.revenue) || Object.keys(reportData.revenue).length > 0);
-                    const hasExpenses = reportData.expenses && (Array.isArray(reportData.expenses) || Object.keys(reportData.expenses).length > 0);
-                    console.log('💰 Revenue data:', hasRevenue ? 'Present' : 'Missing');
-                    console.log('💸 Expenses data:', hasExpenses ? 'Present' : 'Missing');
-                } else if (reportType === 'cash-flow') {
-                    const hasOperating = reportData.operating && (Array.isArray(reportData.operating) || Object.keys(reportData.operating).length > 0);
-                    console.log('💵 Operating activities:', hasOperating ? 'Present' : 'Missing');
-                } else if (reportType === 'balance-sheet') {
-                    const hasAssets = reportData.assets && (Array.isArray(reportData.assets) || Object.keys(reportData.assets).length > 0);
-                    const hasLiabilities = reportData.liabilities && (Array.isArray(reportData.liabilities) || Object.keys(reportData.liabilities).length > 0);
-                    const hasEquity = reportData.equity && (Array.isArray(reportData.equity) || Object.keys(reportData.equity).length > 0);
-                    console.log('🏦 Assets data:', hasAssets ? 'Present' : 'Missing');
-                    console.log('📊 Liabilities data:', hasLiabilities ? 'Present' : 'Missing');
-                    console.log('💼 Equity data:', hasEquity ? 'Present' : 'Missing');
-                }
-            }
-            
-            if (data.debug) {
-                console.log('📊 Report Debug Info:', JSON.stringify(data.debug, null, 2));
-                if (data.debug.total_accounts_in_db !== undefined) {
-                    console.log(`📋 Total accounts in database: ${data.debug.total_accounts_in_db}`);
-                }
-                if (data.debug.accounts_count !== undefined) {
-                    console.log(`📊 Accounts in report: ${data.debug.accounts_count}`);
-                }
-                if (data.debug.table_exists_check !== undefined) {
-                    console.log(`✅ Table exists check: ${data.debug.table_exists_check}`);
-                }
-            } else {
-                console.warn('⚠️ No debug info in response');
-            }
             
             // Setup handlers after report is displayed
             setTimeout(() => {

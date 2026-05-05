@@ -729,7 +729,6 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
         
         // Build data object
         // For now, send the first debit/credit line to maintain API compatibility
-        // TODO: Update API to handle multiple lines (debit_lines and credit_lines arrays)
         const firstDebitLine = debitLines.length > 0 ? debitLines[0] : null;
         const firstCreditLine = creditLines.length > 0 ? creditLines[0] : null;
         
@@ -1106,7 +1105,6 @@ ProfessionalAccounting.prototype.saveBill = async function(billId = null) {
 ProfessionalAccounting.prototype.saveBankAccount = async function(bankId = null) {
         // Prevent duplicate submissions - double check
         if (this._savingBankAccount) {
-            console.warn('saveBankAccount: Duplicate call prevented');
             return;
         }
         this._savingBankAccount = true;

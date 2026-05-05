@@ -357,9 +357,8 @@ ProfessionalAccounting.prototype.loadChartOfAccounts = async function() {
                             const entityMatch = account.entity_type && account.entity_type.toLowerCase().includes(searchLower);
                             return codeMatch || nameMatch || typeMatch || entityMatch;
                         });
-                        // If search filtered out all accounts, show warning
                         if (beforeFilterCount > 0 && filteredAccounts.length === 0) {
-                            console.warn(`[Chart of Accounts] Search "${search}" filtered out all ${beforeFilterCount} accounts. Clear search to see all accounts.`);
+                            // Keep filtered state; UI already communicates no results.
                         }
                     }
                 }
@@ -4965,9 +4964,12 @@ ProfessionalAccounting.prototype.getFixedAssetsStatusCards = function(reportData
 
 
 ProfessionalAccounting.prototype.getEntriesByYearStatusCards = function(reportData) {
-        const entries = reportData?.entries || [];
-        const years = new Set(entries.map(e => e.year || 'Unknown')).size;
-        const totalEntries = entries.reduce((sum, e) => sum + (e.count || 0), 0);
+        const entries = Array.isArray(reportData?.data) ? reportData.data : (reportData?.entries || []);
+        const years = Array.isArray(reportData?.years) && reportData.years.length > 0
+            ? reportData.years.length
+            : new Set(entries.map(e => e.year || 'Unknown')).size;
+        const totalEntries = Number(reportData?.totals?.total_entries || 0) ||
+            entries.reduce((sum, e) => sum + Number(e.entry_count || e.count || 0), 0);
         
         let html = '<div class="report-status-cards">';
         html += this.createStatCard('primary', 'fa-calendar-alt', years, 'Years');
@@ -4978,9 +4980,10 @@ ProfessionalAccounting.prototype.getEntriesByYearStatusCards = function(reportDa
 
 
 ProfessionalAccounting.prototype.getCustomerDebitsStatusCards = function(reportData) {
-        const debits = reportData?.debits || [];
+        const debits = Array.isArray(reportData?.customers) ? reportData.customers : (reportData?.debits || []);
         const totalDebit = parseFloat(reportData?.totals?.total_debit || 0);
-        const customers = new Set(debits.map(d => d.customer_id || d.customer_name)).size;
+        const customers = Number(reportData?.totals?.total_customers || 0) ||
+            new Set(debits.map(d => d.customer_id || d.customer_name)).size;
         
         let html = '<div class="report-status-cards">';
         html += this.createStatCard('primary', 'fa-users', customers, 'Customers');
@@ -4992,10 +4995,11 @@ ProfessionalAccounting.prototype.getCustomerDebitsStatusCards = function(reportD
 
 
 ProfessionalAccounting.prototype.getStatisticalPositionStatusCards = function(reportData) {
-        const accounts = reportData?.statistics?.total_accounts || 0;
-        const transactions = reportData?.statistics?.total_transactions || 0;
-        const receivables = reportData?.statistics?.total_receivables || 0;
-        const payables = reportData?.statistics?.total_payables || 0;
+        const stats = reportData?.statistics || {};
+        const accounts = Number(stats?.accounts?.total || stats?.total_accounts || 0);
+        const transactions = Number(stats?.transactions?.total || stats?.total_transactions || 0);
+        const receivables = Number(stats?.receivables?.total_outstanding || stats?.total_receivables || 0);
+        const payables = Number(stats?.payables?.total_outstanding || stats?.total_payables || 0);
         
         let html = '<div class="report-status-cards">';
         html += this.createStatCard('primary', 'fa-book', accounts, 'Accounts');
@@ -5032,8 +5036,13 @@ ProfessionalAccounting.prototype.getChangesInEquityStatusCards = function(report
 
 
 ProfessionalAccounting.prototype.getFinancialPerformanceStatusCards = function(reportData) {
-        const revenue = parseFloat(reportData?.performance_data?.revenue || 0);
-        const expenses = parseFloat(reportData?.performance_data?.expenses || 0);
+        const performanceRows = Array.isArray(reportData?.performance_data) ? reportData.performance_data : [];
+        const metricValue = (name) => {
+            const row = performanceRows.find(r => String(r?.metric || '').toLowerCase() === name);
+            return row ? parseFloat(row.value || 0) : 0;
+        };
+        const revenue = parseFloat(reportData?.totals?.total_revenue || metricValue('total revenue') || metricValue('revenue') || 0);
+        const expenses = parseFloat(reportData?.totals?.total_expenses || metricValue('total expenses') || metricValue('expenses') || 0);
         const netIncome = revenue - expenses;
         const profitMargin = revenue > 0 ? ((netIncome / revenue) * 100).toFixed(1) + '%' : '0%';
         

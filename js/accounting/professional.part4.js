@@ -1199,11 +1199,9 @@ ProfessionalAccounting.prototype.showModal = function(title, content, size = 'no
                     submitButton.addEventListener('click', async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('Create Invoice button clicked');
                         
                         // Prevent double submission
                         if (submitButton.disabled) {
-                            console.log('Button already processing, ignoring click');
                             return;
                         }
                         
@@ -1215,12 +1213,10 @@ ProfessionalAccounting.prototype.showModal = function(title, content, size = 'no
                         try {
                             // Validate required fields
                             const requiredFields = newForm.querySelectorAll('[required]');
-                            console.log('Found required fields:', requiredFields.length);
                             let isValid = true;
                             const missingFields = [];
                             requiredFields.forEach(field => {
                                 const value = field.value ? field.value.trim() : '';
-                                console.log(`Field ${field.name || field.id}: value="${value}"`);
                                 if (!value || value === '') {
                                     isValid = false;
                                     field.style.borderColor = '#ef4444';
@@ -1231,16 +1227,12 @@ ProfessionalAccounting.prototype.showModal = function(title, content, size = 'no
                             });
                             
                             if (!isValid) {
-                                console.log('Validation failed. Missing fields:', missingFields);
                                 this.showToast(`Please fill in all required fields. Missing: ${missingFields.join(', ')}`, 'error');
                                 return;
                             }
                             
-                            console.log('Validation passed, proceeding to save...');
-                            
                             const invoiceId = newForm.getAttribute('data-invoice-id');
                             const id = invoiceId && invoiceId !== 'null' ? parseInt(invoiceId) : null;
-                            console.log('Calling saveInvoice with id:', id);
                             await this.saveInvoice(id);
                         } finally {
                             // Re-enable button
@@ -1254,7 +1246,6 @@ ProfessionalAccounting.prototype.showModal = function(title, content, size = 'no
                 newForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Invoice form submitted');
                     
                     // Validate required fields
                     const requiredFields = newForm.querySelectorAll('[required]');
@@ -1275,7 +1266,6 @@ ProfessionalAccounting.prototype.showModal = function(title, content, size = 'no
                     
                     const invoiceId = newForm.getAttribute('data-invoice-id');
                     const id = invoiceId && invoiceId !== 'null' ? parseInt(invoiceId) : null;
-                    console.log('Calling saveInvoice with id:', id);
                     await this.saveInvoice(id);
                 });
             }
@@ -1308,7 +1298,6 @@ ProfessionalAccounting.prototype.showModal = function(title, content, size = 'no
                     
                     // Additional guard check - double protection
                     if (this._savingBankAccount) {
-                        console.warn('Form submission blocked: save already in progress');
                         return;
                     }
                     
@@ -4248,7 +4237,6 @@ ProfessionalAccounting.prototype.openBankAccountForm = async function(bankId = n
                     
                     // Additional guard check - double protection
                     if (this._savingBankAccount) {
-                        console.warn('Form submission blocked: save already in progress');
                         return;
                     }
                     

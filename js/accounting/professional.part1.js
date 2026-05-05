@@ -1792,7 +1792,6 @@ ProfessionalAccounting.prototype.ensureTabButtonsClickable = function() {
 
 ProfessionalAccounting.prototype.handleNavClick = function(tabName) {
     if (!tabName) return;
-    if (window.ACCOUNTING_DEBUG && console && console.log) console.log('[Accounting Tab Debug] handleNavClick called', tabName);
     try {
         if (tabName === 'dashboard') this.switchTab('dashboard');
         else if (tabName === 'chart-of-accounts') { this.openChartOfAccountsModal(); this.switchTab('dashboard'); }
@@ -1815,7 +1814,6 @@ ProfessionalAccounting.prototype.handleNavClick = function(tabName) {
 
 ProfessionalAccounting.prototype.handleQuickAction = function(action) {
     if (!action) return;
-    if (window.ACCOUNTING_DEBUG && console && console.log) console.log('[Accounting Tab Debug] handleQuickAction called', action);
     try {
         switch (action) {
             case 'quick-entry': this.openQuickEntry(); break;
@@ -2141,7 +2139,6 @@ ProfessionalAccounting.prototype.initializeEnglishDatePickers = function(contain
                     clickOpens: true
                 });
             } catch (e) {
-                console.warn('Failed to initialize Flatpickr on date input:', e);
                 // Restore original type on error
                 input.type = originalType;
             }

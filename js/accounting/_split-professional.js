@@ -52,7 +52,6 @@ function writeMixin(filename, header, methodNames) {
         if (src) parts.push(toObjLiteral(src));
         else missing.push(n);
     }
-    if (missing.length) console.warn(filename + ' missing:', missing.join(', '));
     const body = parts.join(',\n\n');
     const out = `/**
  * Professional Accounting - ${header}
@@ -69,7 +68,6 @@ ${body}
 })();
 `;
     fs.writeFileSync(path.join(__dirname, filename), out);
-    console.log('Wrote', filename);
 }
 
 const UTILITIES = ['formatDate', 'formatDateForInput', 'formatDateForAPI', 'formatCurrency', 'escapeHtml', 'showToast', 'showConfirmDialog', 'showPrompt', 'hasFormChanges', 'markFormAsChanged', 'markFormAsSaved', 'getDefaultCurrencySync', 'getDefaultCurrency', 'initDefaultCurrency', 'createPaginationHTML', 'getCachedReport', 'cacheReport', 'clearReportCache', 'isElementMeasurable'];
@@ -90,4 +88,3 @@ writeMixin('professional.reports.js', 'Reports (formatting, filters, comparison)
 writeMixin('professional.modals.js', 'Modals (ledger, invoices, bills, bank, quick entry, etc.)', MODALS_UNIQ);
 writeMixin('professional.management.js', 'Management (cost centers, bank guarantees, entry approval, follow-ups)', MANAGEMENT);
 
-console.log('Done. Now create professional.core.js manually (class + setupEventListeners + switchTab + cleanupStrayOverlays + saveReportsOriginalContent).');

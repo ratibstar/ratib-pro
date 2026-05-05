@@ -520,9 +520,12 @@ ProfessionalAccounting.prototype.getFixedAssetsStatusCards = function(reportData
     }
 
 ProfessionalAccounting.prototype.getEntriesByYearStatusCards = function(reportData) {
-        const entries = reportData?.entries || [];
-        const years = new Set(entries.map(e => e.year || 'Unknown')).size;
-        const totalEntries = entries.reduce((sum, e) => sum + (e.count || 0), 0);
+        const entries = Array.isArray(reportData?.data) ? reportData.data : (reportData?.entries || []);
+        const years = Array.isArray(reportData?.years) && reportData.years.length > 0
+            ? reportData.years.length
+            : new Set(entries.map(e => e.year || 'Unknown')).size;
+        const totalEntries = Number(reportData?.totals?.total_entries || 0) ||
+            entries.reduce((sum, e) => sum + Number(e.entry_count || e.count || 0), 0);
         
         let html = '<div class="report-status-cards">';
         html += this.createStatCard('primary', 'fa-calendar-alt', years, 'Years');
@@ -532,9 +535,10 @@ ProfessionalAccounting.prototype.getEntriesByYearStatusCards = function(reportDa
     }
 
 ProfessionalAccounting.prototype.getCustomerDebitsStatusCards = function(reportData) {
-        const debits = reportData?.debits || [];
+        const debits = Array.isArray(reportData?.customers) ? reportData.customers : (reportData?.debits || []);
         const totalDebit = parseFloat(reportData?.totals?.total_debit || 0);
-        const customers = new Set(debits.map(d => d.customer_id || d.customer_name)).size;
+        const customers = Number(reportData?.totals?.total_customers || 0) ||
+            new Set(debits.map(d => d.customer_id || d.customer_name)).size;
         
         let html = '<div class="report-status-cards">';
         html += this.createStatCard('primary', 'fa-users', customers, 'Customers');
@@ -545,10 +549,11 @@ ProfessionalAccounting.prototype.getCustomerDebitsStatusCards = function(reportD
     }
 
 ProfessionalAccounting.prototype.getStatisticalPositionStatusCards = function(reportData) {
-        const accounts = reportData?.statistics?.total_accounts || 0;
-        const transactions = reportData?.statistics?.total_transactions || 0;
-        const receivables = reportData?.statistics?.total_receivables || 0;
-        const payables = reportData?.statistics?.total_payables || 0;
+        const stats = reportData?.statistics || {};
+        const accounts = Number(stats?.accounts?.total || stats?.total_accounts || 0);
+        const transactions = Number(stats?.transactions?.total || stats?.total_transactions || 0);
+        const receivables = Number(stats?.receivables?.total_outstanding || stats?.total_receivables || 0);
+        const payables = Number(stats?.payables?.total_outstanding || stats?.total_payables || 0);
         
         let html = '<div class="report-status-cards">';
         html += this.createStatCard('primary', 'fa-book', accounts, 'Accounts');
@@ -583,8 +588,13 @@ ProfessionalAccounting.prototype.getChangesInEquityStatusCards = function(report
     }
 
 ProfessionalAccounting.prototype.getFinancialPerformanceStatusCards = function(reportData) {
-        const revenue = parseFloat(reportData?.performance_data?.revenue || 0);
-        const expenses = parseFloat(reportData?.performance_data?.expenses || 0);
+        const performanceRows = Array.isArray(reportData?.performance_data) ? reportData.performance_data : [];
+        const metricValue = (name) => {
+            const row = performanceRows.find(r => String(r?.metric || '').toLowerCase() === name);
+            return row ? parseFloat(row.value || 0) : 0;
+        };
+        const revenue = parseFloat(reportData?.totals?.total_revenue || metricValue('total revenue') || metricValue('revenue') || 0);
+        const expenses = parseFloat(reportData?.totals?.total_expenses || metricValue('total expenses') || metricValue('expenses') || 0);
         const netIncome = revenue - expenses;
         const profitMargin = revenue > 0 ? ((netIncome / revenue) * 100).toFixed(1) + '%' : '0%';
         
@@ -2518,11 +2528,8 @@ ProfessionalAccounting.prototype.loadAccountsForSelect = async function(selectId
         }
         
         if (!accountSelect) {
-            console.warn('loadAccountsForSelect: Account select not found', selectId);
             return;
         }
-        
-        console.log('loadAccountsForSelect: Found select element', selectId, accountSelect);
         
         // Show loading state
         if (!accountSelect.innerHTML.includes('Loading')) {
@@ -2536,20 +2543,17 @@ ProfessionalAccounting.prototype.loadAccountsForSelect = async function(selectId
         
         try {
             const accountsUrl = `${this.apiBase}/accounts.php?is_active=1&ensure_entity_accounts=1`;
-            console.log('Loading accounts for:', selectId || 'element', 'API:', accountsUrl);
             const response = await fetch(accountsUrl, { credentials: 'include' });
             const data = await response.json().catch(() => ({ success: false, accounts: [] }));
             if (!response.ok) {
                 throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);
             }
-            console.log('Accounts response:', data);
             
             // Re-fetch the select element in case DOM changed
             if (selectId) {
                 const refreshedSelect = document.getElementById(selectId);
                 if (refreshedSelect) {
                     accountSelect = refreshedSelect;
-                    console.log('Re-fetched select element after API call:', selectId);
                 } else {
                     console.error('Select element lost after fetch!', selectId);
                     // Try one more time after a short delay
@@ -2557,7 +2561,6 @@ ProfessionalAccounting.prototype.loadAccountsForSelect = async function(selectId
                     const retrySelect = document.getElementById(selectId);
                     if (retrySelect) {
                         accountSelect = retrySelect;
-                        console.log('Retry: Found select element', selectId);
                     } else {
                         console.error('Select element still not found after retry!', selectId);
                         return;
@@ -2584,28 +2587,17 @@ ProfessionalAccounting.prototype.loadAccountsForSelect = async function(selectId
                 
                 // Verify the update worked
                 const finalOptionCount = accountSelect.options.length;
-                console.log(`Successfully loaded ${data.accounts.length} accounts into ${selectId || 'element'}. Options count: ${finalOptionCount}`);
-                
-                if (finalOptionCount > 0) {
-                    console.log('First option:', accountSelect.options[0].textContent);
-                    if (finalOptionCount > 1) {
-                        console.log('Second option:', accountSelect.options[1].textContent);
-                    }
-                }
                 
                 // If still not working, retry with fresh element reference
                 if (finalOptionCount <= 1 && selectId) {
-                    console.warn('Options count low, retrying with fresh element reference...');
                     await new Promise(resolve => setTimeout(resolve, 100));
                     const freshSelect = document.getElementById(selectId);
                     if (freshSelect) {
                         freshSelect.innerHTML = optionsHTML;
-                        console.log('Retried with fresh element. New count:', freshSelect.options.length);
                     }
                 }
             } else {
                 // If no accounts found, use fallback options
-                console.warn('No accounts found, using fallback options');
                 accountSelect.innerHTML = '';
                 const defaultOption = document.createElement('option');
                 defaultOption.value = '';
@@ -2739,8 +2731,6 @@ ProfessionalAccounting.prototype.openInvoiceModal = async function(invoiceId = n
             const debitSelect = document.getElementById('invoiceDebitAccountSelect');
             const creditSelect = document.getElementById('invoiceCreditAccountSelect');
             
-            console.log('Invoice modal opened - Debit select found:', !!debitSelect, 'Credit select found:', !!creditSelect);
-            
             if (debitSelect) {
                 await this.loadAccountsForSelect('invoiceDebitAccountSelect');
             } else {
@@ -2828,11 +2818,9 @@ ProfessionalAccounting.prototype.openInvoiceModal = async function(invoiceId = n
                     submitBtn.addEventListener('click', async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('Create Invoice button clicked (direct handler)');
                         
                         // Prevent double submission
                         if (submitBtn.disabled) {
-                            console.log('Button already processing, ignoring click');
                             return;
                         }
                         
@@ -2844,12 +2832,10 @@ ProfessionalAccounting.prototype.openInvoiceModal = async function(invoiceId = n
                         try {
                             // Validate required fields
                             const requiredFields = form.querySelectorAll('[required]');
-                            console.log('Found required fields:', requiredFields.length);
                             let isValid = true;
                             const missingFields = [];
                             requiredFields.forEach(field => {
                                 const value = field.value ? field.value.trim() : '';
-                                console.log(`Field ${field.name || field.id}: value="${value}"`);
                                 if (!value || value === '') {
                                     isValid = false;
                                     field.style.borderColor = '#ef4444';
@@ -2860,16 +2846,12 @@ ProfessionalAccounting.prototype.openInvoiceModal = async function(invoiceId = n
                             });
                             
                             if (!isValid) {
-                                console.log('Validation failed. Missing fields:', missingFields);
                                 this.showToast(`Please fill in all required fields. Missing: ${missingFields.join(', ')}`, 'error');
                                 return;
                             }
                             
-                            console.log('Validation passed, proceeding to save...');
-                            
                             const invoiceIdAttr = form.getAttribute('data-invoice-id');
                             const id = invoiceIdAttr && invoiceIdAttr !== 'null' ? parseInt(invoiceIdAttr) : null;
-                            console.log('Calling saveInvoice with id:', id);
                             await this.saveInvoice(id);
                         } finally {
                             // Re-enable button
@@ -3657,12 +3639,10 @@ ProfessionalAccounting.prototype.openReceivablesModal = function() {
                     e.stopImmediatePropagation();
                     e.cancelBubble = true;
                     e.returnValue = false;
-                    console.log('New Invoice button clicked from Accounts Receivable modal');
                     
                     // Try to call the real openInvoiceModal function directly
                     // First check if getInvoiceModalContent exists (means real function is available)
                     if (typeof self.getInvoiceModalContent === 'function') {
-                        console.log('Found getInvoiceModalContent, opening invoice form');
                         const content = self.getInvoiceModalContent(null);
                         self.showModal('Create Invoice', content, 'large');
                         
@@ -3888,15 +3868,12 @@ ProfessionalAccounting.prototype.openReceivablesModal = function() {
                         // Check if it's the real function or the alias
                         const funcStr = self.openInvoiceModal.toString();
                         if (funcStr.includes('getInvoiceModalContent') || funcStr.includes('Create Invoice') || funcStr.includes('Edit Invoice')) {
-                            console.log('Calling real openInvoiceModal function');
                             self.openInvoiceModal();
                         } else {
-                            console.log('openInvoiceModal is alias, trying to find real function');
                             // Try to get the real function from prototype
                             if (typeof ProfessionalAccounting !== 'undefined') {
                                 const protoFunc = ProfessionalAccounting.prototype.openInvoiceModal;
                                 if (protoFunc && protoFunc.toString().includes('getInvoiceModalContent')) {
-                                    console.log('Calling prototype openInvoiceModal');
                                     protoFunc.call(self);
                                 } else {
                                     console.error('Real openInvoiceModal not found in prototype');
@@ -3912,8 +3889,6 @@ ProfessionalAccounting.prototype.openReceivablesModal = function() {
                 newBtn.onclick = clickHandler;
                 newBtn.addEventListener('click', clickHandler, { capture: true });
                 newBtn.addEventListener('click', clickHandler, { capture: false });
-                
-                console.log('New Invoice button handler attached');
             } else {
                 console.error('New Invoice button not found in modal');
             }

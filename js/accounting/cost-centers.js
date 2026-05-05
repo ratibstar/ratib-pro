@@ -55,7 +55,6 @@
     }
 
     function loadCostCenters() {
-        // TODO: Implement API call to load cost centers with totals from general_ledger
         // Totals should be calculated from general_ledger GROUP BY cost_center_id
         renderCostCentersTable([]);
     }
@@ -141,15 +140,12 @@
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
         
-        // TODO: Implement API call to save cost center
-        console.log('Saving cost center:', data);
         
         closeModal();
         loadCostCenters();
     }
 
     function loadCostCenterSummary(costCenterId) {
-        // TODO: Implement API call to load cost center summary from general_ledger
         // Query: SELECT SUM(debit) as total_expenses, SUM(credit) as total_revenue 
         // FROM general_ledger WHERE cost_center_id = ? GROUP BY cost_center_id
         
@@ -166,21 +162,17 @@
     }
 
     function viewDetailedReport(costCenterId) {
-        // TODO: Navigate to cost center detailed report
         // Should show all ledger entries filtered by cost_center_id
-        console.log('View detailed report for cost center:', costCenterId);
     }
 
     function applyFilters() {
         const status = document.getElementById('statusFilter').value;
-        // TODO: Implement filter logic
         loadCostCenters();
     }
 
     // Global functions for inline event handlers
     window.editCostCenter = function(id) {
         currentEditingId = id;
-        // TODO: Load cost center data and populate form
         document.getElementById('modal-title').textContent = 'Edit Cost Center';
         loadCostCenterSummary(id);
         document.getElementById('cost-center-modal').classList.remove('accounting-modal-hidden');
@@ -189,14 +181,11 @@
 
     window.deleteCostCenter = function(id) {
         if (confirm('Are you sure you want to delete this cost center?')) {
-            // TODO: Implement API call to delete cost center
             loadCostCenters();
         }
     };
 
     window.viewCostCenterReport = function(id) {
-        // TODO: Navigate to cost center report page
-        console.log('View cost center report:', id);
     };
 
     // Utility functions

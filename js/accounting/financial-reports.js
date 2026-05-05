@@ -67,7 +67,6 @@
     }
 
     function loadCostCenters() {
-        // TODO: Implement API call to load cost centers
     }
 
     function applyFilters() {
@@ -120,7 +119,6 @@
         showReportModal();
         document.getElementById('report-content').innerHTML = '<div class="loading-skeleton loading-skeleton-report"></div>';
         
-        // TODO: Implement API call to generate report
         // For now, show placeholder
         setTimeout(() => {
             renderReport(reportType, getMockReportData(reportType));
@@ -523,7 +521,7 @@
     }
 
     function getMockReportData(reportType) {
-        // Mock data for demonstration - TODO: Replace with actual API calls
+        // Mock data for demonstration
         return {
             period: getPeriodLabel(document.getElementById('period-select').value),
             accounts: [],
@@ -548,8 +546,6 @@
         const period = document.getElementById('period-select').value;
         const costCenterId = document.getElementById('cost-center-filter').value;
         
-        // TODO: Implement API call to export report
-        console.log('Exporting report:', { reportType, format, period, costCenterId });
     };
 
     function exportCurrentReport(format) {

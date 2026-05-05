@@ -552,7 +552,6 @@
                     }
                     flatpickr(input, { locale: englishLocale, dateFormat: 'm/d/Y', altInput: false, allowInput: true, enableTime: false, time_24hr: false, defaultDate: dateValue, clickOpens: true });
                 } catch (e) {
-                    console.warn('Failed to initialize Flatpickr on date input:', e);
                     input.type = originalType;
                 }
             });

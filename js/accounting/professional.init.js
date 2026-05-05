@@ -74,7 +74,7 @@ function attachNavHandlers() {
 
 window.ACCOUNTING_DEBUG = (typeof window.ACCOUNTING_DEBUG !== 'undefined') ? window.ACCOUNTING_DEBUG : false;
 function _log() {
-    if (window.ACCOUNTING_DEBUG && console && console.log) console.log('[Accounting Tab Debug]', ...arguments);
+    if (!window.ACCOUNTING_DEBUG) return;
 }
 
 // Global wrappers for inline onclick
@@ -83,8 +83,6 @@ window.handleAccountingNavClick = function(tabName) {
     if (window.professionalAccounting && typeof window.professionalAccounting.handleNavClick === 'function') {
         window.professionalAccounting.handleNavClick(tabName);
         _log('handleNavClick executed', tabName);
-    } else {
-        console.warn('[Accounting] Nav click FAILED - professionalAccounting not ready', tabName);
     }
 };
 window.handleAccountingQuickAction = function(action) {
@@ -92,28 +90,8 @@ window.handleAccountingQuickAction = function(action) {
     if (window.professionalAccounting && typeof window.professionalAccounting.handleQuickAction === 'function') {
         window.professionalAccounting.handleQuickAction(action);
         _log('handleQuickAction executed', action);
-    } else {
-        console.warn('[Accounting] Quick action FAILED - professionalAccounting not ready', action);
     }
 };
-
-// Log ALL clicks in accounting area when debug on (runs first in capture)
-document.addEventListener('click', function(e) {
-    if (!window.ACCOUNTING_DEBUG) return;
-    var inAcc = e.target.closest('.accounting-container');
-    if (!inAcc) return;
-    var nav = e.target.closest('.top-nav-link, .quick-action-btn, .tab-btn');
-    var pe = nav ? window.getComputedStyle(nav).pointerEvents : 'n/a';
-    var disp = nav ? window.getComputedStyle(nav).display : 'n/a';
-    console.log('[Accounting Tab Debug] CLICK', {
-        target: (e.target.tagName || '') + (e.target.className ? '.' + String(e.target.className).split(/\s+/)[0] : ''),
-        onNav: !!nav,
-        pointerEvents: pe,
-        display: disp,
-        tab: nav && nav.dataset ? nav.dataset.tab : null,
-        action: nav && nav.dataset ? nav.dataset.action : null
-    });
-}, true);
 
 // Emergency capture-phase handler
 document.addEventListener('click', function(e) {
@@ -128,16 +106,12 @@ document.addEventListener('click', function(e) {
         if (window.professionalAccounting && window.professionalAccounting.handleNavClick) {
             _log('CAPTURE: calling handleNavClick', tab);
             window.professionalAccounting.handleNavClick(tab);
-        } else {
-            console.warn('[Accounting] CAPTURE: professionalAccounting not ready for tab', tab);
         }
     } else if (el.classList.contains('quick-action-btn')) {
         var action = el.dataset.action;
         if (window.professionalAccounting && window.professionalAccounting.handleQuickAction) {
             _log('CAPTURE: calling handleQuickAction', action);
             window.professionalAccounting.handleQuickAction(action);
-        } else {
-            console.warn('[Accounting] CAPTURE: professionalAccounting not ready for action', action);
         }
     }
 }, true);
@@ -261,7 +235,6 @@ function patchBankGuaranteesLoad() {
             }
         });
         if (shouldPatch) {
-            console.log('[Bank Guarantee Patch] MutationObserver triggered patch');
             setTimeout(patchBankGuaranteeButtons, 50);
         }
     });

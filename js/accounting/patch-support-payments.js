@@ -44,4 +44,3 @@ if (!s.includes('editBtn') || !s.match(/editBtn.*edit-voucher/)) {
 }
 
 fs.writeFileSync(filePath, s);
-console.log('professional.js patched successfully.');

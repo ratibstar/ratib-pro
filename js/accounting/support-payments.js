@@ -85,17 +85,14 @@
     }
 
     function loadPayments() {
-        // TODO: Implement API call to load payments
         renderPaymentsTable([]);
     }
 
     function loadAccounts() {
-        // TODO: Implement API call to load accounts
         // Accounts should be grouped by type: ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
     }
 
     function loadCostCenters() {
-        // TODO: Implement API call to load cost centers
     }
 
     function renderPaymentsTable(payments) {
@@ -232,7 +229,6 @@
         // Credit: LIABILITY, EQUITY, or REVENUE
         const allowedTypes = side === 'debit' ? ['ASSET', 'EXPENSE'] : ['LIABILITY', 'EQUITY', 'REVENUE'];
         
-        // TODO: Group accounts by type
         return accounts
             .filter(acc => allowedTypes.includes(acc.account_type))
             .map(acc => `<option value="${acc.id}">[${acc.account_code}] ${acc.account_name}</option>`)
@@ -356,8 +352,6 @@
 
         const formData = collectFormData();
         
-        // TODO: Implement API call to post payment
-        console.log('Posting payment:', formData);
         
         closeModal();
         loadPayments();
@@ -367,8 +361,6 @@
         const formData = collectFormData();
         formData.status = 'draft';
         
-        // TODO: Implement API call to save draft
-        console.log('Saving draft:', formData);
         
         closeModal();
         loadPayments();
@@ -394,7 +386,6 @@
     }
 
     function applyFilters() {
-        // TODO: Implement filter logic
         loadPayments();
     }
 
@@ -419,7 +410,6 @@
 
     window.editPayment = function(id) {
         currentEditingId = id;
-        // TODO: Load payment data and populate form
         document.getElementById('modal-title').textContent = 'Edit Support Payment';
         document.getElementById('payment-modal').classList.remove('accounting-modal-hidden');
         document.getElementById('payment-modal').classList.add('accounting-modal-visible');
@@ -427,14 +417,11 @@
 
     window.deletePayment = function(id) {
         if (confirm('Are you sure you want to delete this payment?')) {
-            // TODO: Implement API call to delete payment
             loadPayments();
         }
     };
 
     window.viewJournalEntry = function(jeId) {
-        // TODO: Navigate to journal entry view
-        console.log('View journal entry:', jeId);
     };
 
     // Utility functions

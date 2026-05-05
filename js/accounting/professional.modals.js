@@ -667,7 +667,6 @@
             }
             
             if (!accountSelect) {
-                console.warn('loadAccountsForSelect: Account select not found', selectId);
                 return;
             }
             
@@ -3172,7 +3171,6 @@
                     };
                     const log = (...args) => {
                         const line = `[JE ${new Date().toISOString()}] ${args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ')}`;
-                        console.log('[JournalEntry DEBUG]', ...args);
                         if (out) {
                             out.textContent = (out.textContent ? out.textContent + '\n' : '') + line;
                             out.scrollTop = out.scrollHeight;
