@@ -143,39 +143,8 @@ document.addEventListener('click', function(e) {
 }, true);
 
 function patchApiCredentials() {
-    if (typeof ProfessionalAccounting === 'undefined') return;
-    var orig = ProfessionalAccounting.prototype.refreshDashboardCards;
-    if (!orig) return;
-    ProfessionalAccounting.prototype.refreshDashboardCards = async function() {
-        try {
-            if (typeof this.initDefaultCurrency === 'function') {
-                await this.initDefaultCurrency();
-            }
-            var response = await fetch(this.apiBase + '/unified-calculations.php?type=all', { credentials: 'include' });
-            var data = await response.json();
-            if (data.success && data.dashboard) {
-                this.updateOverviewCards({
-                    total_revenue: data.dashboard.total_revenue,
-                    total_expenses: data.dashboard.total_expenses,
-                    net_profit: data.dashboard.net_profit,
-                    cash_balance: data.dashboard.cash_balance,
-                    total_receivables: data.dashboard.total_receivables,
-                    total_payables: data.dashboard.total_payables,
-                    receivables_count: data.dashboard.receivables_count,
-                    payables_count: data.dashboard.payables_count,
-                    revenue_change: data.dashboard.revenue_change,
-                    expense_change: data.dashboard.expense_change,
-                    profit_change: data.dashboard.profit_change,
-                    balance_change: data.dashboard.balance_change,
-                    currency: data.dashboard.currency
-                });
-            }
-            if (typeof this.loadCashFlowSummary === 'function') this.loadCashFlowSummary();
-            if (typeof this.loadFinancialSummary === 'function') this.loadFinancialSummary();
-        } catch (err) {
-            console.error('Error refreshing dashboard cards:', err);
-        }
-    };
+    // refreshDashboardCards is implemented in professional.dashboard.js.
+    // Keep this hook as a no-op to avoid overriding with a legacy JSON-only path.
 }
 
 window.patchBankGuaranteeButtons = function() {

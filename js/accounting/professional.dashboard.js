@@ -264,31 +264,25 @@
 
         async loadCashFlowSummary() {
             try {
-                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`);
-                let data;
-                try {
-                    data = await response.json();
-                } catch (jsonError) {
-                    console.error('Error parsing response in loadCashFlowSummary:', jsonError);
-                    return; // Silently fail if JSON parsing fails
-                }
-                if (data.success && data.dashboard) {
-                    const cashIn = parseFloat(data.dashboard.total_revenue || 0);
-                    const cashOut = parseFloat(data.dashboard.total_expenses || 0);
-                    const netFlow = cashIn - cashOut;
-                    const cashInEl = document.getElementById('cashInAmount');
-                    const cashOutEl = document.getElementById('cashOutAmount');
-                    const netFlowEl = document.getElementById('netFlowAmount');
-                    if (cashInEl) {
-                        cashInEl.textContent = this.formatCurrency(cashIn);
-                }
-                    if (cashOutEl) {
-                        cashOutEl.textContent = this.formatCurrency(cashOut);
-                    }
-                    if (netFlowEl) {
-                        netFlowEl.textContent = this.formatCurrency(netFlow);
-                        netFlowEl.className = 'cashflow-value ' + (netFlow >= 0 ? 'positive' : 'negative');
-                }
+                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
+                if (!response.ok) return;
+                const data = await response.json().catch(() => null);
+                if (!data || !data.success || !data.dashboard) return;
+                const cashIn = parseFloat(data.dashboard.total_revenue || 0);
+                const cashOut = parseFloat(data.dashboard.total_expenses || 0);
+                const netFlow = cashIn - cashOut;
+                const cashInEl = document.getElementById('cashInAmount');
+                const cashOutEl = document.getElementById('cashOutAmount');
+                const netFlowEl = document.getElementById('netFlowAmount');
+                if (cashInEl) cashInEl.textContent = this.formatCurrency(cashIn);
+                if (cashOutEl) cashOutEl.textContent = this.formatCurrency(cashOut);
+                if (netFlowEl) {
+                    netFlowEl.textContent = this.formatCurrency(netFlow);
+                    netFlowEl.className = 'cashflow-value ' + (netFlow >= 0 ? 'positive' : 'negative');
                 }
             } catch (error) {
             }
@@ -296,34 +290,28 @@
 
         async loadFinancialSummary() {
             try {
-                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`);
-                let data;
-                try {
-                    data = await response.json();
-                } catch (jsonError) {
-                    console.error('Error parsing response in loadFinancialSummary:', jsonError);
-                    return; // Silently fail if JSON parsing fails
-                }
-                if (data.success && data.dashboard) {
-                    // Calculate assets (cash balance + receivables)
-                    const assets = parseFloat(data.dashboard.cash_balance || 0) + parseFloat(data.dashboard.total_receivables || 0);
-                    // Liabilities (payables)
-                    const liabilities = parseFloat(data.dashboard.total_payables || 0);
-                    // Equity (assets - liabilities)
-                    const equity = assets - liabilities;
-                    const assetsEl = document.getElementById('totalAssets');
-                    const liabilitiesEl = document.getElementById('totalLiabilities');
-                    const equityEl = document.getElementById('totalEquity');
-                    if (assetsEl) {
-                        assetsEl.textContent = this.formatCurrency(assets);
-                    }
-                    if (liabilitiesEl) {
-                        liabilitiesEl.textContent = this.formatCurrency(liabilities);
-                    }
-                    if (equityEl) {
-                        equityEl.textContent = this.formatCurrency(equity);
-                        equityEl.className = 'summary-value ' + (equity >= 0 ? 'positive' : 'negative');
-                    }
+                const response = await fetch(`${this.apiBase}/unified-calculations.php?type=all`, {
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
+                if (!response.ok) return;
+                const data = await response.json().catch(() => null);
+                if (!data || !data.success || !data.dashboard) return;
+                // Calculate assets (cash balance + receivables)
+                const assets = parseFloat(data.dashboard.cash_balance || 0) + parseFloat(data.dashboard.total_receivables || 0);
+                // Liabilities (payables)
+                const liabilities = parseFloat(data.dashboard.total_payables || 0);
+                // Equity (assets - liabilities)
+                const equity = assets - liabilities;
+                const assetsEl = document.getElementById('totalAssets');
+                const liabilitiesEl = document.getElementById('totalLiabilities');
+                const equityEl = document.getElementById('totalEquity');
+                if (assetsEl) assetsEl.textContent = this.formatCurrency(assets);
+                if (liabilitiesEl) liabilitiesEl.textContent = this.formatCurrency(liabilities);
+                if (equityEl) {
+                    equityEl.textContent = this.formatCurrency(equity);
+                    equityEl.className = 'summary-value ' + (equity >= 0 ? 'positive' : 'negative');
                 }
             } catch (error) {
             }
