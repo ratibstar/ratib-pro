@@ -851,7 +851,68 @@ function generateIncomeStatement($conn, $startDate = null, $endDate = null, $cos
         'net_income' => $totalRevenue - $totalExpenses
     ];
 
-    // Deep fallback: if statement is still empty, pull posted expense-side vouchers/payments
+    // Deep fallback: if revenue is empty, pull posted receipt-side vouchers/payments
+    // regardless of date parsing differences so report stays connected to actual activity.
+    if ($totalRevenue <= 0) {
+        if (tableExists($conn, 'receipt_vouchers')) {
+            $rvFallback = $conn->query("
+                SELECT
+                    COALESCE(NULLIF(TRIM(voucher_number), ''), CONCAT('#', id)) AS account_name,
+                    COALESCE(amount, 0) AS revenue_amount
+                FROM receipt_vouchers
+                WHERE COALESCE(amount, 0) > 0
+                  AND (
+                    LOWER(TRIM(COALESCE(status, ''))) IN ('approved', 'posted')
+                    OR LOWER(TRIM(COALESCE(posting_status, ''))) IN ('approved', 'posted')
+                    OR COALESCE(is_posted, 0) = 1
+                  )
+                ORDER BY id DESC
+                LIMIT 300
+            ");
+            if ($rvFallback) {
+                while ($row = $rvFallback->fetch_assoc()) {
+                    $amount = floatval($row['revenue_amount'] ?? 0);
+                    if ($amount <= 0) continue;
+                    $report['revenue'][] = [
+                        'account_code' => 'RV',
+                        'account_name' => 'Receipt Voucher ' . ($row['account_name'] ?? ''),
+                        'revenue_amount' => $amount
+                    ];
+                    $totalRevenue += $amount;
+                }
+                $rvFallback->free();
+            }
+        }
+        if (tableExists($conn, 'payment_receipts')) {
+            $prFallback = $conn->query("
+                SELECT
+                    COALESCE(NULLIF(TRIM(receipt_number), ''), CONCAT('#', id)) AS account_name,
+                    COALESCE(amount, 0) AS revenue_amount
+                FROM payment_receipts
+                WHERE COALESCE(amount, 0) > 0
+                  AND LOWER(TRIM(COALESCE(status, ''))) IN ('cleared', 'deposited', 'posted', 'approved')
+                ORDER BY id DESC
+                LIMIT 300
+            ");
+            if ($prFallback) {
+                while ($row = $prFallback->fetch_assoc()) {
+                    $amount = floatval($row['revenue_amount'] ?? 0);
+                    if ($amount <= 0) continue;
+                    $report['revenue'][] = [
+                        'account_code' => 'PR',
+                        'account_name' => 'Receipt ' . ($row['account_name'] ?? ''),
+                        'revenue_amount' => $amount
+                    ];
+                    $totalRevenue += $amount;
+                }
+                $prFallback->free();
+            }
+        }
+        $report['totals']['total_revenue'] = $totalRevenue;
+        $report['totals']['net_income'] = $totalRevenue - $totalExpenses;
+    }
+
+    // Deep fallback: if statement is still empty on expense side, pull posted expense-side vouchers/payments
     // regardless of date parsing differences so report stays connected to actual activity.
     if ($totalExpenses <= 0) {
         if (tableExists($conn, 'payment_vouchers')) {
