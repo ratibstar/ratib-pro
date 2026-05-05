@@ -2438,6 +2438,51 @@ function generateExpenseStatement($conn, $startDate = null, $endDate = null) {
             $pvStmt->free();
         }
     }
+
+    // Fallback/source-of-truth: expense-side entries from general ledger + chart of accounts.
+    // This keeps Expense Statement connected to actual accounting postings.
+    if (tableExists($conn, 'general_ledger') && tableExists($conn, 'financial_accounts')) {
+        $hasJeTable = tableExists($conn, 'journal_entries');
+        $hasJeStatus = $hasJeTable && columnExists($conn, 'journal_entries', 'status');
+        $hasPostingDate = columnExists($conn, 'general_ledger', 'posting_date');
+        $dateCol = $hasPostingDate ? 'gl.posting_date' : 'gl.created_at';
+
+        if ($dateCol) {
+            $jeJoin = $hasJeTable ? "LEFT JOIN journal_entries je ON je.id = gl.journal_entry_id" : "";
+            $jeStatusFilter = $hasJeStatus ? "AND (je.id IS NULL OR je.status IN ('Approved', 'Posted'))" : "";
+            $glStmt = $conn->query("
+                SELECT
+                    COALESCE(NULLIF(TRIM(fa.account_name), ''), 'Expense') AS category,
+                    CONCAT(
+                        'GL ',
+                        COALESCE(NULLIF(TRIM(fa.account_code), ''), '#'),
+                        ' - ',
+                        COALESCE(NULLIF(TRIM(fa.account_name), ''), 'Expense')
+                    ) AS description,
+                    {$dateCol} AS transaction_date,
+                    COALESCE(SUM(gl.debit), 0) AS total_amount,
+                    COUNT(*) AS transaction_count
+                FROM general_ledger gl
+                INNER JOIN financial_accounts fa ON fa.id = gl.account_id
+                {$jeJoin}
+                WHERE fa.account_type = 'EXPENSE'
+                    AND COALESCE(gl.debit, 0) > 0
+                    AND {$dateCol} >= '{$escapedStartDate}'
+                    AND {$dateCol} <= '{$escapedEndDate}'
+                    {$jeStatusFilter}
+                GROUP BY fa.id, DATE({$dateCol})
+                ORDER BY transaction_date DESC
+                LIMIT 500
+            ");
+            if ($glStmt) {
+                while ($row = $glStmt->fetch_assoc()) {
+                    $row['total_amount'] = floatval($row['total_amount']);
+                    $report['expenses'][] = $row;
+                }
+                $glStmt->free();
+            }
+        }
+    }
     
     $totalExpenses = !empty($report['expenses']) ? array_sum(array_column($report['expenses'], 'total_amount')) : 0;
     $report['totals'] = [
