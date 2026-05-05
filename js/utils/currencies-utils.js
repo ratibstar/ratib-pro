@@ -164,7 +164,7 @@ class CurrencyUtils {
             : selectElement;
         
         if (!select) {
-            console.error('❌ Currency select element not found:', selectElement);
+            // Silent no-op: some dynamic modals pass stale IDs during close/re-render.
             return;
         }
 

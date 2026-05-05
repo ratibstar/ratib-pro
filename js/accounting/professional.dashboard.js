@@ -1644,7 +1644,13 @@
                     cache: 'no-cache',
                     headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                 });
-                const data = await response.json();
+                if (!response.ok) {
+                    return;
+                }
+                const data = await response.json().catch(() => null);
+                if (!data) {
+                    return;
+                }
                 if (data.success && data.dashboard) {
                     this.updateOverviewCards({
                         total_revenue: data.dashboard.total_revenue,
@@ -1669,7 +1675,7 @@
                 // Refresh financial summary
                 this.loadFinancialSummary();
             } catch (error) {
-                console.error('Error refreshing dashboard cards:', error);
+                // Keep production console clean; backend can temporarily return HTML/5xx.
             }
         }
     };
