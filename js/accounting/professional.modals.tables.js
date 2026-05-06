@@ -5928,8 +5928,10 @@
                                         try {
                                             persisted = JSON.parse(sessionStorage.getItem('accounting_reapproved_journal_ids') || '[]');
                                         } catch (_) {}
+                                        const isReapprovable = (this._reapprovableEntryIds && this._reapprovableEntryIds.has(Number(entry.id)));
                                         const isReapproved = (this._reapprovedEntryIds && this._reapprovedEntryIds.has(Number(entry.id))) ||
                                             (Array.isArray(persisted) && persisted.includes(Number(entry.id)));
+                                        if (!isReapprovable && !isReapproved) return '';
                                         return isReapproved
                                             ? `<button class="action-btn reapproved" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve Again"><i class="fas fa-check-double"></i></button>`
                                             : `<button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve"><i class="fas fa-undo"></i></button>`;
