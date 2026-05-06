@@ -805,15 +805,16 @@
                     if (isStale()) return;
                     const glCountData = await glCountRes.json().catch(() => null);
                     if (isStale()) return;
-                    const glEntries = Number(
-                        glCountData?.report?.summary?.total_transactions ??
-                        glCountData?.report?.totals?.total_transactions ??
-                        glCountData?.summary?.total_transactions ??
-                        glCountData?.totals?.total_transactions ??
-                        0
-                    );
-                    if (glEntries > 0) {
-                        totalEntries = Math.max(totalEntries, glEntries);
+                    const accounts = Array.isArray(glCountData?.report?.accounts) ? glCountData.report.accounts : [];
+                    if (accounts.length > 0) {
+                        const accountsWithTx = accounts.reduce((n, a) => {
+                            const tx = a && Array.isArray(a.transactions) ? a.transactions : [];
+                            return n + (tx.length > 0 ? 1 : 0);
+                        }, 0);
+                        if (accountsWithTx > 0) {
+                            // Matches General Ledger header: "with transactions"
+                            totalEntries = Math.max(totalEntries, accountsWithTx);
+                        }
                     }
                 } catch (_) {}
                 if (txHint) {
