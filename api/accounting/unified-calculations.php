@@ -434,8 +434,7 @@ try {
         $currExpBeforeGlActivity = floatval($expenses['total_expenses'] ?? 0);
         if ($currRevBeforeGlActivity == 0.0 && $currExpBeforeGlActivity == 0.0) {
             $glTbl = $conn->query("SHOW TABLES LIKE 'general_ledger'");
-            $jeTbl = $conn->query("SHOW TABLES LIKE 'journal_entries'");
-            if ($glTbl && $glTbl->num_rows > 0 && $jeTbl && $jeTbl->num_rows > 0) {
+            if ($glTbl && $glTbl->num_rows > 0) {
                 $glDebitCol = null;
                 $glCreditCol = null;
                 $cd = $conn->query("SHOW COLUMNS FROM general_ledger");
@@ -460,8 +459,6 @@ try {
                             COALESCE(SUM(gl.`{$glCreditCol}`), 0) AS total_credits,
                             COUNT(*) AS line_count
                         FROM general_ledger gl
-                        INNER JOIN journal_entries je ON je.id = gl.journal_entry_id
-                        WHERE je.status IN ('Posted', 'Approved')
                     ";
                     $glActStmt = $conn->prepare($glActSql);
                     if ($glActStmt) {
@@ -483,9 +480,6 @@ try {
             }
             if ($glTbl instanceof mysqli_result) {
                 $glTbl->free();
-            }
-            if ($jeTbl instanceof mysqli_result) {
-                $jeTbl->free();
             }
         }
 
