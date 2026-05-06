@@ -406,7 +406,7 @@
                         <div class="summary-cards-mini-header">
                             <div class="summary-cards-mini">
                                 <div class="summary-mini-card">
-                                    <h4>Total Reports</h4>
+                                    <h4>Total Entries</h4>
                                     <p id="modalReportsTotal">0</p>
                                 </div>
                                 <div class="summary-mini-card">
@@ -884,7 +884,9 @@
                     txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
                 }
 
+                const totalEl = document.getElementById('modalReportsTotal');
                 const transactionCountEl = document.getElementById('modalReportsTransactionCount');
+                if (totalEl) totalEl.textContent = String(totalEntries);
                 if (transactionCountEl) transactionCountEl.textContent = String(totalEntries);
             } catch (e) {
                 // Keep the modal usable even if summary endpoints fail.
@@ -969,8 +971,7 @@
             const agingCountEl = document.getElementById('modalReportsAgingCount');
             const analysisCountEl = document.getElementById('modalReportsAnalysisCount');
             
-            // "Total Reports" should reflect the full report catalog (not filtered visibility).
-            if (totalEl) totalEl.textContent = String(reportCards.length);
+            // Do not overwrite API-driven summary cards from filter/search.
         },
 
         setupSettingsFilters() {
