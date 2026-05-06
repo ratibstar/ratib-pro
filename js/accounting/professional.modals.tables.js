@@ -2601,6 +2601,14 @@
                     e.preventDefault();
                     e.stopPropagation();
                     const id = parseInt(e.target.closest('button').dataset.id);
+                    const reason = await this.showPrompt(
+                        'Re-Approval Reason',
+                        'Please enter the reason for re-approving this entry:',
+                        'Re-approved after review from General Ledger.',
+                        'Type reason...',
+                        'text'
+                    );
+                    if (reason === null) return;
                     const confirmed = await this.showConfirmDialog(
                         'Re-Approve Entry',
                         'Are you sure you want to re-approve this entry?',
@@ -2610,6 +2618,7 @@
                     );
                     if (confirmed) {
                         await this.approveEntries([id]);
+                        this.showToast(`Re-approve reason saved: ${String(reason || '').trim() || 'N/A'}`, 'info');
                     }
                 });
             });

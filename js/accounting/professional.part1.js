@@ -1280,6 +1280,14 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                     const btn = e.target.closest('[data-action="reapprove-entry"]');
                     const id = parseInt(btn?.getAttribute('data-id') || e.target.closest('[data-id]')?.getAttribute('data-id') || 0, 10);
                     if (!id) break;
+                    const reason = await this.showPrompt(
+                        'Re-Approval Reason',
+                        'Please enter the reason for re-approving this entry:',
+                        'Re-approved after review from General Ledger.',
+                        'Type reason...',
+                        'text'
+                    );
+                    if (reason === null) break;
                     this.showConfirmDialog(
                         'Re-Approve Entry',
                         'Are you sure you want to re-approve this entry?',
@@ -1312,6 +1320,7 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                             }
 
                             this.showToast(`Entry #${id} re-approved`, 'success');
+                            this.showToast(`Reason: ${String(reason || '').trim() || 'N/A'}`, 'info');
                             if (typeof this.loadModalJournalEntries === 'function') {
                                 await this.loadModalJournalEntries();
                             }

@@ -588,7 +588,8 @@
                     const status = (entry.status || 'pending').toLowerCase();
                     const statusBadgeVariant = status === 'approved' ? 'success' : (status === 'rejected' ? 'danger' : 'warning');
                     const statusText = status === 'approved' ? 'Approved' : (status === 'rejected' ? 'Rejected' : 'Pending');
-                    const isDisabled = status !== 'pending';
+                    // Keep actions available in Entry Approval table for all statuses.
+                    const isDisabled = false;
                     const currency = entry.currency || this.getDefaultCurrencySync();
                     const debitAmount = parseFloat(entry.total_debit ?? entry.debit_amount ?? entry.debit ?? 0) || 0;
                     const creditAmount = parseFloat(entry.total_credit ?? entry.credit_amount ?? entry.credit ?? 0) || 0;
@@ -637,12 +638,12 @@
                                             <i class="fas fa-times"></i>
                                         </button>
                                     ` : ''}
-                                    ${status !== 'approved' ? `
+                                    ${true ? `
                                     <button class="btn-icon btn-primary" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve">
                                         <i class="fas fa-undo"></i>
                                     </button>
                                     ` : ''}
-                                    ${status !== 'approved' ? `
+                                    ${true ? `
                                     <button class="btn-icon btn-edit" data-action="edit-entry-approval" data-id="${entry.id}" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
