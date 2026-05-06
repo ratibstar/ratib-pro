@@ -5306,8 +5306,8 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                     const y = now.getFullYear();
                     const dFrom = `${y}-01-01`;
                     const dTo = `${y}-12-31`;
-                    const incomeUrl = `${this.apiBase}/reports.php?report=income-statement&date_from=${encodeURIComponent(dFrom)}&date_to=${encodeURIComponent(dTo)}${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
-                    const expenseUrl = `${this.apiBase}/reports.php?report=expense-statement&date_from=${encodeURIComponent(dFrom)}&date_to=${encodeURIComponent(dTo)}${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                    const incomeUrl = `${this.apiBase}/reports.php?type=income-statement&start_date=${encodeURIComponent(dFrom)}&end_date=${encodeURIComponent(dTo)}${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                    const expenseUrl = `${this.apiBase}/reports.php?type=expense-statement&start_date=${encodeURIComponent(dFrom)}&end_date=${encodeURIComponent(dTo)}${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
                     const [irRes, exRes] = await Promise.all([
                         fetch(incomeUrl, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } }),
                         fetch(expenseUrl, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } })
@@ -5330,7 +5330,9 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             }
             if (income === 0 && expense === 0 && profit === 0) {
                 try {
-                    const glUrl = `${this.apiBase}/reports.php?report=general-ledger${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                    const glStart = '2000-01-01';
+                    const glEnd = new Date().toISOString().slice(0, 10);
+                    const glUrl = `${this.apiBase}/reports.php?type=general-ledger&start_date=${encodeURIComponent(glStart)}&end_date=${encodeURIComponent(glEnd)}${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
                     const glRes = await fetch(glUrl, {
                         credentials: 'include',
                         cache: 'no-cache',
