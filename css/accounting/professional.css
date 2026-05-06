@@ -2032,6 +2032,11 @@ a[href="#"]:not(.nav-link):not(.submenu-link) {
     line-height: 1.2;
 }
 
+/* Allow hints to be neutral when explicitly muted */
+.entity-amount.text-muted {
+    color: var(--text-muted) !important;
+}
+
 .status-card-mini {
     background: rgba(99, 102, 241, 0.1);
     border: 1px solid rgba(99, 102, 241, 0.2);

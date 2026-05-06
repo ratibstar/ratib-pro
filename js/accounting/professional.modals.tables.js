@@ -881,7 +881,7 @@
                 }
 
                 if (txHint) {
-                    txHint.textContent = `${totalEntries} transaction entries available${suffix}${dbTag}`;
+                    txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
                 }
 
                 const totalEl = document.getElementById('modalReportsTotal');
