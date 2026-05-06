@@ -5931,7 +5931,7 @@
                                         const isReapproved = (this._reapprovedEntryIds && this._reapprovedEntryIds.has(Number(entry.id))) ||
                                             (Array.isArray(persisted) && persisted.includes(Number(entry.id)));
                                         return isReapproved
-                                            ? `<button class="action-btn reapproved" title="Re-Approved" disabled><i class="fas fa-check-double"></i></button>`
+                                            ? `<button class="action-btn reapproved" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve Again"><i class="fas fa-check-double"></i></button>`
                                             : `<button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve"><i class="fas fa-undo"></i></button>`;
                                     })()}
                                     ${entry.source === 'transaction' ? `<button class="action-btn edit" data-action="edit-entity-transaction" data-id="${entry.id}" data-permission="edit_journal_entry" title="Edit Entry"><i class="fas fa-edit"></i></button>` : `<button class="action-btn edit" data-action="edit-entry" data-id="${entry.id}" data-permission="edit_journal_entry" title="Edit Entry"><i class="fas fa-edit"></i></button>`}

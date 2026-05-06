@@ -1034,6 +1034,20 @@
                     console.error('Error parsing response in loadFinancialOverview:', jsonError);
                     throw new Error('Invalid JSON response from server');
                 }
+                // Keep re-approve markers synced with real rejected rows in Entry Approval.
+                try {
+                    const rejRes = await fetch(`${this.apiBase}/entry-approval.php?status=rejected`, { credentials: 'include' });
+                    const rejData = await rejRes.json().catch(() => ({}));
+                    const rejectedRows = Array.isArray(rejData?.entries) ? rejData.entries : [];
+                    const rejectedJournalIds = new Set(
+                        rejectedRows.map((r) => Number(r.journal_entry_id || 0)).filter((x) => x > 0)
+                    );
+                    const raw = sessionStorage.getItem('accounting_reapproved_journal_ids');
+                    const arr = raw ? JSON.parse(raw) : [];
+                    const next = (Array.isArray(arr) ? arr : []).map((x) => Number(x)).filter((x) => rejectedJournalIds.has(x));
+                    sessionStorage.setItem('accounting_reapproved_journal_ids', JSON.stringify(next));
+                    this._reapprovedEntryIds = new Set(next);
+                } catch (_) {}
                 // Don't auto-expand dates - respect user's date selections
                 // If no entries found, just show empty state (handled below)
                 if (data.success && data.entries && data.entries.length > 0) {
@@ -1314,7 +1328,7 @@
                                             const isReapproved = (this._reapprovedEntryIds && this._reapprovedEntryIds.has(rowId)) ||
                                                 (Array.isArray(persisted) && persisted.includes(rowId));
                                             return isReapproved
-                                                ? `<button class="action-btn reapproved" title="Re-Approved" disabled><i class="fas fa-check-double"></i></button>`
+                                                ? `<button class="action-btn reapproved" data-action="reapprove-entry" data-id="${entry.id || entry.entry_number || ''}" title="Re-Approve Again"><i class="fas fa-check-double"></i></button>`
                                                 : `<button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id || entry.entry_number || ''}" title="Re-Approve"><i class="fas fa-undo"></i></button>`;
                                         })()}
                                         ${entry.source === 'transaction' ? `<button class="action-btn edit" data-action="edit-entity-transaction" data-id="${entry.id || entry.entry_number || ''}" data-permission="edit_journal_entry" title="Edit Entry"><i class="fas fa-edit"></i></button>` : `<button class="action-btn edit" data-action="edit-entry" data-id="${entry.id || entry.entry_number || ''}" data-permission="edit_journal_entry" title="Edit Entry"><i class="fas fa-edit"></i></button>`}

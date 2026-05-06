@@ -3730,7 +3730,7 @@ ProfessionalAccounting.prototype.loadJournalEntries = async function() {
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 ${this._reapprovedEntryIds && this._reapprovedEntryIds.has(Number(entry.id)) ? `
-                                <button class="action-btn reapproved" title="Re-Approved" disabled>
+                                <button class="action-btn reapproved" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve Again">
                                     <i class="fas fa-check-double"></i>
                                 </button>` : `
                                 <button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve">
@@ -4822,7 +4822,7 @@ ProfessionalAccounting.prototype.loadModalJournalEntries = async function() {
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     ${this._reapprovedEntryIds && this._reapprovedEntryIds.has(Number(entry.id || entry.entry_number || 0)) ? `
-                                    <button class="action-btn reapproved" title="Re-Approved" disabled>
+                                    <button class="action-btn reapproved" data-action="reapprove-entry" data-id="${entry.id || entry.entry_number || ''}" title="Re-Approve Again">
                                         <i class="fas fa-check-double"></i>
                                     </button>` : `
                                     <button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id || entry.entry_number || ''}" title="Re-Approve">
