@@ -427,6 +427,68 @@ try {
             $stmt->close();
         }
         
+        // When there is no P&L (Income/Expense) data but the ledger still has posted
+        // movement (e.g. AR, AP, cash transfers), surface GL debit/credit totals so
+        // dashboard cards are not stuck at zero while GL clearly has activity.
+        $currRevBeforeGlActivity = floatval($revenue['total_revenue'] ?? 0);
+        $currExpBeforeGlActivity = floatval($expenses['total_expenses'] ?? 0);
+        if ($currRevBeforeGlActivity == 0.0 && $currExpBeforeGlActivity == 0.0) {
+            $glTbl = $conn->query("SHOW TABLES LIKE 'general_ledger'");
+            $jeTbl = $conn->query("SHOW TABLES LIKE 'journal_entries'");
+            if ($glTbl && $glTbl->num_rows > 0 && $jeTbl && $jeTbl->num_rows > 0) {
+                $glDebitCol = null;
+                $glCreditCol = null;
+                $cd = $conn->query("SHOW COLUMNS FROM general_ledger");
+                if ($cd) {
+                    $have = [];
+                    while ($r = $cd->fetch_assoc()) {
+                        $have[strtolower((string)($r['Field'] ?? ''))] = true;
+                    }
+                    $cd->free();
+                    if (!empty($have['debit']) && !empty($have['credit'])) {
+                        $glDebitCol = 'debit';
+                        $glCreditCol = 'credit';
+                    } elseif (!empty($have['debit_amount']) && !empty($have['credit_amount'])) {
+                        $glDebitCol = 'debit_amount';
+                        $glCreditCol = 'credit_amount';
+                    }
+                }
+                if ($glDebitCol !== null && $glCreditCol !== null) {
+                    $glActSql = "
+                        SELECT
+                            COALESCE(SUM(gl.`{$glDebitCol}`), 0) AS total_debits,
+                            COALESCE(SUM(gl.`{$glCreditCol}`), 0) AS total_credits,
+                            COUNT(*) AS line_count
+                        FROM general_ledger gl
+                        INNER JOIN journal_entries je ON je.id = gl.journal_entry_id
+                        WHERE je.status IN ('Posted', 'Approved')
+                    ";
+                    $glActStmt = $conn->prepare($glActSql);
+                    if ($glActStmt) {
+                        $glActStmt->execute();
+                        $glActRow = $glActStmt->get_result()->fetch_assoc();
+                        $glActStmt->close();
+                        $td = floatval($glActRow['total_debits'] ?? 0);
+                        $tc = floatval($glActRow['total_credits'] ?? 0);
+                        $lc = intval($glActRow['line_count'] ?? 0);
+                        if ($td > 0 || $tc > 0) {
+                            // Map credits → "revenue side" and debits → "expense side" for summary cards only.
+                            $revenue['total_revenue'] = $tc;
+                            $expenses['total_expenses'] = $td;
+                            $revenue['revenue_count'] = max(1, $lc);
+                            $expenses['expense_count'] = max(1, $lc);
+                        }
+                    }
+                }
+            }
+            if ($glTbl instanceof mysqli_result) {
+                $glTbl->free();
+            }
+            if ($jeTbl instanceof mysqli_result) {
+                $jeTbl->free();
+            }
+        }
+
         // Net Profit
         $netProfit = floatval($revenue['total_revenue']) - floatval($expenses['total_expenses']);
         
