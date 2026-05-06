@@ -2601,14 +2601,32 @@
                     e.preventDefault();
                     e.stopPropagation();
                     const id = parseInt(e.target.closest('button').dataset.id);
+                    const reasonGuide = [
+                        '1) Correction validated',
+                        '2) Supporting documents verified',
+                        '3) Manager override after review',
+                        '4) Data-entry mistake fixed',
+                        '5) Duplicate rejection resolved',
+                        '6) Other (write custom reason)'
+                    ].join('\n');
                     const reason = await this.showPrompt(
                         'Re-Approval Reason',
-                        'Please enter the reason for re-approving this entry:',
-                        'Re-approved after review from General Ledger.',
-                        'Type reason...',
+                        `Choose reason number or type custom reason:\n${reasonGuide}`,
+                        '1',
+                        'Enter 1-6 or custom reason...',
                         'text'
                     );
                     if (reason === null) return;
+                    const normalizedReason = (() => {
+                        const v = String(reason || '').trim();
+                        if (v === '1') return 'Correction validated';
+                        if (v === '2') return 'Supporting documents verified';
+                        if (v === '3') return 'Manager override after review';
+                        if (v === '4') return 'Data-entry mistake fixed';
+                        if (v === '5') return 'Duplicate rejection resolved';
+                        if (v === '6' || v === '') return 'Other (manual re-approval reason provided by reviewer)';
+                        return v;
+                    })();
                     const confirmed = await this.showConfirmDialog(
                         'Re-Approve Entry',
                         'Are you sure you want to re-approve this entry?',
@@ -2618,7 +2636,7 @@
                     );
                     if (confirmed) {
                         await this.approveEntries([id]);
-                        this.showToast(`Re-approve reason saved: ${String(reason || '').trim() || 'N/A'}`, 'info');
+                        this.showToast(`Re-approve reason: ${normalizedReason}`, 'info');
                     }
                 });
             });

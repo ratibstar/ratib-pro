@@ -588,8 +588,8 @@
                     const status = (entry.status || 'pending').toLowerCase();
                     const statusBadgeVariant = status === 'approved' ? 'success' : (status === 'rejected' ? 'danger' : 'warning');
                     const statusText = status === 'approved' ? 'Approved' : (status === 'rejected' ? 'Rejected' : 'Pending');
-                    // Keep actions available in Entry Approval table for all statuses.
-                    const isDisabled = false;
+                    const isPending = status === 'pending';
+                    const isRejected = status === 'rejected';
                     const currency = entry.currency || this.getDefaultCurrencySync();
                     const debitAmount = parseFloat(entry.total_debit ?? entry.debit_amount ?? entry.debit ?? 0) || 0;
                     const creditAmount = parseFloat(entry.total_credit ?? entry.credit_amount ?? entry.credit ?? 0) || 0;
@@ -602,7 +602,7 @@
                                 <td class="voucher-number-cell">
                                     <div class="voucher-number-stack">
                                         <div class="voucher-number-inline" style="display:flex; align-items:center; gap:8px;">
-                                            <input type="checkbox" class="entry-checkbox" value="${entry.id}" ${isDisabled ? 'disabled' : ''} />
+                                            <input type="checkbox" class="entry-checkbox" value="${entry.id}" ${!isPending ? 'disabled' : ''} />
                                             <a href="#" class="journal-ref-link" data-action="view-entry" data-id="${entry.id}" title="View Entry">
                                                 ${this.escapeHtml(entry.entry_number || '')}
                                             </a>
@@ -630,7 +630,7 @@
                                     <button class="btn-icon btn-view" data-action="view-entry" data-id="${entry.id}" title="View">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    ${!isDisabled ? `
+                                    ${isPending ? `
                                         <button class="btn-icon btn-success" data-action="approve-entry" data-id="${entry.id}" title="Approve">
                                             <i class="fas fa-check"></i>
                                         </button>
@@ -638,12 +638,12 @@
                                             <i class="fas fa-times"></i>
                                         </button>
                                     ` : ''}
-                                    ${true ? `
+                                    ${isRejected ? `
                                     <button class="btn-icon btn-primary" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve">
                                         <i class="fas fa-undo"></i>
                                     </button>
                                     ` : ''}
-                                    ${true ? `
+                                    ${status !== 'approved' ? `
                                     <button class="btn-icon btn-edit" data-action="edit-entry-approval" data-id="${entry.id}" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>

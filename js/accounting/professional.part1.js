@@ -1280,14 +1280,32 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                     const btn = e.target.closest('[data-action="reapprove-entry"]');
                     const id = parseInt(btn?.getAttribute('data-id') || e.target.closest('[data-id]')?.getAttribute('data-id') || 0, 10);
                     if (!id) break;
+                    const reasonGuide = [
+                        '1) Correction validated',
+                        '2) Supporting documents verified',
+                        '3) Manager override after review',
+                        '4) Data-entry mistake fixed',
+                        '5) Duplicate rejection resolved',
+                        '6) Other (write custom reason)'
+                    ].join('\n');
                     this.showPrompt(
                         'Re-Approval Reason',
-                        'Please enter the reason for re-approving this entry:',
-                        'Re-approved after review from General Ledger.',
-                        'Type reason...',
+                        `Choose reason number or type custom reason:\n${reasonGuide}`,
+                        '1',
+                        'Enter 1-6 or custom reason...',
                         'text'
                     ).then((reason) => {
                         if (reason === null) return;
+                        const normalizedReason = (() => {
+                            const v = String(reason || '').trim();
+                            if (v === '1') return 'Correction validated';
+                            if (v === '2') return 'Supporting documents verified';
+                            if (v === '3') return 'Manager override after review';
+                            if (v === '4') return 'Data-entry mistake fixed';
+                            if (v === '5') return 'Duplicate rejection resolved';
+                            if (v === '6' || v === '') return 'Other (manual re-approval reason provided by reviewer)';
+                            return v;
+                        })();
                         this.showConfirmDialog(
                             'Re-Approve Entry',
                             'Are you sure you want to re-approve this entry?',
@@ -1320,7 +1338,7 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                                 }
 
                                 this.showToast(`Entry #${id} re-approved`, 'success');
-                                this.showToast(`Reason: ${String(reason || '').trim() || 'N/A'}`, 'info');
+                                this.showToast(`Reason: ${normalizedReason}`, 'info');
                                 if (typeof this.loadModalJournalEntries === 'function') {
                                     await this.loadModalJournalEntries();
                                 }
