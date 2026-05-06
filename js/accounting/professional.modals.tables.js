@@ -420,22 +420,22 @@
                                 <div class="summary-entity-card">
                                     <h4>Balance Reports</h4>
                                     <p id="modalReportsBalanceCount">$0.00</p>
-                                    <span class="entity-amount" id="modalReportsBalanceHint">Trial Balance, Balance Sheet, Cash Flow Report</span>
+                                    <span class="entity-amount text-muted" id="modalReportsBalanceHint">Cash — | Net —</span>
                                 </div>
                                 <div class="summary-entity-card">
                                     <h4>Transaction Reports</h4>
                                     <p id="modalReportsTransactionCount">0</p>
-                                    <span class="entity-amount" id="modalReportsTransactionHint">Cash Book, Bank Book, Ledger, Account Statement, Chart</span>
+                                    <span class="entity-amount text-muted" id="modalReportsTransactionHint">— transaction entries available</span>
                                 </div>
                                 <div class="summary-entity-card">
                                     <h4>Aging Reports</h4>
                                     <p id="modalReportsAgingCount">0</p>
-                                    <span class="entity-amount" id="modalReportsAgingHint">Debt Receivable, Credit Receivable</span>
+                                    <span class="entity-amount text-muted" id="modalReportsAgingHint">AR — | AP —</span>
                                 </div>
                                 <div class="summary-entity-card">
                                     <h4>Analysis Reports</h4>
                                     <p id="modalReportsAnalysisCount">$0.00</p>
-                                    <span class="entity-amount" id="modalReportsAnalysisHint">Income, Expense, Performance, Equity, Comparative</span>
+                                    <span class="entity-amount text-muted" id="modalReportsAnalysisHint">Revenue — | Expense —</span>
                                 </div>
                             </div>
                         </div>
@@ -816,6 +816,23 @@
                     } catch (_) {
                         totalEntries = 0;
                     }
+                }
+                if (txHint && totalEntries <= 0) {
+                    try {
+                        const jeUrl = `${this.apiBase}/journal-entries.php?limit=1&page=1${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                        const jeRes = await fetch(jeUrl, {
+                            credentials: 'include',
+                            cache: 'no-cache',
+                            headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                        });
+                        if (isStale()) return;
+                        const je = await jeRes.json().catch(() => null);
+                        if (isStale()) return;
+                        const jeCount = Array.isArray(je?.entries) ? je.entries.length : 0;
+                        if (jeCount > 0) {
+                            totalEntries = jeCount;
+                        }
+                    } catch (_) {}
                 }
 
                 const summaryKey = agencyId || 'default';
