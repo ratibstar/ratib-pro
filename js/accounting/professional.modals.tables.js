@@ -807,13 +807,13 @@
                     if (isStale()) return;
                     const accounts = Array.isArray(glCountData?.report?.accounts) ? glCountData.report.accounts : [];
                     if (accounts.length > 0) {
-                        const accountsWithTx = accounts.reduce((n, a) => {
+                        const glTotalTransactions = accounts.reduce((n, a) => {
                             const tx = a && Array.isArray(a.transactions) ? a.transactions : [];
-                            return n + (tx.length > 0 ? 1 : 0);
+                            return n + tx.length;
                         }, 0);
-                        if (accountsWithTx > 0) {
-                            // Matches General Ledger header: "with transactions"
-                            totalEntries = Math.max(totalEntries, accountsWithTx);
+                        if (glTotalTransactions > 0) {
+                            // Match General Ledger report card: "Total Transactions"
+                            totalEntries = Math.max(totalEntries, glTotalTransactions);
                         }
                     }
                 } catch (_) {}
