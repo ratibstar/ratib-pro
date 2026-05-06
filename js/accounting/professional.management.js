@@ -4912,11 +4912,39 @@
                     await this.loadEntryApproval(filterSelect ? filterSelect.value : 'all');
                     return;
                 }
+                const selectedRows = Array.isArray(this.entryApprovalData)
+                    ? this.entryApprovalData.filter((r) => ids.includes(Number(r.id)))
+                    : [];
+                const pendingIds = selectedRows
+                    .filter((r) => String(r.status || '').toLowerCase() === 'pending')
+                    .map((r) => Number(r.id));
+                const nonPendingIds = selectedRows
+                    .filter((r) => String(r.status || '').toLowerCase() !== 'pending')
+                    .map((r) => Number(r.id));
+
+                if (pendingIds.length === 0) {
+                    if (nonPendingIds.length > 0) {
+                        try {
+                            const rawA = sessionStorage.getItem('accounting_reapproved_approval_ids');
+                            const arrA = rawA ? JSON.parse(rawA) : [];
+                            const nextA = (Array.isArray(arrA) ? arrA : []).filter((x) => !nonPendingIds.includes(Number(x)));
+                            sessionStorage.setItem('accounting_reapproved_approval_ids', JSON.stringify(nextA));
+                        } catch (_) {}
+                        this.showToast('Selected entries are already processed; re-approval marker cleared', 'success');
+                        const filterSelect = document.getElementById('entryApprovalStatusFilter');
+                        const currentFilter = filterSelect ? filterSelect.value : 'all';
+                        await this.loadEntryApproval(currentFilter);
+                        return;
+                    }
+                    this.showToast('No pending entries selected for approval', 'warning');
+                    return;
+                }
+
                 const response = await fetch(`${this.apiBase}/entry-approval.php`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ action: 'approve', ids: ids })
+                    body: JSON.stringify({ action: 'approve', ids: pendingIds })
                 });
                 const data = await response.json().catch(() => ({ success: false, message: 'Invalid response' }));
                 if (!response.ok || !data.success) {
@@ -4949,7 +4977,15 @@
                     this.showToast(data.message || 'Failed to approve entries', 'error');
                     return;
                 }
-                this.showToast(data.message || `${ids.length} entry(ies) approved successfully`, 'success');
+                if (nonPendingIds.length > 0) {
+                    try {
+                        const rawA = sessionStorage.getItem('accounting_reapproved_approval_ids');
+                        const arrA = rawA ? JSON.parse(rawA) : [];
+                        const nextA = (Array.isArray(arrA) ? arrA : []).filter((x) => !nonPendingIds.includes(Number(x)));
+                        sessionStorage.setItem('accounting_reapproved_approval_ids', JSON.stringify(nextA));
+                    } catch (_) {}
+                }
+                this.showToast(data.message || `${pendingIds.length} entry(ies) approved successfully`, 'success');
                 const filterSelect = document.getElementById('entryApprovalStatusFilter');
                 const currentFilter = filterSelect ? filterSelect.value : 'all';
                 await this.loadEntryApproval(currentFilter);
