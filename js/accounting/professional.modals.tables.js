@@ -884,9 +884,7 @@
                     txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
                 }
 
-                const totalEl = document.getElementById('modalReportsTotal');
                 const transactionCountEl = document.getElementById('modalReportsTransactionCount');
-                if (totalEl) totalEl.textContent = String(totalEntries);
                 if (transactionCountEl) transactionCountEl.textContent = String(totalEntries);
             } catch (e) {
                 // Keep the modal usable even if summary endpoints fail.
@@ -971,8 +969,9 @@
             const agingCountEl = document.getElementById('modalReportsAgingCount');
             const analysisCountEl = document.getElementById('modalReportsAnalysisCount');
             
-            // Intentionally do not update top summary cards here.
-            // They are live API-driven and handled by loadReportsConnectionSummary().
+            // Keep "Total Reports" as a real report count (catalog/filter),
+            // while money metrics remain live API-driven.
+            if (totalEl) totalEl.textContent = String(visibleCount);
         },
 
         setupSettingsFilters() {
