@@ -5013,34 +5013,34 @@ ProfessionalAccounting.prototype.openReportsModal = function() {
                         <div class="summary-cards-mini">
                             <div class="summary-mini-card">
                                 <h4>Total Reports</h4>
-                                <p id="modalReportsTotal">16</p>
+                                <p id="modalReportsTotal">0</p>
                             </div>
                             <div class="summary-mini-card">
                                 <h4>Financial</h4>
-                                <p id="modalReportsFinancial">9</p>
+                                <p id="modalReportsFinancial">$0.00</p>
                             </div>
                             <div class="summary-mini-card">
                                 <h4>Operational</h4>
-                                <p id="modalReportsOperational">7</p>
+                                <p id="modalReportsOperational">$0.00</p>
                             </div>
                             <div class="summary-entity-card">
                                 <h4>Balance Reports</h4>
-                                <p id="modalReportsBalanceCount">3</p>
+                                <p id="modalReportsBalanceCount">$0.00</p>
                                 <span class="entity-amount" id="modalReportsBalanceHint">Trial Balance, Balance Sheet, Cash Flow Report</span>
                             </div>
                             <div class="summary-entity-card">
                                 <h4>Transaction Reports</h4>
-                                <p id="modalReportsTransactionCount">5</p>
+                                <p id="modalReportsTransactionCount">0</p>
                                 <span class="entity-amount" id="modalReportsTransactionHint">Cash Book, Bank Book, Ledger, Account Statement, Chart</span>
                             </div>
                             <div class="summary-entity-card">
                                 <h4>Aging Reports</h4>
-                                <p id="modalReportsAgingCount">2</p>
+                                <p id="modalReportsAgingCount">0</p>
                                 <span class="entity-amount" id="modalReportsAgingHint">Debt Receivable, Credit Receivable</span>
                             </div>
                             <div class="summary-entity-card">
                                 <h4>Analysis Reports</h4>
-                                <p id="modalReportsAnalysisCount">6</p>
+                                <p id="modalReportsAnalysisCount">$0.00</p>
                                 <span class="entity-amount" id="modalReportsAnalysisHint">Income, Expense, Performance, Equity, Comparative</span>
                             </div>
                         </div>
@@ -5287,6 +5287,34 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                     // Keep base summary values on fallback failure.
                 }
             }
+            if (income === 0 && expense === 0 && profit === 0) {
+                try {
+                    const now = new Date();
+                    const y = now.getFullYear();
+                    const dFrom = `${y}-01-01`;
+                    const dTo = `${y}-12-31`;
+                    const incomeUrl = `${this.apiBase}/reports.php?report=income-statement&date_from=${encodeURIComponent(dFrom)}&date_to=${encodeURIComponent(dTo)}${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                    const expenseUrl = `${this.apiBase}/reports.php?report=expense-statement&date_from=${encodeURIComponent(dFrom)}&date_to=${encodeURIComponent(dTo)}${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                    const [irRes, exRes] = await Promise.all([
+                        fetch(incomeUrl, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } }),
+                        fetch(expenseUrl, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } })
+                    ]);
+                    if (isStale()) return;
+                    const ir = await irRes.json().catch(() => null);
+                    const ex = await exRes.json().catch(() => null);
+                    if (isStale()) return;
+                    const incTotal = Number(ir?.totals?.total_revenue ?? ir?.summary?.total_income ?? ir?.summary?.total_revenue ?? 0);
+                    const expTotal = Number(ex?.totals?.total_expenses ?? ex?.summary?.total_expense ?? ex?.summary?.total_expenses ?? 0);
+                    if (incTotal > 0 || expTotal > 0) {
+                        income = incTotal;
+                        expense = expTotal;
+                        profit = income - expense;
+                        if (cash === 0) cash = profit;
+                    }
+                } catch (_) {
+                    // Keep previous fallback values on failure.
+                }
+            }
             if (balanceHint) {
                 balanceHint.textContent = `Cash ${this.formatCurrency(cash, cur)} | Net ${this.formatCurrency(profit, cur)}${suffix}`;
             }
@@ -5463,16 +5491,8 @@ ProfessionalAccounting.prototype.filterReports = function() {
         const agingCountEl = document.getElementById('modalReportsAgingCount');
         const analysisCountEl = document.getElementById('modalReportsAnalysisCount');
         
-        const liveSummaryLocked = !!document.querySelector('#modalReportsGrid[data-live-summary-lock="1"]');
-        if (this._reportsSummaryUsesCatalogCounts !== false && !liveSummaryLocked) {
-            if (totalEl) totalEl.textContent = visibleCount;
-            if (financialEl) financialEl.textContent = financialCount;
-            if (operationalEl) operationalEl.textContent = operationalCount;
-            if (balanceCountEl) balanceCountEl.textContent = balanceCount;
-            if (transactionCountEl) transactionCountEl.textContent = transactionCount;
-            if (agingCountEl) agingCountEl.textContent = agingCount;
-            if (analysisCountEl) analysisCountEl.textContent = analysisCount;
-        }
+        // Intentionally do not update top summary cards here.
+        // They are live API-driven and handled by loadReportsConnectionSummary().
     }
 
 ProfessionalAccounting.prototype.openSettingsModal = async function() {
