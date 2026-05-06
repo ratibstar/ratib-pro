@@ -318,6 +318,83 @@ try {
             }
         }
 
+        // Final ledger-line fallback: derive from posted journal_entry_lines when
+        // financial_transactions/general_ledger summaries are unavailable.
+        $currentRevenue = floatval($revenue['total_revenue'] ?? 0);
+        $currentExpenses = floatval($expenses['total_expenses'] ?? 0);
+        if ($currentRevenue == 0.0 && $currentExpenses == 0.0) {
+            $jelRevenue = 0.0;
+            $jelExpenses = 0.0;
+
+            $jeTable = $conn->query("SHOW TABLES LIKE 'journal_entries'");
+            $jelTable = $conn->query("SHOW TABLES LIKE 'journal_entry_lines'");
+            $faTable = $conn->query("SHOW TABLES LIKE 'financial_accounts'");
+            if ($jeTable && $jeTable->num_rows > 0 && $jelTable && $jelTable->num_rows > 0 && $faTable && $faTable->num_rows > 0) {
+                $jelColsRes = $conn->query("SHOW COLUMNS FROM journal_entry_lines");
+                $jelCols = [];
+                if ($jelColsRes) {
+                    while ($c = $jelColsRes->fetch_assoc()) {
+                        $jelCols[] = strtolower((string)($c['Field'] ?? ''));
+                    }
+                    $jelColsRes->free();
+                }
+                $debitCol = in_array('debit_amount', $jelCols, true) ? 'debit_amount' : (in_array('debit', $jelCols, true) ? 'debit' : null);
+                $creditCol = in_array('credit_amount', $jelCols, true) ? 'credit_amount' : (in_array('credit', $jelCols, true) ? 'credit' : null);
+
+                if ($debitCol !== null && $creditCol !== null) {
+                    $postedWhere = "(je.status = 'Posted' OR je.status = 'Approved')";
+
+                    $revSql = "
+                        SELECT COALESCE(SUM(jel.`{$creditCol}` - jel.`{$debitCol}`), 0) AS total_revenue
+                        FROM journal_entry_lines jel
+                        INNER JOIN journal_entries je ON je.id = jel.journal_entry_id
+                        INNER JOIN financial_accounts fa ON fa.id = jel.account_id
+                        WHERE {$postedWhere}
+                          AND (
+                            fa.account_type = 'REVENUE'
+                            OR fa.account_code LIKE '4%'
+                          )
+                    ";
+                    $revStmt = $conn->prepare($revSql);
+                    if ($revStmt) {
+                        $revStmt->execute();
+                        $revRow = $revStmt->get_result()->fetch_assoc();
+                        $jelRevenue = floatval($revRow['total_revenue'] ?? 0);
+                        $revStmt->close();
+                    }
+
+                    $expSql = "
+                        SELECT COALESCE(SUM(jel.`{$debitCol}` - jel.`{$creditCol}`), 0) AS total_expenses
+                        FROM journal_entry_lines jel
+                        INNER JOIN journal_entries je ON je.id = jel.journal_entry_id
+                        INNER JOIN financial_accounts fa ON fa.id = jel.account_id
+                        WHERE {$postedWhere}
+                          AND (
+                            fa.account_type = 'EXPENSE'
+                            OR fa.account_code LIKE '5%'
+                          )
+                    ";
+                    $expStmt = $conn->prepare($expSql);
+                    if ($expStmt) {
+                        $expStmt->execute();
+                        $expRow = $expStmt->get_result()->fetch_assoc();
+                        $jelExpenses = floatval($expRow['total_expenses'] ?? 0);
+                        $expStmt->close();
+                    }
+                }
+            }
+            if ($jeTable instanceof mysqli_result) $jeTable->free();
+            if ($jelTable instanceof mysqli_result) $jelTable->free();
+            if ($faTable instanceof mysqli_result) $faTable->free();
+
+            if ($jelRevenue > 0 || $jelExpenses > 0) {
+                $revenue['total_revenue'] = $jelRevenue;
+                $expenses['total_expenses'] = $jelExpenses;
+                $revenue['revenue_count'] = intval($jelRevenue > 0 ? 1 : 0);
+                $expenses['expense_count'] = intval($jelExpenses > 0 ? 1 : 0);
+            }
+        }
+
         // Prior rolling 30-day window (days 31–60 ago) for % change vs current 30 days
         $prevRevenue = 0.0;
         $stmt = $conn->prepare("
