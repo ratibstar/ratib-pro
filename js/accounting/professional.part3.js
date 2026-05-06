@@ -1,6 +1,6 @@
 /**
  * EN: Implements frontend interaction behavior in `js/accounting/professional.part3.js`.
- * AR: ينفذ سلوك تفاعلات الواجهة الأمامية في `js/accounting/professional.part3.js`.
+ * AR: Implements frontend interaction behavior in `js/accounting/professional.part3.js`.
  */
 /** Professional Accounting - Part 3 (lines 10199-15198) */
 

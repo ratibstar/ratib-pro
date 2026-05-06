@@ -1,6 +1,6 @@
 /**
  * EN: Implements frontend interaction behavior in `js/accounting/professional.part1.js`.
- * AR: ينفذ سلوك تفاعلات الواجهة الأمامية في `js/accounting/professional.part1.js`.
+ * AR: Implements frontend interaction behavior in `js/accounting/professional.part1.js`.
  */
 /** Professional Accounting - Part 1 (lines 199-5198) */
 ProfessionalAccounting.prototype.cleanupStrayOverlays = function() {

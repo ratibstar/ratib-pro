@@ -1,6 +1,6 @@
 /**
  * EN: Implements frontend interaction behavior in `js/accounting/professional.management.js`.
- * AR: ينفذ سلوك تفاعلات الواجهة الأمامية في `js/accounting/professional.management.js`.
+ * AR: Implements frontend interaction behavior in `js/accounting/professional.management.js`.
  */
 /**
  * Professional Accounting - Management
@@ -3875,6 +3875,74 @@
                 }
             } catch (error) {
                 this.showToast('Failed to load bank guarantee data', 'error');
+            }
+        },
+
+        async saveEntryApproval(id) {
+            try {
+                const entryNumberEl = document.getElementById('entryApprovalNumber');
+                const entryDateEl = document.getElementById('entryApprovalDate');
+                const descriptionEl = document.getElementById('entryApprovalDescription');
+                const debitAmountEl = document.getElementById('entryApprovalDebit');
+                const creditAmountEl = document.getElementById('entryApprovalCredit');
+                const currencyEl = document.getElementById('entryApprovalCurrency');
+
+                if (!entryNumberEl || !entryDateEl) {
+                    this.showToast('Form fields not found', 'error');
+                    return;
+                }
+
+                const entryNumber = entryNumberEl.value.trim();
+                const entryDate = entryDateEl.value;
+                const description = descriptionEl ? descriptionEl.value.trim() : '';
+                const debitAmount = debitAmountEl ? parseFloat(debitAmountEl.value || 0) : 0;
+                const creditAmount = creditAmountEl ? parseFloat(creditAmountEl.value || 0) : 0;
+                const currency = currencyEl ? currencyEl.value : 'SAR';
+
+                if (!entryNumber || !entryDate) {
+                    this.showToast('Entry number and date are required', 'error');
+                    return;
+                }
+
+                if (debitAmount <= 0 && creditAmount <= 0) {
+                    this.showToast('Either Debit or Credit amount must be greater than 0', 'error');
+                    return;
+                }
+
+                const entryId = Number(id || document.getElementById('entryApprovalId')?.value || 0);
+                if (!entryId) {
+                    this.showToast('Invalid entry ID', 'error');
+                    return;
+                }
+
+                this.showToast('Updating entry...', 'info');
+                const response = await fetch(`${this.apiBase}/entry-approval.php?id=${entryId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        entry_number: entryNumber,
+                        entry_date: entryDate,
+                        description: description,
+                        debit_amount: debitAmount,
+                        credit_amount: creditAmount,
+                        currency: currency
+                    })
+                });
+                const data = await response.json().catch(() => ({ success: false, message: `HTTP ${response.status}` }));
+                if (!response.ok || !data.success) {
+                    this.showToast(data.message || `Failed to update entry (HTTP ${response.status})`, 'error');
+                    return;
+                }
+
+                this.showToast(data.message || 'Entry updated successfully', 'success');
+                if (typeof this.closeModal === 'function') {
+                    this.closeModal('entryApprovalFormModal', false);
+                }
+                const filterSelect = document.getElementById('entryApprovalStatusFilter');
+                await this.loadEntryApproval(filterSelect ? filterSelect.value : 'all');
+            } catch (error) {
+                this.showToast('Error updating entry: ' + (error && error.message ? error.message : error), 'error');
             }
         },
 

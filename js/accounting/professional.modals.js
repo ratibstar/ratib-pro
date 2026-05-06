@@ -1,6 +1,6 @@
 /**
  * EN: Implements frontend interaction behavior in `js/accounting/professional.modals.js`.
- * AR: ينفذ سلوك تفاعلات الواجهة الأمامية في `js/accounting/professional.modals.js`.
+ * AR: Implements frontend interaction behavior in `js/accounting/professional.modals.js`.
  */
 /**
  * Professional Accounting - Modals
