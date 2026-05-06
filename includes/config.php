@@ -1323,7 +1323,11 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
                     if ($countryIdForHelper <= 0 && $sessionCountryId > 0) {
                         $countryIdForHelper = $sessionCountryId;
                     }
-                    $acct = function_exists('getAgencyDbConnection')
+                    // Hard bind selected agency to its own DB credentials.
+                    // When an explicit agency is selected, do not allow helper-level
+                    // country/shared fallback connections that can blend tenant data.
+                    $forceDirectAgencyDb = $effectiveAgencyId > 0;
+                    $acct = (!$forceDirectAgencyDb && function_exists('getAgencyDbConnection'))
                         ? getAgencyDbConnection($row, $countryIdForHelper)
                         : null;
                     if (!$acct || empty($acct['conn']) || !($acct['conn'] instanceof mysqli)) {
