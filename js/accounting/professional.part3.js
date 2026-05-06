@@ -4998,7 +4998,7 @@ ProfessionalAccounting.prototype.openReportsModal = function() {
                             <div class="summary-entity-card">
                                 <h4>Transaction Reports</h4>
                                 <p id="modalReportsTransactionCount">0</p>
-                                <span class="entity-amount text-muted" id="modalReportsTransactionHint">— transaction entries available</span>
+                                <span class="entity-amount text-muted" id="modalReportsTransactionHint">— journal entries available</span>
                             </div>
                             <div class="summary-entity-card">
                                 <h4>Aging Reports</h4>
@@ -5213,7 +5213,7 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             if (balanceHint) balanceHint.textContent = `Cash — | Net —${suffix}`;
             if (agingHint) agingHint.textContent = `AR — | AP —${suffix}`;
             if (analysisHint) analysisHint.textContent = `Revenue — | Expense —${suffix}`;
-            if (txHint) txHint.textContent = `— transaction entries available${suffix}`;
+            if (txHint) txHint.textContent = `— journal entries available${suffix}`;
 
             const summaryUrl = `${this.apiBase}/unified-calculations.php?type=all${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
             const summaryRes = await fetch(summaryUrl, {
@@ -5365,94 +5365,28 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             if (agingCountEl) agingCountEl.textContent = String(receivablesCount + payablesCount);
             if (analysisCountEl) analysisCountEl.textContent = this.formatCurrency(profit, cur);
 
-            let totalEntries = Number(summary?.ledger?.entry_count || 0);
+            // STRICT SINGLE-SOURCE MODE:
+            // Use only journal-entries API for entry counters to avoid overlap/double counting.
+            let totalEntries = 0;
             try {
-                const glStart = '2000-01-01';
-                const glEnd = new Date().toISOString().slice(0, 10);
-                const glCountUrl = `${this.apiBase}/reports.php?type=general-ledger&start_date=${encodeURIComponent(glStart)}&end_date=${encodeURIComponent(glEnd)}${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
-                const glCountRes = await fetch(glCountUrl, {
+                const jeUrl = `${this.apiBase}/journal-entries.php?_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`;
+                const jeRes = await fetch(jeUrl, {
                     credentials: 'include',
                     cache: 'no-cache',
                     headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                 });
                 if (isStale()) return;
-                const glCountData = await glCountRes.json().catch(() => null);
+                const je = await jeRes.json().catch(() => null);
                 if (isStale()) return;
-                const accounts = Array.isArray(glCountData?.report?.accounts) ? glCountData.report.accounts : [];
-                if (accounts.length > 0) {
-                    const glTotalTransactions = accounts.reduce((n, a) => {
-                        const tx = a && Array.isArray(a.transactions) ? a.transactions : [];
-                        return n + tx.length;
-                    }, 0);
-                    if (glTotalTransactions > 0) {
-                        totalEntries = Math.max(totalEntries, glTotalTransactions);
-                    }
-                }
-            } catch (_) {}
-            if (txHint) {
-                try {
-                    const txUrl = `${this.apiBase}/transactions.php?limit=1&page=1${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
-                    const txRes = await fetch(txUrl, {
-                        credentials: 'include',
-                        cache: 'no-cache',
-                        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-                    });
-                    if (isStale()) return;
-                    const tx = await txRes.json().catch(() => null);
-                    if (isStale()) return;
-                    totalEntries = Math.max(
-                        totalEntries,
-                        Number(tx?.total_count || tx?.total || tx?.count || 0)
-                    );
-                const txIncome = Number(tx?.summary?.total_income || 0);
-                const txExpense = Number(tx?.summary?.total_expenses || 0);
-                if (income === 0 && expense === 0 && profit === 0 && (txIncome > 0 || txExpense > 0)) {
-                    income = txIncome;
-                    expense = txExpense;
-                    profit = income - expense;
-                    if (cash === 0) cash = profit;
-                }
-                } catch (_) {}
+                totalEntries = Number(
+                    je?.total_count ||
+                    je?.total ||
+                    je?.count ||
+                    (Array.isArray(je?.entries) ? je.entries.length : 0)
+                ) || 0;
+            } catch (_) {
+                totalEntries = 0;
             }
-            let jeCountForFast = 0;
-            if (txHint && totalEntries <= 0) {
-                try {
-                    const jeUrl = `${this.apiBase}/journal-entries.php?limit=1&page=1${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
-                    const jeRes = await fetch(jeUrl, {
-                        credentials: 'include',
-                        cache: 'no-cache',
-                        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-                    });
-                    if (isStale()) return;
-                    const je = await jeRes.json().catch(() => null);
-                    if (isStale()) return;
-                    const jeCount = Number(je?.total_count || je?.total || je?.count || (Array.isArray(je?.entries) ? je.entries.length : 0));
-                    jeCountForFast = Math.max(jeCountForFast, jeCount);
-                    if (jeCount > 0) {
-                        totalEntries = jeCount;
-                    }
-                } catch (_) {}
-            }
-            // Fast reactive counter: JE + Receipt Vouchers + Payment Vouchers
-            try {
-                const [jeAllRes, rcRes, pyRes] = await Promise.all([
-                    fetch(`${this.apiBase}/journal-entries.php?_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } }),
-                    fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=receipt&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } }),
-                    fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=payment&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } })
-                ]);
-                if (isStale()) return;
-                const jeAll = await jeAllRes.json().catch(() => null);
-                const rcAll = await rcRes.json().catch(() => null);
-                const pyAll = await pyRes.json().catch(() => null);
-                if (isStale()) return;
-                const jeFast = Number(jeAll?.total_count || jeAll?.total || jeAll?.count || (Array.isArray(jeAll?.entries) ? jeAll.entries.length : 0)) || jeCountForFast;
-                const rcCount = Number(rcAll?.total_count || rcAll?.total || rcAll?.count || (Array.isArray(rcAll?.vouchers) ? rcAll.vouchers.length : 0));
-                const pyCount = Number(pyAll?.total_count || pyAll?.total || pyAll?.count || (Array.isArray(pyAll?.vouchers) ? pyAll.vouchers.length : 0));
-                const fastCombined = Math.max(0, jeFast) + Math.max(0, rcCount) + Math.max(0, pyCount);
-                if (fastCombined > 0) {
-                    totalEntries = Math.max(totalEntries, fastCombined);
-                }
-            } catch (_) {}
 
             const summaryKey = agencyId || 'default';
             this._reportsLastGoodSummary = this._reportsLastGoodSummary || {};
@@ -5500,7 +5434,7 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             }
 
             if (txHint) {
-                txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
+                txHint.textContent = `${totalEntries} journal entries available${suffix}`;
             }
 
             const totalEl = document.getElementById('modalReportsTotal');
