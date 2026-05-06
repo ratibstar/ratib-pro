@@ -178,8 +178,18 @@ try {
                 }
 
                 $where = ["COALESCE(`{$amountCol}`, 0) > 0"];
+                $approvalParts = [];
                 if (in_array('status', $cols, true)) {
-                    $where[] = "(`status` IS NULL OR `status` = '' OR `status` NOT IN ('Cancelled', 'Voided', 'Reversed'))";
+                    $approvalParts[] = "LOWER(TRIM(COALESCE(`status`, ''))) IN ('approved', 'posted')";
+                }
+                if (in_array('posting_status', $cols, true)) {
+                    $approvalParts[] = "LOWER(TRIM(COALESCE(`posting_status`, ''))) IN ('approved', 'posted')";
+                }
+                if (in_array('is_posted', $cols, true)) {
+                    $approvalParts[] = "COALESCE(`is_posted`, 0) = 1";
+                }
+                if (!empty($approvalParts)) {
+                    $where[] = '(' . implode(' OR ', $approvalParts) . ')';
                 }
                 $sql = "SELECT COALESCE(SUM(`{$amountCol}`), 0) AS {$alias} FROM `{$tableName}` WHERE " . implode(' AND ', $where);
                 $stmt = $conn->prepare($sql);

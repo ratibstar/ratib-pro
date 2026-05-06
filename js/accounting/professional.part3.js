@@ -4998,7 +4998,7 @@ ProfessionalAccounting.prototype.openReportsModal = function() {
                             <div class="summary-entity-card">
                                 <h4>Transaction Reports</h4>
                                 <p id="modalReportsTransactionCount">0</p>
-                                <span class="entity-amount text-muted" id="modalReportsTransactionHint">— journal entries available</span>
+                                <span class="entity-amount text-muted" id="modalReportsTransactionHint">— transaction entries available</span>
                             </div>
                             <div class="summary-entity-card">
                                 <h4>Aging Reports</h4>
@@ -5213,7 +5213,7 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             if (balanceHint) balanceHint.textContent = `Cash — | Net —${suffix}`;
             if (agingHint) agingHint.textContent = `AR — | AP —${suffix}`;
             if (analysisHint) analysisHint.textContent = `Revenue — | Expense —${suffix}`;
-            if (txHint) txHint.textContent = `— journal entries available${suffix}`;
+            if (txHint) txHint.textContent = `— transaction entries available${suffix}`;
 
             const summaryUrl = `${this.apiBase}/unified-calculations.php?type=all${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
             const summaryRes = await fetch(summaryUrl, {
@@ -5374,12 +5374,12 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                         cache: 'no-cache',
                         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                     }),
-                    fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=receipt&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, {
+                    fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=receipt&action=list&per_page=5000&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, {
                         credentials: 'include',
                         cache: 'no-cache',
                         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                     }),
-                    fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=payment&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, {
+                    fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=payment&action=list&per_page=5000&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, {
                         credentials: 'include',
                         cache: 'no-cache',
                         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
@@ -5391,8 +5391,18 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                 const py = await pyRes.json().catch(() => null);
                 if (isStale()) return;
                 const jeCount = Number(je?.total_count || je?.total || je?.count || (Array.isArray(je?.entries) ? je.entries.length : 0)) || 0;
-                const rcCount = Number(rc?.total_count || rc?.total || rc?.count || (Array.isArray(rc?.vouchers) ? rc.vouchers.length : 0)) || 0;
-                const pyCount = Number(py?.total_count || py?.total || py?.count || (Array.isArray(py?.vouchers) ? py.vouchers.length : 0)) || 0;
+                const countApproved = (rows) => (Array.isArray(rows) ? rows.filter((v) => {
+                    const s = String(v?.status || '').trim().toLowerCase();
+                    const ps = String(v?.posting_status || '').trim().toLowerCase();
+                    const posted = Number(v?.is_posted || 0) === 1;
+                    return posted || s === 'approved' || s === 'posted' || ps === 'approved' || ps === 'posted';
+                }).length : 0);
+                const rcCount = Array.isArray(rc?.vouchers)
+                    ? countApproved(rc.vouchers)
+                    : (Number(rc?.total_count || rc?.total || rc?.count || 0) || 0);
+                const pyCount = Array.isArray(py?.vouchers)
+                    ? countApproved(py.vouchers)
+                    : (Number(py?.total_count || py?.total || py?.count || 0) || 0);
                 totalEntries = Math.max(0, jeCount) + Math.max(0, rcCount) + Math.max(0, pyCount);
             } catch (_) {
                 totalEntries = 0;
@@ -5444,7 +5454,7 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             }
 
             if (txHint) {
-                txHint.textContent = `${totalEntries} journal entries available${suffix}`;
+                txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
             }
 
             const totalEl = document.getElementById('modalReportsTotal');

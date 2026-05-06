@@ -425,7 +425,7 @@
                                 <div class="summary-entity-card">
                                     <h4>Transaction Reports</h4>
                                     <p id="modalReportsTransactionCount">0</p>
-                                    <span class="entity-amount text-muted" id="modalReportsTransactionHint">— journal entries available</span>
+                                    <span class="entity-amount text-muted" id="modalReportsTransactionHint">— transaction entries available</span>
                                 </div>
                                 <div class="summary-entity-card">
                                     <h4>Aging Reports</h4>
@@ -640,7 +640,7 @@
                 if (balanceHint) balanceHint.textContent = `Cash — | Net —${suffix}`;
                 if (agingHint) agingHint.textContent = `AR — | AP —${suffix}`;
                 if (analysisHint) analysisHint.textContent = `Revenue — | Expense —${suffix}`;
-                if (txHint) txHint.textContent = `— journal entries available${suffix}`;
+                if (txHint) txHint.textContent = `— transaction entries available${suffix}`;
 
                 const summaryUrl = `${this.apiBase}/unified-calculations.php?type=all${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
                 const summaryRes = await fetch(summaryUrl, {
@@ -801,12 +801,12 @@
                             cache: 'no-cache',
                             headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                         }),
-                        fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=receipt&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, {
+                        fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=receipt&action=list&per_page=5000&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, {
                             credentials: 'include',
                             cache: 'no-cache',
                             headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                         }),
-                        fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=payment&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, {
+                        fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=payment&action=list&per_page=5000&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, {
                             credentials: 'include',
                             cache: 'no-cache',
                             headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
@@ -818,8 +818,18 @@
                     const py = await pyRes.json().catch(() => null);
                     if (isStale()) return;
                     const jeCount = Number(je?.total_count || je?.total || je?.count || (Array.isArray(je?.entries) ? je.entries.length : 0)) || 0;
-                    const rcCount = Number(rc?.total_count || rc?.total || rc?.count || (Array.isArray(rc?.vouchers) ? rc.vouchers.length : 0)) || 0;
-                    const pyCount = Number(py?.total_count || py?.total || py?.count || (Array.isArray(py?.vouchers) ? py.vouchers.length : 0)) || 0;
+                    const countApproved = (rows) => (Array.isArray(rows) ? rows.filter((v) => {
+                        const s = String(v?.status || '').trim().toLowerCase();
+                        const ps = String(v?.posting_status || '').trim().toLowerCase();
+                        const posted = Number(v?.is_posted || 0) === 1;
+                        return posted || s === 'approved' || s === 'posted' || ps === 'approved' || ps === 'posted';
+                    }).length : 0);
+                    const rcCount = Array.isArray(rc?.vouchers)
+                        ? countApproved(rc.vouchers)
+                        : (Number(rc?.total_count || rc?.total || rc?.count || 0) || 0);
+                    const pyCount = Array.isArray(py?.vouchers)
+                        ? countApproved(py.vouchers)
+                        : (Number(py?.total_count || py?.total || py?.count || 0) || 0);
                     totalEntries = Math.max(0, jeCount) + Math.max(0, rcCount) + Math.max(0, pyCount);
                 } catch (_) {
                     totalEntries = 0;
@@ -871,7 +881,7 @@
                 }
 
                 if (txHint) {
-                    txHint.textContent = `${totalEntries} journal entries available${suffix}`;
+                    txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
                 }
 
                 const totalEl = document.getElementById('modalReportsTotal');
@@ -3511,6 +3521,9 @@
                                 <button class="btn btn-secondary btn-sm" data-action="refresh-vouchers">
                                     <i class="fas fa-sync"></i> Refresh
                                 </button>
+                                <button class="btn btn-outline-primary btn-sm" data-action="open-voucher-approval-table">
+                                    <i class="fas fa-check-double"></i> Approval Table
+                                </button>
                                 </div>
                             <div class="table-wrapper-modern">
                                 <table class="table-modern" id="vouchersTable">
@@ -3558,6 +3571,10 @@
                 refreshBtn.addEventListener('click', () => {
                     this.loadVouchers();
                 });
+            }
+            const approvalBtn = modal.querySelector('[data-action="open-voucher-approval-table"]');
+            if (approvalBtn) {
+                approvalBtn.addEventListener('click', () => this.openVoucherApprovalTableModal());
             }
             
             // New payment voucher button
@@ -3612,6 +3629,179 @@
                     this.deleteVoucher(id, type);
                 });
             });
+        },
+
+        openVoucherApprovalTableModal() {
+            const content = `
+                <div class="accounting-module-modal-content">
+                    <div class="module-content">
+                        <div class="filters-bar filters-bar-compact">
+                            <button class="btn btn-success btn-sm" id="voucherApprovalApproveSelected">
+                                <i class="fas fa-check"></i> Approve Selected
+                            </button>
+                            <button class="btn btn-danger btn-sm" id="voucherApprovalRejectSelected">
+                                <i class="fas fa-times"></i> Reject Selected
+                            </button>
+                            <button class="btn btn-secondary btn-sm" id="voucherApprovalRefresh">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="table-wrapper-modern">
+                            <table class="table-modern" id="voucherApprovalTable">
+                                <thead>
+                                    <tr>
+                                        <th><input type="checkbox" id="voucherApprovalSelectAll"></th>
+                                        <th>Type</th>
+                                        <th>Voucher #</th>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Description</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="voucherApprovalTableBody">
+                                    <tr><td colspan="8" class="loading-row"><i class="fas fa-spinner fa-spin"></i> Loading pending vouchers...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            this.showModal('Vouchers Approval Table', content, 'large', 'voucherApprovalModal');
+            setTimeout(() => {
+                this.loadVoucherApprovalTable();
+                this.setupVoucherApprovalHandlers();
+            }, 100);
+        },
+
+        setupVoucherApprovalHandlers() {
+            const modal = document.getElementById('voucherApprovalModal');
+            if (!modal) return;
+            const refreshBtn = modal.querySelector('#voucherApprovalRefresh');
+            if (refreshBtn) refreshBtn.addEventListener('click', () => this.loadVoucherApprovalTable());
+            const selectAll = modal.querySelector('#voucherApprovalSelectAll');
+            if (selectAll) {
+                selectAll.addEventListener('change', (e) => {
+                    modal.querySelectorAll('.voucher-approval-select').forEach(cb => { cb.checked = e.target.checked; });
+                });
+            }
+            const approveSelected = modal.querySelector('#voucherApprovalApproveSelected');
+            if (approveSelected) {
+                approveSelected.addEventListener('click', async () => {
+                    const selected = Array.from(modal.querySelectorAll('.voucher-approval-select:checked'));
+                    if (!selected.length) return this.showToast('Select vouchers first', 'warning');
+                    await this.processVoucherApprovalRows(selected, 'approve');
+                });
+            }
+            const rejectSelected = modal.querySelector('#voucherApprovalRejectSelected');
+            if (rejectSelected) {
+                rejectSelected.addEventListener('click', async () => {
+                    const selected = Array.from(modal.querySelectorAll('.voucher-approval-select:checked'));
+                    if (!selected.length) return this.showToast('Select vouchers first', 'warning');
+                    await this.processVoucherApprovalRows(selected, 'reject');
+                });
+            }
+        },
+
+        async loadVoucherApprovalTable() {
+            const tbody = document.getElementById('voucherApprovalTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="8" class="loading-row"><i class="fas fa-spinner fa-spin"></i> Loading pending vouchers...</td></tr>';
+            try {
+                const [paymentRes, receiptRes] = await Promise.all([
+                    fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=payment&action=list&status=Draft&per_page=5000`, { credentials: 'include' }),
+                    fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=receipt&action=list&status=Draft&per_page=5000`, { credentials: 'include' })
+                ]);
+                const paymentData = await paymentRes.json().catch(() => null);
+                const receiptData = await receiptRes.json().catch(() => null);
+                const payments = Array.isArray(paymentData?.vouchers) ? paymentData.vouchers : [];
+                const receipts = Array.isArray(receiptData?.vouchers) ? receiptData.vouchers : [];
+                const rows = [
+                    ...payments.map(v => ({ ...v, _type: 'payment' })),
+                    ...receipts.map(v => ({ ...v, _type: 'receipt' }))
+                ].sort((a, b) => String(b.voucher_date || '').localeCompare(String(a.voucher_date || '')));
+
+                if (!rows.length) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center">No pending vouchers for approval.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = rows.map(v => {
+                    const id = Number(v.id || 0);
+                    const type = v._type === 'payment' ? 'Payment Voucher' : 'Receipt Voucher';
+                    const number = this.escapeHtml(v.voucher_number || v.receipt_number || `#${id}`);
+                    const date = this.escapeHtml(v.voucher_date || v.payment_date || '');
+                    const amount = this.formatCurrency(Number(v.amount || 0), v.currency || this.getDefaultCurrencySync());
+                    const status = this.escapeHtml(v.status || 'Draft');
+                    const desc = this.escapeHtml(v.description || v.notes || '');
+                    return `
+                        <tr>
+                            <td><input type="checkbox" class="voucher-approval-select" data-id="${id}" data-type="${v._type}"></td>
+                            <td>${type}</td>
+                            <td>${number}</td>
+                            <td>${date}</td>
+                            <td>${amount}</td>
+                            <td><span class="badge badge-warning">${status}</span></td>
+                            <td>${desc}</td>
+                            <td>
+                                <button class="btn btn-success btn-xs" data-action="voucher-approve-one" data-id="${id}" data-type="${v._type}"><i class="fas fa-check"></i></button>
+                                <button class="btn btn-danger btn-xs" data-action="voucher-reject-one" data-id="${id}" data-type="${v._type}"><i class="fas fa-times"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tbody.querySelectorAll('[data-action="voucher-approve-one"]').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        await this.processSingleVoucherApproval(e.currentTarget.dataset.id, e.currentTarget.dataset.type, 'approve');
+                    });
+                });
+                tbody.querySelectorAll('[data-action="voucher-reject-one"]').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        await this.processSingleVoucherApproval(e.currentTarget.dataset.id, e.currentTarget.dataset.type, 'reject');
+                    });
+                });
+            } catch (error) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Failed to load approval table.</td></tr>';
+            }
+        },
+
+        async processSingleVoucherApproval(id, type, action) {
+            const fakeCheckbox = { dataset: { id: String(id), type: String(type) } };
+            await this.processVoucherApprovalRows([fakeCheckbox], action);
+        },
+
+        async processVoucherApprovalRows(items, action) {
+            let successCount = 0;
+            for (const item of items) {
+                const id = Number(item.dataset.id || 0);
+                const type = String(item.dataset.type || '');
+                if (!id || !type) continue;
+                try {
+                    let res;
+                    if (action === 'approve') {
+                        res = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&action=post&id=${id}`, {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({})
+                        });
+                    } else {
+                        res = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&id=${id}`, {
+                            method: 'PUT',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: 'Rejected' })
+                        });
+                    }
+                    const data = await res.json().catch(() => null);
+                    if (data?.success) successCount++;
+                } catch (_) {}
+            }
+            this.showToast(`${successCount} voucher(s) ${action === 'approve' ? 'approved' : 'rejected'}`, successCount ? 'success' : 'warning');
+            await this.loadVoucherApprovalTable();
+            if (typeof this.loadVouchers === 'function') this.loadVouchers();
+            if (typeof this.loadReportsConnectionSummary === 'function') this.loadReportsConnectionSummary();
         },
 
         async viewVoucher(voucherId, voucherType) {
