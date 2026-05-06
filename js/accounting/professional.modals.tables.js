@@ -652,8 +652,6 @@
                 const summary = await summaryRes.json().catch(() => null);
                 if (isStale()) return;
                 if (!summary || !summary.success) return;
-                const dbTag = summary?.tenant_debug?.db ? ` | db:${summary.tenant_debug.db}` : '';
-
                 const cur = this.normalizeCurrencyCode(summary?.dashboard?.currency) || this.getDefaultCurrencySync();
                 let cash = Number(summary?.dashboard?.cash_balance || 0);
                 const receivables = Number(summary?.dashboard?.total_receivables || 0);
@@ -738,6 +736,15 @@
                         // Keep previous fallback values on failure.
                     }
                 }
+
+                // Normalize: expense should not be negative for display/Net calc.
+                if (Number.isFinite(expense) && expense < 0) {
+                    expense = Math.abs(expense);
+                }
+                if (Number.isFinite(income) && income < 0) {
+                    income = Math.abs(income);
+                }
+                profit = income - expense;
                 if (income === 0 && expense === 0 && profit === 0) {
                     try {
                         const glStart = '2000-01-01';
@@ -764,13 +771,13 @@
                     }
                 }
                 if (balanceHint) {
-                    balanceHint.textContent = `Cash ${this.formatCurrency(cash, cur)} | Net ${this.formatCurrency(profit, cur)}${suffix}${dbTag}`;
+                    balanceHint.textContent = `Cash ${this.formatCurrency(cash, cur)} | Net ${this.formatCurrency(profit, cur)}${suffix}`;
                 }
                 if (agingHint) {
                     agingHint.textContent = `AR ${this.formatCurrency(receivables, cur)} | AP ${this.formatCurrency(payables, cur)}${suffix}`;
                 }
                 if (analysisHint) {
-                    analysisHint.textContent = `Revenue ${this.formatCurrency(income, cur)} | Expense ${this.formatCurrency(expense, cur)}${suffix}${dbTag}`;
+                    analysisHint.textContent = `Revenue ${this.formatCurrency(income, cur)} | Expense ${this.formatCurrency(expense, cur)}${suffix}`;
                 }
 
                 // Update financial cards independently from transactions endpoint.

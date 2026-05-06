@@ -984,12 +984,6 @@ try {
         ];
     }
     
-    $response['tenant_debug'] = [
-        'db' => (string)($GLOBALS['agency_db']['db'] ?? DB_NAME),
-        'agency_id_get' => isset($_GET['agency_id']) ? (int)$_GET['agency_id'] : 0,
-        'agency_id_session' => isset($_SESSION['agency_id']) ? (int)$_SESSION['agency_id'] : 0,
-        'control' => !empty($_GET['control']) && (string)$_GET['control'] === '1' ? 1 : 0
-    ];
     $response['success'] = true;
     $response['timestamp'] = date('Y-m-d H:i:s');
     
