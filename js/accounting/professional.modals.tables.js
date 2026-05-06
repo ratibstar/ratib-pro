@@ -2600,6 +2600,11 @@
                 btn.addEventListener('click', async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    const fromLedger = !!e.target.closest('#generalLedgerModal');
+                    if (!fromLedger) {
+                        this.showToast('Re-Approve is available only in General Ledger', 'info');
+                        return;
+                    }
                     const id = parseInt(e.target.closest('button').dataset.id);
                     const reasonChoices = [
                         'Correction validated',
@@ -5918,9 +5923,17 @@
                                     <button class="action-btn view" data-action="view-entry" data-id="${entry.id}" data-source="${entry.source || 'journal'}" data-permission="view_journal_entries" title="View Entry">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve">
-                                        <i class="fas fa-undo"></i>
-                                    </button>
+                                    ${(() => {
+                                        let persisted = [];
+                                        try {
+                                            persisted = JSON.parse(sessionStorage.getItem('accounting_reapproved_journal_ids') || '[]');
+                                        } catch (_) {}
+                                        const isReapproved = (this._reapprovedEntryIds && this._reapprovedEntryIds.has(Number(entry.id))) ||
+                                            (Array.isArray(persisted) && persisted.includes(Number(entry.id)));
+                                        return isReapproved
+                                            ? `<button class="action-btn reapproved" title="Re-Approved" disabled><i class="fas fa-check-double"></i></button>`
+                                            : `<button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve"><i class="fas fa-undo"></i></button>`;
+                                    })()}
                                     ${entry.source === 'transaction' ? `<button class="action-btn edit" data-action="edit-entity-transaction" data-id="${entry.id}" data-permission="edit_journal_entry" title="Edit Entry"><i class="fas fa-edit"></i></button>` : `<button class="action-btn edit" data-action="edit-entry" data-id="${entry.id}" data-permission="edit_journal_entry" title="Edit Entry"><i class="fas fa-edit"></i></button>`}
                                     <button class="action-btn print" data-action="print-entry" data-id="${entry.id || entry.entry_number || ''}" data-source="${entry.source || 'journal'}" title="Print Entry">
                                         <i class="fas fa-print"></i>
