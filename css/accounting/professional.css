@@ -11236,9 +11236,9 @@ input.date-input {
 
 #entryApprovalModal #entryApprovalTable.professional-ledger-table th:nth-child(8),
 #entryApprovalModal #entryApprovalTable.professional-ledger-table td:nth-child(8) {
-    width: 160px !important; /* Actions */
-    min-width: 160px !important;
-    max-width: 160px !important;
+    width: 240px !important; /* Actions */
+    min-width: 240px !important;
+    max-width: 240px !important;
     text-align: center;
 }
 
@@ -11257,6 +11257,7 @@ input.date-input {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    margin-right: 4px;
 }
 
 #entryApprovalModal .voucher-number-stack {

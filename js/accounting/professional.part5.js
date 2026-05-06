@@ -4300,18 +4300,6 @@ ProfessionalAccounting.prototype.getPaymentVoucherModalContent = function(vouche
                         </select>
                     </div>
                 </div>
-                <div class="accounting-modal-form-row">
-                    <div class="accounting-modal-form-group">
-                        <label>Status</label>
-                        <select name="status" id="paymentVoucherStatus">
-                            <option value="Draft" selected>Draft</option>
-                            <option value="Posted">Posted</option>
-                            <option value="Cancelled">Cancelled</option>
-                            <option value="Reversed">Reversed</option>
-                        </select>
-                        
-                    </div>
-                </div>
                 <div class="accounting-modal-form-group full-width">
                     <label>Description</label>
                     <textarea name="notes" rows="3" placeholder="Description"></textarea>

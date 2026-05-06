@@ -637,6 +637,11 @@
                                             <i class="fas fa-times"></i>
                                         </button>
                                     ` : ''}
+                                    ${status === 'rejected' ? `
+                                    <button class="btn-icon btn-primary" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                    ` : ''}
                                     ${status !== 'approved' ? `
                                     <button class="btn-icon btn-edit" data-action="edit-entry-approval" data-id="${entry.id}" title="Edit">
                                         <i class="fas fa-edit"></i>
@@ -4231,18 +4236,6 @@
                         <select name="currency" id="paymentVoucherCurrency">
                             <option value="">Loading currencies...</option>
                         </select>
-                    </div>
-                </div>
-                <div class="accounting-modal-form-row">
-                    <div class="accounting-modal-form-group">
-                        <label>Status</label>
-                        <select name="status" id="paymentVoucherStatus">
-                            <option value="Draft" selected>Draft</option>
-                            <option value="Posted">Posted</option>
-                            <option value="Cancelled">Cancelled</option>
-                            <option value="Reversed">Reversed</option>
-                        </select>
-                        
                     </div>
                 </div>
                 <div class="accounting-modal-form-group full-width">

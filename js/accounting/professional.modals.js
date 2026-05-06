@@ -3827,17 +3827,6 @@
                         <button type="button" class="btn btn-secondary" id="journalSaveDraftBtn" data-action="save-draft" style="display: ${isEdit ? 'none' : 'inline-block'};">Save Draft</button>
                         <button type="submit" class="btn btn-primary" id="journalSubmitBtn" disabled>${isEdit ? 'Update' : 'Create'} Entry</button>
                     </div>
-                    <div class="journal-entry-debug-bar" id="journalEntryDebugBar" aria-label="Journal entry debug tools">
-                        <div class="journal-entry-debug-bar-title">Debug</div>
-                        <div class="journal-entry-debug-bar-btns">
-                            <button type="button" class="btn btn-secondary btn-sm" data-je-debug="log">Log state</button>
-                            <button type="button" class="btn btn-secondary btn-sm" data-je-debug="trysave">Try saveJournalEntry</button>
-                            <button type="button" class="btn btn-secondary btn-sm" data-je-debug="requestsubmit">requestSubmit()</button>
-                            <button type="button" class="btn btn-secondary btn-sm" data-je-debug="syntheticdraft">Synthetic save-draft click</button>
-                            <button type="button" class="btn btn-secondary btn-sm" data-je-debug="pointer">Pointer probe</button>
-                        </div>
-                        <pre class="journal-entry-debug-out" id="journalEntryDebugOut"></pre>
-                    </div>
                 </form>
             `;
         },

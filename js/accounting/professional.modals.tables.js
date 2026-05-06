@@ -2596,6 +2596,23 @@
                     }
                 });
             });
+            modal.querySelectorAll('[data-action="reapprove-entry"]').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = parseInt(e.target.closest('button').dataset.id);
+                    const confirmed = await this.showConfirmDialog(
+                        'Re-Approve Entry',
+                        'Are you sure you want to re-approve this entry?',
+                        'Re-Approve',
+                        'Cancel',
+                        'success'
+                    );
+                    if (confirmed) {
+                        await this.approveEntries([id]);
+                    }
+                });
+            });
             // View buttons
             modal.querySelectorAll('[data-action="view-entry"]').forEach(btn => {
                 btn.addEventListener('click', (e) => {
