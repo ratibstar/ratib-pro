@@ -554,6 +554,11 @@
             
             // Apply search filter
             let filtered = [...this.entryApprovalData];
+            const currentStatusFilter = (document.getElementById('entryApprovalStatusFilter')?.value || 'all').toLowerCase();
+            // UX: In "all", show actionable rows by default (hide approved rows).
+            if ((this.entryApprovalView || 'entries') === 'entries' && currentStatusFilter === 'all') {
+                filtered = filtered.filter(entry => String(entry.status || '').toLowerCase() !== 'approved');
+            }
             const searchTerm = (this.entryApprovalSearchTerm || '').toLowerCase();
             if (searchTerm) {
                 filtered = filtered.filter(entry => 

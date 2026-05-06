@@ -3733,7 +3733,9 @@ ProfessionalAccounting.prototype.loadJournalEntries = async function() {
                                     const rowId = Number(entry.id || 0);
                                     const isReapprovable = !!(this._reapprovableEntryIds && this._reapprovableEntryIds.has(rowId));
                                     const isReapproved = !!(this._reapprovedEntryIds && this._reapprovedEntryIds.has(rowId));
-                                    if (!isReapprovable && !isReapproved) return '';
+                                    if (!isReapprovable && !isReapproved) {
+                                        return `<button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve"><i class="fas fa-undo"></i></button>`;
+                                    }
                                     return isReapproved
                                         ? `<button class="action-btn reapproved" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve Again"><i class="fas fa-check-double"></i></button>`
                                         : `<button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve"><i class="fas fa-undo"></i></button>`;
@@ -4827,7 +4829,9 @@ ProfessionalAccounting.prototype.loadModalJournalEntries = async function() {
                                         const rowId = Number(entry.id || entry.entry_number || 0);
                                         const isReapprovable = !!(this._reapprovableEntryIds && this._reapprovableEntryIds.has(rowId));
                                         const isReapproved = !!(this._reapprovedEntryIds && this._reapprovedEntryIds.has(rowId));
-                                        if (!isReapprovable && !isReapproved) return '';
+                                        if (!isReapprovable && !isReapproved) {
+                                            return `<button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id || entry.entry_number || ''}" title="Re-Approve"><i class="fas fa-undo"></i></button>`;
+                                        }
                                         return isReapproved
                                             ? `<button class="action-btn reapproved" data-action="reapprove-entry" data-id="${entry.id || entry.entry_number || ''}" title="Re-Approve Again"><i class="fas fa-check-double"></i></button>`
                                             : `<button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id || entry.entry_number || ''}" title="Re-Approve"><i class="fas fa-undo"></i></button>`;
