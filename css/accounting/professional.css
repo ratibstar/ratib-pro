@@ -5849,6 +5849,16 @@ body:not(.agent-page) .pagination-controls {
     color: var(--accent-yellow);
 }
 
+.action-btn.reapprove {
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.14);
+}
+
+.action-btn.reapprove:hover {
+    background: rgba(96, 165, 250, 0.24);
+    color: #93c5fd;
+}
+
 .action-btn.delete {
     color: var(--accent-red);
     background: rgba(239, 68, 68, 0.1);

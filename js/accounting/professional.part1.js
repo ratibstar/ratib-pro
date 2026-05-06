@@ -1276,6 +1276,26 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                     }
                     break;
                 }
+                case 'reapprove-entry': {
+                    const btn = e.target.closest('[data-action="reapprove-entry"]');
+                    const id = parseInt(btn?.getAttribute('data-id') || e.target.closest('[data-id]')?.getAttribute('data-id') || 0, 10);
+                    if (!id) break;
+                    const confirmed = await this.showConfirmDialog(
+                        'Re-Approve Entry',
+                        'Are you sure you want to re-approve this entry?',
+                        'Re-Approve',
+                        'Cancel',
+                        'success'
+                    );
+                    if (!confirmed) break;
+                    if (typeof this.approveEntries === 'function') {
+                        await this.approveEntries([id]);
+                        if (typeof this.loadModalJournalEntries === 'function') {
+                            await this.loadModalJournalEntries();
+                        }
+                    }
+                    break;
+                }
                 case 'edit-entry-approval':
                     const editApprovalEntryId = parseInt(e.target.closest('button')?.getAttribute('data-id') || 0);
                     if (editApprovalEntryId) this.openEntryApprovalForm(editApprovalEntryId);
