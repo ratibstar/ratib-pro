@@ -5865,6 +5865,13 @@ body:not(.agent-page) .pagination-controls {
     cursor: default;
 }
 
+.btn-icon.reapproved {
+    color: #fecaca !important;
+    background: rgba(220, 38, 38, 0.35) !important;
+    cursor: default !important;
+    opacity: 1 !important;
+}
+
 .action-btn.delete {
     color: var(--accent-red);
     background: rgba(239, 68, 68, 0.1);
@@ -11318,6 +11325,7 @@ input[type="date"]::-webkit-clear-button {
 }
 input[type="date"] {
     -webkit-appearance: none !important;
+    appearance: none !important;
 }
 
 /* Account sub-pages: filter groups, modals, summaries (no inline styles) */

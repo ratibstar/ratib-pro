@@ -1304,7 +1304,7 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                                 </div>
                                 <div class="accounting-modal-actions">
                                     <button type="button" class="btn btn-secondary" id="reapproveReasonCancel">Cancel</button>
-                                    <button type="button" class="btn btn-primary" id="reapproveReasonOk">OK</button>
+                                    <button type="button" class="btn btn-primary" id="reapproveReasonOk" disabled>OK</button>
                                 </div>
                             `;
                             this.showModal('Re-Approval Reason', content, 'small', modalId);
@@ -1369,6 +1369,31 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                                 const rows = Array.isArray(approvalListData?.entries) ? approvalListData.entries : [];
                                 const linked = rows.find((r) => Number(r.journal_entry_id || 0) === Number(id));
                                 if (!linked || !linked.id) {
+                                    // If already approved (no rejected row), mark as re-approved locally so UI reflects the action.
+                                    let existingApproved = null;
+                                    try {
+                                        const allRes = await fetch(`${this.apiBase}/entry-approval.php?status=all`, { credentials: 'include' });
+                                        const allData = await allRes.json().catch(() => ({}));
+                                        const allRows = Array.isArray(allData?.entries) ? allData.entries : [];
+                                        existingApproved = allRows.find((r) =>
+                                            Number(r.journal_entry_id || 0) === Number(id) &&
+                                            String(r.status || '').toLowerCase() === 'approved'
+                                        ) || null;
+                                    } catch (_) {}
+                                    if (existingApproved) {
+                                        if (!this._reapprovedEntryIds) this._reapprovedEntryIds = new Set();
+                                        this._reapprovedEntryIds.add(Number(id));
+                                        try {
+                                            const raw = sessionStorage.getItem('accounting_reapproved_journal_ids');
+                                            const arr = raw ? JSON.parse(raw) : [];
+                                            const merged = Array.from(new Set([...(Array.isArray(arr) ? arr : []), Number(id)]));
+                                            sessionStorage.setItem('accounting_reapproved_journal_ids', JSON.stringify(merged));
+                                        } catch (_) {}
+                                        this.showToast(`Entry #${id} is already approved`, 'info');
+                                        if (typeof this.loadModalJournalEntries === 'function') await this.loadModalJournalEntries();
+                                        if (typeof this.loadEntryApproval === 'function') await this.loadEntryApproval('all');
+                                        return;
+                                    }
                                     this.showToast(`No rejected approval row linked to entry #${id}`, 'warning');
                                     return;
                                 }
@@ -1389,6 +1414,18 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                                 this.showToast(`Reason: ${normalizedReason}`, 'info');
                                 if (!this._reapprovedEntryIds) this._reapprovedEntryIds = new Set();
                                 this._reapprovedEntryIds.add(Number(id));
+                                if (!this._reapprovedApprovalIds) this._reapprovedApprovalIds = new Set();
+                                this._reapprovedApprovalIds.add(Number(linked.id));
+                                try {
+                                    const rawJ = sessionStorage.getItem('accounting_reapproved_journal_ids');
+                                    const rawA = sessionStorage.getItem('accounting_reapproved_approval_ids');
+                                    const arrJ = rawJ ? JSON.parse(rawJ) : [];
+                                    const arrA = rawA ? JSON.parse(rawA) : [];
+                                    const mergedJ = Array.from(new Set([...(Array.isArray(arrJ) ? arrJ : []), Number(id)]));
+                                    const mergedA = Array.from(new Set([...(Array.isArray(arrA) ? arrA : []), Number(linked.id)]));
+                                    sessionStorage.setItem('accounting_reapproved_journal_ids', JSON.stringify(mergedJ));
+                                    sessionStorage.setItem('accounting_reapproved_approval_ids', JSON.stringify(mergedA));
+                                } catch (_) {}
                                 if (typeof this.loadModalJournalEntries === 'function') {
                                     await this.loadModalJournalEntries();
                                 }

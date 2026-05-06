@@ -2636,7 +2636,11 @@
                             const okBtn = m.querySelector('#reapproveReasonOk2');
                             const updateOkState = () => {
                                 const customVal = (customInput && customInput.value ? customInput.value.trim() : '');
-                                if (okBtn) okBtn.disabled = !(selectedReason || customVal);
+                                if (okBtn) {
+                                    okBtn.disabled = !(selectedReason || customVal);
+                                    okBtn.style.opacity = okBtn.disabled ? '0.45' : '1';
+                                    okBtn.style.pointerEvents = okBtn.disabled ? 'none' : '';
+                                }
                             };
                             m.querySelectorAll('.reapprove-reason-choice').forEach((b) => {
                                 b.addEventListener('click', () => {
@@ -2677,6 +2681,26 @@
                     );
                     if (confirmed) {
                         await this.approveEntries([id]);
+                        const row = Array.isArray(this.entryApprovalData) ? this.entryApprovalData.find((x) => Number(x.id) === Number(id)) : null;
+                        if (!this._reapprovedApprovalIds) this._reapprovedApprovalIds = new Set();
+                        this._reapprovedApprovalIds.add(Number(id));
+                        if (row && row.journal_entry_id) {
+                            if (!this._reapprovedEntryIds) this._reapprovedEntryIds = new Set();
+                            this._reapprovedEntryIds.add(Number(row.journal_entry_id));
+                        }
+                        try {
+                            const rawA = sessionStorage.getItem('accounting_reapproved_approval_ids');
+                            const rawJ = sessionStorage.getItem('accounting_reapproved_journal_ids');
+                            const arrA = rawA ? JSON.parse(rawA) : [];
+                            const arrJ = rawJ ? JSON.parse(rawJ) : [];
+                            const mergedA = Array.from(new Set([...(Array.isArray(arrA) ? arrA : []), Number(id)]));
+                            const mergedJ = row && row.journal_entry_id
+                                ? Array.from(new Set([...(Array.isArray(arrJ) ? arrJ : []), Number(row.journal_entry_id)]))
+                                : (Array.isArray(arrJ) ? arrJ : []);
+                            sessionStorage.setItem('accounting_reapproved_approval_ids', JSON.stringify(mergedA));
+                            sessionStorage.setItem('accounting_reapproved_journal_ids', JSON.stringify(mergedJ));
+                        } catch (_) {}
+                        if (typeof this.renderEntryApprovalTable === 'function') this.renderEntryApprovalTable();
                         this.showToast(`Re-approve reason: ${normalizedReason}`, 'info');
                     }
                 });

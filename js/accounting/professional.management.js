@@ -590,6 +590,15 @@
                     const statusText = status === 'approved' ? 'Approved' : (status === 'rejected' ? 'Rejected' : 'Pending');
                     const isPending = status === 'pending';
                     const isRejected = status === 'rejected';
+                    const isApproved = status === 'approved';
+                    let reapprovedApprovalIds = [];
+                    let reapprovedJournalIds = [];
+                    try {
+                        reapprovedApprovalIds = JSON.parse(sessionStorage.getItem('accounting_reapproved_approval_ids') || '[]');
+                        reapprovedJournalIds = JSON.parse(sessionStorage.getItem('accounting_reapproved_journal_ids') || '[]');
+                    } catch (_) {}
+                    const isReapproved = (Array.isArray(reapprovedApprovalIds) && reapprovedApprovalIds.includes(Number(entry.id))) ||
+                        (Array.isArray(reapprovedJournalIds) && reapprovedJournalIds.includes(Number(entry.journal_entry_id || 0)));
                     const currency = entry.currency || this.getDefaultCurrencySync();
                     const debitAmount = parseFloat(entry.total_debit ?? entry.debit_amount ?? entry.debit ?? 0) || 0;
                     const creditAmount = parseFloat(entry.total_credit ?? entry.credit_amount ?? entry.credit ?? 0) || 0;
@@ -638,10 +647,16 @@
                                             <i class="fas fa-times"></i>
                                         </button>
                                     ` : ''}
-                                    ${isRejected ? `
+                                    ${(isRejected || isApproved) ? `
+                                    ${isReapproved ? `
+                                    <button class="btn-icon reapproved" title="Re-Approved" disabled>
+                                        <i class="fas fa-check-double"></i>
+                                    </button>
+                                    ` : `
                                     <button class="btn-icon btn-primary" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve">
                                         <i class="fas fa-undo"></i>
                                     </button>
+                                    `}
                                     ` : ''}
                                     ${status !== 'approved' ? `
                                     <button class="btn-icon btn-edit" data-action="edit-entry-approval" data-id="${entry.id}" title="Edit">
