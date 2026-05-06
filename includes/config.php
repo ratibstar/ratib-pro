@@ -1223,6 +1223,7 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
             }
         }
         $openAgencyContext = $singleUrlMode && $getControl && $getAgencyId > 0;
+        $apiAgencyContext = $singleUrlMode && $isApiReqTenant && $getAgencyId > 0;
 
         // Control "Open" passes ?control=1&agency_id=X — that must win over a stale session from another agency.
         // Otherwise the previous tenant's agency_id stays in $_SESSION and every Open keeps the wrong DB/users.
@@ -1251,7 +1252,9 @@ if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
             $sessionLoggedIn = !empty($_SESSION['logged_in']);
         }
 
-        $effectiveAgencyId = ($openAgencyContext && $getAgencyId > 0)
+        // API hardening: when agency_id is explicitly provided to /api requests,
+        // always honor it to prevent stale session tenant bleed between agencies.
+        $effectiveAgencyId = (($openAgencyContext || $apiAgencyContext) && $getAgencyId > 0)
             ? $getAgencyId
             : ($sessionAgencyId > 0 ? $sessionAgencyId : 0);
         $mustUseAgencyDb = $singleUrlMode && (
