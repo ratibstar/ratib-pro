@@ -12,7 +12,8 @@
  *     "reference_agency_id": 12,
  *     "target_agency_ids": [2,3,4],      // optional; omit for all agencies in scope
  *     "apply": false,                      // false = dry-run, true = execute
- *     "seed_baseline": true                // optional, default true
+ *     "seed_baseline": true,               // optional, default true
+ *     "sync_functional_config": false      // optional, default false (replace config tables from reference)
  *   }
  */
 
@@ -127,6 +128,21 @@ function insert_rows(mysqli $conn, string $table, array $rows): int
         }
     }
     return $inserted;
+}
+
+function replace_table_rows(mysqli $conn, string $table, array $rows): array
+{
+    $safeTable = str_replace('`', '``', $table);
+    $before = table_count($conn, $table);
+    if ($before === null) {
+        return ['ok' => false, 'error' => 'target table not accessible', 'before' => null, 'after' => null, 'inserted' => 0];
+    }
+    if (!@$conn->query("DELETE FROM `{$safeTable}`")) {
+        return ['ok' => false, 'error' => $conn->error ?: 'DELETE failed', 'before' => $before, 'after' => $before, 'inserted' => 0];
+    }
+    $inserted = insert_rows($conn, $table, $rows);
+    $after = table_count($conn, $table);
+    return ['ok' => true, 'before' => $before, 'after' => $after, 'inserted' => $inserted];
 }
 
 function agency_row_by_id(mysqli $ctrl, int $agencyId): ?array
@@ -262,6 +278,7 @@ if (!is_array($input)) {
 $referenceAgencyId = (int)($input['reference_agency_id'] ?? 0);
 $apply = !empty($input['apply']);
 $seedBaseline = !array_key_exists('seed_baseline', $input) || (bool)$input['seed_baseline'];
+$syncFunctionalConfig = !empty($input['sync_functional_config']);
 $targetAgencyIds = $input['target_agency_ids'] ?? [];
 $targetAgencyIds = is_array($targetAgencyIds) ? array_values(array_unique(array_map('intval', $targetAgencyIds))) : [];
 $targetAgencyIds = array_values(array_filter($targetAgencyIds, static fn($id) => $id > 0));
@@ -290,11 +307,39 @@ $refTables = get_tables($refConn);
 
 // Safe baseline tables to seed if missing/empty (non-transactional defaults).
 $baselineSeedTables = ['roles', 'permissions', 'currencies', 'settings', 'account_types'];
+$functionalConfigTables = [
+    'roles',
+    'permissions',
+    'role_permissions',
+    'permissions_groups',
+    'settings',
+    'system_settings',
+    'app_settings',
+    'feature_flags',
+    'modules',
+    'module_settings',
+    'ui_settings',
+    'navigation_settings',
+    'accounting_settings',
+    'approval_settings',
+    'workflows',
+    'workflow_steps',
+    'currencies',
+    'account_types',
+];
 $baselineRows = [];
 if ($seedBaseline) {
     foreach ($baselineSeedTables as $t) {
         if (in_array($t, $refTables, true)) {
             $baselineRows[$t] = fetch_all_rows($refConn, $t);
+        }
+    }
+}
+$functionalRows = [];
+if ($syncFunctionalConfig) {
+    foreach ($functionalConfigTables as $t) {
+        if (in_array($t, $refTables, true)) {
+            $functionalRows[$t] = fetch_all_rows($refConn, $t);
         }
     }
 }
@@ -319,6 +364,8 @@ $summary = [
     'tables_created' => 0,
     'baseline_rows_to_seed' => 0,
     'baseline_rows_seeded' => 0,
+    'functional_tables_planned' => 0,
+    'functional_tables_synced' => 0,
 ];
 
 foreach ($targetAgencies as $agency) {
@@ -388,6 +435,48 @@ foreach ($targetAgencies as $agency) {
         }
     }
 
+    $functionalReport = [];
+    if ($syncFunctionalConfig) {
+        foreach ($functionalRows as $table => $rows) {
+            if (!in_array($table, $refTables, true)) {
+                continue;
+            }
+            $exists = in_array($table, get_tables($targetConn), true);
+            if (!$exists) {
+                $functionalReport[] = ['table' => $table, 'action' => 'skip_missing_in_target'];
+                continue;
+            }
+            $summary['functional_tables_planned']++;
+            if ($apply) {
+                @$targetConn->query('SET FOREIGN_KEY_CHECKS=0');
+                $rep = replace_table_rows($targetConn, $table, $rows);
+                @$targetConn->query('SET FOREIGN_KEY_CHECKS=1');
+                if (!empty($rep['ok'])) {
+                    $summary['functional_tables_synced']++;
+                    $functionalReport[] = [
+                        'table' => $table,
+                        'action' => 'replaced_from_reference',
+                        'before_rows' => $rep['before'],
+                        'after_rows' => $rep['after'],
+                        'inserted_rows' => $rep['inserted'],
+                    ];
+                } else {
+                    $functionalReport[] = [
+                        'table' => $table,
+                        'action' => 'failed',
+                        'error' => (string)($rep['error'] ?? 'unknown'),
+                    ];
+                }
+            } else {
+                $functionalReport[] = [
+                    'table' => $table,
+                    'action' => 'would_replace_from_reference',
+                    'planned_rows' => count($rows),
+                ];
+            }
+        }
+    }
+
     $results[] = [
         'agency_id' => $aid,
         'agency_name' => (string)($agency['name'] ?? ''),
@@ -398,6 +487,7 @@ foreach ($targetAgencies as $agency) {
         'tables_missing_before' => $toCreate,
         'tables_created' => $created,
         'baseline_seed' => $seedReport,
+        'functional_config_sync' => $functionalReport,
     ];
     $targetConn->close();
 }
@@ -408,6 +498,7 @@ json_out([
     'success' => true,
     'message' => $apply ? 'Bootstrap applied' : 'Dry-run completed',
     'mode' => $apply ? 'apply' : 'dry-run',
+    'sync_functional_config' => $syncFunctionalConfig,
     'reference_agency' => [
         'id' => (int)$reference['id'],
         'name' => (string)($reference['name'] ?? ''),
