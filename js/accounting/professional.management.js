@@ -637,7 +637,7 @@
                                             <i class="fas fa-times"></i>
                                         </button>
                                     ` : ''}
-                                    ${status === 'rejected' ? `
+                                    ${status !== 'approved' ? `
                                     <button class="btn-icon btn-primary" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve">
                                         <i class="fas fa-undo"></i>
                                     </button>

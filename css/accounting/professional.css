@@ -6884,7 +6884,7 @@ body:not(.agent-page) .pagination-controls {
     }
     
     #modalLedgerTableWrapper {
-        overflow-x: hidden !important;
+        overflow-x: auto !important;
         overflow-y: hidden !important;
         max-height: 400px !important;
         height: 400px !important;
@@ -7024,8 +7024,9 @@ body:not(.agent-page) .pagination-controls {
     }
     
     #modalJournalEntriesTable.professional-ledger-table .description-column {
-        min-width: 10px;
-        max-width: 100px;
+        min-width: 220px;
+        width: 220px;
+        max-width: 220px;
     }
     
     #modalJournalEntriesTable.professional-ledger-table .checkbox-column {
@@ -7036,8 +7037,14 @@ body:not(.agent-page) .pagination-controls {
     }
     
     #modalJournalEntriesTable.professional-ledger-table .actions-column {
-        min-width: 130px;
-        width: 130px;
+        min-width: 220px;
+        width: 220px;
+        max-width: 220px;
+        white-space: nowrap;
+    }
+
+    #modalJournalEntriesTable.professional-ledger-table td.actions-column {
+        overflow: visible !important;
     }
     
     /* Debit and Credit styling */
