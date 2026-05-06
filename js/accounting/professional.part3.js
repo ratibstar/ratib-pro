@@ -5328,6 +5328,29 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                     // Keep previous fallback values on failure.
                 }
             }
+            if (income === 0 && expense === 0 && profit === 0) {
+                try {
+                    const glUrl = `${this.apiBase}/reports.php?report=general-ledger${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                    const glRes = await fetch(glUrl, {
+                        credentials: 'include',
+                        cache: 'no-cache',
+                        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                    });
+                    if (isStale()) return;
+                    const gl = await glRes.json().catch(() => null);
+                    if (isStale()) return;
+                    const glDebit = Number(gl?.totals?.total_debit || 0);
+                    const glCredit = Number(gl?.totals?.total_credit || 0);
+                    if (glDebit > 0 || glCredit > 0) {
+                        income = glCredit;
+                        expense = glDebit;
+                        profit = income - expense;
+                        if (cash === 0) cash = profit;
+                    }
+                } catch (_) {
+                    // Keep previous fallback values on failure.
+                }
+            }
             if (balanceHint) {
                 balanceHint.textContent = `Cash ${this.formatCurrency(cash, cur)} | Net ${this.formatCurrency(profit, cur)}${suffix}${dbTag}`;
             }
