@@ -790,12 +790,12 @@ try {
             // Use transaction for atomicity
             $conn->begin_transaction();
             try {
-                // Update entry_approval - only approve pending entries (prevent duplicate approvals)
+                // Update entry_approval - allow approving pending/rejected entries.
                 $stmt = $conn->prepare("
                     UPDATE entry_approval 
                     SET status = 'approved', approved_by = ?, approved_at = NOW()
                     WHERE id IN (" . implode(',', array_fill(0, count($ids), '?')) . ")
-                    AND status = 'pending'
+                    AND status IN ('pending', 'rejected')
                 ");
                 $params = array_merge([$userId], $ids);
                 $types = 'i' . str_repeat('i', count($ids));
@@ -806,7 +806,7 @@ try {
                 
                 if ($approvedCount === 0) {
                     $conn->rollback();
-                    throw new Exception('No entries were approved. Entries may already be approved or rejected.');
+                    throw new Exception('No entries were approved. Entries may already be approved.');
                 }
                 
                 // If entries are linked to journal entries, update journal entry status to Posted

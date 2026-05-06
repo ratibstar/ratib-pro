@@ -3741,6 +3741,11 @@
                 const formContent = `
                     <form id="entryApprovalForm">
                         <input type="hidden" id="entryApprovalId" value="${entry.id}">
+                        <input type="hidden" id="entryApprovalJournalEntryId" value="${this.escapeHtml(String(entry.journal_entry_id || ''))}">
+                        <input type="hidden" id="entryApprovalCostCenterId" value="${this.escapeHtml(String(entry.cost_center_id || ''))}">
+                        <input type="hidden" id="entryApprovalBankGuaranteeId" value="${this.escapeHtml(String(entry.bank_guarantee_id || ''))}">
+                        <input type="hidden" id="entryApprovalEntityType" value="${this.escapeHtml(String(entry.entity_type || ''))}">
+                        <input type="hidden" id="entryApprovalEntityId" value="${this.escapeHtml(String(entry.entity_id || ''))}">
                         <div class="accounting-modal-form-group">
                             <label>Entry Number <span class="required">*</span></label>
                             <input type="text" id="entryApprovalNumber" value="${this.escapeHtml(entry.entry_number)}" class="form-control" required>
@@ -3886,6 +3891,11 @@
                 const debitAmountEl = document.getElementById('entryApprovalDebit');
                 const creditAmountEl = document.getElementById('entryApprovalCredit');
                 const currencyEl = document.getElementById('entryApprovalCurrency');
+                const journalEntryIdEl = document.getElementById('entryApprovalJournalEntryId');
+                const costCenterIdEl = document.getElementById('entryApprovalCostCenterId');
+                const bankGuaranteeIdEl = document.getElementById('entryApprovalBankGuaranteeId');
+                const entityTypeEl = document.getElementById('entryApprovalEntityType');
+                const entityIdEl = document.getElementById('entryApprovalEntityId');
 
                 if (!entryNumberEl || !entryDateEl) {
                     this.showToast('Form fields not found', 'error');
@@ -3893,11 +3903,26 @@
                 }
 
                 const entryNumber = entryNumberEl.value.trim();
-                const entryDate = entryDateEl.value;
+                let entryDate = (entryDateEl.value || '').trim();
                 const description = descriptionEl ? descriptionEl.value.trim() : '';
                 const debitAmount = debitAmountEl ? parseFloat(debitAmountEl.value || 0) : 0;
                 const creditAmount = creditAmountEl ? parseFloat(creditAmountEl.value || 0) : 0;
                 const currency = currencyEl ? currencyEl.value : 'SAR';
+                const toIntOrNull = (v) => {
+                    const n = Number(String(v ?? '').trim());
+                    return Number.isFinite(n) && n > 0 ? n : null;
+                };
+                const journalEntryId = toIntOrNull(journalEntryIdEl ? journalEntryIdEl.value : null);
+                const costCenterId = toIntOrNull(costCenterIdEl ? costCenterIdEl.value : null);
+                const bankGuaranteeId = toIntOrNull(bankGuaranteeIdEl ? bankGuaranteeIdEl.value : null);
+                const entityType = entityTypeEl ? String(entityTypeEl.value || '').trim() : '';
+                const entityId = toIntOrNull(entityIdEl ? entityIdEl.value : null);
+
+                // Normalize dates to YYYY-MM-DD before PUT (prevents date filter disappear issues).
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(entryDate)) {
+                    const [mm, dd, yyyy] = entryDate.split('/');
+                    entryDate = `${yyyy}-${mm}-${dd}`;
+                }
 
                 if (!entryNumber || !entryDate) {
                     this.showToast('Entry number and date are required', 'error');
@@ -3926,7 +3951,12 @@
                         description: description,
                         debit_amount: debitAmount,
                         credit_amount: creditAmount,
-                        currency: currency
+                        currency: currency,
+                        journal_entry_id: journalEntryId,
+                        cost_center_id: costCenterId,
+                        bank_guarantee_id: bankGuaranteeId,
+                        entity_type: entityType || null,
+                        entity_id: entityId
                     })
                 });
                 const data = await response.json().catch(() => ({ success: false, message: `HTTP ${response.status}` }));
@@ -4915,14 +4945,20 @@
                 const selectedRows = Array.isArray(this.entryApprovalData)
                     ? this.entryApprovalData.filter((r) => ids.includes(Number(r.id)))
                     : [];
-                const pendingIds = selectedRows
-                    .filter((r) => String(r.status || '').toLowerCase() === 'pending')
+                const actionableIds = selectedRows
+                    .filter((r) => {
+                        const s = String(r.status || '').toLowerCase();
+                        return s === 'pending' || s === 'rejected';
+                    })
                     .map((r) => Number(r.id));
                 const nonPendingIds = selectedRows
-                    .filter((r) => String(r.status || '').toLowerCase() !== 'pending')
+                    .filter((r) => {
+                        const s = String(r.status || '').toLowerCase();
+                        return s !== 'pending' && s !== 'rejected';
+                    })
                     .map((r) => Number(r.id));
 
-                if (pendingIds.length === 0) {
+                if (actionableIds.length === 0) {
                     if (nonPendingIds.length > 0) {
                         try {
                             const rawA = sessionStorage.getItem('accounting_reapproved_approval_ids');
@@ -4936,7 +4972,7 @@
                         await this.loadEntryApproval(currentFilter);
                         return;
                     }
-                    this.showToast('No pending entries selected for approval', 'warning');
+                    this.showToast('No actionable entries selected for approval', 'warning');
                     return;
                 }
 
@@ -4944,7 +4980,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
-                    body: JSON.stringify({ action: 'approve', ids: pendingIds })
+                    body: JSON.stringify({ action: 'approve', ids: actionableIds })
                 });
                 const data = await response.json().catch(() => ({ success: false, message: 'Invalid response' }));
                 if (!response.ok || !data.success) {
@@ -4985,7 +5021,7 @@
                         sessionStorage.setItem('accounting_reapproved_approval_ids', JSON.stringify(nextA));
                     } catch (_) {}
                 }
-                this.showToast(data.message || `${pendingIds.length} entry(ies) approved successfully`, 'success');
+                this.showToast(data.message || `${actionableIds.length} entry(ies) approved successfully`, 'success');
                 const filterSelect = document.getElementById('entryApprovalStatusFilter');
                 const currentFilter = filterSelect ? filterSelect.value : 'all';
                 await this.loadEntryApproval(currentFilter);
