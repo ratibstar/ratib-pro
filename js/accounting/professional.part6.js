@@ -4954,6 +4954,32 @@ ProfessionalAccounting.prototype.setupEntryApprovalHandlers = function() {
         
         const modal = document.getElementById('entryApprovalModal');
         if (!modal) return;
+        if (!this.entryApprovalView) this.entryApprovalView = 'entries';
+
+        const setView = (view) => {
+            this.entryApprovalView = view;
+            this.entryApprovalCurrentPage = 1;
+            const btnEntries = document.getElementById('entryApprovalViewEntries');
+            const btnPayments = document.getElementById('entryApprovalViewPayments');
+            const btnReceipts = document.getElementById('entryApprovalViewReceipts');
+            const syncBtn = document.getElementById('entryApprovalSyncPostedVouchers');
+            const mark = (btn, active) => {
+                if (!btn) return;
+                btn.classList.toggle('btn-primary', !!active);
+                btn.classList.toggle('btn-secondary', !active);
+            };
+            mark(btnEntries, view === 'entries');
+            mark(btnPayments, view === 'payment');
+            mark(btnReceipts, view === 'receipt');
+            if (syncBtn) syncBtn.style.display = view === 'entries' ? '' : 'none';
+            this.loadEntryApproval(document.getElementById('entryApprovalStatusFilter')?.value || 'all');
+        };
+        const btnEntries = document.getElementById('entryApprovalViewEntries');
+        const btnPayments = document.getElementById('entryApprovalViewPayments');
+        const btnReceipts = document.getElementById('entryApprovalViewReceipts');
+        if (btnEntries) btnEntries.onclick = () => setView('entries');
+        if (btnPayments) btnPayments.onclick = () => setView('payment');
+        if (btnReceipts) btnReceipts.onclick = () => setView('receipt');
 
         // Search input handler
         const searchInput = document.getElementById('entryApprovalSearch');
@@ -5020,6 +5046,8 @@ ProfessionalAccounting.prototype.setupEntryApprovalHandlers = function() {
                 }
             });
         }
+        // Normalize tab state on open
+        setView(this.entryApprovalView || 'entries');
     }
 
     // Missing Render Methods

@@ -2196,9 +2196,6 @@ ProfessionalAccounting.prototype.loadEntryApproval = async function(statusFilter
             
             // Build URL with filters
             const params = new URLSearchParams();
-            if (statusFilter && statusFilter !== 'all') {
-                params.append('status', statusFilter);
-            }
             
             // Add date filters if available
             const dateFrom = document.getElementById('entryApprovalDateFrom')?.value;
@@ -2210,13 +2207,23 @@ ProfessionalAccounting.prototype.loadEntryApproval = async function(statusFilter
                 params.append('date_to', this.formatDateForAPI(dateTo));
             }
             
-            const url = params.toString() 
-                ? `${this.apiBase}/entry-approval.php?${params.toString()}`
-                : `${this.apiBase}/entry-approval.php`;
-            
-            const response = await fetch(url, {
-                credentials: 'include'
-            });
+            const view = this.entryApprovalView || 'entries';
+            let response;
+            if (view === 'entries') {
+                if (statusFilter && statusFilter !== 'all') {
+                    params.append('status', statusFilter);
+                }
+                const url = params.toString()
+                    ? `${this.apiBase}/entry-approval.php?${params.toString()}`
+                    : `${this.apiBase}/entry-approval.php`;
+                response = await fetch(url, { credentials: 'include' });
+            } else {
+                params.append('action', 'list');
+                params.append('type', view);
+                params.append('per_page', '5000');
+                const url = `${this.apiBase}/receipt-payment-vouchers.php?${params.toString()}`;
+                response = await fetch(url, { credentials: 'include' });
+            }
             
             if (!response.ok) {
                 const errorText = await response.text();
@@ -2232,7 +2239,35 @@ ProfessionalAccounting.prototype.loadEntryApproval = async function(statusFilter
             }
 
             // Store all data
-            this.entryApprovalData = data.entries || [];
+            if ((this.entryApprovalView || 'entries') === 'entries') {
+                this.entryApprovalData = data.entries || [];
+            } else {
+                const normalizeStatus = (v) => {
+                    const s = String(v?.status || '').trim().toLowerCase();
+                    const ps = String(v?.posting_status || '').trim().toLowerCase();
+                    const posted = Number(v?.is_posted || 0) === 1;
+                    if (s === 'rejected') return 'rejected';
+                    if (posted || s === 'approved' || s === 'posted' || ps === 'approved' || ps === 'posted') return 'approved';
+                    return 'pending';
+                };
+                let vouchers = Array.isArray(data.vouchers) ? data.vouchers : [];
+                if (statusFilter && statusFilter !== 'all') {
+                    vouchers = vouchers.filter(v => normalizeStatus(v) === statusFilter);
+                }
+                this.entryApprovalData = vouchers.map(v => ({
+                    id: Number(v.id || 0),
+                    entry_number: v.voucher_number || v.receipt_number || `#${v.id}`,
+                    entry_date: v.voucher_date || v.payment_date || '',
+                    total_debit: Number(v.amount || 0),
+                    total_credit: Number(v.amount || 0),
+                    debit_account_name: v.bank_account_name || '',
+                    credit_account_name: v.account_name || v.vendor_name || v.customer_name || '',
+                    description: v.description || v.notes || '',
+                    status: normalizeStatus(v),
+                    currency: v.currency || this.getDefaultCurrencySync(),
+                    voucher_type: this.entryApprovalView
+                }));
+            }
             
             // Render table with pagination and filters
             this.renderEntryApprovalTable();

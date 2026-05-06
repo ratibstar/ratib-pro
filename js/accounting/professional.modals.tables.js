@@ -2035,6 +2035,17 @@
                                 </button>
                             </div>
                         </div>
+                        <div class="filters-bar filters-bar-compact" style="margin-bottom:8px;">
+                            <button class="btn btn-sm btn-primary" id="entryApprovalViewEntries" data-view="entries">
+                                <i class="fas fa-journal-whills"></i> Entry Approval
+                            </button>
+                            <button class="btn btn-sm btn-secondary" id="entryApprovalViewPayments" data-view="payment">
+                                <i class="fas fa-file-invoice-dollar"></i> Expenses (Payment Vouchers)
+                            </button>
+                            <button class="btn btn-sm btn-secondary" id="entryApprovalViewReceipts" data-view="receipt">
+                                <i class="fas fa-receipt"></i> Receipt Vouchers
+                            </button>
+                        </div>
                         <div id="entryApprovalStatusCards" class="report-status-cards">
                             <div class="stat-card stat-card-primary">
                                 <i class="fas fa-list stat-icon stat-icon-primary"></i>

@@ -253,6 +253,32 @@
             
             const modal = document.getElementById('entryApprovalModal');
             if (!modal) return;
+            if (!this.entryApprovalView) this.entryApprovalView = 'entries';
+
+            const setView = (view) => {
+                this.entryApprovalView = view;
+                this.entryApprovalCurrentPage = 1;
+                const btnEntries = document.getElementById('entryApprovalViewEntries');
+                const btnPayments = document.getElementById('entryApprovalViewPayments');
+                const btnReceipts = document.getElementById('entryApprovalViewReceipts');
+                const syncBtn = document.getElementById('entryApprovalSyncPostedVouchers');
+                const mark = (btn, active) => {
+                    if (!btn) return;
+                    btn.classList.toggle('btn-primary', !!active);
+                    btn.classList.toggle('btn-secondary', !active);
+                };
+                mark(btnEntries, view === 'entries');
+                mark(btnPayments, view === 'payment');
+                mark(btnReceipts, view === 'receipt');
+                if (syncBtn) syncBtn.style.display = view === 'entries' ? '' : 'none';
+                this.loadEntryApproval(document.getElementById('entryApprovalStatusFilter')?.value || 'all');
+            };
+            const btnEntries = document.getElementById('entryApprovalViewEntries');
+            const btnPayments = document.getElementById('entryApprovalViewPayments');
+            const btnReceipts = document.getElementById('entryApprovalViewReceipts');
+            if (btnEntries) btnEntries.onclick = () => setView('entries');
+            if (btnPayments) btnPayments.onclick = () => setView('payment');
+            if (btnReceipts) btnReceipts.onclick = () => setView('receipt');
             // Search input handler
             const searchInput = document.getElementById('entryApprovalSearch');
             if (searchInput) {
@@ -298,6 +324,8 @@
                     void this.syncPostedVouchersToEntryApproval();
                 };
             }
+            // Normalize button state on open.
+            setView(this.entryApprovalView || 'entries');
             // Pagination handlers
             const prevBtn = document.getElementById('entryApprovalPrevBtn');
             const nextBtn = document.getElementById('entryApprovalNextBtn');
@@ -4479,9 +4507,6 @@
                 
                 // Build URL with filters
                 const params = new URLSearchParams();
-                if (statusFilter && statusFilter !== 'all') {
-                    params.append('status', statusFilter);
-                }
                 
                 // Add date filters if available
                 const dateFrom = document.getElementById('entryApprovalDateFrom')?.value;
@@ -4493,13 +4518,24 @@
                     params.append('date_to', this.formatDateForAPI(dateTo));
                 }
                 
-                const url = params.toString() 
-                    ? `${this.apiBase}/entry-approval.php?${params.toString()}`
-                    : `${this.apiBase}/entry-approval.php`;
-                
-                const response = await fetch(url, {
-                    credentials: 'include'
-                });
+                const view = this.entryApprovalView || 'entries';
+                let response;
+                if (view === 'entries') {
+                    if (statusFilter && statusFilter !== 'all') {
+                        params.append('status', statusFilter);
+                    }
+                    const url = params.toString()
+                        ? `${this.apiBase}/entry-approval.php?${params.toString()}`
+                        : `${this.apiBase}/entry-approval.php`;
+                    response = await fetch(url, { credentials: 'include' });
+                } else {
+                    // Voucher approval pages: same modal/table, but source is voucher API.
+                    params.append('action', 'list');
+                    params.append('type', view);
+                    params.append('per_page', '5000');
+                    const url = `${this.apiBase}/receipt-payment-vouchers.php?${params.toString()}`;
+                    response = await fetch(url, { credentials: 'include' });
+                }
                 
                 if (!response.ok) {
                     const errorText = await response.text().catch(function() { return ''; });
@@ -4511,7 +4547,35 @@
                 }
 
                 // Store all data
-                this.entryApprovalData = data.entries || [];
+                if ((this.entryApprovalView || 'entries') === 'entries') {
+                    this.entryApprovalData = data.entries || [];
+                } else {
+                    const normalizeStatus = (v) => {
+                        const s = String(v?.status || '').trim().toLowerCase();
+                        const ps = String(v?.posting_status || '').trim().toLowerCase();
+                        const posted = Number(v?.is_posted || 0) === 1;
+                        if (s === 'rejected') return 'rejected';
+                        if (posted || s === 'approved' || s === 'posted' || ps === 'approved' || ps === 'posted') return 'approved';
+                        return 'pending';
+                    };
+                    let vouchers = Array.isArray(data.vouchers) ? data.vouchers : [];
+                    if (statusFilter && statusFilter !== 'all') {
+                        vouchers = vouchers.filter(v => normalizeStatus(v) === statusFilter);
+                    }
+                    this.entryApprovalData = vouchers.map(v => ({
+                        id: Number(v.id || 0),
+                        entry_number: v.voucher_number || v.receipt_number || `#${v.id}`,
+                        entry_date: v.voucher_date || v.payment_date || '',
+                        total_debit: Number(v.amount || 0),
+                        total_credit: Number(v.amount || 0),
+                        debit_account_name: v.bank_account_name || '',
+                        credit_account_name: v.account_name || v.vendor_name || v.customer_name || '',
+                        description: v.description || v.notes || '',
+                        status: normalizeStatus(v),
+                        currency: v.currency || this.getDefaultCurrencySync(),
+                        voucher_type: this.entryApprovalView
+                    }));
+                }
                 
                 // Render table with pagination and filters
                 this.renderEntryApprovalTable();
@@ -4633,6 +4697,24 @@
             if (!ids || ids.length === 0) return;
             this.showToast('Processing approval...', 'info');
             try {
+                if ((this.entryApprovalView || 'entries') !== 'entries') {
+                    const type = this.entryApprovalView;
+                    let ok = 0;
+                    for (const id of ids) {
+                        const r = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&action=post&id=${id}`, {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({})
+                        });
+                        const d = await r.json().catch(() => null);
+                        if (d?.success) ok++;
+                    }
+                    this.showToast(`${ok} voucher(s) approved successfully`, ok ? 'success' : 'warning');
+                    const filterSelect = document.getElementById('entryApprovalStatusFilter');
+                    await this.loadEntryApproval(filterSelect ? filterSelect.value : 'all');
+                    return;
+                }
                 const response = await fetch(`${this.apiBase}/entry-approval.php`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -4682,6 +4764,24 @@
             }
             this.showToast('Processing rejection...', 'info');
             try {
+                if ((this.entryApprovalView || 'entries') !== 'entries') {
+                    const type = this.entryApprovalView;
+                    let ok = 0;
+                    for (const id of ids) {
+                        const r = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&id=${id}`, {
+                            method: 'PUT',
+                            credentials: 'include',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: 'Rejected', rejection_reason: rejectionReason || '' })
+                        });
+                        const d = await r.json().catch(() => null);
+                        if (d?.success) ok++;
+                    }
+                    this.showToast(`${ok} voucher(s) rejected successfully`, ok ? 'success' : 'warning');
+                    const filterSelect = document.getElementById('entryApprovalStatusFilter');
+                    await this.loadEntryApproval(filterSelect ? filterSelect.value : 'all');
+                    return;
+                }
                 const response = await fetch(`${this.apiBase}/entry-approval.php`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -4716,11 +4816,27 @@
         },
 
         openEntryApprovalForm(id) {
+            if ((this.entryApprovalView || 'entries') === 'payment') {
+                this.openPaymentVoucherModal(id);
+                return;
+            }
+            if ((this.entryApprovalView || 'entries') === 'receipt') {
+                this.openReceiptVoucherModal(id);
+                return;
+            }
             this.loadEntryApprovalData(id);
         },
 
         async openEntryDetailsModal(entryId) {
             try {
+                if ((this.entryApprovalView || 'entries') === 'payment') {
+                    await this.viewVoucher(entryId, 'payment');
+                    return;
+                }
+                if ((this.entryApprovalView || 'entries') === 'receipt') {
+                    await this.viewVoucher(entryId, 'receipt');
+                    return;
+                }
                 const response = await fetch(`${this.apiBase}/entry-approval.php?id=${entryId}`, {
                     credentials: 'include'
                 });
