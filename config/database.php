@@ -10,11 +10,16 @@ if (!defined('ENV_LOADED')) {
     require_once __DIR__ . '/env/load.php';
 }
 if (!defined('DB_HOST')) {
-    define('DB_HOST', 'localhost');
-    define('DB_PORT', 3306);
-    define('DB_USER', 'outratib_out');
-    define('DB_PASS', '9s%BpMr1]dfb');
-    define('DB_NAME', 'outratib_out');
+    $envHost = getenv('DB_HOST');
+    $envPort = getenv('DB_PORT');
+    $envUser = getenv('DB_USER');
+    $envPass = getenv('DB_PASS');
+    $envName = getenv('DB_NAME');
+    define('DB_HOST', ($envHost !== false && $envHost !== '') ? (string)$envHost : 'localhost');
+    define('DB_PORT', ($envPort !== false && $envPort !== '') ? (int)$envPort : 3306);
+    define('DB_USER', ($envUser !== false) ? (string)$envUser : '');
+    define('DB_PASS', ($envPass !== false) ? (string)$envPass : '');
+    define('DB_NAME', ($envName !== false) ? (string)$envName : '');
 }
 if (!defined('SITE_URL')) {
     define('SITE_URL', 'https://bangladesh.out.ratib.sa');

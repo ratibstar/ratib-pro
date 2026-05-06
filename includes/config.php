@@ -75,11 +75,16 @@ if (!defined('CONTROL_PANEL_DB_NAME')) {
 }
 
 if (!defined('DB_HOST')) {
-    define('DB_HOST', 'localhost');
-    define('DB_PORT', 3306);
-    define('DB_USER', 'outratib_out');
-    define('DB_PASS', '9s%BpMr1]dfb');
-    define('DB_NAME', 'outratib_out');
+    $envHost = getenv('DB_HOST');
+    $envPort = getenv('DB_PORT');
+    $envUser = getenv('DB_USER');
+    $envPass = getenv('DB_PASS');
+    $envName = getenv('DB_NAME');
+    define('DB_HOST', ($envHost !== false && $envHost !== '') ? (string)$envHost : 'localhost');
+    define('DB_PORT', ($envPort !== false && $envPort !== '') ? (int)$envPort : 3306);
+    define('DB_USER', ($envUser !== false) ? (string)$envUser : '');
+    define('DB_PASS', ($envPass !== false) ? (string)$envPass : '');
+    define('DB_NAME', ($envName !== false) ? (string)$envName : '');
 }
 if (!defined('SITE_URL')) {
     define('SITE_URL', 'https://bangladesh.out.ratib.sa');
@@ -1030,6 +1035,26 @@ if (!function_exists('ratib_halt_for_agency_db_error')) {
     }
 }
 
+if (!function_exists('ratib_require_single_url_db_config')) {
+    /**
+     * Single-URL hard guard: never continue with empty/incomplete DB config.
+     * This prevents accidental fallback to a shared/default database.
+     */
+    function ratib_require_single_url_db_config(): void
+    {
+        if (!(defined('SINGLE_URL_MODE') && SINGLE_URL_MODE)) {
+            return;
+        }
+        $dbHost = trim((string)(defined('DB_HOST') ? DB_HOST : ''));
+        $dbUser = trim((string)(defined('DB_USER') ? DB_USER : ''));
+        $dbName = trim((string)(defined('DB_NAME') ? DB_NAME : ''));
+        $dbPort = (int)(defined('DB_PORT') ? DB_PORT : 0);
+        if ($dbHost === '' || $dbUser === '' || $dbName === '' || $dbPort <= 0) {
+            ratib_halt_for_agency_db_error('Single URL mode requires complete DB config (host/user/name/port).');
+        }
+    }
+}
+
 require_once __DIR__ . '/control_lookup_conn.php';
 
 // When Control opens a specific agency (?control=1&agency_id=...), validate target agency immediately.
@@ -1161,6 +1186,7 @@ if (
 // Ratib Pro only — single connection (no control panel)
 if (!isset($GLOBALS['conn']) || $GLOBALS['conn'] === null) {
     try {
+        ratib_require_single_url_db_config();
         if (function_exists('mysqli_report') && defined('MYSQLI_REPORT_ERROR') && defined('MYSQLI_REPORT_STRICT')) {
             mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
         }
