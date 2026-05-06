@@ -3,39 +3,6 @@
  * AR: ينفذ سلوك تفاعلات الواجهة الأمامية في `js/accounting/professional.part3.js`.
  */
 /** Professional Accounting - Part 3 (lines 10199-15198) */
-                const overdueClass = daysOverdue > 0 ? 'overdue' : '';
-                html += `<tr class="report-data-row ${index % 2 === 0 ? 'even' : 'odd'} ${overdueClass}">`;
-                const billNumber = this.escapeHtml(item.bill_number || '');
-                const vendorName = this.escapeHtml(item.vendor_name || '');
-                html += `<td class="report-col-invoice" title="${billNumber}"><code>${billNumber}</code></td>`;
-                html += `<td class="report-col-customer" title="${vendorName}">${vendorName}</td>`;
-                html += `<td class="report-col-date" title="${this.formatDate(item.bill_date || '')}">${this.formatDate(item.bill_date || '')}</td>`;
-                html += `<td class="report-col-date" title="${this.formatDate(item.due_date || '')}">${this.formatDate(item.due_date || '')}</td>`;
-                html += `<td class="report-col-amount text-right">${this.formatCurrency(parseFloat(item.total_amount || 0))}</td>`;
-                html += `<td class="report-col-amount text-right debit-cell">${this.formatCurrency(parseFloat(item.paid_amount || 0))}</td>`;
-                html += `<td class="report-col-amount text-right credit-cell">${this.formatCurrency(parseFloat(item.balance || 0))}</td>`;
-                html += `<td class="report-col-days text-right ${daysOverdue > 0 ? 'overdue-badge' : ''}">${daysOverdue > 0 ? daysOverdue : '-'}</td>`;
-                html += '</tr>';
-            });
-        } else {
-            html += '<tr><td colspan="8" class="text-center report-empty-state">No payables found</td></tr>';
-        }
-        
-        html += '</tbody>';
-        
-        if (reportData?.total_outstanding !== undefined) {
-            html += '<tfoot class="report-totals-footer">';
-            html += '<tr class="report-totals-row">';
-            html += '<td colspan="6" class="report-totals-label"><strong>Total Outstanding:</strong></td>';
-            html += `<td class="report-col-amount text-right credit-cell"><strong>${this.formatCurrency(parseFloat(reportData.total_outstanding || 0))}</strong></td>`;
-            html += '<td></td>';
-            html += '</tr>';
-            html += '</tfoot>';
-        }
-        
-        html += '</table></div>';
-        return html;
-    }
 
 ProfessionalAccounting.prototype.formatCashBook = function(reportData) {
         // Get all transactions and apply search filter
@@ -5399,6 +5366,29 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             if (analysisCountEl) analysisCountEl.textContent = this.formatCurrency(profit, cur);
 
             let totalEntries = Number(summary?.ledger?.entry_count || 0);
+            try {
+                const glStart = '2000-01-01';
+                const glEnd = new Date().toISOString().slice(0, 10);
+                const glCountUrl = `${this.apiBase}/reports.php?type=general-ledger&start_date=${encodeURIComponent(glStart)}&end_date=${encodeURIComponent(glEnd)}${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                const glCountRes = await fetch(glCountUrl, {
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
+                if (isStale()) return;
+                const glCountData = await glCountRes.json().catch(() => null);
+                if (isStale()) return;
+                const glEntries = Number(
+                    glCountData?.report?.summary?.total_transactions ??
+                    glCountData?.report?.totals?.total_transactions ??
+                    glCountData?.summary?.total_transactions ??
+                    glCountData?.totals?.total_transactions ??
+                    0
+                );
+                if (glEntries > 0) {
+                    totalEntries = Math.max(totalEntries, glEntries);
+                }
+            } catch (_) {}
             if (txHint) {
                 try {
                     const txUrl = `${this.apiBase}/transactions.php?limit=1&page=1${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
@@ -5876,4 +5866,22 @@ ProfessionalAccounting.prototype.loadSettings = async function() {
                             const option = Array.from(input.options).find(opt => opt.value === value || opt.value === String(value));
                             if (option) {
                                 input.value = option.value;
-                            } else if (input.id === 'defaultCurrency') {
+                            } else if (input.id === 'defaultCurrency' && value) {
+                                const code = String(value).toUpperCase();
+                                const currencyOption = Array.from(input.options).find(opt =>
+                                    (opt.value.includes(' - ') ? opt.value.split(' - ')[0].trim().toUpperCase() : opt.value.toUpperCase()) === code
+                                );
+                                if (currencyOption) input.value = currencyOption.value;
+                            }
+                        } else {
+                            input.value = value;
+                        }
+                    }
+                });
+                this.updateSettingsSummary();
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            this.showToast('Failed to load settings. Using defaults.', 'warning');
+        }
+    }

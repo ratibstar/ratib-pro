@@ -793,6 +793,29 @@
                 if (analysisCountEl) analysisCountEl.textContent = this.formatCurrency(profit, cur);
 
                 let totalEntries = Number(summary?.ledger?.entry_count || 0);
+                try {
+                    const glStart = '2000-01-01';
+                    const glEnd = new Date().toISOString().slice(0, 10);
+                    const glCountUrl = `${this.apiBase}/reports.php?type=general-ledger&start_date=${encodeURIComponent(glStart)}&end_date=${encodeURIComponent(glEnd)}${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
+                    const glCountRes = await fetch(glCountUrl, {
+                        credentials: 'include',
+                        cache: 'no-cache',
+                        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                    });
+                    if (isStale()) return;
+                    const glCountData = await glCountRes.json().catch(() => null);
+                    if (isStale()) return;
+                    const glEntries = Number(
+                        glCountData?.report?.summary?.total_transactions ??
+                        glCountData?.report?.totals?.total_transactions ??
+                        glCountData?.summary?.total_transactions ??
+                        glCountData?.totals?.total_transactions ??
+                        0
+                    );
+                    if (glEntries > 0) {
+                        totalEntries = Math.max(totalEntries, glEntries);
+                    }
+                } catch (_) {}
                 if (txHint) {
                     try {
                         const txUrl = `${this.apiBase}/transactions.php?limit=1&page=1${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
