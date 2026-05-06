@@ -4622,7 +4622,7 @@
         async loadEntryApproval(statusFilter = null) {
             const tbodyEl = document.getElementById('entryApprovalTableBody');
             if (!tbodyEl) {
-                console.error('entryApprovalTableBody not found');
+                // Entry Approval modal is not open; skip silently.
                 return;
             }
 
@@ -5004,9 +5004,9 @@
                                 sessionStorage.setItem('accounting_reapproved_approval_ids', JSON.stringify(Array.from(idSet)));
                             } catch (_) {}
                             this.showToast('Entry kept approved and re-approval flag cleared', 'success');
-                            const filterSelect = document.getElementById('entryApprovalStatusFilter');
-                            const currentFilter = filterSelect ? filterSelect.value : 'all';
-                            await this.loadEntryApproval(currentFilter);
+                            this.entryApprovalData = (Array.isArray(this.entryApprovalData) ? this.entryApprovalData : [])
+                                .filter((r) => !ids.includes(Number(r.id)));
+                            this.renderEntryApprovalTable();
                             return;
                         }
                     }
@@ -5021,10 +5021,30 @@
                         sessionStorage.setItem('accounting_reapproved_approval_ids', JSON.stringify(nextA));
                     } catch (_) {}
                 }
+                // Clear re-approval markers for rows that were just approved from Entry Approval.
+                try {
+                    const rawA = sessionStorage.getItem('accounting_reapproved_approval_ids');
+                    const rawJ = sessionStorage.getItem('accounting_reapproved_journal_ids');
+                    const arrA = rawA ? JSON.parse(rawA) : [];
+                    const arrJ = rawJ ? JSON.parse(rawJ) : [];
+                    const byId = new Map((Array.isArray(this.entryApprovalData) ? this.entryApprovalData : []).map((r) => [Number(r.id), Number(r.journal_entry_id || 0)]));
+                    const removeJ = new Set(actionableIds.map((id) => byId.get(Number(id))).filter((x) => Number(x) > 0));
+                    const nextA = (Array.isArray(arrA) ? arrA : []).filter((x) => !actionableIds.includes(Number(x)));
+                    const nextJ = (Array.isArray(arrJ) ? arrJ : []).filter((x) => !removeJ.has(Number(x)));
+                    sessionStorage.setItem('accounting_reapproved_approval_ids', JSON.stringify(nextA));
+                    sessionStorage.setItem('accounting_reapproved_journal_ids', JSON.stringify(nextJ));
+                    if (this._reapprovedApprovalIds && typeof this._reapprovedApprovalIds.delete === 'function') {
+                        actionableIds.forEach((id) => this._reapprovedApprovalIds.delete(Number(id)));
+                    }
+                    if (this._reapprovedEntryIds && typeof this._reapprovedEntryIds.delete === 'function') {
+                        removeJ.forEach((jid) => this._reapprovedEntryIds.delete(Number(jid)));
+                    }
+                } catch (_) {}
                 this.showToast(data.message || `${actionableIds.length} entry(ies) approved successfully`, 'success');
-                const filterSelect = document.getElementById('entryApprovalStatusFilter');
-                const currentFilter = filterSelect ? filterSelect.value : 'all';
-                await this.loadEntryApproval(currentFilter);
+                // UX request: remove approved rows from Entry Approval table immediately.
+                this.entryApprovalData = (Array.isArray(this.entryApprovalData) ? this.entryApprovalData : [])
+                    .filter((r) => !actionableIds.includes(Number(r.id)));
+                this.renderEntryApprovalTable();
                 if (typeof this.loadModalJournalEntries === 'function') {
                     setTimeout(() => this.loadModalJournalEntries(), 500);
                 }
