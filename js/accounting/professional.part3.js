@@ -5316,8 +5316,24 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                     const ir = await irRes.json().catch(() => null);
                     const ex = await exRes.json().catch(() => null);
                     if (isStale()) return;
-                    const incTotal = Number(ir?.totals?.total_revenue ?? ir?.summary?.total_income ?? ir?.summary?.total_revenue ?? 0);
-                    const expTotal = Number(ex?.totals?.total_expenses ?? ex?.summary?.total_expense ?? ex?.summary?.total_expenses ?? 0);
+                    const incTotal = Number(
+                        ir?.report?.totals?.total_revenue ??
+                        ir?.report?.summary?.total_income ??
+                        ir?.report?.summary?.total_revenue ??
+                        ir?.totals?.total_revenue ??
+                        ir?.summary?.total_income ??
+                        ir?.summary?.total_revenue ??
+                        0
+                    );
+                    const expTotal = Number(
+                        ex?.report?.totals?.total_expenses ??
+                        ex?.report?.summary?.total_expense ??
+                        ex?.report?.summary?.total_expenses ??
+                        ex?.totals?.total_expenses ??
+                        ex?.summary?.total_expense ??
+                        ex?.summary?.total_expenses ??
+                        0
+                    );
                     if (incTotal > 0 || expTotal > 0) {
                         income = incTotal;
                         expense = expTotal;
@@ -5341,8 +5357,8 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                     if (isStale()) return;
                     const gl = await glRes.json().catch(() => null);
                     if (isStale()) return;
-                    const glDebit = Number(gl?.totals?.total_debit || 0);
-                    const glCredit = Number(gl?.totals?.total_credit || 0);
+                    const glDebit = Number(gl?.report?.totals?.total_debit ?? gl?.totals?.total_debit ?? 0);
+                    const glCredit = Number(gl?.report?.totals?.total_credit ?? gl?.totals?.total_credit ?? 0);
                     if (glDebit > 0 || glCredit > 0) {
                         income = glCredit;
                         expense = glDebit;
