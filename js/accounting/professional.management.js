@@ -4459,7 +4459,7 @@
                         const ps = String(voucher?.postingStatus || '').trim().toLowerCase();
                         const posted = Number(voucher?.isPosted || 0) === 1;
                         const reason = String(voucher?.rejectionReason || '').trim();
-                        if (s === 'rejected') return { label: 'Rejected', badge: 'danger', reason };
+                        if (s === 'rejected' || s === 'cancelled' || s === 'reversed' || ps === 'reversed') return { label: 'Rejected', badge: 'danger', reason };
                         if (posted || s === 'approved' || s === 'posted' || ps === 'approved' || ps === 'posted') {
                             return { label: 'Approved', badge: 'success', reason: '' };
                         }
@@ -4580,7 +4580,7 @@
                         const s = String(v?.status || '').trim().toLowerCase();
                         const ps = String(v?.posting_status || '').trim().toLowerCase();
                         const posted = Number(v?.is_posted || 0) === 1;
-                        if (s === 'rejected') return 'rejected';
+                        if (s === 'rejected' || s === 'cancelled' || s === 'reversed' || ps === 'reversed') return 'rejected';
                         if (posted || s === 'approved' || s === 'posted' || ps === 'approved' || ps === 'posted') return 'approved';
                         return 'pending';
                     };
@@ -4731,37 +4731,37 @@
                         const row = Array.isArray(this.entryApprovalData) ? this.entryApprovalData.find(r => Number(r.id) === Number(id)) : null;
                         const voucherNumber = row?.entry_number || `#${id}`;
                         // Approval path for voucher tabs:
-                        // 1) Mark status as Approved (Entry Approval style).
-                        // 2) If that fails, fallback to post action.
+                        // 1) Post voucher (best path, creates/locks journal effects).
+                        // 2) If that fails, fallback to status update using DB-safe values.
                         let approved = false;
                         let failMsg = '';
                         try {
-                            const putRes = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&id=${id}`, {
-                                method: 'PUT',
+                            const postRes = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&action=post&id=${id}`, {
+                                method: 'POST',
                                 credentials: 'include',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ status: 'Approved', posting_status: 'Approved' })
+                                body: JSON.stringify({})
                             });
-                            const putData = await putRes.json().catch(() => null);
-                            approved = !!putData?.success;
-                            if (!approved) failMsg = putData?.message || `HTTP ${putRes.status}`;
+                            const postData = await postRes.json().catch(() => null);
+                            approved = !!postData?.success;
+                            if (!approved) failMsg = postData?.message || `HTTP ${postRes.status}`;
                         } catch (err) {
-                            failMsg = (err && err.message) ? err.message : 'PUT request failed';
+                            failMsg = (err && err.message) ? err.message : 'POST request failed';
                         }
 
                         if (!approved) {
                             try {
-                                const postRes = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&action=post&id=${id}`, {
-                                    method: 'POST',
+                                const putRes = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&id=${id}`, {
+                                    method: 'PUT',
                                     credentials: 'include',
                                     headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({})
+                                    body: JSON.stringify({ status: 'Posted', posting_status: 'posted', is_posted: 1 })
                                 });
-                                const postData = await postRes.json().catch(() => null);
-                                approved = !!postData?.success;
-                                if (!approved) failMsg = postData?.message || `HTTP ${postRes.status}`;
+                                const putData = await putRes.json().catch(() => null);
+                                approved = !!putData?.success;
+                                if (!approved) failMsg = putData?.message || `HTTP ${putRes.status}`;
                             } catch (err) {
-                                failMsg = (err && err.message) ? err.message : 'POST request failed';
+                                failMsg = (err && err.message) ? err.message : 'PUT request failed';
                             }
                         }
                         if (approved) ok++;
@@ -4836,7 +4836,7 @@
                                 method: 'PUT',
                                 credentials: 'include',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ status: 'Rejected', posting_status: 'Rejected', rejection_reason: rejectionReason || '' })
+                                body: JSON.stringify({ status: 'Cancelled', posting_status: 'reversed', rejection_reason: rejectionReason || '' })
                             });
                             const d = await r.json().catch(() => null);
                             if (d?.success) ok++;
