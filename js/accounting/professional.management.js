@@ -637,9 +637,11 @@
                                             <i class="fas fa-times"></i>
                                         </button>
                                     ` : ''}
+                                    ${status !== 'approved' ? `
                                     <button class="btn-icon btn-edit" data-action="edit-entry-approval" data-id="${entry.id}" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
+                                    ` : ''}
                                 </td>
                             </tr>
                         `;
@@ -4465,6 +4467,7 @@
                     };
                     tbody.innerHTML = allVouchers.map(voucher => {
                         const ui = approvalUi(voucher);
+                        const isApprovedLocked = ui.label === 'Approved';
                         return `
                         <tr>
                             <td>${this.escapeHtml(voucher.reference || 'N/A')}</td>
@@ -4484,15 +4487,16 @@
                                 <button class="btn btn-sm btn-info" data-action="view-voucher" data-id="${voucher.id}" data-type="${voucher.voucherType}" title="View">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button class="btn btn-sm btn-warning" data-action="edit-voucher" data-id="${voucher.id}" data-type="${voucher.voucherType}" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </button>
                                 <button class="btn btn-sm btn-secondary" data-action="print-voucher" data-id="${voucher.id}" data-type="${voucher.voucherType}" title="Print">
                                     <i class="fas fa-print"></i>
                                 </button>
+                                ${!isApprovedLocked ? `
+                                <button class="btn btn-sm btn-warning" data-action="edit-voucher" data-id="${voucher.id}" data-type="${voucher.voucherType}" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
                                 <button class="btn btn-sm btn-danger" data-action="delete-voucher" data-id="${voucher.id}" data-type="${voucher.voucherType}" title="Delete">
                                     <i class="fas fa-trash"></i>
-                                </button>
+                                </button>` : ''}
                             </td>
                         </tr>
                     `;
@@ -4722,11 +4726,15 @@
                 if ((this.entryApprovalView || 'entries') !== 'entries') {
                     const type = this.entryApprovalView;
                     let ok = 0;
+                    const failures = [];
                     for (const id of ids) {
+                        const row = Array.isArray(this.entryApprovalData) ? this.entryApprovalData.find(r => Number(r.id) === Number(id)) : null;
+                        const voucherNumber = row?.entry_number || `#${id}`;
                         // Approval path for voucher tabs:
                         // 1) Mark status as Approved (Entry Approval style).
                         // 2) If that fails, fallback to post action.
                         let approved = false;
+                        let failMsg = '';
                         try {
                             const putRes = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&id=${id}`, {
                                 method: 'PUT',
@@ -4736,7 +4744,10 @@
                             });
                             const putData = await putRes.json().catch(() => null);
                             approved = !!putData?.success;
-                        } catch (_) {}
+                            if (!approved) failMsg = putData?.message || `HTTP ${putRes.status}`;
+                        } catch (err) {
+                            failMsg = (err && err.message) ? err.message : 'PUT request failed';
+                        }
 
                         if (!approved) {
                             try {
@@ -4748,11 +4759,18 @@
                                 });
                                 const postData = await postRes.json().catch(() => null);
                                 approved = !!postData?.success;
-                            } catch (_) {}
+                                if (!approved) failMsg = postData?.message || `HTTP ${postRes.status}`;
+                            } catch (err) {
+                                failMsg = (err && err.message) ? err.message : 'POST request failed';
+                            }
                         }
                         if (approved) ok++;
+                        else failures.push({ voucherNumber, message: failMsg || 'Approval failed' });
                     }
                     this.showToast(`${ok} voucher(s) approved successfully`, ok ? 'success' : 'warning');
+                    failures.forEach((f) => {
+                        this.showToast(`Voucher ${f.voucherNumber}: ${f.message}`, 'error');
+                    });
                     const filterSelect = document.getElementById('entryApprovalStatusFilter');
                     await this.loadEntryApproval(filterSelect ? filterSelect.value : 'all');
                     return;
@@ -4809,17 +4827,28 @@
                 if ((this.entryApprovalView || 'entries') !== 'entries') {
                     const type = this.entryApprovalView;
                     let ok = 0;
+                    const failures = [];
                     for (const id of ids) {
-                        const r = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&id=${id}`, {
-                            method: 'PUT',
-                            credentials: 'include',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ status: 'Rejected', rejection_reason: rejectionReason || '' })
-                        });
-                        const d = await r.json().catch(() => null);
-                        if (d?.success) ok++;
+                        const row = Array.isArray(this.entryApprovalData) ? this.entryApprovalData.find(r => Number(r.id) === Number(id)) : null;
+                        const voucherNumber = row?.entry_number || `#${id}`;
+                        try {
+                            const r = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&id=${id}`, {
+                                method: 'PUT',
+                                credentials: 'include',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ status: 'Rejected', posting_status: 'Rejected', rejection_reason: rejectionReason || '' })
+                            });
+                            const d = await r.json().catch(() => null);
+                            if (d?.success) ok++;
+                            else failures.push({ voucherNumber, message: d?.message || `HTTP ${r.status}` });
+                        } catch (err) {
+                            failures.push({ voucherNumber, message: (err && err.message) ? err.message : 'Request failed' });
+                        }
                     }
                     this.showToast(`${ok} voucher(s) rejected successfully`, ok ? 'success' : 'warning');
+                    failures.forEach((f) => {
+                        this.showToast(`Voucher ${f.voucherNumber}: ${f.message}`, 'error');
+                    });
                     const filterSelect = document.getElementById('entryApprovalStatusFilter');
                     await this.loadEntryApproval(filterSelect ? filterSelect.value : 'all');
                     return;
