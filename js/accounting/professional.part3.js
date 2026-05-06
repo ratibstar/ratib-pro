@@ -5362,6 +5362,14 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                     const tx = await txRes.json().catch(() => null);
                     if (isStale()) return;
                     totalEntries = Number(tx?.total_count || tx?.total || tx?.count || 0);
+                const txIncome = Number(tx?.summary?.total_income || 0);
+                const txExpense = Number(tx?.summary?.total_expenses || 0);
+                if (income === 0 && expense === 0 && profit === 0 && (txIncome > 0 || txExpense > 0)) {
+                    income = txIncome;
+                    expense = txExpense;
+                    profit = income - expense;
+                    if (cash === 0) cash = profit;
+                }
                 } catch (_) {
                     totalEntries = 0;
                 }
