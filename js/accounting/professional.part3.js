@@ -5414,6 +5414,7 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                 }
                 } catch (_) {}
             }
+            let jeCountForFast = 0;
             if (txHint && totalEntries <= 0) {
                 try {
                     const jeUrl = `${this.apiBase}/journal-entries.php?limit=1&page=1${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
@@ -5426,11 +5427,32 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                     const je = await jeRes.json().catch(() => null);
                     if (isStale()) return;
                     const jeCount = Number(je?.total_count || je?.total || je?.count || (Array.isArray(je?.entries) ? je.entries.length : 0));
+                    jeCountForFast = Math.max(jeCountForFast, jeCount);
                     if (jeCount > 0) {
                         totalEntries = jeCount;
                     }
                 } catch (_) {}
             }
+            // Fast reactive counter: JE + Receipt Vouchers + Payment Vouchers
+            try {
+                const [jeAllRes, rcRes, pyRes] = await Promise.all([
+                    fetch(`${this.apiBase}/journal-entries.php?_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } }),
+                    fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=receipt&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } }),
+                    fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=payment&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, { credentials: 'include', cache: 'no-cache', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } })
+                ]);
+                if (isStale()) return;
+                const jeAll = await jeAllRes.json().catch(() => null);
+                const rcAll = await rcRes.json().catch(() => null);
+                const pyAll = await pyRes.json().catch(() => null);
+                if (isStale()) return;
+                const jeFast = Number(jeAll?.total_count || jeAll?.total || jeAll?.count || (Array.isArray(jeAll?.entries) ? jeAll.entries.length : 0)) || jeCountForFast;
+                const rcCount = Number(rcAll?.total_count || rcAll?.total || rcAll?.count || (Array.isArray(rcAll?.vouchers) ? rcAll.vouchers.length : 0));
+                const pyCount = Number(pyAll?.total_count || pyAll?.total || pyAll?.count || (Array.isArray(pyAll?.vouchers) ? pyAll.vouchers.length : 0));
+                const fastCombined = Math.max(0, jeFast) + Math.max(0, rcCount) + Math.max(0, pyCount);
+                if (fastCombined > 0) {
+                    totalEntries = Math.max(totalEntries, fastCombined);
+                }
+            } catch (_) {}
 
             const summaryKey = agencyId || 'default';
             this._reportsLastGoodSummary = this._reportsLastGoodSummary || {};
@@ -5483,8 +5505,9 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
 
             const totalEl = document.getElementById('modalReportsTotal');
             const transactionCountEl = document.getElementById('modalReportsTransactionCount');
-            if (totalEl) totalEl.textContent = String(totalEntries);
-            if (transactionCountEl) transactionCountEl.textContent = String(totalEntries);
+            const finalEntriesText = String(totalEntries);
+            if (transactionCountEl) transactionCountEl.textContent = finalEntriesText;
+            if (totalEl) totalEl.textContent = finalEntriesText;
         } catch (e) {
             // Keep the modal usable even if summary endpoints fail.
         }
