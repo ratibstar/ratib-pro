@@ -4709,13 +4709,7 @@
                 'warning'
             );
             if (!confirmed) return;
-            const reason = await this.showPrompt(
-                'Rejection Reason',
-                `Please enter the reason for rejecting ${checked.length} entry(ies):`,
-                '',
-                'Enter rejection reason...',
-                'text'
-            );
+            const reason = await this.pickEntryRejectionReason(`Please select the reason for rejecting ${checked.length} entry(ies):`);
             if (!reason || !reason.trim()) {
                 if (reason !== null) {
                     this.showToast('Rejection reason is required', 'error');
@@ -4723,6 +4717,75 @@
                 return;
             }
             await this.rejectEntries(checked, reason.trim());
+        },
+
+        async pickEntryRejectionReason(message = 'Please select the rejection reason:') {
+            const reasonChoices = [
+                'Insufficient supporting documents',
+                'Amount/account mismatch found',
+                'Duplicate entry detected',
+                'Policy/compliance validation failed',
+                'Needs manager review and correction'
+            ];
+            const reason = await new Promise((resolve) => {
+                const modalId = 'entryRejectReasonModal';
+                const chips = reasonChoices.map((r) =>
+                    `<button type="button" class="btn btn-sm btn-secondary entry-reject-reason-choice" data-reason="${this.escapeHtml(r)}" style="margin:3px;">${this.escapeHtml(r)}</button>`
+                ).join('');
+                const content = `
+                    <div class="accounting-modal-form-group">
+                        <label>${this.escapeHtml(message)}</label>
+                        <div>${chips}</div>
+                    </div>
+                    <div class="accounting-modal-form-group">
+                        <label>Or custom reason</label>
+                        <input type="text" id="entryRejectReasonCustom" placeholder="Type custom reason...">
+                    </div>
+                    <div class="accounting-modal-actions">
+                        <button type="button" class="btn btn-secondary" id="entryRejectReasonCancel">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="entryRejectReasonOk" disabled>OK</button>
+                    </div>
+                `;
+                this.showModal('Rejection Reason', content, 'small', modalId);
+                setTimeout(() => {
+                    const m = document.getElementById(modalId);
+                    if (!m) return resolve(null);
+                    let selectedReason = '';
+                    const customInput = m.querySelector('#entryRejectReasonCustom');
+                    const okBtn = m.querySelector('#entryRejectReasonOk');
+                    const updateOkState = () => {
+                        const customVal = (customInput && customInput.value ? customInput.value.trim() : '');
+                        if (okBtn) okBtn.disabled = !(selectedReason || customVal);
+                    };
+                    m.querySelectorAll('.entry-reject-reason-choice').forEach((b) => {
+                        b.addEventListener('click', () => {
+                            selectedReason = b.getAttribute('data-reason') || '';
+                            m.querySelectorAll('.entry-reject-reason-choice').forEach((x) => x.classList.remove('btn-primary'));
+                            b.classList.add('btn-primary');
+                            if (customInput) customInput.value = '';
+                            updateOkState();
+                        });
+                    });
+                    if (customInput) {
+                        customInput.addEventListener('input', () => {
+                            if ((customInput.value || '').trim()) {
+                                selectedReason = '';
+                                m.querySelectorAll('.entry-reject-reason-choice').forEach((x) => x.classList.remove('btn-primary'));
+                            }
+                            updateOkState();
+                        });
+                    }
+                    const cancelBtn = m.querySelector('#entryRejectReasonCancel');
+                    if (cancelBtn) cancelBtn.addEventListener('click', () => { this.closeModal(modalId, false); resolve(null); });
+                    if (okBtn) okBtn.addEventListener('click', () => {
+                        if (okBtn.disabled) return;
+                        const v = (customInput && customInput.value ? customInput.value.trim() : '');
+                        this.closeModal(modalId, false);
+                        resolve(v || selectedReason);
+                    });
+                }, 30);
+            });
+            return reason ? String(reason).trim() : reason;
         },
 
         async approveEntries(ids) {
@@ -4789,6 +4852,32 @@
                 });
                 const data = await response.json().catch(() => ({ success: false, message: 'Invalid response' }));
                 if (!response.ok || !data.success) {
+                    const msg = String(data.message || data.error || '').toLowerCase();
+                    const looksAlreadyApproved = msg.includes('no entries were approved') || msg.includes('already be approved');
+                    if (looksAlreadyApproved) {
+                        let hadReapprovedRows = false;
+                        let reapprovedApprovalIds = [];
+                        try {
+                            reapprovedApprovalIds = JSON.parse(sessionStorage.getItem('accounting_reapproved_approval_ids') || '[]');
+                        } catch (_) {}
+                        const idSet = new Set((Array.isArray(reapprovedApprovalIds) ? reapprovedApprovalIds : []).map((x) => Number(x)));
+                        ids.forEach((id) => {
+                            if (idSet.has(Number(id))) {
+                                hadReapprovedRows = true;
+                                idSet.delete(Number(id));
+                            }
+                        });
+                        if (hadReapprovedRows) {
+                            try {
+                                sessionStorage.setItem('accounting_reapproved_approval_ids', JSON.stringify(Array.from(idSet)));
+                            } catch (_) {}
+                            this.showToast('Entry kept approved and re-approval flag cleared', 'success');
+                            const filterSelect = document.getElementById('entryApprovalStatusFilter');
+                            const currentFilter = filterSelect ? filterSelect.value : 'all';
+                            await this.loadEntryApproval(currentFilter);
+                            return;
+                        }
+                    }
                     this.showToast(data.message || 'Failed to approve entries', 'error');
                     return;
                 }
@@ -4813,13 +4902,7 @@
         async rejectEntries(ids, rejectionReason = null) {
             if (!ids || ids.length === 0) return;
             if (!rejectionReason) {
-                rejectionReason = await this.showPrompt(
-                    'Rejection Reason',
-                    'Please enter the reason for rejecting this entry:',
-                    '',
-                    'Enter rejection reason...',
-                    'text'
-                );
+                rejectionReason = await this.pickEntryRejectionReason('Please select the reason for rejecting this entry:');
                 if (!rejectionReason || !rejectionReason.trim()) {
                     if (rejectionReason !== null) {
                         this.showToast('Rejection reason is required', 'error');
@@ -4876,6 +4959,18 @@
                     return;
                 }
                 this.showToast(data.message || `${ids.length} entry(ies) rejected successfully`, 'success');
+                try {
+                    const rawA = sessionStorage.getItem('accounting_reapproved_approval_ids');
+                    const rawJ = sessionStorage.getItem('accounting_reapproved_journal_ids');
+                    const arrA = rawA ? JSON.parse(rawA) : [];
+                    const arrJ = rawJ ? JSON.parse(rawJ) : [];
+                    const nextA = (Array.isArray(arrA) ? arrA : []).filter((x) => !ids.includes(Number(x)));
+                    const byId = new Map((Array.isArray(this.entryApprovalData) ? this.entryApprovalData : []).map((r) => [Number(r.id), Number(r.journal_entry_id || 0)]));
+                    const removeJ = new Set(ids.map((id) => byId.get(Number(id))).filter((x) => Number(x) > 0));
+                    const nextJ = (Array.isArray(arrJ) ? arrJ : []).filter((x) => !removeJ.has(Number(x)));
+                    sessionStorage.setItem('accounting_reapproved_approval_ids', JSON.stringify(nextA));
+                    sessionStorage.setItem('accounting_reapproved_journal_ids', JSON.stringify(nextJ));
+                } catch (_) {}
                 await new Promise((resolve) => setTimeout(resolve, 500));
                 const filterSelect = document.getElementById('entryApprovalStatusFilter');
                 if (filterSelect) {
