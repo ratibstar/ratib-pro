@@ -604,9 +604,11 @@
                     } catch (_) {}
                     const isReapproved = (Array.isArray(reapprovedApprovalIds) && reapprovedApprovalIds.includes(Number(entry.id))) ||
                         (Array.isArray(reapprovedJournalIds) && reapprovedJournalIds.includes(Number(entry.journal_entry_id || 0)));
-                    // If row was re-approved from General Ledger, reopen approval actions in Entry Approval.
+                    // Keep approval actions visible across agencies like Indonesia setup (entries view).
                     const isReapprovalRequested = isReapproved;
-                    const canTakeApprovalActions = isPending || isReapprovalRequested;
+                    const canTakeApprovalActions = ((this.entryApprovalView || 'entries') === 'entries')
+                        ? true
+                        : (isPending || isReapprovalRequested);
                     const currency = entry.currency || this.getDefaultCurrencySync();
                     const debitAmount = parseFloat(entry.total_debit ?? entry.debit_amount ?? entry.debit ?? 0) || 0;
                     const creditAmount = parseFloat(entry.total_credit ?? entry.credit_amount ?? entry.credit ?? 0) || 0;
@@ -619,7 +621,7 @@
                                 <td class="voucher-number-cell">
                                     <div class="voucher-number-stack">
                                         <div class="voucher-number-inline" style="display:flex; align-items:center; gap:8px;">
-                                            <input type="checkbox" class="entry-checkbox" value="${entry.id}" ${!canTakeApprovalActions ? 'disabled' : ''} />
+                                            <input type="checkbox" class="entry-checkbox" value="${entry.id}" ${(((this.entryApprovalView || 'entries') === 'entries') ? '' : (!canTakeApprovalActions ? 'disabled' : ''))} />
                                             <a href="#" class="journal-ref-link" data-action="view-entry" data-id="${entry.id}" title="View Entry">
                                                 ${this.escapeHtml(entry.entry_number || '')}
                                             </a>
