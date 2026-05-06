@@ -1278,6 +1278,8 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                 }
                 case 'reapprove-entry': {
                     const btn = e.target.closest('[data-action="reapprove-entry"]');
+                    const fromLedgerModal = !!e.target.closest('#generalLedgerModal');
+                    if (!fromLedgerModal) break; // Re-approve action is allowed only from General Ledger rows.
                     const id = parseInt(btn?.getAttribute('data-id') || e.target.closest('[data-id]')?.getAttribute('data-id') || 0, 10);
                     if (!id) break;
                     const reasonChoices = [

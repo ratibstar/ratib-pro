@@ -647,16 +647,10 @@
                                             <i class="fas fa-times"></i>
                                         </button>
                                     ` : ''}
-                                    ${(isRejected || isApproved) ? `
-                                    ${isReapproved ? `
+                                    ${(isRejected || isApproved) && isReapproved ? `
                                     <button class="btn-icon reapproved" title="Re-Approved" disabled>
                                         <i class="fas fa-check-double"></i>
                                     </button>
-                                    ` : `
-                                    <button class="btn-icon btn-primary" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve">
-                                        <i class="fas fa-undo"></i>
-                                    </button>
-                                    `}
                                     ` : ''}
                                     ${status !== 'approved' ? `
                                     <button class="btn-icon btn-edit" data-action="edit-entry-approval" data-id="${entry.id}" title="Edit">
