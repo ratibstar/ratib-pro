@@ -1289,39 +1289,35 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                     ).then(async (confirmed) => {
                         if (!confirmed) return;
                         try {
-                            // Re-approve from General Ledger by updating journal entry status directly.
-                            const getRes = await fetch(`${this.apiBase}/journal-entries.php?id=${id}`, { credentials: 'include' });
-                            const getData = await getRes.json().catch(() => ({}));
-                            const entry = getData?.entry || null;
-                            if (!getRes.ok || !entry) {
-                                this.showToast((getData && (getData.message || getData.error)) || `Failed to load entry #${id}`, 'error');
+                            // Re-approve through Entry Approval workflow using journal_entry_id -> entry_approval.id.
+                            const approvalListRes = await fetch(`${this.apiBase}/entry-approval.php?status=rejected`, { credentials: 'include' });
+                            const approvalListData = await approvalListRes.json().catch(() => ({}));
+                            const rows = Array.isArray(approvalListData?.entries) ? approvalListData.entries : [];
+                            const linked = rows.find((r) => Number(r.journal_entry_id || 0) === Number(id));
+                            if (!linked || !linked.id) {
+                                this.showToast(`No rejected approval row linked to entry #${id}`, 'warning');
                                 return;
                             }
 
-                            const putPayload = {
-                                entry_date: entry.entry_date || '',
-                                description: entry.description || '',
-                                total_debit: Number(entry.total_debit || 0),
-                                total_credit: Number(entry.total_credit || 0),
-                                status: 'Posted',
-                                currency: entry.currency || this.getDefaultCurrencySync(),
-                                entry_type: entry.entry_type || 'Manual'
-                            };
-                            const putRes = await fetch(`${this.apiBase}/journal-entries.php?id=${id}`, {
-                                method: 'PUT',
+                            const approveRes = await fetch(`${this.apiBase}/entry-approval.php`, {
+                                method: 'POST',
                                 credentials: 'include',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(putPayload)
+                                body: JSON.stringify({ action: 'approve', ids: [Number(linked.id)] })
                             });
-                            const putData = await putRes.json().catch(() => ({}));
-                            if (!putRes.ok || !putData.success) {
-                                this.showToast((putData && (putData.message || putData.error)) || `Failed to re-approve entry #${id}`, 'error');
+                            const approveData = await approveRes.json().catch(() => ({}));
+                            if (!approveRes.ok || !approveData.success) {
+                                this.showToast((approveData && (approveData.message || approveData.error)) || `Failed to re-approve entry #${id}`, 'error');
                                 return;
                             }
 
-                            this.showToast(`Entry ${entry.entry_number || ('#' + id)} re-approved`, 'success');
+                            this.showToast(`Entry #${id} re-approved`, 'success');
                             if (typeof this.loadModalJournalEntries === 'function') {
                                 await this.loadModalJournalEntries();
+                            }
+                            if (typeof this.loadEntryApproval === 'function') {
+                                const f = document.getElementById('entryApprovalStatusFilter');
+                                await this.loadEntryApproval(f ? f.value : 'all');
                             }
                             if (typeof this.loadDashboard === 'function') {
                                 setTimeout(() => this.loadDashboard(), 300);
