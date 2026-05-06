@@ -4369,6 +4369,9 @@
                                 amount: v.amount,
                                 currency: v.currency || this.getDefaultCurrencySync(),
                                 status: v.status,
+                                postingStatus: v.posting_status || '',
+                                isPosted: Number(v.is_posted || 0),
+                                rejectionReason: v.rejection_reason || '',
                                 voucherType: 'payment'
                             });
                         });
@@ -4392,6 +4395,9 @@
                                 amount: v.amount,
                                 currency: v.currency || this.getDefaultCurrencySync(),
                                 status: v.status,
+                                postingStatus: v.posting_status || '',
+                                isPosted: Number(v.is_posted || 0),
+                                rejectionReason: v.rejection_reason || '',
                                 voucherType: 'payment'
                             });
                         });
@@ -4407,6 +4413,9 @@
                                 amount: v.amount,
                                 currency: v.currency || this.getDefaultCurrencySync(),
                                 status: v.status,
+                                postingStatus: v.posting_status || '',
+                                isPosted: Number(v.is_posted || 0),
+                                rejectionReason: v.rejection_reason || '',
                                 voucherType: 'receipt'
                             });
                         });
@@ -4443,7 +4452,20 @@
                         </tr>
                     `;
                 } else {
-                    tbody.innerHTML = allVouchers.map(voucher => `
+                    const approvalUi = (voucher) => {
+                        const s = String(voucher?.status || '').trim().toLowerCase();
+                        const ps = String(voucher?.postingStatus || '').trim().toLowerCase();
+                        const posted = Number(voucher?.isPosted || 0) === 1;
+                        const reason = String(voucher?.rejectionReason || '').trim();
+                        if (s === 'rejected') return { label: 'Rejected', badge: 'danger', reason };
+                        if (posted || s === 'approved' || s === 'posted' || ps === 'approved' || ps === 'posted') {
+                            return { label: 'Approved', badge: 'success', reason: '' };
+                        }
+                        return { label: 'Pending', badge: 'warning', reason: '' };
+                    };
+                    tbody.innerHTML = allVouchers.map(voucher => {
+                        const ui = approvalUi(voucher);
+                        return `
                         <tr>
                             <td>${this.escapeHtml(voucher.reference || 'N/A')}</td>
                             <td>${voucher.date || 'N/A'}</td>
@@ -4455,9 +4477,8 @@
                             <td>${this.escapeHtml(voucher.referenceNumber || '-')}</td>
                             <td>${this.formatCurrency(voucher.amount || 0, voucher.currency)}</td>
                             <td>
-                                <span class="badge badge-${voucher.status === 'Draft' ? 'secondary' : voucher.status === 'Cleared' || voucher.status === 'Deposited' ? 'success' : 'warning'}">
-                                    ${this.escapeHtml(voucher.status || 'N/A')}
-                                </span>
+                                <span class="badge badge-${ui.badge}">${this.escapeHtml(ui.label)}</span>
+                                ${ui.reason ? `<div class="text-danger" style="font-size:11px;margin-top:2px;">Reason: ${this.escapeHtml(ui.reason)}</div>` : ''}
                             </td>
                             <td class="actions-column">
                                 <button class="btn btn-sm btn-info" data-action="view-voucher" data-id="${voucher.id}" data-type="${voucher.voucherType}" title="View">
@@ -4474,7 +4495,8 @@
                                 </button>
                             </td>
                         </tr>
-                    `).join('');
+                    `;
+                    }).join('');
                 }
             } catch (error) {
                 console.error('Error loading vouchers:', error);
@@ -4701,14 +4723,34 @@
                     const type = this.entryApprovalView;
                     let ok = 0;
                     for (const id of ids) {
-                        const r = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&action=post&id=${id}`, {
-                            method: 'POST',
-                            credentials: 'include',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({})
-                        });
-                        const d = await r.json().catch(() => null);
-                        if (d?.success) ok++;
+                        // Approval path for voucher tabs:
+                        // 1) Mark status as Approved (Entry Approval style).
+                        // 2) If that fails, fallback to post action.
+                        let approved = false;
+                        try {
+                            const putRes = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&id=${id}`, {
+                                method: 'PUT',
+                                credentials: 'include',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ status: 'Approved', posting_status: 'Approved' })
+                            });
+                            const putData = await putRes.json().catch(() => null);
+                            approved = !!putData?.success;
+                        } catch (_) {}
+
+                        if (!approved) {
+                            try {
+                                const postRes = await fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=${encodeURIComponent(type)}&action=post&id=${id}`, {
+                                    method: 'POST',
+                                    credentials: 'include',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({})
+                                });
+                                const postData = await postRes.json().catch(() => null);
+                                approved = !!postData?.success;
+                            } catch (_) {}
+                        }
+                        if (approved) ok++;
                     }
                     this.showToast(`${ok} voucher(s) approved successfully`, ok ? 'success' : 'warning');
                     const filterSelect = document.getElementById('entryApprovalStatusFilter');

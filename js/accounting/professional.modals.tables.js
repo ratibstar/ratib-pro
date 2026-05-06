@@ -3822,6 +3822,13 @@
                 if (data.success && data.voucher) {
                     const v = data.voucher;
                     const typeLabel = voucherType === 'payment' ? 'Payment' : 'Receipt';
+                    const s = String(v.status || '').trim().toLowerCase();
+                    const ps = String(v.posting_status || '').trim().toLowerCase();
+                    const posted = Number(v.is_posted || 0) === 1;
+                    const rejected = s === 'rejected';
+                    const approved = posted || s === 'approved' || s === 'posted' || ps === 'approved' || ps === 'posted';
+                    const statusLabel = rejected ? 'Rejected' : (approved ? 'Approved' : 'Pending');
+                    const statusBadge = rejected ? 'danger' : (approved ? 'success' : 'warning');
                     const content = `
                         <div class="voucher-view-details accounting-modal-form-group">
                             <div class="accounting-modal-form-row">
@@ -3867,9 +3874,14 @@
                             <div class="accounting-modal-form-row">
                                 <div class="accounting-modal-form-group">
                                     <label>Status</label>
-                                    <p class="voucher-view-value"><span class="badge badge-${v.status === 'Draft' ? 'secondary' : v.status === 'Posted' || v.status === 'Cleared' ? 'success' : 'warning'}">${this.escapeHtml(v.status || 'N/A')}</span></p>
+                                    <p class="voucher-view-value"><span class="badge badge-${statusBadge}">${this.escapeHtml(statusLabel)}</span></p>
                                 </div>
                             </div>
+                            ${rejected && (v.rejection_reason || '').trim() ? `
+                            <div class="accounting-modal-form-group full-width">
+                                <label>Rejection Reason</label>
+                                <p class="voucher-view-value text-danger">${this.escapeHtml(v.rejection_reason)}</p>
+                            </div>` : ''}
                             <div class="accounting-modal-form-group full-width">
                                 <label>Description</label>
                                 <p class="voucher-view-value">${this.escapeHtml(v.notes || v.description || 'N/A')}</p>
