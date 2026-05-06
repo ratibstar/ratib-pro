@@ -11058,9 +11058,9 @@ input.date-input {
     border-right: none;
 }
 
-/* No horizontal scrolling: fit columns inside modal */
+/* Allow horizontal scroll when actions/buttons need space */
 #generalLedgerModal #modalLedgerTableWrapper {
-    overflow-x: hidden !important;
+    overflow-x: auto !important;
 }
 
 /* Column widths (must match the 8 rendered <td> cells) */
@@ -11105,9 +11105,9 @@ input.date-input {
 
 #generalLedgerModal #modalJournalEntriesTable.professional-ledger-table th:nth-child(8),
 #generalLedgerModal #modalJournalEntriesTable.professional-ledger-table td:nth-child(8) {
-    width: 120px !important; /* Actions */
-    min-width: 120px !important;
-    max-width: 120px !important;
+    width: 220px !important; /* Actions */
+    min-width: 220px !important;
+    max-width: 220px !important;
 }
 
 /* Alignments */
@@ -11141,6 +11141,12 @@ input.date-input {
 
 #generalLedgerModal #modalJournalEntriesTable.professional-ledger-table td:nth-child(8) {
     text-align: center;
+    white-space: nowrap !important;
+    overflow: visible !important;
+}
+
+#generalLedgerModal #modalJournalEntriesTable.professional-ledger-table td:nth-child(8) .action-btn {
+    margin-right: 3px;
 }
 
 #generalLedgerModal .voucher-number-stack {
