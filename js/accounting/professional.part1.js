@@ -1280,20 +1280,21 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                     const btn = e.target.closest('[data-action="reapprove-entry"]');
                     const id = parseInt(btn?.getAttribute('data-id') || e.target.closest('[data-id]')?.getAttribute('data-id') || 0, 10);
                     if (!id) break;
-                    const confirmed = await this.showConfirmDialog(
+                    this.showConfirmDialog(
                         'Re-Approve Entry',
                         'Are you sure you want to re-approve this entry?',
                         'Re-Approve',
                         'Cancel',
                         'success'
-                    );
-                    if (!confirmed) break;
-                    if (typeof this.approveEntries === 'function') {
-                        await this.approveEntries([id]);
-                        if (typeof this.loadModalJournalEntries === 'function') {
-                            await this.loadModalJournalEntries();
+                    ).then(async (confirmed) => {
+                        if (!confirmed) return;
+                        if (typeof this.approveEntries === 'function') {
+                            await this.approveEntries([id]);
+                            if (typeof this.loadModalJournalEntries === 'function') {
+                                await this.loadModalJournalEntries();
+                            }
                         }
-                    }
+                    });
                     break;
                 }
                 case 'edit-entry-approval':
