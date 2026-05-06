@@ -5222,6 +5222,18 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                 const val = currentParams.get(key);
                 if (val !== null && val !== '') tenantParams.set(key, val);
             });
+            const serverTenant = (window.__ACCOUNTING_TENANT_CONTEXT__ && typeof window.__ACCOUNTING_TENANT_CONTEXT__ === 'object')
+                ? window.__ACCOUNTING_TENANT_CONTEXT__
+                : {};
+            if (!tenantParams.get('control') && String(serverTenant.control || '') === '1') {
+                tenantParams.set('control', '1');
+            }
+            if (!tenantParams.get('agency_id') && String(serverTenant.agency_id || '').trim() !== '' && String(serverTenant.agency_id) !== '0') {
+                tenantParams.set('agency_id', String(serverTenant.agency_id));
+            }
+            if (!tenantParams.get('country_id') && String(serverTenant.country_id || '').trim() !== '' && String(serverTenant.country_id) !== '0') {
+                tenantParams.set('country_id', String(serverTenant.country_id));
+            }
             const tenantQuery = tenantParams.toString();
             const agencyId = tenantParams.get('agency_id') || '';
             const suffix = agencyId ? ` (agency_id=${agencyId})` : '';

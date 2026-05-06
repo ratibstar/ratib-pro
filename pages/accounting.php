@@ -1124,11 +1124,37 @@ include '../includes/header.php';
 <script>
 (function () {
     var c = <?php echo $ratibAccountingBootstrapCurrencyJson; ?>;
+    var tenant = {
+        control: <?php echo (!empty($_GET['control']) && (string)$_GET['control'] === '1') || !empty($_SESSION['control_logged_in']) ? '1' : '0'; ?>,
+        agency_id: "<?php
+            $aid = 0;
+            if (isset($_GET['agency_id']) && ctype_digit((string)$_GET['agency_id'])) {
+                $aid = (int)$_GET['agency_id'];
+            } elseif (!empty($_SESSION['agency_id'])) {
+                $aid = (int)$_SESSION['agency_id'];
+            } elseif (!empty($_SESSION['control_agency_id'])) {
+                $aid = (int)$_SESSION['control_agency_id'];
+            }
+            echo (int)$aid;
+        ?>",
+        country_id: "<?php
+            $cid = 0;
+            if (isset($_GET['country_id']) && ctype_digit((string)$_GET['country_id'])) {
+                $cid = (int)$_GET['country_id'];
+            } elseif (!empty($_SESSION['country_id'])) {
+                $cid = (int)$_SESSION['country_id'];
+            } elseif (!empty($_SESSION['control_country_id'])) {
+                $cid = (int)$_SESSION['control_country_id'];
+            }
+            echo (int)$cid;
+        ?>"
+    };
     if (typeof c !== 'string') {
         c = '';
     }
     window.__ACCOUNTING_SERVER_DEFAULT_CURRENCY__ = c;
     window.__ACCOUNTING_SERVER_BOOTSTRAPPED__ = true;
+    window.__ACCOUNTING_TENANT_CONTEXT__ = tenant;
     try {
         if (/^[A-Z]{3}$/.test(c)) {
             localStorage.setItem('accounting_default_currency', c);
