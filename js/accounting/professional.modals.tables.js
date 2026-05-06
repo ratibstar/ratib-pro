@@ -792,25 +792,35 @@
                 if (agingCountEl) agingCountEl.textContent = String(receivablesCount + payablesCount);
                 if (analysisCountEl) analysisCountEl.textContent = this.formatCurrency(profit, cur);
 
-                // STRICT SINGLE-SOURCE MODE:
-                // Use only journal-entries API for entry counters to avoid overlap/double counting.
+                // Activity total mode: Journal Entries + Receipt Vouchers + Payment Vouchers.
                 let totalEntries = 0;
                 try {
-                    const jeUrl = `${this.apiBase}/journal-entries.php?_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`;
-                    const jeRes = await fetch(jeUrl, {
-                        credentials: 'include',
-                        cache: 'no-cache',
-                        headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-                    });
+                    const [jeRes, rcRes, pyRes] = await Promise.all([
+                        fetch(`${this.apiBase}/journal-entries.php?_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, {
+                            credentials: 'include',
+                            cache: 'no-cache',
+                            headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                        }),
+                        fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=receipt&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, {
+                            credentials: 'include',
+                            cache: 'no-cache',
+                            headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                        }),
+                        fetch(`${this.apiBase}/receipt-payment-vouchers.php?type=payment&_t=${Date.now()}${tenantQuery ? `&${tenantQuery}` : ''}`, {
+                            credentials: 'include',
+                            cache: 'no-cache',
+                            headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                        })
+                    ]);
                     if (isStale()) return;
                     const je = await jeRes.json().catch(() => null);
+                    const rc = await rcRes.json().catch(() => null);
+                    const py = await pyRes.json().catch(() => null);
                     if (isStale()) return;
-                    totalEntries = Number(
-                        je?.total_count ||
-                        je?.total ||
-                        je?.count ||
-                        (Array.isArray(je?.entries) ? je.entries.length : 0)
-                    ) || 0;
+                    const jeCount = Number(je?.total_count || je?.total || je?.count || (Array.isArray(je?.entries) ? je.entries.length : 0)) || 0;
+                    const rcCount = Number(rc?.total_count || rc?.total || rc?.count || (Array.isArray(rc?.vouchers) ? rc.vouchers.length : 0)) || 0;
+                    const pyCount = Number(py?.total_count || py?.total || py?.count || (Array.isArray(py?.vouchers) ? py.vouchers.length : 0)) || 0;
+                    totalEntries = Math.max(0, jeCount) + Math.max(0, rcCount) + Math.max(0, pyCount);
                 } catch (_) {
                     totalEntries = 0;
                 }
