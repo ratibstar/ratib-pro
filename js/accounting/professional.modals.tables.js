@@ -601,7 +601,7 @@
                     return;
                 }
                 this.loadReportsConnectionSummary();
-            }, 20000);
+            }, 3000);
         },
 
         async loadReportsConnectionSummary() {
@@ -840,9 +840,7 @@
                         profit = income - expense;
                         if (cash === 0) cash = profit;
                     }
-                    } catch (_) {
-                        totalEntries = 0;
-                    }
+                    } catch (_) {}
                 }
                 if (txHint && totalEntries <= 0) {
                     try {

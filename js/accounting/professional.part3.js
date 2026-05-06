@@ -5174,7 +5174,7 @@ ProfessionalAccounting.prototype.startReportsConnectionWatcher = function() {
                 return;
             }
             this.loadReportsConnectionSummary();
-        }, 20000);
+        }, 3000);
     }
 
 ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function() {
@@ -5412,9 +5412,7 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                     profit = income - expense;
                     if (cash === 0) cash = profit;
                 }
-                } catch (_) {
-                    totalEntries = 0;
-                }
+                } catch (_) {}
             }
             if (txHint && totalEntries <= 0) {
                 try {
