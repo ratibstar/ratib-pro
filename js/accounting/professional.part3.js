@@ -5258,6 +5258,7 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             const summary = await summaryRes.json().catch(() => null);
             if (isStale()) return;
             if (!summary || !summary.success) return;
+            const dbTag = summary?.tenant_debug?.db ? ` | db:${summary.tenant_debug.db}` : '';
 
             const cur = this.normalizeCurrencyCode(summary?.dashboard?.currency) || this.getDefaultCurrencySync();
             let cash = Number(summary?.dashboard?.cash_balance || 0);
@@ -5328,13 +5329,13 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
                 }
             }
             if (balanceHint) {
-                balanceHint.textContent = `Cash ${this.formatCurrency(cash, cur)} | Net ${this.formatCurrency(profit, cur)}${suffix}`;
+                balanceHint.textContent = `Cash ${this.formatCurrency(cash, cur)} | Net ${this.formatCurrency(profit, cur)}${suffix}${dbTag}`;
             }
             if (agingHint) {
                 agingHint.textContent = `AR ${this.formatCurrency(receivables, cur)} | AP ${this.formatCurrency(payables, cur)}${suffix}`;
             }
             if (analysisHint) {
-                analysisHint.textContent = `Revenue ${this.formatCurrency(income, cur)} | Expense ${this.formatCurrency(expense, cur)}${suffix}`;
+                analysisHint.textContent = `Revenue ${this.formatCurrency(income, cur)} | Expense ${this.formatCurrency(expense, cur)}${suffix}${dbTag}`;
             }
 
             // Update financial cards independently from transactions endpoint.
@@ -5421,7 +5422,7 @@ ProfessionalAccounting.prototype.loadReportsConnectionSummary = async function()
             }
 
             if (txHint) {
-                txHint.textContent = `${totalEntries} transaction entries available${suffix}`;
+                txHint.textContent = `${totalEntries} transaction entries available${suffix}${dbTag}`;
             }
 
             const totalEl = document.getElementById('modalReportsTotal');
