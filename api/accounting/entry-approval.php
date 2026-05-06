@@ -805,8 +805,27 @@ try {
                 $stmt->close();
                 
                 if ($approvedCount === 0) {
-                    $conn->rollback();
-                    throw new Exception('No entries were approved. Entries may already be approved.');
+                    // If requested rows are already approved, treat as successful idempotent approval.
+                    $alreadyStmt = $conn->prepare("
+                        SELECT COUNT(*) AS cnt
+                        FROM entry_approval
+                        WHERE id IN (" . implode(',', array_fill(0, count($ids), '?')) . ")
+                        AND status = 'approved'
+                    ");
+                    $alreadyStmt->bind_param(str_repeat('i', count($ids)), ...$ids);
+                    $alreadyStmt->execute();
+                    $alreadyRes = $alreadyStmt->get_result();
+                    $alreadyCnt = 0;
+                    if ($alreadyRes) {
+                        $row = $alreadyRes->fetch_assoc();
+                        $alreadyCnt = intval($row['cnt'] ?? 0);
+                        $alreadyRes->free();
+                    }
+                    $alreadyStmt->close();
+                    if ($alreadyCnt <= 0) {
+                        $conn->rollback();
+                        throw new Exception('No entries were approved. Entries may already be approved.');
+                    }
                 }
                 
                 // If entries are linked to journal entries, update journal entry status to Posted
