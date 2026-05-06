@@ -620,6 +620,30 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
             return jeFail('validation', 'Form not found');
         }
         
+        const toWesternDigits = (s) => String(s || '').replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (ch) => {
+            const code = ch.charCodeAt(0);
+            if (code >= 0x0660 && code <= 0x0669) return String(code - 0x0660);
+            if (code >= 0x06F0 && code <= 0x06F9) return String(code - 0x06F0);
+            return ch;
+        });
+        const normalizeAmountInput = (raw) => {
+            let v = toWesternDigits(raw);
+            v = v.replace(/\u066B/g, '.').replace(/\u066C/g, '');
+            v = v.replace(/\u060C/g, ',');
+            v = v.replace(/\s+/g, '');
+            if (v.includes('.') && v.includes(',')) {
+                v = v.replace(/,/g, '');
+            } else {
+                v = v.replace(/,/g, '.');
+            }
+            v = v.replace(/[^0-9.\-]/g, '');
+            return v;
+        };
+        const parseAmount = (raw) => {
+            const n = parseFloat(normalizeAmountInput(raw));
+            return Number.isFinite(n) ? n : 0;
+        };
+
         // Collect all debit and credit lines
         const debitLines = [];
         const creditLines = [];
@@ -634,7 +658,11 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
             const amountInput = row.querySelector('input.debit-amount, input.line-amount.debit-amount, .debit-amount');
             
             const accountId = accountSelect ? parseInt(String(accountSelect.value || '').trim(), 10) : 0;
-            const amount = amountInput ? parseFloat(String(amountInput.value || '').replace(',', '.')) : 0;
+            if (amountInput) {
+                const normalized = normalizeAmountInput(amountInput.value || '');
+                if (normalized !== (amountInput.value || '')) amountInput.value = normalized;
+            }
+            const amount = amountInput ? parseAmount(amountInput.value || '') : 0;
             
             // Only include lines with account and amount > 0 (round amount to 2 decimals)
             if (accountId > 0 && amount > 0) {
@@ -658,7 +686,11 @@ ProfessionalAccounting.prototype.saveJournalEntry = async function(entryId = nul
             const amountInput = row.querySelector('input.credit-amount, input.line-amount.credit-amount, .credit-amount');
             
             const accountId = accountSelect ? parseInt(String(accountSelect.value || '').trim(), 10) : 0;
-            const amount = amountInput ? parseFloat(String(amountInput.value || '').replace(',', '.')) : 0;
+            if (amountInput) {
+                const normalized = normalizeAmountInput(amountInput.value || '');
+                if (normalized !== (amountInput.value || '')) amountInput.value = normalized;
+            }
+            const amount = amountInput ? parseAmount(amountInput.value || '') : 0;
             
             // Only include lines with account and amount > 0 (round amount to 2 decimals)
             if (accountId > 0 && amount > 0) {

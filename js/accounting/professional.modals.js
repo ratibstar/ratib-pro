@@ -2882,6 +2882,32 @@
                 if (journalEntryForm && !journalEntryForm.hasAttribute('data-handler-attached')) {
                     // Mark as having handler attached to prevent duplicates
                     journalEntryForm.setAttribute('data-handler-attached', 'true');
+
+                    const toWesternDigits = (s) => String(s || '').replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (ch) => {
+                        const code = ch.charCodeAt(0);
+                        if (code >= 0x0660 && code <= 0x0669) return String(code - 0x0660);
+                        if (code >= 0x06F0 && code <= 0x06F9) return String(code - 0x06F0);
+                        return ch;
+                    });
+                    const normalizeAmountInput = (raw) => {
+                        let v = toWesternDigits(raw);
+                        // Arabic decimal/thousand separators
+                        v = v.replace(/\u066B/g, '.').replace(/\u066C/g, '');
+                        // Arabic comma acts as decimal separator in many keyboards
+                        v = v.replace(/\u060C/g, ',');
+                        v = v.replace(/\s+/g, '');
+                        if (v.includes('.') && v.includes(',')) {
+                            v = v.replace(/,/g, '');
+                        } else {
+                            v = v.replace(/,/g, '.');
+                        }
+                        v = v.replace(/[^0-9.\-]/g, '');
+                        return v;
+                    };
+                    const parseAmount = (raw) => {
+                        const n = parseFloat(normalizeAmountInput(raw));
+                        return Number.isFinite(n) ? n : 0;
+                    };
                     
                     // Setup real-time balance calculation for multiple lines
                     const updateBalance = () => {
@@ -2889,7 +2915,9 @@
                         const debitInputs = journalEntryForm.querySelectorAll('.debit-amount');
                         let totalDebit = 0;
                         debitInputs.forEach(input => {
-                            const value = parseFloat(input.value || 0);
+                            const normalized = normalizeAmountInput(input.value || '');
+                            if (normalized !== (input.value || '')) input.value = normalized;
+                            const value = parseAmount(normalized);
                             if (!isNaN(value) && value > 0) {
                                 totalDebit += value;
                             }
@@ -2899,7 +2927,9 @@
                         const creditInputs = journalEntryForm.querySelectorAll('.credit-amount');
                         let totalCredit = 0;
                         creditInputs.forEach(input => {
-                            const value = parseFloat(input.value || 0);
+                            const normalized = normalizeAmountInput(input.value || '');
+                            if (normalized !== (input.value || '')) input.value = normalized;
+                            const value = parseAmount(normalized);
                             if (!isNaN(value) && value > 0) {
                                 totalCredit += value;
                             }
@@ -2908,7 +2938,7 @@
                         // Every row with amount > 0 must have an account (server rejects otherwise — felt like "dead" buttons)
                         const rowAmount = (row, sel) => {
                             const inp = row.querySelector(sel);
-                            const v = inp ? parseFloat(inp.value || 0) : 0;
+                            const v = inp ? parseAmount(inp.value || 0) : 0;
                             return !isNaN(v) ? v : 0;
                         };
                         const rowAccountId = (row) => {
