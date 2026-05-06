@@ -5859,6 +5859,12 @@ body:not(.agent-page) .pagination-controls {
     color: #93c5fd;
 }
 
+.action-btn.reapproved {
+    color: #fecaca;
+    background: rgba(220, 38, 38, 0.35);
+    cursor: default;
+}
+
 .action-btn.delete {
     color: var(--accent-red);
     background: rgba(239, 68, 68, 0.1);

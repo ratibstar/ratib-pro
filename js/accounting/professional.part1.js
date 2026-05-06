@@ -1280,32 +1280,62 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                     const btn = e.target.closest('[data-action="reapprove-entry"]');
                     const id = parseInt(btn?.getAttribute('data-id') || e.target.closest('[data-id]')?.getAttribute('data-id') || 0, 10);
                     if (!id) break;
-                    const reasonGuide = [
-                        '1) Correction validated',
-                        '2) Supporting documents verified',
-                        '3) Manager override after review',
-                        '4) Data-entry mistake fixed',
-                        '5) Duplicate rejection resolved',
-                        '6) Other (write custom reason)'
-                    ].join('\n');
-                    this.showPrompt(
-                        'Re-Approval Reason',
-                        `Choose reason number or type custom reason:\n${reasonGuide}`,
-                        '1',
-                        'Enter 1-6 or custom reason...',
-                        'text'
-                    ).then((reason) => {
+                    const reasonChoices = [
+                        'Correction validated',
+                        'Supporting documents verified',
+                        'Manager override after review',
+                        'Data-entry mistake fixed',
+                        'Duplicate rejection resolved'
+                    ];
+                    (async () => {
+                        const reason = await new Promise((resolve) => {
+                            const modalId = 'reapproveReasonModal';
+                            const chips = reasonChoices.map((r, i) =>
+                                `<button type="button" class="btn btn-sm btn-secondary reapprove-reason-choice" data-reason="${this.escapeHtml(r)}" style="margin:3px;" id="reapproveReasonChoice${i}">${this.escapeHtml(r)}</button>`
+                            ).join('');
+                            const content = `
+                                <div class="accounting-modal-form-group">
+                                    <label>Select a reason</label>
+                                    <div id="reapproveReasonChoices">${chips}</div>
+                                </div>
+                                <div class="accounting-modal-form-group">
+                                    <label>Or custom reason</label>
+                                    <input type="text" id="reapproveReasonCustom" placeholder="Type custom reason...">
+                                </div>
+                                <div class="accounting-modal-actions">
+                                    <button type="button" class="btn btn-secondary" id="reapproveReasonCancel">Cancel</button>
+                                    <button type="button" class="btn btn-primary" id="reapproveReasonOk">OK</button>
+                                </div>
+                            `;
+                            this.showModal('Re-Approval Reason', content, 'small', modalId);
+                            setTimeout(() => {
+                                let selectedReason = reasonChoices[0];
+                                const modal = document.getElementById(modalId);
+                                if (!modal) return resolve(null);
+                                const customInput = modal.querySelector('#reapproveReasonCustom');
+                                modal.querySelectorAll('.reapprove-reason-choice').forEach((b) => {
+                                    b.addEventListener('click', () => {
+                                        selectedReason = b.getAttribute('data-reason') || '';
+                                        modal.querySelectorAll('.reapprove-reason-choice').forEach((x) => x.classList.remove('btn-primary'));
+                                        b.classList.add('btn-primary');
+                                    });
+                                });
+                                const okBtn = modal.querySelector('#reapproveReasonOk');
+                                const cancelBtn = modal.querySelector('#reapproveReasonCancel');
+                                if (okBtn) okBtn.addEventListener('click', () => {
+                                    const v = (customInput && customInput.value ? customInput.value.trim() : '');
+                                    const finalReason = v || selectedReason || 'Re-approved after review from General Ledger.';
+                                    this.closeModal(modalId, false);
+                                    resolve(finalReason);
+                                });
+                                if (cancelBtn) cancelBtn.addEventListener('click', () => {
+                                    this.closeModal(modalId, false);
+                                    resolve(null);
+                                });
+                            }, 30);
+                        });
                         if (reason === null) return;
-                        const normalizedReason = (() => {
-                            const v = String(reason || '').trim();
-                            if (v === '1') return 'Correction validated';
-                            if (v === '2') return 'Supporting documents verified';
-                            if (v === '3') return 'Manager override after review';
-                            if (v === '4') return 'Data-entry mistake fixed';
-                            if (v === '5') return 'Duplicate rejection resolved';
-                            if (v === '6' || v === '') return 'Other (manual re-approval reason provided by reviewer)';
-                            return v;
-                        })();
+                        const normalizedReason = String(reason || '').trim() || 'Re-approved after review from General Ledger.';
                         this.showConfirmDialog(
                             'Re-Approve Entry',
                             'Are you sure you want to re-approve this entry?',
@@ -1339,6 +1369,8 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
 
                                 this.showToast(`Entry #${id} re-approved`, 'success');
                                 this.showToast(`Reason: ${normalizedReason}`, 'info');
+                                if (!this._reapprovedEntryIds) this._reapprovedEntryIds = new Set();
+                                this._reapprovedEntryIds.add(Number(id));
                                 if (typeof this.loadModalJournalEntries === 'function') {
                                     await this.loadModalJournalEntries();
                                 }
@@ -1353,7 +1385,7 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                                 this.showToast((err && err.message) ? err.message : 'Re-approve failed', 'error');
                             }
                         });
-                    });
+                    })();
                     break;
                 }
                 case 'edit-entry-approval':
@@ -3640,9 +3672,13 @@ ProfessionalAccounting.prototype.loadJournalEntries = async function() {
                                 <button class="action-btn view" data-action="view-entry" data-id="${entry.id}" data-source="${entry.source || 'journal'}" data-permission="view_journal_entries" title="View Entry">
                                     <i class="fas fa-eye"></i>
                                 </button>
+                                ${this._reapprovedEntryIds && this._reapprovedEntryIds.has(Number(entry.id)) ? `
+                                <button class="action-btn reapproved" title="Re-Approved" disabled>
+                                    <i class="fas fa-check-double"></i>
+                                </button>` : `
                                 <button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id}" title="Re-Approve">
                                     <i class="fas fa-undo"></i>
-                                </button>
+                                </button>`}
                                 ${entry.source === 'transaction' ? `<button class="action-btn edit" data-action="edit-entity-transaction" data-id="${entry.id}" data-permission="edit_journal_entry" title="Edit Entry"><i class="fas fa-edit"></i></button>` : `<button class="action-btn edit" data-action="edit-entry" data-id="${entry.id}" data-permission="edit_journal_entry" title="Edit Entry"><i class="fas fa-edit"></i></button>`}
                                 <button class="action-btn print" data-action="print-entry" data-id="${entry.id || entry.entry_number || ''}" data-source="${entry.source || 'journal'}" title="Print Entry">
                                     <i class="fas fa-print"></i>
@@ -4728,9 +4764,13 @@ ProfessionalAccounting.prototype.loadModalJournalEntries = async function() {
                                     <button class="action-btn view" data-action="view-entry" data-id="${entry.id || entry.entry_number || ''}" data-source="${entry.source || 'journal'}" title="View Entry" data-permission="view_journal_entries">
                                         <i class="fas fa-eye"></i>
                                     </button>
+                                    ${this._reapprovedEntryIds && this._reapprovedEntryIds.has(Number(entry.id || entry.entry_number || 0)) ? `
+                                    <button class="action-btn reapproved" title="Re-Approved" disabled>
+                                        <i class="fas fa-check-double"></i>
+                                    </button>` : `
                                     <button class="action-btn reapprove" data-action="reapprove-entry" data-id="${entry.id || entry.entry_number || ''}" title="Re-Approve">
                                         <i class="fas fa-undo"></i>
-                                    </button>
+                                    </button>`}
                                     ${entry.source === 'transaction' ? `<button class="action-btn edit" data-action="edit-entity-transaction" data-id="${entry.id || entry.entry_number || ''}" data-permission="edit_journal_entry" title="Edit Entry"><i class="fas fa-edit"></i></button>` : `<button class="action-btn edit" data-action="edit-entry" data-id="${entry.id || entry.entry_number || ''}" data-permission="edit_journal_entry" title="Edit Entry"><i class="fas fa-edit"></i></button>`}
                                     <button class="action-btn print" data-action="print-entry" data-id="${entry.id || entry.entry_number || ''}" data-source="${entry.source || 'journal'}" title="Print Entry">
                                         <i class="fas fa-print"></i>
