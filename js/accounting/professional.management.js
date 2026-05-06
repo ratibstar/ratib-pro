@@ -4242,7 +4242,7 @@
                             <option value="Cancelled">Cancelled</option>
                             <option value="Reversed">Reversed</option>
                         </select>
-                        <small class="form-text">Draft = not finalized; Posted = recorded/cleared</small>
+                        
                     </div>
                 </div>
                 <div class="accounting-modal-form-group full-width">

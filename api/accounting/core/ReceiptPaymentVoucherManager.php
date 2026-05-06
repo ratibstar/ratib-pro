@@ -724,6 +724,10 @@ class ReceiptPaymentVoucherManager {
             if (isset($data['voucher_date'])) {
                 $data['voucher_date'] = formatDateForDatabase($data['voucher_date']);
             }
+            // Map normalized status values to legacy-table statuses on update as well.
+            if (isset($data['status']) && is_string($data['status'])) {
+                $data['status'] = $this->mapStatus($data['status'], true);
+            }
             // Normalize amount to 2 decimals for consistent storage
             if (array_key_exists('amount', $data)) {
                 $data['amount'] = round(floatval($data['amount']), 2);
