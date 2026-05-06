@@ -1280,60 +1280,61 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                     const btn = e.target.closest('[data-action="reapprove-entry"]');
                     const id = parseInt(btn?.getAttribute('data-id') || e.target.closest('[data-id]')?.getAttribute('data-id') || 0, 10);
                     if (!id) break;
-                    const reason = await this.showPrompt(
+                    this.showPrompt(
                         'Re-Approval Reason',
                         'Please enter the reason for re-approving this entry:',
                         'Re-approved after review from General Ledger.',
                         'Type reason...',
                         'text'
-                    );
-                    if (reason === null) break;
-                    this.showConfirmDialog(
-                        'Re-Approve Entry',
-                        'Are you sure you want to re-approve this entry?',
-                        'Re-Approve',
-                        'Cancel',
-                        'success'
-                    ).then(async (confirmed) => {
-                        if (!confirmed) return;
-                        try {
-                            // Re-approve through Entry Approval workflow using journal_entry_id -> entry_approval.id.
-                            const approvalListRes = await fetch(`${this.apiBase}/entry-approval.php?status=rejected`, { credentials: 'include' });
-                            const approvalListData = await approvalListRes.json().catch(() => ({}));
-                            const rows = Array.isArray(approvalListData?.entries) ? approvalListData.entries : [];
-                            const linked = rows.find((r) => Number(r.journal_entry_id || 0) === Number(id));
-                            if (!linked || !linked.id) {
-                                this.showToast(`No rejected approval row linked to entry #${id}`, 'warning');
-                                return;
-                            }
+                    ).then((reason) => {
+                        if (reason === null) return;
+                        this.showConfirmDialog(
+                            'Re-Approve Entry',
+                            'Are you sure you want to re-approve this entry?',
+                            'Re-Approve',
+                            'Cancel',
+                            'success'
+                        ).then(async (confirmed) => {
+                            if (!confirmed) return;
+                            try {
+                                // Re-approve through Entry Approval workflow using journal_entry_id -> entry_approval.id.
+                                const approvalListRes = await fetch(`${this.apiBase}/entry-approval.php?status=rejected`, { credentials: 'include' });
+                                const approvalListData = await approvalListRes.json().catch(() => ({}));
+                                const rows = Array.isArray(approvalListData?.entries) ? approvalListData.entries : [];
+                                const linked = rows.find((r) => Number(r.journal_entry_id || 0) === Number(id));
+                                if (!linked || !linked.id) {
+                                    this.showToast(`No rejected approval row linked to entry #${id}`, 'warning');
+                                    return;
+                                }
 
-                            const approveRes = await fetch(`${this.apiBase}/entry-approval.php`, {
-                                method: 'POST',
-                                credentials: 'include',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ action: 'approve', ids: [Number(linked.id)] })
-                            });
-                            const approveData = await approveRes.json().catch(() => ({}));
-                            if (!approveRes.ok || !approveData.success) {
-                                this.showToast((approveData && (approveData.message || approveData.error)) || `Failed to re-approve entry #${id}`, 'error');
-                                return;
-                            }
+                                const approveRes = await fetch(`${this.apiBase}/entry-approval.php`, {
+                                    method: 'POST',
+                                    credentials: 'include',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ action: 'approve', ids: [Number(linked.id)] })
+                                });
+                                const approveData = await approveRes.json().catch(() => ({}));
+                                if (!approveRes.ok || !approveData.success) {
+                                    this.showToast((approveData && (approveData.message || approveData.error)) || `Failed to re-approve entry #${id}`, 'error');
+                                    return;
+                                }
 
-                            this.showToast(`Entry #${id} re-approved`, 'success');
-                            this.showToast(`Reason: ${String(reason || '').trim() || 'N/A'}`, 'info');
-                            if (typeof this.loadModalJournalEntries === 'function') {
-                                await this.loadModalJournalEntries();
+                                this.showToast(`Entry #${id} re-approved`, 'success');
+                                this.showToast(`Reason: ${String(reason || '').trim() || 'N/A'}`, 'info');
+                                if (typeof this.loadModalJournalEntries === 'function') {
+                                    await this.loadModalJournalEntries();
+                                }
+                                if (typeof this.loadEntryApproval === 'function') {
+                                    const f = document.getElementById('entryApprovalStatusFilter');
+                                    await this.loadEntryApproval(f ? f.value : 'all');
+                                }
+                                if (typeof this.loadDashboard === 'function') {
+                                    setTimeout(() => this.loadDashboard(), 300);
+                                }
+                            } catch (err) {
+                                this.showToast((err && err.message) ? err.message : 'Re-approve failed', 'error');
                             }
-                            if (typeof this.loadEntryApproval === 'function') {
-                                const f = document.getElementById('entryApprovalStatusFilter');
-                                await this.loadEntryApproval(f ? f.value : 'all');
-                            }
-                            if (typeof this.loadDashboard === 'function') {
-                                setTimeout(() => this.loadDashboard(), 300);
-                            }
-                        } catch (err) {
-                            this.showToast((err && err.message) ? err.message : 'Re-approve failed', 'error');
-                        }
+                        });
                     });
                     break;
                 }
