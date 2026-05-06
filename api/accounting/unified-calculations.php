@@ -148,56 +148,57 @@ try {
         $currentRevenue = floatval($revenue['total_revenue'] ?? 0);
         $currentExpenses = floatval($expenses['total_expenses'] ?? 0);
         if ($currentRevenue == 0.0 && $currentExpenses == 0.0) {
-            $voucherRevenue = 0.0;
-            $voucherExpenses = 0.0;
-
-            $rvTable = $conn->query("SHOW TABLES LIKE 'receipt_vouchers'");
-            if ($rvTable && $rvTable->num_rows > 0) {
-                $rvSql = "
-                    SELECT COALESCE(SUM(amount), 0) AS total_revenue
-                    FROM receipt_vouchers
-                    WHERE COALESCE(amount, 0) > 0
-                      AND (
-                        status IS NULL
-                        OR status = ''
-                        OR status NOT IN ('Cancelled', 'Voided', 'Reversed')
-                      )
-                ";
-                $rvStmt = $conn->prepare($rvSql);
-                if ($rvStmt) {
-                    $rvStmt->execute();
-                    $rv = $rvStmt->get_result()->fetch_assoc();
-                    $voucherRevenue = floatval($rv['total_revenue'] ?? 0);
-                    $rvStmt->close();
+            $sumVoucherTable = function(string $tableName, string $alias) use ($conn): float {
+                $tbl = $conn->query("SHOW TABLES LIKE '" . $conn->real_escape_string($tableName) . "'");
+                if (!$tbl || $tbl->num_rows <= 0) {
+                    if ($tbl instanceof mysqli_result) $tbl->free();
+                    return 0.0;
                 }
-            }
-            if ($rvTable instanceof mysqli_result) {
-                $rvTable->free();
-            }
+                if ($tbl instanceof mysqli_result) $tbl->free();
 
-            $pvTable = $conn->query("SHOW TABLES LIKE 'payment_vouchers'");
-            if ($pvTable && $pvTable->num_rows > 0) {
-                $pvSql = "
-                    SELECT COALESCE(SUM(amount), 0) AS total_expenses
-                    FROM payment_vouchers
-                    WHERE COALESCE(amount, 0) > 0
-                      AND (
-                        status IS NULL
-                        OR status = ''
-                        OR status NOT IN ('Cancelled', 'Voided', 'Reversed')
-                      )
-                ";
-                $pvStmt = $conn->prepare($pvSql);
-                if ($pvStmt) {
-                    $pvStmt->execute();
-                    $pv = $pvStmt->get_result()->fetch_assoc();
-                    $voucherExpenses = floatval($pv['total_expenses'] ?? 0);
-                    $pvStmt->close();
+                $colRes = $conn->query("SHOW COLUMNS FROM `{$tableName}`");
+                if (!$colRes) {
+                    return 0.0;
                 }
-            }
-            if ($pvTable instanceof mysqli_result) {
-                $pvTable->free();
-            }
+                $cols = [];
+                while ($c = $colRes->fetch_assoc()) {
+                    $cols[] = strtolower((string)($c['Field'] ?? ''));
+                }
+                $colRes->free();
+
+                $amountCol = null;
+                foreach (['amount', 'total_amount', 'paid_amount', 'payment_amount'] as $cand) {
+                    if (in_array($cand, $cols, true)) {
+                        $amountCol = $cand;
+                        break;
+                    }
+                }
+                if ($amountCol === null) {
+                    return 0.0;
+                }
+
+                $where = ["COALESCE(`{$amountCol}`, 0) > 0"];
+                if (in_array('status', $cols, true)) {
+                    $where[] = "(`status` IS NULL OR `status` = '' OR `status` NOT IN ('Cancelled', 'Voided', 'Reversed'))";
+                }
+                $sql = "SELECT COALESCE(SUM(`{$amountCol}`), 0) AS {$alias} FROM `{$tableName}` WHERE " . implode(' AND ', $where);
+                $stmt = $conn->prepare($sql);
+                if (!$stmt) {
+                    return 0.0;
+                }
+                $stmt->execute();
+                $row = $stmt->get_result()->fetch_assoc();
+                $stmt->close();
+                return floatval($row[$alias] ?? 0);
+            };
+
+            // Read both modern and legacy voucher table families per-agency.
+            $voucherRevenue =
+                $sumVoucherTable('receipt_vouchers', 'total_revenue')
+                + $sumVoucherTable('payment_receipts', 'total_revenue');
+            $voucherExpenses =
+                $sumVoucherTable('payment_vouchers', 'total_expenses')
+                + $sumVoucherTable('payment_payments', 'total_expenses');
 
             if ($voucherRevenue > 0 || $voucherExpenses > 0) {
                 $revenue['total_revenue'] = $voucherRevenue;
