@@ -5575,9 +5575,8 @@ ProfessionalAccounting.prototype.filterReports = function() {
         const agingCountEl = document.getElementById('modalReportsAgingCount');
         const analysisCountEl = document.getElementById('modalReportsAnalysisCount');
         
-        // Keep "Total Reports" as a real report count (catalog/filter),
-        // while money metrics remain live API-driven.
-        if (totalEl) totalEl.textContent = String(visibleCount);
+        // "Total Reports" should reflect the full report catalog (not filtered visibility).
+        if (totalEl) totalEl.textContent = String(reportCards.length);
     }
 
 ProfessionalAccounting.prototype.openSettingsModal = async function() {
