@@ -1365,57 +1365,40 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                         ).then(async (confirmed) => {
                             if (!confirmed) return;
                             try {
-                                // Re-approve through Entry Approval workflow using journal_entry_id -> entry_approval.id.
-                                const approvalListRes = await fetch(`${this.apiBase}/entry-approval.php?status=rejected`, { credentials: 'include' });
-                                const approvalListData = await approvalListRes.json().catch(() => ({}));
-                                const rows = Array.isArray(approvalListData?.entries) ? approvalListData.entries : [];
-                                const linked = rows.find((r) => Number(r.journal_entry_id || 0) === Number(id));
+                                // Re-approve request from GL: move linked row into review-needed state (rejected),
+                                // so it becomes actionable again in Entry Approval table.
+                                const allRes = await fetch(`${this.apiBase}/entry-approval.php?status=all`, { credentials: 'include' });
+                                const allData = await allRes.json().catch(() => ({}));
+                                const allRows = Array.isArray(allData?.entries) ? allData.entries : [];
+                                const linked = allRows.find((r) => Number(r.journal_entry_id || 0) === Number(id));
                                 if (!linked || !linked.id) {
-                                    // If already approved (no rejected row), mark as re-approved locally so UI reflects the action.
-                                    let existingApproved = null;
-                                    try {
-                                        const allRes = await fetch(`${this.apiBase}/entry-approval.php?status=all`, { credentials: 'include' });
-                                        const allData = await allRes.json().catch(() => ({}));
-                                        const allRows = Array.isArray(allData?.entries) ? allData.entries : [];
-                                        existingApproved = allRows.find((r) =>
-                                            Number(r.journal_entry_id || 0) === Number(id) &&
-                                            String(r.status || '').toLowerCase() === 'approved'
-                                        ) || null;
-                                    } catch (_) {}
-                                    if (existingApproved) {
-                                        if (!this._reapprovedEntryIds) this._reapprovedEntryIds = new Set();
-                                        this._reapprovedEntryIds.add(Number(id));
-                                        try {
-                                            const raw = sessionStorage.getItem('accounting_reapproved_journal_ids');
-                                            const arr = raw ? JSON.parse(raw) : [];
-                                            const merged = Array.from(new Set([...(Array.isArray(arr) ? arr : []), Number(id)]));
-                                            sessionStorage.setItem('accounting_reapproved_journal_ids', JSON.stringify(merged));
-                                        } catch (_) {}
-                                        this.showToast(`Entry #${id} is already approved`, 'info');
-                                        if (typeof this.loadModalJournalEntries === 'function') await this.loadModalJournalEntries();
-                                        if (typeof this.loadEntryApproval === 'function') await this.loadEntryApproval('all');
+                                    this.showToast(`No Entry Approval row linked to entry #${id}`, 'warning');
+                                    return;
+                                }
+                                const linkedStatus = String(linked.status || '').toLowerCase();
+                                if (linkedStatus !== 'rejected') {
+                                    const rejectRes = await fetch(`${this.apiBase}/entry-approval.php`, {
+                                        method: 'POST',
+                                        credentials: 'include',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                            action: 'reject',
+                                            ids: [Number(linked.id)],
+                                            rejection_reason: `Re-approval requested from General Ledger: ${normalizedReason}`
+                                        })
+                                    });
+                                    const rejectData = await rejectRes.json().catch(() => ({}));
+                                    if (!rejectRes.ok || !rejectData.success) {
+                                        this.showToast((rejectData && (rejectData.message || rejectData.error)) || `Failed to request re-approval for entry #${id}`, 'error');
                                         return;
                                     }
-                                    this.showToast(`No rejected approval row linked to entry #${id}`, 'warning');
-                                    return;
                                 }
 
-                                const approveRes = await fetch(`${this.apiBase}/entry-approval.php`, {
-                                    method: 'POST',
-                                    credentials: 'include',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ action: 'approve', ids: [Number(linked.id)] })
-                                });
-                                const approveData = await approveRes.json().catch(() => ({}));
-                                if (!approveRes.ok || !approveData.success) {
-                                    this.showToast((approveData && (approveData.message || approveData.error)) || `Failed to re-approve entry #${id}`, 'error');
-                                    return;
-                                }
-
-                                this.showToast(`Entry #${id} re-approved`, 'success');
-                                this.showToast(`Reason: ${normalizedReason}`, 'info');
+                                // Mark as reapproved-requested in GL and keep it re-approvable.
                                 if (!this._reapprovedEntryIds) this._reapprovedEntryIds = new Set();
                                 this._reapprovedEntryIds.add(Number(id));
+                                if (!this._reapprovableEntryIds) this._reapprovableEntryIds = new Set();
+                                this._reapprovableEntryIds.add(Number(id));
                                 if (!this._reapprovedApprovalIds) this._reapprovedApprovalIds = new Set();
                                 this._reapprovedApprovalIds.add(Number(linked.id));
                                 try {
@@ -1428,6 +1411,15 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                                     sessionStorage.setItem('accounting_reapproved_journal_ids', JSON.stringify(mergedJ));
                                     sessionStorage.setItem('accounting_reapproved_approval_ids', JSON.stringify(mergedA));
                                 } catch (_) {}
+
+                                // If already rejected, user can still press again: keep visible feedback.
+                                if (linkedStatus === 'rejected') {
+                                    this.showToast(`Entry #${id} is already waiting re-approval`, 'info');
+                                } else {
+                                    this.showToast(`Entry #${id} moved to re-approval queue`, 'success');
+                                }
+                                this.showToast(`Reason: ${normalizedReason}`, 'info');
+
                                 if (typeof this.loadModalJournalEntries === 'function') {
                                     await this.loadModalJournalEntries();
                                 }
