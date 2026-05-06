@@ -599,6 +599,9 @@
                     } catch (_) {}
                     const isReapproved = (Array.isArray(reapprovedApprovalIds) && reapprovedApprovalIds.includes(Number(entry.id))) ||
                         (Array.isArray(reapprovedJournalIds) && reapprovedJournalIds.includes(Number(entry.journal_entry_id || 0)));
+                    // If row was re-approved from General Ledger, reopen approval actions in Entry Approval.
+                    const isReapprovalRequested = isReapproved;
+                    const canTakeApprovalActions = isPending || isReapprovalRequested;
                     const currency = entry.currency || this.getDefaultCurrencySync();
                     const debitAmount = parseFloat(entry.total_debit ?? entry.debit_amount ?? entry.debit ?? 0) || 0;
                     const creditAmount = parseFloat(entry.total_credit ?? entry.credit_amount ?? entry.credit ?? 0) || 0;
@@ -611,7 +614,7 @@
                                 <td class="voucher-number-cell">
                                     <div class="voucher-number-stack">
                                         <div class="voucher-number-inline" style="display:flex; align-items:center; gap:8px;">
-                                            <input type="checkbox" class="entry-checkbox" value="${entry.id}" ${!isPending ? 'disabled' : ''} />
+                                            <input type="checkbox" class="entry-checkbox" value="${entry.id}" ${!canTakeApprovalActions ? 'disabled' : ''} />
                                             <a href="#" class="journal-ref-link" data-action="view-entry" data-id="${entry.id}" title="View Entry">
                                                 ${this.escapeHtml(entry.entry_number || '')}
                                             </a>
@@ -639,7 +642,7 @@
                                     <button class="btn-icon btn-view" data-action="view-entry" data-id="${entry.id}" title="View">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    ${isPending ? `
+                                    ${canTakeApprovalActions ? `
                                         <button class="btn-icon btn-success" data-action="approve-entry" data-id="${entry.id}" title="Approve">
                                             <i class="fas fa-check"></i>
                                         </button>
@@ -652,7 +655,7 @@
                                         <i class="fas fa-check-double"></i>
                                     </button>
                                     ` : ''}
-                                    ${status !== 'approved' ? `
+                                    ${(status !== 'approved' || isReapprovalRequested) ? `
                                     <button class="btn-icon btn-edit" data-action="edit-entry-approval" data-id="${entry.id}" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </button>
