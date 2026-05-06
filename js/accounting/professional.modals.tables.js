@@ -792,7 +792,7 @@
                 if (agingCountEl) agingCountEl.textContent = String(receivablesCount + payablesCount);
                 if (analysisCountEl) analysisCountEl.textContent = this.formatCurrency(profit, cur);
 
-                let totalEntries = 0;
+                let totalEntries = Number(summary?.ledger?.entry_count || 0);
                 if (txHint) {
                     try {
                         const txUrl = `${this.apiBase}/transactions.php?limit=1&page=1${tenantQuery ? `&${tenantQuery}` : ''}&_t=${Date.now()}`;
@@ -804,7 +804,10 @@
                         if (isStale()) return;
                         const tx = await txRes.json().catch(() => null);
                         if (isStale()) return;
-                        totalEntries = Number(tx?.total_count || tx?.total || tx?.count || 0);
+                        totalEntries = Math.max(
+                            totalEntries,
+                            Number(tx?.total_count || tx?.total || tx?.count || 0)
+                        );
                     const txIncome = Number(tx?.summary?.total_income || 0);
                     const txExpense = Number(tx?.summary?.total_expenses || 0);
                     if (income === 0 && expense === 0 && profit === 0 && (txIncome > 0 || txExpense > 0)) {
@@ -828,7 +831,7 @@
                         if (isStale()) return;
                         const je = await jeRes.json().catch(() => null);
                         if (isStale()) return;
-                        const jeCount = Array.isArray(je?.entries) ? je.entries.length : 0;
+                        const jeCount = Number(je?.total_count || je?.total || je?.count || (Array.isArray(je?.entries) ? je.entries.length : 0));
                         if (jeCount > 0) {
                             totalEntries = jeCount;
                         }
