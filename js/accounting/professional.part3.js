@@ -5015,12 +5015,12 @@ ProfessionalAccounting.prototype.openReportsModal = function() {
                                 <h4>Total Reports</h4>
                                 <p id="modalReportsTotal">0</p>
                             </div>
-                            <div class="summary-mini-card">
-                                <h4>Financial</h4>
+                                <div class="summary-mini-card">
+                                    <h4>Revenue</h4>
                                 <p id="modalReportsFinancial">$0.00</p>
                             </div>
                             <div class="summary-mini-card">
-                                <h4>Operational</h4>
+                                    <h4>Expense</h4>
                                 <p id="modalReportsOperational">$0.00</p>
                             </div>
                             <div class="summary-entity-card">
