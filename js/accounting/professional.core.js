@@ -117,14 +117,17 @@ class ProfessionalAccounting {
         // Disabled cleanup to prevent modals from being removed
         // this.cleanupStrayOverlays();
         
-        // Initialize default currency from system settings and only then render UI,
-        // so dashboard/cards don't briefly show stale localStorage currency.
-        Promise.resolve(this.initDefaultCurrency())
-            .catch(() => {})
-            .finally(() => {
-                this.loadDashboard();
-                this.loadFinancialOverview();
-            });
+        // Start dashboard immediately; loadDashboard() already refreshes currency internally.
+        this.loadDashboard();
+        // Defer secondary overview payload until browser is idle/settled.
+        const runDeferredOverview = () => {
+            try { this.loadFinancialOverview(); } catch (_) {}
+        };
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(runDeferredOverview, { timeout: 1200 });
+        } else {
+            setTimeout(runDeferredOverview, 600);
+        }
         
         // Listen for storage changes (when currency is updated in another tab/window)
         window.addEventListener('storage', (e) => {
@@ -197,8 +200,10 @@ class ProfessionalAccounting {
         this.setupRecentTransactionsPaginationControls();
         this.initializeDates();
         
-        // Auto-generate alerts on page load (once per day)
-        this.checkAndGenerateAlerts();
+        // Auto-generate alerts can wait until initial UI is interactive.
+        setTimeout(() => {
+            this.checkAndGenerateAlerts();
+        }, 3000);
         
         // Show success message on initialization
         setTimeout(() => {

@@ -708,8 +708,8 @@ if (document.readyState !== 'loading') initProfessionalAccounting();
     };
     function runInit() {
         setTimeout(function() { window.initializeEnglishDatePickers(document); }, 500);
+        // Keep one delayed retry for late-mounted UI while avoiding excessive full-document scans.
         setTimeout(function() { window.initializeEnglishDatePickers(document); }, 1500);
-        setTimeout(function() { window.initializeEnglishDatePickers(document); }, 3000);
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', runInit);
@@ -732,7 +732,8 @@ if (document.readyState !== 'loading') initProfessionalAccounting();
             });
         });
     });
-    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['type', 'class'] });
+    // Observe only added nodes. Watching attributes across the whole body is expensive.
+    obs.observe(document.body, { childList: true, subtree: true });
 })();
 
 // Receipt voucher edit data binding - moved from accounting.php inline
@@ -762,6 +763,8 @@ if (document.readyState !== 'loading') initProfessionalAccounting();
                                 if (!collVal) collVal = custId ? 'customer_' + custId : (collId ? 'gl_' + collId : '');
                             }
                             window.__EDIT_RECEIPT_DATA__ = { cash_account_id: cashVal, collected_from_id: collVal };
+                            startForceBinding();
+                            scheduleForceBindingWatchdog();
                         }
                     } catch (e) {}
                 });
@@ -787,6 +790,7 @@ if (document.readyState !== 'loading') initProfessionalAccounting();
         return true;
     }
     var forceInterval = null;
+    var forceWatchdogTimeout = null;
     function startForceBinding() {
         if (forceInterval) return;
         forceInterval = setInterval(function() {
@@ -806,12 +810,30 @@ if (document.readyState !== 'loading') initProfessionalAccounting();
             }
         }, 50);
     }
-    setInterval(function() {
-        if (window.__EDIT_RECEIPT_DATA__) {
-            var modal = document.getElementById('receiptVoucherModal');
-            if (modal && !modal.classList.contains('accounting-modal-hidden')) startForceBinding();
-        }
-    }, 100);
+    function scheduleForceBindingWatchdog() {
+        if (forceWatchdogTimeout) return;
+        forceWatchdogTimeout = setTimeout(function() {
+            forceWatchdogTimeout = null;
+            if (window.__EDIT_RECEIPT_DATA__) {
+                startForceBinding();
+                // One extra delayed retry for slow modal/data rendering paths.
+                scheduleForceBindingWatchdog();
+            }
+        }, 700);
+    }
+    // Trigger binding checks when modal visibility/state changes instead of polling forever.
+    var receiptObs = new MutationObserver(function() {
+        if (!window.__EDIT_RECEIPT_DATA__) return;
+        startForceBinding();
+        scheduleForceBindingWatchdog();
+    });
+    if (document.body) {
+        receiptObs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    } else {
+        document.addEventListener('DOMContentLoaded', function() {
+            receiptObs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+        }, { once: true });
+    }
 })();
 
 // openEntityTransactionModal: required by Entities modal / entity transactions (part4 not loaded)

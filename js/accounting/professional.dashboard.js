@@ -118,6 +118,24 @@
             }, 20000);
         },
 
+        _deferDashboardVisuals() {
+            const run = () => {
+                // Skip heavy visual work if user is no longer on dashboard.
+                if (this.currentTab && this.currentTab !== 'dashboard') return;
+                this.loadRevenueExpenseNetChart();
+                this.loadCashBalanceChart();
+                this.loadReceivablePayableChart();
+                this.loadExpenseBreakdownChart();
+                this.loadInvoiceAgingChart();
+                this.loadFinancialOverviewChart();
+            };
+            if (typeof window.requestIdleCallback === 'function') {
+                window.requestIdleCallback(run, { timeout: 1500 });
+            } else {
+                setTimeout(run, 350);
+            }
+        },
+
         async _fetchUnifiedCalculationsAll() {
             if (this._unifiedCalculationsUnavailable === true) {
                 return null;
@@ -1674,12 +1692,7 @@
             this.loadRecentTransactions();
             this.loadCashFlowSummary();
             this.loadFinancialSummary();
-            this.loadRevenueExpenseNetChart();
-            this.loadCashBalanceChart();
-            this.loadReceivablePayableChart();
-            this.loadExpenseBreakdownChart();
-            this.loadInvoiceAgingChart();
-            this.loadFinancialOverviewChart();
+            this._deferDashboardVisuals();
             } finally {
                 // Reset flag after a short delay to allow async operations to complete
                 setTimeout(() => {
