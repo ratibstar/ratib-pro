@@ -154,8 +154,20 @@ function strict_agency_connect(array $agency): array
     $port = (int)($agency['db_port'] ?? 3306);
     if ($port <= 0) $port = 3306;
 
+    // Allow credential fallback only when agency row fields are empty.
+    // IMPORTANT: DB name never falls back; target DB remains strict per agency row.
+    if ($host === '' && defined('DB_HOST')) {
+        $host = (string)DB_HOST;
+    }
+    if ($user === '' && defined('DB_USER')) {
+        $user = (string)DB_USER;
+    }
+    if ($pass === '' && defined('DB_PASS')) {
+        $pass = (string)DB_PASS;
+    }
+
     if ($host === '' || $user === '' || $db === '') {
-        return ['ok' => false, 'error' => 'Missing strict DB credentials in control_agencies row'];
+        return ['ok' => false, 'error' => 'Missing DB host/user/db_name (db_name must exist in control_agencies)'];
     }
 
     $conn = @new mysqli($host, $user, $pass, $db, $port);
@@ -177,7 +189,18 @@ function strict_agency_connect(array $agency): array
         return ['ok' => false, 'error' => "Active DB mismatch (expected {$db}, got {$activeDb})"];
     }
 
-    return ['ok' => true, 'conn' => $conn, 'db_name' => $db, 'host' => $host, 'port' => $port];
+    return [
+        'ok' => true,
+        'conn' => $conn,
+        'db_name' => $db,
+        'host' => $host,
+        'port' => $port,
+        'used_fallback_credentials' => (
+            trim((string)($agency['db_host'] ?? '')) === '' ||
+            trim((string)($agency['db_user'] ?? '')) === '' ||
+            (string)($agency['db_pass'] ?? '') === ''
+        ),
+    ];
 }
 
 function agencies_in_scope(mysqli $ctrl, ?array $allowedCountryIds, array $targetAgencyIds): array
@@ -370,6 +393,7 @@ foreach ($targetAgencies as $agency) {
         'agency_name' => (string)($agency['name'] ?? ''),
         'country_name' => (string)($agency['country_name'] ?? ''),
         'db_name' => (string)($connData['db_name'] ?? ($agency['db_name'] ?? '')),
+        'used_fallback_credentials' => !empty($connData['used_fallback_credentials']),
         'connected' => true,
         'tables_missing_before' => $toCreate,
         'tables_created' => $created,
