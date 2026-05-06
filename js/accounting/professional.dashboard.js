@@ -1,6 +1,6 @@
 /**
  * EN: Implements frontend interaction behavior in `js/accounting/professional.dashboard.js`.
- * AR: ينفذ سلوك تفاعلات الواجهة الأمامية في `js/accounting/professional.dashboard.js`.
+ * AR: Implements frontend interaction behavior in `js/accounting/professional.dashboard.js`.
  */
 /**
  * Professional Accounting - Dashboard
@@ -22,6 +22,30 @@
 
         _getEntryApprovalNavLink() {
             return document.querySelector('.top-nav-link[data-tab="entry-approval"]');
+        },
+
+        async _safeJsonFromResponse(response, contextLabel = 'request') {
+            if (!response) return null;
+            if (!response.ok) {
+                const status = Number(response.status || 0);
+                const now = Date.now();
+                const lastWarnAt = Number(this._apiAccessWarnAt || 0);
+                // Show a single friendly warning every 20s max.
+                if ((status === 401 || status === 403) && typeof this.showToast === 'function' && (now - lastWarnAt > 20000)) {
+                    this._apiAccessWarnAt = now;
+                    this.showToast('Some accounting APIs are blocked (401/403). Please check session/permissions.', 'warning');
+                }
+                return null;
+            }
+            const contentType = String(response.headers?.get('content-type') || '').toLowerCase();
+            if (!contentType.includes('application/json')) {
+                return null;
+            }
+            try {
+                return await response.json();
+            } catch (_) {
+                return null;
+            }
         },
 
         _ensureEntryApprovalIndicator(link) {
@@ -246,13 +270,7 @@
                     cache: 'no-cache',
                     headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                 });
-                let data;
-                try {
-                    data = await response.json();
-                } catch (jsonError) {
-                    console.error('Error parsing response in loadRecentTransactions:', jsonError);
-                    data = { success: false, transactions: [] };
-                }
+                const data = await this._safeJsonFromResponse(response, 'loadRecentTransactions') || { success: false, transactions: [] };
                 if (loadingEl) {
                     loadingEl.classList.add('hidden', 'loading-hidden');
                     loadingEl.classList.remove('visible-flex');
@@ -560,7 +578,7 @@
         async checkTablesExist() {
             try {
                 const response = await fetch(`${this.apiBase}/accounts.php?is_active=1`);
-                const data = await response.json();
+                const data = await this._safeJsonFromResponse(response, 'checkTablesExist') || { success: false, accounts: [] };
                 const setupButton = document.querySelector('[data-action="setup-tables"]');
                 if (setupButton) {
                     setupButton.style.display = (data.success && data.accounts && data.accounts.length > 0) ? 'none' : '';
@@ -658,13 +676,8 @@
             
             try {
                 const response = await fetch(`${this.apiBase}/chart-data.php?period=${period}`);
-                let data;
-                try {
-                    data = await response.json();
-                } catch (jsonError) {
-                    console.error('Error parsing response in loadRevenueExpenseNetChart:', jsonError);
-                    return; // Silently fail if JSON parsing fails
-                }
+                const data = await this._safeJsonFromResponse(response, 'loadRevenueExpenseNetChart');
+                if (!data) return;
                 if (data.success && data.chart_data) {
                     this.renderRevenueExpenseNetChart(data.chart_data);
                 }
@@ -850,13 +863,8 @@
             
             try {
                 const response = await fetch(`${this.apiBase}/chart-data.php?period=${period}`);
-                let data;
-                try {
-                    data = await response.json();
-                } catch (jsonError) {
-                    console.error('Error parsing response in loadCashBalanceChart:', jsonError);
-                    return; // Silently fail if JSON parsing fails
-                }
+                const data = await this._safeJsonFromResponse(response, 'loadCashBalanceChart');
+                if (!data) return;
                 if (data.success && data.chart_data) {
                     this.renderCashBalanceChart(data.chart_data);
                 }
@@ -1011,19 +1019,8 @@
                     fetch(`${this.apiBase}/invoices.php`),
                     fetch(`${this.apiBase}/bills.php`)
                 ]);
-                let receivablesData, payablesData;
-                try {
-                    receivablesData = await receivablesRes.json();
-                } catch (jsonError) {
-                    console.error('Error parsing receivables response:', jsonError);
-                    receivablesData = { summary: { total_outstanding: 0 }, invoices: [] };
-                }
-                try {
-                    payablesData = await payablesRes.json();
-                } catch (jsonError) {
-                    console.error('Error parsing payables response:', jsonError);
-                    payablesData = { summary: { total_outstanding: 0 }, bills: [] };
-                }
+                const receivablesData = await this._safeJsonFromResponse(receivablesRes, 'loadReceivablePayableChart:receivables') || { summary: { total_outstanding: 0 }, invoices: [] };
+                const payablesData = await this._safeJsonFromResponse(payablesRes, 'loadReceivablePayableChart:payables') || { summary: { total_outstanding: 0 }, bills: [] };
                 const receivablesTotal = receivablesData.summary?.total_outstanding || 0;
                 const receivablesCount = receivablesData.invoices?.length || 0;
                 const payablesTotal = payablesData.summary?.total_outstanding || 0;
@@ -1131,13 +1128,8 @@
         async loadExpenseBreakdownChart() {
             try {
                 const response = await fetch(`${this.apiBase}/dashboard.php`);
-                let data;
-                try {
-                    data = await response.json();
-                } catch (jsonError) {
-                    console.error('Error parsing response in loadExpenseBreakdownChart:', jsonError);
-                    return; // Silently fail if JSON parsing fails
-                }
+                const data = await this._safeJsonFromResponse(response, 'loadExpenseBreakdownChart');
+                if (!data) return;
                 if (data.success) {
                     // Simplified expense breakdown - in real app would fetch from categories API
                     const expenseData = [
@@ -1235,13 +1227,8 @@
         async loadInvoiceAgingChart() {
             try {
                 const response = await fetch(`${this.apiBase}/dashboard.php`);
-                let data;
-                try {
-                    data = await response.json();
-                } catch (jsonError) {
-                    console.error('Error parsing response in loadInvoiceAgingChart:', jsonError);
-                    return; // Silently fail if JSON parsing fails
-                }
+                const data = await this._safeJsonFromResponse(response, 'loadInvoiceAgingChart');
+                if (!data) return;
                 if (data.success) {
                     // Simplified invoice aging - in real app would fetch from invoices API
                     const agingData = [
@@ -1346,13 +1333,8 @@
         async loadFinancialOverviewChart() {
             try {
                 const response = await fetch(`${this.apiBase}/dashboard.php`);
-                let data;
-                try {
-                    data = await response.json();
-                } catch (jsonError) {
-                    console.error('Error parsing response in loadFinancialOverviewChart:', jsonError);
-                    return; // Silently fail if JSON parsing fails
-                }
+                const data = await this._safeJsonFromResponse(response, 'loadFinancialOverviewChart');
+                if (!data) return;
                 if (data.success && data.stats) {
                     const totalIncome = data.stats.total_income || 0;
                     const totalExpense = data.stats.total_expense || 0;
