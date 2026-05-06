@@ -2601,32 +2601,73 @@
                     e.preventDefault();
                     e.stopPropagation();
                     const id = parseInt(e.target.closest('button').dataset.id);
-                    const reasonGuide = [
-                        '1) Correction validated',
-                        '2) Supporting documents verified',
-                        '3) Manager override after review',
-                        '4) Data-entry mistake fixed',
-                        '5) Duplicate rejection resolved',
-                        '6) Other (write custom reason)'
-                    ].join('\n');
-                    const reason = await this.showPrompt(
-                        'Re-Approval Reason',
-                        `Choose reason number or type custom reason:\n${reasonGuide}`,
-                        '1',
-                        'Enter 1-6 or custom reason...',
-                        'text'
-                    );
+                    const reasonChoices = [
+                        'Correction validated',
+                        'Supporting documents verified',
+                        'Manager override after review',
+                        'Data-entry mistake fixed',
+                        'Duplicate rejection resolved'
+                    ];
+                    const reason = await new Promise((resolve) => {
+                        const modalId = 'reapproveReasonModal2';
+                        const chips = reasonChoices.map((r) =>
+                            `<button type="button" class="btn btn-sm btn-secondary reapprove-reason-choice" data-reason="${this.escapeHtml(r)}" style="margin:3px;">${this.escapeHtml(r)}</button>`
+                        ).join('');
+                        const content = `
+                            <div class="accounting-modal-form-group">
+                                <label>Select a reason</label>
+                                <div>${chips}</div>
+                            </div>
+                            <div class="accounting-modal-form-group">
+                                <label>Or custom reason</label>
+                                <input type="text" id="reapproveReasonCustom2" placeholder="Type custom reason...">
+                            </div>
+                            <div class="accounting-modal-actions">
+                                <button type="button" class="btn btn-secondary" id="reapproveReasonCancel2">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="reapproveReasonOk2" disabled>OK</button>
+                            </div>
+                        `;
+                        this.showModal('Re-Approval Reason', content, 'small', modalId);
+                        setTimeout(() => {
+                            const m = document.getElementById(modalId);
+                            if (!m) return resolve(null);
+                            let selectedReason = '';
+                            const customInput = m.querySelector('#reapproveReasonCustom2');
+                            const okBtn = m.querySelector('#reapproveReasonOk2');
+                            const updateOkState = () => {
+                                const customVal = (customInput && customInput.value ? customInput.value.trim() : '');
+                                if (okBtn) okBtn.disabled = !(selectedReason || customVal);
+                            };
+                            m.querySelectorAll('.reapprove-reason-choice').forEach((b) => {
+                                b.addEventListener('click', () => {
+                                    selectedReason = b.getAttribute('data-reason') || '';
+                                    m.querySelectorAll('.reapprove-reason-choice').forEach((x) => x.classList.remove('btn-primary'));
+                                    b.classList.add('btn-primary');
+                                    if (customInput) customInput.value = '';
+                                    updateOkState();
+                                });
+                            });
+                            if (customInput) {
+                                customInput.addEventListener('input', () => {
+                                    if ((customInput.value || '').trim()) {
+                                        selectedReason = '';
+                                        m.querySelectorAll('.reapprove-reason-choice').forEach((x) => x.classList.remove('btn-primary'));
+                                    }
+                                    updateOkState();
+                                });
+                            }
+                            const cancelBtn = m.querySelector('#reapproveReasonCancel2');
+                            if (cancelBtn) cancelBtn.addEventListener('click', () => { this.closeModal(modalId, false); resolve(null); });
+                            if (okBtn) okBtn.addEventListener('click', () => {
+                                if (okBtn.disabled) return;
+                                const v = (customInput && customInput.value ? customInput.value.trim() : '');
+                                this.closeModal(modalId, false);
+                                resolve(v || selectedReason);
+                            });
+                        }, 30);
+                    });
                     if (reason === null) return;
-                    const normalizedReason = (() => {
-                        const v = String(reason || '').trim();
-                        if (v === '1') return 'Correction validated';
-                        if (v === '2') return 'Supporting documents verified';
-                        if (v === '3') return 'Manager override after review';
-                        if (v === '4') return 'Data-entry mistake fixed';
-                        if (v === '5') return 'Duplicate rejection resolved';
-                        if (v === '6' || v === '') return 'Other (manual re-approval reason provided by reviewer)';
-                        return v;
-                    })();
+                    const normalizedReason = String(reason || '').trim();
                     const confirmed = await this.showConfirmDialog(
                         'Re-Approve Entry',
                         'Are you sure you want to re-approve this entry?',

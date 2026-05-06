@@ -1309,22 +1309,40 @@ ProfessionalAccounting.prototype.setupEventListeners = function() {
                             `;
                             this.showModal('Re-Approval Reason', content, 'small', modalId);
                             setTimeout(() => {
-                                let selectedReason = reasonChoices[0];
+                                let selectedReason = '';
                                 const modal = document.getElementById(modalId);
                                 if (!modal) return resolve(null);
                                 const customInput = modal.querySelector('#reapproveReasonCustom');
+                                const okBtn = modal.querySelector('#reapproveReasonOk');
+                                const updateOkState = () => {
+                                    const customVal = (customInput && customInput.value ? customInput.value.trim() : '');
+                                    const enabled = !!(selectedReason || customVal);
+                                    if (okBtn) okBtn.disabled = !enabled;
+                                };
+                                if (okBtn) okBtn.disabled = true;
                                 modal.querySelectorAll('.reapprove-reason-choice').forEach((b) => {
                                     b.addEventListener('click', () => {
                                         selectedReason = b.getAttribute('data-reason') || '';
                                         modal.querySelectorAll('.reapprove-reason-choice').forEach((x) => x.classList.remove('btn-primary'));
                                         b.classList.add('btn-primary');
+                                        if (customInput) customInput.value = '';
+                                        updateOkState();
                                     });
                                 });
-                                const okBtn = modal.querySelector('#reapproveReasonOk');
                                 const cancelBtn = modal.querySelector('#reapproveReasonCancel');
+                                if (customInput) {
+                                    customInput.addEventListener('input', () => {
+                                        if ((customInput.value || '').trim()) {
+                                            selectedReason = '';
+                                            modal.querySelectorAll('.reapprove-reason-choice').forEach((x) => x.classList.remove('btn-primary'));
+                                        }
+                                        updateOkState();
+                                    });
+                                }
                                 if (okBtn) okBtn.addEventListener('click', () => {
+                                    if (okBtn.disabled) return;
                                     const v = (customInput && customInput.value ? customInput.value.trim() : '');
-                                    const finalReason = v || selectedReason || 'Re-approved after review from General Ledger.';
+                                    const finalReason = v || selectedReason;
                                     this.closeModal(modalId, false);
                                     resolve(finalReason);
                                 });
