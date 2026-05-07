@@ -65,6 +65,13 @@ RewriteRule ^(.*)$ public/index.php [QSA,L]
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0" env=RATIB_HOME_NOCACHE
     Header set Pragma "no-cache" env=RATIB_HOME_NOCACHE
     Header set Expires "0" env=RATIB_HOME_NOCACHE
+
+    # Also bypass cache for home pricing assets so stale HTML still renders latest pricing UI logic/styles.
+    SetEnvIf Request_URI "^/js/pages/home-page\.js$" RATIB_HOME_ASSET_NOCACHE=1
+    SetEnvIf Request_URI "^/css/pages/home-public\.css$" RATIB_HOME_ASSET_NOCACHE=1
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0" env=RATIB_HOME_ASSET_NOCACHE
+    Header set Pragma "no-cache" env=RATIB_HOME_ASSET_NOCACHE
+    Header set Expires "0" env=RATIB_HOME_ASSET_NOCACHE
 </IfModule>
 
 # php_value / php_flag in .htaccess breaks PHP-FPM, LiteSpeed LSAPI, and many cPanel PHP handlers → HTTP 500 for EVERY PHP hit.
