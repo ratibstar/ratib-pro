@@ -2426,6 +2426,17 @@ if ($rwExample === 'global_wave') {
                         <tr><td colspan="8">No tenants found.</td></tr>
                     <?php else: foreach ($tenantsPaged as $t): ?>
                         <?php
+                        $rawStatus = strtolower(trim((string) ($t['status'] ?? '')));
+                        $rowName = trim((string) ($t['name'] ?? ''));
+                        $rowDomain = trim((string) ($t['domain'] ?? ''));
+                        $rowDbHealth = ccTenantDbHealthCheck($t);
+                        $rowHasHealthIssue = ($rowName === '' || $rowDomain === '' || empty($rowDbHealth['ok']));
+                        $statusBadgeText = $rawStatus !== '' ? $rawStatus : 'inactive';
+                        $statusBadgeClass = $rawStatus !== '' ? $rawStatus : 'inactive';
+                        if ($rawStatus === 'active' && $rowHasHealthIssue) {
+                            $statusBadgeText = 'inactive issues';
+                            $statusBadgeClass = 'inactive';
+                        }
                         $hasDbConfig = trim((string) ($t['database_name'] ?? '')) !== '' && trim((string) ($t['db_user'] ?? '')) !== '';
                         $isLinkedTenant = !empty($t['has_tenant']) && (int) ($t['id'] ?? 0) > 0;
                         ?>
@@ -2440,7 +2451,7 @@ if ($rwExample === 'global_wave') {
                             <td><?php echo htmlspecialchars((string) ($t['display_id'] ?? (string) (int) ($t['id'] ?? 0)), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) $t['name'], ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) $t['domain'], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><span class="badge <?php echo htmlspecialchars((string) $t['status'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) $t['status'], ENT_QUOTES, 'UTF-8'); ?></span></td>
+                            <td><span class="badge <?php echo htmlspecialchars($statusBadgeClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($statusBadgeText, ENT_QUOTES, 'UTF-8'); ?></span></td>
                             <td><span class="db-badge <?php echo $hasDbConfig ? 'ok' : 'missing'; ?>"><?php echo $hasDbConfig ? 'configured' : 'missing'; ?></span></td>
                             <td><?php echo htmlspecialchars(ccAsciiDigits((string) $t['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td class="row-actions">
