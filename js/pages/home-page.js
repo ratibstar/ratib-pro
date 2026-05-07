@@ -75,6 +75,16 @@
     window.RATIB_USD_TO_SAR = HOME.usdToSar;
     var openRegister = HOME.openRegister;
     var DISPLAY_MULTIPLIER = 2;
+    function formatPayableAmount(value) {
+        var n = Number(value);
+        if (!isFinite(n) || n <= 0) {
+            return '0';
+        }
+        if (Math.abs(n - Math.round(n)) < 0.0001) {
+            return Math.round(n).toLocaleString();
+        }
+        return n.toFixed(2);
+    }
     function formatDisplayAmount(value) {
         var n = Number(value);
         if (!isFinite(n) || n <= 0) {
@@ -82,23 +92,26 @@
         }
         return (Math.round(n * DISPLAY_MULTIPLIER)).toLocaleString();
     }
+    function formatPromoInline(payable) {
+        return '<span class="promo-old">$' + formatDisplayAmount(payable) + '</span> <span class="promo-new">$' + formatPayableAmount(payable) + '</span>';
+    }
     function syncPromoDisplayLabels() {
         var goldPlanBtn = document.querySelector('.plan-btn-form[data-plan="gold"]');
         var platinumPlanBtn = document.querySelector('.plan-btn-form[data-plan="platinum"]');
         if (goldPlanBtn) {
-            goldPlanBtn.innerHTML = '<i class="fas fa-crown me-1"></i> Gold $' + formatDisplayAmount(HOME.goldYear1);
+            goldPlanBtn.innerHTML = '<i class="fas fa-crown me-1"></i> Gold ' + formatPromoInline(HOME.goldYear1);
         }
         if (platinumPlanBtn) {
-            platinumPlanBtn.innerHTML = '<i class="fas fa-gem me-1"></i> Platinum $' + formatDisplayAmount(HOME.platinumYear1);
+            platinumPlanBtn.innerHTML = '<i class="fas fa-gem me-1"></i> Platinum ' + formatPromoInline(HOME.platinumYear1);
         }
 
         var formMonthBtn = document.querySelector('.form-year-btn[data-years="0"] .form-year-price');
         var formYearBtn = document.querySelector('.form-year-btn[data-years="1"] .form-year-price');
         if (formMonthBtn) {
-            formMonthBtn.textContent = '$' + formatDisplayAmount(HOME.goldMonth);
+            formMonthBtn.innerHTML = formatPromoInline(HOME.goldMonth);
         }
         if (formYearBtn) {
-            formYearBtn.textContent = '$' + formatDisplayAmount(HOME.goldYear1);
+            formYearBtn.innerHTML = formatPromoInline(HOME.goldYear1);
         }
 
         var goldCardPlan = document.querySelector('.price-card.gold .card-plan');
@@ -113,10 +126,10 @@
         var goldCardYear = document.querySelector('.gold-year-btn[data-years="1"] .year-price-small');
         var platCardMonth = document.querySelector('.platinum-year-btn[data-years="0"] .year-price-small');
         var platCardYear = document.querySelector('.platinum-year-btn[data-years="1"] .year-price-small');
-        if (goldCardMonth) goldCardMonth.textContent = '$' + formatDisplayAmount(HOME.goldMonth);
-        if (goldCardYear) goldCardYear.textContent = '$' + formatDisplayAmount(HOME.goldYear1);
-        if (platCardMonth) platCardMonth.textContent = '$' + formatDisplayAmount(HOME.platinumMonth);
-        if (platCardYear) platCardYear.textContent = '$' + formatDisplayAmount(HOME.platinumYear1);
+        if (goldCardMonth) goldCardMonth.innerHTML = formatPromoInline(HOME.goldMonth);
+        if (goldCardYear) goldCardYear.innerHTML = formatPromoInline(HOME.goldYear1);
+        if (platCardMonth) platCardMonth.innerHTML = formatPromoInline(HOME.platinumMonth);
+        if (platCardYear) platCardYear.innerHTML = formatPromoInline(HOME.platinumYear1);
     }
     syncPromoDisplayLabels();
     // EN: Remove any legacy 2-year buttons if stale markup is served.
@@ -394,7 +407,7 @@
                     var price = planVal === 'gold' ? parseFloat(b.getAttribute('data-price-gold')) : parseFloat(b.getAttribute('data-price-platinum'));
                     var span = b.querySelector('.form-year-price');
                     if (span) {
-                        span.textContent = '$' + formatDisplayAmount(price);
+                        span.innerHTML = formatPromoInline(price);
                     }
                     var isActive = (y === years);
                     if (planVal === 'gold') {

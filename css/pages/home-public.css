@@ -902,6 +902,15 @@ a.live-status:hover {
   font-size: 0.75rem;
   opacity: 0.9;
 }
+.promo-old {
+  text-decoration: line-through;
+  opacity: 0.72;
+  color: #9ba9b8;
+}
+.promo-new {
+  font-weight: 700;
+  color: inherit;
+}
 @keyframes buttonPulse {
   0%,
   100% {
