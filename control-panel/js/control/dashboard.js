@@ -14,6 +14,8 @@
     var grid = document.getElementById('usersPerCountryGrid');
     var runTenantSelfTestBtn = document.getElementById('runTenantSelfTestBtn');
     var tenantSelfTestResult = document.getElementById('tenantSelfTestResult');
+    var runTenantAllSelfTestBtn = document.getElementById('runTenantAllSelfTestBtn');
+    var tenantAllSelfTestResult = document.getElementById('tenantAllSelfTestResult');
     if (!grid || !apiBase) return;
     apiBase = apiBase.replace(/\/$/, '');
     ratibBase = ratibBase.replace(/\/$/, '') || (window.location.origin || '');
@@ -134,6 +136,49 @@
                 })
                 .finally(function() {
                     runTenantSelfTestBtn.disabled = false;
+                });
+        });
+    }
+
+    function setAllResult(status, text) {
+        if (!tenantAllSelfTestResult) return;
+        tenantAllSelfTestResult.classList.remove('tenant-self-test-idle', 'tenant-self-test-running', 'tenant-self-test-pass', 'tenant-self-test-fail');
+        tenantAllSelfTestResult.classList.add('tenant-self-test-' + status);
+        tenantAllSelfTestResult.innerHTML = '<span class="tenant-self-test-badge">' + status.toUpperCase() + '</span>' +
+            '<span class="tenant-self-test-text">' + text + '</span>';
+    }
+
+    if (runTenantAllSelfTestBtn && tenantAllSelfTestResult) {
+        runTenantAllSelfTestBtn.addEventListener('click', function() {
+            if (!apiBase) return;
+            runTenantAllSelfTestBtn.disabled = true;
+            setAllResult('running', 'Running all agencies audit...');
+            fetch(apiBase + '/agencies-audit.php', { credentials: 'same-origin' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (!data || data.success !== true) {
+                        setAllResult('fail', 'All agencies test failed to run.');
+                        return;
+                    }
+                    var summary = data.summary || {};
+                    var total = Number(summary.agencies_total || 0);
+                    var ok = Number(summary.db_connect_ok || 0);
+                    var failed = Number(summary.db_connect_failed || 0);
+                    var fullReady = Number(summary.full_ready || 0);
+                    if (failed === 0 && total > 0 && fullReady === total) {
+                        setAllResult('pass', 'PASS - all agencies healthy. Total: ' + total + ', Full Ready: ' + fullReady);
+                    } else {
+                        setAllResult('fail', 'FAIL - total: ' + total + ', db ok: ' + ok + ', db failed: ' + failed + ', full ready: ' + fullReady);
+                    }
+                    try {
+                        console.warn('All agencies audit details:', data);
+                    } catch (_) {}
+                })
+                .catch(function() {
+                    setAllResult('fail', 'Request error while auditing all agencies.');
+                })
+                .finally(function() {
+                    runTenantAllSelfTestBtn.disabled = false;
                 });
         });
     }

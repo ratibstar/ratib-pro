@@ -359,11 +359,18 @@ $pageTitle = 'Control Panel Dashboard';
             <div class="tenant-self-test-section">
                 <div class="tenant-self-test-header">
                     <h3><i class="fas fa-shield-check me-2"></i>Tenant Isolation Self-Test</h3>
-                    <button type="button" id="runTenantSelfTestBtn" class="btn btn-sm btn-outline-info">Run Test</button>
+                    <div class="tenant-self-test-actions">
+                        <button type="button" id="runTenantSelfTestBtn" class="btn btn-sm btn-outline-info">Run Current</button>
+                        <button type="button" id="runTenantAllSelfTestBtn" class="btn btn-sm btn-outline-warning">Run All Agencies</button>
+                    </div>
                 </div>
                 <div id="tenantSelfTestResult" class="tenant-self-test-result tenant-self-test-idle">
                     <span class="tenant-self-test-badge">IDLE</span>
                     <span class="tenant-self-test-text">Press "Run Test" to verify DB isolation now.</span>
+                </div>
+                <div id="tenantAllSelfTestResult" class="tenant-all-self-test-result tenant-self-test-idle">
+                    <span class="tenant-self-test-badge">IDLE</span>
+                    <span class="tenant-self-test-text">Run All Agencies to validate every agency DB connection/readiness.</span>
                 </div>
             </div>
 
