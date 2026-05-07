@@ -2499,10 +2499,10 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                 <h4>Release Wizard</h4>
                 <p class="cc-muted">Apply one core release globally, by country, or by tenant. Use rollback to disable a country/tenant override quickly.</p>
                 <div class="cc-form-row wrap" id="rwExamples">
-                    <button type="button" class="rw-example-btn" data-flag="release.payments.v3" data-scope="global" data-stage="wave1" data-percent="10" data-default="1" data-operation="apply">Example: Global wave rollout</button>
-                    <button type="button" class="rw-example-btn" data-flag="release.tax.sa.v2" data-scope="country" data-stage="full" data-percent="100" data-default="0" data-override="1" data-operation="apply">Example: Country-only feature</button>
-                    <button type="button" class="rw-example-btn" data-flag="hotfix.invoice.rounding" data-scope="tenant" data-stage="full" data-percent="100" data-default="0" data-override="1" data-operation="apply">Example: Tenant hotfix</button>
-                    <button type="button" class="rw-example-btn" data-flag="release.tax.sa.v2" data-scope="country" data-stage="full" data-percent="100" data-default="0" data-operation="rollback_scope">Example: Rollback country override</button>
+                    <button type="button" class="rw-example-btn" onclick="ccRwLoadExample(this)" data-flag="release.payments.v3" data-scope="global" data-stage="wave1" data-percent="10" data-default="1" data-operation="apply">Example: Global wave rollout</button>
+                    <button type="button" class="rw-example-btn" onclick="ccRwLoadExample(this)" data-flag="release.tax.sa.v2" data-scope="country" data-stage="full" data-percent="100" data-default="0" data-override="1" data-operation="apply">Example: Country-only feature</button>
+                    <button type="button" class="rw-example-btn" onclick="ccRwLoadExample(this)" data-flag="hotfix.invoice.rounding" data-scope="tenant" data-stage="full" data-percent="100" data-default="0" data-override="1" data-operation="apply">Example: Tenant hotfix</button>
+                    <button type="button" class="rw-example-btn" onclick="ccRwLoadExample(this)" data-flag="release.tax.sa.v2" data-scope="country" data-stage="full" data-percent="100" data-default="0" data-operation="rollback_scope">Example: Rollback country override</button>
                 </div>
                 <form method="post" id="rwForm" class="cc-form-row wrap">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
@@ -2616,6 +2616,54 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
 
 <div id="ccToastHost" class="cc-toast-host" aria-live="polite" aria-atomic="true"></div>
 
+<script>
+function ccRwSyncVisibility() {
+    var scopeEl = document.getElementById('rwScopeType');
+    var opEl = document.getElementById('rwOperation');
+    var countryEl = document.getElementById('rwCountryId');
+    var tenantEl = document.getElementById('rwTenantId');
+    if (!scopeEl) return;
+    var scope = String(scopeEl.value || 'global');
+    var op = opEl ? String(opEl.value || 'apply') : 'apply';
+    var isCountry = scope === 'country';
+    var isTenant = scope === 'tenant';
+    document.querySelectorAll('.rw-country-field').forEach(function (el) {
+        el.classList.toggle('hidden', !isCountry);
+    });
+    document.querySelectorAll('.rw-tenant-field').forEach(function (el) {
+        el.classList.toggle('hidden', !isTenant);
+    });
+    document.querySelectorAll('.rw-override-field').forEach(function (el) {
+        el.classList.toggle('hidden', !(isCountry || isTenant) || op === 'rollback_scope');
+    });
+    if (countryEl) countryEl.required = isCountry;
+    if (tenantEl) tenantEl.required = isTenant;
+}
+
+function ccRwLoadExample(btn) {
+    if (!btn) return;
+    var map = {
+        rwFlagKey: 'data-flag',
+        rwScopeType: 'data-scope',
+        rwStage: 'data-stage',
+        rwPercent: 'data-percent',
+        rwDefaultValue: 'data-default',
+        rwOperation: 'data-operation',
+        rwOverrideValue: 'data-override'
+    };
+    Object.keys(map).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        var v = btn.getAttribute(map[id]);
+        if (v !== null && v !== '') el.value = v;
+    });
+    ccRwSyncVisibility();
+    var form = document.getElementById('rwForm');
+    if (form && form.scrollIntoView) form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+document.addEventListener('DOMContentLoaded', ccRwSyncVisibility);
+</script>
 <script src="<?php echo htmlspecialchars($assetJsUrl, ENT_QUOTES, 'UTF-8'); ?>"></script>
 </body>
 </html>
