@@ -1368,8 +1368,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
             if ($bulkAction === 'delete') {
                 $stmt = $controlPdo->prepare("DELETE FROM tenants WHERE id IN ($placeholders)");
                 $stmt->execute($tenantIds);
-                ccAudit($controlPdo, 'tenant_bulk_delete', ['payload' => array_merge($auditPost, ['tenant_ids' => $tenantIds])]);
-                logSystemEvent('ADMIN_ACTION', ['action' => 'tenant_bulk_delete', 'tenant_ids' => $tenantIds]);
+                try {
+                    ccAudit($controlPdo, 'tenant_bulk_delete', ['payload' => array_merge($auditPost, ['tenant_ids' => $tenantIds])]);
+                    logSystemEvent('ADMIN_ACTION', ['action' => 'tenant_bulk_delete', 'tenant_ids' => $tenantIds]);
+                } catch (Throwable $logErr) {
+                    error_log('tenant_bulk_delete audit/log failed: ' . $logErr->getMessage());
+                }
                 $alerts[] = ['type' => 'danger', 'text' => 'Bulk delete executed for ' . count($tenantIds) . ' tenants.'];
             } else {
                 $next = $bulkAction === 'activate' ? 'active' : 'suspended';
@@ -1384,8 +1388,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
                     $ast = $controlPdo->prepare("UPDATE control_agencies SET is_active=? WHERE tenant_id IN ($placeholders)");
                     $ast->execute(array_merge([$next === 'active' ? 1 : 0], $tenantIds));
                 }
-                ccAudit($controlPdo, 'tenant_bulk_toggle', ['payload' => array_merge($auditPost, ['tenant_ids' => $tenantIds, 'next_status' => $next])]);
-                logSystemEvent('ADMIN_ACTION', ['action' => 'tenant_bulk_toggle', 'tenant_ids' => $tenantIds, 'status' => $next]);
+                try {
+                    ccAudit($controlPdo, 'tenant_bulk_toggle', ['payload' => array_merge($auditPost, ['tenant_ids' => $tenantIds, 'next_status' => $next])]);
+                    logSystemEvent('ADMIN_ACTION', ['action' => 'tenant_bulk_toggle', 'tenant_ids' => $tenantIds, 'status' => $next]);
+                } catch (Throwable $logErr) {
+                    error_log('tenant_bulk_toggle audit/log failed: ' . $logErr->getMessage());
+                }
                 $alerts[] = ['type' => 'warning', 'text' => 'Bulk status changed to ' . $next . ' for ' . count($tenantIds) . ' tenants.'];
             }
         } elseif ($action === 'rollout_wizard_apply') {
@@ -1750,7 +1758,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
                 || str_contains($msg, 'confirmation')
                 || str_contains($msg, 'incomplete')
                 || str_contains($msg, 'Provisioning failed')
-                || str_contains($msg, 'Rollout');
+                || str_contains($msg, 'Rollout')
+                || str_contains($msg, 'Bulk');
             $alerts[] = ['type' => 'danger', 'text' => $safeUser ? $msg : 'Request could not be completed.'];
         }
     }
