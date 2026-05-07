@@ -863,6 +863,25 @@
 
     bindTestConnectionForms();
     bindConfigButtons();
+    var inactiveIssuesBtn = document.getElementById('ccInactiveIssuesBtn');
+    var tenantIssuesPanel = document.getElementById('ccTenantIssuesPanel');
+    function setTenantIssuesOpen(open) {
+        if (!inactiveIssuesBtn || !tenantIssuesPanel) return;
+        tenantIssuesPanel.classList.toggle('hidden', !open);
+        inactiveIssuesBtn.classList.toggle('is-open', !!open);
+        inactiveIssuesBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    if (inactiveIssuesBtn && tenantIssuesPanel) {
+        inactiveIssuesBtn.addEventListener('click', function () {
+            setTenantIssuesOpen(tenantIssuesPanel.classList.contains('hidden'));
+        });
+        inactiveIssuesBtn.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setTenantIssuesOpen(tenantIssuesPanel.classList.contains('hidden'));
+            }
+        });
+    }
     var serverPaging = false;
     try {
         var tenantSection = document.getElementById('tenant-control');

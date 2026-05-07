@@ -2312,13 +2312,13 @@ if ($rwExample === 'global_wave') {
                     <span>Active & Correct</span>
                     <strong><?php echo (int) $tenantHealthOk; ?></strong>
                 </div>
-                <div class="stat danger">
+                <div class="stat danger cc-stat-clickable" id="ccInactiveIssuesBtn" role="button" tabindex="0" aria-expanded="false" aria-controls="ccTenantIssuesPanel">
                     <span>Inactive / Issues</span>
                     <strong><?php echo (int) $tenantHealthIssues; ?></strong>
                 </div>
             </div>
             <?php if (!empty($tenantHealthIssueRows)): ?>
-                <div class="cc-alert warning">
+                <div class="cc-alert warning hidden" id="ccTenantIssuesPanel">
                     <strong>Tenants needing fix</strong>
                     <div class="cc-muted" style="margin-top:6px;">
                         <?php foreach ($tenantHealthIssueRows as $ir): ?>

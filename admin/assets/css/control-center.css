@@ -217,6 +217,21 @@ button {
   padding: 8px;
   border: 1px solid #334155;
 }
+.cc-stat-clickable {
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.cc-stat-clickable:hover {
+  border-color: #f59e0b;
+}
+.cc-stat-clickable:focus {
+  outline: 2px solid #f59e0b;
+  outline-offset: 1px;
+}
+.cc-stat-clickable.is-open {
+  border-color: #f59e0b;
+}
 .stat span {
   font-size: 11px;
   color: #94a3b8;
