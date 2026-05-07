@@ -77,7 +77,7 @@ try {
                 if ($scopeIds === []) {
                     $parts[] = '1=0';
                 } else {
-                    $parts[] = 'a.country_id IN (' . implode(',', array_map('intval', $scopeIds)) . ')';
+                    $parts[] = '(a.country_id IS NULL OR a.country_id IN (' . implode(',', array_map('intval', $scopeIds)) . '))';
                 }
             }
             $where = $parts ? ' WHERE ' . implode(' AND ', $parts) : '';

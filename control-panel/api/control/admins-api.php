@@ -226,7 +226,7 @@ if ($method === 'GET') {
         if ($scopeIds === []) {
             $whereParts[] = '1=0';
         } else {
-            $whereParts[] = 'a.country_id IN (' . implode(',', array_map('intval', $scopeIds)) . ')';
+            $whereParts[] = '(a.country_id IS NULL OR a.country_id IN (' . implode(',', array_map('intval', $scopeIds)) . '))';
         }
     }
     $where = $whereParts ? ' WHERE ' . implode(' AND ', $whereParts) : '';
