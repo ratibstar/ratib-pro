@@ -1103,3 +1103,4 @@ try {
         'hint' => 'If local_order_id > 0, the row exists in ngenius_reg_orders; fix gateway/config then retry or mark paid manually.',
     ]);
 }
+

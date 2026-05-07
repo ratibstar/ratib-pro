@@ -579,3 +579,4 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/chat-widget.js"></script>
 </body>
 </html>
+
