@@ -1508,6 +1508,10 @@ a.live-status:hover {
   font-size: 0.75rem;
   opacity: 0.9;
 }
+/* Keep only Monthly and 1 yr options visible in duration row. */
+#formYearButtons .form-year-btn:nth-child(n + 3) {
+  display: none !important;
+}
 .is-hidden {
   display: none !important;
 }
