@@ -98,6 +98,10 @@
     }
 
     if (runTenantSelfTestBtn && tenantSelfTestResult) {
+        if (runTenantSelfTestBtn.getAttribute('data-tenant-self-test-bound') === '1') {
+            return;
+        }
+        runTenantSelfTestBtn.setAttribute('data-tenant-self-test-bound', '1');
         runTenantSelfTestBtn.addEventListener('click', function() {
             var endpoint = buildTenantSelfTestUrl();
             runTenantSelfTestBtn.disabled = true;
