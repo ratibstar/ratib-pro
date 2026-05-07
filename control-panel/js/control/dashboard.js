@@ -159,6 +159,10 @@
     }
 
     function runAllAgenciesAudit(triggeredByUser) {
+        // If feature is disabled, the "Run All Agencies" button is not rendered with this id.
+        if (!runTenantAllSelfTestBtn) {
+            return;
+        }
         if (!apiBase) return;
         if (runTenantAllSelfTestBtn) {
             runTenantAllSelfTestBtn.disabled = true;
@@ -217,9 +221,11 @@
         });
     }
 
-    // Start periodic auto-check once dashboard is ready.
-    setTimeout(function() { runAllAgenciesAudit(false); }, 2000);
-    if (tenantAllIntervalMs >= 60000) {
-        setInterval(function() { runAllAgenciesAudit(false); }, tenantAllIntervalMs);
+    // Start periodic auto-check only when all-agencies audit is enabled.
+    if (runTenantAllSelfTestBtn) {
+        setTimeout(function() { runAllAgenciesAudit(false); }, 2000);
+        if (tenantAllIntervalMs >= 60000) {
+            setInterval(function() { runAllAgenciesAudit(false); }, tenantAllIntervalMs);
+        }
     }
 })();
