@@ -93,6 +93,10 @@ $goldTestPriceYear1 = 650;
 $goldTestPriceMonth = 54;
 $platinumTestPriceYear1 = 800;
 $platinumTestPriceMonth = 67;
+$goldListPriceYear1 = $goldTestPriceYear1 * 2;
+$goldListPriceMonth = $goldTestPriceMonth * 2;
+$platinumListPriceYear1 = $platinumTestPriceYear1 * 2;
+$platinumListPriceMonth = $platinumTestPriceMonth * 2;
 $amount = isset($_GET['amount']) ? (float)$_GET['amount'] : null;
 $years = isset($_GET['years']) ? (int)$_GET['years'] : null;
 // EN: Only monthly (0) and one-year (1) tiers are offered; normalize any legacy/invalid value to one year.
@@ -292,15 +296,15 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
         <div class="pricing-row">
             <div class="price-card gold">
                 <span class="card-badge">50% Off</span>
-                <div class="card-plan">Gold $<?php echo number_format((float)$goldTestPriceYear1, 0); ?></div>
+                <div class="card-plan">Gold $<?php echo number_format((float)$goldListPriceYear1, 0); ?></div>
                 <div class="card-subtitle">Branded agency portal</div>
                 <div class="plan-year-wrap">
                     <div class="plan-year-buttons">
-                        <button type="button" class="year-btn gold-year-btn year-btn-card year-btn-neutral" data-years="0" data-price="<?php echo (float)$goldTestPriceMonth; ?>">Monthly<br><span class="year-price-small">$<?php echo number_format((float)$goldTestPriceMonth, 0); ?></span></button>
-                        <button type="button" class="year-btn gold-year-btn year-btn-card year-btn-gold-active active" data-years="1" data-price="<?php echo (float)$goldTestPriceYear1; ?>">1 Year<br><span class="year-price-small">$<?php echo number_format((float)$goldTestPriceYear1, 0); ?></span></button>
+                        <button type="button" class="year-btn gold-year-btn year-btn-card year-btn-neutral" data-years="0" data-price="<?php echo (float)$goldTestPriceMonth; ?>">Monthly<br><span class="year-price-small">$<?php echo number_format((float)$goldListPriceMonth, 0); ?></span></button>
+                        <button type="button" class="year-btn gold-year-btn year-btn-card year-btn-gold-active active" data-years="1" data-price="<?php echo (float)$goldTestPriceYear1; ?>">1 Year<br><span class="year-price-small">$<?php echo number_format((float)$goldListPriceYear1, 0); ?></span></button>
                     </div>
                 </div>
-                <p class="card-price-old" id="goldOldPrice">$1,100</p>
+                <p class="card-price-old" id="goldOldPrice">$<?php echo number_format((float)$goldListPriceYear1, 0); ?></p>
                 <p class="card-price" id="goldPrice">$<?php echo number_format((float)$goldTestPriceYear1, 0); ?> <span id="goldPriceLabel">for 1 year</span></p>
                 <span class="card-discount">50% Discount</span>
                 <div class="card-divider"></div>
@@ -317,15 +321,15 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
             </div>
             <div class="price-card platinum">
                 <span class="card-badge">50% Off</span>
-                <div class="card-plan">Platinum $<?php echo number_format((float)$platinumTestPriceYear1, 0); ?></div>
+                <div class="card-plan">Platinum $<?php echo number_format((float)$platinumListPriceYear1, 0); ?></div>
                 <div class="card-subtitle">Full-featured solution</div>
                 <div class="plan-year-wrap">
                     <div class="plan-year-buttons">
-                        <button type="button" class="year-btn platinum-year-btn year-btn-card year-btn-neutral" data-years="0" data-price="<?php echo (float)$platinumTestPriceMonth; ?>">Monthly<br><span class="year-price-small">$<?php echo number_format((float)$platinumTestPriceMonth, 0); ?></span></button>
-                        <button type="button" class="year-btn platinum-year-btn year-btn-card year-btn-platinum-active active" data-years="1" data-price="<?php echo (float)$platinumTestPriceYear1; ?>">1 Year<br><span class="year-price-small">$<?php echo number_format((float)$platinumTestPriceYear1, 0); ?></span></button>
+                        <button type="button" class="year-btn platinum-year-btn year-btn-card year-btn-neutral" data-years="0" data-price="<?php echo (float)$platinumTestPriceMonth; ?>">Monthly<br><span class="year-price-small">$<?php echo number_format((float)$platinumListPriceMonth, 0); ?></span></button>
+                        <button type="button" class="year-btn platinum-year-btn year-btn-card year-btn-platinum-active active" data-years="1" data-price="<?php echo (float)$platinumTestPriceYear1; ?>">1 Year<br><span class="year-price-small">$<?php echo number_format((float)$platinumListPriceYear1, 0); ?></span></button>
                     </div>
                 </div>
-                <p class="card-price-old" id="platinumOldPrice">$1,200</p>
+                <p class="card-price-old" id="platinumOldPrice">$<?php echo number_format((float)$platinumListPriceYear1, 0); ?></p>
                 <p class="card-price" id="platinumPrice">$<?php echo number_format((float)$platinumTestPriceYear1, 0); ?> <span id="platinumPriceLabel">for 1 year</span></p>
                 <span class="card-discount">50% Discount</span>
                 <div class="card-divider"></div>
@@ -369,14 +373,14 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
                 <p class="small mb-2 form-plan-hint"><i class="fas fa-info-circle me-1"></i>Select <strong>Gold</strong> or <strong>Platinum</strong> to see the payment summary for your plan.</p>
                 <div class="d-flex gap-2 flex-wrap mb-2">
                     <button type="button" class="btn plan-btn-form plan-btn-pro" data-plan="pro" data-amount="" data-years="1"><i class="fas fa-star me-1"></i> Pro</button>
-                    <button type="button" class="btn plan-btn-form plan-btn-gold" data-plan="gold" data-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-years="1"><i class="fas fa-crown me-1"></i> Gold $<?php echo number_format((float)$goldTestPriceYear1, 0); ?></button>
-                    <button type="button" class="btn plan-btn-form plan-btn-platinum" data-plan="platinum" data-amount="<?php echo (float)$platinumTestPriceYear1; ?>" data-years="1"><i class="fas fa-gem me-1"></i> Platinum $<?php echo number_format((float)$platinumTestPriceYear1, 0); ?></button>
+                    <button type="button" class="btn plan-btn-form plan-btn-gold" data-plan="gold" data-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-years="1"><i class="fas fa-crown me-1"></i> Gold $<?php echo number_format((float)$goldListPriceYear1, 0); ?></button>
+                    <button type="button" class="btn plan-btn-form plan-btn-platinum" data-plan="platinum" data-amount="<?php echo (float)$platinumTestPriceYear1; ?>" data-years="1"><i class="fas fa-gem me-1"></i> Platinum $<?php echo number_format((float)$platinumListPriceYear1, 0); ?></button>
                 </div>
                 <div id="formYearButtonsWrap" class="mb-2 <?php echo ($plan !== 'pro' && $planAmount) ? '' : 'is-hidden'; ?>">
                     <label class="form-label form-duration-label">Duration</label>
                     <div class="d-flex gap-2 flex-wrap" id="formYearButtons">
-                        <button type="button" class="form-year-btn" data-years="0" data-price-gold="<?php echo (float)$goldTestPriceMonth; ?>" data-price-platinum="<?php echo (float)$platinumTestPriceMonth; ?>">Monthly<br><span class="form-year-price">$<?php echo number_format((float)$goldTestPriceMonth, 0); ?></span></button>
-                        <button type="button" class="form-year-btn" data-years="1" data-price-gold="<?php echo (float)$goldTestPriceYear1; ?>" data-price-platinum="<?php echo (float)$platinumTestPriceYear1; ?>">1 yr<br><span class="form-year-price">$<?php echo number_format((float)$goldTestPriceYear1, 0); ?></span></button>
+                        <button type="button" class="form-year-btn" data-years="0" data-price-gold="<?php echo (float)$goldTestPriceMonth; ?>" data-price-platinum="<?php echo (float)$platinumTestPriceMonth; ?>">Monthly<br><span class="form-year-price">$<?php echo number_format((float)$goldListPriceMonth, 0); ?></span></button>
+                        <button type="button" class="form-year-btn" data-years="1" data-price-gold="<?php echo (float)$goldTestPriceYear1; ?>" data-price-platinum="<?php echo (float)$platinumTestPriceYear1; ?>">1 yr<br><span class="form-year-price">$<?php echo number_format((float)$goldListPriceYear1, 0); ?></span></button>
                     </div>
                 </div>
             </div>

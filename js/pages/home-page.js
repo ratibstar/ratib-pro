@@ -470,8 +470,6 @@
     (function () {
         var goldPrices = { 0: HOME.goldMonth, 1: HOME.goldYear1 };
         var platinumPrices = { 0: HOME.platinumMonth, 1: HOME.platinumYear1 };
-        var goldOldPrices = { 0: 108, 1: 1100 };
-        var platinumOldPrices = { 0: 134, 1: 1200 };
 
         function updateGoldPrice(years, event) {
             years = parseInt(years, 10);
@@ -479,7 +477,7 @@
                 years = 1;
             }
             var price = goldPrices.hasOwnProperty(years) ? goldPrices[years] : HOME.goldYear1;
-            var oldPrice = goldOldPrices.hasOwnProperty(years) ? goldOldPrices[years] : 1100;
+            var oldPrice = price * 2;
             var priceEl = document.getElementById('goldPrice');
             var oldPriceEl = document.getElementById('goldOldPrice');
             var btn = document.getElementById('goldRegisterBtn');
@@ -541,7 +539,7 @@
                 years = 1;
             }
             var price = platinumPrices.hasOwnProperty(years) ? platinumPrices[years] : HOME.platinumYear1;
-            var oldPrice = platinumOldPrices.hasOwnProperty(years) ? platinumOldPrices[years] : 1200;
+            var oldPrice = price * 2;
             var priceEl = document.getElementById('platinumPrice');
             var oldPriceEl = document.getElementById('platinumOldPrice');
             var btn = document.getElementById('platinumRegisterBtn');
