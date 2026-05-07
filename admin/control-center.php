@@ -1646,6 +1646,16 @@ if ($controlPdo instanceof PDO) {
     }
 }
 
+$tenantLimit = (int) ($_GET['tenant_limit'] ?? 5);
+if (!in_array($tenantLimit, [5, 10, 25], true)) {
+    $tenantLimit = 5;
+}
+$tenantPage = max(1, (int) ($_GET['tenant_page'] ?? 1));
+$tenantTotal = count($tenants);
+$tenantTotalPages = max(1, (int) ceil($tenantTotal / max(1, $tenantLimit)));
+$tenantPage = min($tenantTotalPages, $tenantPage);
+$tenantsPaged = array_slice($tenants, ($tenantPage - 1) * $tenantLimit, $tenantLimit);
+
 $ccMetrics = ['queries_ok' => 0, 'queries_fail' => 0, 'safety_warnings' => 0, 'queries_last_minute' => 0];
 $activeTenantCount = 0;
 $suspendedTenantCount = 0;
@@ -1860,13 +1870,23 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                 <button type="submit">Create Tenant</button>
                 </fieldset>
             </form>
+            <form method="get" class="cc-form-row" action="" style="justify-content:flex-end;">
+                <label class="cc-muted">Rows</label>
+                <select name="tenant_limit" onchange="this.form.submit()">
+                    <option value="5" <?php echo $tenantLimit === 5 ? 'selected' : ''; ?>>5</option>
+                    <option value="10" <?php echo $tenantLimit === 10 ? 'selected' : ''; ?>>10</option>
+                    <option value="25" <?php echo $tenantLimit === 25 ? 'selected' : ''; ?>>25</option>
+                </select>
+                <input type="hidden" name="tenant_page" value="<?php echo (int) $tenantPage; ?>">
+                <noscript><button type="submit">Apply</button></noscript>
+            </form>
             <div class="cc-table-wrap">
                 <table>
                     <thead><tr><th>ID</th><th>Name</th><th>Domain</th><th>Status</th><th>DB Config</th><th>Created</th><th>Actions</th></tr></thead>
                     <tbody>
-                    <?php if (empty($tenants)): ?>
+                    <?php if (empty($tenantsPaged)): ?>
                         <tr><td colspan="7">No tenants found.</td></tr>
-                    <?php else: foreach ($tenants as $t): ?>
+                    <?php else: foreach ($tenantsPaged as $t): ?>
                         <?php
                         $hasDbConfig = trim((string) ($t['database_name'] ?? '')) !== '' && trim((string) ($t['db_user'] ?? '')) !== '';
                         $isLinkedTenant = !empty($t['has_tenant']) && (int) ($t['id'] ?? 0) > 0;
@@ -1937,6 +1957,11 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                     </tbody>
                 </table>
             </div>
+            <div class="cc-pagination">
+                <a href="?tenant_page=<?php echo max(1, $tenantPage - 1); ?>&tenant_limit=<?php echo (int) $tenantLimit; ?>#tenant-control">Prev</a>
+                <span>Page <?php echo (int) $tenantPage; ?> / <?php echo (int) $tenantTotalPages; ?></span>
+                <a href="?tenant_page=<?php echo min($tenantTotalPages, $tenantPage + 1); ?>&tenant_limit=<?php echo (int) $tenantLimit; ?>#tenant-control">Next</a>
+            </div>
         </section>
 
         <section id="db-control" class="cc-card">
@@ -1945,9 +1970,9 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                 <table>
                     <thead><tr><th>Tenant</th><th>Connection</th><th>Actions</th></tr></thead>
                     <tbody>
-                    <?php if (empty($tenants)): ?>
+                    <?php if (empty($tenantsPaged)): ?>
                         <tr><td colspan="3">No tenants available.</td></tr>
-                    <?php else: foreach ($tenants as $t): ?>
+                    <?php else: foreach ($tenantsPaged as $t): ?>
                         <tr>
                             <?php $isLinkedTenant = !empty($t['has_tenant']) && (int) ($t['id'] ?? 0) > 0; ?>
                             <td>#<?php echo htmlspecialchars((string) ($t['display_id'] ?? (string) (int) ($t['id'] ?? 0)), ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars((string) $t['domain'], ENT_QUOTES, 'UTF-8'); ?></td>
@@ -1978,6 +2003,11 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                     <?php endforeach; endif; ?>
                     </tbody>
                 </table>
+            </div>
+            <div class="cc-pagination">
+                <a href="?tenant_page=<?php echo max(1, $tenantPage - 1); ?>&tenant_limit=<?php echo (int) $tenantLimit; ?>#db-control">Prev</a>
+                <span>Page <?php echo (int) $tenantPage; ?> / <?php echo (int) $tenantTotalPages; ?></span>
+                <a href="?tenant_page=<?php echo min($tenantTotalPages, $tenantPage + 1); ?>&tenant_limit=<?php echo (int) $tenantLimit; ?>#db-control">Next</a>
             </div>
         </section>
 
