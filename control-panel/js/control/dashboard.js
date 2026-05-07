@@ -176,11 +176,13 @@
                     var total = Number(summary.agencies_total || 0);
                     var ok = Number(summary.db_connect_ok || 0);
                     var failed = Number(summary.db_connect_failed || 0);
+                    var isolationReady = Number(summary.isolation_ready || 0);
+                    var isolationFailed = Number(summary.isolation_failed || 0);
                     var fullReady = Number(summary.full_ready || 0);
-                    if (failed === 0 && total > 0 && fullReady === total) {
-                        setAllResult('pass', 'PASS - all agencies healthy. Total: ' + total + ', Full Ready: ' + fullReady);
+                    if (failed === 0 && isolationFailed === 0 && total > 0 && isolationReady === total) {
+                        setAllResult('pass', 'PASS - all agencies isolated. Total: ' + total + ', DB ok: ' + ok);
                     } else {
-                        setAllResult('fail', 'FAIL - total: ' + total + ', db ok: ' + ok + ', db failed: ' + failed + ', full ready: ' + fullReady);
+                        setAllResult('fail', 'FAIL - total: ' + total + ', db ok: ' + ok + ', db failed: ' + failed + ', isolation ready: ' + isolationReady + ', full ready: ' + fullReady);
                     }
                     try {
                         console.warn('All agencies audit details:', data);

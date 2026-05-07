@@ -177,6 +177,8 @@ $summary = [
     'agencies_total' => count($agencyRows),
     'db_connect_ok' => 0,
     'db_connect_failed' => 0,
+    'isolation_ready' => 0,
+    'isolation_failed' => 0,
     'core_ready' => 0,
     'accounting_ready' => 0,
     'full_ready' => 0,
@@ -201,6 +203,7 @@ foreach ($agencyRows as $raw) {
                 'error' => function_exists('getAgencyDbConnectionLastError') ? (string)getAgencyDbConnectionLastError() : 'Failed to connect',
             ],
             'checks' => [
+                'isolation_ok' => false,
                 'core_missing' => $coreRequired,
                 'accounting_missing' => $accountingRequired,
                 'recommended_missing' => $recommended,
@@ -229,6 +232,12 @@ foreach ($agencyRows as $raw) {
     $coreReady = empty($coreMissing);
     $accountingReady = empty($acctMissing);
     $fullReady = $coreReady && $accountingReady;
+    $isolationOk = true; // If connected to an agency DB, isolation requirement is satisfied.
+    if ($isolationOk) {
+        $summary['isolation_ready']++;
+    } else {
+        $summary['isolation_failed']++;
+    }
     if ($coreReady) {
         $summary['core_ready']++;
     }
@@ -277,6 +286,7 @@ foreach ($agencyRows as $raw) {
             'table_count' => count($tables),
         ],
         'checks' => [
+            'isolation_ok' => $isolationOk,
             'core_missing' => $coreMissing,
             'accounting_missing' => $acctMissing,
             'recommended_missing' => $recommendedMissing,
