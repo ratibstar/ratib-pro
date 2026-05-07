@@ -118,3 +118,80 @@
     color: #dbeafe;
     word-break: break-all;
 }
+
+.tenant-rollout-grid-live {
+    margin-top: 4px;
+}
+
+.tenant-rollout-form {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.tenant-rollout-form-inline {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    align-items: end;
+}
+
+.tenant-rollout-field {
+    display: grid;
+    gap: 4px;
+}
+
+.tenant-rollout-field label {
+    color: #cbd5e1;
+    font-size: 0.82rem;
+}
+
+.tenant-rollout-field input,
+.tenant-rollout-field select {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 7px 9px;
+}
+
+.tenant-rollout-list {
+    display: grid;
+    gap: 8px;
+    max-height: 280px;
+    overflow: auto;
+    padding-right: 4px;
+}
+
+.tenant-rollout-item {
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(100, 116, 139, 0.35);
+    border-radius: 9px;
+    padding: 8px;
+}
+
+.tenant-rollout-item-title {
+    margin: 0;
+    color: #f8fafc;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.tenant-rollout-item-meta {
+    margin: 2px 0 0;
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+.tenant-rollout-item-actions {
+    margin-top: 7px;
+    display: flex;
+    gap: 6px;
+}
+
+.tenant-rollout-empty {
+    color: #94a3b8;
+    font-size: 0.88rem;
+    border: 1px dashed rgba(148, 163, 184, 0.3);
+    border-radius: 8px;
+    padding: 8px;
+}

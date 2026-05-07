@@ -92,6 +92,114 @@ startControlLayout('Tenants & Rollout', ['css/control/tenant-rollout.css'], []);
         <p class="tenant-rollout-url-label">Direct URL:</p>
         <code id="tenantRolloutDirectUrl"><?php echo htmlspecialchars(control_panel_page_with_control('control/tenant-rollout.php'), ENT_QUOTES, 'UTF-8'); ?></code>
     </div>
+
+    <div class="tenant-rollout-grid tenant-rollout-grid-live">
+        <article class="tenant-rollout-card">
+            <h4>Tenant Registry</h4>
+            <p>Add and update tenant routing records used for per-domain agency mapping.</p>
+            <form id="tenantForm" class="tenant-rollout-form" autocomplete="off">
+                <input type="hidden" id="tenantIdInput" value="">
+                <div class="tenant-rollout-field">
+                    <label for="tenantCodeInput">Tenant Code</label>
+                    <input id="tenantCodeInput" type="text" maxlength="64" placeholder="e.g. sa_riyadh_001" required>
+                </div>
+                <div class="tenant-rollout-field">
+                    <label for="tenantNameInput">Tenant Name</label>
+                    <input id="tenantNameInput" type="text" maxlength="191" placeholder="Agency display name" required>
+                </div>
+                <div class="tenant-rollout-field">
+                    <label for="tenantDomainInput">Primary Domain</label>
+                    <input id="tenantDomainInput" type="text" maxlength="191" placeholder="riyadh.example.com" required>
+                </div>
+                <div class="tenant-rollout-field">
+                    <label for="tenantCountryInput">Country</label>
+                    <select id="tenantCountryInput" required></select>
+                </div>
+                <div class="tenant-rollout-field">
+                    <label for="tenantDbKeyInput">DB Key Ref</label>
+                    <input id="tenantDbKeyInput" type="text" maxlength="191" placeholder="secret-manager-key-or-ref" required>
+                </div>
+                <div class="tenant-rollout-field">
+                    <label for="tenantStatusInput">Status</label>
+                    <select id="tenantStatusInput">
+                        <option value="active">Active</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                </div>
+                <div class="tenant-rollout-actions">
+                    <button type="submit" class="btn btn-sm btn-primary">Save Tenant</button>
+                    <button type="button" id="tenantFormResetBtn" class="btn btn-sm btn-outline-light">Reset</button>
+                </div>
+            </form>
+            <div id="tenantRegistryList" class="tenant-rollout-list"></div>
+        </article>
+
+        <article class="tenant-rollout-card">
+            <h4>Feature Flags</h4>
+            <p>Create global feature flags and default values before country/tenant overrides.</p>
+            <form id="flagForm" class="tenant-rollout-form" autocomplete="off">
+                <input type="hidden" id="flagIdInput" value="">
+                <div class="tenant-rollout-field">
+                    <label for="flagKeyInput">Flag Key</label>
+                    <input id="flagKeyInput" type="text" maxlength="120" placeholder="invoice.sa.zatca_enabled" required>
+                </div>
+                <div class="tenant-rollout-field">
+                    <label for="flagDescriptionInput">Description</label>
+                    <input id="flagDescriptionInput" type="text" maxlength="255" placeholder="Short purpose of this flag">
+                </div>
+                <div class="tenant-rollout-field">
+                    <label for="flagDefaultInput">Default Value</label>
+                    <select id="flagDefaultInput">
+                        <option value="0">Disabled</option>
+                        <option value="1">Enabled</option>
+                    </select>
+                </div>
+                <div class="tenant-rollout-actions">
+                    <button type="submit" class="btn btn-sm btn-primary">Save Flag</button>
+                    <button type="button" id="flagFormResetBtn" class="btn btn-sm btn-outline-light">Reset</button>
+                </div>
+            </form>
+            <div id="featureFlagsList" class="tenant-rollout-list"></div>
+        </article>
+    </div>
+
+    <article class="tenant-rollout-card">
+        <h4>Flag Overrides</h4>
+        <p>Set overrides for one country or one tenant without changing global defaults.</p>
+        <form id="overrideForm" class="tenant-rollout-form tenant-rollout-form-inline" autocomplete="off">
+            <div class="tenant-rollout-field">
+                <label for="overrideFlagInput">Flag</label>
+                <select id="overrideFlagInput" required></select>
+            </div>
+            <div class="tenant-rollout-field">
+                <label for="overrideScopeInput">Scope</label>
+                <select id="overrideScopeInput">
+                    <option value="country">Country</option>
+                    <option value="tenant">Tenant</option>
+                </select>
+            </div>
+            <div class="tenant-rollout-field">
+                <label for="overrideCountryInput">Country</label>
+                <select id="overrideCountryInput"></select>
+            </div>
+            <div class="tenant-rollout-field">
+                <label for="overrideTenantInput">Tenant</label>
+                <select id="overrideTenantInput"></select>
+            </div>
+            <div class="tenant-rollout-field">
+                <label for="overrideValueInput">Value</label>
+                <select id="overrideValueInput">
+                    <option value="0">Disabled</option>
+                    <option value="1">Enabled</option>
+                </select>
+            </div>
+            <div class="tenant-rollout-actions">
+                <button type="submit" class="btn btn-sm btn-primary">Save Override</button>
+            </div>
+        </form>
+        <div id="overridesList" class="tenant-rollout-list"></div>
+    </article>
 </section>
 
 <?php endControlLayout(['js/control/tenant-rollout.js']); ?>
