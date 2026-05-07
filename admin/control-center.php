@@ -368,8 +368,11 @@ function ccResolveTenantIdFromRef(PDO $pdo, string $tenantRef): int
             return $id;
         }
     }
-    $st = $pdo->prepare('SELECT id FROM tenants WHERE LOWER(domain) = LOWER(:ref) OR LOWER(name) = LOWER(:ref) LIMIT 1');
-    $st->execute([':ref' => $ref]);
+    $st = $pdo->prepare('SELECT id FROM tenants WHERE LOWER(domain) = LOWER(:ref1) OR LOWER(name) = LOWER(:ref2) LIMIT 1');
+    $st->execute([
+        ':ref1' => $ref,
+        ':ref2' => $ref,
+    ]);
     return (int) ($st->fetchColumn() ?: 0);
 }
 
