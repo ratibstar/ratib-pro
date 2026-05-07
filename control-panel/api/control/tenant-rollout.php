@@ -163,6 +163,8 @@ function tr_audit(mysqli $ctrl, string $entityType, ?int $entityId, string $acti
     $afterJson = $after === null ? null : json_encode($after, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $uid = tr_user_id();
     $uname = tr_username();
+    $entityIdValue = $entityId ?? 0;
+    $uidValue = $uid ?? 0;
     $st = $ctrl->prepare(
         "INSERT INTO control_rollout_audit
          (entity_type, entity_id, action_type, before_json, after_json, changed_by_id, changed_by_username, created_at)
@@ -171,9 +173,15 @@ function tr_audit(mysqli $ctrl, string $entityType, ?int $entityId, string $acti
     if (!$st) {
         return;
     }
-    $st->bind_param('sisssis', $entityType, $entityId, $actionType, $beforeJson, $afterJson, $uid, $uname);
-    $st->execute();
-    $st->close();
+    try {
+        $st->bind_param('sisssis', $entityType, $entityIdValue, $actionType, $beforeJson, $afterJson, $uidValue, $uname);
+        $st->execute();
+        $st->close();
+    } catch (Throwable $_) {
+        if ($st instanceof mysqli_stmt) {
+            $st->close();
+        }
+    }
 }
 
 function tr_countries(mysqli $ctrl): array
