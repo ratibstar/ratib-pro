@@ -337,8 +337,8 @@
             category: 'registration'
         },
         {
-            keywords: ['price', 'pricing', 'cost', 'fee', 'plan', 'gold', 'platinum', '550', '600', '1100', '1200'],
-            answer: "Our plans & pricing:\n• Gold (1 Branch): $1,100 → $550 (50% off) one-time setup\n• Platinum (No Branches): $1,200 → $600 (50% off) one-time setup\n• Pro: Contact us for details\n\nScroll to 'Plans & Pricing' section for full features. Discount applies to new registrations.",
+            keywords: ['price', 'pricing', 'cost', 'fee', 'plan', 'gold', 'platinum', '54', '67', '650', '800', '1100', '1200'],
+            answer: "Our plans & pricing:\n• Gold: monthly $54, or $650/yr (2 yrs $1,000)\n• Platinum: monthly $67, or $800/yr (2 yrs $1,100)\n• Pro: Contact us for details\n\nScroll to 'Plans & Pricing' for full features.",
             category: 'pricing'
         },
         {

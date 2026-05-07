@@ -10,7 +10,7 @@
  * Redirecting to registration form with plan parameters.
  */
 $plan = isset($_GET['plan']) ? htmlspecialchars($_GET['plan']) : 'gold';
-$amount = isset($_GET['amount']) ? (float)$_GET['amount'] : 550;
+$amount = isset($_GET['amount']) ? (float)$_GET['amount'] : 650;
 $years = isset($_GET['years']) ? (int)$_GET['years'] : 1;
 
 // Get base URL
@@ -112,7 +112,7 @@ exit;
         const urlParams = new URLSearchParams(window.location.search);
         const plan = urlParams.get('plan') || 'gold';
         const years = parseInt(urlParams.get('years')) || 1;
-        const subtotal = parseFloat(urlParams.get('amount')) || 550;
+        const subtotal = parseFloat(urlParams.get('amount')) || 650;
         const tax = parseFloat(urlParams.get('tax')) || (subtotal * 0.15);
         const total = parseFloat(urlParams.get('total')) || (subtotal + tax);
 

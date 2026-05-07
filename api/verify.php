@@ -237,7 +237,10 @@ function ensureControlRequestLinked($pdo, array $order, string $status): ?int
     $hasAgencyIdUserCol = ($colAgencyIdUser && $colAgencyIdUser->num_rows > 0);
 
     $plan = strtolower(trim((string) ($order['plan_key'] ?? '')));
-    $years = max(1, (int) ($order['years'] ?? 1));
+    $years = (int) ($order['years'] ?? 1);
+    if ($years < 0) {
+        $years = 1;
+    }
     $total = (float) ($order['total_amount'] ?? 0.0);
     $email = trim((string) ($order['email'] ?? ''));
     $payStatus = $status === 'paid' ? 'paid' : ($status === 'failed' ? 'failed' : 'pending');

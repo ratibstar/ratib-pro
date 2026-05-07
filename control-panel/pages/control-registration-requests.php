@@ -223,8 +223,8 @@ $fmtAgencyId = function($id) { return $id ? ('AG' . str_pad((int)$id, 4, '0', ST
                     <option value="<?php echo htmlspecialchars($registerProUrl); ?>">Recommended — Gold, 1 year (N-Genius)</option>
                     <option value="<?php echo htmlspecialchars($regBaseWithOpen); ?>">Open register only (defaults to Gold)</option>
                     <option value="<?php echo htmlspecialchars($regBaseWithOpen . '&plan=pro'); ?>">Pro (non-paid inquiry)</option>
-                    <option value="<?php echo htmlspecialchars($regBaseWithOpen . '&plan=gold&amount=550'); ?>">Gold $550</option>
-                    <option value="<?php echo htmlspecialchars($regBaseWithOpen . '&plan=platinum&amount=600'); ?>">Platinum $600</option>
+                    <option value="<?php echo htmlspecialchars($regBaseWithOpen . '&plan=gold&amount=650'); ?>">Gold $650</option>
+                    <option value="<?php echo htmlspecialchars($regBaseWithOpen . '&plan=platinum&amount=800'); ?>">Platinum $800</option>
                 </select>
                 <input type="text" id="regLink" class="req-reg-link-input" readonly value="<?php echo htmlspecialchars($registerProUrl); ?>">
                 <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCopyLink"><i class="fas fa-copy me-1"></i> Copy</button>

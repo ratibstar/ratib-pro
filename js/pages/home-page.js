@@ -17,9 +17,11 @@
             initialPlan: 'pro',
             initialAmount: null,
             initialYears: 1,
-            goldYear1: 550,
+            goldMonth: 54,
+            goldYear1: 650,
             goldYear2: 1000,
-            platinumYear1: 600,
+            platinumMonth: 67,
+            platinumYear1: 800,
             platinumYear2: 1100
         };
         var el = document.getElementById('ratib-home-bootstrap');
@@ -47,11 +49,17 @@
                 if (typeof o.initialYears === 'number') {
                     d.initialYears = o.initialYears;
                 }
+                if (typeof o.goldMonth === 'number') {
+                    d.goldMonth = o.goldMonth;
+                }
                 if (typeof o.goldYear1 === 'number') {
                     d.goldYear1 = o.goldYear1;
                 }
                 if (typeof o.goldYear2 === 'number') {
                     d.goldYear2 = o.goldYear2;
+                }
+                if (typeof o.platinumMonth === 'number') {
+                    d.platinumMonth = o.platinumMonth;
                 }
                 if (typeof o.platinumYear1 === 'number') {
                     d.platinumYear1 = o.platinumYear1;
@@ -117,10 +125,17 @@
                 inputPlanAmount.value = amount || '';
             }
             if (inputYears) {
-                inputYears.value = years || 1;
+                var yShow = parseInt(years, 10);
+                if (!isFinite(yShow) || yShow < 0) {
+                    yShow = 1;
+                }
+                inputYears.value = String(yShow);
             }
             amount = parseFloat(amount) || 0;
-            years = parseInt(years, 10) || 1;
+            years = parseInt(years, 10);
+            if (!isFinite(years) || years < 0) {
+                years = 1;
+            }
             if (paymentBlockWrap) {
                 paymentBlockWrap.style.display = amount > 0 ? 'block' : 'none';
             }
@@ -153,7 +168,10 @@
             return;
         }
 
-        years = parseInt(years, 10) || 1;
+        years = parseInt(years, 10);
+        if (!isFinite(years) || years < 0) {
+            years = 1;
+        }
         var inputPlanEl = document.getElementById('inputPlan');
         var planValue = (planKeyOpt != null && String(planKeyOpt).trim() !== '')
             ? String(planKeyOpt).trim().toLowerCase()
@@ -205,9 +223,12 @@
 
         console.log('updatePaymentSummary - subtotal:', subtotal, 'years:', years, 'planLabel:', planLabel, 'inputPlan.value:', inputPlanEl ? inputPlanEl.value : '');
 
+        var durationLabel = years === 0
+            ? 'monthly'
+            : (years + ' year' + (years > 1 ? 's' : ''));
         summaryEl.innerHTML = '<h4 style="font-size: 1rem; margin-bottom: 0.75rem; color: #f1c40f;"><i class="fas fa-receipt me-2"></i>Payment Summary</h4>' +
             '<div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">' +
-            '<span style="color: #aaa;">' + planLabel + ' Plan (' + years + ' year' + (years > 1 ? 's' : '') + ')</span>' +
+            '<span style="color: #aaa;">' + planLabel + ' Plan (' + durationLabel + ')</span>' +
             '<span style="color: #fff; font-weight: 600;">$' + subtotal.toFixed(2) + '</span>' +
             '</div>' +
             '<div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">' +
@@ -260,11 +281,18 @@
                 inputPlanAmount.setAttribute('value', amount || '');
             }
             if (inputYears) {
-                inputYears.value = years || 1;
-                inputYears.setAttribute('value', years || 1);
+                var yIn = parseInt(years, 10);
+                if (!isFinite(yIn) || yIn < 0) {
+                    yIn = 1;
+                }
+                inputYears.value = String(yIn);
+                inputYears.setAttribute('value', String(yIn));
             }
             amount = parseFloat(amount) || 0;
-            years = parseInt(years, 10) || 1;
+            years = parseInt(years, 10);
+            if (!isFinite(years) || years < 0) {
+                years = 1;
+            }
 
             console.log('setFormPlan called - planVal:', planVal, 'amount:', amount, 'years:', years);
 
@@ -293,7 +321,10 @@
                 }
 
                 formYearButtons.forEach(function (b) {
-                    var y = parseInt(b.getAttribute('data-years'), 10) || 1;
+                    var y = parseInt(b.getAttribute('data-years'), 10);
+                    if (isNaN(y) || y < 0) {
+                        y = 1;
+                    }
                     var price = planVal === 'gold' ? parseFloat(b.getAttribute('data-price-gold')) : parseFloat(b.getAttribute('data-price-platinum'));
                     var span = b.querySelector('.form-year-price');
                     if (span) {
@@ -336,9 +367,9 @@
         var initialYears = HOME.initialYears;
         var defaultAmount = null;
         if (initialPlan === 'gold') {
-            defaultAmount = HOME.goldYear1;
+            defaultAmount = initialYears === 0 ? HOME.goldMonth : HOME.goldYear1;
         } else if (initialPlan === 'platinum') {
-            defaultAmount = HOME.platinumYear1;
+            defaultAmount = initialYears === 0 ? HOME.platinumMonth : HOME.platinumYear1;
         }
         if (inputPlan && initialPlan) {
             inputPlan.value = initialPlan;
@@ -407,7 +438,10 @@
                     }
                 }
 
-                var y = parseInt(this.getAttribute('data-years'), 10) || 1;
+                var yDur = parseInt(this.getAttribute('data-years'), 10);
+                if (isNaN(yDur) || yDur < 0) {
+                    yDur = 1;
+                }
                 var price = planVal === 'gold' ? parseFloat(this.getAttribute('data-price-gold')) : parseFloat(this.getAttribute('data-price-platinum'));
 
                 if (inputPlan) {
@@ -415,7 +449,7 @@
                     inputPlan.setAttribute('value', planVal);
                 }
 
-                setFormPlan(planVal, price, y);
+                setFormPlan(planVal, price, yDur);
             });
         });
     })();
@@ -423,15 +457,18 @@
     // EN: Price card interactions (top pricing cards) and year toggles.
     // AR: تفاعلات بطاقات الأسعار العلوية وتبديل مدة الاشتراك.
     (function () {
-        var goldPrices = { 1: HOME.goldYear1, 2: HOME.goldYear2 };
-        var platinumPrices = { 1: HOME.platinumYear1, 2: HOME.platinumYear2 };
-        var goldOldPrices = { 1: 1100, 2: 2000 };
-        var platinumOldPrices = { 1: 1200, 2: 2200 };
+        var goldPrices = { 0: HOME.goldMonth, 1: HOME.goldYear1, 2: HOME.goldYear2 };
+        var platinumPrices = { 0: HOME.platinumMonth, 1: HOME.platinumYear1, 2: HOME.platinumYear2 };
+        var goldOldPrices = { 0: 108, 1: 1100, 2: 2000 };
+        var platinumOldPrices = { 0: 134, 1: 1200, 2: 2200 };
 
         function updateGoldPrice(years, event) {
-            years = parseInt(years, 10) || 1;
-            var price = goldPrices[years] || HOME.goldYear1;
-            var oldPrice = goldOldPrices[years] || 1100;
+            years = parseInt(years, 10);
+            if (!isFinite(years) || years < 0) {
+                years = 1;
+            }
+            var price = goldPrices.hasOwnProperty(years) ? goldPrices[years] : HOME.goldYear1;
+            var oldPrice = goldOldPrices.hasOwnProperty(years) ? goldOldPrices[years] : 1100;
             var priceEl = document.getElementById('goldPrice');
             var oldPriceEl = document.getElementById('goldOldPrice');
             var btn = document.getElementById('goldRegisterBtn');
@@ -439,7 +476,8 @@
             var inputYears = document.getElementById('inputYears');
 
             if (priceEl) {
-                priceEl.innerHTML = '$' + price.toLocaleString() + ' <span id="goldPriceLabel">for ' + years + ' year' + (years > 1 ? 's' : '') + '</span>';
+                var goldLbl = years === 0 ? 'per month' : ('for ' + years + ' year' + (years > 1 ? 's' : ''));
+                priceEl.innerHTML = '$' + price.toLocaleString() + ' <span id="goldPriceLabel">' + goldLbl + '</span>';
             }
             if (oldPriceEl) {
                 oldPriceEl.textContent = '$' + oldPrice.toLocaleString();
@@ -455,7 +493,7 @@
                     inputPlanAmount.value = price;
                 }
                 if (inputYears) {
-                    inputYears.value = years;
+                    inputYears.value = String(years);
                 }
                 var inputPlanEl = document.getElementById('inputPlan');
                 if (inputPlanEl) {
@@ -487,9 +525,12 @@
         }
 
         function updatePlatinumPrice(years, event) {
-            years = parseInt(years, 10) || 1;
-            var price = platinumPrices[years] || HOME.platinumYear1;
-            var oldPrice = platinumOldPrices[years] || 1200;
+            years = parseInt(years, 10);
+            if (!isFinite(years) || years < 0) {
+                years = 1;
+            }
+            var price = platinumPrices.hasOwnProperty(years) ? platinumPrices[years] : HOME.platinumYear1;
+            var oldPrice = platinumOldPrices.hasOwnProperty(years) ? platinumOldPrices[years] : 1200;
             var priceEl = document.getElementById('platinumPrice');
             var oldPriceEl = document.getElementById('platinumOldPrice');
             var btn = document.getElementById('platinumRegisterBtn');
@@ -497,7 +538,8 @@
             var inputYears = document.getElementById('inputYears');
 
             if (priceEl) {
-                priceEl.innerHTML = '$' + price.toLocaleString() + ' <span id="platinumPriceLabel">for ' + years + ' year' + (years > 1 ? 's' : '') + '</span>';
+                var platLbl = years === 0 ? 'per month' : ('for ' + years + ' year' + (years > 1 ? 's' : ''));
+                priceEl.innerHTML = '$' + price.toLocaleString() + ' <span id="platinumPriceLabel">' + platLbl + '</span>';
             }
             if (oldPriceEl) {
                 oldPriceEl.textContent = '$' + oldPrice.toLocaleString();
@@ -513,7 +555,7 @@
                     inputPlanAmount.value = price;
                 }
                 if (inputYears) {
-                    inputYears.value = years;
+                    inputYears.value = String(years);
                 }
                 var inputPlanEl = document.getElementById('inputPlan');
                 if (inputPlanEl) {
@@ -546,17 +588,35 @@
 
         document.querySelectorAll('.gold-year-btn').forEach(function (btn) {
             btn.addEventListener('click', function (e) {
-                var y = parseInt(this.getAttribute('data-years'), 10) || 1;
+                var y = parseInt(this.getAttribute('data-years'), 10);
+                if (isNaN(y) || y < 0) {
+                    y = 1;
+                }
                 updateGoldPrice(y, e);
             });
         });
 
         document.querySelectorAll('.platinum-year-btn').forEach(function (btn) {
             btn.addEventListener('click', function (e) {
-                var y = parseInt(this.getAttribute('data-years'), 10) || 1;
+                var y = parseInt(this.getAttribute('data-years'), 10);
+                if (isNaN(y) || y < 0) {
+                    y = 1;
+                }
                 updatePlatinumPrice(y, e);
             });
         });
+
+        (function syncPricingCardsFromBootstrap() {
+            var iy = parseInt(HOME.initialYears, 10);
+            if (isNaN(iy) || iy < 0) {
+                iy = 1;
+            }
+            if (HOME.initialPlan === 'gold' && (iy === 0 || iy === 1 || iy === 2)) {
+                updateGoldPrice(iy, null);
+            } else if (HOME.initialPlan === 'platinum' && (iy === 0 || iy === 1 || iy === 2)) {
+                updatePlatinumPrice(iy, null);
+            }
+        })();
     })();
 
     // EN: Delegated click handlers for register anchors.
@@ -577,7 +637,10 @@
             e.preventDefault();
             var plan = openA.getAttribute('data-register-plan') || 'gold';
             var amount = parseFloat(openA.getAttribute('data-register-amount') || '0') || 0;
-            var yrs = parseInt(openA.getAttribute('data-register-years') || '1', 10) || 1;
+            var yrs = parseInt(openA.getAttribute('data-register-years') || '1', 10);
+            if (isNaN(yrs) || yrs < 0) {
+                yrs = 1;
+            }
             showRegistrationForm(plan, amount, yrs);
         }
     });

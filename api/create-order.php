@@ -645,7 +645,7 @@ function backfillMissingControlRequests($pdo, int $limit = 50): int
                 $fields[] = 'years';
                 $values[] = '?';
                 $types .= 'i';
-                $bind[] = $years > 0 ? $years : 1;
+                $bind[] = ($years < 0) ? 1 : $years;
             }
             if ($hasPaymentStatus) {
                 $fields[] = 'payment_status';
@@ -708,13 +708,13 @@ function resolvePlanAmount(array $input): array
         $plan = 'gold';
     }
     $years = (int) ($input['years'] ?? 1);
-    if ($years < 1) {
+    if ($years < 0) {
         $years = 1;
     }
 
     $priceTable = [
-        'gold' => [1 => 550.0, 2 => 1000.0],
-        'platinum' => [1 => 600.0, 2 => 1100.0],
+        'gold' => [0 => 54.0, 1 => 650.0, 2 => 1000.0],
+        'platinum' => [0 => 67.0, 1 => 800.0, 2 => 1100.0],
     ];
 
     if (!isset($priceTable[$plan])) {

@@ -406,8 +406,8 @@ if ($tableExists) {
             <option value="<?php echo htmlspecialchars($registerProUrl); ?>">Recommended — Gold, 1 year (N-Genius)</option>
             <option value="<?php echo htmlspecialchars($regBase . '?open=register'); ?>">Open register only (defaults to Gold)</option>
             <option value="<?php echo htmlspecialchars($regBase . '?open=register&plan=pro'); ?>">Pro (non-paid inquiry)</option>
-            <option value="<?php echo htmlspecialchars($regBase . '?open=register&plan=gold&amount=550'); ?>">Gold $550</option>
-            <option value="<?php echo htmlspecialchars($regBase . '?open=register&plan=platinum&amount=600'); ?>">Platinum $600</option>
+            <option value="<?php echo htmlspecialchars($regBase . '?open=register&plan=gold&amount=650'); ?>">Gold $650</option>
+            <option value="<?php echo htmlspecialchars($regBase . '?open=register&plan=platinum&amount=800'); ?>">Platinum $800</option>
         </select>
         <input type="text" id="regLink" readonly value="<?php echo htmlspecialchars($registerProUrl); ?>" class="req-reg-link-input">
         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCopyLink"><i class="fas fa-copy me-1"></i> Copy</button>

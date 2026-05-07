@@ -64,12 +64,23 @@
   var CHECKOUT_LOCK_TTL_MS = 1;
   var CHECKOUT_LOCK_KEY = 'ratib_checkout_pending_v1';
 
+  function normalizeLockYears(raw) {
+    if (raw === undefined || raw === null || raw === '') {
+      return 1;
+    }
+    var n = Number(raw);
+    if (!isFinite(n) || n < 0) {
+      return 1;
+    }
+    return n;
+  }
+
   function normalizeLockIdentity(payload) {
     var p = payload && typeof payload === 'object' ? payload : {};
     return {
       email: String(p.email || p.contact_email || '').trim().toLowerCase(),
       plan: String(p.plan || '').trim().toLowerCase(),
-      years: Number(p.years || 1) || 1
+      years: normalizeLockYears(p.years)
     };
   }
 
@@ -315,7 +326,7 @@
     if (existingLock) {
       var lockedEmail = String(existingLock.email || '').trim().toLowerCase();
       var lockedPlan = String(existingLock.plan || '').trim().toLowerCase();
-      var lockedYears = Number(existingLock.years || 1) || 1;
+      var lockedYears = normalizeLockYears(existingLock.years);
       var sameIdentity =
         lockedEmail !== '' &&
         lockedEmail === identity.email &&

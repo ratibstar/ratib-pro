@@ -130,7 +130,7 @@ if (strpos(PAYPAL_API_BASE, 'sandbox') === false && !isset($_GET['force'])) {
         </div>
 
         <div class="mt-4">
-            <a href="index.php?plan=gold&years=1&amount=550" class="btn btn-primary">
+            <a href="index.php?plan=gold&years=1&amount=650" class="btn btn-primary">
                 <i class="fas fa-arrow-right"></i> Go to Checkout
             </a>
             <a href="../pages/home.php" class="btn btn-secondary">

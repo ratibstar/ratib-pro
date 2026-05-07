@@ -231,7 +231,10 @@ function payment_sync_control_row_via_pdo(PDO $pdo, int $controlRequestId, array
     $okPlan = strtolower(trim((string) ($order['plan_key'] ?? '')));
     $planVal = substr($okPlan !== '' ? $okPlan : 'pro', 0, 32);
     $totalVal = (float) ($order['total_amount'] ?? 0.0);
-    $yearsVal = max(1, (int) ($order['years'] ?? 1));
+    $yearsVal = (int) ($order['years'] ?? 1);
+    if ($yearsVal < 0) {
+        $yearsVal = 1;
+    }
 
     $a = trim((string) ($order['reg_agency_name'] ?? ''));
     $agencyVal = $a !== '' ? $a : ('N-Genius ' . strtoupper($okPlan !== '' ? $okPlan : 'PLAN'));
@@ -415,7 +418,10 @@ function payment_sync_control_row_from_ngenius_order(?mysqli $conn, int $control
     $okPlan = strtolower(trim((string) ($order['plan_key'] ?? '')));
     $planVal = substr($okPlan !== '' ? $okPlan : 'pro', 0, 32);
     $totalVal = (float) ($order['total_amount'] ?? 0.0);
-    $yearsVal = max(1, (int) ($order['years'] ?? 1));
+    $yearsVal = (int) ($order['years'] ?? 1);
+    if ($yearsVal < 0) {
+        $yearsVal = 1;
+    }
 
     $a = trim((string) ($order['reg_agency_name'] ?? ''));
     $agencyVal = $a !== '' ? $a : ('N-Genius ' . strtoupper($okPlan !== '' ? $okPlan : 'PLAN'));
@@ -517,10 +523,15 @@ function payment_build_ngenius_order_snapshot_for_control_sync(array $input, arr
     $countryId = isset($input['country_id']) && ctype_digit((string) $input['country_id'])
         ? (int) $input['country_id'] : 0;
 
+    $snapYears = (int) ($amountResolved['years'] ?? 1);
+    if ($snapYears < 0) {
+        $snapYears = 1;
+    }
+
     return [
         'email' => trim((string) ($input['contact_email'] ?? $input['email'] ?? '')),
         'plan_key' => (string) ($amountResolved['plan'] ?? ''),
-        'years' => max(1, (int) ($amountResolved['years'] ?? 1)),
+        'years' => $snapYears,
         'total_amount' => (float) ($amountResolved['total'] ?? 0.0),
         'reg_agency_name' => trim((string) ($input['agency_name'] ?? '')),
         'reg_agency_id' => trim((string) ($input['agency_id'] ?? '')),
@@ -559,10 +570,15 @@ function payment_fetch_ngenius_order_row_for_control_sync(PDO $mainPdo, int $ord
  */
 function payment_order_row_to_control_sync_snapshot(array $row): array
 {
+    $rowYears = (int) ($row['years'] ?? 1);
+    if ($rowYears < 0) {
+        $rowYears = 1;
+    }
+
     return [
         'email' => trim((string) ($row['email'] ?? '')),
         'plan_key' => (string) ($row['plan_key'] ?? ''),
-        'years' => max(1, (int) ($row['years'] ?? 1)),
+        'years' => $rowYears,
         'total_amount' => (float) ($row['total_amount'] ?? 0.0),
         'reg_agency_name' => trim((string) ($row['reg_agency_name'] ?? '')),
         'reg_agency_id' => trim((string) ($row['reg_agency_id'] ?? '')),

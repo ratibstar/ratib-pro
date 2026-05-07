@@ -65,8 +65,8 @@ if ($amount <= 0 || $amount > 100000) { // Max $100,000
     jsonResponse(false, null, 'Invalid amount', 400);
 }
 
-// Security: Validate years range
-if ($years < 1 || $years > 10) {
+// Security: Validate years range (0 = monthly)
+if ($years < 0 || $years > 10) {
     jsonResponse(false, null, 'Invalid years selection', 400);
 }
 
@@ -95,7 +95,9 @@ $orderData = [
     'purchase_units' => [
         [
             'reference_id' => 'ratib_' . uniqid(), // Unique reference for your system
-            'description' => sprintf('Ratib %s Plan - %d Year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),
+            'description' => $years === 0
+                ? sprintf('Ratib %s Plan - Monthly', ucfirst($plan))
+                : sprintf('Ratib %s Plan - %d Year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),
             'custom_id' => sprintf('plan:%s:years:%d', $plan, $years), // For tracking in your system
             'amount' => [
                 'currency_code' => CURRENCY,
@@ -113,8 +115,12 @@ $orderData = [
             ],
             'items' => [
                 [
-                    'name' => sprintf('Ratib %s Plan - %d Year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),
-                    'description' => sprintf('Ratib %s Plan subscription for %d year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),
+                    'name' => $years === 0
+                        ? sprintf('Ratib %s Plan - Monthly', ucfirst($plan))
+                        : sprintf('Ratib %s Plan - %d Year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),
+                    'description' => $years === 0
+                        ? sprintf('Ratib %s Plan monthly subscription', ucfirst($plan))
+                        : sprintf('Ratib %s Plan subscription for %d year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),
                     'unit_amount' => [
                         'currency_code' => CURRENCY,
                         'value' => number_format($amount, 2, '.', ''),
