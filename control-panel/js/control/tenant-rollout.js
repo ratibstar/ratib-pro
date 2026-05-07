@@ -188,8 +188,9 @@
                 return;
             }
             hydrate(res);
-        }).catch(function () {
-            var msg = arguments[0] && arguments[0].message ? arguments[0].message : 'Failed to load rollout data.';
+        }).catch(function (err) {
+            var msg = err && err.message ? err.message : 'Failed to load rollout data.';
+            try { console.error('tenant-rollout load error:', err); } catch (_) {}
             showFlash(msg, false);
         });
     }
@@ -257,8 +258,9 @@
                 showFlash(res.message || 'Tenant saved.', true);
                 resetTenantForm();
                 loadAll();
-            }).catch(function () {
-                var msg = arguments[0] && arguments[0].message ? arguments[0].message : 'Failed to save tenant.';
+            }).catch(function (err) {
+                var msg = err && err.message ? err.message : 'Failed to save tenant.';
+                try { console.error('tenant-rollout save tenant error:', err); } catch (_) {}
                 showFlash(msg, false);
             });
         });
@@ -281,8 +283,9 @@
                 showFlash(res.message || 'Flag saved.', true);
                 resetFlagForm();
                 loadAll();
-            }).catch(function () {
-                var msg = arguments[0] && arguments[0].message ? arguments[0].message : 'Failed to save flag.';
+            }).catch(function (err) {
+                var msg = err && err.message ? err.message : 'Failed to save flag.';
+                try { console.error('tenant-rollout save flag error:', err); } catch (_) {}
                 showFlash(msg, false);
             });
         });
@@ -307,8 +310,9 @@
                 overrideForm.reset();
                 syncScopeFields();
                 loadAll();
-            }).catch(function () {
-                var msg = arguments[0] && arguments[0].message ? arguments[0].message : 'Failed to save override.';
+            }).catch(function (err) {
+                var msg = err && err.message ? err.message : 'Failed to save override.';
+                try { console.error('tenant-rollout save override error:', err); } catch (_) {}
                 showFlash(msg, false);
             });
         });
@@ -368,8 +372,9 @@
                 }
                 showFlash(res.message || 'Override removed.', true);
                 loadAll();
-            }).catch(function () {
-                var msg = arguments[0] && arguments[0].message ? arguments[0].message : 'Failed to remove override.';
+            }).catch(function (err) {
+                var msg = err && err.message ? err.message : 'Failed to remove override.';
+                try { console.error('tenant-rollout delete override error:', err); } catch (_) {}
                 showFlash(msg, false);
             });
         });

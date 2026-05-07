@@ -374,14 +374,13 @@ if ($method === 'POST') {
         if ($id > 0) {
             $st = $ctrl->prepare(
                 "UPDATE control_rollout_tenants
-                 SET tenant_code = ?, tenant_name = ?, primary_domain = ?, country_id = ?, db_key_ref = ?, status = ?, release_channel = ?, updated_at = NOW()
+                 SET tenant_code = ?, tenant_name = ?, primary_domain = NULLIF(?, ''), country_id = NULLIF(?, 0), db_key_ref = ?, status = ?, release_channel = ?, updated_at = NOW()
                  WHERE id = ?"
             );
             if (!$st) {
                 tr_json(['success' => false, 'message' => 'Failed to prepare tenant update'], 500);
             }
-            $countryNullable = $countryId > 0 ? $countryId : null;
-            $st->bind_param('sssisssi', $tenantCode, $tenantName, $primaryDomain, $countryNullable, $dbKeyRef, $status, $releaseChannel, $id);
+            $st->bind_param('sssisssi', $tenantCode, $tenantName, $primaryDomain, $countryId, $dbKeyRef, $status, $releaseChannel, $id);
             $ok = $st->execute();
             $execErr = tr_stmt_error($st);
             $isDup = tr_is_duplicate_error($st);
@@ -399,13 +398,12 @@ if ($method === 'POST') {
         $st = $ctrl->prepare(
             "INSERT INTO control_rollout_tenants
             (tenant_code, tenant_name, primary_domain, country_id, db_key_ref, status, release_channel, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())"
+             VALUES (?, ?, NULLIF(?, ''), NULLIF(?, 0), ?, ?, ?, NOW(), NOW())"
         );
         if (!$st) {
             tr_json(['success' => false, 'message' => 'Failed to prepare tenant insert'], 500);
         }
-        $countryNullable = $countryId > 0 ? $countryId : null;
-        $st->bind_param('sssisss', $tenantCode, $tenantName, $primaryDomain, $countryNullable, $dbKeyRef, $status, $releaseChannel);
+        $st->bind_param('sssisss', $tenantCode, $tenantName, $primaryDomain, $countryId, $dbKeyRef, $status, $releaseChannel);
         $ok = $st->execute();
         $execErr = tr_stmt_error($st);
         $isDup = tr_is_duplicate_error($st);
@@ -513,6 +511,7 @@ if ($method === 'POST') {
         }
 
         $uid = tr_user_id();
+        $uidValue = $uid ?? 0;
         $uname = tr_username();
         if ($existingId > 0) {
             $st = $ctrl->prepare(
@@ -523,7 +522,7 @@ if ($method === 'POST') {
             if (!$st) {
                 tr_json(['success' => false, 'message' => 'Failed to prepare override update'], 500);
             }
-            $st->bind_param('iisi', $overrideValue, $uid, $uname, $existingId);
+            $st->bind_param('iisi', $overrideValue, $uidValue, $uname, $existingId);
             $ok = $st->execute();
             $execErr = tr_stmt_error($st);
             $st->close();
@@ -534,17 +533,17 @@ if ($method === 'POST') {
             tr_json(['success' => true, 'message' => 'Override updated']);
         }
 
-        $countryNullable = $scopeType === 'country' ? $countryId : null;
-        $tenantNullable = $scopeType === 'tenant' ? $tenantId : null;
+        $countryBind = $scopeType === 'country' ? $countryId : 0;
+        $tenantBind = $scopeType === 'tenant' ? $tenantId : 0;
         $st = $ctrl->prepare(
             "INSERT INTO control_rollout_flag_overrides
             (flag_id, scope_type, country_id, tenant_id, override_value, is_active, changed_by_id, changed_by_username, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, 1, ?, ?, NOW(), NOW())"
+             VALUES (?, ?, NULLIF(?, 0), NULLIF(?, 0), ?, 1, ?, ?, NOW(), NOW())"
         );
         if (!$st) {
             tr_json(['success' => false, 'message' => 'Failed to prepare override insert'], 500);
         }
-        $st->bind_param('isiiiis', $flagId, $scopeType, $countryNullable, $tenantNullable, $overrideValue, $uid, $uname);
+        $st->bind_param('isiiiis', $flagId, $scopeType, $countryBind, $tenantBind, $overrideValue, $uidValue, $uname);
         $ok = $st->execute();
         $execErr = tr_stmt_error($st);
         $newId = (int) $st->insert_id;
