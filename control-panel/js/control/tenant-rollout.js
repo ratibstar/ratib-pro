@@ -45,6 +45,12 @@
     var overrideSearchInput = document.getElementById('overrideSearchInput');
     var overrideFilterScopeInput = document.getElementById('overrideFilterScopeInput');
     var overrideFormResetBtn = document.getElementById('overrideFormResetBtn');
+    var bulkFlagInput = document.getElementById('bulkFlagInput');
+    var bulkScopeInput = document.getElementById('bulkScopeInput');
+    var bulkCountryInput = document.getElementById('bulkCountryInput');
+    var bulkTenantInput = document.getElementById('bulkTenantInput');
+    var bulkEnableOverridesBtn = document.getElementById('bulkEnableOverridesBtn');
+    var bulkDisableOverridesBtn = document.getElementById('bulkDisableOverridesBtn');
 
     var state = {
         countries: [],
@@ -125,7 +131,23 @@
                 return '<option value="' + Number(f.id || 0) + '">' + esc(f.flag_key || '') + '</option>';
             }).join('');
         }
+        if (bulkFlagInput) {
+            bulkFlagInput.innerHTML = '<option value="">Select flag</option>' + state.flags.map(function (f) {
+                return '<option value="' + Number(f.id || 0) + '">' + esc(f.flag_key || '') + '</option>';
+            }).join('');
+        }
+        if (bulkCountryInput) {
+            bulkCountryInput.innerHTML = '<option value="">Select country</option>' + state.countries.map(function (c) {
+                return '<option value="' + Number(c.id || 0) + '">' + esc(c.name || c.slug || '') + '</option>';
+            }).join('');
+        }
+        if (bulkTenantInput) {
+            bulkTenantInput.innerHTML = '<option value="">Select tenant</option>' + state.tenants.map(function (t) {
+                return '<option value="' + Number(t.id || 0) + '">' + esc(t.tenant_name || t.tenant_code || '') + '</option>';
+            }).join('');
+        }
         syncScopeFields();
+        syncBulkScopeFields();
     }
 
     function paginate(items, page) {
@@ -292,6 +314,16 @@
         }
         if (overrideTenantInput) {
             overrideTenantInput.disabled = scope !== 'tenant';
+        }
+    }
+
+    function syncBulkScopeFields() {
+        var scope = bulkScopeInput ? bulkScopeInput.value : 'country';
+        if (bulkCountryInput) {
+            bulkCountryInput.disabled = scope !== 'country';
+        }
+        if (bulkTenantInput) {
+            bulkTenantInput.disabled = scope !== 'tenant';
         }
     }
 
@@ -488,6 +520,8 @@
             if (!btn) return;
             var id = Number(btn.getAttribute('data-id') || 0);
             if (!id) return;
+            var confirmDelete = window.confirm('Delete this override? This cannot be undone.');
+            if (!confirmDelete) return;
             request('POST', { action: 'delete_override', id: id }).then(function (res) {
                 if (!res || !res.success) {
                     showFlash((res && res.message) || 'Failed to remove override.', false);
@@ -524,7 +558,59 @@
     if (overrideScopeInput) {
         overrideScopeInput.addEventListener('change', syncScopeFields);
     }
+    if (bulkScopeInput) {
+        bulkScopeInput.addEventListener('change', syncBulkScopeFields);
+    }
+
+    if (bulkDisableOverridesBtn) {
+        var runBulkOverrideAction = function (actionName, okText) {
+            var flagId = Number((bulkFlagInput && bulkFlagInput.value) || 0);
+            var scope = (bulkScopeInput && bulkScopeInput.value) || 'country';
+            var countryId = Number((bulkCountryInput && bulkCountryInput.value) || 0);
+            var tenantId = Number((bulkTenantInput && bulkTenantInput.value) || 0);
+            if (flagId <= 0) {
+                showFlash('Select a flag for bulk action.', false);
+                return;
+            }
+            if (scope === 'country' && countryId <= 0) {
+                showFlash('Select a country for bulk country action.', false);
+                return;
+            }
+            if (scope === 'tenant' && tenantId <= 0) {
+                showFlash('Select a tenant for bulk tenant action.', false);
+                return;
+            }
+            request('POST', {
+                action: actionName,
+                flag_id: flagId,
+                scope_type: scope,
+                country_id: countryId,
+                tenant_id: tenantId
+            }).then(function (res) {
+                if (!res || !res.success) {
+                    showFlash((res && res.message) || 'Bulk action failed.', false);
+                    return;
+                }
+                showFlash(res.message || okText, true);
+                loadAll();
+            }).catch(function (err) {
+                showFlash((err && err.message) || 'Bulk action failed.', false);
+            });
+        };
+
+        bulkDisableOverridesBtn.addEventListener('click', function () {
+            var confirmDisable = window.confirm('Disable all matching overrides for this selection?');
+            if (!confirmDisable) return;
+            runBulkOverrideAction('bulk_disable_overrides', 'Bulk disable completed.');
+        });
+        if (bulkEnableOverridesBtn) {
+            bulkEnableOverridesBtn.addEventListener('click', function () {
+                runBulkOverrideAction('bulk_enable_overrides', 'Bulk enable completed.');
+            });
+        }
+    }
 
     syncScopeFields();
+    syncBulkScopeFields();
     loadAll();
 })();

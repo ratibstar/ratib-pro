@@ -215,6 +215,26 @@ startControlLayout('Tenants & Rollout', ['css/control/tenant-rollout.css'], []);
                 <option value="tenant">Tenant</option>
             </select>
         </div>
+        <div class="tenant-rollout-bulk-box">
+            <h5>Bulk Actions</h5>
+            <div class="tenant-rollout-list-tools">
+                <select id="bulkFlagInput">
+                    <option value="">Select flag</option>
+                </select>
+                <select id="bulkScopeInput">
+                    <option value="country">Country</option>
+                    <option value="tenant">Tenant</option>
+                </select>
+                <select id="bulkCountryInput">
+                    <option value="">Select country</option>
+                </select>
+                <select id="bulkTenantInput">
+                    <option value="">Select tenant</option>
+                </select>
+                <button type="button" id="bulkEnableOverridesBtn" class="btn btn-sm btn-outline-success">Enable Matching Overrides</button>
+                <button type="button" id="bulkDisableOverridesBtn" class="btn btn-sm btn-outline-danger">Disable Matching Overrides</button>
+            </div>
+        </div>
         <div id="overridesList" class="tenant-rollout-list"></div>
         <div id="overridesPager" class="tenant-rollout-pager"></div>
     </article>

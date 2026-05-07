@@ -575,6 +575,116 @@ if ($method === 'POST') {
         tr_json(['success' => true, 'message' => 'Override removed']);
     }
 
+    if ($postAction === 'bulk_disable_overrides') {
+        $flagId = (int) ($body['flag_id'] ?? 0);
+        $scopeType = strtolower(trim((string) ($body['scope_type'] ?? '')));
+        $countryId = (int) ($body['country_id'] ?? 0);
+        $tenantId = (int) ($body['tenant_id'] ?? 0);
+        if ($flagId <= 0 || !in_array($scopeType, ['country', 'tenant'], true)) {
+            tr_json(['success' => false, 'message' => 'Invalid bulk payload'], 422);
+        }
+        if ($scopeType === 'country' && $countryId <= 0) {
+            tr_json(['success' => false, 'message' => 'country_id required for country bulk action'], 422);
+        }
+        if ($scopeType === 'tenant' && $tenantId <= 0) {
+            tr_json(['success' => false, 'message' => 'tenant_id required for tenant bulk action'], 422);
+        }
+        $uidValue = tr_user_id() ?? 0;
+        $uname = tr_username();
+
+        if ($scopeType === 'country') {
+            $st = $ctrl->prepare(
+                "UPDATE control_rollout_flag_overrides
+                 SET is_active = 0, changed_by_id = ?, changed_by_username = ?, updated_at = NOW()
+                 WHERE flag_id = ? AND scope_type = 'country' AND country_id = ?"
+            );
+            if (!$st) {
+                tr_json(['success' => false, 'message' => 'Failed to prepare bulk country update'], 500);
+            }
+            $st->bind_param('isii', $uidValue, $uname, $flagId, $countryId);
+        } else {
+            $st = $ctrl->prepare(
+                "UPDATE control_rollout_flag_overrides
+                 SET is_active = 0, changed_by_id = ?, changed_by_username = ?, updated_at = NOW()
+                 WHERE flag_id = ? AND scope_type = 'tenant' AND tenant_id = ?"
+            );
+            if (!$st) {
+                tr_json(['success' => false, 'message' => 'Failed to prepare bulk tenant update'], 500);
+            }
+            $st->bind_param('isii', $uidValue, $uname, $flagId, $tenantId);
+        }
+        $ok = $st->execute();
+        $affected = (int) $st->affected_rows;
+        $execErr = tr_stmt_error($st);
+        $st->close();
+        if (!$ok) {
+            tr_json(['success' => false, 'message' => 'Bulk disable failed: ' . $execErr], 500);
+        }
+        tr_audit($ctrl, 'override', null, 'bulk_disable', null, [
+            'flag_id' => $flagId,
+            'scope_type' => $scopeType,
+            'country_id' => $countryId,
+            'tenant_id' => $tenantId,
+            'affected_rows' => $affected,
+        ]);
+        tr_json(['success' => true, 'message' => 'Bulk disable completed. Rows affected: ' . $affected]);
+    }
+
+    if ($postAction === 'bulk_enable_overrides') {
+        $flagId = (int) ($body['flag_id'] ?? 0);
+        $scopeType = strtolower(trim((string) ($body['scope_type'] ?? '')));
+        $countryId = (int) ($body['country_id'] ?? 0);
+        $tenantId = (int) ($body['tenant_id'] ?? 0);
+        if ($flagId <= 0 || !in_array($scopeType, ['country', 'tenant'], true)) {
+            tr_json(['success' => false, 'message' => 'Invalid bulk payload'], 422);
+        }
+        if ($scopeType === 'country' && $countryId <= 0) {
+            tr_json(['success' => false, 'message' => 'country_id required for country bulk action'], 422);
+        }
+        if ($scopeType === 'tenant' && $tenantId <= 0) {
+            tr_json(['success' => false, 'message' => 'tenant_id required for tenant bulk action'], 422);
+        }
+        $uidValue = tr_user_id() ?? 0;
+        $uname = tr_username();
+
+        if ($scopeType === 'country') {
+            $st = $ctrl->prepare(
+                "UPDATE control_rollout_flag_overrides
+                 SET is_active = 1, changed_by_id = ?, changed_by_username = ?, updated_at = NOW()
+                 WHERE flag_id = ? AND scope_type = 'country' AND country_id = ?"
+            );
+            if (!$st) {
+                tr_json(['success' => false, 'message' => 'Failed to prepare bulk country update'], 500);
+            }
+            $st->bind_param('isii', $uidValue, $uname, $flagId, $countryId);
+        } else {
+            $st = $ctrl->prepare(
+                "UPDATE control_rollout_flag_overrides
+                 SET is_active = 1, changed_by_id = ?, changed_by_username = ?, updated_at = NOW()
+                 WHERE flag_id = ? AND scope_type = 'tenant' AND tenant_id = ?"
+            );
+            if (!$st) {
+                tr_json(['success' => false, 'message' => 'Failed to prepare bulk tenant update'], 500);
+            }
+            $st->bind_param('isii', $uidValue, $uname, $flagId, $tenantId);
+        }
+        $ok = $st->execute();
+        $affected = (int) $st->affected_rows;
+        $execErr = tr_stmt_error($st);
+        $st->close();
+        if (!$ok) {
+            tr_json(['success' => false, 'message' => 'Bulk enable failed: ' . $execErr], 500);
+        }
+        tr_audit($ctrl, 'override', null, 'bulk_enable', null, [
+            'flag_id' => $flagId,
+            'scope_type' => $scopeType,
+            'country_id' => $countryId,
+            'tenant_id' => $tenantId,
+            'affected_rows' => $affected,
+        ]);
+        tr_json(['success' => true, 'message' => 'Bulk enable completed. Rows affected: ' . $affected]);
+    }
+
     tr_json(['success' => false, 'message' => 'Unknown action'], 422);
 }
 
