@@ -8,6 +8,7 @@
  * Uses only control panel data (no Ratib Pro)
  */
 require_once __DIR__ . '/request-url.php';
+require_once __DIR__ . '/../../../includes/tenant-rollout-flags.php';
 $apiBase = control_control_api_base_url();
 if (empty($_SESSION['control_csrf_token']) || !is_string($_SESSION['control_csrf_token'])) {
     try {
@@ -467,7 +468,23 @@ $currencyLabel = 'SAR';
 
 $formAction = pageUrl('control/accounting.php');
 $qBase = 'control=1' . ($countryId ? '&country_id=' . $countryId : '');
-$canManageAccountingUi = hasControlPermission(CONTROL_PERM_ACCOUNTING) || hasControlPermission('manage_control_accounting');
+$canManageAccountingByPermission = hasControlPermission(CONTROL_PERM_ACCOUNTING) || hasControlPermission('manage_control_accounting');
+$accountingWriteResolved = null;
+$accountingWriteEnabled = true;
+if ($ctrl instanceof mysqli && function_exists('trf_resolve_effective_flag')) {
+    try {
+        $sessionTenantId = isset($_SESSION['control_agency_id']) ? (int) $_SESSION['control_agency_id'] : 0;
+        $sessionCountryId = isset($_SESSION['control_country_id']) ? (int) $_SESSION['control_country_id'] : 0;
+        $accountingWriteResolved = trf_resolve_effective_flag($ctrl, 'control.accounting.enable_write_actions', $sessionTenantId, $sessionCountryId);
+        if (isset($accountingWriteResolved['enabled']) && !$accountingWriteResolved['enabled']) {
+            $accountingWriteEnabled = false;
+        }
+    } catch (Throwable $e) {
+        $accountingWriteResolved = null;
+        $accountingWriteEnabled = true;
+    }
+}
+$canManageAccountingUi = $canManageAccountingByPermission && $accountingWriteEnabled;
 ?>
 <div id="accountingContent" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-country-id="<?php echo (int) $countryId; ?>" data-csrf-token="<?php echo htmlspecialchars($controlCsrfToken, ENT_QUOTES, 'UTF-8'); ?>" data-can-manage="<?php echo $canManageAccountingUi ? '1' : '0'; ?>" class="accounting-container" lang="en" translate="no" dir="ltr">
     <div class="accounting-header">
@@ -487,6 +504,13 @@ $canManageAccountingUi = hasControlPermission(CONTROL_PERM_ACCOUNTING) || hasCon
     </div>
     <div class="accounting-layout">
         <div class="accounting-main-content">
+            <?php if (!$accountingWriteEnabled && is_array($accountingWriteResolved)): ?>
+            <div class="alert alert-warning py-2 px-3 mb-3" role="status">
+                <i class="fas fa-lock me-2"></i>
+                Accounting write actions are disabled by feature flag.
+                <span class="small ms-2">Source: <?php echo htmlspecialchars((string) ($accountingWriteResolved['source'] ?? 'unknown'), ENT_QUOTES, 'UTF-8'); ?></span>
+            </div>
+            <?php endif; ?>
             <div id="financialOverview" class="overview-grid">
                 <a href="<?php echo $formAction . '?' . $qBase . '&tab=dashboard'; ?>" class="overview-card revenue"><div class="card-icon"><i class="fas fa-arrow-up"></i></div><div class="card-content"><h3><?php echo number_format($summary['total_revenue'], 2); ?> SAR</h3><p>Total Revenue</p><span class="card-change positive">+0%</span></div></a>
                 <a href="#expensesModal" class="overview-card expense" data-cp-acc-modal="expensesModal"><div class="card-icon"><i class="fas fa-arrow-down"></i></div><div class="card-content"><h3><?php echo number_format($summary['total_expenses'], 2); ?> SAR</h3><p>Total Expenses</p><span class="card-change negative">+0%</span></div></a>
@@ -616,7 +640,7 @@ $canManageAccountingUi = hasControlPermission(CONTROL_PERM_ACCOUNTING) || hasCon
             </div></div>
             <div class="col-md-6"><div class="p-3 rounded cp-acc-card-dark">
                 <div class="small text-muted mb-2">Backfill missing links for already-paid registrations (safe to run more than once).</div>
-                <button type="button" class="btn btn-sm btn-primary" id="btnCpAccSyncRegistrationPaid" data-permission="control_accounting,manage_control_accounting"><i class="fas fa-link me-1"></i> Sync registration payments to accounting</button>
+                <button type="button" class="btn btn-sm btn-primary" id="btnCpAccSyncRegistrationPaid" data-permission="control_accounting,manage_control_accounting" <?php echo $accountingWriteEnabled ? '' : 'disabled title="Disabled by feature flag control.accounting.enable_write_actions"'; ?>><i class="fas fa-link me-1"></i> Sync registration payments to accounting</button>
             </div></div>
         </div>
         <div class="row g-3 mb-4">

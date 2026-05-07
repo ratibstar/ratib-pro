@@ -22,6 +22,7 @@ if (!$isControl || empty($_SESSION['control_logged_in'])) {
 
 require_once __DIR__ . '/../../includes/control-permissions.php';
 requireControlPermission(CONTROL_PERM_DASHBOARD);
+require_once __DIR__ . '/../../../includes/tenant-rollout-flags.php';
 
 $ctrl = $GLOBALS['control_conn'] ?? null;
 if (!$ctrl || !($ctrl instanceof mysqli)) {
@@ -168,6 +169,27 @@ if (function_exists('hasControlPermission') && (
     }
 }
 
+// Phase 2 integration example: runtime resolver by tenant/country context.
+$phase2ResolvedFlag = null;
+$phase2NoticeEnabled = false;
+$phase2AllAgenciesAuditResolved = null;
+$phase2AllAgenciesAuditEnabled = true;
+if ($ctrl instanceof mysqli && function_exists('trf_resolve_effective_flag')) {
+    try {
+        $sessionTenantId = isset($_SESSION['control_agency_id']) ? (int) $_SESSION['control_agency_id'] : 0;
+        $sessionCountryId = isset($_SESSION['control_country_id']) ? (int) $_SESSION['control_country_id'] : 0;
+        $phase2ResolvedFlag = trf_resolve_effective_flag($ctrl, 'control.dashboard.phase2_notice', $sessionTenantId, $sessionCountryId);
+        $phase2NoticeEnabled = !empty($phase2ResolvedFlag['enabled']);
+        $phase2AllAgenciesAuditResolved = trf_resolve_effective_flag($ctrl, 'control.dashboard.enable_all_agencies_audit', $sessionTenantId, $sessionCountryId);
+        $phase2AllAgenciesAuditEnabled = !isset($phase2AllAgenciesAuditResolved['enabled']) || !empty($phase2AllAgenciesAuditResolved['enabled']);
+    } catch (Throwable $e) {
+        $phase2ResolvedFlag = null;
+        $phase2NoticeEnabled = false;
+        $phase2AllAgenciesAuditResolved = null;
+        $phase2AllAgenciesAuditEnabled = true;
+    }
+}
+
 // EN: Render dashboard page with cards + quick links and inject front-end config.
 // AR: عرض صفحة اللوحة مع بطاقات الإحصاء والروابط السريعة وتمرير إعدادات الواجهة.
 $pageTitle = 'Control Panel Dashboard';
@@ -258,6 +280,13 @@ if (!empty($_SESSION['control_popup_error'])) {
                 </button>
                 <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard Overview</h2>
             </div>
+            <?php if ($phase2NoticeEnabled && is_array($phase2ResolvedFlag)): ?>
+            <div class="alert alert-info py-2 px-3 mb-3" role="status">
+                <i class="fas fa-flag-checkered me-2"></i>
+                Phase 2 flag resolver is active for this context.
+                <span class="small ms-2">Source: <?php echo htmlspecialchars((string) ($phase2ResolvedFlag['source'] ?? 'unknown'), ENT_QUOTES, 'UTF-8'); ?></span>
+            </div>
+            <?php endif; ?>
             <div id="tenantIsolationGlobalAlert" class="tenant-isolation-global-alert is-hidden" role="alert">
                 <i class="fas fa-triangle-exclamation me-2"></i>
                 <span id="tenantIsolationGlobalAlertText">Tenant isolation issue detected.</span>
@@ -405,7 +434,13 @@ if (!empty($_SESSION['control_popup_error'])) {
                     <h3><i class="fas fa-shield-check me-2"></i>Tenant Isolation Self-Test</h3>
                     <div class="tenant-self-test-actions">
                         <button type="button" id="runTenantSelfTestBtn" class="btn btn-sm btn-outline-info">Run Current</button>
+                        <?php if ($phase2AllAgenciesAuditEnabled): ?>
                         <button type="button" id="runTenantAllSelfTestBtn" class="btn btn-sm btn-outline-warning">Run All Agencies</button>
+                        <?php else: ?>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Disabled by feature flag control.dashboard.enable_all_agencies_audit">
+                            Run All Agencies (Flag Disabled)
+                        </button>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <div id="tenantSelfTestResult" class="tenant-self-test-result tenant-self-test-idle">
