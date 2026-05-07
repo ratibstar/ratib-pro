@@ -106,7 +106,7 @@ try {
         if ($res3) $stats['agencies'] = (int)($res3->fetch_assoc()['c'] ?? 0);
     }
     
-    // Pending registration requests (filtered by user's allowed countries)
+    // Pending registration requests (aligned with Registration Requests "Review" queue defaults)
     $chk3 = $ctrl->query("SHOW TABLES LIKE 'control_registration_requests'");
     if ($chk3 && $chk3->num_rows > 0) {
         $reqWhere = '';
@@ -131,7 +131,20 @@ try {
                 $reqWhere = ' AND (country_id IN (' . $idsStr . ')' . $nameMatch . ')';
             }
         }
-        $res4 = $ctrl->query("SELECT COUNT(*) as c FROM control_registration_requests WHERE status = 'pending'" . $reqWhere);
+        $pendingWhere = "LOWER(TRIM(COALESCE(status,''))) = 'pending'" . $reqWhere;
+        // Keep dashboard card consistent with default Review list visibility (paid or Pro inquiry rows).
+        $colPaymentStatus = @$ctrl->query("SHOW COLUMNS FROM control_registration_requests LIKE 'payment_status'");
+        $colPlan = @$ctrl->query("SHOW COLUMNS FROM control_registration_requests LIKE 'plan'");
+        $hasPaymentStatus = $colPaymentStatus && $colPaymentStatus->num_rows > 0;
+        $hasPlan = $colPlan && $colPlan->num_rows > 0;
+        if ($hasPaymentStatus) {
+            if ($hasPlan) {
+                $pendingWhere .= " AND (LOWER(TRIM(COALESCE(payment_status,''))) = 'paid' OR LOWER(TRIM(COALESCE(plan,''))) = 'pro')";
+            } else {
+                $pendingWhere .= " AND LOWER(TRIM(COALESCE(payment_status,''))) = 'paid'";
+            }
+        }
+        $res4 = $ctrl->query("SELECT COUNT(*) as c FROM control_registration_requests WHERE " . $pendingWhere);
         if ($res4) $stats['pending_requests'] = (int)($res4->fetch_assoc()['c'] ?? 0);
     }
 } catch (Throwable $e) {
