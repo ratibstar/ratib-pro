@@ -4,12 +4,21 @@ declare(strict_types=1);
 header('Content-Type: application/json; charset=UTF-8');
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/control-permissions.php';
+if (function_exists('mysqli_report')) {
+    mysqli_report(MYSQLI_REPORT_OFF);
+}
 
 function tr_json(array $payload, int $status = 200): void
 {
     http_response_code($status);
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
+}
+
+function tr_stmt_error(mysqli_stmt $st): string
+{
+    $err = trim((string) $st->error);
+    return $err !== '' ? $err : 'Database operation failed';
 }
 
 function tr_user_id(): ?int
@@ -113,7 +122,9 @@ function tr_audit(mysqli $ctrl, string $entityType, ?int $entityId, string $acti
 function tr_countries(mysqli $ctrl): array
 {
     $rows = [];
-    $res = @$ctrl->query("SELECT id, name, slug FROM control_countries WHERE is_active = 1 ORDER BY name ASC");
+    $hasIsActive = @$ctrl->query("SHOW COLUMNS FROM control_countries LIKE 'is_active'");
+    $where = ($hasIsActive && $hasIsActive->num_rows > 0) ? " WHERE is_active = 1" : "";
+    $res = @$ctrl->query("SELECT id, name, slug FROM control_countries" . $where . " ORDER BY name ASC");
     if (!$res) {
         return $rows;
     }
@@ -307,9 +318,10 @@ if ($method === 'POST') {
             $countryNullable = $countryId > 0 ? $countryId : null;
             $st->bind_param('sssisssi', $tenantCode, $tenantName, $primaryDomain, $countryNullable, $dbKeyRef, $status, $releaseChannel, $id);
             $ok = $st->execute();
+            $execErr = tr_stmt_error($st);
             $st->close();
             if (!$ok) {
-                tr_json(['success' => false, 'message' => 'Tenant update failed'], 500);
+                tr_json(['success' => false, 'message' => 'Tenant update failed: ' . $execErr], 500);
             }
             tr_audit($ctrl, 'tenant', $id, 'update', $before, ['tenant_code' => $tenantCode, 'tenant_name' => $tenantName, 'primary_domain' => $primaryDomain, 'country_id' => $countryId, 'status' => $status]);
             tr_json(['success' => true, 'message' => 'Tenant updated']);
@@ -326,10 +338,11 @@ if ($method === 'POST') {
         $countryNullable = $countryId > 0 ? $countryId : null;
         $st->bind_param('sssisss', $tenantCode, $tenantName, $primaryDomain, $countryNullable, $dbKeyRef, $status, $releaseChannel);
         $ok = $st->execute();
+        $execErr = tr_stmt_error($st);
         $newId = (int) $st->insert_id;
         $st->close();
         if (!$ok) {
-            tr_json(['success' => false, 'message' => 'Tenant insert failed'], 500);
+            tr_json(['success' => false, 'message' => 'Tenant insert failed: ' . $execErr], 500);
         }
         tr_audit($ctrl, 'tenant', $newId, 'create', null, ['tenant_code' => $tenantCode, 'tenant_name' => $tenantName, 'primary_domain' => $primaryDomain, 'country_id' => $countryId, 'status' => $status]);
         tr_json(['success' => true, 'message' => 'Tenant created']);
@@ -355,9 +368,10 @@ if ($method === 'POST') {
             }
             $st->bind_param('ssii', $flagKey, $flagDescription, $defaultValue, $id);
             $ok = $st->execute();
+            $execErr = tr_stmt_error($st);
             $st->close();
             if (!$ok) {
-                tr_json(['success' => false, 'message' => 'Flag update failed'], 500);
+                tr_json(['success' => false, 'message' => 'Flag update failed: ' . $execErr], 500);
             }
             tr_audit($ctrl, 'flag', $id, 'update', null, ['flag_key' => $flagKey, 'default_value' => $defaultValue]);
             tr_json(['success' => true, 'message' => 'Flag updated']);
@@ -372,10 +386,11 @@ if ($method === 'POST') {
         }
         $st->bind_param('ssi', $flagKey, $flagDescription, $defaultValue);
         $ok = $st->execute();
+        $execErr = tr_stmt_error($st);
         $newId = (int) $st->insert_id;
         $st->close();
         if (!$ok) {
-            tr_json(['success' => false, 'message' => 'Flag insert failed'], 500);
+            tr_json(['success' => false, 'message' => 'Flag insert failed: ' . $execErr], 500);
         }
         tr_audit($ctrl, 'flag', $newId, 'create', null, ['flag_key' => $flagKey, 'default_value' => $defaultValue]);
         tr_json(['success' => true, 'message' => 'Flag created']);
@@ -429,9 +444,10 @@ if ($method === 'POST') {
             }
             $st->bind_param('iisi', $overrideValue, $uid, $uname, $existingId);
             $ok = $st->execute();
+            $execErr = tr_stmt_error($st);
             $st->close();
             if (!$ok) {
-                tr_json(['success' => false, 'message' => 'Override update failed'], 500);
+                tr_json(['success' => false, 'message' => 'Override update failed: ' . $execErr], 500);
             }
             tr_audit($ctrl, 'override', $existingId, 'update', null, ['flag_id' => $flagId, 'scope_type' => $scopeType, 'override_value' => $overrideValue]);
             tr_json(['success' => true, 'message' => 'Override updated']);
@@ -449,10 +465,11 @@ if ($method === 'POST') {
         }
         $st->bind_param('isiiiis', $flagId, $scopeType, $countryNullable, $tenantNullable, $overrideValue, $uid, $uname);
         $ok = $st->execute();
+        $execErr = tr_stmt_error($st);
         $newId = (int) $st->insert_id;
         $st->close();
         if (!$ok) {
-            tr_json(['success' => false, 'message' => 'Override insert failed'], 500);
+            tr_json(['success' => false, 'message' => 'Override insert failed: ' . $execErr], 500);
         }
         tr_audit($ctrl, 'override', $newId, 'create', null, ['flag_id' => $flagId, 'scope_type' => $scopeType, 'override_value' => $overrideValue]);
         tr_json(['success' => true, 'message' => 'Override created']);
@@ -469,9 +486,10 @@ if ($method === 'POST') {
         }
         $st->bind_param('i', $id);
         $ok = $st->execute();
+        $execErr = tr_stmt_error($st);
         $st->close();
         if (!$ok) {
-            tr_json(['success' => false, 'message' => 'Override delete failed'], 500);
+            tr_json(['success' => false, 'message' => 'Override delete failed: ' . $execErr], 500);
         }
         tr_audit($ctrl, 'override', $id, 'delete', null, null);
         tr_json(['success' => true, 'message' => 'Override removed']);
