@@ -294,12 +294,28 @@
     if (overrideForm) {
         overrideForm.addEventListener('submit', function (event) {
             event.preventDefault();
+            var scope = overrideScopeInput.value || 'country';
+            var flagId = Number(overrideFlagInput.value || 0);
+            var countryId = Number(overrideCountryInput.value || 0);
+            var tenantId = Number(overrideTenantInput.value || 0);
+            if (flagId <= 0) {
+                showFlash('Please select a flag first.', false);
+                return;
+            }
+            if (scope === 'country' && countryId <= 0) {
+                showFlash('Please select a country for country override.', false);
+                return;
+            }
+            if (scope === 'tenant' && tenantId <= 0) {
+                showFlash('Please select a tenant for tenant override.', false);
+                return;
+            }
             request('POST', {
                 action: 'save_override',
-                flag_id: Number(overrideFlagInput.value || 0),
-                scope_type: overrideScopeInput.value || 'country',
-                country_id: Number(overrideCountryInput.value || 0),
-                tenant_id: Number(overrideTenantInput.value || 0),
+                flag_id: flagId,
+                scope_type: scope,
+                country_id: countryId,
+                tenant_id: tenantId,
                 override_value: Number(overrideValueInput.value || 0)
             }).then(function (res) {
                 if (!res || !res.success) {
