@@ -1,10 +1,18 @@
-<?php
+﻿<?php
 /**
  * Public: Home / landing page — English, layout like ratib.sa reference.
  * EN: Prepares server-side values (plans/currency/assets), renders page sections, and bootstraps JS config.
  * AR: يجهّز قيم السيرفر (الخطط/العملة/الأصول)، ويعرض أقسام الصفحة، ثم يمرر إعدادات JavaScript.
  */
 require_once __DIR__ . '/../includes/config.php';
+
+// Prevent stale HTML caching so pricing updates appear immediately.
+if (!headers_sent()) {
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Cache-Control: post-check=0, pre-check=0', false);
+    header('Pragma: no-cache');
+    header('Expires: 0');
+}
 
 // EN: Read checkout currency/exchange settings from environment with safe defaults.
 // AR: قراءة إعدادات عملة الدفع وسعر التحويل من البيئة مع قيم افتراضية آمنة.
