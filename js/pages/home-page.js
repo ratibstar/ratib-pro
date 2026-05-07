@@ -275,7 +275,17 @@
         var durationLabel = years === 0
             ? 'monthly'
             : (years + ' year' + (years > 1 ? 's' : ''));
+        var listPrice = subtotal * DISPLAY_MULTIPLIER;
+        var discountAmount = listPrice - subtotal;
         summaryEl.innerHTML = '<h4 style="font-size: 1rem; margin-bottom: 0.75rem; color: #f1c40f;"><i class="fas fa-receipt me-2"></i>Payment Summary</h4>' +
+            '<div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">' +
+            '<span style="color: #aaa;">List Price</span>' +
+            '<span style="color: #fff; font-weight: 600;">$' + listPrice.toFixed(2) + '</span>' +
+            '</div>' +
+            '<div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">' +
+            '<span style="color: #aaa;">Discount (50%)</span>' +
+            '<span style="color: #2ecc71; font-weight: 600;">-$' + discountAmount.toFixed(2) + '</span>' +
+            '</div>' +
             '<div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">' +
             '<span style="color: #aaa;">' + planLabel + ' Plan (' + durationLabel + ')</span>' +
             '<span style="color: #fff; font-weight: 600;">$' + subtotal.toFixed(2) + '</span>' +

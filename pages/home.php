@@ -411,6 +411,19 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
                     <!-- Payment Summary -->
                     <div class="mb-4 payment-summary-box payment-summary-panel">
                         <h4 class="payment-summary-title"><i class="fas fa-receipt me-2"></i>Payment Summary</h4>
+                        <?php
+                        $__payableSubtotal = $planAmount ? (float)$planAmount : 0.0;
+                        $__listSubtotal = $__payableSubtotal * 2;
+                        $__discountAmount = $__listSubtotal - $__payableSubtotal;
+                        ?>
+                        <div class="payment-summary-row">
+                            <span class="payment-summary-muted">List Price</span>
+                            <span class="payment-summary-value" id="paymentSummaryListPrice">$<?php echo number_format($__listSubtotal, 2); ?></span>
+                        </div>
+                        <div class="payment-summary-row">
+                            <span class="payment-summary-muted">Discount (50%)</span>
+                            <span class="payment-summary-value" id="paymentSummaryDiscount">-$<?php echo number_format($__discountAmount, 2); ?></span>
+                        </div>
                         <div class="payment-summary-row">
                             <span class="payment-summary-muted" id="paymentSummaryLabel"><?php echo htmlspecialchars($planLabel); ?> Plan (<?php echo ($years !== null && (int)$years === 0) ? 'monthly' : ((int)($years !== null ? $years : 1)) . ' year' . (((int)($years !== null ? $years : 1)) > 1 ? 's' : ''); ?>)</span>
                             <span class="payment-summary-value" id="paymentSummarySubtotal">$<?php echo $planAmount ? number_format((float)$planAmount, 2) : '0.00'; ?></span>
