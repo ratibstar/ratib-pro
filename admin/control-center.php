@@ -376,6 +376,29 @@ function ccResolveTenantIdFromRef(PDO $pdo, string $tenantRef): int
     return (int) ($st->fetchColumn() ?: 0);
 }
 
+function ccTenantDbHealthCheck(array $tenant): array
+{
+    $dbName = trim((string) ($tenant['database_name'] ?? ''));
+    $dbUser = trim((string) ($tenant['db_user'] ?? ''));
+    $dbHost = trim((string) ($tenant['db_host'] ?? ''));
+    if ($dbName === '') {
+        return ['ok' => false, 'reason' => 'database name missing'];
+    }
+    if ($dbUser === '') {
+        return ['ok' => false, 'reason' => 'db user missing'];
+    }
+    if ($dbHost === '') {
+        return ['ok' => false, 'reason' => 'db host missing'];
+    }
+    try {
+        $db = ccTenantPdo($tenant);
+        $db->query('SELECT 1');
+        return ['ok' => true, 'reason' => ''];
+    } catch (Throwable $e) {
+        return ['ok' => false, 'reason' => 'db connection failed'];
+    }
+}
+
 // EN: Normalize agency identifiers from mixed formats into positive integer ID.
 // AR: توحيد معرف الوكالة من صيغ متعددة إلى رقم صحيح موجب.
 function ccAgencyNumericId($raw): int
@@ -2052,22 +2075,12 @@ foreach ($tenants as $th) {
         }
     }
 
-    $dbName = trim((string) ($th['database_name'] ?? ''));
-    $dbUser = trim((string) ($th['db_user'] ?? ''));
-    $dbHost = trim((string) ($th['db_host'] ?? ''));
     $dbIssues = [];
-    if ($dbName === '') {
-        $dbIssues[] = 'database name missing';
-    }
-    if ($dbUser === '') {
-        $dbIssues[] = 'db user missing';
-    }
-    if ($dbHost === '') {
-        $dbIssues[] = 'db host missing';
-    }
-    if (empty($dbIssues)) {
+    $dbHealth = ccTenantDbHealthCheck($th);
+    if (!empty($dbHealth['ok'])) {
         $dbHealthOk++;
     } else {
+        $dbIssues[] = (string) ($dbHealth['reason'] ?? 'db issue');
         $dbHealthIssues++;
         if (count($dbHealthIssueRows) < 8) {
             $dbHealthIssueRows[] = [
