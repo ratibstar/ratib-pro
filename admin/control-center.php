@@ -2014,6 +2014,41 @@ $suspendedTenantCount = count(array_filter($tenants, static function ($t) {
 $inactiveTenantCount = count(array_filter($tenants, static function ($t) {
     return ((string) ($t['status'] ?? '')) === 'inactive';
 }));
+$tenantHealthOk = 0;
+$tenantHealthIssues = 0;
+$tenantHealthIssueRows = [];
+foreach ($tenants as $th) {
+    $status = strtolower(trim((string) ($th['status'] ?? '')));
+    $name = trim((string) ($th['name'] ?? ''));
+    $domain = trim((string) ($th['domain'] ?? ''));
+    $dbName = trim((string) ($th['database_name'] ?? ''));
+    $dbUser = trim((string) ($th['db_user'] ?? ''));
+    $issueReasons = [];
+    if ($status !== 'active') {
+        $issueReasons[] = 'status=' . ($status !== '' ? $status : 'unknown');
+    }
+    if ($name === '') {
+        $issueReasons[] = 'name missing';
+    }
+    if ($domain === '') {
+        $issueReasons[] = 'domain missing';
+    }
+    if ($dbName === '' || $dbUser === '') {
+        $issueReasons[] = 'db config incomplete';
+    }
+    if (empty($issueReasons)) {
+        $tenantHealthOk++;
+    } else {
+        $tenantHealthIssues++;
+        if (count($tenantHealthIssueRows) < 8) {
+            $tenantHealthIssueRows[] = [
+                'id' => (string) ($th['display_id'] ?? (string) (int) ($th['id'] ?? 0)),
+                'name' => $name !== '' ? $name : '(no-name)',
+                'reasons' => implode(' | ', $issueReasons),
+            ];
+        }
+    }
+}
 
 $eventsTotalPages = max(1, (int) ceil($totalEvents / max(1, $eventsPerPage)));
 $csrfToken = ccCsrfToken();
@@ -2178,6 +2213,26 @@ if ($rwExample === 'global_wave') {
 
         <section id="tenant-control" class="cc-card" data-cc-server-paging="1">
             <h3>Tenant Control</h3>
+            <div class="cc-grid stats" style="margin-bottom:10px;">
+                <div class="stat safe">
+                    <span>Active & Correct</span>
+                    <strong><?php echo (int) $tenantHealthOk; ?></strong>
+                </div>
+                <div class="stat danger">
+                    <span>Inactive / Issues</span>
+                    <strong><?php echo (int) $tenantHealthIssues; ?></strong>
+                </div>
+            </div>
+            <?php if (!empty($tenantHealthIssueRows)): ?>
+                <div class="cc-alert warning">
+                    <strong>Tenants needing fix</strong>
+                    <div class="cc-muted" style="margin-top:6px;">
+                        <?php foreach ($tenantHealthIssueRows as $ir): ?>
+                            <div>#<?php echo htmlspecialchars((string) $ir['id'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $ir['name'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $ir['reasons'], ENT_QUOTES, 'UTF-8'); ?></div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
             <?php if ($isSuperAdminCc): ?>
                 <p class="cc-muted cc-tenant-source-meta">
                     Source DB: <strong><?php echo htmlspecialchars($ccSourceDb !== '' ? $ccSourceDb : '(unknown)', ENT_QUOTES, 'UTF-8'); ?></strong>
