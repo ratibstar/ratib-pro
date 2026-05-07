@@ -129,9 +129,6 @@
                             ? ('FAIL - ' + failed.slice(0, 2).join(', ') + (failed.length > 2 ? ' ...' : ''))
                             : 'FAIL - one or more checks failed.';
                         setSelfTestResult('fail', shortMsg);
-                        try {
-                            console.warn('Tenant isolation self-test details:', data);
-                        } catch (_) {}
                     }
                 })
                 .catch(function() {
@@ -202,9 +199,6 @@
                     setAllResult('fail', 'FAIL - total: ' + total + ', db ok: ' + ok + ', db failed: ' + failed + ', isolation ready: ' + isolationReady + ', full ready: ' + fullReady);
                     setGlobalIsolationAlert(true, 'Isolation alert: ' + failed + ' DB failures / ' + isolationFailed + ' isolation failures detected.');
                 }
-                try {
-                    console.warn('All agencies audit details:', data);
-                } catch (_) {}
             })
             .catch(function() {
                 setAllResult('fail', 'Request error while auditing all agencies.');
