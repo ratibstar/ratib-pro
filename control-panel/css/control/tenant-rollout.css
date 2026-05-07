@@ -199,6 +199,36 @@
     color: #e2e8f0;
 }
 
+.tenant-rollout-matrix {
+    display: grid;
+    border: 1px solid rgba(100, 116, 139, 0.35);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.tenant-rollout-matrix-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1.2fr 1.2fr 1fr;
+}
+
+.tenant-rollout-matrix-row > div {
+    padding: 9px 10px;
+    border-bottom: 1px solid rgba(100, 116, 139, 0.25);
+    border-right: 1px solid rgba(100, 116, 139, 0.2);
+    color: #cbd5e1;
+    font-size: 0.84rem;
+}
+
+.tenant-rollout-matrix-row > div:last-child {
+    border-right: 0;
+}
+
+.tenant-rollout-matrix-head > div {
+    font-weight: 700;
+    color: #f8fafc;
+    background: rgba(15, 23, 42, 0.7);
+}
+
 .tenant-rollout-item {
     background: rgba(15, 23, 42, 0.55);
     border: 1px solid rgba(100, 116, 139, 0.35);

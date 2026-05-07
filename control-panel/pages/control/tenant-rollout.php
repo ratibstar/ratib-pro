@@ -261,6 +261,37 @@ startControlLayout('Tenants & Rollout', ['css/control/tenant-rollout.css'], []);
         </form>
         <div id="resolverResult" class="tenant-rollout-empty">Run resolver to view effective source/value.</div>
     </article>
+
+    <article class="tenant-rollout-card">
+        <h4>Feature Flag Enforcement Matrix</h4>
+        <p>Live map of where flags are enforced in UI and API.</p>
+        <div class="tenant-rollout-matrix">
+            <div class="tenant-rollout-matrix-row tenant-rollout-matrix-head">
+                <div>Flag Key</div>
+                <div>UI Enforcement</div>
+                <div>API Enforcement</div>
+                <div>Scope</div>
+            </div>
+            <div class="tenant-rollout-matrix-row">
+                <div><code>control.dashboard.phase2_notice</code></div>
+                <div>Dashboard notice visibility</div>
+                <div>N/A (display flag)</div>
+                <div>tenant / country / global</div>
+            </div>
+            <div class="tenant-rollout-matrix-row">
+                <div><code>control.dashboard.enable_all_agencies_audit</code></div>
+                <div>Dashboard "Run All Agencies" action</div>
+                <div><code>api/control/agencies-audit.php</code> guarded</div>
+                <div>tenant / country / global</div>
+            </div>
+            <div class="tenant-rollout-matrix-row">
+                <div><code>control.accounting.enable_write_actions</code></div>
+                <div>Accounting write controls disabled</div>
+                <div><code>api/control/accounting.php</code> POST guarded</div>
+                <div>tenant / country / global</div>
+            </div>
+        </div>
+    </article>
 </section>
 
 <?php endControlLayout(['js/control/tenant-rollout.js']); ?>
