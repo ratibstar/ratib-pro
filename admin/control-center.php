@@ -2327,6 +2327,10 @@ if ($rwExample === 'global_wave') {
                     </div>
                 </div>
             <?php endif; ?>
+            <div class="cc-alert warning hidden" id="ccTenantIssueSinglePanel">
+                <strong id="ccTenantIssueSingleTitle">Selected tenant issue</strong>
+                <div class="cc-muted" id="ccTenantIssueSingleText" style="margin-top:6px;">-</div>
+            </div>
             <?php if ($isSuperAdminCc): ?>
                 <p class="cc-muted cc-tenant-source-meta">
                     Source DB: <strong><?php echo htmlspecialchars($ccSourceDb !== '' ? $ccSourceDb : '(unknown)', ENT_QUOTES, 'UTF-8'); ?></strong>
