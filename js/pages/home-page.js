@@ -95,43 +95,6 @@
     function formatPromoInline(payable) {
         return '<span class="promo-old">$' + formatDisplayAmount(payable) + '</span> <span class="promo-new">$' + formatPayableAmount(payable) + '</span>';
     }
-    function syncPromoDisplayLabels() {
-        var goldPlanBtn = document.querySelector('.plan-btn-form[data-plan="gold"]');
-        var platinumPlanBtn = document.querySelector('.plan-btn-form[data-plan="platinum"]');
-        if (goldPlanBtn) {
-            goldPlanBtn.innerHTML = '<i class="fas fa-crown me-1"></i> Gold ' + formatPromoInline(HOME.goldYear1);
-        }
-        if (platinumPlanBtn) {
-            platinumPlanBtn.innerHTML = '<i class="fas fa-gem me-1"></i> Platinum ' + formatPromoInline(HOME.platinumYear1);
-        }
-
-        var formMonthBtn = document.querySelector('.form-year-btn[data-years="0"] .form-year-price');
-        var formYearBtn = document.querySelector('.form-year-btn[data-years="1"] .form-year-price');
-        if (formMonthBtn) {
-            formMonthBtn.innerHTML = formatPromoInline(HOME.goldMonth);
-        }
-        if (formYearBtn) {
-            formYearBtn.innerHTML = formatPromoInline(HOME.goldYear1);
-        }
-
-        var goldCardPlan = document.querySelector('.price-card.gold .card-plan');
-        var platinumCardPlan = document.querySelector('.price-card.platinum .card-plan');
-        if (goldCardPlan) {
-            goldCardPlan.textContent = 'Gold $' + formatDisplayAmount(HOME.goldYear1);
-        }
-        if (platinumCardPlan) {
-            platinumCardPlan.textContent = 'Platinum $' + formatDisplayAmount(HOME.platinumYear1);
-        }
-        var goldCardMonth = document.querySelector('.gold-year-btn[data-years="0"] .year-price-small');
-        var goldCardYear = document.querySelector('.gold-year-btn[data-years="1"] .year-price-small');
-        var platCardMonth = document.querySelector('.platinum-year-btn[data-years="0"] .year-price-small');
-        var platCardYear = document.querySelector('.platinum-year-btn[data-years="1"] .year-price-small');
-        if (goldCardMonth) goldCardMonth.innerHTML = formatPromoInline(HOME.goldMonth);
-        if (goldCardYear) goldCardYear.innerHTML = formatPromoInline(HOME.goldYear1);
-        if (platCardMonth) platCardMonth.innerHTML = formatPromoInline(HOME.platinumMonth);
-        if (platCardYear) platCardYear.innerHTML = formatPromoInline(HOME.platinumYear1);
-    }
-    syncPromoDisplayLabels();
     // EN: Remove any legacy 2-year buttons if stale markup is served.
     // AR: إزالة أي أزرار مدة قديمة (سنتان) إذا تم تحميل HTML قديم.
     document.querySelectorAll('[data-years]').forEach(function (btn) {
