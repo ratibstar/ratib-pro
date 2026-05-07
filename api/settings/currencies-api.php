@@ -61,6 +61,7 @@ function currencies_api_bootstrap_env()
 // AR: تفضيل اتصال التطبيق الخاص بالوكالة/المستأجر ثم الرجوع لاتصال env عند الحاجة.
 function currencies_api_connect_mysqli()
 {
+    $singleUrlMode = defined('SINGLE_URL_MODE') && SINGLE_URL_MODE;
     // 1) Try main app bootstrap first (can select agency-specific DB in multi-DB setups).
     $cfg = __DIR__ . '/../../includes/config.php';
     if (is_file($cfg)) {
@@ -76,6 +77,10 @@ function currencies_api_connect_mysqli()
     }
 
     // 2) Fallback to env constants.
+    if ($singleUrlMode) {
+        // In single URL tenant mode, never bypass tenant bootstrap with a direct DB_* connection.
+        return array('conn' => null, 'owned' => false);
+    }
     currencies_api_bootstrap_env();
     if (!defined('DB_HOST') || !defined('DB_USER') || !defined('DB_NAME')) {
         return array('conn' => null, 'owned' => false);

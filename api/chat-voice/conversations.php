@@ -21,19 +21,13 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
 
 // Get database connection
 if (!isset($conn) || $conn === null) {
-    if (isset($GLOBALS['conn']) && $GLOBALS['conn'] !== null) {
+    if (isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli) {
         $conn = $GLOBALS['conn'];
     } else {
-        try {
-            mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-            $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
-            $conn->set_charset("utf8mb4");
-            $GLOBALS['conn'] = $conn;
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode(['success' => false, 'message' => 'Database connection failed']);
-            exit;
-        }
+        error_log('chat-voice/conversations: tenant DB connection missing after bootstrap.');
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Database connection failed']);
+        exit;
     }
 }
 

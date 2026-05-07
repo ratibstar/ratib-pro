@@ -12,16 +12,9 @@ $success_message = '';
 
 $conn = $GLOBALS['conn'] ?? null;
 if ($conn === null || !isset($GLOBALS['conn'])) {
-    try {
-        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-        $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
-        $conn->set_charset("utf8mb4");
-        $GLOBALS['conn'] = $conn;
-    } catch (Exception $e) {
-        error_log("Login - Failed to create database connection: " . $e->getMessage());
-        $error = 'Database connection failed. Please contact administrator.';
-        $conn = null;
-    }
+    error_log("Login - Tenant DB connection is missing after bootstrap.");
+    $error = 'Database connection failed. Please contact administrator.';
+    $conn = null;
 }
 
 if (isset($_GET['message']) && $_GET['message'] === 'logged_out') {

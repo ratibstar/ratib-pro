@@ -35,20 +35,11 @@ if (!hasPermission('view_dashboard')) {
 
 // Ensure database connection is available
 if (!isset($conn) || $conn === null) {
-    // Try to get connection from globals
-    if (isset($GLOBALS['conn']) && $GLOBALS['conn'] !== null) {
+    if (isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli) {
         $conn = $GLOBALS['conn'];
     } else {
-        // Create new connection
-        try {
-            mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-            $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
-            $conn->set_charset("utf8mb4");
-            $GLOBALS['conn'] = $conn;
-        } catch (Exception $e) {
-            error_log("Dashboard - Failed to create database connection: " . $e->getMessage());
-            die("Database connection failed. Please contact administrator.");
-        }
+        error_log("Dashboard - Tenant DB connection is missing after bootstrap.");
+        die("Database connection failed. Please contact administrator.");
     }
 }
 $pageTitle = "Dashboard";
