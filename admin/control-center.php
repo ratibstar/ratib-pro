@@ -346,6 +346,28 @@ function ccFindTenant(PDO $pdo, int $tenantId): ?array
     return $row ?: null;
 }
 
+function ccResolveTenantIdFromRef(PDO $pdo, string $tenantRef): int
+{
+    $ref = trim($tenantRef);
+    if ($ref === '') {
+        return 0;
+    }
+    if (ctype_digit($ref)) {
+        return (int) $ref;
+    }
+    if (ccTableExists($pdo, 'control_rollout_tenants')) {
+        $st = $pdo->prepare('SELECT id FROM control_rollout_tenants WHERE tenant_code = :code LIMIT 1');
+        $st->execute([':code' => strtolower($ref)]);
+        $id = (int) ($st->fetchColumn() ?: 0);
+        if ($id > 0) {
+            return $id;
+        }
+    }
+    $st = $pdo->prepare('SELECT id FROM tenants WHERE LOWER(domain) = LOWER(:ref) OR LOWER(name) = LOWER(:ref) LIMIT 1');
+    $st->execute([':ref' => $ref]);
+    return (int) ($st->fetchColumn() ?: 0);
+}
+
 // EN: Normalize agency identifiers from mixed formats into positive integer ID.
 // AR: توحيد معرف الوكالة من صيغ متعددة إلى رقم صحيح موجب.
 function ccAgencyNumericId($raw): int
@@ -1382,7 +1404,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
             $rolloutPercent = max(0, min(100, (int) ($_POST['rw_rollout_percent'] ?? 100)));
             $scopeType = strtolower(trim((string) ($_POST['rw_scope_type'] ?? 'global')));
             $countryId = max(0, (int) ($_POST['rw_country_id'] ?? 0));
-            $tenantId = max(0, (int) ($_POST['rw_tenant_id'] ?? 0));
+            $tenantRef = trim((string) ($_POST['rw_tenant_id'] ?? ''));
+            $tenantId = max(0, ccResolveTenantIdFromRef($controlPdo, $tenantRef));
             $overrideValue = ((int) ($_POST['rw_override_value'] ?? 0) > 0) ? 1 : 0;
             $operation = strtolower(trim((string) ($_POST['rw_operation'] ?? 'apply')));
 
@@ -1402,7 +1425,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
                 throw new RuntimeException('Country ID is required for country scope.');
             }
             if ($scopeType === 'tenant' && $tenantId <= 0) {
-                throw new RuntimeException('Tenant ID is required for tenant scope.');
+                throw new RuntimeException('Tenant ID/code is required for tenant scope.');
             }
 
             $controlPdo->beginTransaction();
@@ -1486,8 +1509,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
                 }
             }
             $controlPdo->commit();
-            ccAudit($controlPdo, 'rollout_wizard_apply', ['payload' => array_merge($auditPost, ['flag_key' => $flagKey, 'scope_type' => $scopeType, 'operation' => $operation])]);
-            logSystemEvent('ADMIN_ACTION', ['action' => 'rollout_wizard_apply', 'flag_key' => $flagKey, 'scope_type' => $scopeType, 'operation' => $operation]);
+            try {
+                ccAudit($controlPdo, 'rollout_wizard_apply', ['payload' => array_merge($auditPost, ['flag_key' => $flagKey, 'scope_type' => $scopeType, 'operation' => $operation])]);
+                logSystemEvent('ADMIN_ACTION', ['action' => 'rollout_wizard_apply', 'flag_key' => $flagKey, 'scope_type' => $scopeType, 'operation' => $operation]);
+            } catch (Throwable $logErr) {
+                error_log('rollout_wizard_apply audit/log failed: ' . $logErr->getMessage());
+            }
             $alerts[] = ['type' => 'safe', 'text' => 'Release Wizard applied for ' . $flagKey . ' (' . $scopeType . ', ' . $operation . ').'];
         } elseif ($action === 'tenant_link_agency') {
             ControlCenterAccess::requireRole([ControlCenterAccess::SUPER_ADMIN]);
@@ -1722,7 +1749,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
                 || str_contains($msg, 'confirm text')
                 || str_contains($msg, 'confirmation')
                 || str_contains($msg, 'incomplete')
-                || str_contains($msg, 'Provisioning failed');
+                || str_contains($msg, 'Provisioning failed')
+                || str_contains($msg, 'Rollout');
             $alerts[] = ['type' => 'danger', 'text' => $safeUser ? $msg : 'Request could not be completed.'];
         }
     }
@@ -2591,7 +2619,7 @@ if ($rwExample === 'global_wave') {
                             <option value="<?php echo (int) $cid; ?>"></option>
                         <?php endforeach; ?>
                     </datalist>
-                    <input class="cc-compact rw-tenant-field hidden" type="number" name="rw_tenant_id" id="rwTenantId" min="1" placeholder="Tenant ID">
+                    <input class="cc-compact rw-tenant-field hidden" type="text" name="rw_tenant_id" id="rwTenantId" placeholder="Tenant ID or code">
                     <select class="cc-compact rw-override-field hidden" name="rw_override_value" id="rwOverrideValue">
                         <option value="1" <?php echo (int) $rwDefaults['override_value'] === 1 ? 'selected' : ''; ?>>override enabled</option>
                         <option value="0" <?php echo (int) $rwDefaults['override_value'] === 0 ? 'selected' : ''; ?>>override disabled</option>
