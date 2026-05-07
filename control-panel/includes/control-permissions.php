@@ -252,37 +252,9 @@ function requireControlPermission($permission) {
         echo json_encode(['success' => false, 'message' => 'Not authorized.']);
         exit;
     }
-
+    $_SESSION['control_popup_error'] = 'Not authorized.';
     $dashboardUrl = function_exists('pageUrl') ? pageUrl('control/dashboard.php') . '?control=1' : '/pages/control/dashboard.php?control=1';
-    header('Content-Type: text/html; charset=UTF-8');
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Not authorized</title>
-        <style>
-            body { margin: 0; font-family: Arial, sans-serif; background: transparent; }
-            .auth-toast {
-                position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-                z-index: 99999; min-width: 220px; max-width: 90vw;
-                padding: 10px 14px; border-radius: 10px;
-                background: #2b2b2b; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.25);
-                font-size: 13px; line-height: 1.4; text-align: center;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="auth-toast">Not authorized.</div>
-        <script>
-            setTimeout(function () {
-                window.location.href = <?php echo json_encode($dashboardUrl); ?>;
-            }, 1200);
-        </script>
-    </body>
-    </html>
-    <?php
+    header('Location: ' . $dashboardUrl);
     exit;
 }
 

@@ -171,6 +171,11 @@ if (function_exists('hasControlPermission') && (
 // EN: Render dashboard page with cards + quick links and inject front-end config.
 // AR: عرض صفحة اللوحة مع بطاقات الإحصاء والروابط السريعة وتمرير إعدادات الواجهة.
 $pageTitle = 'Control Panel Dashboard';
+$controlPopupError = '';
+if (!empty($_SESSION['control_popup_error'])) {
+    $controlPopupError = (string) $_SESSION['control_popup_error'];
+    unset($_SESSION['control_popup_error']);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -187,6 +192,11 @@ $pageTitle = 'Control Panel Dashboard';
     <?php endif; ?>
 </head>
 <body class="control-system-body">
+    <?php if ($controlPopupError !== ''): ?>
+    <div id="controlPopupErrorToast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;min-width:220px;max-width:90vw;padding:10px 14px;border-radius:10px;background:#2b2b2b;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:13px;line-height:1.4;text-align:center;">
+        <?php echo htmlspecialchars($controlPopupError, ENT_QUOTES, 'UTF-8'); ?>
+    </div>
+    <?php endif; ?>
     <?php $fullBase = rtrim((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . preg_replace('#/pages/[^?]*.*$#', '', $_SERVER['REQUEST_URI'] ?? ''), '/'); ?>
     <?php $ratibBase = rtrim(defined('RATIB_PRO_URL') ? RATIB_PRO_URL : (defined('SITE_URL') ? SITE_URL : ''), '/'); if ($ratibBase === '' && isset($_SERVER['HTTP_HOST'])) { $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http'; $ratibBase = $scheme . '://' . $_SERVER['HTTP_HOST']; } ?>
     <!-- EN: Server-to-client bootstrap for control dashboard scripts (API endpoints + base URLs). -->
@@ -417,5 +427,20 @@ $pageTitle = 'Control Panel Dashboard';
     <script src="<?php echo asset('js/control/system.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/header-support-alerts.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/dashboard.js'); ?>?v=<?php echo time(); ?>"></script>
+    <?php if ($controlPopupError !== ''): ?>
+    <script>
+        (function () {
+            var toast = document.getElementById('controlPopupErrorToast');
+            if (!toast) return;
+            setTimeout(function () {
+                toast.style.transition = 'opacity 200ms ease';
+                toast.style.opacity = '0';
+                setTimeout(function () {
+                    if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 220);
+            }, 1600);
+        })();
+    </script>
+    <?php endif; ?>
 </body>
 </html>
