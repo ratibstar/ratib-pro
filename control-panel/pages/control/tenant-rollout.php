@@ -159,6 +159,19 @@ startControlLayout('Tenants & Rollout', ['css/control/tenant-rollout.css'], []);
                         <option value="1">Enabled</option>
                     </select>
                 </div>
+                <div class="tenant-rollout-field">
+                    <label for="flagStageInput">Rollout Stage</label>
+                    <select id="flagStageInput">
+                        <option value="canary">Canary</option>
+                        <option value="wave1">Wave 1</option>
+                        <option value="wave2">Wave 2</option>
+                        <option value="full" selected>Full</option>
+                    </select>
+                </div>
+                <div class="tenant-rollout-field">
+                    <label for="flagPercentInput">Rollout Percent</label>
+                    <input id="flagPercentInput" type="number" min="0" max="100" value="100">
+                </div>
                 <div class="tenant-rollout-actions">
                     <button type="submit" class="btn btn-sm btn-primary">Save Flag</button>
                     <button type="button" id="flagFormResetBtn" class="btn btn-sm btn-outline-light">Reset</button>

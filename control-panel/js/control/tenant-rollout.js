@@ -29,6 +29,8 @@
     var flagKeyInput = document.getElementById('flagKeyInput');
     var flagDescriptionInput = document.getElementById('flagDescriptionInput');
     var flagDefaultInput = document.getElementById('flagDefaultInput');
+    var flagStageInput = document.getElementById('flagStageInput');
+    var flagPercentInput = document.getElementById('flagPercentInput');
     var flagFormResetBtn = document.getElementById('flagFormResetBtn');
     var featureFlagsList = document.getElementById('featureFlagsList');
     var featureFlagsPager = document.getElementById('featureFlagsPager');
@@ -244,8 +246,10 @@
                 '<p class="tenant-rollout-item-title">' + esc(f.flag_key || '') + '</p>' +
                 '<p class="tenant-rollout-item-meta">' + esc(f.flag_description || 'No description') + '</p>' +
                 '<p class="tenant-rollout-item-meta">Default: ' + (Number(f.default_value || 0) > 0 ? 'Enabled' : 'Disabled') + '</p>' +
+                '<p class="tenant-rollout-item-meta">Wave: ' + esc(f.rollout_stage || 'full') + ' | Percent: ' + Number(f.rollout_percent || 100) + '%</p>' +
                 '<div class="tenant-rollout-item-actions">' +
                 '<button type="button" class="btn btn-sm btn-outline-light js-edit-flag" data-id="' + Number(f.id || 0) + '">Edit</button>' +
+                '<button type="button" class="btn btn-sm btn-outline-warning js-promote-flag-wave" data-id="' + Number(f.id || 0) + '">Promote Wave</button>' +
                 '</div>' +
                 '</div>';
         }).join('');
@@ -404,7 +408,9 @@
                 id: Number(flagIdInput.value || 0),
                 flag_key: (flagKeyInput.value || '').trim(),
                 flag_description: (flagDescriptionInput.value || '').trim(),
-                default_value: Number(flagDefaultInput.value || 0)
+                default_value: Number(flagDefaultInput.value || 0),
+                rollout_stage: (flagStageInput && flagStageInput.value) ? String(flagStageInput.value).trim() : 'full',
+                rollout_percent: Math.max(0, Math.min(100, Number((flagPercentInput && flagPercentInput.value) || 100)))
             }).then(function (res) {
                 if (!res || !res.success) {
                     showFlash((res && res.message) || 'Failed to save flag.', false);
@@ -515,7 +521,25 @@
             flagKeyInput.value = flag.flag_key || '';
             flagDescriptionInput.value = flag.flag_description || '';
             flagDefaultInput.value = Number(flag.default_value || 0) > 0 ? '1' : '0';
+            if (flagStageInput) flagStageInput.value = flag.rollout_stage || 'full';
+            if (flagPercentInput) flagPercentInput.value = String(Number(flag.rollout_percent || 100));
             showFlash('Flag loaded into form.', true);
+        });
+        featureFlagsList.addEventListener('click', function (event) {
+            var pBtn = event.target.closest('.js-promote-flag-wave');
+            if (!pBtn) return;
+            var id = Number(pBtn.getAttribute('data-id') || 0);
+            if (!id) return;
+            request('POST', { action: 'promote_flag_wave', id: id }).then(function (res) {
+                if (!res || !res.success) {
+                    showFlash((res && res.message) || 'Promotion failed.', false);
+                    return;
+                }
+                showFlash(res.message || 'Wave promoted.', true);
+                loadAll();
+            }).catch(function (err) {
+                showFlash((err && err.message) || 'Promotion failed.', false);
+            });
         });
     }
 

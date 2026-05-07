@@ -106,6 +106,8 @@ function tr_ensure_tables(mysqli $ctrl): void
             flag_key VARCHAR(120) NOT NULL,
             flag_description VARCHAR(255) NULL,
             default_value TINYINT(1) NOT NULL DEFAULT 0,
+            rollout_stage VARCHAR(16) NOT NULL DEFAULT 'full',
+            rollout_percent TINYINT UNSIGNED NOT NULL DEFAULT 100,
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -154,6 +156,14 @@ function tr_ensure_tables(mysqli $ctrl): void
     $hasTenantStatus = @$ctrl->query("SHOW COLUMNS FROM control_rollout_tenants LIKE 'status'");
     if (!$hasTenantStatus || $hasTenantStatus->num_rows === 0) {
         @$ctrl->query("ALTER TABLE control_rollout_tenants ADD COLUMN status VARCHAR(32) NOT NULL DEFAULT 'active'");
+    }
+    $hasFlagStage = @$ctrl->query("SHOW COLUMNS FROM control_rollout_feature_flags LIKE 'rollout_stage'");
+    if (!$hasFlagStage || $hasFlagStage->num_rows === 0) {
+        @$ctrl->query("ALTER TABLE control_rollout_feature_flags ADD COLUMN rollout_stage VARCHAR(16) NOT NULL DEFAULT 'full' AFTER default_value");
+    }
+    $hasFlagPercent = @$ctrl->query("SHOW COLUMNS FROM control_rollout_feature_flags LIKE 'rollout_percent'");
+    if (!$hasFlagPercent || $hasFlagPercent->num_rows === 0) {
+        @$ctrl->query("ALTER TABLE control_rollout_feature_flags ADD COLUMN rollout_percent TINYINT UNSIGNED NOT NULL DEFAULT 100 AFTER rollout_stage");
     }
 }
 
@@ -238,7 +248,7 @@ function tr_tenants(mysqli $ctrl): array
 function tr_flags(mysqli $ctrl): array
 {
     $rows = [];
-    $res = $ctrl->query("SELECT id, flag_key, flag_description, default_value, is_active, created_at, updated_at FROM control_rollout_feature_flags ORDER BY flag_key ASC");
+    $res = $ctrl->query("SELECT id, flag_key, flag_description, default_value, rollout_stage, rollout_percent, is_active, created_at, updated_at FROM control_rollout_feature_flags ORDER BY flag_key ASC");
     if (!$res) {
         return $rows;
     }
@@ -248,6 +258,8 @@ function tr_flags(mysqli $ctrl): array
             'flag_key' => (string) ($r['flag_key'] ?? ''),
             'flag_description' => (string) ($r['flag_description'] ?? ''),
             'default_value' => (int) ($r['default_value'] ?? 0),
+            'rollout_stage' => (string) ($r['rollout_stage'] ?? 'full'),
+            'rollout_percent' => (int) ($r['rollout_percent'] ?? 100),
             'is_active' => (int) ($r['is_active'] ?? 1),
             'created_at' => (string) ($r['created_at'] ?? ''),
             'updated_at' => (string) ($r['updated_at'] ?? ''),
@@ -424,6 +436,12 @@ if ($method === 'POST') {
         $flagKey = strtolower(trim((string) ($body['flag_key'] ?? '')));
         $flagDescription = trim((string) ($body['flag_description'] ?? ''));
         $defaultValue = (int) ($body['default_value'] ?? 0) > 0 ? 1 : 0;
+        $rolloutStage = strtolower(trim((string) ($body['rollout_stage'] ?? 'full')));
+        $rolloutPercent = max(0, min(100, (int) ($body['rollout_percent'] ?? 100)));
+        $allowedStages = ['canary', 'wave1', 'wave2', 'full'];
+        if (!in_array($rolloutStage, $allowedStages, true)) {
+            $rolloutStage = 'full';
+        }
         if ($flagKey === '' || !preg_match('/^[a-z0-9_.\\-]+$/', $flagKey)) {
             tr_json(['success' => false, 'message' => 'Invalid flag_key'], 422);
         }
@@ -431,13 +449,13 @@ if ($method === 'POST') {
         if ($id > 0) {
             $st = $ctrl->prepare(
                 "UPDATE control_rollout_feature_flags
-                 SET flag_key = ?, flag_description = ?, default_value = ?, updated_at = NOW()
+                 SET flag_key = ?, flag_description = ?, default_value = ?, rollout_stage = ?, rollout_percent = ?, updated_at = NOW()
                  WHERE id = ?"
             );
             if (!$st) {
                 tr_json(['success' => false, 'message' => 'Failed to prepare flag update'], 500);
             }
-            $st->bind_param('ssii', $flagKey, $flagDescription, $defaultValue, $id);
+            $st->bind_param('ssisii', $flagKey, $flagDescription, $defaultValue, $rolloutStage, $rolloutPercent, $id);
             $ok = $st->execute();
             $execErr = tr_stmt_error($st);
             $isDup = tr_is_duplicate_error($st);
@@ -448,18 +466,18 @@ if ($method === 'POST') {
                 }
                 tr_json(['success' => false, 'message' => 'Flag update failed: ' . $execErr], 500);
             }
-            tr_audit($ctrl, 'flag', $id, 'update', null, ['flag_key' => $flagKey, 'default_value' => $defaultValue]);
+            tr_audit($ctrl, 'flag', $id, 'update', null, ['flag_key' => $flagKey, 'default_value' => $defaultValue, 'rollout_stage' => $rolloutStage, 'rollout_percent' => $rolloutPercent]);
             tr_json(['success' => true, 'message' => 'Flag updated']);
         }
 
         $st = $ctrl->prepare(
-            "INSERT INTO control_rollout_feature_flags (flag_key, flag_description, default_value, is_active, created_at, updated_at)
-             VALUES (?, ?, ?, 1, NOW(), NOW())"
+            "INSERT INTO control_rollout_feature_flags (flag_key, flag_description, default_value, rollout_stage, rollout_percent, is_active, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, 1, NOW(), NOW())"
         );
         if (!$st) {
             tr_json(['success' => false, 'message' => 'Failed to prepare flag insert'], 500);
         }
-        $st->bind_param('ssi', $flagKey, $flagDescription, $defaultValue);
+        $st->bind_param('ssisi', $flagKey, $flagDescription, $defaultValue, $rolloutStage, $rolloutPercent);
         $ok = $st->execute();
         $execErr = tr_stmt_error($st);
         $isDup = tr_is_duplicate_error($st);
@@ -471,8 +489,49 @@ if ($method === 'POST') {
             }
             tr_json(['success' => false, 'message' => 'Flag insert failed: ' . $execErr], 500);
         }
-        tr_audit($ctrl, 'flag', $newId, 'create', null, ['flag_key' => $flagKey, 'default_value' => $defaultValue]);
+        tr_audit($ctrl, 'flag', $newId, 'create', null, ['flag_key' => $flagKey, 'default_value' => $defaultValue, 'rollout_stage' => $rolloutStage, 'rollout_percent' => $rolloutPercent]);
         tr_json(['success' => true, 'message' => 'Flag created']);
+    }
+
+    if ($postAction === 'promote_flag_wave') {
+        $id = (int) ($body['id'] ?? 0);
+        if ($id <= 0) {
+            tr_json(['success' => false, 'message' => 'Flag id is required'], 422);
+        }
+        $stGet = $ctrl->prepare("SELECT rollout_stage, rollout_percent FROM control_rollout_feature_flags WHERE id = ? LIMIT 1");
+        if (!$stGet) {
+            tr_json(['success' => false, 'message' => 'Failed to prepare flag lookup'], 500);
+        }
+        $stGet->bind_param('i', $id);
+        $stGet->execute();
+        $row = $stGet->get_result()->fetch_assoc();
+        $stGet->close();
+        if (!$row) {
+            tr_json(['success' => false, 'message' => 'Flag not found'], 404);
+        }
+        $stage = strtolower(trim((string) ($row['rollout_stage'] ?? 'full')));
+        $map = [
+            'canary' => ['wave1', 10],
+            'wave1' => ['wave2', 30],
+            'wave2' => ['full', 100],
+            'full' => ['full', 100],
+        ];
+        $next = $map[$stage] ?? ['full', 100];
+        $nextStage = $next[0];
+        $nextPercent = (int) $next[1];
+        $st = $ctrl->prepare("UPDATE control_rollout_feature_flags SET rollout_stage = ?, rollout_percent = ?, updated_at = NOW() WHERE id = ?");
+        if (!$st) {
+            tr_json(['success' => false, 'message' => 'Failed to prepare flag promotion'], 500);
+        }
+        $st->bind_param('sii', $nextStage, $nextPercent, $id);
+        $ok = $st->execute();
+        $execErr = tr_stmt_error($st);
+        $st->close();
+        if (!$ok) {
+            tr_json(['success' => false, 'message' => 'Promotion failed: ' . $execErr], 500);
+        }
+        tr_audit($ctrl, 'flag', $id, 'promote_wave', ['rollout_stage' => $stage], ['rollout_stage' => $nextStage, 'rollout_percent' => $nextPercent]);
+        tr_json(['success' => true, 'message' => 'Flag promoted to ' . $nextStage . ' (' . $nextPercent . '%)']);
     }
 
     if ($postAction === 'save_override') {
