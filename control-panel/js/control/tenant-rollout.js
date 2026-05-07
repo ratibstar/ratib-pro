@@ -21,6 +21,8 @@
     var tenantStatusInput = document.getElementById('tenantStatusInput');
     var tenantFormResetBtn = document.getElementById('tenantFormResetBtn');
     var tenantRegistryList = document.getElementById('tenantRegistryList');
+    var tenantRegistryPager = document.getElementById('tenantRegistryPager');
+    var tenantSearchInput = document.getElementById('tenantSearchInput');
 
     var flagForm = document.getElementById('flagForm');
     var flagIdInput = document.getElementById('flagIdInput');
@@ -29,6 +31,8 @@
     var flagDefaultInput = document.getElementById('flagDefaultInput');
     var flagFormResetBtn = document.getElementById('flagFormResetBtn');
     var featureFlagsList = document.getElementById('featureFlagsList');
+    var featureFlagsPager = document.getElementById('featureFlagsPager');
+    var flagSearchInput = document.getElementById('flagSearchInput');
 
     var overrideForm = document.getElementById('overrideForm');
     var overrideFlagInput = document.getElementById('overrideFlagInput');
@@ -37,13 +41,23 @@
     var overrideTenantInput = document.getElementById('overrideTenantInput');
     var overrideValueInput = document.getElementById('overrideValueInput');
     var overridesList = document.getElementById('overridesList');
+    var overridesPager = document.getElementById('overridesPager');
+    var overrideSearchInput = document.getElementById('overrideSearchInput');
+    var overrideFilterScopeInput = document.getElementById('overrideFilterScopeInput');
+    var overrideFormResetBtn = document.getElementById('overrideFormResetBtn');
 
     var state = {
         countries: [],
         tenants: [],
         flags: [],
-        overrides: []
+        overrides: [],
+        pagination: {
+            tenants: 1,
+            flags: 1,
+            overrides: 1
+        }
     };
+    var pageSize = 5;
 
     function showFlash(text, ok) {
         if (!flash) return;
@@ -114,13 +128,47 @@
         syncScopeFields();
     }
 
-    function renderTenants() {
-        if (!tenantRegistryList) return;
-        if (!state.tenants.length) {
-            tenantRegistryList.innerHTML = '<div class="tenant-rollout-empty">No tenants yet.</div>';
+    function paginate(items, page) {
+        var total = items.length;
+        var pages = Math.max(1, Math.ceil(total / pageSize));
+        var safePage = Math.min(Math.max(1, page || 1), pages);
+        var start = (safePage - 1) * pageSize;
+        return {
+            items: items.slice(start, start + pageSize),
+            page: safePage,
+            pages: pages
+        };
+    }
+
+    function renderPager(el, key, page, pages) {
+        if (!el) return;
+        if (pages <= 1) {
+            el.innerHTML = '';
             return;
         }
-        tenantRegistryList.innerHTML = state.tenants.map(function (t) {
+        var html = '';
+        html += '<button type="button" class="btn btn-sm btn-outline-light js-page-btn" data-key="' + key + '" data-page="' + (page - 1) + '"' + (page <= 1 ? ' disabled' : '') + '>Prev</button>';
+        html += '<span class="btn btn-sm btn-outline-secondary disabled">Page ' + page + ' / ' + pages + '</span>';
+        html += '<button type="button" class="btn btn-sm btn-outline-light js-page-btn" data-key="' + key + '" data-page="' + (page + 1) + '"' + (page >= pages ? ' disabled' : '') + '>Next</button>';
+        el.innerHTML = html;
+    }
+
+    function renderTenants() {
+        if (!tenantRegistryList) return;
+        var q = ((tenantSearchInput && tenantSearchInput.value) || '').trim().toLowerCase();
+        var filtered = state.tenants.filter(function (t) {
+            if (!q) return true;
+            var hay = [t.tenant_name, t.tenant_code, t.primary_domain, t.country_name, t.status].join(' ').toLowerCase();
+            return hay.indexOf(q) !== -1;
+        });
+        if (!filtered.length) {
+            tenantRegistryList.innerHTML = '<div class="tenant-rollout-empty">No tenants yet.</div>';
+            renderPager(tenantRegistryPager, 'tenants', 1, 1);
+            return;
+        }
+        var p = paginate(filtered, state.pagination.tenants);
+        state.pagination.tenants = p.page;
+        tenantRegistryList.innerHTML = p.items.map(function (t) {
             var country = t.country_name || 'N/A';
             return '<div class="tenant-rollout-item">' +
                 '<p class="tenant-rollout-item-title">' + esc(t.tenant_name || '') + '</p>' +
@@ -131,15 +179,25 @@
                 '</div>' +
                 '</div>';
         }).join('');
+        renderPager(tenantRegistryPager, 'tenants', p.page, p.pages);
     }
 
     function renderFlags() {
         if (!featureFlagsList) return;
-        if (!state.flags.length) {
+        var q = ((flagSearchInput && flagSearchInput.value) || '').trim().toLowerCase();
+        var filtered = state.flags.filter(function (f) {
+            if (!q) return true;
+            var hay = [f.flag_key, f.flag_description].join(' ').toLowerCase();
+            return hay.indexOf(q) !== -1;
+        });
+        if (!filtered.length) {
             featureFlagsList.innerHTML = '<div class="tenant-rollout-empty">No feature flags yet.</div>';
+            renderPager(featureFlagsPager, 'flags', 1, 1);
             return;
         }
-        featureFlagsList.innerHTML = state.flags.map(function (f) {
+        var p = paginate(filtered, state.pagination.flags);
+        state.pagination.flags = p.page;
+        featureFlagsList.innerHTML = p.items.map(function (f) {
             return '<div class="tenant-rollout-item">' +
                 '<p class="tenant-rollout-item-title">' + esc(f.flag_key || '') + '</p>' +
                 '<p class="tenant-rollout-item-meta">' + esc(f.flag_description || 'No description') + '</p>' +
@@ -149,25 +207,39 @@
                 '</div>' +
                 '</div>';
         }).join('');
+        renderPager(featureFlagsPager, 'flags', p.page, p.pages);
     }
 
     function renderOverrides() {
         if (!overridesList) return;
-        if (!state.overrides.length) {
+        var q = ((overrideSearchInput && overrideSearchInput.value) || '').trim().toLowerCase();
+        var scopeFilter = ((overrideFilterScopeInput && overrideFilterScopeInput.value) || '').trim().toLowerCase();
+        var filtered = state.overrides.filter(function (o) {
+            if (scopeFilter && String(o.scope_type || '').toLowerCase() !== scopeFilter) return false;
+            if (!q) return true;
+            var hay = [o.flag_key, o.scope_type, o.country_name, o.tenant_name].join(' ').toLowerCase();
+            return hay.indexOf(q) !== -1;
+        });
+        if (!filtered.length) {
             overridesList.innerHTML = '<div class="tenant-rollout-empty">No overrides yet.</div>';
+            renderPager(overridesPager, 'overrides', 1, 1);
             return;
         }
-        overridesList.innerHTML = state.overrides.map(function (o) {
+        var p = paginate(filtered, state.pagination.overrides);
+        state.pagination.overrides = p.page;
+        overridesList.innerHTML = p.items.map(function (o) {
             var target = o.scope_type === 'country' ? (o.country_name || 'Unknown country') : (o.tenant_name || 'Unknown tenant');
             return '<div class="tenant-rollout-item">' +
                 '<p class="tenant-rollout-item-title">' + esc(o.flag_key || '') + '</p>' +
                 '<p class="tenant-rollout-item-meta">' + esc(o.scope_type || '') + ': ' + esc(target) + '</p>' +
                 '<p class="tenant-rollout-item-meta">Value: ' + (Number(o.override_value || 0) > 0 ? 'Enabled' : 'Disabled') + '</p>' +
                 '<div class="tenant-rollout-item-actions">' +
+                '<button type="button" class="btn btn-sm btn-outline-light js-edit-override" data-id="' + Number(o.id || 0) + '">Edit</button>' +
                 '<button type="button" class="btn btn-sm btn-outline-danger js-delete-override" data-id="' + Number(o.id || 0) + '">Delete</button>' +
                 '</div>' +
                 '</div>';
         }).join('');
+        renderPager(overridesPager, 'overrides', p.page, p.pages);
     }
 
     function hydrate(payload) {
@@ -205,6 +277,12 @@
         if (!flagForm) return;
         flagForm.reset();
         flagIdInput.value = '';
+    }
+
+    function resetOverrideForm() {
+        if (!overrideForm) return;
+        overrideForm.reset();
+        syncScopeFields();
     }
 
     function syncScopeFields() {
@@ -341,6 +419,20 @@
     if (flagFormResetBtn) {
         flagFormResetBtn.addEventListener('click', resetFlagForm);
     }
+    if (overrideFormResetBtn) {
+        overrideFormResetBtn.addEventListener('click', resetOverrideForm);
+    }
+
+    function onFilterChanged(key) {
+        state.pagination[key] = 1;
+        if (key === 'tenants') renderTenants();
+        if (key === 'flags') renderFlags();
+        if (key === 'overrides') renderOverrides();
+    }
+    if (tenantSearchInput) tenantSearchInput.addEventListener('input', function () { onFilterChanged('tenants'); });
+    if (flagSearchInput) flagSearchInput.addEventListener('input', function () { onFilterChanged('flags'); });
+    if (overrideSearchInput) overrideSearchInput.addEventListener('input', function () { onFilterChanged('overrides'); });
+    if (overrideFilterScopeInput) overrideFilterScopeInput.addEventListener('change', function () { onFilterChanged('overrides'); });
 
     if (tenantRegistryList) {
         tenantRegistryList.addEventListener('click', function (event) {
@@ -377,6 +469,21 @@
 
     if (overridesList) {
         overridesList.addEventListener('click', function (event) {
+            var editBtn = event.target.closest('.js-edit-override');
+            if (editBtn) {
+                var editId = Number(editBtn.getAttribute('data-id') || 0);
+                var ov = state.overrides.find(function (item) { return Number(item.id || 0) === editId; });
+                if (ov) {
+                    overrideFlagInput.value = String(ov.flag_id || '');
+                    overrideScopeInput.value = ov.scope_type || 'country';
+                    overrideCountryInput.value = String(ov.country_id || '');
+                    overrideTenantInput.value = String(ov.tenant_id || '');
+                    overrideValueInput.value = Number(ov.override_value || 0) > 0 ? '1' : '0';
+                    syncScopeFields();
+                    showFlash('Override loaded into form.', true);
+                }
+                return;
+            }
             var btn = event.target.closest('.js-delete-override');
             if (!btn) return;
             var id = Number(btn.getAttribute('data-id') || 0);
@@ -395,6 +502,24 @@
             });
         });
     }
+
+    function bindPagerClicks(el) {
+        if (!el) return;
+        el.addEventListener('click', function (event) {
+            var btn = event.target.closest('.js-page-btn');
+            if (!btn) return;
+            var key = btn.getAttribute('data-key');
+            var page = Number(btn.getAttribute('data-page') || 1);
+            if (!key || !state.pagination[key]) return;
+            state.pagination[key] = Math.max(1, page);
+            if (key === 'tenants') renderTenants();
+            if (key === 'flags') renderFlags();
+            if (key === 'overrides') renderOverrides();
+        });
+    }
+    bindPagerClicks(tenantRegistryPager);
+    bindPagerClicks(featureFlagsPager);
+    bindPagerClicks(overridesPager);
 
     if (overrideScopeInput) {
         overrideScopeInput.addEventListener('change', syncScopeFields);

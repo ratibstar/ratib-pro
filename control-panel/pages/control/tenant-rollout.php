@@ -132,7 +132,11 @@ startControlLayout('Tenants & Rollout', ['css/control/tenant-rollout.css'], []);
                     <button type="button" id="tenantFormResetBtn" class="btn btn-sm btn-outline-light">Reset</button>
                 </div>
             </form>
+            <div class="tenant-rollout-list-tools">
+                <input id="tenantSearchInput" type="text" placeholder="Search tenants...">
+            </div>
             <div id="tenantRegistryList" class="tenant-rollout-list"></div>
+            <div id="tenantRegistryPager" class="tenant-rollout-pager"></div>
         </article>
 
         <article class="tenant-rollout-card">
@@ -160,7 +164,11 @@ startControlLayout('Tenants & Rollout', ['css/control/tenant-rollout.css'], []);
                     <button type="button" id="flagFormResetBtn" class="btn btn-sm btn-outline-light">Reset</button>
                 </div>
             </form>
+            <div class="tenant-rollout-list-tools">
+                <input id="flagSearchInput" type="text" placeholder="Search flags...">
+            </div>
             <div id="featureFlagsList" class="tenant-rollout-list"></div>
+            <div id="featureFlagsPager" class="tenant-rollout-pager"></div>
         </article>
     </div>
 
@@ -196,9 +204,19 @@ startControlLayout('Tenants & Rollout', ['css/control/tenant-rollout.css'], []);
             </div>
             <div class="tenant-rollout-actions">
                 <button type="submit" class="btn btn-sm btn-primary">Save Override</button>
+                <button type="button" id="overrideFormResetBtn" class="btn btn-sm btn-outline-light">Reset</button>
             </div>
         </form>
+        <div class="tenant-rollout-list-tools">
+            <input id="overrideSearchInput" type="text" placeholder="Search overrides...">
+            <select id="overrideFilterScopeInput">
+                <option value="">All scopes</option>
+                <option value="country">Country</option>
+                <option value="tenant">Tenant</option>
+            </select>
+        </div>
         <div id="overridesList" class="tenant-rollout-list"></div>
+        <div id="overridesPager" class="tenant-rollout-pager"></div>
     </article>
 </section>
 
