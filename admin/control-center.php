@@ -2084,29 +2084,32 @@ foreach ($tenants as $th) {
     $name = trim((string) ($th['name'] ?? ''));
     $domain = trim((string) ($th['domain'] ?? ''));
     $dbHealth = ccTenantDbHealthCheck($th);
-    $issueReasons = [];
-    if ($status !== 'active') {
-        $issueReasons[] = 'status=' . ($status !== '' ? $status : 'unknown');
-    }
-    if ($name === '') {
-        $issueReasons[] = 'name missing';
-    }
-    if ($domain === '') {
-        $issueReasons[] = 'domain missing';
-    }
-    if (empty($dbHealth['ok'])) {
-        $issueReasons[] = (string) ($dbHealth['reason'] ?? 'db issue');
-    }
-    if (empty($issueReasons)) {
-        $tenantHealthOk++;
-    } else {
-        $tenantHealthIssues++;
-        if (count($tenantHealthIssueRows) < 8) {
-            $tenantHealthIssueRows[] = [
-                'id' => (string) ($th['display_id'] ?? (string) (int) ($th['id'] ?? 0)),
-                'name' => $name !== '' ? $name : '(no-name)',
-                'reasons' => implode(' | ', $issueReasons),
-            ];
+    // Suspended tenants are tracked in their own top card, separate from inactive/issues.
+    if ($status !== 'suspended') {
+        $issueReasons = [];
+        if ($status !== 'active') {
+            $issueReasons[] = 'status=' . ($status !== '' ? $status : 'unknown');
+        }
+        if ($name === '') {
+            $issueReasons[] = 'name missing';
+        }
+        if ($domain === '') {
+            $issueReasons[] = 'domain missing';
+        }
+        if (empty($dbHealth['ok'])) {
+            $issueReasons[] = (string) ($dbHealth['reason'] ?? 'db issue');
+        }
+        if (empty($issueReasons)) {
+            $tenantHealthOk++;
+        } else {
+            $tenantHealthIssues++;
+            if (count($tenantHealthIssueRows) < 8) {
+                $tenantHealthIssueRows[] = [
+                    'id' => (string) ($th['display_id'] ?? (string) (int) ($th['id'] ?? 0)),
+                    'name' => $name !== '' ? $name : '(no-name)',
+                    'reasons' => implode(' | ', $issueReasons),
+                ];
+            }
         }
     }
 
@@ -2311,6 +2314,10 @@ if ($rwExample === 'global_wave') {
                 <div class="stat safe">
                     <span>Active & Correct</span>
                     <strong><?php echo (int) $tenantHealthOk; ?></strong>
+                </div>
+                <div class="stat warning">
+                    <span>Suspended</span>
+                    <strong><?php echo (int) $suspendedTenantCount; ?></strong>
                 </div>
                 <div class="stat danger cc-stat-clickable" id="ccInactiveIssuesBtn" role="button" tabindex="0" aria-expanded="false" aria-controls="ccTenantIssuesPanel">
                     <span>Inactive / Issues</span>
