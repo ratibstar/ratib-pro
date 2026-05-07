@@ -2604,6 +2604,7 @@ if ($rwExample === 'global_wave') {
                 </form>
             </div>
             <div class="cc-flags">
+                <p class="cc-muted">Runtime status (read-only). Use Release Wizard above to apply rollout changes.</p>
                 <?php
                 $flags = [
                     'TENANT_STRICT_MODE' => defined('TENANT_STRICT_MODE') ? (bool) TENANT_STRICT_MODE : false,
@@ -2613,7 +2614,12 @@ if ($rwExample === 'global_wave') {
                 ];
                 foreach ($flags as $name => $enabled):
                 ?>
-                    <div class="flag-item"><span><?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?></span><label class="switch"><input type="checkbox" <?php echo $enabled ? 'checked' : ''; ?> disabled><span class="slider"></span></label></div>
+                    <div class="flag-item">
+                        <span><?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?></span>
+                        <span class="badge <?php echo $enabled ? 'active' : 'suspended'; ?>">
+                            <?php echo $enabled ? 'enabled (read-only)' : 'disabled (read-only)'; ?>
+                        </span>
+                    </div>
                 <?php endforeach; ?>
             </div>
             <div class="cc-table-wrap" style="margin-top:12px;">
