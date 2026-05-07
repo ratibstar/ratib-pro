@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Public: Home / landing page — English, layout like ratib.sa reference.
  * EN: Prepares server-side values (plans/currency/assets), renders page sections, and bootstraps JS config.
