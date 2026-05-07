@@ -255,6 +255,26 @@ function ccLogEvent(PDO $pdo, string $message, string $level = 'info', ?int $ten
     }
 }
 
+// Backward-compatible wrapper used by legacy action handlers in this page.
+function logSystemEvent(string $eventType, array $context = []): void
+{
+    try {
+        $level = 'info';
+        if (isset($context['level']) && is_string($context['level']) && trim($context['level']) !== '') {
+            $level = strtolower(trim($context['level']));
+            unset($context['level']);
+        }
+        $message = isset($context['action']) ? ('Control center action: ' . (string) $context['action']) : 'Control center action';
+        $tenantId = isset($context['tenant_id']) ? (int) $context['tenant_id'] : null;
+        emitEvent($eventType, $level, $message, [
+            'source' => 'control_center',
+            'context' => $context,
+        ], null, $tenantId);
+    } catch (Throwable $e) {
+        error_log('control-center logSystemEvent failed: ' . $e->getMessage());
+    }
+}
+
 // EN: Open PDO connection to selected tenant database using stored tenant credentials.
 // AR: فتح اتصال PDO بقاعدة المستأجر باستخدام بيانات الاتصال المحفوظة للمستأجر.
 function ccTenantPdo(array $tenant): PDO
