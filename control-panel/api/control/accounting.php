@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../../includes/config.php';
+require_once __DIR__ . '/../../../includes/tenant-rollout-flags.php';
 error_reporting(0);
 
 function jsonOut($data) {
@@ -42,6 +43,20 @@ $canManageAccounting = hasControlPermission(CONTROL_PERM_ACCOUNTING) || hasContr
 $ctrl = $GLOBALS['control_conn'] ?? null;
 if (!$ctrl) {
     jsonOut(['success' => false, 'message' => 'Database unavailable']);
+}
+
+function control_accounting_write_flag_enabled(mysqli $ctrl): bool
+{
+    if (!function_exists('trf_resolve_effective_flag')) {
+        return true;
+    }
+    $tenantId = isset($_SESSION['control_agency_id']) ? (int) $_SESSION['control_agency_id'] : 0;
+    $countryId = isset($_SESSION['control_country_id']) ? (int) $_SESSION['control_country_id'] : 0;
+    $resolved = trf_resolve_effective_flag($ctrl, 'control.accounting.enable_write_actions', $tenantId, $countryId);
+    if (isset($resolved['enabled']) && !$resolved['enabled']) {
+        return false;
+    }
+    return true;
 }
 
 /** Normalize Eastern/Western Arabic numerals to ASCII 0-9 (dates/amounts pasted from Arabic locales). */
@@ -916,6 +931,9 @@ if ($method === 'GET') {
 if ($method === 'POST') {
     if (!$canManageAccounting) {
         jsonOut(['success' => false, 'message' => 'Access denied']);
+    }
+    if (!control_accounting_write_flag_enabled($ctrl)) {
+        jsonOut(['success' => false, 'message' => 'Accounting write actions are disabled by feature flag control.accounting.enable_write_actions']);
     }
     $rawInput = file_get_contents('php://input');
     $input = is_string($rawInput) && $rawInput !== '' ? (json_decode($rawInput, true) ?: []) : $_POST;

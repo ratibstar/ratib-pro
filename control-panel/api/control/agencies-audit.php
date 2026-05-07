@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/control-permissions.php';
+require_once __DIR__ . '/../../../includes/tenant-rollout-flags.php';
 require_once __DIR__ . '/agency-db-helper.php';
 if (function_exists('mysqli_report')) {
     mysqli_report(MYSQLI_REPORT_OFF);
@@ -100,6 +101,15 @@ if (!hasControlPermission(CONTROL_PERM_AGENCIES) && !hasControlPermission('view_
 $ctrl = $GLOBALS['control_conn'] ?? null;
 if (!$ctrl instanceof mysqli) {
     jsonOut(['success' => false, 'message' => 'Control database unavailable'], 500);
+}
+
+if (function_exists('trf_resolve_effective_flag')) {
+    $tenantId = isset($_SESSION['control_agency_id']) ? (int) $_SESSION['control_agency_id'] : 0;
+    $countryId = isset($_SESSION['control_country_id']) ? (int) $_SESSION['control_country_id'] : 0;
+    $auditFlag = trf_resolve_effective_flag($ctrl, 'control.dashboard.enable_all_agencies_audit', $tenantId, $countryId);
+    if (isset($auditFlag['enabled']) && !$auditFlag['enabled']) {
+        jsonOut(['success' => false, 'message' => 'All agencies audit is disabled by feature flag control.dashboard.enable_all_agencies_audit'], 403);
+    }
 }
 
 $allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
