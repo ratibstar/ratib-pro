@@ -413,9 +413,9 @@ if (!empty($_SESSION['control_popup_error'])) {
                         <i class="fas fa-chart-line"></i>
                         <span>View Reports</span>
                     </a>
-                    <a href="<?php echo pageUrl('control/tenant-rollout.php'); ?>?control=1" class="quick-action-card" data-permission="control_system_settings,view_control_system_settings,control_dashboard">
+                    <a href="<?php echo htmlspecialchars(rtrim($ratibBase !== '' ? $ratibBase : $fullBase, '/') . '/admin/control-center.php#system-flags', ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings,control_dashboard">
                         <i class="fas fa-diagram-project"></i>
-                        <span>Tenants &amp; Rollout</span>
+                        <span>Rollout Control</span>
                     </a>
                     <a href="<?php echo pageUrl('control/soc-dashboard.php'); ?>?control=1" class="quick-action-card">
                         <i class="fas fa-shield-halved"></i>
