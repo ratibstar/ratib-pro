@@ -366,6 +366,17 @@ function ccAgencyNumericId($raw): int
     return 0;
 }
 
+function ccAsciiDigits(string $value): string
+{
+    $out = $value;
+    $arabicIndic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    $easternArabicIndic = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    $ascii = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    $out = str_replace($arabicIndic, $ascii, $out);
+    $out = str_replace($easternArabicIndic, $ascii, $out);
+    return $out;
+}
+
 /**
  * Build a unified managed-resource list for Control Center:
  * - Real tenants from tenants table
@@ -1879,7 +1890,7 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                         <div class="cc-alert-item sev-<?php echo htmlspecialchars(strtolower((string) $da['severity']), ENT_QUOTES, 'UTF-8'); ?>">
                             <span class="cc-alert-sev"><?php echo htmlspecialchars((string) $da['severity'], ENT_QUOTES, 'UTF-8'); ?></span>
                             <span class="cc-alert-msg"><?php echo htmlspecialchars((string) $da['message'], ENT_QUOTES, 'UTF-8'); ?></span>
-                            <span class="cc-alert-meta"><?php echo htmlspecialchars((string) ($da['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?><?php echo !empty($da['tenant_id']) ? ' · tenant #' . (int) $da['tenant_id'] : ''; ?></span>
+                            <span class="cc-alert-meta"><?php echo htmlspecialchars(ccAsciiDigits((string) ($da['created_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?><?php echo !empty($da['tenant_id']) ? ' · tenant #' . (int) $da['tenant_id'] : ''; ?></span>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -2022,7 +2033,7 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                             <td><?php echo htmlspecialchars((string) $t['domain'], ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><span class="badge <?php echo htmlspecialchars((string) $t['status'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) $t['status'], ENT_QUOTES, 'UTF-8'); ?></span></td>
                             <td><span class="db-badge <?php echo $hasDbConfig ? 'ok' : 'missing'; ?>"><?php echo $hasDbConfig ? 'configured' : 'missing'; ?></span></td>
-                            <td><?php echo htmlspecialchars((string) $t['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(ccAsciiDigits((string) $t['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td class="row-actions">
                                 <?php if (!$isLinkedTenant): ?>
                                 <span class="cc-muted cc-tenant-link-pending">Tenant link pending</span>
@@ -2209,7 +2220,7 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                         <tr><td colspan="5">No gateway rows.</td></tr>
                     <?php else: foreach ($gatewayRows as $g): ?>
                         <tr data-status="<?php echo htmlspecialchars((string) $g['decision'], ENT_QUOTES, 'UTF-8'); ?>" data-tenant="<?php echo (int) $g['tenant_id']; ?>">
-                            <td><?php echo htmlspecialchars((string) $g['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(ccAsciiDigits((string) $g['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo (int) $g['tenant_id']; ?></td>
                             <td><span class="badge <?php echo htmlspecialchars((string) $g['decision'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) $g['decision'], ENT_QUOTES, 'UTF-8'); ?></span></td>
                             <td><?php echo htmlspecialchars((string) $g['reason'], ENT_QUOTES, 'UTF-8'); ?></td>
@@ -2235,7 +2246,7 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                             <td><?php echo htmlspecialchars((string) $s['endpoint'], ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) $s['event'], ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) $s['reason'], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo htmlspecialchars((string) $s['created_at'], ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(ccAsciiDigits((string) $s['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                         </tr>
                     <?php endforeach; endif; ?>
                     </tbody>
@@ -2254,7 +2265,7 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                         <tr><td colspan="6">No audit rows yet or table not installed.</td></tr>
                     <?php else: foreach ($adminAuditRows as $ar): ?>
                         <tr>
-                            <td><?php echo htmlspecialchars((string) ($ar['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(ccAsciiDigits((string) ($ar['created_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) ($ar['role'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) ($ar['action'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo (int) ($ar['user_id'] ?? 0); ?></td>
@@ -2288,7 +2299,7 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                         <tr><td colspan="6">No events available.</td></tr>
                     <?php else: foreach ($eventsRows as $l): ?>
                         <tr>
-                            <td><?php echo htmlspecialchars((string) ($l['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(ccAsciiDigits((string) ($l['created_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) ($l['level'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) ($l['event_type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) ($l['tenant_id'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
@@ -2341,7 +2352,7 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                             <td><?php echo htmlspecialchars((string) ($rf['rollout_stage'] ?? 'full'), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo (int) ($rf['rollout_percent'] ?? 100); ?>%</td>
                             <td><?php echo ((int) ($rf['default_value'] ?? 0) > 0) ? 'enabled' : 'disabled'; ?></td>
-                            <td><?php echo htmlspecialchars((string) ($rf['updated_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo htmlspecialchars(ccAsciiDigits((string) ($rf['updated_at'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></td>
                         </tr>
                     <?php endforeach; endif; ?>
                     </tbody>

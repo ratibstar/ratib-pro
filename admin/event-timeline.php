@@ -43,6 +43,17 @@ function etl_duration_ms(?string $metadata): ?int
     return is_numeric($v) ? (int) $v : null;
 }
 
+function etl_ascii_digits(string $value): string
+{
+    $out = $value;
+    $arabicIndic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    $easternArabicIndic = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+    $ascii = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    $out = str_replace($arabicIndic, $ascii, $out);
+    $out = str_replace($easternArabicIndic, $ascii, $out);
+    return $out;
+}
+
 function timelinePdo(): PDO
 {
     return getControlDB();
@@ -209,7 +220,7 @@ uasort($groups, static function ($a, $b) {
                             ?>
                             <div class="<?php echo $cls; ?>" data-event-id="<?php echo (int) ($r['id'] ?? 0); ?>">
                                 <div class="meta">
-                                    <span><?php echo htmlspecialchars((string) $r['created_at'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                    <span><?php echo htmlspecialchars(etl_ascii_digits((string) $r['created_at']), ENT_QUOTES, 'UTF-8'); ?></span>
                                     <span><?php echo htmlspecialchars((string) $r['event_type'], ENT_QUOTES, 'UTF-8'); ?></span>
                                     <span>level=<?php echo htmlspecialchars((string) $r['level'], ENT_QUOTES, 'UTF-8'); ?></span>
                                     <?php if ($dms !== null): ?><span><?php echo (int) $dms; ?> ms</span><?php endif; ?>
@@ -236,7 +247,7 @@ uasort($groups, static function ($a, $b) {
                 <?php $tlvl = preg_replace('/[^a-z]/', '', strtolower((string) ($t['level'] ?? 'info'))) ?: 'info'; ?>
                 <div class="timeline-item lvl-<?php echo $tlvl; ?><?php echo etl_is_anomaly($t) ? ' anomaly' : ''; ?>">
                     <div class="meta">
-                        <span><?php echo htmlspecialchars((string) $t['created_at'], ENT_QUOTES, 'UTF-8'); ?></span>
+                        <span><?php echo htmlspecialchars(etl_ascii_digits((string) $t['created_at']), ENT_QUOTES, 'UTF-8'); ?></span>
                         <span><?php echo htmlspecialchars((string) $t['event_type'], ENT_QUOTES, 'UTF-8'); ?></span>
                         <span>tenant=<?php echo (int) ($t['tenant_id'] ?? 0); ?></span>
                         <?php $td = etl_duration_ms(isset($t['metadata']) ? (string) $t['metadata'] : null); ?>

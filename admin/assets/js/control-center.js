@@ -16,7 +16,7 @@
 
     function showToast(message, kind) {
         if (!toastHost) {
-            window.alert(message);
+            try { console.warn(message); } catch (_) {}
             return;
         }
         var toast = document.createElement('div');
@@ -26,103 +26,6 @@
         window.setTimeout(function () {
             toast.remove();
         }, 4200);
-    }
-
-    function ensureConfirmModal() {
-        var existing = document.getElementById('ccConfirmOverlay');
-        if (existing) return existing;
-        var overlay = document.createElement('div');
-        overlay.id = 'ccConfirmOverlay';
-        overlay.className = 'modal cc-confirm-overlay hidden';
-        overlay.innerHTML =
-            '<div class="modal-content cc-confirm-card">' +
-            '<h3 id="ccConfirmTitle">Confirm Action</h3>' +
-            '<form id="ccConfirmForm" class="cc-form-grid">' +
-            '<input id="ccConfirmActionField" class="cc-confirm-meta" type="text" placeholder="Action" />' +
-            '<input id="ccConfirmTenantField" class="cc-confirm-meta" type="text" placeholder="Tenant ID" />' +
-            '<input id="ccConfirmRequiredField" class="cc-confirm-meta" type="text" placeholder="Required Text" />' +
-            '<input id="ccConfirmInput" class="cc-confirm-input" type="text" autocomplete="off" placeholder="Type confirmation text" />' +
-            '<div class="modal-actions cc-confirm-actions">' +
-            '<button type="submit" id="ccConfirmOk">Confirm</button>' +
-            '<button type="button" id="ccConfirmCancel">Cancel</button>' +
-            '</div>' +
-            '</form>' +
-            '</div>';
-        document.body.appendChild(overlay);
-        return overlay;
-    }
-
-    function showConfirmModal(options) {
-        options = options || {};
-        var overlay = ensureConfirmModal();
-        var titleEl = document.getElementById('ccConfirmTitle');
-        var formEl = document.getElementById('ccConfirmForm');
-        var actionEl = document.getElementById('ccConfirmActionField');
-        var tenantEl = document.getElementById('ccConfirmTenantField');
-        var requiredEl = document.getElementById('ccConfirmRequiredField');
-        var inputEl = document.getElementById('ccConfirmInput');
-        var cancelBtn = document.getElementById('ccConfirmCancel');
-        var okBtn = document.getElementById('ccConfirmOk');
-        var requiredText = options.requireText ? String(options.requireText) : '';
-        var confirmLabel = options.confirmLabel ? String(options.confirmLabel) : 'Confirm';
-        var resolveFn = null;
-
-        titleEl.textContent = options.title || 'Confirm Action';
-        okBtn.textContent = confirmLabel;
-        inputEl.value = '';
-        actionEl.value = String(options.actionName || '');
-        tenantEl.value = options.tenantId ? String(options.tenantId) : '';
-        requiredEl.value = requiredText;
-        inputEl.disabled = requiredText === '';
-        inputEl.placeholder = requiredText !== '' ? ('type ' + requiredText + ' here') : 'no typed confirmation required';
-
-        function close(result) {
-            overlay.classList.add('hidden');
-            cancelBtn.removeEventListener('click', onCancel);
-            formEl.removeEventListener('submit', onSubmit);
-            overlay.removeEventListener('click', onBackdrop);
-            document.removeEventListener('keydown', onEsc);
-            if (resolveFn) resolveFn(result);
-        }
-
-        function onCancel() {
-            close({ confirmed: false, value: '' });
-        }
-
-        function onSubmit(e) {
-            e.preventDefault();
-            var v = inputEl.value || '';
-            if (requiredText && v !== requiredText) {
-                showToast('Please type exactly: ' + requiredText, 'warning');
-                inputEl.focus();
-                return;
-            }
-            close({ confirmed: true, value: v });
-        }
-
-        function onBackdrop(e) {
-            if (e.target === overlay) {
-                close({ confirmed: false, value: '' });
-            }
-        }
-
-        function onEsc(e) {
-            if (e.key === 'Escape') {
-                close({ confirmed: false, value: '' });
-            }
-        }
-
-        cancelBtn.addEventListener('click', onCancel);
-        formEl.addEventListener('submit', onSubmit);
-        overlay.addEventListener('click', onBackdrop);
-        document.addEventListener('keydown', onEsc);
-        overlay.classList.remove('hidden');
-        if (requiredText) inputEl.focus();
-        else okBtn.focus();
-
-        return new Promise(function (resolve) {
-            resolveFn = resolve;
-        });
     }
 
     function setPausedTypingState(isPaused) {
@@ -768,19 +671,31 @@
                 showToast('SAFE mode is read-only. Switch to STRICT (scoped writes) or SYSTEM (super-admin).', 'warning');
                 return;
             }
-            showConfirmModal({
-                title: mode === 'STRICT' ? 'Confirm STRICT write' : 'Confirm SYSTEM write',
-                message: 'Irreversible data changes may occur. Ensure SQL is correct and tenant scope is intentional.',
-                actionName: 'run_query',
-                tenantId: parseInt(String(fd.get('query_tenant_id') || '0'), 10) || 0,
-                requireText: 'EXECUTE',
-                confirmLabel: 'Run write query',
-                danger: true
-            }).then(function (decision) {
-                if (!decision || !decision.confirmed) return;
-                if (confirmHidden) confirmHidden.value = '1';
-                runQueryRequest(fd, true);
-            });
+            var existingConfirm = queryForm.querySelector('.cc-confirm-inline');
+            if (!existingConfirm) {
+                var wrap = document.createElement('div');
+                wrap.className = 'cc-confirm-inline';
+                var hint = document.createElement('span');
+                hint.className = 'cc-muted';
+                hint.textContent = 'Type EXECUTE then submit again';
+                var txt = document.createElement('input');
+                txt.type = 'text';
+                txt.autocomplete = 'off';
+                txt.placeholder = 'EXECUTE';
+                wrap.appendChild(hint);
+                wrap.appendChild(txt);
+                queryForm.appendChild(wrap);
+                window.setTimeout(function () { try { txt.focus(); } catch (_) {} }, 0);
+                return;
+            }
+            var typedInput = existingConfirm.querySelector('input');
+            var typed = String((typedInput && typedInput.value) || '').trim().toUpperCase();
+            if (typed !== 'EXECUTE') {
+                showToast('Confirmation text must be: EXECUTE', 'warning');
+                return;
+            }
+            if (confirmHidden) confirmHidden.value = '1';
+            runQueryRequest(fd, true);
         });
     }
 
@@ -918,21 +833,38 @@
                 showToast('Select at least 1 tenant', 'danger');
                 return;
             }
-            showConfirmModal({
-                title: 'Confirm Bulk Action',
-                message: 'Type ' + required + ' to run bulk action: ' + act,
-                actionName: 'tenant_bulk',
-                tenantId: '',
-                requireText: required,
-                confirmLabel: 'Confirm',
-                danger: true
-            }).then(function (result) {
-                if (!result || !result.confirmed) return;
-                var input = bulkForm.querySelector('input[name="confirm_text"]');
-                if (input) input.value = required;
-                bulkForm.dataset.confirmed = '1';
-                bulkForm.submit();
-            });
+            var input = bulkForm.querySelector('input[name="confirm_text"]');
+            if (!input) {
+                showToast('Missing confirm field', 'danger');
+                return;
+            }
+            var wrap = bulkForm.querySelector('.cc-confirm-inline');
+            if (!wrap) {
+                wrap = document.createElement('span');
+                wrap.className = 'cc-confirm-inline';
+                var hint = document.createElement('span');
+                hint.className = 'cc-muted';
+                hint.textContent = 'Type ' + required + ' then press Run again';
+                var txt = document.createElement('input');
+                txt.type = 'text';
+                txt.autocomplete = 'off';
+                txt.placeholder = required;
+                txt.addEventListener('input', function () {
+                    input.value = String(txt.value || '');
+                });
+                wrap.appendChild(hint);
+                wrap.appendChild(txt);
+                bulkForm.appendChild(wrap);
+                window.setTimeout(function () { try { txt.focus(); } catch (_) {} }, 0);
+                return;
+            }
+            var typed = String(input.value || '').trim().toUpperCase();
+            if (typed !== required) {
+                showToast('Confirmation text must be: ' + required, 'warning');
+                return;
+            }
+            bulkForm.dataset.confirmed = '1';
+            bulkForm.submit();
         });
     }
 })();
