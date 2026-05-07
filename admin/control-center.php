@@ -1987,6 +1987,61 @@ $staticCssUrl = ($siteUrl !== '' ? $siteUrl : '') . '/admin/assets/css/control-c
 $staticJsUrl = ($siteUrl !== '' ? $siteUrl : '') . '/admin/assets/js/control-center.js?v=' . rawurlencode($assetJsVersion);
 $relativeCssUrl = 'assets/css/control-center.css?v=' . rawurlencode($assetCssVersion);
 $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion);
+
+$rwExample = strtolower(trim((string) ($_GET['rw_example'] ?? '')));
+$rwDefaults = [
+    'flag_key' => '',
+    'flag_description' => '',
+    'scope_type' => 'global',
+    'rollout_stage' => 'full',
+    'rollout_percent' => 100,
+    'default_value' => 0,
+    'override_value' => 1,
+    'operation' => 'apply',
+];
+if ($rwExample === 'global_wave') {
+    $rwDefaults = array_merge($rwDefaults, [
+        'flag_key' => 'release.payments.v3',
+        'flag_description' => 'Global release in controlled waves.',
+        'scope_type' => 'global',
+        'rollout_stage' => 'wave1',
+        'rollout_percent' => 10,
+        'default_value' => 1,
+        'operation' => 'apply',
+    ]);
+} elseif ($rwExample === 'country_feature') {
+    $rwDefaults = array_merge($rwDefaults, [
+        'flag_key' => 'release.tax.sa.v2',
+        'flag_description' => 'Country-specific tax rules rollout.',
+        'scope_type' => 'country',
+        'rollout_stage' => 'full',
+        'rollout_percent' => 100,
+        'default_value' => 0,
+        'override_value' => 1,
+        'operation' => 'apply',
+    ]);
+} elseif ($rwExample === 'tenant_hotfix') {
+    $rwDefaults = array_merge($rwDefaults, [
+        'flag_key' => 'hotfix.invoice.rounding',
+        'flag_description' => 'Tenant-only hotfix for invoice rounding.',
+        'scope_type' => 'tenant',
+        'rollout_stage' => 'full',
+        'rollout_percent' => 100,
+        'default_value' => 0,
+        'override_value' => 1,
+        'operation' => 'apply',
+    ]);
+} elseif ($rwExample === 'country_rollback') {
+    $rwDefaults = array_merge($rwDefaults, [
+        'flag_key' => 'release.tax.sa.v2',
+        'flag_description' => 'Rollback country override quickly.',
+        'scope_type' => 'country',
+        'rollout_stage' => 'full',
+        'rollout_percent' => 100,
+        'default_value' => 0,
+        'operation' => 'rollback_scope',
+    ]);
+}
 ?>
 <!doctype html>
 <html lang="en" dir="ltr">
@@ -2499,36 +2554,36 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                 <h4>Release Wizard</h4>
                 <p class="cc-muted">Apply one core release globally, by country, or by tenant. Use rollback to disable a country/tenant override quickly.</p>
                 <div class="cc-form-row wrap" id="rwExamples">
-                    <button type="button" class="rw-example-btn" onclick="ccRwLoadExample(this)" data-flag="release.payments.v3" data-scope="global" data-stage="wave1" data-percent="10" data-default="1" data-operation="apply">Example: Global wave rollout</button>
-                    <button type="button" class="rw-example-btn" onclick="ccRwLoadExample(this)" data-flag="release.tax.sa.v2" data-scope="country" data-stage="full" data-percent="100" data-default="0" data-override="1" data-operation="apply">Example: Country-only feature</button>
-                    <button type="button" class="rw-example-btn" onclick="ccRwLoadExample(this)" data-flag="hotfix.invoice.rounding" data-scope="tenant" data-stage="full" data-percent="100" data-default="0" data-override="1" data-operation="apply">Example: Tenant hotfix</button>
-                    <button type="button" class="rw-example-btn" onclick="ccRwLoadExample(this)" data-flag="release.tax.sa.v2" data-scope="country" data-stage="full" data-percent="100" data-default="0" data-operation="rollback_scope">Example: Rollback country override</button>
+                    <a class="rw-example-btn cc-live" href="?rw_example=global_wave#system-flags">Example: Global wave rollout</a>
+                    <a class="rw-example-btn cc-live" href="?rw_example=country_feature#system-flags">Example: Country-only feature</a>
+                    <a class="rw-example-btn cc-live" href="?rw_example=tenant_hotfix#system-flags">Example: Tenant hotfix</a>
+                    <a class="rw-example-btn cc-live" href="?rw_example=country_rollback#system-flags">Example: Rollback country override</a>
                 </div>
                 <form method="post" id="rwForm" class="cc-form-row wrap">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="action" value="rollout_wizard_apply">
-                    <input class="cc-grow" type="text" name="rw_flag_key" id="rwFlagKey" placeholder="Flag key (example: release.payments.v3)" list="rwFlagList" required>
+                    <input class="cc-grow" type="text" name="rw_flag_key" id="rwFlagKey" placeholder="Flag key (example: release.payments.v3)" value="<?php echo htmlspecialchars((string) $rwDefaults['flag_key'], ENT_QUOTES, 'UTF-8'); ?>" list="rwFlagList" required>
                     <datalist id="rwFlagList">
                         <?php foreach ($rolloutFlagKeys as $rk): ?>
                             <option value="<?php echo htmlspecialchars((string) $rk, ENT_QUOTES, 'UTF-8'); ?>"></option>
                         <?php endforeach; ?>
                     </datalist>
-                    <input class="cc-grow" type="text" name="rw_flag_description" id="rwFlagDescription" placeholder="Description (why this release exists)">
+                    <input class="cc-grow" type="text" name="rw_flag_description" id="rwFlagDescription" value="<?php echo htmlspecialchars((string) $rwDefaults['flag_description'], ENT_QUOTES, 'UTF-8'); ?>" placeholder="Description (why this release exists)">
                     <select class="cc-compact" name="rw_scope_type" id="rwScopeType">
-                        <option value="global">global</option>
-                        <option value="country">country</option>
-                        <option value="tenant">tenant</option>
+                        <option value="global" <?php echo $rwDefaults['scope_type'] === 'global' ? 'selected' : ''; ?>>global</option>
+                        <option value="country" <?php echo $rwDefaults['scope_type'] === 'country' ? 'selected' : ''; ?>>country</option>
+                        <option value="tenant" <?php echo $rwDefaults['scope_type'] === 'tenant' ? 'selected' : ''; ?>>tenant</option>
                     </select>
                     <select class="cc-compact" name="rw_rollout_stage" id="rwStage">
-                        <option value="canary">canary</option>
-                        <option value="wave1">wave1</option>
-                        <option value="wave2">wave2</option>
-                        <option value="full" selected>full</option>
+                        <option value="canary" <?php echo $rwDefaults['rollout_stage'] === 'canary' ? 'selected' : ''; ?>>canary</option>
+                        <option value="wave1" <?php echo $rwDefaults['rollout_stage'] === 'wave1' ? 'selected' : ''; ?>>wave1</option>
+                        <option value="wave2" <?php echo $rwDefaults['rollout_stage'] === 'wave2' ? 'selected' : ''; ?>>wave2</option>
+                        <option value="full" <?php echo $rwDefaults['rollout_stage'] === 'full' ? 'selected' : ''; ?>>full</option>
                     </select>
-                    <input class="cc-compact" type="number" name="rw_rollout_percent" id="rwPercent" min="0" max="100" value="100" title="Rollout percent">
+                    <input class="cc-compact" type="number" name="rw_rollout_percent" id="rwPercent" min="0" max="100" value="<?php echo (int) $rwDefaults['rollout_percent']; ?>" title="Rollout percent">
                     <select class="cc-compact" name="rw_default_value" id="rwDefaultValue">
-                        <option value="1">default enabled</option>
-                        <option value="0">default disabled</option>
+                        <option value="1" <?php echo (int) $rwDefaults['default_value'] === 1 ? 'selected' : ''; ?>>default enabled</option>
+                        <option value="0" <?php echo (int) $rwDefaults['default_value'] === 0 ? 'selected' : ''; ?>>default disabled</option>
                     </select>
                     <input class="cc-compact rw-country-field hidden" type="number" name="rw_country_id" id="rwCountryId" min="1" placeholder="Country ID" list="rwCountryList">
                     <datalist id="rwCountryList">
@@ -2538,12 +2593,12 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                     </datalist>
                     <input class="cc-compact rw-tenant-field hidden" type="number" name="rw_tenant_id" id="rwTenantId" min="1" placeholder="Tenant ID">
                     <select class="cc-compact rw-override-field hidden" name="rw_override_value" id="rwOverrideValue">
-                        <option value="1">override enabled</option>
-                        <option value="0">override disabled</option>
+                        <option value="1" <?php echo (int) $rwDefaults['override_value'] === 1 ? 'selected' : ''; ?>>override enabled</option>
+                        <option value="0" <?php echo (int) $rwDefaults['override_value'] === 0 ? 'selected' : ''; ?>>override disabled</option>
                     </select>
                     <select class="cc-compact" name="rw_operation" id="rwOperation">
-                        <option value="apply">apply</option>
-                        <option value="rollback_scope">rollback_scope</option>
+                        <option value="apply" <?php echo $rwDefaults['operation'] === 'apply' ? 'selected' : ''; ?>>apply</option>
+                        <option value="rollback_scope" <?php echo $rwDefaults['operation'] === 'rollback_scope' ? 'selected' : ''; ?>>rollback_scope</option>
                     </select>
                     <button type="submit" class="cc-compact">Run Wizard</button>
                 </form>
