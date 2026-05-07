@@ -77,7 +77,9 @@
     }
 
     function buildTenantSelfTestUrl() {
-        var base = tenantSelfTestUrl;
+        // Prefer control-panel API namespace because this dashboard is routed there.
+        var base = apiBase ? (apiBase + '/tenant-isolation-self-test.php') : '';
+        if (!base) base = tenantSelfTestUrl;
         if (!base) {
             base = apiBase.replace(/\/?api\/control$/i, '') + '/api/diagnostics/tenant-isolation-self-test.php';
         }
