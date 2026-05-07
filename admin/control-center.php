@@ -1652,6 +1652,14 @@ $suspendedTenantCount = 0;
 $inactiveTenantCount = 0;
 $dashboardCriticalEvents = [];
 $adminAuditRows = [];
+$rolloutSummary = [
+    'flags_total' => 0,
+    'overrides_total' => 0,
+    'stage_canary' => 0,
+    'stage_wave1' => 0,
+    'stage_wave2' => 0,
+    'stage_full' => 0,
+];
 if ($controlPdo instanceof PDO) {
     try {
         $ccMetrics = array_merge($ccMetrics, ControlCenterMetrics::getCounters($controlPdo));
@@ -1679,6 +1687,27 @@ if ($controlPdo instanceof PDO) {
                  WHERE event_type = 'ADMIN_AUDIT'
                  ORDER BY id DESC LIMIT 50"
             )->fetchAll(PDO::FETCH_ASSOC);
+        }
+        if (ccTableExists($controlPdo, 'control_rollout_feature_flags')) {
+            $row = $controlPdo->query(
+                "SELECT
+                    COUNT(*) AS flags_total,
+                    SUM(CASE WHEN LOWER(COALESCE(rollout_stage,'')) = 'canary' THEN 1 ELSE 0 END) AS stage_canary,
+                    SUM(CASE WHEN LOWER(COALESCE(rollout_stage,'')) = 'wave1' THEN 1 ELSE 0 END) AS stage_wave1,
+                    SUM(CASE WHEN LOWER(COALESCE(rollout_stage,'')) = 'wave2' THEN 1 ELSE 0 END) AS stage_wave2,
+                    SUM(CASE WHEN LOWER(COALESCE(rollout_stage,'')) = 'full' THEN 1 ELSE 0 END) AS stage_full
+                 FROM control_rollout_feature_flags"
+            )->fetch(PDO::FETCH_ASSOC);
+            if (is_array($row)) {
+                $rolloutSummary['flags_total'] = (int) ($row['flags_total'] ?? 0);
+                $rolloutSummary['stage_canary'] = (int) ($row['stage_canary'] ?? 0);
+                $rolloutSummary['stage_wave1'] = (int) ($row['stage_wave1'] ?? 0);
+                $rolloutSummary['stage_wave2'] = (int) ($row['stage_wave2'] ?? 0);
+                $rolloutSummary['stage_full'] = (int) ($row['stage_full'] ?? 0);
+            }
+        }
+        if (ccTableExists($controlPdo, 'control_rollout_flag_overrides')) {
+            $rolloutSummary['overrides_total'] = (int) ($controlPdo->query('SELECT COUNT(*) FROM control_rollout_flag_overrides')->fetchColumn() ?: 0);
         }
     } catch (Throwable $e) {
         /* ignore */
@@ -2108,6 +2137,12 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
 
         <section id="system-flags" class="cc-card">
             <h3>System Flags</h3>
+            <p class="cc-muted">
+                Rollout engine: <strong><?php echo (int) $rolloutSummary['flags_total']; ?></strong> flags,
+                <strong><?php echo (int) $rolloutSummary['overrides_total']; ?></strong> overrides
+                (canary: <?php echo (int) $rolloutSummary['stage_canary']; ?>, wave1: <?php echo (int) $rolloutSummary['stage_wave1']; ?>, wave2: <?php echo (int) $rolloutSummary['stage_wave2']; ?>, full: <?php echo (int) $rolloutSummary['stage_full']; ?>).
+                <a href="<?php echo htmlspecialchars(($siteUrl !== '' ? $siteUrl : '') . '/control-panel/pages/control/tenant-rollout.php?control=1', ENT_QUOTES, 'UTF-8'); ?>">Open Tenants &amp; Rollout</a>
+            </p>
             <div class="cc-flags">
                 <?php
                 $flags = [
