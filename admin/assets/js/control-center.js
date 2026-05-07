@@ -966,5 +966,23 @@
             bulkForm.submit();
         });
     }
+
+    // After bulk success (set by server), show popup and reset bulk controls.
+    var bulkPopup = (typeof window !== 'undefined' && window.__ccBulkPopupMessage) ? String(window.__ccBulkPopupMessage) : '';
+    if (bulkPopup) {
+        try { window.alert(bulkPopup); } catch (_) {}
+        if (selectAll) selectAll.checked = false;
+        document.querySelectorAll('.cc-tenant-check').forEach(function (cb) { cb.checked = false; });
+        if (bulkAction) bulkAction.value = '';
+        if (bulkForm) {
+            var cInput = bulkForm.querySelector('input[name="confirm_text"]');
+            if (cInput) cInput.value = '';
+            var cWrap = bulkForm.querySelector('.cc-confirm-inline');
+            if (cWrap) cWrap.remove();
+            bulkForm.dataset.confirmed = '0';
+        }
+        updateBulkCount();
+        updateBulkRunState();
+    }
 })();
 

@@ -10,6 +10,11 @@ require_once __DIR__ . '/../includes/config.php';
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+$ccBulkPopupMessage = '';
+if (!empty($_SESSION['cc_bulk_popup']) && is_string($_SESSION['cc_bulk_popup'])) {
+    $ccBulkPopupMessage = $_SESSION['cc_bulk_popup'];
+    unset($_SESSION['cc_bulk_popup']);
+}
 
 // EN: Mark request as control-center mode for shared access helpers.
 // AR: تعليم الطلب كوضع مركز التحكم لاستخدام مساعدات الصلاحيات المشتركة.
@@ -1374,7 +1379,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
                 } catch (Throwable $logErr) {
                     error_log('tenant_bulk_delete audit/log failed: ' . $logErr->getMessage());
                 }
-                $alerts[] = ['type' => 'danger', 'text' => 'Bulk delete executed for ' . count($tenantIds) . ' tenants.'];
+                $_SESSION['cc_bulk_popup'] = 'Bulk delete executed for ' . count($tenantIds) . ' tenants.';
             } else {
                 $next = $bulkAction === 'activate' ? 'active' : 'suspended';
                 $stmt = $controlPdo->prepare("UPDATE tenants SET status=?, updated_at=NOW() WHERE id IN ($placeholders)");
@@ -1394,7 +1399,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
                 } catch (Throwable $logErr) {
                     error_log('tenant_bulk_toggle audit/log failed: ' . $logErr->getMessage());
                 }
-                $alerts[] = ['type' => 'warning', 'text' => 'Bulk status changed to ' . $next . ' for ' . count($tenantIds) . ' tenants.'];
+                $_SESSION['cc_bulk_popup'] = 'Bulk status changed to ' . $next . ' for ' . count($tenantIds) . ' tenants.';
             }
         } elseif ($action === 'rollout_wizard_apply') {
             ControlCenterAccess::requireRole([ControlCenterAccess::SUPER_ADMIN, ControlCenterAccess::ADMIN]);
@@ -2715,6 +2720,7 @@ if ($rwExample === 'global_wave') {
 <div id="ccToastHost" class="cc-toast-host" aria-live="polite" aria-atomic="true"></div>
 
 <script>
+window.__ccBulkPopupMessage = <?php echo json_encode($ccBulkPopupMessage, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 function ccRwSyncVisibility() {
     var scopeEl = document.getElementById('rwScopeType');
     var opEl = document.getElementById('rwOperation');
