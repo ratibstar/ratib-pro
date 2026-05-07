@@ -189,7 +189,8 @@
             }
             hydrate(res);
         }).catch(function () {
-            showFlash('Failed to load rollout data.', false);
+            var msg = arguments[0] && arguments[0].message ? arguments[0].message : 'Failed to load rollout data.';
+            showFlash(msg, false);
         });
     }
 
@@ -257,7 +258,8 @@
                 resetTenantForm();
                 loadAll();
             }).catch(function () {
-                showFlash('Failed to save tenant.', false);
+                var msg = arguments[0] && arguments[0].message ? arguments[0].message : 'Failed to save tenant.';
+                showFlash(msg, false);
             });
         });
     }
@@ -280,7 +282,8 @@
                 resetFlagForm();
                 loadAll();
             }).catch(function () {
-                showFlash('Failed to save flag.', false);
+                var msg = arguments[0] && arguments[0].message ? arguments[0].message : 'Failed to save flag.';
+                showFlash(msg, false);
             });
         });
     }
@@ -305,7 +308,8 @@
                 syncScopeFields();
                 loadAll();
             }).catch(function () {
-                showFlash('Failed to save override.', false);
+                var msg = arguments[0] && arguments[0].message ? arguments[0].message : 'Failed to save override.';
+                showFlash(msg, false);
             });
         });
     }
@@ -365,7 +369,8 @@
                 showFlash(res.message || 'Override removed.', true);
                 loadAll();
             }).catch(function () {
-                showFlash('Failed to remove override.', false);
+                var msg = arguments[0] && arguments[0].message ? arguments[0].message : 'Failed to remove override.';
+                showFlash(msg, false);
             });
         });
     }

@@ -63,6 +63,11 @@ function tr_stmt_error(mysqli_stmt $st): string
     return $err !== '' ? $err : 'Database operation failed';
 }
 
+function tr_is_duplicate_error(mysqli_stmt $st): bool
+{
+    return (int) ($st->errno ?? 0) === 1062;
+}
+
 function tr_user_id(): ?int
 {
     if (!isset($_SESSION['control_user_id'])) {
@@ -371,8 +376,12 @@ if ($method === 'POST') {
             $st->bind_param('sssisssi', $tenantCode, $tenantName, $primaryDomain, $countryNullable, $dbKeyRef, $status, $releaseChannel, $id);
             $ok = $st->execute();
             $execErr = tr_stmt_error($st);
+            $isDup = tr_is_duplicate_error($st);
             $st->close();
             if (!$ok) {
+                if ($isDup) {
+                    tr_json(['success' => false, 'message' => 'Tenant code or domain already exists.'], 409);
+                }
                 tr_json(['success' => false, 'message' => 'Tenant update failed: ' . $execErr], 500);
             }
             tr_audit($ctrl, 'tenant', $id, 'update', $before, ['tenant_code' => $tenantCode, 'tenant_name' => $tenantName, 'primary_domain' => $primaryDomain, 'country_id' => $countryId, 'status' => $status]);
@@ -391,9 +400,13 @@ if ($method === 'POST') {
         $st->bind_param('sssisss', $tenantCode, $tenantName, $primaryDomain, $countryNullable, $dbKeyRef, $status, $releaseChannel);
         $ok = $st->execute();
         $execErr = tr_stmt_error($st);
+        $isDup = tr_is_duplicate_error($st);
         $newId = (int) $st->insert_id;
         $st->close();
         if (!$ok) {
+            if ($isDup) {
+                tr_json(['success' => false, 'message' => 'Tenant code or domain already exists.'], 409);
+            }
             tr_json(['success' => false, 'message' => 'Tenant insert failed: ' . $execErr], 500);
         }
         tr_audit($ctrl, 'tenant', $newId, 'create', null, ['tenant_code' => $tenantCode, 'tenant_name' => $tenantName, 'primary_domain' => $primaryDomain, 'country_id' => $countryId, 'status' => $status]);
@@ -421,8 +434,12 @@ if ($method === 'POST') {
             $st->bind_param('ssii', $flagKey, $flagDescription, $defaultValue, $id);
             $ok = $st->execute();
             $execErr = tr_stmt_error($st);
+            $isDup = tr_is_duplicate_error($st);
             $st->close();
             if (!$ok) {
+                if ($isDup) {
+                    tr_json(['success' => false, 'message' => 'Flag key already exists.'], 409);
+                }
                 tr_json(['success' => false, 'message' => 'Flag update failed: ' . $execErr], 500);
             }
             tr_audit($ctrl, 'flag', $id, 'update', null, ['flag_key' => $flagKey, 'default_value' => $defaultValue]);
@@ -439,9 +456,13 @@ if ($method === 'POST') {
         $st->bind_param('ssi', $flagKey, $flagDescription, $defaultValue);
         $ok = $st->execute();
         $execErr = tr_stmt_error($st);
+        $isDup = tr_is_duplicate_error($st);
         $newId = (int) $st->insert_id;
         $st->close();
         if (!$ok) {
+            if ($isDup) {
+                tr_json(['success' => false, 'message' => 'Flag key already exists.'], 409);
+            }
             tr_json(['success' => false, 'message' => 'Flag insert failed: ' . $execErr], 500);
         }
         tr_audit($ctrl, 'flag', $newId, 'create', null, ['flag_key' => $flagKey, 'default_value' => $defaultValue]);
