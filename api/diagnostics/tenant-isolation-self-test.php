@@ -10,7 +10,11 @@ header('Content-Type: application/json; charset=UTF-8');
 
 require_once __DIR__ . '/../../includes/config.php';
 
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+$isAppUser = isset($_SESSION['user_id'], $_SESSION['logged_in'])
+    && $_SESSION['logged_in'] === true
+    && (int) $_SESSION['user_id'] > 0;
+$isControlUser = !empty($_SESSION['control_logged_in']);
+if (!$isAppUser && !$isControlUser) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Unauthorized'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
@@ -24,6 +28,7 @@ if (!isset($GLOBALS['conn']) || !($GLOBALS['conn'] instanceof mysqli)) {
 
 $conn = $GLOBALS['conn'];
 $conn->set_charset('utf8mb4');
+$tableChecksEnabled = $isAppUser || (isset($_SESSION['agency_id']) && (int) $_SESSION['agency_id'] > 0);
 
 /**
  * @return bool
@@ -87,47 +92,47 @@ $checks = [
     'Dashboard' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'dashboard.php'),
         'page_avoids_direct_db_fallback' => ratib_selftest_file_avoids_direct_db_fallback($pages . 'dashboard.php'),
-        'table_agents_exists' => ratib_selftest_table_exists($conn, 'agents'),
+        'table_agents_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'agents') : null,
     ],
     'Agent' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'agent.php'),
-        'table_agents_exists' => ratib_selftest_table_exists($conn, 'agents'),
+        'table_agents_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'agents') : null,
     ],
     'SubAgent' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'subagent.php'),
-        'table_subagents_exists' => ratib_selftest_table_exists($conn, 'subagents'),
+        'table_subagents_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'subagents') : null,
     ],
     'Workers' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'Worker.php'),
-        'table_workers_exists' => ratib_selftest_table_exists($conn, 'workers'),
+        'table_workers_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'workers') : null,
     ],
     'Partner Agencies' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'partner-agencies.php'),
-        'table_partner_agencies_exists' => ratib_selftest_table_exists($conn, 'partner_agencies'),
+        'table_partner_agencies_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'partner_agencies') : null,
     ],
     'Cases' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'cases' . DIRECTORY_SEPARATOR . 'cases-table.php'),
-        'table_cases_exists' => ratib_selftest_table_exists($conn, 'cases'),
+        'table_cases_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'cases') : null,
     ],
     'Accounting' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'accounting.php'),
-        'table_financial_transactions_exists' => ratib_selftest_table_exists($conn, 'financial_transactions'),
+        'table_financial_transactions_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'financial_transactions') : null,
     ],
     'HR' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'hr.php'),
-        'table_employees_exists' => ratib_selftest_table_exists($conn, 'employees'),
+        'table_employees_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'employees') : null,
     ],
     'Reports' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'reports.php'),
-        'table_activity_logs_exists' => ratib_selftest_table_exists($conn, 'activity_logs'),
+        'table_activity_logs_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'activity_logs') : null,
     ],
     'Contact' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'contact.php'),
-        'table_contacts_exists' => ratib_selftest_table_exists($conn, 'contacts'),
+        'table_contacts_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'contacts') : null,
     ],
     'Notifications' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'notifications.php'),
-        'table_contact_notifications_exists' => ratib_selftest_table_exists($conn, 'contact_notifications'),
+        'table_contact_notifications_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'contact_notifications') : null,
     ],
     'Register Pro' => [
         'page_exists' => is_readable($pages . 'register-pro.php'),
@@ -135,11 +140,11 @@ $checks = [
     ],
     'System Settings' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'system-settings.php'),
-        'table_users_exists' => ratib_selftest_table_exists($conn, 'users'),
+        'table_users_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'users') : null,
     ],
     'Help & Learning Center' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'help-center.php'),
-        'table_help_articles_exists' => ratib_selftest_table_exists($conn, 'help_articles'),
+        'table_help_articles_exists' => $tableChecksEnabled ? ratib_selftest_table_exists($conn, 'help_articles') : null,
     ],
     'Logout' => [
         'page_uses_bootstrap' => ratib_selftest_file_has_config_include($pages . 'logout.php'),
@@ -157,6 +162,9 @@ $apiGuards = [
 $allOk = true;
 foreach ($checks as $module => $moduleChecks) {
     foreach ($moduleChecks as $ok) {
+        if ($ok === null) {
+            continue;
+        }
         if ($ok !== true) {
             $allOk = false;
             break 2;
@@ -177,9 +185,11 @@ echo json_encode([
     'isolation_ok' => $allOk,
     'runtime_context' => [
         'host' => (string) ($_SERVER['HTTP_HOST'] ?? ''),
+        'session_type' => $isControlUser && !$isAppUser ? 'control' : 'app',
         'single_url_mode' => defined('SINGLE_URL_MODE') ? (bool) SINGLE_URL_MODE : false,
         'tenant_id' => isset($_SESSION['country_id']) ? (int) $_SESSION['country_id'] : null,
         'agency_id' => isset($_SESSION['agency_id']) ? (int) $_SESSION['agency_id'] : null,
+        'table_checks_enabled' => $tableChecksEnabled,
         'db_name_active' => $dbName,
         'db_host' => $dbHost,
         'db_port' => $dbPort,

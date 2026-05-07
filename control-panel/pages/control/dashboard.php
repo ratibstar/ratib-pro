@@ -176,7 +176,7 @@ $pageTitle = 'Control Panel Dashboard';
     <?php $ratibBase = rtrim(defined('RATIB_PRO_URL') ? RATIB_PRO_URL : (defined('SITE_URL') ? SITE_URL : ''), '/'); if ($ratibBase === '' && isset($_SERVER['HTTP_HOST'])) { $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http'; $ratibBase = $scheme . '://' . $_SERVER['HTTP_HOST']; } ?>
     <!-- EN: Server-to-client bootstrap for control dashboard scripts (API endpoints + base URLs). -->
     <!-- AR: تمرير إعدادات الخادم إلى سكربتات لوحة التحكم (مسارات API وروابط الأساس). -->
-<div id="control-config" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-agencies-url-base="<?php echo htmlspecialchars($agenciesUrlWithControl); ?>" data-country-users-url-base="<?php echo htmlspecialchars($countryUsersUrlWithControl); ?>" data-ratib-base="<?php echo htmlspecialchars($ratibBase); ?>"></div>
+<div id="control-config" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-agencies-url-base="<?php echo htmlspecialchars($agenciesUrlWithControl); ?>" data-country-users-url-base="<?php echo htmlspecialchars($countryUsersUrlWithControl); ?>" data-ratib-base="<?php echo htmlspecialchars($ratibBase); ?>" data-tenant-self-test-url="<?php echo htmlspecialchars(rtrim($fullBase, '/') . '/api/diagnostics/tenant-isolation-self-test.php'); ?>"></div>
     <div id="app-config" data-base-url="<?php echo htmlspecialchars($fullBase, ENT_QUOTES, 'UTF-8'); ?>" data-api-base="<?php echo htmlspecialchars($fullBase . '/api', ENT_QUOTES, 'UTF-8'); ?>" data-control-api-path="<?php echo htmlspecialchars($fullBase . '/api/control', ENT_QUOTES, 'UTF-8'); ?>" data-control="1" class="hidden"></div>
     
     <!-- EN: Top header with support alerts, account identity, and logout action. -->
@@ -355,6 +355,17 @@ $pageTitle = 'Control Panel Dashboard';
                 </div>
             </div>
             <?php endif; ?>
+
+            <div class="tenant-self-test-section">
+                <div class="tenant-self-test-header">
+                    <h3><i class="fas fa-shield-check me-2"></i>Tenant Isolation Self-Test</h3>
+                    <button type="button" id="runTenantSelfTestBtn" class="btn btn-sm btn-outline-info">Run Test</button>
+                </div>
+                <div id="tenantSelfTestResult" class="tenant-self-test-result tenant-self-test-idle">
+                    <span class="tenant-self-test-badge">IDLE</span>
+                    <span class="tenant-self-test-text">Press "Run Test" to verify DB isolation now.</span>
+                </div>
+            </div>
 
             <!-- EN: Live preview list of newest registration requests for fast triage. -->
             <!-- AR: قائمة مباشرة لأحدث طلبات التسجيل لتسريع المتابعة. -->

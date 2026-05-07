@@ -10,7 +10,10 @@
     var agenciesUrlBase = (config && config.getAttribute('data-agencies-url-base')) || '';
     var countryUsersUrlBase = (config && config.getAttribute('data-country-users-url-base')) || '';
     var ratibBase = (config && config.getAttribute('data-ratib-base')) || '';
+    var tenantSelfTestUrl = (config && config.getAttribute('data-tenant-self-test-url')) || '';
     var grid = document.getElementById('usersPerCountryGrid');
+    var runTenantSelfTestBtn = document.getElementById('runTenantSelfTestBtn');
+    var tenantSelfTestResult = document.getElementById('tenantSelfTestResult');
     if (!grid || !apiBase) return;
     apiBase = apiBase.replace(/\/$/, '');
     ratibBase = ratibBase.replace(/\/$/, '') || (window.location.origin || '');
@@ -64,4 +67,64 @@
         .catch(function() {
             grid.innerHTML = '<div class="text-muted control-empty-state">Failed to load users per country.</div>';
         });
+
+    function setSelfTestResult(status, text) {
+        if (!tenantSelfTestResult) return;
+        tenantSelfTestResult.classList.remove('tenant-self-test-idle', 'tenant-self-test-running', 'tenant-self-test-pass', 'tenant-self-test-fail');
+        tenantSelfTestResult.classList.add('tenant-self-test-' + status);
+        tenantSelfTestResult.innerHTML = '<span class="tenant-self-test-badge">' + status.toUpperCase() + '</span>' +
+            '<span class="tenant-self-test-text">' + text + '</span>';
+    }
+
+    function buildTenantSelfTestUrl() {
+        var base = tenantSelfTestUrl;
+        if (!base) {
+            base = apiBase.replace(/\/?api\/control$/i, '') + '/api/diagnostics/tenant-isolation-self-test.php';
+        }
+        try {
+            var current = new URL(window.location.href);
+            var url = new URL(base, window.location.origin);
+            if (current.searchParams.get('control') === '1') {
+                url.searchParams.set('control', '1');
+            }
+            var agencyId = current.searchParams.get('agency_id');
+            if (agencyId) {
+                url.searchParams.set('agency_id', agencyId);
+            }
+            return url.toString();
+        } catch (_) {
+            return base;
+        }
+    }
+
+    if (runTenantSelfTestBtn && tenantSelfTestResult) {
+        runTenantSelfTestBtn.addEventListener('click', function() {
+            var endpoint = buildTenantSelfTestUrl();
+            runTenantSelfTestBtn.disabled = true;
+            setSelfTestResult('running', 'Running isolation checks...');
+            fetch(endpoint, { credentials: 'same-origin' })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (!data || data.success !== true) {
+                        setSelfTestResult('fail', 'Test failed to run.');
+                        return;
+                    }
+                    if (data.isolation_ok === true) {
+                        var dbName = (data.runtime_context && data.runtime_context.db_name_active) ? data.runtime_context.db_name_active : 'N/A';
+                        setSelfTestResult('pass', 'PASS - isolation is healthy. Active DB: ' + dbName);
+                    } else {
+                        setSelfTestResult('fail', 'FAIL - one or more checks failed. Open browser console for details.');
+                        try {
+                            console.warn('Tenant isolation self-test details:', data);
+                        } catch (_) {}
+                    }
+                })
+                .catch(function() {
+                    setSelfTestResult('fail', 'Request error while running test.');
+                })
+                .finally(function() {
+                    runTenantSelfTestBtn.disabled = false;
+                });
+        });
+    }
 })();
