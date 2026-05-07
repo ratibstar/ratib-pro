@@ -1827,6 +1827,8 @@ $assetBase = $siteUrl !== '' ? ($siteUrl . '/admin/control-center-assets.php') :
 $assetCssUrl = $assetBase . '?file=css&v=' . rawurlencode($assetCssVersion);
 $assetJsUrl = $assetBase . '?file=js&v=' . rawurlencode($assetJsVersion);
 $helpCenterUrl = ($siteUrl !== '' ? $siteUrl : '') . '/admin/help-center.php?lang=ar';
+$eventTimelineUrl = ($siteUrl !== '' ? $siteUrl : '') . '/admin/event-timeline.php';
+$eventFlowUrl = ($siteUrl !== '' ? $siteUrl : '') . '/admin/event-flow.php';
 $staticCssUrl = ($siteUrl !== '' ? $siteUrl : '') . '/admin/assets/css/control-center.css?v=' . rawurlencode($assetCssVersion);
 $staticJsUrl = ($siteUrl !== '' ? $siteUrl : '') . '/admin/assets/js/control-center.js?v=' . rawurlencode($assetJsVersion);
 $relativeCssUrl = 'assets/css/control-center.css?v=' . rawurlencode($assetCssVersion);
@@ -1854,8 +1856,8 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
         <a href="#system-alerts">Critical Events</a>
         <a href="#admin-audit">Event History</a>
         <a href="#logs-explorer">Events Explorer</a>
-        <a href="<?php echo htmlspecialchars(($siteUrl !== '' ? $siteUrl : '') . '/admin/event-timeline.php', ENT_QUOTES, 'UTF-8'); ?>">Event Timeline</a>
-        <a href="<?php echo htmlspecialchars(($siteUrl !== '' ? $siteUrl : '') . '/admin/event-flow.php', ENT_QUOTES, 'UTF-8'); ?>">Event Flow</a>
+        <a href="#event-timeline-inline">Event Timeline</a>
+        <a href="#event-flow-inline">Event Flow</a>
         <a href="#system-flags">System Flags</a>
         <a href="#emergency-controls">Emergency Controls</a>
         <a href="<?php echo htmlspecialchars($helpCenterUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener">Help Center</a>
@@ -2314,6 +2316,20 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                 <a href="?events_page=<?php echo max(1, $eventsPage - 1); ?>&event_keyword=<?php echo urlencode($eventKeyword); ?>&event_level=<?php echo urlencode($eventLevel); ?>&event_tenant_id=<?php echo (int) $eventTenant; ?>#logs-explorer">Prev</a>
                 <span>Page <?php echo $eventsPage; ?> / <?php echo $eventsTotalPages; ?></span>
                 <a href="?events_page=<?php echo min($eventsTotalPages, $eventsPage + 1); ?>&event_keyword=<?php echo urlencode($eventKeyword); ?>&event_level=<?php echo urlencode($eventLevel); ?>&event_tenant_id=<?php echo (int) $eventTenant; ?>#logs-explorer">Next</a>
+            </div>
+        </section>
+
+        <section id="event-timeline-inline" class="cc-card">
+            <h3>Event Timeline</h3>
+            <div class="cc-embed-wrap">
+                <iframe class="cc-embed-frame" src="<?php echo htmlspecialchars($eventTimelineUrl, ENT_QUOTES, 'UTF-8'); ?>" title="Event Timeline"></iframe>
+            </div>
+        </section>
+
+        <section id="event-flow-inline" class="cc-card">
+            <h3>Event Flow</h3>
+            <div class="cc-embed-wrap">
+                <iframe class="cc-embed-frame" src="<?php echo htmlspecialchars($eventFlowUrl, ENT_QUOTES, 'UTF-8'); ?>" title="Event Flow"></iframe>
             </div>
         </section>
 
