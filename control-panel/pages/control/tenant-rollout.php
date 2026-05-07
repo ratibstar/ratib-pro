@@ -238,6 +238,29 @@ startControlLayout('Tenants & Rollout', ['css/control/tenant-rollout.css'], []);
         <div id="overridesList" class="tenant-rollout-list"></div>
         <div id="overridesPager" class="tenant-rollout-pager"></div>
     </article>
+
+    <article class="tenant-rollout-card">
+        <h4>Phase 2 - Effective Flag Resolver Test</h4>
+        <p>Verify runtime flag resolution order: tenant override -> country override -> global default.</p>
+        <form id="resolverForm" class="tenant-rollout-form tenant-rollout-form-inline" autocomplete="off">
+            <div class="tenant-rollout-field">
+                <label for="resolverFlagInput">Flag</label>
+                <select id="resolverFlagInput" required></select>
+            </div>
+            <div class="tenant-rollout-field">
+                <label for="resolverCountryInput">Country (optional)</label>
+                <select id="resolverCountryInput"></select>
+            </div>
+            <div class="tenant-rollout-field">
+                <label for="resolverTenantInput">Tenant (optional)</label>
+                <select id="resolverTenantInput"></select>
+            </div>
+            <div class="tenant-rollout-actions">
+                <button type="submit" class="btn btn-sm btn-primary">Resolve Flag</button>
+            </div>
+        </form>
+        <div id="resolverResult" class="tenant-rollout-empty">Run resolver to view effective source/value.</div>
+    </article>
 </section>
 
 <?php endControlLayout(['js/control/tenant-rollout.js']); ?>

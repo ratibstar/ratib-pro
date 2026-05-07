@@ -51,6 +51,11 @@
     var bulkTenantInput = document.getElementById('bulkTenantInput');
     var bulkEnableOverridesBtn = document.getElementById('bulkEnableOverridesBtn');
     var bulkDisableOverridesBtn = document.getElementById('bulkDisableOverridesBtn');
+    var resolverForm = document.getElementById('resolverForm');
+    var resolverFlagInput = document.getElementById('resolverFlagInput');
+    var resolverCountryInput = document.getElementById('resolverCountryInput');
+    var resolverTenantInput = document.getElementById('resolverTenantInput');
+    var resolverResult = document.getElementById('resolverResult');
 
     var state = {
         countries: [],
@@ -131,6 +136,11 @@
                 return '<option value="' + Number(f.id || 0) + '">' + esc(f.flag_key || '') + '</option>';
             }).join('');
         }
+        if (resolverFlagInput) {
+            resolverFlagInput.innerHTML = '<option value="">Select flag</option>' + state.flags.map(function (f) {
+                return '<option value="' + esc(f.flag_key || '') + '">' + esc(f.flag_key || '') + '</option>';
+            }).join('');
+        }
         if (bulkFlagInput) {
             bulkFlagInput.innerHTML = '<option value="">Select flag</option>' + state.flags.map(function (f) {
                 return '<option value="' + Number(f.id || 0) + '">' + esc(f.flag_key || '') + '</option>';
@@ -141,8 +151,18 @@
                 return '<option value="' + Number(c.id || 0) + '">' + esc(c.name || c.slug || '') + '</option>';
             }).join('');
         }
+        if (resolverCountryInput) {
+            resolverCountryInput.innerHTML = '<option value="">Optional country</option>' + state.countries.map(function (c) {
+                return '<option value="' + Number(c.id || 0) + '">' + esc(c.name || c.slug || '') + '</option>';
+            }).join('');
+        }
         if (bulkTenantInput) {
             bulkTenantInput.innerHTML = '<option value="">Select tenant</option>' + state.tenants.map(function (t) {
+                return '<option value="' + Number(t.id || 0) + '">' + esc(t.tenant_name || t.tenant_code || '') + '</option>';
+            }).join('');
+        }
+        if (resolverTenantInput) {
+            resolverTenantInput.innerHTML = '<option value="">Optional tenant</option>' + state.tenants.map(function (t) {
                 return '<option value="' + Number(t.id || 0) + '">' + esc(t.tenant_name || t.tenant_code || '') + '</option>';
             }).join('');
         }
@@ -608,6 +628,46 @@
                 runBulkOverrideAction('bulk_enable_overrides', 'Bulk enable completed.');
             });
         }
+    }
+
+    if (resolverForm) {
+        resolverForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            var flagKey = (resolverFlagInput && resolverFlagInput.value) ? String(resolverFlagInput.value).trim() : '';
+            var countryId = Number((resolverCountryInput && resolverCountryInput.value) || 0);
+            var tenantId = Number((resolverTenantInput && resolverTenantInput.value) || 0);
+            if (!flagKey) {
+                showFlash('Select a flag first.', false);
+                return;
+            }
+            var url = apiBase + '/tenant-rollout-resolver.php?flag_key=' + encodeURIComponent(flagKey)
+                + '&country_id=' + encodeURIComponent(String(countryId))
+                + '&tenant_id=' + encodeURIComponent(String(tenantId));
+            fetch(url, { credentials: 'same-origin', cache: 'no-store' })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (!data || !data.success || !data.resolved) {
+                        throw new Error((data && data.message) || 'Resolver failed');
+                    }
+                    var r = data.resolved || {};
+                    if (resolverResult) {
+                        resolverResult.className = 'tenant-rollout-item';
+                        resolverResult.innerHTML =
+                            '<p class="tenant-rollout-item-title">' + esc(r.flag_key || flagKey) + '</p>' +
+                            '<p class="tenant-rollout-item-meta">Effective value: ' + (Number(r.value || 0) > 0 ? 'Enabled' : 'Disabled') + '</p>' +
+                            '<p class="tenant-rollout-item-meta">Source: ' + esc(r.source || 'unknown') + '</p>' +
+                            '<p class="tenant-rollout-item-meta">Tenant ID: ' + esc(String(r.tenant_id || 0)) + ' | Country ID: ' + esc(String(r.country_id || 0)) + '</p>';
+                    }
+                })
+                .catch(function (err) {
+                    var msg = (err && err.message) ? err.message : 'Resolver failed';
+                    if (resolverResult) {
+                        resolverResult.className = 'tenant-rollout-empty';
+                        resolverResult.textContent = msg;
+                    }
+                    showFlash(msg, false);
+                });
+        });
     }
 
     syncScopeFields();
