@@ -466,6 +466,11 @@ form.inline {
   color: #fecaca;
   border-color: #991b1b;
 }
+.db-badge.issue {
+  background: #422006;
+  color: #fde68a;
+  border-color: #b45309;
+}
 .conn-status {
   display: block;
   width: 100%;

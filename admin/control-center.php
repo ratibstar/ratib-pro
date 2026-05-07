@@ -2455,7 +2455,19 @@ if ($rwExample === 'global_wave') {
                             $statusBadgeText = 'inactive issues';
                             $statusBadgeClass = 'inactive-issues';
                         }
-                        $hasDbConfig = trim((string) ($t['database_name'] ?? '')) !== '' && trim((string) ($t['db_user'] ?? '')) !== '';
+                        $dbNameRaw = trim((string) ($t['database_name'] ?? ''));
+                        $dbUserRaw = trim((string) ($t['db_user'] ?? ''));
+                        $dbHostRaw = trim((string) ($t['db_host'] ?? ''));
+                        $hasDbConfig = $dbNameRaw !== '' && $dbUserRaw !== '' && $dbHostRaw !== '';
+                        $dbConfigClass = 'ok';
+                        $dbConfigText = 'configured';
+                        if (!$hasDbConfig) {
+                            $dbConfigClass = 'missing';
+                            $dbConfigText = 'unconfigured';
+                        } elseif (empty($rowDbHealth['ok'])) {
+                            $dbConfigClass = 'issue';
+                            $dbConfigText = 'misconfigured';
+                        }
                         $isLinkedTenant = !empty($t['has_tenant']) && (int) ($t['id'] ?? 0) > 0;
                         ?>
                         <tr>
@@ -2482,7 +2494,7 @@ if ($rwExample === 'global_wave') {
                                 <?php endif; ?>
                             </td>
                             <td class="cc-muted"><?php echo htmlspecialchars($rowIssueText, ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><span class="db-badge <?php echo $hasDbConfig ? 'ok' : 'missing'; ?>"><?php echo $hasDbConfig ? 'configured' : 'missing'; ?></span></td>
+                            <td><span class="db-badge <?php echo htmlspecialchars($dbConfigClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($dbConfigText, ENT_QUOTES, 'UTF-8'); ?></span></td>
                             <td><?php echo htmlspecialchars(ccAsciiDigits((string) $t['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td class="row-actions">
                                 <?php if (!$isLinkedTenant): ?>
@@ -2591,13 +2603,28 @@ if ($rwExample === 'global_wave') {
                         <tr>
                             <?php $isLinkedTenant = !empty($t['has_tenant']) && (int) ($t['id'] ?? 0) > 0; ?>
                             <td>#<?php echo htmlspecialchars((string) ($t['display_id'] ?? (string) (int) ($t['id'] ?? 0)), ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars((string) $t['domain'], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <?php $dbReady = trim((string) ($t['database_name'] ?? '')) !== '' && trim((string) ($t['db_user'] ?? '')) !== ''; ?>
+                            <?php
+                            $dbHealthRow = ccTenantDbHealthCheck($t);
+                            $dbNameRaw = trim((string) ($t['database_name'] ?? ''));
+                            $dbUserRaw = trim((string) ($t['db_user'] ?? ''));
+                            $dbHostRaw = trim((string) ($t['db_host'] ?? ''));
+                            $dbReady = $dbNameRaw !== '' && $dbUserRaw !== '' && $dbHostRaw !== '';
+                            $dbBadgeClass = 'ok';
+                            $dbBadgeText = 'configured';
+                            if (!$dbReady) {
+                                $dbBadgeClass = 'missing';
+                                $dbBadgeText = 'unconfigured';
+                            } elseif (empty($dbHealthRow['ok'])) {
+                                $dbBadgeClass = 'issue';
+                                $dbBadgeText = 'misconfigured';
+                            }
+                            ?>
                             <td>
                                 <?php echo htmlspecialchars((string) ($t['db_host'] ?: 'localhost'), ENT_QUOTES, 'UTF-8'); ?>
                                 /
                                 <?php echo htmlspecialchars((string) ($t['database_name'] ?: '-'), ENT_QUOTES, 'UTF-8'); ?>
                                 / ****
-                                <span class="db-badge <?php echo $dbReady ? 'ok' : 'missing'; ?>"><?php echo $dbReady ? 'configured' : 'missing'; ?></span>
+                                <span class="db-badge <?php echo htmlspecialchars($dbBadgeClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($dbBadgeText, ENT_QUOTES, 'UTF-8'); ?></span>
                             </td>
                             <td class="row-actions">
                                 <?php if ($isLinkedTenant): ?>
