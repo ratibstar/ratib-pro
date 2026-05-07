@@ -19,10 +19,10 @@
             initialYears: 1,
             goldMonth: 54,
             goldYear1: 650,
-            goldYear2: 1000,
+            goldYear2: null,
             platinumMonth: 67,
             platinumYear1: 800,
-            platinumYear2: 1100
+            platinumYear2: null
         };
         var el = document.getElementById('ratib-home-bootstrap');
         if (!el || !el.textContent) {
@@ -55,7 +55,7 @@
                 if (typeof o.goldYear1 === 'number') {
                     d.goldYear1 = o.goldYear1;
                 }
-                if (typeof o.goldYear2 === 'number') {
+                if (typeof o.goldYear2 === 'number' && o.goldYear2 > 0) {
                     d.goldYear2 = o.goldYear2;
                 }
                 if (typeof o.platinumMonth === 'number') {
@@ -64,7 +64,7 @@
                 if (typeof o.platinumYear1 === 'number') {
                     d.platinumYear1 = o.platinumYear1;
                 }
-                if (typeof o.platinumYear2 === 'number') {
+                if (typeof o.platinumYear2 === 'number' && o.platinumYear2 > 0) {
                     d.platinumYear2 = o.platinumYear2;
                 }
             }
@@ -457,10 +457,10 @@
     // EN: Price card interactions (top pricing cards) and year toggles.
     // AR: تفاعلات بطاقات الأسعار العلوية وتبديل مدة الاشتراك.
     (function () {
-        var goldPrices = { 0: HOME.goldMonth, 1: HOME.goldYear1, 2: HOME.goldYear2 };
-        var platinumPrices = { 0: HOME.platinumMonth, 1: HOME.platinumYear1, 2: HOME.platinumYear2 };
-        var goldOldPrices = { 0: 108, 1: 1100, 2: 2000 };
-        var platinumOldPrices = { 0: 134, 1: 1200, 2: 2200 };
+        var goldPrices = { 0: HOME.goldMonth, 1: HOME.goldYear1 };
+        var platinumPrices = { 0: HOME.platinumMonth, 1: HOME.platinumYear1 };
+        var goldOldPrices = { 0: 108, 1: 1100 };
+        var platinumOldPrices = { 0: 134, 1: 1200 };
 
         function updateGoldPrice(years, event) {
             years = parseInt(years, 10);
@@ -611,9 +611,9 @@
             if (isNaN(iy) || iy < 0) {
                 iy = 1;
             }
-            if (HOME.initialPlan === 'gold' && (iy === 0 || iy === 1 || iy === 2)) {
+            if (HOME.initialPlan === 'gold' && (iy === 0 || iy === 1)) {
                 updateGoldPrice(iy, null);
-            } else if (HOME.initialPlan === 'platinum' && (iy === 0 || iy === 1 || iy === 2)) {
+            } else if (HOME.initialPlan === 'platinum' && (iy === 0 || iy === 1)) {
                 updatePlatinumPrice(iy, null);
             }
         })();
