@@ -68,6 +68,11 @@ $pageJs = [
     asset('js/unified-history.js') . "?v=" . $unifiedHistoryVersion,
     asset('js/dashboard.js') . "?v=" . time()
 ];
+$ratibPopupError = '';
+if (!empty($_SESSION['ratib_popup_error'])) {
+    $ratibPopupError = (string) $_SESSION['ratib_popup_error'];
+    unset($_SESSION['ratib_popup_error']);
+}
 
 // Country / agency context (for control and normal logins)
 $currentCountryName = $_SESSION['country_name'] ?? null;
@@ -737,6 +742,35 @@ try {
 
 include '../includes/header.php';
 ?>
+<?php if ($ratibPopupError !== ''): ?>
+<style>
+    @keyframes ratibPopupShake {
+        0%, 100% { transform: translateX(-50%); }
+        15% { transform: translateX(calc(-50% - 6px)); }
+        30% { transform: translateX(calc(-50% + 6px)); }
+        45% { transform: translateX(calc(-50% - 5px)); }
+        60% { transform: translateX(calc(-50% + 5px)); }
+        75% { transform: translateX(calc(-50% - 3px)); }
+    }
+</style>
+<div id="ratibPopupErrorToast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;min-width:380px;max-width:92vw;padding:16px 22px;border-radius:12px;background:#b91c1c;color:#fff;box-shadow:0 12px 28px rgba(127,29,29,.45);font-size:18px;font-weight:700;line-height:1.35;text-align:center;border:2px solid #fecaca;letter-spacing:.2px;animation:ratibPopupShake .45s ease-in-out 0s 2;">
+    <i class="fas fa-triangle-exclamation" style="margin-right:8px;"></i>
+    <?php echo htmlspecialchars($ratibPopupError, ENT_QUOTES, 'UTF-8'); ?>
+</div>
+<script>
+    (function () {
+        var toast = document.getElementById('ratibPopupErrorToast');
+        if (!toast) return;
+        setTimeout(function () {
+            toast.style.transition = 'opacity 200ms ease';
+            toast.style.opacity = '0';
+            setTimeout(function () {
+                if (toast && toast.parentNode) toast.parentNode.removeChild(toast);
+            }, 220);
+        }, 1600);
+    })();
+</script>
+<?php endif; ?>
 
         <div class="dashboard-content">
             <?php if (!empty($currentCountryName) || !empty($currentAgencyName)): ?>

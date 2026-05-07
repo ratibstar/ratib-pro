@@ -394,8 +394,8 @@ function getUserRole() {
 function checkPermissionOrShowUnauthorized($permission) {
     if (!hasPermission($permission)) {
         http_response_code(403);
-        require_once __DIR__ . '/final_overlay.php';
-        showFinalOverlay($permission);
+        $_SESSION['ratib_popup_error'] = 'Not authorized.';
+        header('Location: ' . pageUrl('dashboard.php'));
         exit;
     }
 }
