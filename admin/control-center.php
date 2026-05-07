@@ -2083,8 +2083,7 @@ foreach ($tenants as $th) {
     $status = strtolower(trim((string) ($th['status'] ?? '')));
     $name = trim((string) ($th['name'] ?? ''));
     $domain = trim((string) ($th['domain'] ?? ''));
-    $dbName = trim((string) ($th['database_name'] ?? ''));
-    $dbUser = trim((string) ($th['db_user'] ?? ''));
+    $dbHealth = ccTenantDbHealthCheck($th);
     $issueReasons = [];
     if ($status !== 'active') {
         $issueReasons[] = 'status=' . ($status !== '' ? $status : 'unknown');
@@ -2095,8 +2094,8 @@ foreach ($tenants as $th) {
     if ($domain === '') {
         $issueReasons[] = 'domain missing';
     }
-    if ($dbName === '' || $dbUser === '') {
-        $issueReasons[] = 'db config incomplete';
+    if (empty($dbHealth['ok'])) {
+        $issueReasons[] = (string) ($dbHealth['reason'] ?? 'db issue');
     }
     if (empty($issueReasons)) {
         $tenantHealthOk++;
@@ -2112,7 +2111,6 @@ foreach ($tenants as $th) {
     }
 
     $dbIssues = [];
-    $dbHealth = ccTenantDbHealthCheck($th);
     if (!empty($dbHealth['ok'])) {
         $dbHealthOk++;
     } else {
