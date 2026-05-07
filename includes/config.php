@@ -311,9 +311,11 @@ if (!defined('DEBUG_MODE')) {
     define('DEBUG_MODE', $debugEnabled);
 }
 
-// Start session if not already started
+// Start session safely (avoid warning/white flash if output already started).
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    if (!headers_sent()) {
+        session_start();
+    }
 }
 
 // Invalidate legacy passwordless control-bridge sessions (not a row in `users`).
