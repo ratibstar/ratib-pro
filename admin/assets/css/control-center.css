@@ -416,6 +416,11 @@ th {
   background: #991b1b;
   color: #fee2e2;
 }
+.badge.inactive-issues {
+  background: #7c2d12;
+  color: #ffedd5;
+  border: 1px solid #c2410c;
+}
 .badge.provisioning,
 .badge.warned {
   background: #92400e;

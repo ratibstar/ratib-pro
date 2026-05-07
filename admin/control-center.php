@@ -2449,7 +2449,7 @@ if ($rwExample === 'global_wave') {
                         $statusBadgeClass = $rawStatus !== '' ? $rawStatus : 'inactive';
                         if ($rawStatus === 'active' && $rowHasHealthIssue) {
                             $statusBadgeText = 'inactive issues';
-                            $statusBadgeClass = 'inactive';
+                            $statusBadgeClass = 'inactive-issues';
                         }
                         $hasDbConfig = trim((string) ($t['database_name'] ?? '')) !== '' && trim((string) ($t['db_user'] ?? '')) !== '';
                         $isLinkedTenant = !empty($t['has_tenant']) && (int) ($t['id'] ?? 0) > 0;
