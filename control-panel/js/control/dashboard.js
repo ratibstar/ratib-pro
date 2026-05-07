@@ -11,11 +11,14 @@
     var countryUsersUrlBase = (config && config.getAttribute('data-country-users-url-base')) || '';
     var ratibBase = (config && config.getAttribute('data-ratib-base')) || '';
     var tenantSelfTestUrl = (config && config.getAttribute('data-tenant-self-test-url')) || '';
+    var tenantAllIntervalMs = Number((config && config.getAttribute('data-tenant-all-self-test-interval-ms')) || 0) || 300000;
     var grid = document.getElementById('usersPerCountryGrid');
     var runTenantSelfTestBtn = document.getElementById('runTenantSelfTestBtn');
     var tenantSelfTestResult = document.getElementById('tenantSelfTestResult');
     var runTenantAllSelfTestBtn = document.getElementById('runTenantAllSelfTestBtn');
     var tenantAllSelfTestResult = document.getElementById('tenantAllSelfTestResult');
+    var tenantIsolationGlobalAlert = document.getElementById('tenantIsolationGlobalAlert');
+    var tenantIsolationGlobalAlertText = document.getElementById('tenantIsolationGlobalAlertText');
     if (!grid || !apiBase) return;
     apiBase = apiBase.replace(/\/$/, '');
     ratibBase = ratibBase.replace(/\/$/, '') || (window.location.origin || '');
@@ -148,52 +151,81 @@
             '<span class="tenant-self-test-text">' + text + '</span>';
     }
 
+    function setGlobalIsolationAlert(show, text) {
+        if (!tenantIsolationGlobalAlert || !tenantIsolationGlobalAlertText) return;
+        if (show) {
+            tenantIsolationGlobalAlertText.textContent = text || 'Tenant isolation issue detected.';
+            tenantIsolationGlobalAlert.classList.remove('is-hidden');
+        } else {
+            tenantIsolationGlobalAlert.classList.add('is-hidden');
+        }
+    }
+
+    function runAllAgenciesAudit(triggeredByUser) {
+        if (!apiBase) return;
+        if (runTenantAllSelfTestBtn) {
+            runTenantAllSelfTestBtn.disabled = true;
+        }
+        setAllResult('running', triggeredByUser ? 'Running all agencies audit...' : 'Auto-checking all agencies...');
+        fetch(apiBase + '/agencies-audit.php', { credentials: 'same-origin' })
+            .then(function(r) {
+                return r.text().then(function(text) {
+                    var parsed = null;
+                    try { parsed = JSON.parse(text); } catch (_) {}
+                    return { ok: r.ok, status: r.status, data: parsed, raw: text };
+                });
+            })
+            .then(function(resp) {
+                var data = resp.data;
+                if (!resp.ok) {
+                    var msg = (data && data.message) ? data.message : ('HTTP ' + resp.status);
+                    setAllResult('fail', 'All agencies test error: ' + msg);
+                    setGlobalIsolationAlert(true, 'Tenant isolation auto-check failed: ' + msg);
+                    return;
+                }
+                if (!data || data.success !== true) {
+                    setAllResult('fail', 'All agencies test failed to run.');
+                    setGlobalIsolationAlert(true, 'Tenant isolation auto-check failed to run.');
+                    return;
+                }
+                var summary = data.summary || {};
+                var total = Number(summary.agencies_total || 0);
+                var ok = Number(summary.db_connect_ok || 0);
+                var failed = Number(summary.db_connect_failed || 0);
+                var isolationReady = Number(summary.isolation_ready || 0);
+                var isolationFailed = Number(summary.isolation_failed || 0);
+                var fullReady = Number(summary.full_ready || 0);
+                if (failed === 0 && isolationFailed === 0 && total > 0 && isolationReady === total) {
+                    setAllResult('pass', 'PASS - all agencies isolated. Total: ' + total + ', DB ok: ' + ok);
+                    setGlobalIsolationAlert(false, '');
+                } else {
+                    setAllResult('fail', 'FAIL - total: ' + total + ', db ok: ' + ok + ', db failed: ' + failed + ', isolation ready: ' + isolationReady + ', full ready: ' + fullReady);
+                    setGlobalIsolationAlert(true, 'Isolation alert: ' + failed + ' DB failures / ' + isolationFailed + ' isolation failures detected.');
+                }
+                try {
+                    console.warn('All agencies audit details:', data);
+                } catch (_) {}
+            })
+            .catch(function() {
+                setAllResult('fail', 'Request error while auditing all agencies.');
+                setGlobalIsolationAlert(true, 'Tenant isolation auto-check request error.');
+            })
+            .finally(function() {
+                if (runTenantAllSelfTestBtn) {
+                    runTenantAllSelfTestBtn.disabled = false;
+                }
+            });
+    }
+
     if (runTenantAllSelfTestBtn && tenantAllSelfTestResult) {
         runTenantAllSelfTestBtn.addEventListener('click', function() {
-            if (!apiBase) return;
-            runTenantAllSelfTestBtn.disabled = true;
-            setAllResult('running', 'Running all agencies audit...');
-            fetch(apiBase + '/agencies-audit.php', { credentials: 'same-origin' })
-                .then(function(r) {
-                    return r.text().then(function(text) {
-                        var parsed = null;
-                        try { parsed = JSON.parse(text); } catch (_) {}
-                        return { ok: r.ok, status: r.status, data: parsed, raw: text };
-                    });
-                })
-                .then(function(resp) {
-                    var data = resp.data;
-                    if (!resp.ok) {
-                        var msg = (data && data.message) ? data.message : ('HTTP ' + resp.status);
-                        setAllResult('fail', 'All agencies test error: ' + msg);
-                        return;
-                    }
-                    if (!data || data.success !== true) {
-                        setAllResult('fail', 'All agencies test failed to run.');
-                        return;
-                    }
-                    var summary = data.summary || {};
-                    var total = Number(summary.agencies_total || 0);
-                    var ok = Number(summary.db_connect_ok || 0);
-                    var failed = Number(summary.db_connect_failed || 0);
-                    var isolationReady = Number(summary.isolation_ready || 0);
-                    var isolationFailed = Number(summary.isolation_failed || 0);
-                    var fullReady = Number(summary.full_ready || 0);
-                    if (failed === 0 && isolationFailed === 0 && total > 0 && isolationReady === total) {
-                        setAllResult('pass', 'PASS - all agencies isolated. Total: ' + total + ', DB ok: ' + ok);
-                    } else {
-                        setAllResult('fail', 'FAIL - total: ' + total + ', db ok: ' + ok + ', db failed: ' + failed + ', isolation ready: ' + isolationReady + ', full ready: ' + fullReady);
-                    }
-                    try {
-                        console.warn('All agencies audit details:', data);
-                    } catch (_) {}
-                })
-                .catch(function() {
-                    setAllResult('fail', 'Request error while auditing all agencies.');
-                })
-                .finally(function() {
-                    runTenantAllSelfTestBtn.disabled = false;
-                });
+            runAllAgenciesAudit(true);
         });
+    }
+
+    // Start periodic auto-check once dashboard is ready.
+    setTimeout(function() { runAllAgenciesAudit(false); }, 2000);
+    if (tenantAllIntervalMs >= 60000) {
+        setInterval(function() { runAllAgenciesAudit(false); }, tenantAllIntervalMs);
     }
 })();
