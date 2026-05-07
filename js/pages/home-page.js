@@ -258,6 +258,13 @@
         var paymentBlockWrap = document.getElementById('paymentBlockWrap');
         var btnSubmit = document.getElementById('btnSubmit');
         var formYearButtonsWrap = document.getElementById('formYearButtonsWrap');
+        // Keep duration choices limited to supported tiers only (monthly and 1 year).
+        var legacyYearButtons = document.querySelectorAll('.form-year-btn[data-years]:not([data-years="0"]):not([data-years="1"])');
+        legacyYearButtons.forEach(function (btn) {
+            if (btn && btn.parentNode) {
+                btn.parentNode.removeChild(btn);
+            }
+        });
         var formYearButtons = document.querySelectorAll('.form-year-btn');
         var planBtns = document.querySelectorAll('.plan-btn-form');
         var activePlanStyle = {
