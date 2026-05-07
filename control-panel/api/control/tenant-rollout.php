@@ -157,7 +157,7 @@ function tr_ensure_tables(mysqli $ctrl): void
     }
 }
 
-function tr_audit(mysqli $ctrl, string $entityType, ?int $entityId, string $actionType, mixed $before, mixed $after): void
+function tr_audit(mysqli $ctrl, string $entityType, ?int $entityId, string $actionType, $before, $after): void
 {
     $beforeJson = $before === null ? null : json_encode($before, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     $afterJson = $after === null ? null : json_encode($after, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
