@@ -257,6 +257,43 @@ body {
 .cc-form-row.wrap {
   flex-wrap: wrap;
 }
+.cc-form-row .cc-grow {
+  flex: 1 1 160px;
+  min-width: 160px;
+}
+.cc-form-row .cc-compact {
+  flex: 0 0 auto;
+}
+.cc-bulk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+.cc-bulk-left {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cc-inline-panel {
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 12px;
+  background: #0f172a;
+  margin: 10px 0 12px;
+}
+.cc-inline-panel.hidden {
+  display: none;
+}
+.cc-inline-panel h4 {
+  margin: 0 0 10px;
+}
+.cc-check-cell {
+  width: 34px;
+}
 input,
 select,
 textarea,

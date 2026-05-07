@@ -1294,6 +1294,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
             ccAudit($controlPdo, 'tenant_delete', ['tenant_id' => $tenantId, 'payload' => $auditPost]);
             logSystemEvent('ADMIN_ACTION', ['action' => 'tenant_delete', 'tenant_id' => $tenantId]);
             $alerts[] = ['type' => 'danger', 'text' => 'Tenant deleted.'];
+        } elseif ($action === 'tenant_bulk') {
+            ControlCenterAccess::requireRole([ControlCenterAccess::SUPER_ADMIN, ControlCenterAccess::ADMIN]);
+            if (!ControlCenterRateLimiter::check('tenant_actions', $rid, 5, 60)) {
+                throw new RuntimeException('RATE_LIMIT');
+            }
+            $bulkAction = strtolower(trim((string) ($_POST['bulk_action'] ?? '')));
+            $tenantIdsRaw = $_POST['tenant_ids'] ?? [];
+            if (!is_array($tenantIdsRaw)) {
+                $tenantIdsRaw = [$tenantIdsRaw];
+            }
+            $tenantIds = array_values(array_filter(array_map(static function ($v) {
+                return (int) $v;
+            }, $tenantIdsRaw), static function ($v) {
+                return $v > 0;
+            }));
+            $tenantIds = array_values(array_unique($tenantIds));
+            if (empty($tenantIds)) {
+                throw new RuntimeException('Select at least 1 tenant.');
+            }
+            if (!in_array($bulkAction, ['activate', 'suspend', 'delete'], true)) {
+                throw new RuntimeException('Choose a valid bulk action.');
+            }
+
+            $confirmText = strtoupper(trim((string) ($_POST['confirm_text'] ?? '')));
+            if ($bulkAction === 'suspend' && $confirmText !== 'SUSPEND') {
+                throw new RuntimeException('Bulk suspend requires confirm text: SUSPEND');
+            }
+            if ($bulkAction === 'activate' && $confirmText !== 'ACTIVATE') {
+                throw new RuntimeException('Bulk activate requires confirm text: ACTIVATE');
+            }
+            if ($bulkAction === 'delete' && $confirmText !== 'DELETE') {
+                throw new RuntimeException('Bulk delete requires confirm text: DELETE');
+            }
+            if ($bulkAction === 'suspend' || $bulkAction === 'delete') {
+                ControlCenterAccess::requireRole([ControlCenterAccess::SUPER_ADMIN]);
+            }
+
+            $placeholders = implode(',', array_fill(0, count($tenantIds), '?'));
+            if ($bulkAction === 'delete') {
+                $stmt = $controlPdo->prepare("DELETE FROM tenants WHERE id IN ($placeholders)");
+                $stmt->execute($tenantIds);
+                ccAudit($controlPdo, 'tenant_bulk_delete', ['payload' => array_merge($auditPost, ['tenant_ids' => $tenantIds])]);
+                logSystemEvent('ADMIN_ACTION', ['action' => 'tenant_bulk_delete', 'tenant_ids' => $tenantIds]);
+                $alerts[] = ['type' => 'danger', 'text' => 'Bulk delete executed for ' . count($tenantIds) . ' tenants.'];
+            } else {
+                $next = $bulkAction === 'activate' ? 'active' : 'suspended';
+                $stmt = $controlPdo->prepare("UPDATE tenants SET status=?, updated_at=NOW() WHERE id IN ($placeholders)");
+                $stmt->execute(array_merge([$next], $tenantIds));
+                $hasSuspColSt = $controlPdo->query("SHOW COLUMNS FROM control_agencies LIKE 'is_suspended'");
+                $hasSuspCol = (bool) ($hasSuspColSt && $hasSuspColSt->fetchColumn());
+                if ($hasSuspCol) {
+                    $ast = $controlPdo->prepare("UPDATE control_agencies SET is_active=?, is_suspended=? WHERE tenant_id IN ($placeholders)");
+                    $ast->execute(array_merge([$next === 'active' ? 1 : 0, $next === 'suspended' ? 1 : 0], $tenantIds));
+                } else {
+                    $ast = $controlPdo->prepare("UPDATE control_agencies SET is_active=? WHERE tenant_id IN ($placeholders)");
+                    $ast->execute(array_merge([$next === 'active' ? 1 : 0], $tenantIds));
+                }
+                ccAudit($controlPdo, 'tenant_bulk_toggle', ['payload' => array_merge($auditPost, ['tenant_ids' => $tenantIds, 'next_status' => $next])]);
+                logSystemEvent('ADMIN_ACTION', ['action' => 'tenant_bulk_toggle', 'tenant_ids' => $tenantIds, 'status' => $next]);
+                $alerts[] = ['type' => 'warning', 'text' => 'Bulk status changed to ' . $next . ' for ' . count($tenantIds) . ' tenants.'];
+            }
         } elseif ($action === 'tenant_link_agency') {
             ControlCenterAccess::requireRole([ControlCenterAccess::SUPER_ADMIN]);
             if (!ControlCenterRateLimiter::check('tenant_actions', $rid, 5, 60)) {
@@ -1844,7 +1905,7 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
             </div>
         </section>
 
-        <section id="tenant-control" class="cc-card">
+        <section id="tenant-control" class="cc-card" data-cc-server-paging="1">
             <h3>Tenant Control</h3>
             <?php if ($isSuperAdminCc): ?>
                 <p class="cc-muted cc-tenant-source-meta">
@@ -1856,20 +1917,54 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
             <?php if (!$isSuperAdminCc): ?>
                 <p class="cc-muted">Creating tenants requires <strong>SUPER_ADMIN</strong>. You can still view and test connections per your role.</p>
             <?php endif; ?>
-            <form method="post" class="cc-form-grid">
+            <form method="post" class="cc-form-row wrap cc-tenant-create-bar">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="action" value="tenant_create">
                 <fieldset class="cc-fieldset-plain" <?php echo $isSuperAdminCc ? '' : 'disabled'; ?>>
-                <input type="text" name="name" placeholder="Tenant Name" required>
-                <input type="text" name="domain" placeholder="Domain" required>
-                <input type="text" name="database_name" placeholder="Database Name (optional — auto if empty)">
-                <input type="text" name="db_host" placeholder="DB Host">
-                <input type="text" name="db_user" placeholder="DB User">
-                <input type="password" name="db_password" placeholder="DB Password">
-                <select name="status"><option value="provisioning">provisioning</option><option value="active" selected>active</option><option value="suspended">suspended</option></select>
-                <button type="submit">Create Tenant</button>
+                <input class="cc-grow" type="text" name="name" placeholder="Tenant Name" required>
+                <input class="cc-grow" type="text" name="domain" placeholder="Domain" required>
+                <input class="cc-grow" type="text" name="database_name" placeholder="Database Name (optional — auto if empty)">
+                <input class="cc-grow" type="text" name="db_host" placeholder="DB Host">
+                <input class="cc-grow" type="text" name="db_user" placeholder="DB User">
+                <input class="cc-grow" type="password" name="db_password" placeholder="DB Password">
+                <select class="cc-compact" name="status"><option value="provisioning">provisioning</option><option value="active" selected>active</option><option value="suspended">suspended</option></select>
+                <button class="cc-compact" type="submit">Create Tenant</button>
                 </fieldset>
             </form>
+
+            <div id="ccDbConfigPanel" class="cc-inline-panel hidden">
+                <h4>Configure Tenant DB</h4>
+                <form id="ccDbConfigForm" class="cc-form-row wrap">
+                    <input type="hidden" id="cfgTenantId">
+                    <fieldset class="cc-fieldset-plain" <?php echo $isAdminOrAboveCc ? '' : 'disabled'; ?>>
+                        <input class="cc-grow" type="text" id="cfgDbName" placeholder="Database Name" required>
+                        <input class="cc-grow" type="text" id="cfgDbHost" placeholder="DB Host (optional)">
+                        <input class="cc-grow" type="text" id="cfgDbUser" placeholder="DB User" required>
+                        <input class="cc-grow" type="password" id="cfgDbPassword" placeholder="DB Password">
+                        <button class="cc-compact" type="submit">Save DB Config</button>
+                        <button class="cc-compact" type="button" id="ccCloseDbPanel">Close</button>
+                    </fieldset>
+                </form>
+            </div>
+
+            <div class="cc-bulk-bar">
+                <div class="cc-bulk-left">
+                    <strong>Bulk</strong>
+                    <form method="post" class="cc-form-row wrap danger-form" id="ccTenantBulkForm" data-prompt="Type CONFIRM to continue">
+                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                        <input type="hidden" name="action" value="tenant_bulk">
+                        <input type="hidden" name="confirm_text" value="">
+                        <select name="bulk_action" id="ccBulkAction" class="cc-compact">
+                            <option value="">Choose action…</option>
+                            <option value="activate">Activate</option>
+                            <option value="suspend">Suspend</option>
+                            <option value="delete">Delete</option>
+                        </select>
+                        <button type="submit" class="cc-compact">Run</button>
+                    </form>
+                    <span class="cc-muted" id="ccBulkCount">0 selected</span>
+                </div>
+            </div>
             <form method="get" class="cc-form-row" action="" style="justify-content:flex-end;">
                 <label class="cc-muted">Rows</label>
                 <select name="tenant_limit" onchange="this.form.submit()">
@@ -1881,17 +1976,24 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                 <noscript><button type="submit">Apply</button></noscript>
             </form>
             <div class="cc-table-wrap">
-                <table>
-                    <thead><tr><th>ID</th><th>Name</th><th>Domain</th><th>Status</th><th>DB Config</th><th>Created</th><th>Actions</th></tr></thead>
+                <table id="ccTenantsTable">
+                    <thead><tr><th class="cc-check-cell"><input type="checkbox" id="ccSelectAllTenants"></th><th>ID</th><th>Name</th><th>Domain</th><th>Status</th><th>DB Config</th><th>Created</th><th>Actions</th></tr></thead>
                     <tbody>
                     <?php if (empty($tenantsPaged)): ?>
-                        <tr><td colspan="7">No tenants found.</td></tr>
+                        <tr><td colspan="8">No tenants found.</td></tr>
                     <?php else: foreach ($tenantsPaged as $t): ?>
                         <?php
                         $hasDbConfig = trim((string) ($t['database_name'] ?? '')) !== '' && trim((string) ($t['db_user'] ?? '')) !== '';
                         $isLinkedTenant = !empty($t['has_tenant']) && (int) ($t['id'] ?? 0) > 0;
                         ?>
                         <tr>
+                            <td class="cc-check-cell">
+                                <?php if ($isLinkedTenant): ?>
+                                    <input type="checkbox" class="cc-tenant-check" name="tenant_ids[]" form="ccTenantBulkForm" value="<?php echo (int) $t['id']; ?>">
+                                <?php else: ?>
+                                    <input type="checkbox" disabled>
+                                <?php endif; ?>
+                            </td>
                             <td><?php echo htmlspecialchars((string) ($t['display_id'] ?? (string) (int) ($t['id'] ?? 0)), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) $t['name'], ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) $t['domain'], ENT_QUOTES, 'UTF-8'); ?></td>
@@ -1911,6 +2013,15 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                                         data-db-host="<?php echo htmlspecialchars((string) ($t['db_host'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
                                         data-db-user="<?php echo htmlspecialchars((string) ($t['db_user'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
                                         data-status="<?php echo htmlspecialchars((string) $t['status'], ENT_QUOTES, 'UTF-8'); ?>">Edit</button>
+                                <?php endif; ?>
+                                <?php if ($isLinkedTenant && $isAdminOrAboveCc): ?>
+                                <button type="button" class="cfg-db-btn"
+                                        data-tenant-id="<?php echo (int) $t['id']; ?>"
+                                        data-db-name="<?php echo htmlspecialchars((string) ($t['database_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-db-host="<?php echo htmlspecialchars((string) ($t['db_host'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-db-user="<?php echo htmlspecialchars((string) ($t['db_user'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                                    Configure DB
+                                </button>
                                 <?php endif; ?>
                                 <?php if ($isLinkedTenant && (string) $t['status'] === 'active' && $isSuperAdminCc): ?>
                                 <form method="post" class="inline danger-form" data-prompt="Type SUSPEND to continue">
@@ -2267,25 +2378,6 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
             <div class="modal-actions">
                 <button type="submit">Save</button>
                 <button type="button" id="closeEditModal">Cancel</button>
-            </div>
-            </fieldset>
-        </form>
-    </div>
-</div>
-
-<div id="configDbModal" class="modal hidden">
-    <div class="modal-content">
-        <h3>Configure Tenant DB</h3>
-        <form id="configDbForm" class="cc-form-grid">
-            <input type="hidden" id="cfgTenantId">
-            <fieldset class="cc-fieldset-plain" <?php echo $isAdminOrAboveCc ? '' : 'disabled'; ?>>
-            <input type="text" id="cfgDbName" placeholder="Database Name" required>
-            <input type="text" id="cfgDbHost" placeholder="DB Host (optional)">
-            <input type="text" id="cfgDbUser" placeholder="DB User" required>
-            <input type="password" id="cfgDbPassword" placeholder="DB Password">
-            <div class="modal-actions">
-                <button type="submit">Save DB Config</button>
-                <button type="button" id="closeConfigDbModal">Cancel</button>
             </div>
             </fieldset>
         </form>

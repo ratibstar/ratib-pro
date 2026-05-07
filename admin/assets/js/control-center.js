@@ -195,9 +195,9 @@
     var dbHostEl = document.getElementById('editTenantDbHost');
     var dbUserEl = document.getElementById('editTenantDbUser');
     var statusEl = document.getElementById('editTenantStatus');
-    var configDbModal = document.getElementById('configDbModal');
-    var closeConfigDbModal = document.getElementById('closeConfigDbModal');
-    var configDbForm = document.getElementById('configDbForm');
+    var configDbPanel = document.getElementById('ccDbConfigPanel');
+    var closeConfigDbPanel = document.getElementById('ccCloseDbPanel');
+    var configDbForm = document.getElementById('ccDbConfigForm');
     var cfgTenantId = document.getElementById('cfgTenantId');
     var cfgDbName = document.getElementById('cfgDbName');
     var cfgDbHost = document.getElementById('cfgDbHost');
@@ -456,13 +456,13 @@
     function configureDbForTenant(tenant) {
         var tenantId = Number(tenant.id || 0);
         if (!tenantId) return;
-        if (!configDbModal) return;
+        if (!configDbPanel) return;
         cfgTenantId.value = String(tenantId);
         cfgDbName.value = String(tenant.database_name || '');
         cfgDbHost.value = String(tenant.db_host || '');
         cfgDbUser.value = String(tenant.db_user || '');
         cfgDbPassword.value = '';
-        configDbModal.classList.remove('hidden');
+        configDbPanel.classList.remove('hidden');
     }
 
     function bindTestConnectionForms() {
@@ -792,9 +792,9 @@
                 });
     }
 
-    if (closeConfigDbModal && configDbModal) {
-        closeConfigDbModal.addEventListener('click', function () {
-            configDbModal.classList.add('hidden');
+    if (closeConfigDbPanel && configDbPanel) {
+        closeConfigDbPanel.addEventListener('click', function () {
+            configDbPanel.classList.add('hidden');
         });
     }
 
@@ -822,9 +822,9 @@
                     showToast(data.message || 'Failed to update DB configuration', 'danger');
                     return;
                 }
-                configDbModal.classList.add('hidden');
+                if (configDbPanel) configDbPanel.classList.add('hidden');
                 showToast('Tenant DB configuration updated', 'safe');
-                loadTenants();
+                window.location.reload();
             }).catch(function (err) {
                 showToast(err && err.message ? err.message : 'Configure DB request failed', 'danger');
             });
@@ -832,6 +832,74 @@
     }
 
     bindTestConnectionForms();
-    loadTenants();
+    var serverPaging = false;
+    try {
+        var tenantSection = document.getElementById('tenant-control');
+        serverPaging = !!(tenantSection && tenantSection.getAttribute('data-cc-server-paging') === '1');
+    } catch (_) {
+        serverPaging = false;
+    }
+    if (!serverPaging) {
+        loadTenants();
+    }
+
+    // Bulk: select all + count + confirm word based on action
+    var selectAll = document.getElementById('ccSelectAllTenants');
+    var bulkForm = document.getElementById('ccTenantBulkForm');
+    var bulkAction = document.getElementById('ccBulkAction');
+    var bulkCount = document.getElementById('ccBulkCount');
+    function updateBulkCount() {
+        if (!bulkCount) return;
+        var checked = document.querySelectorAll('.cc-tenant-check:checked').length;
+        bulkCount.textContent = String(checked) + ' selected';
+    }
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            var on = !!selectAll.checked;
+            document.querySelectorAll('.cc-tenant-check').forEach(function (cb) {
+                if (cb && !cb.disabled) cb.checked = on;
+            });
+            updateBulkCount();
+        });
+    }
+    document.querySelectorAll('.cc-tenant-check').forEach(function (cb) {
+        cb.addEventListener('change', updateBulkCount);
+    });
+    updateBulkCount();
+    if (bulkForm && bulkAction) {
+        bulkForm.addEventListener('submit', function (e) {
+            if (bulkForm.dataset.confirmed === '1') {
+                bulkForm.dataset.confirmed = '0';
+                return;
+            }
+            e.preventDefault();
+            var act = String(bulkAction.value || '').toLowerCase();
+            var required = act === 'suspend' ? 'SUSPEND' : (act === 'activate' ? 'ACTIVATE' : (act === 'delete' ? 'DELETE' : ''));
+            if (!required) {
+                showToast('Choose a bulk action first', 'danger');
+                return;
+            }
+            var anyChecked = document.querySelectorAll('.cc-tenant-check:checked').length > 0;
+            if (!anyChecked) {
+                showToast('Select at least 1 tenant', 'danger');
+                return;
+            }
+            showConfirmModal({
+                title: 'Confirm Bulk Action',
+                message: 'Type ' + required + ' to run bulk action: ' + act,
+                actionName: 'tenant_bulk',
+                tenantId: '',
+                requireText: required,
+                confirmLabel: 'Confirm',
+                danger: true
+            }).then(function (result) {
+                if (!result || !result.confirmed) return;
+                var input = bulkForm.querySelector('input[name="confirm_text"]');
+                if (input) input.value = required;
+                bulkForm.dataset.confirmed = '1';
+                bulkForm.submit();
+            });
+        });
+    }
 })();
 
