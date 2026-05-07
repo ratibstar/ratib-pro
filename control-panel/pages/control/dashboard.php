@@ -193,7 +193,7 @@ if (!empty($_SESSION['control_popup_error'])) {
 </head>
 <body class="control-system-body">
     <?php if ($controlPopupError !== ''): ?>
-    <div id="controlPopupErrorToast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;min-width:220px;max-width:90vw;padding:10px 14px;border-radius:10px;background:#2b2b2b;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:13px;line-height:1.4;text-align:center;">
+    <div id="controlPopupErrorToast" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:99999;min-width:360px;max-width:92vw;padding:16px 22px;border-radius:12px;background:#b91c1c;color:#fff;box-shadow:0 12px 28px rgba(127,29,29,.45);font-size:18px;font-weight:700;line-height:1.35;text-align:center;border:2px solid #fecaca;letter-spacing:.2px;">
         <?php echo htmlspecialchars($controlPopupError, ENT_QUOTES, 'UTF-8'); ?>
     </div>
     <?php endif; ?>
