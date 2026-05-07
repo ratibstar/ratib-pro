@@ -792,6 +792,54 @@
         loadTenants();
     }
 
+    // Release Wizard
+    var rwForm = document.getElementById('rwForm');
+    var rwScopeType = document.getElementById('rwScopeType');
+    var rwOperation = document.getElementById('rwOperation');
+    var rwCountry = document.getElementById('rwCountryId');
+    var rwTenant = document.getElementById('rwTenantId');
+    var rwOverride = document.getElementById('rwOverrideValue');
+    function syncRwVisibility() {
+        if (!rwScopeType) return;
+        var scope = String(rwScopeType.value || 'global');
+        var op = rwOperation ? String(rwOperation.value || 'apply') : 'apply';
+        var isCountry = scope === 'country';
+        var isTenant = scope === 'tenant';
+        document.querySelectorAll('.rw-country-field').forEach(function (el) {
+            el.classList.toggle('hidden', !isCountry);
+        });
+        document.querySelectorAll('.rw-tenant-field').forEach(function (el) {
+            el.classList.toggle('hidden', !isTenant);
+        });
+        document.querySelectorAll('.rw-override-field').forEach(function (el) {
+            el.classList.toggle('hidden', !(isCountry || isTenant) || op === 'rollback_scope');
+        });
+        if (rwCountry) rwCountry.required = isCountry;
+        if (rwTenant) rwTenant.required = isTenant;
+    }
+    if (rwScopeType) rwScopeType.addEventListener('change', syncRwVisibility);
+    if (rwOperation) rwOperation.addEventListener('change', syncRwVisibility);
+    syncRwVisibility();
+
+    document.querySelectorAll('.rw-example-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var flag = document.getElementById('rwFlagKey');
+            var stage = document.getElementById('rwStage');
+            var percent = document.getElementById('rwPercent');
+            var def = document.getElementById('rwDefaultValue');
+            var ov = document.getElementById('rwOverrideValue');
+            if (flag) flag.value = btn.getAttribute('data-flag') || '';
+            if (rwScopeType) rwScopeType.value = btn.getAttribute('data-scope') || 'global';
+            if (stage) stage.value = btn.getAttribute('data-stage') || 'full';
+            if (percent) percent.value = btn.getAttribute('data-percent') || '100';
+            if (def) def.value = btn.getAttribute('data-default') || '0';
+            if (rwOperation) rwOperation.value = btn.getAttribute('data-operation') || 'apply';
+            if (ov) ov.value = btn.getAttribute('data-override') || '1';
+            syncRwVisibility();
+            if (rwForm) rwForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    });
+
     // Bulk: select all + count + confirm word based on action
     var selectAll = document.getElementById('ccSelectAllTenants');
     var bulkForm = document.getElementById('ccTenantBulkForm');

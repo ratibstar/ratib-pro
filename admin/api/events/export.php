@@ -17,6 +17,19 @@ require_once __DIR__ . '/../../core/EventBus.php';
 require_once __DIR__ . '/../../core/EventRepository.php';
 require_once __DIR__ . '/../../core/EventExporter.php';
 
+function export_normalize_datetime_filter(string $value): string
+{
+    $v = trim($value);
+    if ($v === '') {
+        return '';
+    }
+    $v = str_replace(['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'], ['0','1','2','3','4','5','6','7','8','9'], $v);
+    $v = str_replace(['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'], ['0','1','2','3','4','5','6','7','8','9'], $v);
+    $v = str_replace('T', ' ', $v);
+    $v = preg_replace('/[^0-9:\-\s]/', '', $v) ?? '';
+    return trim($v);
+}
+
 if (!ControlCenterAccess::canAccessControlCenter()) {
     eventApiResponse(false, [], ['request_id' => getRequestId(), 'event_count' => 0, 'error' => 'Forbidden'], 403);
 }
@@ -35,10 +48,10 @@ if ($tenantId > 0) {
     $filters['tenant_id'] = $tenantId;
 }
 if (!empty($_GET['from'])) {
-    $filters['from'] = (string) $_GET['from'];
+    $filters['from'] = export_normalize_datetime_filter((string) $_GET['from']);
 }
 if (!empty($_GET['to'])) {
-    $filters['to'] = (string) $_GET['to'];
+    $filters['to'] = export_normalize_datetime_filter((string) $_GET['to']);
 }
 if (!empty($_GET['event_type'])) {
     $filters['event_type'] = (string) $_GET['event_type'];

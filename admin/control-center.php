@@ -1366,6 +1366,129 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
                 logSystemEvent('ADMIN_ACTION', ['action' => 'tenant_bulk_toggle', 'tenant_ids' => $tenantIds, 'status' => $next]);
                 $alerts[] = ['type' => 'warning', 'text' => 'Bulk status changed to ' . $next . ' for ' . count($tenantIds) . ' tenants.'];
             }
+        } elseif ($action === 'rollout_wizard_apply') {
+            ControlCenterAccess::requireRole([ControlCenterAccess::SUPER_ADMIN, ControlCenterAccess::ADMIN]);
+            if (!ControlCenterRateLimiter::check('tenant_actions', $rid, 10, 60)) {
+                throw new RuntimeException('RATE_LIMIT');
+            }
+            if (!ccTableExists($controlPdo, 'control_rollout_feature_flags') || !ccTableExists($controlPdo, 'control_rollout_flag_overrides')) {
+                throw new RuntimeException('Rollout tables are not installed yet.');
+            }
+
+            $flagKey = strtolower(trim((string) ($_POST['rw_flag_key'] ?? '')));
+            $flagDescription = trim((string) ($_POST['rw_flag_description'] ?? ''));
+            $defaultValue = ((int) ($_POST['rw_default_value'] ?? 0) > 0) ? 1 : 0;
+            $rolloutStage = strtolower(trim((string) ($_POST['rw_rollout_stage'] ?? 'full')));
+            $rolloutPercent = max(0, min(100, (int) ($_POST['rw_rollout_percent'] ?? 100)));
+            $scopeType = strtolower(trim((string) ($_POST['rw_scope_type'] ?? 'global')));
+            $countryId = max(0, (int) ($_POST['rw_country_id'] ?? 0));
+            $tenantId = max(0, (int) ($_POST['rw_tenant_id'] ?? 0));
+            $overrideValue = ((int) ($_POST['rw_override_value'] ?? 0) > 0) ? 1 : 0;
+            $operation = strtolower(trim((string) ($_POST['rw_operation'] ?? 'apply')));
+
+            if ($flagKey === '' || !preg_match('/^[a-z0-9_.\\-]+$/', $flagKey)) {
+                throw new RuntimeException('Invalid flag key format.');
+            }
+            if (!in_array($rolloutStage, ['canary', 'wave1', 'wave2', 'full'], true)) {
+                $rolloutStage = 'full';
+            }
+            if (!in_array($scopeType, ['global', 'country', 'tenant'], true)) {
+                throw new RuntimeException('Invalid scope.');
+            }
+            if (!in_array($operation, ['apply', 'rollback_scope'], true)) {
+                $operation = 'apply';
+            }
+            if ($scopeType === 'country' && $countryId <= 0) {
+                throw new RuntimeException('Country ID is required for country scope.');
+            }
+            if ($scopeType === 'tenant' && $tenantId <= 0) {
+                throw new RuntimeException('Tenant ID is required for tenant scope.');
+            }
+
+            $controlPdo->beginTransaction();
+            $stFlag = $controlPdo->prepare("SELECT id FROM control_rollout_feature_flags WHERE flag_key = :k LIMIT 1");
+            $stFlag->execute([':k' => $flagKey]);
+            $flagId = (int) ($stFlag->fetchColumn() ?: 0);
+            if ($flagId > 0) {
+                $stUp = $controlPdo->prepare(
+                    "UPDATE control_rollout_feature_flags
+                     SET flag_description = :d, default_value = :v, rollout_stage = :s, rollout_percent = :p, is_active = 1, updated_at = NOW()
+                     WHERE id = :id"
+                );
+                $stUp->execute([
+                    ':d' => $flagDescription,
+                    ':v' => $defaultValue,
+                    ':s' => $rolloutStage,
+                    ':p' => $rolloutPercent,
+                    ':id' => $flagId,
+                ]);
+            } else {
+                $stIn = $controlPdo->prepare(
+                    "INSERT INTO control_rollout_feature_flags
+                     (flag_key, flag_description, default_value, rollout_stage, rollout_percent, is_active, created_at, updated_at)
+                     VALUES (:k, :d, :v, :s, :p, 1, NOW(), NOW())"
+                );
+                $stIn->execute([
+                    ':k' => $flagKey,
+                    ':d' => $flagDescription,
+                    ':v' => $defaultValue,
+                    ':s' => $rolloutStage,
+                    ':p' => $rolloutPercent,
+                ]);
+                $flagId = (int) $controlPdo->lastInsertId();
+            }
+
+            $changedById = (int) ($_SESSION['user_id'] ?? $_SESSION['control_user_id'] ?? 0);
+            $changedByName = trim((string) ($_SESSION['username'] ?? $_SESSION['control_username'] ?? 'system'));
+
+            if ($scopeType !== 'global') {
+                $scopeWhere = $scopeType === 'country'
+                    ? 'flag_id = :f AND scope_type = \'country\' AND country_id = :sid'
+                    : 'flag_id = :f AND scope_type = \'tenant\' AND tenant_id = :sid';
+                $stOv = $controlPdo->prepare("SELECT id FROM control_rollout_flag_overrides WHERE {$scopeWhere} LIMIT 1");
+                $stOv->execute([':f' => $flagId, ':sid' => $scopeType === 'country' ? $countryId : $tenantId]);
+                $overrideId = (int) ($stOv->fetchColumn() ?: 0);
+
+                if ($operation === 'rollback_scope') {
+                    if ($overrideId > 0) {
+                        $stDis = $controlPdo->prepare("UPDATE control_rollout_flag_overrides SET is_active = 0, updated_at = NOW() WHERE id = :id");
+                        $stDis->execute([':id' => $overrideId]);
+                    }
+                } else {
+                    if ($overrideId > 0) {
+                        $stUpOv = $controlPdo->prepare(
+                            "UPDATE control_rollout_flag_overrides
+                             SET override_value = :ov, is_active = 1, changed_by_id = :cbid, changed_by_username = :cbn, updated_at = NOW()
+                             WHERE id = :id"
+                        );
+                        $stUpOv->execute([
+                            ':ov' => $overrideValue,
+                            ':cbid' => $changedById,
+                            ':cbn' => $changedByName,
+                            ':id' => $overrideId,
+                        ]);
+                    } else {
+                        $stInsOv = $controlPdo->prepare(
+                            "INSERT INTO control_rollout_flag_overrides
+                             (flag_id, scope_type, country_id, tenant_id, override_value, is_active, changed_by_id, changed_by_username, created_at, updated_at)
+                             VALUES (:f, :sc, :cid, :tid, :ov, 1, :cbid, :cbn, NOW(), NOW())"
+                        );
+                        $stInsOv->execute([
+                            ':f' => $flagId,
+                            ':sc' => $scopeType,
+                            ':cid' => $scopeType === 'country' ? $countryId : null,
+                            ':tid' => $scopeType === 'tenant' ? $tenantId : null,
+                            ':ov' => $overrideValue,
+                            ':cbid' => $changedById,
+                            ':cbn' => $changedByName,
+                        ]);
+                    }
+                }
+            }
+            $controlPdo->commit();
+            ccAudit($controlPdo, 'rollout_wizard_apply', ['payload' => array_merge($auditPost, ['flag_key' => $flagKey, 'scope_type' => $scopeType, 'operation' => $operation])]);
+            logSystemEvent('ADMIN_ACTION', ['action' => 'rollout_wizard_apply', 'flag_key' => $flagKey, 'scope_type' => $scopeType, 'operation' => $operation]);
+            $alerts[] = ['type' => 'safe', 'text' => 'Release Wizard applied for ' . $flagKey . ' (' . $scopeType . ', ' . $operation . ').'];
         } elseif ($action === 'tenant_link_agency') {
             ControlCenterAccess::requireRole([ControlCenterAccess::SUPER_ADMIN]);
             if (!ControlCenterRateLimiter::check('tenant_actions', $rid, 5, 60)) {
@@ -1577,6 +1700,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
             $alerts[] = ['type' => 'danger', 'text' => 'Emergency action "' . $code . '" recorded.'];
         }
     } catch (Throwable $e) {
+        if ($controlPdo instanceof PDO && $controlPdo->inTransaction()) {
+            $controlPdo->rollBack();
+        }
         $act = (string) ($_POST['action'] ?? '');
         $msg = $e->getMessage();
         error_log('control-center POST ' . $act . ': ' . $msg);
@@ -1743,6 +1869,8 @@ $rolloutSummary = [
     'stage_full' => 0,
 ];
 $rolloutTopFlags = [];
+$rolloutFlagKeys = [];
+$rolloutCountryIds = [];
 if ($controlPdo instanceof PDO) {
     try {
         $ccMetrics = array_merge($ccMetrics, ControlCenterMetrics::getCounters($controlPdo));
@@ -1794,9 +1922,35 @@ if ($controlPdo instanceof PDO) {
                  ORDER BY updated_at DESC, id DESC
                  LIMIT 10"
             )->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $rolloutFlagKeys = $controlPdo->query(
+                "SELECT flag_key
+                 FROM control_rollout_feature_flags
+                 ORDER BY flag_key ASC
+                 LIMIT 500"
+            )->fetchAll(PDO::FETCH_COLUMN) ?: [];
         }
         if (ccTableExists($controlPdo, 'control_rollout_flag_overrides')) {
             $rolloutSummary['overrides_total'] = (int) ($controlPdo->query('SELECT COUNT(*) FROM control_rollout_flag_overrides')->fetchColumn() ?: 0);
+            $rolloutCountryIds = $controlPdo->query(
+                "SELECT DISTINCT country_id
+                 FROM control_rollout_flag_overrides
+                 WHERE country_id IS NOT NULL AND country_id > 0
+                 ORDER BY country_id ASC
+                 LIMIT 200"
+            )->fetchAll(PDO::FETCH_COLUMN) ?: [];
+        }
+        if (ccTableExists($controlPdo, 'control_rollout_tenants')) {
+            $tenantCountryIds = $controlPdo->query(
+                "SELECT DISTINCT country_id
+                 FROM control_rollout_tenants
+                 WHERE country_id IS NOT NULL AND country_id > 0
+                 ORDER BY country_id ASC
+                 LIMIT 200"
+            )->fetchAll(PDO::FETCH_COLUMN) ?: [];
+            if (!empty($tenantCountryIds)) {
+                $rolloutCountryIds = array_values(array_unique(array_merge($rolloutCountryIds, $tenantCountryIds)));
+                sort($rolloutCountryIds);
+            }
         }
     } catch (Throwable $e) {
         /* ignore */
@@ -2341,6 +2495,59 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                 (canary: <?php echo (int) $rolloutSummary['stage_canary']; ?>, wave1: <?php echo (int) $rolloutSummary['stage_wave1']; ?>, wave2: <?php echo (int) $rolloutSummary['stage_wave2']; ?>, full: <?php echo (int) $rolloutSummary['stage_full']; ?>).
                 <a href="<?php echo htmlspecialchars(($siteUrl !== '' ? $siteUrl : '') . '/control-panel/pages/control/tenant-rollout.php?control=1', ENT_QUOTES, 'UTF-8'); ?>">Open Tenants &amp; Rollout</a>
             </p>
+            <div class="cc-inline-panel">
+                <h4>Release Wizard</h4>
+                <p class="cc-muted">Apply one core release globally, by country, or by tenant. Use rollback to disable a country/tenant override quickly.</p>
+                <div class="cc-form-row wrap" id="rwExamples">
+                    <button type="button" class="rw-example-btn" data-flag="release.payments.v3" data-scope="global" data-stage="wave1" data-percent="10" data-default="1" data-operation="apply">Example: Global wave rollout</button>
+                    <button type="button" class="rw-example-btn" data-flag="release.tax.sa.v2" data-scope="country" data-stage="full" data-percent="100" data-default="0" data-override="1" data-operation="apply">Example: Country-only feature</button>
+                    <button type="button" class="rw-example-btn" data-flag="hotfix.invoice.rounding" data-scope="tenant" data-stage="full" data-percent="100" data-default="0" data-override="1" data-operation="apply">Example: Tenant hotfix</button>
+                    <button type="button" class="rw-example-btn" data-flag="release.tax.sa.v2" data-scope="country" data-stage="full" data-percent="100" data-default="0" data-operation="rollback_scope">Example: Rollback country override</button>
+                </div>
+                <form method="post" id="rwForm" class="cc-form-row wrap">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="action" value="rollout_wizard_apply">
+                    <input class="cc-grow" type="text" name="rw_flag_key" id="rwFlagKey" placeholder="Flag key (example: release.payments.v3)" list="rwFlagList" required>
+                    <datalist id="rwFlagList">
+                        <?php foreach ($rolloutFlagKeys as $rk): ?>
+                            <option value="<?php echo htmlspecialchars((string) $rk, ENT_QUOTES, 'UTF-8'); ?>"></option>
+                        <?php endforeach; ?>
+                    </datalist>
+                    <input class="cc-grow" type="text" name="rw_flag_description" id="rwFlagDescription" placeholder="Description (why this release exists)">
+                    <select class="cc-compact" name="rw_scope_type" id="rwScopeType">
+                        <option value="global">global</option>
+                        <option value="country">country</option>
+                        <option value="tenant">tenant</option>
+                    </select>
+                    <select class="cc-compact" name="rw_rollout_stage" id="rwStage">
+                        <option value="canary">canary</option>
+                        <option value="wave1">wave1</option>
+                        <option value="wave2">wave2</option>
+                        <option value="full" selected>full</option>
+                    </select>
+                    <input class="cc-compact" type="number" name="rw_rollout_percent" id="rwPercent" min="0" max="100" value="100" title="Rollout percent">
+                    <select class="cc-compact" name="rw_default_value" id="rwDefaultValue">
+                        <option value="1">default enabled</option>
+                        <option value="0">default disabled</option>
+                    </select>
+                    <input class="cc-compact rw-country-field hidden" type="number" name="rw_country_id" id="rwCountryId" min="1" placeholder="Country ID" list="rwCountryList">
+                    <datalist id="rwCountryList">
+                        <?php foreach ($rolloutCountryIds as $cid): ?>
+                            <option value="<?php echo (int) $cid; ?>"></option>
+                        <?php endforeach; ?>
+                    </datalist>
+                    <input class="cc-compact rw-tenant-field hidden" type="number" name="rw_tenant_id" id="rwTenantId" min="1" placeholder="Tenant ID">
+                    <select class="cc-compact rw-override-field hidden" name="rw_override_value" id="rwOverrideValue">
+                        <option value="1">override enabled</option>
+                        <option value="0">override disabled</option>
+                    </select>
+                    <select class="cc-compact" name="rw_operation" id="rwOperation">
+                        <option value="apply">apply</option>
+                        <option value="rollback_scope">rollback_scope</option>
+                    </select>
+                    <button type="submit" class="cc-compact">Run Wizard</button>
+                </form>
+            </div>
             <div class="cc-flags">
                 <?php
                 $flags = [

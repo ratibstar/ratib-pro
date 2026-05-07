@@ -54,6 +54,19 @@ function etl_ascii_digits(string $value): string
     return $out;
 }
 
+function etl_normalize_datetime_filter(string $value): string
+{
+    $v = trim(etl_ascii_digits($value));
+    if ($v === '') {
+        return '';
+    }
+    // Accept values from old datetime-local format too.
+    $v = str_replace('T', ' ', $v);
+    // Keep only common datetime chars to avoid invalid SQL values.
+    $v = preg_replace('/[^0-9:\-\s]/', '', $v) ?? '';
+    return trim($v);
+}
+
 function timelinePdo(): PDO
 {
     return getControlDB();
@@ -65,8 +78,8 @@ $filters = [
     'event_type' => (string) ($_GET['event_type'] ?? ''),
     'level' => (string) ($_GET['level'] ?? ''),
     'request_id' => (string) ($_GET['request_id'] ?? ''),
-    'from' => (string) ($_GET['from'] ?? ''),
-    'to' => (string) ($_GET['to'] ?? ''),
+    'from' => etl_normalize_datetime_filter((string) ($_GET['from'] ?? '')),
+    'to' => etl_normalize_datetime_filter((string) ($_GET['to'] ?? '')),
 ];
 $traceRequestId = (string) ($_GET['trace_request_id'] ?? '');
 $isApi = ((string) ($_GET['api'] ?? '') === '1');
@@ -173,8 +186,8 @@ uasort($groups, static function ($a, $b) {
                 <?php endforeach; ?>
             </select>
             <input type="text" name="request_id" placeholder="Request ID" value="<?php echo htmlspecialchars((string) $filters['request_id'], ENT_QUOTES, 'UTF-8'); ?>">
-            <input type="datetime-local" name="from" value="<?php echo htmlspecialchars((string) $filters['from'], ENT_QUOTES, 'UTF-8'); ?>">
-            <input type="datetime-local" name="to" value="<?php echo htmlspecialchars((string) $filters['to'], ENT_QUOTES, 'UTF-8'); ?>">
+            <input type="text" name="from" placeholder="From: YYYY-MM-DD HH:MM:SS" value="<?php echo htmlspecialchars((string) $filters['from'], ENT_QUOTES, 'UTF-8'); ?>">
+            <input type="text" name="to" placeholder="To: YYYY-MM-DD HH:MM:SS" value="<?php echo htmlspecialchars((string) $filters['to'], ENT_QUOTES, 'UTF-8'); ?>">
             <button type="submit">Apply</button>
             <label><input type="checkbox" id="liveMode"> Live stream (SSE)</label>
             <span id="streamStatus" class="stream-status off">stream off</span>
