@@ -57,10 +57,12 @@ $controlPagesBase = rtrim($baseUrl, '/') . '/pages/control';
 $agenciesUrlWithControl = $controlPagesBase . '/agencies.php?control=1';
 $countryUsersUrlWithControl = $controlPagesBase . '/country-users.php?control=1';
 
-// EN: Build scoped statistics according to allowed countries for current operator.
-// AR: تجهيز الإحصاءات ضمن نطاق الدول المسموح بها للمستخدم الحالي.
-// Get statistics - filter by user's allowed countries when they have country-specific access
-$allowedCountryIds = getAllowedCountryIds($ctrl);
+// EN: Build scoped statistics to match Users-per-country API (`getControlPanelCountryScopeIds`).
+// AR: إحصاءات بنفس نطاق دولة العمل كواجهة "المستخدمون حسب الدولة" حتى لا تتعارض الأرقام مع العرض.
+// Get statistics - same workspace scope as get-users-per-country.php (session country pin + country_* limits)
+$scopeCountryIds = function_exists('getControlPanelCountryScopeIds')
+    ? getControlPanelCountryScopeIds($ctrl)
+    : getAllowedCountryIds($ctrl);
 $stats = [
     'countries' => 0,
     'agencies' => 0,
@@ -71,16 +73,16 @@ $stats = [
 ];
 
 $countryWhere = '';
-if ($allowedCountryIds === []) {
+if ($scopeCountryIds === []) {
     $countryWhere = ' AND 1=0'; // No access - show zeros
-} elseif ($allowedCountryIds !== null && !empty($allowedCountryIds)) {
-    $countryWhere = ' AND id IN (' . implode(',', array_map('intval', $allowedCountryIds)) . ')';
+} elseif ($scopeCountryIds !== null && !empty($scopeCountryIds)) {
+    $countryWhere = ' AND id IN (' . implode(',', array_map('intval', $scopeCountryIds)) . ')';
 }
 $agencyWhere = '';
-if ($allowedCountryIds === []) {
+if ($scopeCountryIds === []) {
     $agencyWhere = ' AND 1=0';
-} elseif ($allowedCountryIds !== null && !empty($allowedCountryIds)) {
-    $agencyWhere = ' AND country_id IN (' . implode(',', array_map('intval', $allowedCountryIds)) . ')';
+} elseif ($scopeCountryIds !== null && !empty($scopeCountryIds)) {
+    $agencyWhere = ' AND country_id IN (' . implode(',', array_map('intval', $scopeCountryIds)) . ')';
 }
 
 try {
