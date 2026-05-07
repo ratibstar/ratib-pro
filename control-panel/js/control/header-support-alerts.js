@@ -54,7 +54,9 @@
         if (btn.getAttribute('data-support-alerts-bound') === '1') return;
         btn.setAttribute('data-support-alerts-bound', '1');
 
-        var pollMs = 2000;
+        var pollMs = 15000;
+        var pollTimer = null;
+        var endpointHealthy = true;
 
         function render(items, unread) {
             if (unread > 0) {
@@ -88,9 +90,16 @@
         }
 
         function load() {
+            if (!endpointHealthy) return;
             var url = apiBase + '/support-chats.php?status=open&page=1&limit=5&_=' + Date.now();
             fetch(url, { credentials: 'same-origin', cache: 'no-store' })
-                .then(function(r) { return r.json(); })
+                .then(function(r) {
+                    if (!r.ok) {
+                        endpointHealthy = false;
+                        return null;
+                    }
+                    return r.json();
+                })
                 .then(function(data) {
                     if (!data || !data.success) return;
                     var unread = parseInt(data.unread_total || 0, 10) || 0;
@@ -99,13 +108,25 @@
                     });
                     render(items, unread);
                 })
-                .catch(function() { /* ignore */ });
+                .catch(function() {
+                    endpointHealthy = false;
+                });
+        }
+
+        function ensurePolling() {
+            if (pollTimer) return;
+            pollTimer = setInterval(load, pollMs);
         }
 
         btn.addEventListener('click', function(e) {
             e.preventDefault();
-            dropdown.style.display = (dropdown.style.display === 'none' || !dropdown.style.display) ? 'block' : 'none';
-            load();
+            var opening = (dropdown.style.display === 'none' || !dropdown.style.display);
+            dropdown.style.display = opening ? 'block' : 'none';
+            if (opening) {
+                endpointHealthy = true;
+                load();
+                ensurePolling();
+            }
         });
 
         document.addEventListener('click', function(e) {
@@ -114,12 +135,12 @@
             }
         });
 
-        load();
-        setInterval(load, pollMs);
         document.addEventListener('visibilitychange', function() {
-            if (document.visibilityState === 'visible') load();
+            if (document.visibilityState === 'visible' && dropdown.style.display === 'block') load();
         });
-        window.addEventListener('focus', load);
+        window.addEventListener('focus', function() {
+            if (dropdown.style.display === 'block') load();
+        });
     }
 
     function scheduleInit() {
