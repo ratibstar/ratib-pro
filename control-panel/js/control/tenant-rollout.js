@@ -68,7 +68,22 @@
             headers: method === 'POST' ? { 'Content-Type': 'application/json' } : undefined,
             body: method === 'POST' ? JSON.stringify(payload || {}) : undefined
         }).then(function (res) {
-            return res.json();
+            return res.text().then(function (text) {
+                var data = null;
+                try {
+                    data = JSON.parse(text);
+                } catch (_) {
+                    data = null;
+                }
+                if (!res.ok) {
+                    var serverMessage = (data && data.message) ? data.message : (text || ('HTTP ' + res.status));
+                    throw new Error(serverMessage);
+                }
+                if (!data) {
+                    throw new Error('Invalid JSON response from server.');
+                }
+                return data;
+            });
         });
     }
 

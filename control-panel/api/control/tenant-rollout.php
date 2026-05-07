@@ -7,6 +7,48 @@ require_once __DIR__ . '/../../includes/control-permissions.php';
 if (function_exists('mysqli_report')) {
     mysqli_report(MYSQLI_REPORT_OFF);
 }
+ob_start();
+
+set_exception_handler(static function (Throwable $e): void {
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=UTF-8');
+    }
+    echo json_encode([
+        'success' => false,
+        'message' => 'Unhandled exception: ' . $e->getMessage(),
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+});
+
+set_error_handler(static function (int $severity, string $message, string $file, int $line): bool {
+    if (!(error_reporting() & $severity)) {
+        return false;
+    }
+    throw new ErrorException($message, 0, $severity, $file, $line);
+});
+
+register_shutdown_function(static function (): void {
+    $err = error_get_last();
+    if (!$err) {
+        return;
+    }
+    $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR, E_RECOVERABLE_ERROR];
+    if (!in_array((int) $err['type'], $fatalTypes, true)) {
+        return;
+    }
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=UTF-8');
+    }
+    echo json_encode([
+        'success' => false,
+        'message' => 'Fatal error: ' . (string) ($err['message'] ?? 'unknown'),
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+});
 
 function tr_json(array $payload, int $status = 200): void
 {
@@ -98,6 +140,16 @@ function tr_ensure_tables(mysqli $ctrl): void
             KEY idx_rollout_audit_created (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
+
+    // Lightweight schema healing in case table existed from earlier partial versions.
+    $hasTenantRelease = @$ctrl->query("SHOW COLUMNS FROM control_rollout_tenants LIKE 'release_channel'");
+    if (!$hasTenantRelease || $hasTenantRelease->num_rows === 0) {
+        @$ctrl->query("ALTER TABLE control_rollout_tenants ADD COLUMN release_channel VARCHAR(32) NOT NULL DEFAULT 'stable' AFTER status");
+    }
+    $hasTenantStatus = @$ctrl->query("SHOW COLUMNS FROM control_rollout_tenants LIKE 'status'");
+    if (!$hasTenantStatus || $hasTenantStatus->num_rows === 0) {
+        @$ctrl->query("ALTER TABLE control_rollout_tenants ADD COLUMN status VARCHAR(32) NOT NULL DEFAULT 'active'");
+    }
 }
 
 function tr_audit(mysqli $ctrl, string $entityType, ?int $entityId, string $actionType, mixed $before, mixed $after): void
