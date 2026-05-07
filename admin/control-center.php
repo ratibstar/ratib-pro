@@ -1660,6 +1660,7 @@ $rolloutSummary = [
     'stage_wave2' => 0,
     'stage_full' => 0,
 ];
+$rolloutTopFlags = [];
 if ($controlPdo instanceof PDO) {
     try {
         $ccMetrics = array_merge($ccMetrics, ControlCenterMetrics::getCounters($controlPdo));
@@ -1705,6 +1706,12 @@ if ($controlPdo instanceof PDO) {
                 $rolloutSummary['stage_wave2'] = (int) ($row['stage_wave2'] ?? 0);
                 $rolloutSummary['stage_full'] = (int) ($row['stage_full'] ?? 0);
             }
+            $rolloutTopFlags = $controlPdo->query(
+                "SELECT flag_key, rollout_stage, rollout_percent, default_value, updated_at
+                 FROM control_rollout_feature_flags
+                 ORDER BY updated_at DESC, id DESC
+                 LIMIT 10"
+            )->fetchAll(PDO::FETCH_ASSOC) ?: [];
         }
         if (ccTableExists($controlPdo, 'control_rollout_flag_overrides')) {
             $rolloutSummary['overrides_total'] = (int) ($controlPdo->query('SELECT COUNT(*) FROM control_rollout_flag_overrides')->fetchColumn() ?: 0);
@@ -2155,6 +2162,26 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                 ?>
                     <div class="flag-item"><span><?php echo htmlspecialchars($name, ENT_QUOTES, 'UTF-8'); ?></span><label class="switch"><input type="checkbox" <?php echo $enabled ? 'checked' : ''; ?> disabled><span class="slider"></span></label></div>
                 <?php endforeach; ?>
+            </div>
+            <div class="cc-table-wrap" style="margin-top:12px;">
+                <table>
+                    <thead>
+                        <tr><th>Flag Key</th><th>Stage</th><th>Percent</th><th>Default</th><th>Updated</th></tr>
+                    </thead>
+                    <tbody>
+                    <?php if (empty($rolloutTopFlags)): ?>
+                        <tr><td colspan="5">No rollout flags found.</td></tr>
+                    <?php else: foreach ($rolloutTopFlags as $rf): ?>
+                        <tr>
+                            <td><code><?php echo htmlspecialchars((string) ($rf['flag_key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code></td>
+                            <td><?php echo htmlspecialchars((string) ($rf['rollout_stage'] ?? 'full'), ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td><?php echo (int) ($rf['rollout_percent'] ?? 100); ?>%</td>
+                            <td><?php echo ((int) ($rf['default_value'] ?? 0) > 0) ? 'enabled' : 'disabled'; ?></td>
+                            <td><?php echo htmlspecialchars((string) ($rf['updated_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                        </tr>
+                    <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
             </div>
         </section>
 
