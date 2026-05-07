@@ -17,6 +17,14 @@ body {
   background: #0b1220;
   color: #e5e7eb;
   overflow: hidden;
+  direction: ltr;
+}
+input,
+select,
+textarea,
+button {
+  direction: ltr;
+  unicode-bidi: plaintext;
 }
 .cc-warning {
   background: #7f1d1d;
@@ -290,6 +298,21 @@ body {
 }
 .cc-inline-panel h4 {
   margin: 0 0 10px;
+}
+.cc-inline-panel .cc-panel-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cc-confirm-inline {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cc-confirm-inline input[type="text"] {
+  min-width: 160px;
 }
 .cc-check-cell {
   width: 34px;

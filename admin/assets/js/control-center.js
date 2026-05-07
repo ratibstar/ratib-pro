@@ -186,8 +186,8 @@
         clearSql.addEventListener('click', function () { sqlEditor.value = ''; });
     }
 
-    var modal = document.getElementById('editTenantModal');
-    var closeModal = document.getElementById('closeEditModal');
+    var editPanel = document.getElementById('ccEditTenantPanel');
+    var closeEditPanel = document.getElementById('ccCloseEditPanel');
     var idEl = document.getElementById('editTenantId');
     var nameEl = document.getElementById('editTenantName');
     var domainEl = document.getElementById('editTenantDomain');
@@ -209,7 +209,7 @@
             if (btn.dataset.bound === '1') return;
             btn.dataset.bound = '1';
             btn.addEventListener('click', function () {
-                if (!modal) return;
+                if (!editPanel) return;
                 idEl.value = btn.getAttribute('data-id') || '';
                 nameEl.value = btn.getAttribute('data-name') || '';
                 domainEl.value = btn.getAttribute('data-domain') || '';
@@ -217,13 +217,13 @@
                 dbHostEl.value = btn.getAttribute('data-db-host') || '';
                 dbUserEl.value = btn.getAttribute('data-db-user') || '';
                 statusEl.value = btn.getAttribute('data-status') || 'provisioning';
-                modal.classList.remove('hidden');
+                editPanel.classList.remove('hidden');
             });
         });
     }
     bindEditButtons();
-    if (closeModal && modal) {
-        closeModal.addEventListener('click', function () { modal.classList.add('hidden'); });
+    if (closeEditPanel && editPanel) {
+        closeEditPanel.addEventListener('click', function () { editPanel.classList.add('hidden'); });
     }
 
     function bindDangerForms() {
@@ -236,26 +236,47 @@
                     return;
                 }
                 e.preventDefault();
-                var confirmText = form.getAttribute('data-confirm') || '';
                 var promptText = form.getAttribute('data-prompt') || '';
                 var requiredText = '';
                 var m = promptText.match(/Type\s+([A-Z_]+)\s+to\s+continue/i);
                 if (m && m[1]) requiredText = m[1].toUpperCase();
-                showConfirmModal({
-                    title: 'Confirm Dangerous Action',
-                    message: confirmText || promptText || 'Please confirm this action.',
-                    actionName: (form.querySelector('input[name="action"]') || {}).value || '',
-                    tenantId: (form.querySelector('input[name="tenant_id"]') || {}).value || '',
-                    requireText: requiredText,
-                    confirmLabel: 'Confirm',
-                    danger: true
-                }).then(function (result) {
-                    if (!result || !result.confirmed) return;
-                    var input = form.querySelector('input[name="confirm_text"]');
-                    if (input && requiredText) input.value = requiredText;
-                    form.dataset.confirmed = '1';
-                    form.submit();
-                });
+                if (!requiredText) {
+                    showToast('Missing confirmation keyword', 'danger');
+                    return;
+                }
+                var input = form.querySelector('input[name="confirm_text"]');
+                if (!input) {
+                    showToast('Missing confirm_text field', 'danger');
+                    return;
+                }
+                // Inline confirm UI (no modal)
+                var wrap = form.querySelector('.cc-confirm-inline');
+                if (!wrap) {
+                    wrap = document.createElement('span');
+                    wrap.className = 'cc-confirm-inline';
+                    var hint = document.createElement('span');
+                    hint.className = 'cc-muted';
+                    hint.textContent = 'Type ' + requiredText + ' then press again';
+                    var txt = document.createElement('input');
+                    txt.type = 'text';
+                    txt.autocomplete = 'off';
+                    txt.placeholder = requiredText;
+                    txt.addEventListener('input', function () {
+                        input.value = String(txt.value || '');
+                    });
+                    wrap.appendChild(hint);
+                    wrap.appendChild(txt);
+                    form.appendChild(wrap);
+                    window.setTimeout(function () { try { txt.focus(); } catch (_) {} }, 0);
+                    return;
+                }
+                var typed = String(input.value || '').trim().toUpperCase();
+                if (typed !== requiredText) {
+                    showToast('Confirmation text must be: ' + requiredText, 'warning');
+                    return;
+                }
+                form.dataset.confirmed = '1';
+                form.submit();
             });
         });
     }
@@ -268,33 +289,40 @@
                 return;
             }
             e.preventDefault();
-            var label = form.getAttribute('data-label') || 'emergency action';
-            showConfirmModal({
-                title: 'Emergency Action',
-                message: 'You are about to run: ' + label,
-                actionName: (form.querySelector('input[name="emergency_code"]') || {}).value || 'emergency_action',
-                requireText: 'CONFIRM',
-                confirmLabel: 'Continue',
-                danger: true
-            }).then(function (step1) {
-                if (!step1 || !step1.confirmed) return;
-                showConfirmModal({
-                    title: 'Final Confirmation',
-                    message: 'Type CONFIRM again to execute this emergency action.',
-                    actionName: (form.querySelector('input[name="emergency_code"]') || {}).value || 'emergency_action',
-                    requireText: 'CONFIRM',
-                    confirmLabel: 'Execute',
-                    danger: true
-                }).then(function (step2) {
-                    if (!step2 || !step2.confirmed) return;
-                    var i1 = form.querySelector('input[name="confirm_text"]');
-                    var i2 = form.querySelector('input[name="confirm_text_second"]');
-                    if (i1) i1.value = 'CONFIRM';
-                    if (i2) i2.value = 'CONFIRM';
-                    form.dataset.confirmed = '1';
-                    form.submit();
+            var i1 = form.querySelector('input[name="confirm_text"]');
+            var i2 = form.querySelector('input[name="confirm_text_second"]');
+            if (!i1 || !i2) {
+                showToast('Emergency confirmation inputs missing', 'danger');
+                return;
+            }
+            var wrap = form.querySelector('.cc-confirm-inline');
+            if (!wrap) {
+                wrap = document.createElement('span');
+                wrap.className = 'cc-confirm-inline';
+                var hint = document.createElement('span');
+                hint.className = 'cc-muted';
+                hint.textContent = 'Type CONFIRM then press again';
+                var txt = document.createElement('input');
+                txt.type = 'text';
+                txt.autocomplete = 'off';
+                txt.placeholder = 'CONFIRM';
+                txt.addEventListener('input', function () {
+                    i1.value = String(txt.value || '');
+                    i2.value = String(txt.value || '');
                 });
-            });
+                wrap.appendChild(hint);
+                wrap.appendChild(txt);
+                form.appendChild(wrap);
+                window.setTimeout(function () { try { txt.focus(); } catch (_) {} }, 0);
+                return;
+            }
+            var typed = String(i1.value || '').trim().toUpperCase();
+            if (typed !== 'CONFIRM') {
+                showToast('Confirmation text must be: CONFIRM', 'warning');
+                return;
+            }
+            form.dataset.confirmed = '1';
+            form.submit();
         });
     });
 
@@ -382,6 +410,12 @@
         var div = document.createElement('div');
         div.textContent = (text === null || text === undefined) ? '' : String(text);
         return div.innerHTML;
+    }
+
+    function latinDigits(input) {
+        var s = String(input === null || input === undefined ? '' : input);
+        return s.replace(/[\u0660-\u0669]/g, function (d) { return String(d.charCodeAt(0) - 0x0660); })
+            .replace(/[\u06F0-\u06F9]/g, function (d) { return String(d.charCodeAt(0) - 0x06F0); });
     }
 
     function numericFromMixedId(value) {
@@ -561,7 +595,7 @@
                 '<td>' + escapeHtml(t.domain || '') + '</td>' +
                 '<td><span class="badge ' + escapeHtml(status) + '">' + escapeHtml(status) + '</span></td>' +
                 '<td><span class="db-badge ' + (hasDbConfig ? 'ok' : 'missing') + '">' + (hasDbConfig ? 'configured' : 'missing') + '</span></td>' +
-                '<td>' + escapeHtml(t.created_at || '') + '</td>' +
+                '<td>' + escapeHtml(latinDigits(t.created_at || '')) + '</td>' +
                 '<td class="row-actions">' +
                 editBtn +
                 toggleForm +

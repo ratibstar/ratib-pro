@@ -2,7 +2,8 @@
  * EN: Defines system administration/observability module behavior in `admin/assets/css/event-timeline.css`.
  * AR: يحدد سلوك وحدة إدارة النظام والمراقبة في `admin/assets/css/event-timeline.css`.
  */
-body { margin: 0; font-family: Arial, sans-serif; background: #0b1220; color: #e5e7eb; }
+body { margin: 0; font-family: Arial, sans-serif; background: #0b1220; color: #e5e7eb; direction: ltr; }
+input, select, button, textarea { direction: ltr; unicode-bidi: plaintext; }
 .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
 .card { background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }

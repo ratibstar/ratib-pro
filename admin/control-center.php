@@ -1822,7 +1822,7 @@ $relativeCssUrl = 'assets/css/control-center.css?v=' . rawurlencode($assetCssVer
 $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion);
 ?>
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -1943,6 +1943,29 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
                         <input class="cc-grow" type="password" id="cfgDbPassword" placeholder="DB Password">
                         <button class="cc-compact" type="submit">Save DB Config</button>
                         <button class="cc-compact" type="button" id="ccCloseDbPanel">Close</button>
+                    </fieldset>
+                </form>
+            </div>
+
+            <div id="ccEditTenantPanel" class="cc-inline-panel hidden">
+                <h4>Edit Tenant</h4>
+                <form method="post" id="ccEditTenantForm" class="cc-form-row wrap">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="action" value="tenant_update">
+                    <input type="hidden" name="tenant_id" id="editTenantId">
+                    <fieldset class="cc-fieldset-plain" <?php echo $isAdminOrAboveCc ? '' : 'disabled'; ?>>
+                        <input class="cc-grow" type="text" name="name" id="editTenantName" required placeholder="Tenant Name">
+                        <input class="cc-grow" type="text" name="domain" id="editTenantDomain" required placeholder="Domain">
+                        <input class="cc-grow" type="text" name="database_name" id="editTenantDbName" placeholder="Database Name">
+                        <input class="cc-grow" type="text" name="db_host" id="editTenantDbHost" placeholder="DB Host (optional)">
+                        <input class="cc-grow" type="text" name="db_user" id="editTenantDbUser" placeholder="DB User">
+                        <select class="cc-compact" name="status" id="editTenantStatus">
+                            <option value="provisioning">provisioning</option>
+                            <option value="active">active</option>
+                            <option value="suspended">suspended</option>
+                        </select>
+                        <button class="cc-compact" type="submit">Save</button>
+                        <button class="cc-compact" type="button" id="ccCloseEditPanel">Close</button>
                     </fieldset>
                 </form>
             </div>
@@ -2355,33 +2378,6 @@ $relativeJsUrl = 'assets/js/control-center.js?v=' . rawurlencode($assetJsVersion
             <?php endif; ?>
         </section>
     </main>
-</div>
-
-<div id="editTenantModal" class="modal hidden">
-    <div class="modal-content">
-        <h3>Edit Tenant</h3>
-        <form method="post" id="editTenantForm" class="cc-form-grid">
-            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
-            <input type="hidden" name="action" value="tenant_update">
-            <input type="hidden" name="tenant_id" id="editTenantId">
-            <fieldset class="cc-fieldset-plain" <?php echo $isAdminOrAboveCc ? '' : 'disabled'; ?>>
-            <input type="text" name="name" id="editTenantName" required>
-            <input type="text" name="domain" id="editTenantDomain" required>
-            <input type="text" name="database_name" id="editTenantDbName">
-            <input type="text" name="db_host" id="editTenantDbHost">
-            <input type="text" name="db_user" id="editTenantDbUser">
-            <select name="status" id="editTenantStatus">
-                <option value="provisioning">provisioning</option>
-                <option value="active">active</option>
-                <option value="suspended">suspended</option>
-            </select>
-            <div class="modal-actions">
-                <button type="submit">Save</button>
-                <button type="button" id="closeEditModal">Cancel</button>
-            </div>
-            </fieldset>
-        </form>
-    </div>
 </div>
 
 <div id="ccToastHost" class="cc-toast-host" aria-live="polite" aria-atomic="true"></div>

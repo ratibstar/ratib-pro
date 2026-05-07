@@ -19,6 +19,18 @@
         return d.innerHTML;
     }
 
+    function latinDigits(input) {
+        const s = String(input ?? '');
+        // Convert Arabic-Indic and Eastern Arabic-Indic digits to ASCII.
+        return s.replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+            .replace(/[\u06F0-\u06F9]/g, (d) => String(d.charCodeAt(0) - 0x06F0));
+    }
+
+    function formatDateLikeEnglish(value) {
+        // If backend already returns ISO-like string, keep it but ensure ASCII digits.
+        return latinDigits(value);
+    }
+
     function isAnomaly(ev) {
         return ev.event_type === 'ANOMALY_DETECTED' || ev.level === 'critical';
     }
@@ -80,7 +92,7 @@
         const durHtml = dms != null ? '<span>' + esc(String(dms)) + ' ms</span>' : '';
         const html = '<div class="' + cls + '" data-event-id="' + esc(String(id)) + '">' +
             '<div class="meta">' +
-            '<span>' + esc(ev.created_at) + '</span>' +
+            '<span>' + esc(formatDateLikeEnglish(ev.created_at)) + '</span>' +
             '<span>' + esc(ev.event_type) + '</span>' +
             '<span>level=' + esc(ev.level) + '</span>' +
             durHtml +
