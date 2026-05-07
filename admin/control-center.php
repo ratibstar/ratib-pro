@@ -2233,7 +2233,7 @@ if ($rwExample === 'global_wave') {
                             <option value="suspend">Suspend</option>
                             <option value="delete">Delete</option>
                         </select>
-                        <button type="submit" class="cc-compact">Run</button>
+                        <button type="submit" id="ccBulkRunBtn" class="cc-compact" disabled>Run</button>
                     </form>
                     <span class="cc-muted" id="ccBulkCount">0 selected</span>
                 </div>

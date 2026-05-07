@@ -449,6 +449,20 @@
             });
         });
     }
+    // Delegated fallback for any late-rendered Configure DB buttons.
+    document.addEventListener('click', function (evt) {
+        var btn = evt.target && evt.target.closest ? evt.target.closest('.cfg-db-btn') : null;
+        if (!btn) return;
+        var tenantId = Number(btn.getAttribute('data-tenant-id') || 0);
+        var tenant = tenantIndex[tenantId] || {
+            id: tenantId,
+            database_name: btn.getAttribute('data-db-name') || '',
+            db_host: btn.getAttribute('data-db-host') || '',
+            db_user: btn.getAttribute('data-db-user') || ''
+        };
+        if (!tenant || !tenant.id) return;
+        configureDbForTenant(tenant);
+    });
 
     function renderTenants(rows) {
         var tbody = document.querySelector('#tenant-control table tbody');
@@ -857,10 +871,17 @@
     var bulkForm = document.getElementById('ccTenantBulkForm');
     var bulkAction = document.getElementById('ccBulkAction');
     var bulkCount = document.getElementById('ccBulkCount');
+    var bulkRunBtn = document.getElementById('ccBulkRunBtn');
     function updateBulkCount() {
         if (!bulkCount) return;
         var checked = document.querySelectorAll('.cc-tenant-check:checked').length;
         bulkCount.textContent = String(checked) + ' selected';
+    }
+    function updateBulkRunState() {
+        if (!bulkRunBtn) return;
+        var hasAction = !!(bulkAction && String(bulkAction.value || '').trim() !== '');
+        var checked = document.querySelectorAll('.cc-tenant-check:checked').length;
+        bulkRunBtn.disabled = !(hasAction && checked > 0);
     }
     if (selectAll) {
         selectAll.addEventListener('change', function () {
@@ -869,12 +890,30 @@
                 if (cb && !cb.disabled) cb.checked = on;
             });
             updateBulkCount();
+            updateBulkRunState();
         });
     }
     document.querySelectorAll('.cc-tenant-check').forEach(function (cb) {
-        cb.addEventListener('change', updateBulkCount);
+        cb.addEventListener('change', function () {
+            updateBulkCount();
+            updateBulkRunState();
+        });
     });
+    if (bulkAction) {
+        bulkAction.addEventListener('change', function () {
+            // Reset previous typed confirmation when action changes.
+            if (bulkForm) {
+                var input = bulkForm.querySelector('input[name="confirm_text"]');
+                if (input) input.value = '';
+                var wrap = bulkForm.querySelector('.cc-confirm-inline');
+                if (wrap) wrap.remove();
+                bulkForm.dataset.confirmed = '0';
+            }
+            updateBulkRunState();
+        });
+    }
     updateBulkCount();
+    updateBulkRunState();
     if (bulkForm && bulkAction) {
         bulkForm.addEventListener('submit', function (e) {
             if (bulkForm.dataset.confirmed === '1') {
