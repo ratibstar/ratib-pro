@@ -885,17 +885,22 @@
     var tenantIssueSinglePanel = document.getElementById('ccTenantIssueSinglePanel');
     var tenantIssueSingleTitle = document.getElementById('ccTenantIssueSingleTitle');
     var tenantIssueSingleText = document.getElementById('ccTenantIssueSingleText');
+    var tenantIssueSingleWhen = document.getElementById('ccTenantIssueSingleWhen');
     document.addEventListener('click', function (e) {
         var badge = e.target && e.target.closest ? e.target.closest('.cc-issue-badge-btn') : null;
         if (!badge) return;
         e.preventDefault();
         var issue = String(badge.getAttribute('data-issue') || '').trim();
         var tenantId = String(badge.getAttribute('data-tenant-id') || '').trim();
+        var issueWhen = String(badge.getAttribute('data-issue-time') || '').trim();
         if (tenantIssueSinglePanel && tenantIssueSingleText) {
             if (tenantIssueSingleTitle) {
                 tenantIssueSingleTitle.textContent = tenantId ? ('Tenant #' + tenantId + ' issue') : 'Selected tenant issue';
             }
             tenantIssueSingleText.textContent = issue || 'No issue details found for this tenant';
+            if (tenantIssueSingleWhen) {
+                tenantIssueSingleWhen.textContent = 'Detected: ' + (issueWhen || '-');
+            }
             tenantIssueSinglePanel.classList.remove('hidden');
             tenantIssueSinglePanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }

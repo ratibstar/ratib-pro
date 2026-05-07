@@ -2079,6 +2079,7 @@ $tenantHealthIssueRows = [];
 $dbHealthOk = 0;
 $dbHealthIssues = 0;
 $dbHealthIssueRows = [];
+$issueSnapshotAt = ccAsciiDigits(date('D, Y-m-d H:i:s'));
 foreach ($tenants as $th) {
     $status = strtolower(trim((string) ($th['status'] ?? '')));
     $name = trim((string) ($th['name'] ?? ''));
@@ -2108,6 +2109,7 @@ foreach ($tenants as $th) {
                     'id' => (string) ($th['display_id'] ?? (string) (int) ($th['id'] ?? 0)),
                     'name' => $name !== '' ? $name : '(no-name)',
                     'reasons' => implode(' | ', $issueReasons),
+                    'detected_at' => $issueSnapshotAt,
                 ];
             }
         }
@@ -2124,6 +2126,7 @@ foreach ($tenants as $th) {
                 'id' => (string) ($th['display_id'] ?? (string) (int) ($th['id'] ?? 0)),
                 'name' => $name !== '' ? $name : '(no-name)',
                 'reasons' => implode(' | ', $dbIssues),
+                'detected_at' => $issueSnapshotAt,
             ];
         }
     }
@@ -2329,7 +2332,7 @@ if ($rwExample === 'global_wave') {
                     <strong>Tenants needing fix</strong>
                     <div class="cc-muted" style="margin-top:6px;">
                         <?php foreach ($tenantHealthIssueRows as $ir): ?>
-                            <div>#<?php echo htmlspecialchars((string) $ir['id'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $ir['name'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $ir['reasons'], ENT_QUOTES, 'UTF-8'); ?></div>
+                            <div>#<?php echo htmlspecialchars((string) $ir['id'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $ir['name'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $ir['reasons'], ENT_QUOTES, 'UTF-8'); ?> · Detected: <?php echo htmlspecialchars((string) ($ir['detected_at'] ?? $issueSnapshotAt), ENT_QUOTES, 'UTF-8'); ?></div>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -2337,6 +2340,7 @@ if ($rwExample === 'global_wave') {
             <div class="cc-alert warning hidden" id="ccTenantIssueSinglePanel">
                 <strong id="ccTenantIssueSingleTitle">Selected tenant issue</strong>
                 <div class="cc-muted" id="ccTenantIssueSingleText" style="margin-top:6px;">-</div>
+                <div class="cc-muted" id="ccTenantIssueSingleWhen" style="margin-top:4px;">Detected: -</div>
             </div>
             <?php if ($isSuperAdminCc): ?>
                 <p class="cc-muted cc-tenant-source-meta">
@@ -2456,6 +2460,7 @@ if ($rwExample === 'global_wave') {
                         }
                         $rowHasHealthIssue = !empty($rowIssueReasons);
                         $rowIssueText = $rowHasHealthIssue ? implode(' | ', $rowIssueReasons) : '-';
+                        $rowIssueDetectedAt = $rowHasHealthIssue ? $issueSnapshotAt : '';
                         $statusBadgeText = $rawStatus !== '' ? $rawStatus : 'inactive';
                         $statusBadgeClass = $rawStatus !== '' ? $rawStatus : 'inactive';
                         if ($rawStatus === 'active' && $rowHasHealthIssue) {
@@ -2493,14 +2498,20 @@ if ($rwExample === 'global_wave') {
                                     <button type="button"
                                             class="badge inactive-issues cc-issue-badge-btn"
                                             data-tenant-id="<?php echo (int) ($t['id'] ?? 0); ?>"
-                                            data-issue="<?php echo htmlspecialchars($rowIssueText, ENT_QUOTES, 'UTF-8'); ?>">
+                                            data-issue="<?php echo htmlspecialchars($rowIssueText, ENT_QUOTES, 'UTF-8'); ?>"
+                                            data-issue-time="<?php echo htmlspecialchars($rowIssueDetectedAt, ENT_QUOTES, 'UTF-8'); ?>">
                                         <?php echo htmlspecialchars($statusBadgeText, ENT_QUOTES, 'UTF-8'); ?>
                                     </button>
                                 <?php else: ?>
                                     <span class="badge <?php echo htmlspecialchars($statusBadgeClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($statusBadgeText, ENT_QUOTES, 'UTF-8'); ?></span>
                                 <?php endif; ?>
                             </td>
-                            <td class="cc-muted"><?php echo htmlspecialchars($rowIssueText, ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td class="cc-muted">
+                                <?php echo htmlspecialchars($rowIssueText, ENT_QUOTES, 'UTF-8'); ?>
+                                <?php if ($rowHasHealthIssue): ?>
+                                    <div>Detected: <?php echo htmlspecialchars($rowIssueDetectedAt, ENT_QUOTES, 'UTF-8'); ?></div>
+                                <?php endif; ?>
+                            </td>
                             <td><span class="db-badge <?php echo htmlspecialchars($dbConfigClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($dbConfigText, ENT_QUOTES, 'UTF-8'); ?></span></td>
                             <td><?php echo htmlspecialchars(ccAsciiDigits((string) $t['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td class="row-actions">
@@ -2595,7 +2606,7 @@ if ($rwExample === 'global_wave') {
                     <strong>DB config issues</strong>
                     <div class="cc-muted" style="margin-top:6px;">
                         <?php foreach ($dbHealthIssueRows as $dr): ?>
-                            <div>#<?php echo htmlspecialchars((string) $dr['id'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $dr['name'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $dr['reasons'], ENT_QUOTES, 'UTF-8'); ?></div>
+                            <div>#<?php echo htmlspecialchars((string) $dr['id'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $dr['name'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $dr['reasons'], ENT_QUOTES, 'UTF-8'); ?> · Detected: <?php echo htmlspecialchars((string) ($dr['detected_at'] ?? $issueSnapshotAt), ENT_QUOTES, 'UTF-8'); ?></div>
                         <?php endforeach; ?>
                     </div>
                 </div>
