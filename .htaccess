@@ -59,6 +59,12 @@ RewriteRule ^(.*)$ public/index.php [QSA,L]
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
     Header set X-XSS-Protection "1; mode=block"
+
+    # Always bypass cache for the public pricing/registration page.
+    SetEnvIf Request_URI "^/pages/home\.php$" RATIB_HOME_NOCACHE=1
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0" env=RATIB_HOME_NOCACHE
+    Header set Pragma "no-cache" env=RATIB_HOME_NOCACHE
+    Header set Expires "0" env=RATIB_HOME_NOCACHE
 </IfModule>
 
 # php_value / php_flag in .htaccess breaks PHP-FPM, LiteSpeed LSAPI, and many cPanel PHP handlers → HTTP 500 for EVERY PHP hit.
