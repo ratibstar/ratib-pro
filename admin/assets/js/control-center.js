@@ -432,6 +432,24 @@
         });
     }
 
+    function bindConfigButtons() {
+        document.querySelectorAll('.cfg-db-btn').forEach(function (btn) {
+            if (btn.dataset.bound === '1') return;
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', function () {
+                var tenantId = Number(btn.getAttribute('data-tenant-id') || 0);
+                var tenant = tenantIndex[tenantId] || {
+                    id: tenantId,
+                    database_name: btn.getAttribute('data-db-name') || '',
+                    db_host: btn.getAttribute('data-db-host') || '',
+                    db_user: btn.getAttribute('data-db-user') || ''
+                };
+                if (!tenant || !tenant.id) return;
+                configureDbForTenant(tenant);
+            });
+        });
+    }
+
     function renderTenants(rows) {
         var tbody = document.querySelector('#tenant-control table tbody');
         var csrf = document.body ? (document.body.getAttribute('data-cc-csrf') || '') : '';
@@ -514,14 +532,7 @@
                 '</td>' +
                 '</tr>';
         }).join('');
-        document.querySelectorAll('.cfg-db-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var tenantId = Number(btn.getAttribute('data-tenant-id') || 0);
-                var tenant = tenantIndex[tenantId] || null;
-                if (!tenant) return;
-                configureDbForTenant(tenant);
-            });
-        });
+        bindConfigButtons();
         bindTenantActionButtons();
         bindTestConnectionForms();
         bindEditButtons();
@@ -781,6 +792,7 @@
     }
 
     bindTestConnectionForms();
+    bindConfigButtons();
     var serverPaging = false;
     try {
         var tenantSection = document.getElementById('tenant-control');

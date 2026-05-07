@@ -2223,7 +2223,7 @@ if ($rwExample === 'global_wave') {
             <div class="cc-bulk-bar">
                 <div class="cc-bulk-left">
                     <strong>Bulk</strong>
-                    <form method="post" class="cc-form-row wrap danger-form" id="ccTenantBulkForm" data-prompt="Type CONFIRM to continue">
+                    <form method="post" class="cc-form-row wrap" id="ccTenantBulkForm">
                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                         <input type="hidden" name="action" value="tenant_bulk">
                         <input type="hidden" name="confirm_text" value="">
