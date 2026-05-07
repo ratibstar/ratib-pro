@@ -435,6 +435,58 @@ function ccClassifyDbHealthError(Throwable $e): string
     return 'db connection failed';
 }
 
+function ccBuildTenantIssueDetectedAtMap(PDO $pdo, array $tenants): array
+{
+    $map = [];
+    if (!ccTableExists($pdo, 'system_events')) {
+        return $map;
+    }
+    $tenantIds = [];
+    foreach ($tenants as $t) {
+        $id = (int) ($t['id'] ?? 0);
+        if ($id > 0 && !empty($t['has_tenant'])) {
+            $tenantIds[$id] = true;
+        }
+    }
+    $tenantIds = array_keys($tenantIds);
+    if (empty($tenantIds)) {
+        return $map;
+    }
+    $placeholders = implode(',', array_fill(0, count($tenantIds), '?'));
+    try {
+        $sql = "SELECT tenant_id, level, event_type, message, created_at
+                FROM system_events
+                WHERE tenant_id IN ($placeholders)
+                ORDER BY id DESC
+                LIMIT 5000";
+        $st = $pdo->prepare($sql);
+        $st->execute($tenantIds);
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $tid = (int) ($row['tenant_id'] ?? 0);
+            if ($tid <= 0 || isset($map[$tid])) {
+                continue;
+            }
+            $level = strtolower(trim((string) ($row['level'] ?? '')));
+            $type = strtolower(trim((string) ($row['event_type'] ?? '')));
+            $msg = strtolower(trim((string) ($row['message'] ?? '')));
+            $isIssue = in_array($level, ['warn', 'warning', 'error', 'critical'], true)
+                || strpos($type, 'error') !== false
+                || strpos($type, 'failed') !== false
+                || strpos($msg, 'access denied') !== false
+                || strpos($msg, 'connection') !== false
+                || strpos($msg, 'unknown database') !== false
+                || strpos($msg, 'inactive') !== false
+                || strpos($msg, 'suspend') !== false;
+            if ($isIssue) {
+                $map[$tid] = (string) ($row['created_at'] ?? '');
+            }
+        }
+    } catch (Throwable $e) {
+        return $map;
+    }
+    return $map;
+}
+
 // EN: Normalize agency identifiers from mixed formats into positive integer ID.
 // AR: توحيد معرف الوكالة من صيغ متعددة إلى رقم صحيح موجب.
 function ccAgencyNumericId($raw): int
@@ -480,7 +532,7 @@ function ccManagedResources(PDO $pdo): array
     $items = [];
     try {
         $rows = $pdo->query(
-            "SELECT t.id, t.name, t.domain, t.status, t.created_at, t.database_name, t.db_host, t.db_user, t.db_password,
+            "SELECT t.id, t.name, t.domain, t.status, t.created_at, t.updated_at, t.database_name, t.db_host, t.db_user, t.db_password,
                     COALESCE(
                         a.id,
                         (
@@ -2079,7 +2131,7 @@ $tenantHealthIssueRows = [];
 $dbHealthOk = 0;
 $dbHealthIssues = 0;
 $dbHealthIssueRows = [];
-$issueSnapshotAt = ccAsciiDigits(date('D, Y-m-d H:i:s'));
+$tenantIssueDetectedMap = ccBuildTenantIssueDetectedAtMap($controlPdo, $tenants);
 foreach ($tenants as $th) {
     $status = strtolower(trim((string) ($th['status'] ?? '')));
     $name = trim((string) ($th['name'] ?? ''));
@@ -2105,11 +2157,13 @@ foreach ($tenants as $th) {
         } else {
             $tenantHealthIssues++;
             if (count($tenantHealthIssueRows) < 8) {
+                $detectedAtRaw = (string) ($tenantIssueDetectedMap[(int) ($th['id'] ?? 0)] ?? ($th['updated_at'] ?? $th['created_at'] ?? ''));
+                $detectedAt = ccAsciiDigits(trim($detectedAtRaw));
                 $tenantHealthIssueRows[] = [
                     'id' => (string) ($th['display_id'] ?? (string) (int) ($th['id'] ?? 0)),
                     'name' => $name !== '' ? $name : '(no-name)',
                     'reasons' => implode(' | ', $issueReasons),
-                    'detected_at' => $issueSnapshotAt,
+                    'detected_at' => $detectedAt !== '' ? $detectedAt : ccAsciiDigits(date('D, Y-m-d H:i:s')),
                 ];
             }
         }
@@ -2122,11 +2176,13 @@ foreach ($tenants as $th) {
         $dbIssues[] = (string) ($dbHealth['reason'] ?? 'db issue');
         $dbHealthIssues++;
         if (count($dbHealthIssueRows) < 8) {
+            $detectedAtRaw = (string) ($tenantIssueDetectedMap[(int) ($th['id'] ?? 0)] ?? ($th['updated_at'] ?? $th['created_at'] ?? ''));
+            $detectedAt = ccAsciiDigits(trim($detectedAtRaw));
             $dbHealthIssueRows[] = [
                 'id' => (string) ($th['display_id'] ?? (string) (int) ($th['id'] ?? 0)),
                 'name' => $name !== '' ? $name : '(no-name)',
                 'reasons' => implode(' | ', $dbIssues),
-                'detected_at' => $issueSnapshotAt,
+                'detected_at' => $detectedAt !== '' ? $detectedAt : ccAsciiDigits(date('D, Y-m-d H:i:s')),
             ];
         }
     }
@@ -2332,7 +2388,7 @@ if ($rwExample === 'global_wave') {
                     <strong>Tenants needing fix</strong>
                     <div class="cc-muted" style="margin-top:6px;">
                         <?php foreach ($tenantHealthIssueRows as $ir): ?>
-                            <div>#<?php echo htmlspecialchars((string) $ir['id'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $ir['name'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $ir['reasons'], ENT_QUOTES, 'UTF-8'); ?> · Detected: <?php echo htmlspecialchars((string) ($ir['detected_at'] ?? $issueSnapshotAt), ENT_QUOTES, 'UTF-8'); ?></div>
+                            <div>#<?php echo htmlspecialchars((string) $ir['id'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $ir['name'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $ir['reasons'], ENT_QUOTES, 'UTF-8'); ?> · Detected: <?php echo htmlspecialchars((string) ($ir['detected_at'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?></div>
                         <?php endforeach; ?>
                     </div>
                 </div>
@@ -2460,7 +2516,8 @@ if ($rwExample === 'global_wave') {
                         }
                         $rowHasHealthIssue = !empty($rowIssueReasons);
                         $rowIssueText = $rowHasHealthIssue ? implode(' | ', $rowIssueReasons) : '-';
-                        $rowIssueDetectedAt = $rowHasHealthIssue ? $issueSnapshotAt : '';
+                        $rowDetectedRaw = (string) ($tenantIssueDetectedMap[(int) ($t['id'] ?? 0)] ?? ($t['updated_at'] ?? $t['created_at'] ?? ''));
+                        $rowIssueDetectedAt = $rowHasHealthIssue ? ccAsciiDigits(trim($rowDetectedRaw)) : '';
                         $statusBadgeText = $rawStatus !== '' ? $rawStatus : 'inactive';
                         $statusBadgeClass = $rawStatus !== '' ? $rawStatus : 'inactive';
                         if ($rawStatus === 'active' && $rowHasHealthIssue) {
@@ -2606,7 +2663,7 @@ if ($rwExample === 'global_wave') {
                     <strong>DB config issues</strong>
                     <div class="cc-muted" style="margin-top:6px;">
                         <?php foreach ($dbHealthIssueRows as $dr): ?>
-                            <div>#<?php echo htmlspecialchars((string) $dr['id'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $dr['name'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $dr['reasons'], ENT_QUOTES, 'UTF-8'); ?> · Detected: <?php echo htmlspecialchars((string) ($dr['detected_at'] ?? $issueSnapshotAt), ENT_QUOTES, 'UTF-8'); ?></div>
+                            <div>#<?php echo htmlspecialchars((string) $dr['id'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $dr['name'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $dr['reasons'], ENT_QUOTES, 'UTF-8'); ?> · Detected: <?php echo htmlspecialchars((string) ($dr['detected_at'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?></div>
                         <?php endforeach; ?>
                     </div>
                 </div>
