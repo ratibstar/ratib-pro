@@ -2017,6 +2017,9 @@ $inactiveTenantCount = count(array_filter($tenants, static function ($t) {
 $tenantHealthOk = 0;
 $tenantHealthIssues = 0;
 $tenantHealthIssueRows = [];
+$dbHealthOk = 0;
+$dbHealthIssues = 0;
+$dbHealthIssueRows = [];
 foreach ($tenants as $th) {
     $status = strtolower(trim((string) ($th['status'] ?? '')));
     $name = trim((string) ($th['name'] ?? ''));
@@ -2045,6 +2048,32 @@ foreach ($tenants as $th) {
                 'id' => (string) ($th['display_id'] ?? (string) (int) ($th['id'] ?? 0)),
                 'name' => $name !== '' ? $name : '(no-name)',
                 'reasons' => implode(' | ', $issueReasons),
+            ];
+        }
+    }
+
+    $dbName = trim((string) ($th['database_name'] ?? ''));
+    $dbUser = trim((string) ($th['db_user'] ?? ''));
+    $dbHost = trim((string) ($th['db_host'] ?? ''));
+    $dbIssues = [];
+    if ($dbName === '') {
+        $dbIssues[] = 'database name missing';
+    }
+    if ($dbUser === '') {
+        $dbIssues[] = 'db user missing';
+    }
+    if ($dbHost === '') {
+        $dbIssues[] = 'db host missing';
+    }
+    if (empty($dbIssues)) {
+        $dbHealthOk++;
+    } else {
+        $dbHealthIssues++;
+        if (count($dbHealthIssueRows) < 8) {
+            $dbHealthIssueRows[] = [
+                'id' => (string) ($th['display_id'] ?? (string) (int) ($th['id'] ?? 0)),
+                'name' => $name !== '' ? $name : '(no-name)',
+                'reasons' => implode(' | ', $dbIssues),
             ];
         }
     }
@@ -2208,6 +2237,24 @@ if ($rwExample === 'global_wave') {
                 <div class="stat system"><span>System Mode</span><strong><?php echo (defined('TENANT_STRICT_MODE') && TENANT_STRICT_MODE) ? 'STRICT' : 'SAFE'; ?></strong></div>
                 <div class="stat warning"><span>Gateway Decisions</span><strong><?php echo count($gatewayRows); ?></strong></div>
                 <div class="stat danger"><span>Safety Events</span><strong><?php echo count($safetyRows); ?></strong></div>
+            </div>
+            <div class="cc-grid stats" style="margin-top:10px;">
+                <div class="stat safe">
+                    <span>Tenants Active & Correct</span>
+                    <strong><?php echo (int) $tenantHealthOk; ?></strong>
+                </div>
+                <div class="stat danger">
+                    <span>Tenants With Issues</span>
+                    <strong><?php echo (int) $tenantHealthIssues; ?></strong>
+                </div>
+                <div class="stat safe">
+                    <span>DB Configured</span>
+                    <strong><?php echo (int) $dbHealthOk; ?></strong>
+                </div>
+                <div class="stat danger">
+                    <span>DB Issues</span>
+                    <strong><?php echo (int) $dbHealthIssues; ?></strong>
+                </div>
             </div>
         </section>
 
@@ -2426,6 +2473,26 @@ if ($rwExample === 'global_wave') {
 
         <section id="db-control" class="cc-card">
             <h3>Database Control Panel</h3>
+            <div class="cc-grid stats" style="margin-bottom:10px;">
+                <div class="stat safe">
+                    <span>DB Configured</span>
+                    <strong><?php echo (int) $dbHealthOk; ?></strong>
+                </div>
+                <div class="stat danger">
+                    <span>DB Issues</span>
+                    <strong><?php echo (int) $dbHealthIssues; ?></strong>
+                </div>
+            </div>
+            <?php if (!empty($dbHealthIssueRows)): ?>
+                <div class="cc-alert warning">
+                    <strong>DB config issues</strong>
+                    <div class="cc-muted" style="margin-top:6px;">
+                        <?php foreach ($dbHealthIssueRows as $dr): ?>
+                            <div>#<?php echo htmlspecialchars((string) $dr['id'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $dr['name'], ENT_QUOTES, 'UTF-8'); ?> · <?php echo htmlspecialchars((string) $dr['reasons'], ENT_QUOTES, 'UTF-8'); ?></div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
             <div class="cc-table-wrap">
                 <table>
                     <thead><tr><th>Tenant</th><th>Connection</th><th>Actions</th></tr></thead>
