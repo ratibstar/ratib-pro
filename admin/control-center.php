@@ -2420,17 +2420,31 @@ if ($rwExample === 'global_wave') {
             </form>
             <div class="cc-table-wrap">
                 <table id="ccTenantsTable">
-                    <thead><tr><th class="cc-check-cell"><input type="checkbox" id="ccSelectAllTenants"></th><th>ID</th><th>Name</th><th>Domain</th><th>Status</th><th>DB Config</th><th>Created</th><th>Actions</th></tr></thead>
+                    <thead><tr><th class="cc-check-cell"><input type="checkbox" id="ccSelectAllTenants"></th><th>ID</th><th>Name</th><th>Domain</th><th>Status</th><th>Issue Details</th><th>DB Config</th><th>Created</th><th>Actions</th></tr></thead>
                     <tbody>
                     <?php if (empty($tenantsPaged)): ?>
-                        <tr><td colspan="8">No tenants found.</td></tr>
+                        <tr><td colspan="9">No tenants found.</td></tr>
                     <?php else: foreach ($tenantsPaged as $t): ?>
                         <?php
                         $rawStatus = strtolower(trim((string) ($t['status'] ?? '')));
                         $rowName = trim((string) ($t['name'] ?? ''));
                         $rowDomain = trim((string) ($t['domain'] ?? ''));
                         $rowDbHealth = ccTenantDbHealthCheck($t);
-                        $rowHasHealthIssue = ($rowName === '' || $rowDomain === '' || empty($rowDbHealth['ok']));
+                        $rowIssueReasons = [];
+                        if ($rawStatus !== 'active') {
+                            $rowIssueReasons[] = 'status=' . ($rawStatus !== '' ? $rawStatus : 'unknown');
+                        }
+                        if ($rowName === '') {
+                            $rowIssueReasons[] = 'name missing';
+                        }
+                        if ($rowDomain === '') {
+                            $rowIssueReasons[] = 'domain missing';
+                        }
+                        if (empty($rowDbHealth['ok'])) {
+                            $rowIssueReasons[] = (string) ($rowDbHealth['reason'] ?? 'db issue');
+                        }
+                        $rowHasHealthIssue = !empty($rowIssueReasons);
+                        $rowIssueText = $rowHasHealthIssue ? implode(' | ', $rowIssueReasons) : '-';
                         $statusBadgeText = $rawStatus !== '' ? $rawStatus : 'inactive';
                         $statusBadgeClass = $rawStatus !== '' ? $rawStatus : 'inactive';
                         if ($rawStatus === 'active' && $rowHasHealthIssue) {
@@ -2452,6 +2466,7 @@ if ($rwExample === 'global_wave') {
                             <td><?php echo htmlspecialchars((string) $t['name'], ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) $t['domain'], ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><span class="badge <?php echo htmlspecialchars($statusBadgeClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($statusBadgeText, ENT_QUOTES, 'UTF-8'); ?></span></td>
+                            <td class="cc-muted"><?php echo htmlspecialchars($rowIssueText, ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><span class="db-badge <?php echo $hasDbConfig ? 'ok' : 'missing'; ?>"><?php echo $hasDbConfig ? 'configured' : 'missing'; ?></span></td>
                             <td><?php echo htmlspecialchars(ccAsciiDigits((string) $t['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td class="row-actions">
