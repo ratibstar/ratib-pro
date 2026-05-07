@@ -83,22 +83,12 @@ The PayPal buttons use:
 
 **Gold Plan (1 Year):**
 ```
-https://yourdomain.com/paypal-checkout/index.php?plan=gold&years=1&amount=550
-```
-
-**Gold Plan (2 Years):**
-```
-https://yourdomain.com/paypal-checkout/index.php?plan=gold&years=2&amount=1000
+https://yourdomain.com/paypal-checkout/index.php?plan=gold&years=1&amount=650
 ```
 
 **Platinum Plan (1 Year):**
 ```
-https://yourdomain.com/paypal-checkout/index.php?plan=platinum&years=1&amount=600
-```
-
-**Platinum Plan (2 Years):**
-```
-https://yourdomain.com/paypal-checkout/index.php?plan=platinum&years=2&amount=1100
+https://yourdomain.com/paypal-checkout/index.php?plan=platinum&years=1&amount=800
 ```
 
 ## 📍 Summary

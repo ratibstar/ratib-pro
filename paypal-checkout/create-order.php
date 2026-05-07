@@ -65,8 +65,8 @@ if ($amount <= 0 || $amount > 100000) { // Max $100,000
     jsonResponse(false, null, 'Invalid amount', 400);
 }
 
-// Security: Validate years range (0 = monthly)
-if ($years < 0 || $years > 10) {
+// Security: Validate years range (0 = monthly, 1 = annual; multi-year tiers not offered)
+if ($years < 0 || $years > 1) {
     jsonResponse(false, null, 'Invalid years selection', 400);
 }
 

@@ -95,10 +95,14 @@ $platinumTestPriceYear1 = 800;
 $platinumTestPriceMonth = 67;
 $amount = isset($_GET['amount']) ? (float)$_GET['amount'] : null;
 $years = isset($_GET['years']) ? (int)$_GET['years'] : null;
+// EN: Only monthly (0) and one-year (1) tiers are offered; legacy links with years>1 map to one year.
+if ($years !== null && $years > 1) {
+    $years = 1;
+}
 $plans = ['gold' => ['label' => 'Gold', 'amount' => $goldTestPriceYear1], 'platinum' => ['label' => 'Platinum', 'amount' => $platinumTestPriceYear1], 'pro' => ['label' => 'Pro', 'amount' => null]];
 $planLabel = $plans[$plan]['label'] ?? ucfirst($plan);
-// EN: Amount follows optional URL years: 0 = monthly, 1/2 = multi-year tiers (Gold/Platinum only).
-// AR: المبلغ يتبع مدة years في الرابط: 0 شهري، 1/2 سنوات.
+// EN: Amount follows optional URL years: 0 = monthly, 1 = annual (Gold/Platinum only).
+// AR: المبلغ يتبع مدة years في الرابط: 0 شهري، 1 سنوي.
 $planAmount = ($amount !== null) ? $amount : null;
 if ($planAmount === null && isset($plans[$plan])) {
     if (($plan === 'gold' || $plan === 'platinum') && $years !== null) {

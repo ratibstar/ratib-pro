@@ -338,7 +338,7 @@
         },
         {
             keywords: ['price', 'pricing', 'cost', 'fee', 'plan', 'gold', 'platinum', '54', '67', '650', '800', '1100', '1200'],
-            answer: "Our plans & pricing:\n• Gold: monthly $54, or $650/yr (2 yrs $1,000)\n• Platinum: monthly $67, or $800/yr (2 yrs $1,100)\n• Pro: Contact us for details\n\nScroll to 'Plans & Pricing' for full features.",
+            answer: "Our plans & pricing:\n• Gold: monthly $54, or $650/yr\n• Platinum: monthly $67, or $800/yr\n• Pro: Contact us for details\n\nScroll to 'Plans & Pricing' for full features.",
             category: 'pricing'
         },
         {

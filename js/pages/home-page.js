@@ -19,10 +19,8 @@
             initialYears: 1,
             goldMonth: 54,
             goldYear1: 650,
-            goldYear2: null,
             platinumMonth: 67,
-            platinumYear1: 800,
-            platinumYear2: null
+            platinumYear1: 800
         };
         var el = document.getElementById('ratib-home-bootstrap');
         if (!el || !el.textContent) {
@@ -55,17 +53,11 @@
                 if (typeof o.goldYear1 === 'number') {
                     d.goldYear1 = o.goldYear1;
                 }
-                if (typeof o.goldYear2 === 'number' && o.goldYear2 > 0) {
-                    d.goldYear2 = o.goldYear2;
-                }
                 if (typeof o.platinumMonth === 'number') {
                     d.platinumMonth = o.platinumMonth;
                 }
                 if (typeof o.platinumYear1 === 'number') {
                     d.platinumYear1 = o.platinumYear1;
-                }
-                if (typeof o.platinumYear2 === 'number' && o.platinumYear2 > 0) {
-                    d.platinumYear2 = o.platinumYear2;
                 }
             }
         } catch (err) {
@@ -75,6 +67,10 @@
     }
 
     var HOME = parseBootstrap();
+    // EN: Monthly = 0, annual = 1 only; coerce legacy bootstrap values (e.g. years=2 from old URLs already fixed in PHP).
+    if (HOME.initialYears > 1) {
+        HOME.initialYears = 1;
+    }
     window.RATIB_CHECKOUT_CURRENCY = HOME.checkoutCurrency;
     window.RATIB_USD_TO_SAR = HOME.usdToSar;
     var openRegister = HOME.openRegister;
