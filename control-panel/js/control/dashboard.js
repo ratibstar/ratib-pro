@@ -119,7 +119,11 @@
                         var dbName = (data.runtime_context && data.runtime_context.db_name_active) ? data.runtime_context.db_name_active : 'N/A';
                         setSelfTestResult('pass', 'PASS - isolation is healthy. Active DB: ' + dbName);
                     } else {
-                        setSelfTestResult('fail', 'FAIL - one or more checks failed. Open browser console for details.');
+                        var failed = Array.isArray(data.failed_strict_checks) ? data.failed_strict_checks : [];
+                        var shortMsg = failed.length > 0
+                            ? ('FAIL - ' + failed.slice(0, 2).join(', ') + (failed.length > 2 ? ' ...' : ''))
+                            : 'FAIL - one or more checks failed.';
+                        setSelfTestResult('fail', shortMsg);
                         try {
                             console.warn('Tenant isolation self-test details:', data);
                         } catch (_) {}

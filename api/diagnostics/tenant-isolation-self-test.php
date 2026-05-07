@@ -159,26 +159,43 @@ $apiGuards = [
     'chat_voice_users_no_direct_fallback' => ratib_selftest_file_avoids_direct_db_fallback($api . 'chat-voice' . DIRECTORY_SEPARATOR . 'users.php'),
 ];
 
-$allOk = true;
-foreach ($checks as $module => $moduleChecks) {
-    foreach ($moduleChecks as $ok) {
-        if ($ok === null) {
-            continue;
-        }
-        if ($ok !== true) {
-            $allOk = false;
-            break 2;
-        }
+$strictCheckPaths = [
+    'Dashboard.page_uses_bootstrap',
+    'Dashboard.page_avoids_direct_db_fallback',
+    'Agent.page_uses_bootstrap',
+    'SubAgent.page_uses_bootstrap',
+    'Workers.page_uses_bootstrap',
+    'Partner Agencies.page_uses_bootstrap',
+    'Cases.page_uses_bootstrap',
+    'Accounting.page_uses_bootstrap',
+    'HR.page_uses_bootstrap',
+    'Reports.page_uses_bootstrap',
+    'Contact.page_uses_bootstrap',
+    'Notifications.page_uses_bootstrap',
+    'System Settings.page_uses_bootstrap',
+    'Help & Learning Center.page_uses_bootstrap',
+    'Logout.page_uses_bootstrap',
+    'Register Pro.page_exists',
+    'Register Pro.is_redirect_page',
+];
+
+$failedStrictChecks = [];
+foreach ($strictCheckPaths as $path) {
+    $parts = explode('.', $path, 2);
+    $module = $parts[0] ?? '';
+    $key = $parts[1] ?? '';
+    $value = $checks[$module][$key] ?? null;
+    if ($value !== true) {
+        $failedStrictChecks[] = $path;
     }
 }
-if ($allOk) {
-    foreach ($apiGuards as $ok) {
-        if ($ok !== true) {
-            $allOk = false;
-            break;
-        }
+foreach ($apiGuards as $k => $ok) {
+    if ($ok !== true) {
+        $failedStrictChecks[] = 'api_guards.' . $k;
     }
 }
+
+$allOk = empty($failedStrictChecks);
 
 echo json_encode([
     'success' => true,
@@ -197,5 +214,6 @@ echo json_encode([
     ],
     'module_checks' => $checks,
     'api_guards' => $apiGuards,
+    'failed_strict_checks' => $failedStrictChecks,
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
