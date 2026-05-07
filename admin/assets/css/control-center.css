@@ -421,6 +421,16 @@ th {
   color: #ffedd5;
   border: 1px solid #c2410c;
 }
+.cc-issue-badge-btn {
+  cursor: pointer;
+}
+.cc-issue-badge-btn:hover {
+  filter: brightness(1.08);
+}
+.cc-issue-badge-btn:focus {
+  outline: 2px solid #fb923c;
+  outline-offset: 1px;
+}
 .badge.provisioning,
 .badge.warned {
   background: #92400e;

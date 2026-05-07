@@ -2465,7 +2465,18 @@ if ($rwExample === 'global_wave') {
                             <td><?php echo htmlspecialchars((string) ($t['display_id'] ?? (string) (int) ($t['id'] ?? 0)), ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) $t['name'], ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><?php echo htmlspecialchars((string) $t['domain'], ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><span class="badge <?php echo htmlspecialchars($statusBadgeClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($statusBadgeText, ENT_QUOTES, 'UTF-8'); ?></span></td>
+                            <td>
+                                <?php if ($statusBadgeClass === 'inactive-issues'): ?>
+                                    <button type="button"
+                                            class="badge inactive-issues cc-issue-badge-btn"
+                                            data-tenant-id="<?php echo (int) ($t['id'] ?? 0); ?>"
+                                            data-issue="<?php echo htmlspecialchars($rowIssueText, ENT_QUOTES, 'UTF-8'); ?>">
+                                        <?php echo htmlspecialchars($statusBadgeText, ENT_QUOTES, 'UTF-8'); ?>
+                                    </button>
+                                <?php else: ?>
+                                    <span class="badge <?php echo htmlspecialchars($statusBadgeClass, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($statusBadgeText, ENT_QUOTES, 'UTF-8'); ?></span>
+                                <?php endif; ?>
+                            </td>
                             <td class="cc-muted"><?php echo htmlspecialchars($rowIssueText, ENT_QUOTES, 'UTF-8'); ?></td>
                             <td><span class="db-badge <?php echo $hasDbConfig ? 'ok' : 'missing'; ?>"><?php echo $hasDbConfig ? 'configured' : 'missing'; ?></span></td>
                             <td><?php echo htmlspecialchars(ccAsciiDigits((string) $t['created_at']), ENT_QUOTES, 'UTF-8'); ?></td>

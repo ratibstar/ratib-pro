@@ -882,6 +882,19 @@
             }
         });
     }
+    document.addEventListener('click', function (e) {
+        var badge = e.target && e.target.closest ? e.target.closest('.cc-issue-badge-btn') : null;
+        if (!badge) return;
+        var issue = String(badge.getAttribute('data-issue') || '').trim();
+        if (tenantIssuesPanel && tenantIssuesPanel.classList.contains('hidden')) {
+            setTenantIssuesOpen(true);
+        }
+        if (issue) {
+            showModernAlert(issue, 'warning');
+        } else {
+            showModernAlert('No issue details found for this tenant', 'warning');
+        }
+    });
     var dbIssuesBtn = document.getElementById('ccDbIssuesBtn');
     var dbIssuesPanel = document.getElementById('ccDbIssuesPanel');
     function setDbIssuesOpen(open) {
