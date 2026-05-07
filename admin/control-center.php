@@ -1748,6 +1748,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
         }
         $act = (string) ($_POST['action'] ?? '');
         $msg = $e->getMessage();
+        if (str_contains($msg, 'SQLSTATE[HY000] [1045]') || str_contains(strtolower($msg), 'access denied for user')) {
+            $msg = 'Tenant DB access denied. Check DB user/password in Configure DB.';
+        }
         error_log('control-center POST ' . $act . ': ' . $msg);
         if ($msg === 'CONTROL_CENTER_FORBIDDEN') {
             $alerts[] = ['type' => 'danger', 'text' => 'You do not have permission for this action.'];

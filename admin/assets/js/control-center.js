@@ -93,7 +93,11 @@
             var active = document.activeElement;
             var isTyping =
                 active &&
-                (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable);
+                (active.tagName === 'INPUT' ||
+                 active.tagName === 'TEXTAREA' ||
+                 active.tagName === 'SELECT' ||
+                 active.tagName === 'IFRAME' ||
+                 active.isContentEditable);
             if (isTyping) {
                 setPausedTypingState(true);
                 return;

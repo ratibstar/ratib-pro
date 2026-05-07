@@ -67,14 +67,56 @@ function etl_normalize_datetime_filter(string $value): string
     return trim($v);
 }
 
+function etl_tenant_ref_to_id(PDO $pdo, string $value): int
+{
+    $v = trim(etl_ascii_digits($value));
+    if ($v === '') {
+        return 0;
+    }
+    if (ctype_digit($v)) {
+        return (int) $v;
+    }
+    // Exact lookup by rollout tenant_code first.
+    try {
+        $st = $pdo->prepare('SELECT id FROM control_rollout_tenants WHERE LOWER(tenant_code) = LOWER(:code) LIMIT 1');
+        $st->execute([':code' => strtolower($v)]);
+        $id = (int) ($st->fetchColumn() ?: 0);
+        if ($id > 0) {
+            return $id;
+        }
+    } catch (Throwable $e) {
+        // ignore and fallback
+    }
+    // Fallback lookup against tenants table by domain/name.
+    try {
+        $st2 = $pdo->prepare('SELECT id FROM tenants WHERE LOWER(domain) = LOWER(:d1) OR LOWER(name) = LOWER(:d2) LIMIT 1');
+        $st2->execute([
+            ':d1' => $v,
+            ':d2' => $v,
+        ]);
+        $id2 = (int) ($st2->fetchColumn() ?: 0);
+        if ($id2 > 0) {
+            return $id2;
+        }
+    } catch (Throwable $e) {
+        // ignore and fallback
+    }
+    // Last fallback: numeric part if user typed mixed ID like AG0031.
+    if (preg_match('/(\d+)/', $v, $m) === 1) {
+        return (int) ($m[1] ?? 0);
+    }
+    return 0;
+}
+
 function timelinePdo(): PDO
 {
     return getControlDB();
 }
 
 $pdo = timelinePdo();
+$tenantRawRef = (string) ($_GET['tenant_id'] ?? '');
 $filters = [
-    'tenant_id' => (int) ($_GET['tenant_id'] ?? 0),
+    'tenant_id' => etl_tenant_ref_to_id($pdo, $tenantRawRef),
     'event_type' => (string) ($_GET['event_type'] ?? ''),
     'level' => (string) ($_GET['level'] ?? ''),
     'request_id' => (string) ($_GET['request_id'] ?? ''),
@@ -177,7 +219,7 @@ uasort($groups, static function ($a, $b) {
         </div>
         <p class="muted">Real-time SSE stream (no polling) · grouped by <code>request_id</code> · anomalies highlighted.</p>
         <form method="get" class="row" id="filterForm">
-            <input type="number" name="tenant_id" placeholder="Tenant ID" value="<?php echo (int) $filters['tenant_id'] > 0 ? (int) $filters['tenant_id'] : ''; ?>">
+            <input type="text" name="tenant_id" placeholder="Tenant ID, code, or domain" value="<?php echo htmlspecialchars((string) $tenantRawRef, ENT_QUOTES, 'UTF-8'); ?>">
             <input type="text" name="event_type" placeholder="Event type" value="<?php echo htmlspecialchars((string) $filters['event_type'], ENT_QUOTES, 'UTF-8'); ?>">
             <select name="level">
                 <option value="">Any level</option>
