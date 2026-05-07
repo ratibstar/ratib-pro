@@ -28,6 +28,58 @@
         }, 4200);
     }
 
+    function showModernAlert(message, kind) {
+        if (!message) return;
+        var host = document.getElementById('ccModernAlertHost');
+        if (!host) {
+            host = document.createElement('div');
+            host.id = 'ccModernAlertHost';
+            host.style.position = 'fixed';
+            host.style.right = '16px';
+            host.style.bottom = '16px';
+            host.style.zIndex = '2000';
+            host.style.maxWidth = '420px';
+            host.style.display = 'flex';
+            host.style.flexDirection = 'column';
+            host.style.gap = '8px';
+            document.body.appendChild(host);
+        }
+        var card = document.createElement('div');
+        card.style.background = '#0f172a';
+        card.style.border = '1px solid #334155';
+        card.style.color = '#e5e7eb';
+        card.style.borderRadius = '12px';
+        card.style.padding = '12px 14px';
+        card.style.boxShadow = '0 10px 28px rgba(0,0,0,.35)';
+        card.style.display = 'flex';
+        card.style.alignItems = 'start';
+        card.style.gap = '10px';
+        if (kind === 'safe') {
+            card.style.borderColor = '#166534';
+        } else if (kind === 'warning') {
+            card.style.borderColor = '#92400e';
+        } else if (kind === 'danger') {
+            card.style.borderColor = '#991b1b';
+        }
+        var msg = document.createElement('div');
+        msg.style.flex = '1';
+        msg.textContent = String(message);
+        var closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.textContent = 'x';
+        closeBtn.style.background = 'transparent';
+        closeBtn.style.border = '0';
+        closeBtn.style.color = '#94a3b8';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.addEventListener('click', function () { card.remove(); });
+        card.appendChild(msg);
+        card.appendChild(closeBtn);
+        host.appendChild(card);
+        window.setTimeout(function () {
+            if (card && card.parentNode) card.remove();
+        }, 6000);
+    }
+
     function setPausedTypingState(isPaused) {
         pausedForTyping = !!isPaused;
         if (!liveStatusBadge) return;
@@ -970,7 +1022,7 @@
     // After bulk success (set by server), show popup and reset bulk controls.
     var bulkPopup = (typeof window !== 'undefined' && window.__ccBulkPopupMessage) ? String(window.__ccBulkPopupMessage) : '';
     if (bulkPopup) {
-        try { window.alert(bulkPopup); } catch (_) {}
+        showModernAlert(bulkPopup, 'safe');
         if (selectAll) selectAll.checked = false;
         document.querySelectorAll('.cc-tenant-check').forEach(function (cb) { cb.checked = false; });
         if (bulkAction) bulkAction.value = '';
