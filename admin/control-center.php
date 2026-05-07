@@ -1755,6 +1755,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
                 ? $msg
                 : 'Query could not be completed. Check permissions, mode, and tenant status.';
         } else {
+            $isPrivilegedDebug = in_array($ccRole, [ControlCenterAccess::SUPER_ADMIN, ControlCenterAccess::ADMIN], true);
             $safeUser = str_contains($msg, 'CSRF')
                 || str_contains($msg, 'required')
                 || str_contains($msg, 'not found')
@@ -1765,7 +1766,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $controlPdo instanceof PDO) {
                 || str_contains($msg, 'Provisioning failed')
                 || str_contains($msg, 'Rollout')
                 || str_contains($msg, 'Bulk');
-            $alerts[] = ['type' => 'danger', 'text' => $safeUser ? $msg : 'Request could not be completed.'];
+            $alerts[] = ['type' => 'danger', 'text' => ($safeUser || $isPrivilegedDebug) ? $msg : 'Request could not be completed.'];
         }
     }
 }
