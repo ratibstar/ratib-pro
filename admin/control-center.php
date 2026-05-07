@@ -395,8 +395,44 @@ function ccTenantDbHealthCheck(array $tenant): array
         $db->query('SELECT 1');
         return ['ok' => true, 'reason' => ''];
     } catch (Throwable $e) {
-        return ['ok' => false, 'reason' => 'db connection failed'];
+        return ['ok' => false, 'reason' => ccClassifyDbHealthError($e)];
     }
+}
+
+function ccClassifyDbHealthError(Throwable $e): string
+{
+    $msg = strtolower(trim($e->getMessage()));
+    if ($msg === '') {
+        return 'db connection failed';
+    }
+
+    if (strpos($msg, 'access denied') !== false || strpos($msg, '[1045]') !== false) {
+        return 'db access denied (check user/password)';
+    }
+    if (strpos($msg, 'unknown database') !== false || strpos($msg, '[1049]') !== false) {
+        return 'unknown database';
+    }
+    if (strpos($msg, 'getaddrinfo') !== false
+        || strpos($msg, 'name or service not known') !== false
+        || strpos($msg, 'php_network_getaddresses') !== false
+    ) {
+        return 'db host not reachable';
+    }
+    if (strpos($msg, 'connection refused') !== false
+        || strpos($msg, 'can\'t connect to mysql server') !== false
+        || strpos($msg, 'cant connect to mysql server') !== false
+        || strpos($msg, '[2002]') !== false
+    ) {
+        return 'db server refused connection';
+    }
+    if (strpos($msg, 'timed out') !== false || strpos($msg, '[2003]') !== false) {
+        return 'db connection timeout';
+    }
+    if (strpos($msg, 'sqlstate[hy000] [1044]') !== false) {
+        return 'db user has no privileges';
+    }
+
+    return 'db connection failed';
 }
 
 // EN: Normalize agency identifiers from mixed formats into positive integer ID.
