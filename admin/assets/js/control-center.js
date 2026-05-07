@@ -882,6 +882,25 @@
             }
         });
     }
+    var dbIssuesBtn = document.getElementById('ccDbIssuesBtn');
+    var dbIssuesPanel = document.getElementById('ccDbIssuesPanel');
+    function setDbIssuesOpen(open) {
+        if (!dbIssuesBtn || !dbIssuesPanel) return;
+        dbIssuesPanel.classList.toggle('hidden', !open);
+        dbIssuesBtn.classList.toggle('is-open', !!open);
+        dbIssuesBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    if (dbIssuesBtn && dbIssuesPanel) {
+        dbIssuesBtn.addEventListener('click', function () {
+            setDbIssuesOpen(dbIssuesPanel.classList.contains('hidden'));
+        });
+        dbIssuesBtn.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setDbIssuesOpen(dbIssuesPanel.classList.contains('hidden'));
+            }
+        });
+    }
     var serverPaging = false;
     try {
         var tenantSection = document.getElementById('tenant-control');

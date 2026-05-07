@@ -2551,13 +2551,13 @@ if ($rwExample === 'global_wave') {
                     <span>DB Configured</span>
                     <strong><?php echo (int) $dbHealthOk; ?></strong>
                 </div>
-                <div class="stat danger">
+                <div class="stat danger cc-stat-clickable" id="ccDbIssuesBtn" role="button" tabindex="0" aria-expanded="false" aria-controls="ccDbIssuesPanel">
                     <span>DB Issues</span>
                     <strong><?php echo (int) $dbHealthIssues; ?></strong>
                 </div>
             </div>
             <?php if (!empty($dbHealthIssueRows)): ?>
-                <div class="cc-alert warning">
+                <div class="cc-alert warning hidden" id="ccDbIssuesPanel">
                     <strong>DB config issues</strong>
                     <div class="cc-muted" style="margin-top:6px;">
                         <?php foreach ($dbHealthIssueRows as $dr): ?>
