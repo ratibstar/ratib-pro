@@ -1513,10 +1513,6 @@ a.live-status:hover {
 .form-year-btn[data-years]:not([data-years="0"]):not([data-years="1"]) {
   display: none !important;
 }
-/* Keep only Monthly and 1 yr options visible in duration row. */
-#formYearButtons .form-year-btn:nth-child(n + 3) {
-  display: none !important;
-}
 .is-hidden {
   display: none !important;
 }
