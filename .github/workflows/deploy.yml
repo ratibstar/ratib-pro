@@ -49,8 +49,7 @@ jobs:
         run: |
           HOOK_URL="$(printf '%s' "${{ secrets.CPANEL_DEPLOY_HOOK_URL }}" | tr -d '\r\n' | xargs)"
           if [ -n "$HOOK_URL" ]; then
-            echo "Deploy hook configured; skipping UAPI fallback path."
-            exit 0
+            echo "Deploy hook is configured; continuing with UAPI deploy as a consistency backstop."
           fi
 
           CPANEL_BASE_URL="https://${{ secrets.CPANEL_HOST }}:2083"
