@@ -1508,6 +1508,11 @@ a.live-status:hover {
   font-size: 0.75rem;
   opacity: 0.9;
 }
+/* Hide any legacy 2+ year options from stale deployed markup. */
+.year-btn[data-years]:not([data-years="0"]):not([data-years="1"]),
+.form-year-btn[data-years]:not([data-years="0"]):not([data-years="1"]) {
+  display: none !important;
+}
 /* Keep only Monthly and 1 yr options visible in duration row. */
 #formYearButtons .form-year-btn:nth-child(n + 3) {
   display: none !important;

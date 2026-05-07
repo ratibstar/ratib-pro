@@ -74,6 +74,14 @@
     window.RATIB_CHECKOUT_CURRENCY = HOME.checkoutCurrency;
     window.RATIB_USD_TO_SAR = HOME.usdToSar;
     var openRegister = HOME.openRegister;
+    // EN: Remove any legacy 2-year buttons if stale markup is served.
+    // AR: إزالة أي أزرار مدة قديمة (سنتان) إذا تم تحميل HTML قديم.
+    document.querySelectorAll('[data-years]').forEach(function (btn) {
+        var yLegacy = parseInt(btn.getAttribute('data-years'), 10);
+        if (isFinite(yLegacy) && yLegacy > 1 && btn.parentNode) {
+            btn.parentNode.removeChild(btn);
+        }
+    });
 
     // EN: Opens registration section and synchronizes hidden pricing fields.
     // AR: فتح قسم التسجيل وتحديث حقول الخطة/السعر المخفية.
@@ -594,6 +602,8 @@
                 var y = parseInt(this.getAttribute('data-years'), 10);
                 if (isNaN(y) || y < 0) {
                     y = 1;
+                } else if (y > 1) {
+                    y = 1;
                 }
                 updateGoldPrice(y, e);
             });
@@ -603,6 +613,8 @@
             btn.addEventListener('click', function (e) {
                 var y = parseInt(this.getAttribute('data-years'), 10);
                 if (isNaN(y) || y < 0) {
+                    y = 1;
+                } else if (y > 1) {
                     y = 1;
                 }
                 updatePlatinumPrice(y, e);
