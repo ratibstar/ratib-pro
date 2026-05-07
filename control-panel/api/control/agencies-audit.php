@@ -20,6 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/control-permissions.php';
 require_once __DIR__ . '/agency-db-helper.php';
+if (function_exists('mysqli_report')) {
+    mysqli_report(MYSQLI_REPORT_OFF);
+}
 
 function jsonOut(array $data, int $status = 200): void
 {
@@ -31,6 +34,14 @@ function jsonOut(array $data, int $status = 200): void
     echo json_encode($data);
     exit;
 }
+
+set_exception_handler(function (Throwable $e): void {
+    error_log('agencies-audit fatal: ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());
+    jsonOut([
+        'success' => false,
+        'message' => 'Agencies audit failed: ' . $e->getMessage(),
+    ], 500);
+});
 
 function fetchTableNames(mysqli $conn): array
 {

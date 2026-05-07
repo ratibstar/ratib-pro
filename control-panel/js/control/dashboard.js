@@ -154,8 +154,20 @@
             runTenantAllSelfTestBtn.disabled = true;
             setAllResult('running', 'Running all agencies audit...');
             fetch(apiBase + '/agencies-audit.php', { credentials: 'same-origin' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
+                .then(function(r) {
+                    return r.text().then(function(text) {
+                        var parsed = null;
+                        try { parsed = JSON.parse(text); } catch (_) {}
+                        return { ok: r.ok, status: r.status, data: parsed, raw: text };
+                    });
+                })
+                .then(function(resp) {
+                    var data = resp.data;
+                    if (!resp.ok) {
+                        var msg = (data && data.message) ? data.message : ('HTTP ' + resp.status);
+                        setAllResult('fail', 'All agencies test error: ' + msg);
+                        return;
+                    }
                     if (!data || data.success !== true) {
                         setAllResult('fail', 'All agencies test failed to run.');
                         return;
