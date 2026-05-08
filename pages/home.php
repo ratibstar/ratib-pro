@@ -88,6 +88,19 @@ $countryCurrencyBySlug = [
 $countryCodeRaw = strtoupper(trim((string) ($_GET['country_code'] ?? '')));
 $countryNameRaw = strtoupper(trim((string) ($_GET['country_name'] ?? $_GET['country'] ?? '')));
 $countrySlugRaw = strtolower(trim((string) ($_GET['country_slug'] ?? '')));
+if ($countrySlugRaw === '') {
+    $ref = trim((string) ($_SERVER['HTTP_REFERER'] ?? ''));
+    if ($ref !== '') {
+        $refPath = (string) parse_url($ref, PHP_URL_PATH);
+        $refPath = trim($refPath, '/');
+        if ($refPath !== '') {
+            $firstSeg = strtolower((string) strtok($refPath, '/'));
+            if ($firstSeg !== '' && isset($countryCurrencyBySlug[$firstSeg])) {
+                $countrySlugRaw = $firstSeg;
+            }
+        }
+    }
+}
 if ($countryCodeRaw !== '' && isset($countryCurrencyByCode[$countryCodeRaw])) {
     $ratibDisplayCheckoutCurrency = $countryCurrencyByCode[$countryCodeRaw];
 } elseif ($countryNameRaw !== '' && isset($countryCurrencyByName[$countryNameRaw])) {
