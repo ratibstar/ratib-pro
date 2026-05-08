@@ -85,8 +85,8 @@ $countryCurrencyBySlug = [
     'nepal' => 'NPR',
     'thailand' => 'THB',
 ];
-$countryCodeRaw = strtoupper(trim((string) ($_GET['country_code'] ?? '')));
-$countryNameRaw = strtoupper(trim((string) ($_GET['country_name'] ?? $_GET['country'] ?? '')));
+$countryCodeRaw = strtoupper(trim((string) ($_GET['country_code'] ?? ($_SESSION['country_code'] ?? ''))));
+$countryNameRaw = strtoupper(trim((string) ($_GET['country_name'] ?? $_GET['country'] ?? ($_SESSION['country_name'] ?? ''))));
 $countrySlugRaw = strtolower(trim((string) ($_GET['country_slug'] ?? '')));
 if ($countrySlugRaw === '') {
     $ref = trim((string) ($_SERVER['HTTP_REFERER'] ?? ''));
