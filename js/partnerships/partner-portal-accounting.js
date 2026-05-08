@@ -33,6 +33,37 @@
         return str;
     }
 
+    function normalizeAsciiDigits(s) {
+        if (s == null) return '';
+        return String(s)
+            .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+            .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
+    }
+
+    function normalizeIsoDateInput(raw) {
+        const v = normalizeAsciiDigits(raw).trim();
+        if (!v) return '';
+        const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) return v;
+        const y = Number(m[1]);
+        const mo = Number(m[2]);
+        const d = Number(m[3]);
+        if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(d)) return v;
+        if (mo < 1 || mo > 12 || d < 1 || d > 31) return v;
+        return `${String(y).padStart(4, '0')}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+
+    function attachEnglishDateInput(el) {
+        if (!el) return;
+        const normalize = () => {
+            el.value = normalizeIsoDateInput(el.value);
+        };
+        el.addEventListener('input', normalize);
+        el.addEventListener('change', normalize);
+        el.addEventListener('blur', normalize);
+        normalize();
+    }
+
     function destroyChartInstanceOnly() {
         if (chartInst && typeof chartInst.destroy === 'function') {
             chartInst.destroy();
@@ -281,6 +312,8 @@
 
     function init() {
         initDefaultDates();
+        attachEnglishDateInput(document.getElementById('ppAcctStart'));
+        attachEnglishDateInput(document.getElementById('ppAcctEnd'));
         const btn = document.getElementById('ppAcctRefreshBtn');
         if (btn) btn.addEventListener('click', () => loadStatement());
         loadStatement();

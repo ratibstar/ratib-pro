@@ -1145,18 +1145,21 @@
 
         async loadExpenseBreakdownChart() {
             try {
-                const response = await fetch(`${this.apiBase}/dashboard.php`);
+                const response = await fetch(`${this.apiBase}/bills.php`, {
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
                 const data = await this._safeJsonFromResponse(response, 'loadExpenseBreakdownChart');
-                if (!data) return;
-                if (data.success) {
-                    // Simplified expense breakdown - in real app would fetch from categories API
-                    const expenseData = [
-                        { label: '0-30 Days', value: 6 },
-                        { label: '31-60 Days', value: 2 },
-                        { label: '61+ Days', value: 1 }
-                    ];
-                    this.renderExpenseBreakdownChart(expenseData);
-                }
+                if (!data || !data.success) return;
+
+                const bills = Array.isArray(data.bills) ? data.bills : [];
+                const expenseData = this._buildAgingBucketsFromDocuments(bills, 'due_date', 'balance_amount');
+                this.renderExpenseBreakdownChart([
+                    { label: '0-30 Days', value: expenseData.bucket0to30 },
+                    { label: '31-60 Days', value: expenseData.bucket31to60 },
+                    { label: '61+ Days', value: expenseData.bucket61Plus }
+                ]);
             } catch (error) {
                 console.error('Error loading expense breakdown chart:', error);
             }
@@ -1244,22 +1247,76 @@
 
         async loadInvoiceAgingChart() {
             try {
-                const response = await fetch(`${this.apiBase}/dashboard.php`);
+                const response = await fetch(`${this.apiBase}/invoices.php`, {
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
                 const data = await this._safeJsonFromResponse(response, 'loadInvoiceAgingChart');
-                if (!data) return;
-                if (data.success) {
-                    // Simplified invoice aging - in real app would fetch from invoices API
-                    const agingData = [
-                        { label: '0-30 Days', value: 60 },
-                        { label: '31-60 Days', value: 25 },
-                        { label: '61-90 Days', value: 10 },
-                        { label: '90+ Days', value: 5 }
-                    ];
-                    this.renderInvoiceAgingChart(agingData);
-                }
+                if (!data || !data.success) return;
+
+                const invoices = Array.isArray(data.invoices) ? data.invoices : [];
+                const buckets = this._buildAgingBucketsFromDocuments(invoices, 'due_date', 'balance_amount');
+                const agingData = [
+                    { label: '0-30 Days', value: buckets.bucket0to30 },
+                    { label: '31-60 Days', value: buckets.bucket31to60 },
+                    { label: '61-90 Days', value: buckets.bucket61to90 },
+                    { label: '90+ Days', value: buckets.bucket90Plus }
+                ];
+                this.renderInvoiceAgingChart(agingData);
             } catch (error) {
                 console.error('Error loading invoice aging chart:', error);
             }
+        },
+
+        _buildAgingBucketsFromDocuments(documents, dueDateKey = 'due_date', balanceKey = 'balance_amount') {
+            const out = {
+                bucket0to30: 0,
+                bucket31to60: 0,
+                bucket61to90: 0,
+                bucket90Plus: 0,
+                bucket61Plus: 0
+            };
+            if (!Array.isArray(documents) || documents.length === 0) return out;
+
+            const now = new Date();
+            const dayMs = 24 * 60 * 60 * 1000;
+            const parseDate = (raw) => {
+                const s = String(raw == null ? '' : raw).trim();
+                if (!s) return null;
+                // Supports both yyyy-mm-dd and mm/dd/yyyy.
+                if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+                    const d = new Date(s.substring(0, 10) + 'T00:00:00');
+                    return Number.isNaN(d.getTime()) ? null : d;
+                }
+                if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+                    const parts = s.split('/');
+                    const d = new Date(`${parts[2]}-${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}T00:00:00`);
+                    return Number.isNaN(d.getTime()) ? null : d;
+                }
+                const d = new Date(s);
+                return Number.isNaN(d.getTime()) ? null : d;
+            };
+
+            for (const doc of documents) {
+                if (!doc || typeof doc !== 'object') continue;
+                const due = parseDate(doc[dueDateKey]);
+                if (!due) continue;
+                const rawStatus = String(doc.status || '').toLowerCase();
+                if (rawStatus === 'paid' || rawStatus === 'cancelled' || rawStatus === 'voided') continue;
+
+                const amount = Number(doc[balanceKey] ?? doc.total_amount ?? 0);
+                if (!Number.isFinite(amount) || amount <= 0) continue;
+                const ageDays = Math.max(0, Math.floor((now.getTime() - due.getTime()) / dayMs));
+
+                if (ageDays <= 30) out.bucket0to30 += 1;
+                else if (ageDays <= 60) out.bucket31to60 += 1;
+                else if (ageDays <= 90) out.bucket61to90 += 1;
+                else out.bucket90Plus += 1;
+            }
+
+            out.bucket61Plus = out.bucket61to90 + out.bucket90Plus;
+            return out;
         },
 
         renderInvoiceAgingChart(data) {

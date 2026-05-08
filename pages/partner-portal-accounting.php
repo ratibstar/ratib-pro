@@ -52,8 +52,8 @@ include __DIR__ . '/../includes/partner-portal-header.php';
     </div>
 
     <div class="agency-accounting-filters glass-card" id="ppAcctFilters" hidden>
-        <label class="agency-accounting-date-label">From <input type="date" id="ppAcctStart" class="agency-accounting-date-input"></label>
-        <label class="agency-accounting-date-label">To <input type="date" id="ppAcctEnd" class="agency-accounting-date-input"></label>
+        <label class="agency-accounting-date-label">From <input type="text" id="ppAcctStart" class="agency-accounting-date-input" inputmode="numeric" placeholder="YYYY-MM-DD" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" lang="en" dir="ltr"></label>
+        <label class="agency-accounting-date-label">To <input type="text" id="ppAcctEnd" class="agency-accounting-date-input" inputmode="numeric" placeholder="YYYY-MM-DD" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" lang="en" dir="ltr"></label>
         <button type="button" class="neon-btn agency-accounting-refresh" id="ppAcctRefreshBtn">Refresh</button>
     </div>
 

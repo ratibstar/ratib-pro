@@ -968,27 +968,6 @@ if (document.readyState !== 'loading') initProfessionalAccounting();
         this.openPayablesModal();
     };
 
-    // Stubs to avoid "is not a function" when user clicks View/Print/Duplicate/Void (part5/part6 not loaded)
-    ProfessionalAccounting.prototype.viewEntityTransaction = async function(transactionId) {
-        this.openEntityTransactionModal(transactionId);
-    };
-    ProfessionalAccounting.prototype.viewJournalEntry = async function(entryId) {
-        if (typeof this.openJournalEntryModal === 'function') this.openJournalEntryModal(entryId);
-        else this.showToast('View journal entry: ' + entryId, 'info');
-    };
-    ProfessionalAccounting.prototype.printTransaction = async function(transactionId) {
-        this.showToast('Print transaction – not available in this view', 'info');
-    };
-    ProfessionalAccounting.prototype.printJournalEntry = async function(entryId) {
-        this.showToast('Print journal entry – use Reports or export', 'info');
-    };
-    ProfessionalAccounting.prototype.printTransactions = async function() {
-        this.showToast('Print transactions – use Export for CSV', 'info');
-    };
-    ProfessionalAccounting.prototype.duplicateEntityTransaction = async function(transactionId) {
-        this.showToast('Duplicate transaction – use Edit then Save as new', 'info');
-    };
-    ProfessionalAccounting.prototype.voidEntityTransaction = async function(transactionId) {
-        this.showToast('Void transaction – use Entry Approval or reverse entry', 'info');
-    };
+    // Keep advanced transaction actions from part5/part6 when available.
+    // Do not override those implementations here with fallback stubs.
 })();
