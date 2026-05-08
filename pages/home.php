@@ -611,7 +611,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                         <p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout is charged in <strong><?php echo htmlspecialchars($ratibDisplayCheckoutCurrency, ENT_QUOTES, 'UTF-8'); ?></strong>: <strong class="ratib-ngenius-sar-total"><?php echo htmlspecialchars($ratibDisplayCheckoutCurrency, ENT_QUOTES, 'UTF-8'); ?> <?php echo number_format($__displayTotal, 2); ?></strong> <span class="ratib-ngenius-rate-note">(USD × <?php echo htmlspecialchars(number_format($ratibDisplayUsdRate, 2), ENT_QUOTES, 'UTF-8'); ?>)</span>.</p>
                         <?php if ($ratibDisplayCheckoutCurrency !== $__gatewayCurrency): ?>
                         <p class="small text-muted mb-0 mt-1 ratib-ngenius-currency-note">Gateway charge at checkout: <strong><?php echo htmlspecialchars($__gatewayCurrency, ENT_QUOTES, 'UTF-8'); ?> <?php echo number_format($__gatewayTotal, 2); ?></strong> <span class="ratib-ngenius-rate-note">(USD × <?php echo htmlspecialchars(number_format($__gatewayRate, 2), ENT_QUOTES, 'UTF-8'); ?>)</span>.</p>
-                        <p class="small text-muted mb-0 mt-1 ratib-ngenius-currency-note">You will complete payment in <strong><?php echo htmlspecialchars($__gatewayCurrency, ENT_QUOTES, 'UTF-8'); ?></strong> on N-Genius.</p>
+                        <p class="small text-muted mb-0 mt-1 ratib-ngenius-currency-note">You will complete payment in <strong><?php echo htmlspecialchars($__gatewayCurrency, ENT_QUOTES, 'UTF-8'); ?></strong></p>
                         <?php endif; ?>
                         <?php } ?>
                     </div>
