@@ -870,26 +870,8 @@ if ($siteUrl !== '' && !preg_match('/^https?:\/\/.+/i', $siteUrl)) {
 try {
     $pdo = paymentPdo();
     payment_ensure_ngenius_tables($pdo);
-    $duplicatePendingId = findRecentDuplicatePendingOrderId(
-        $pdo,
-        $email
-    );
-    if ($duplicatePendingId > 0) {
-        paymentLog('create-order duplicate pending blocked', [
-            'duplicate_order_id' => $duplicatePendingId,
-            'email' => $email,
-            'plan' => (string) $amountResolved['plan'],
-            'years' => (int) $amountResolved['years'],
-            'total' => (float) $amountResolved['total'],
-            'window_seconds' => RATIB_CREATE_ORDER_DEDUPE_WINDOW_SECONDS,
-        ]);
-        jsonOut(429, [
-            'message' => 'A pending checkout already exists for this registration. Please complete it or wait before trying again.',
-            'phase' => 'dedupe',
-            'duplicate_order_id' => $duplicatePendingId,
-            'retry_after_seconds' => RATIB_CREATE_ORDER_DEDUPE_WINDOW_SECONDS,
-        ]);
-    }
+    // Duplicate pending checkout blocking disabled by request:
+    // always allow immediate retries, even if a previous checkout is pending/failed.
     // Do not create control registration rows before payment confirmation.
     // Queue insertion is handled by verify.php only after status is "paid".
     $controlRequestId = null;
