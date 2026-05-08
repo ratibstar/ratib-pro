@@ -311,11 +311,11 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
                 <ul class="card-features">
                     <li><i class="fas fa-check"></i> Candidate & document management</li>
                     <li><i class="fas fa-check"></i> Your branded portal</li>
+                    <li><i class="fas fa-check"></i> 20 users</li>
                     <li><i class="fas fa-check"></i> E-invoice system</li>
                     <li><i class="fas fa-check"></i> Standard support</li>
                     <li><i class="fas fa-check"></i> Free Hosting with a domain</li>
                     <li><i class="fas fa-check"></i> Free for one year</li>
-                    <li><i class="fas fa-check"></i> 20 users</li>
                     <li><i class="fas fa-check"></i> Admin control panel</li>
                 </ul>
                 <a href="#register" id="goldRegisterBtn" class="btn-register js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Register</a>
@@ -336,6 +336,7 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
                 <div class="card-divider"></div>
                 <ul class="card-features">
                     <li><i class="fas fa-check"></i> All Gold features</li>
+                    <li><i class="fas fa-check"></i> Unlimited users</li>
                     <li><i class="fas fa-check"></i> Priority support</li>
                     <li><i class="fas fa-check"></i> Advanced analytics</li>
                     <li><i class="fas fa-check"></i> Dedicated setup</li>
@@ -343,9 +344,6 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
                     <li><i class="fas fa-check"></i> Free for one year</li>
                     <li><i class="fas fa-check"></i> Admin control panel</li>
                     <li><i class="fas fa-check"></i> Custom integrations</li>
-                    <li><i class="fas fa-check"></i> unlimited users</li>
-                    <li><i class="fas fa-check"></i> White-label options</li>
-                    <li><i class="fas fa-check"></i> Dedicated account manager</li>
                 </ul>
                 <a href="#register" id="platinumRegisterBtn" class="btn-register js-open-register" data-register-plan="platinum" data-register-amount="<?php echo (float)($plans['platinum']['amount'] ?? $platinumTestPriceYear1); ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Register</a>
             </div>
