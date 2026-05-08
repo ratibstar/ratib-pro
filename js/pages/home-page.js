@@ -316,6 +316,17 @@
         if (!form) {
             return;
         }
+        var desiredSiteUrlInput = form.querySelector('input[name="desired_site_url"]');
+        if (desiredSiteUrlInput) {
+            desiredSiteUrlInput.removeAttribute('required');
+            var desiredLabel = desiredSiteUrlInput.closest('.mb-3');
+            if (desiredLabel) {
+                var labelEl = desiredLabel.querySelector('.form-label');
+                if (labelEl) {
+                    labelEl.textContent = 'Desired Site URL (optional)';
+                }
+            }
+        }
 
         document.getElementById('countrySelect').addEventListener('change', function () {
             var wrap = document.getElementById('otherCountryWrap');
