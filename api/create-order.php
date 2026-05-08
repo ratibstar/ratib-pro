@@ -863,10 +863,7 @@ if ($countryName === '') {
 if ($phone === '') {
     jsonOut(400, ['message' => 'Contact phone is required.']);
 }
-if ($siteUrl === '') {
-    jsonOut(400, ['message' => 'Desired site URL is required.']);
-}
-if (!preg_match('/^https?:\/\/.+/i', $siteUrl)) {
+if ($siteUrl !== '' && !preg_match('/^https?:\/\/.+/i', $siteUrl)) {
     jsonOut(400, ['message' => 'Desired site URL must start with http:// or https://']);
 }
 
