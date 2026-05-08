@@ -248,12 +248,20 @@
 
         var tax = subtotal * 0.15;
         var total = subtotal + tax;
-        var checkoutCur = (typeof window.RATIB_DISPLAY_CHECKOUT_CURRENCY === 'string' && window.RATIB_DISPLAY_CHECKOUT_CURRENCY)
+        var displayCur = (typeof window.RATIB_DISPLAY_CHECKOUT_CURRENCY === 'string' && window.RATIB_DISPLAY_CHECKOUT_CURRENCY)
             ? String(window.RATIB_DISPLAY_CHECKOUT_CURRENCY).toUpperCase() : 'SAR';
-        var ngeniusLabel = (typeof window.RATIB_DISPLAY_NGENIUS_LABEL === 'string' && window.RATIB_DISPLAY_NGENIUS_LABEL)
-            ? String(window.RATIB_DISPLAY_NGENIUS_LABEL) : 'N-Genius KSA';
+        var gatewayCur = (typeof window.RATIB_CHECKOUT_CURRENCY === 'string' && window.RATIB_CHECKOUT_CURRENCY)
+            ? String(window.RATIB_CHECKOUT_CURRENCY).toUpperCase() : 'SAR';
+        if (gatewayCur !== 'SAR' && gatewayCur !== 'USD') {
+            gatewayCur = 'SAR';
+        }
         var usdToDisplay = (typeof window.RATIB_DISPLAY_USD_RATE === 'number' && isFinite(window.RATIB_DISPLAY_USD_RATE) && window.RATIB_DISPLAY_USD_RATE > 0)
             ? window.RATIB_DISPLAY_USD_RATE : 3.75;
+        var usdToGateway = (typeof window.RATIB_USD_TO_SAR === 'number' && isFinite(window.RATIB_USD_TO_SAR) && window.RATIB_USD_TO_SAR > 0)
+            ? window.RATIB_USD_TO_SAR : 3.75;
+        if (gatewayCur === 'USD') {
+            usdToGateway = 1.0;
+        }
         var fallbackUsdRates = {
             USD: 1.00,
             SAR: 3.75,
@@ -270,14 +278,20 @@
             THB: 36.00
         };
         // Guard against stale bootstrap payloads that still send 3.75 for non-SAR currencies.
-        if ((!isFinite(usdToDisplay) || usdToDisplay <= 0 || (checkoutCur !== 'SAR' && Math.abs(usdToDisplay - 3.75) < 0.000001))
-            && Object.prototype.hasOwnProperty.call(fallbackUsdRates, checkoutCur)) {
-            usdToDisplay = fallbackUsdRates[checkoutCur];
+        if ((!isFinite(usdToDisplay) || usdToDisplay <= 0 || (displayCur !== 'SAR' && Math.abs(usdToDisplay - 3.75) < 0.000001))
+            && Object.prototype.hasOwnProperty.call(fallbackUsdRates, displayCur)) {
+            usdToDisplay = fallbackUsdRates[displayCur];
         }
         var ngeniusNote = '';
+        var gatewayApprox = (total * usdToGateway).toFixed(2);
+        var gatewayRateStr = usdToGateway.toFixed(2);
         var displayApprox = (total * usdToDisplay).toFixed(2);
-        var rateStr = usdToDisplay.toFixed(2);
-        ngeniusNote = '<p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout (' + ngeniusLabel + ') is charged in <strong>' + checkoutCur + '</strong>. Approximate total: <strong class="ratib-ngenius-sar-total">' + checkoutCur + ' ' + displayApprox + '</strong> <span class="ratib-ngenius-rate-note">(USD × ' + rateStr + ')</span>.</p>';
+        var displayRateStr = usdToDisplay.toFixed(2);
+        ngeniusNote = '<p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout (N-Genius KSA) is charged in <strong>' + gatewayCur + '</strong>. Approximate total: <strong class="ratib-ngenius-sar-total">' + gatewayCur + ' ' + gatewayApprox + '</strong> <span class="ratib-ngenius-rate-note">(USD × ' + gatewayRateStr + ')</span>';
+        if (displayCur !== gatewayCur) {
+            ngeniusNote += '. Approximate in ' + displayCur + ': <strong>' + displayCur + ' ' + displayApprox + '</strong> <span class="ratib-ngenius-rate-note">(USD × ' + displayRateStr + ')</span>';
+        }
+        ngeniusNote += '.</p>';
 
         console.log('updatePaymentSummary - subtotal:', subtotal, 'years:', years, 'planLabel:', planLabel, 'inputPlan.value:', inputPlanEl ? inputPlanEl.value : '');
 

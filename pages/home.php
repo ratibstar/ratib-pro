@@ -597,9 +597,18 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                         $__showNgeniusNote = ($plan !== 'pro' && $planAmount);
                         if ($__showNgeniusNote) {
                             $__usdTotal = (float) $planAmount * 1.15;
+                            $__gatewayCurrency = strtoupper(trim((string) $ratibCheckoutCurrency));
+                            if ($__gatewayCurrency === '') {
+                                $__gatewayCurrency = 'SAR';
+                            }
+                            $__gatewayRate = ($__gatewayCurrency === 'SAR') ? (float) $ratibUsdToSar : 1.0;
+                            if (!is_finite($__gatewayRate) || $__gatewayRate <= 0) {
+                                $__gatewayRate = ($__gatewayCurrency === 'SAR') ? 3.75 : 1.0;
+                            }
+                            $__gatewayTotal = round($__usdTotal * $__gatewayRate, 2);
                             $__displayTotal = round($__usdTotal * $ratibDisplayUsdRate, 2);
                             ?>
-                        <p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout (<?php echo htmlspecialchars($ratibDisplayNgeniusLabel, ENT_QUOTES, 'UTF-8'); ?>) is charged in <strong><?php echo htmlspecialchars($ratibDisplayCheckoutCurrency, ENT_QUOTES, 'UTF-8'); ?></strong>. Approximate total: <strong class="ratib-ngenius-sar-total"><?php echo htmlspecialchars($ratibDisplayCheckoutCurrency, ENT_QUOTES, 'UTF-8'); ?> <?php echo number_format($__displayTotal, 2); ?></strong> <span class="ratib-ngenius-rate-note">(USD × <?php echo htmlspecialchars(number_format($ratibDisplayUsdRate, 2), ENT_QUOTES, 'UTF-8'); ?>)</span>.</p>
+                        <p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout (N-Genius KSA) is charged in <strong><?php echo htmlspecialchars($__gatewayCurrency, ENT_QUOTES, 'UTF-8'); ?></strong>. Approximate total: <strong class="ratib-ngenius-sar-total"><?php echo htmlspecialchars($__gatewayCurrency, ENT_QUOTES, 'UTF-8'); ?> <?php echo number_format($__gatewayTotal, 2); ?></strong> <span class="ratib-ngenius-rate-note">(USD × <?php echo htmlspecialchars(number_format($__gatewayRate, 2), ENT_QUOTES, 'UTF-8'); ?>)</span><?php if ($ratibDisplayCheckoutCurrency !== $__gatewayCurrency): ?>. Approximate in <?php echo htmlspecialchars($ratibDisplayCheckoutCurrency, ENT_QUOTES, 'UTF-8'); ?>: <strong><?php echo htmlspecialchars($ratibDisplayCheckoutCurrency, ENT_QUOTES, 'UTF-8'); ?> <?php echo number_format($__displayTotal, 2); ?></strong> <span class="ratib-ngenius-rate-note">(USD × <?php echo htmlspecialchars(number_format($ratibDisplayUsdRate, 2), ENT_QUOTES, 'UTF-8'); ?>)</span><?php endif; ?>.</p>
                         <?php } ?>
                     </div>
                     <p class="small mb-0 payment-summary-footnote"><i class="fas fa-file-invoice me-2 payment-summary-footnote-icon"></i>Submit your request below. We will contact you about payment after review.</p>
