@@ -287,7 +287,7 @@
         var gatewayRateStr = usdToGateway.toFixed(2);
         var displayApprox = (total * usdToDisplay).toFixed(2);
         var displayRateStr = usdToDisplay.toFixed(2);
-        ngeniusNote = '<p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout is charged in <strong>' + displayCur + '</strong>: <strong>' + displayCur + ' ' + displayApprox + '</strong> <span class="ratib-ngenius-rate-note">(USD × ' + displayRateStr + ')</span>.</p>';
+        ngeniusNote = '<p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout is charged in <strong>' + displayCur + '</strong>: <strong class="ratib-ngenius-sar-total">' + displayCur + ' ' + displayApprox + '</strong> <span class="ratib-ngenius-rate-note">(USD × ' + displayRateStr + ')</span>.</p>';
 
         console.log('updatePaymentSummary - subtotal:', subtotal, 'years:', years, 'planLabel:', planLabel, 'inputPlan.value:', inputPlanEl ? inputPlanEl.value : '');
 
