@@ -288,6 +288,9 @@
         var displayApprox = (total * usdToDisplay).toFixed(2);
         var displayRateStr = usdToDisplay.toFixed(2);
         ngeniusNote = '<p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout is charged in <strong>' + displayCur + '</strong>: <strong class="ratib-ngenius-sar-total">' + displayCur + ' ' + displayApprox + '</strong> <span class="ratib-ngenius-rate-note">(USD × ' + displayRateStr + ')</span>.</p>';
+        if (displayCur !== gatewayCur) {
+            ngeniusNote += '<p class="small text-muted mb-0 mt-1 ratib-ngenius-currency-note">Gateway charge at checkout: <strong>' + gatewayCur + ' ' + gatewayApprox + '</strong> <span class="ratib-ngenius-rate-note">(USD × ' + gatewayRateStr + ')</span>.</p>';
+        }
 
         console.log('updatePaymentSummary - subtotal:', subtotal, 'years:', years, 'planLabel:', planLabel, 'inputPlan.value:', inputPlanEl ? inputPlanEl.value : '');
 
@@ -315,7 +318,7 @@
             '</div>' +
             '<div class="payment-summary-total-row">' +
             '<span>Total</span>' +
-            '<span>$' + total.toFixed(2) + '</span>' +
+            '<span>' + displayCur + ' ' + displayApprox + '</span>' +
             '</div>' + ngeniusNote;
     }
 
