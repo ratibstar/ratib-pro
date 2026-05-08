@@ -291,6 +291,18 @@
       if (typeof p.hint === 'string' && p.hint) {
         bits.push(p.hint);
       }
+      if (typeof p.order_http_status === 'number' && p.order_http_status > 0) {
+        bits.push('order_http_status=' + String(p.order_http_status));
+      }
+      if (typeof p.order_curl_error === 'string' && p.order_curl_error) {
+        bits.push('order_curl_error=' + p.order_curl_error);
+      }
+      if (typeof p.order_error_hint === 'string' && p.order_error_hint) {
+        bits.push('order_error_hint=' + p.order_error_hint);
+      }
+      if (typeof p.order_error_body === 'string' && p.order_error_body) {
+        bits.push('order_error_body=' + p.order_error_body.slice(0, 260));
+      }
       if (bits.length) {
         return bits.join(' — ');
       }
