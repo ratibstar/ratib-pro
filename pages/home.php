@@ -85,6 +85,33 @@ $countryCurrencyBySlug = [
     'nepal' => 'NPR',
     'thailand' => 'THB',
 ];
+$countryNameByCode = [
+    'BD' => 'Bangladesh',
+    'UG' => 'Uganda',
+    'KE' => 'Kenya',
+    'LK' => 'Sri Lanka',
+    'PH' => 'Philippines',
+    'ID' => 'Indonesia',
+    'ET' => 'Ethiopia',
+    'NG' => 'Nigeria',
+    'RW' => 'Rwanda',
+    'TH' => 'Thailand',
+    'NP' => 'Nepal',
+];
+$countryNameBySlug = [
+    'bangladesh' => 'Bangladesh',
+    'uganda' => 'Uganda',
+    'kenya' => 'Kenya',
+    'sri-lanka' => 'Sri Lanka',
+    'srilanka' => 'Sri Lanka',
+    'philippines' => 'Philippines',
+    'indonesia' => 'Indonesia',
+    'ethiopia' => 'Ethiopia',
+    'nigeria' => 'Nigeria',
+    'rwanda' => 'Rwanda',
+    'thailand' => 'Thailand',
+    'nepal' => 'Nepal',
+];
 $countryCodeRaw = strtoupper(trim((string) ($_GET['country_code'] ?? ($_SESSION['country_code'] ?? ''))));
 $countryNameRaw = strtoupper(trim((string) ($_GET['country_name'] ?? $_GET['country'] ?? ($_SESSION['country_name'] ?? ''))));
 $countrySlugRaw = strtolower(trim((string) ($_GET['country_slug'] ?? '')));
@@ -116,6 +143,17 @@ $ratibDisplayRateKey = 'NGENIUS_USD_TO_' . preg_replace('/[^A-Z]/', '', $ratibDi
 $ratibDisplayUsdRateEnv = (float) ratib_ngenius_env($ratibDisplayRateKey, (string) $ratibDisplayUsdRate);
 if (is_finite($ratibDisplayUsdRateEnv) && $ratibDisplayUsdRateEnv > 0) {
     $ratibDisplayUsdRate = $ratibDisplayUsdRateEnv;
+}
+$ratibLockedCountryName = '';
+if ($countryCodeRaw !== '' && isset($countryNameByCode[$countryCodeRaw])) {
+    $ratibLockedCountryName = $countryNameByCode[$countryCodeRaw];
+} elseif ($countrySlugRaw !== '' && isset($countryNameBySlug[$countrySlugRaw])) {
+    $ratibLockedCountryName = $countryNameBySlug[$countrySlugRaw];
+} elseif ($countryNameRaw !== '') {
+    $countryNameTitle = ucwords(strtolower($countryNameRaw));
+    if ($countryNameTitle !== '') {
+        $ratibLockedCountryName = $countryNameTitle;
+    }
 }
 
 $path = $_SERVER['REQUEST_URI'] ?? '';
@@ -212,6 +250,10 @@ if ($planAmount === null && isset($plans[$plan])) {
     }
 }
 $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indonesia', 'Ethiopia', 'Nigeria', 'Rwanda', 'Thailand', 'Nepal', 'Other countries sending workers'];
+$ratibCountryIsLocked = ($ratibLockedCountryName !== '');
+if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true)) {
+    array_unshift($countries, $ratibLockedCountryName);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -481,7 +523,19 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
                 <div class="hp hp-field"><input type="text" id="hp" name="website_url" tabindex="-1" autocomplete="off"></div>
                 <div class="mb-3"><label class="form-label">Agency Name *</label><input type="text" class="form-control" name="agency_name" required maxlength="255" placeholder="Your agency or company name"></div>
                 <div class="mb-3"><label class="form-label">Agency ID</label><input type="text" class="form-control" name="agency_id" maxlength="64" placeholder="e.g. registration or license number"></div>
-                <div class="mb-3"><label class="form-label">Country *</label><select class="form-control" name="country" id="countrySelect" required><option value="">-- Select Country --</option><?php foreach ($countries as $c): ?><option value="<?php echo htmlspecialchars($c); ?>"><?php echo htmlspecialchars($c); ?></option><?php endforeach; ?></select></div>
+                <div class="mb-3">
+                    <label class="form-label">Country *</label>
+                    <select class="form-control<?php echo $ratibCountryIsLocked ? ' is-locked-country' : ''; ?>" name="<?php echo $ratibCountryIsLocked ? 'country_visible' : 'country'; ?>" id="countrySelect" required <?php echo $ratibCountryIsLocked ? 'disabled' : ''; ?>>
+                        <option value="">-- Select Country --</option>
+                        <?php foreach ($countries as $c): ?>
+                        <option value="<?php echo htmlspecialchars($c); ?>" <?php echo ($ratibCountryIsLocked && $ratibLockedCountryName === $c) ? 'selected' : ''; ?>><?php echo htmlspecialchars($c); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if ($ratibCountryIsLocked): ?>
+                    <input type="hidden" name="country" value="<?php echo htmlspecialchars($ratibLockedCountryName, ENT_QUOTES, 'UTF-8'); ?>">
+                    <p class="small mt-2 mb-0 form-plan-hint"><i class="fas fa-lock me-1"></i>Country is set by your portal.</p>
+                    <?php endif; ?>
+                </div>
                 <div class="mb-3 is-hidden" id="otherCountryWrap"><label class="form-label">Specify country</label><input type="text" class="form-control" name="country_other" id="countryOther" maxlength="255" placeholder="Enter country name"></div>
                 <div class="mb-3"><label class="form-label">Contact Email *</label><input type="email" class="form-control" name="contact_email" required maxlength="255" placeholder="you@example.com"></div>
                 <div class="mb-3"><label class="form-label">Contact Phone *</label><input type="text" class="form-control" name="contact_phone" required maxlength="64" placeholder="+1234567890"></div>
