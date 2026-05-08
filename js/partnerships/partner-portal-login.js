@@ -9,25 +9,18 @@
             msg.hidden = true;
             msg.textContent = '';
         }
-        const email = (document.getElementById('ppEmail')?.value || '').trim();
+        const username = (document.getElementById('ppUsername')?.value || '').trim();
         const passwordField = document.getElementById('ppPassword')?.value || '';
-        const token = (document.getElementById('ppToken')?.value || '').trim();
-        const agencyId = parseInt(String(document.getElementById('ppAgencyId')?.value || '0'), 10);
 
         const body = {};
-        if (email && passwordField) {
-            body.email = email;
-            body.password = passwordField;
-        } else if (token) {
-            body.token = token;
-        } else if (Number.isFinite(agencyId) && agencyId > 0 && passwordField) {
-            body.agency_id = agencyId;
+        if (username && passwordField) {
+            body.username = username;
             body.password = passwordField;
         }
 
         if (Object.keys(body).length === 0) {
             if (msg) {
-                msg.textContent = 'Enter email and password, or a token, or agency ID with password.';
+                msg.textContent = 'Enter username and password.';
                 msg.hidden = false;
             }
             return;
