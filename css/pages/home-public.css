@@ -903,13 +903,18 @@ a.live-status:hover {
   opacity: 0.9;
 }
 .promo-old {
-  text-decoration: line-through;
-  opacity: 0.72;
+  display: inline-block;
+  margin-right: 0.3rem;
+  text-decoration-line: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: rgba(255, 99, 132, 0.9);
+  opacity: 0.78;
   color: #9ba9b8;
 }
 .promo-new {
+  display: inline-block;
   font-weight: 700;
-  color: inherit;
+  color: #f8f9fa;
 }
 @keyframes buttonPulse {
   0%,
