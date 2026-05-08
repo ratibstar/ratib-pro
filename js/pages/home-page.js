@@ -254,6 +254,26 @@
             ? String(window.RATIB_DISPLAY_NGENIUS_LABEL) : 'N-Genius KSA';
         var usdToDisplay = (typeof window.RATIB_DISPLAY_USD_RATE === 'number' && isFinite(window.RATIB_DISPLAY_USD_RATE) && window.RATIB_DISPLAY_USD_RATE > 0)
             ? window.RATIB_DISPLAY_USD_RATE : 3.75;
+        var fallbackUsdRates = {
+            USD: 1.00,
+            SAR: 3.75,
+            BDT: 117.50,
+            IDR: 16000.00,
+            ETB: 57.00,
+            PHP: 57.00,
+            KES: 129.00,
+            UGX: 3800.00,
+            NGN: 1450.00,
+            RWF: 1300.00,
+            LKR: 300.00,
+            NPR: 133.00,
+            THB: 36.00
+        };
+        // Guard against stale bootstrap payloads that still send 3.75 for non-SAR currencies.
+        if ((!isFinite(usdToDisplay) || usdToDisplay <= 0 || (checkoutCur !== 'SAR' && Math.abs(usdToDisplay - 3.75) < 0.000001))
+            && Object.prototype.hasOwnProperty.call(fallbackUsdRates, checkoutCur)) {
+            usdToDisplay = fallbackUsdRates[checkoutCur];
+        }
         var ngeniusNote = '';
         var displayApprox = (total * usdToDisplay).toFixed(2);
         var rateStr = usdToDisplay.toFixed(2);
