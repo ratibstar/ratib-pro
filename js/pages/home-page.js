@@ -14,6 +14,7 @@
             checkoutCurrency: 'SAR',
             displayCheckoutCurrency: 'SAR',
             displayNgeniusLabel: 'N-Genius KSA',
+            displayUsdRate: 3.75,
             usdToSar: 3.75,
             openRegister: false,
             initialPlan: 'pro',
@@ -42,6 +43,9 @@
                 }
                 if (typeof o.displayNgeniusLabel === 'string' && o.displayNgeniusLabel.trim() !== '') {
                     d.displayNgeniusLabel = o.displayNgeniusLabel.trim();
+                }
+                if (typeof o.displayUsdRate === 'number' && isFinite(o.displayUsdRate) && o.displayUsdRate > 0) {
+                    d.displayUsdRate = o.displayUsdRate;
                 }
                 if (typeof o.openRegister === 'boolean') {
                     d.openRegister = o.openRegister;
@@ -82,6 +86,7 @@
     window.RATIB_CHECKOUT_CURRENCY = HOME.checkoutCurrency;
     window.RATIB_DISPLAY_CHECKOUT_CURRENCY = HOME.displayCheckoutCurrency;
     window.RATIB_DISPLAY_NGENIUS_LABEL = HOME.displayNgeniusLabel;
+    window.RATIB_DISPLAY_USD_RATE = HOME.displayUsdRate;
     window.RATIB_USD_TO_SAR = HOME.usdToSar;
     var openRegister = HOME.openRegister;
     var DISPLAY_MULTIPLIER = 2;
@@ -247,12 +252,12 @@
             ? String(window.RATIB_DISPLAY_CHECKOUT_CURRENCY).toUpperCase() : 'SAR';
         var ngeniusLabel = (typeof window.RATIB_DISPLAY_NGENIUS_LABEL === 'string' && window.RATIB_DISPLAY_NGENIUS_LABEL)
             ? String(window.RATIB_DISPLAY_NGENIUS_LABEL) : 'N-Genius KSA';
-        var usdToSar = (typeof window.RATIB_USD_TO_SAR === 'number' && isFinite(window.RATIB_USD_TO_SAR) && window.RATIB_USD_TO_SAR > 0)
-            ? window.RATIB_USD_TO_SAR : 3.75;
+        var usdToDisplay = (typeof window.RATIB_DISPLAY_USD_RATE === 'number' && isFinite(window.RATIB_DISPLAY_USD_RATE) && window.RATIB_DISPLAY_USD_RATE > 0)
+            ? window.RATIB_DISPLAY_USD_RATE : 3.75;
         var ngeniusNote = '';
-        var sarApprox = (total * usdToSar).toFixed(2);
-        var rateStr = usdToSar.toFixed(2);
-        ngeniusNote = '<p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout (' + ngeniusLabel + ') is charged in <strong>' + checkoutCur + '</strong>. Approximate total: <strong class="ratib-ngenius-sar-total">' + checkoutCur + ' ' + sarApprox + '</strong> <span class="ratib-ngenius-rate-note">(USD × ' + rateStr + ')</span>.</p>';
+        var displayApprox = (total * usdToDisplay).toFixed(2);
+        var rateStr = usdToDisplay.toFixed(2);
+        ngeniusNote = '<p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout (' + ngeniusLabel + ') is charged in <strong>' + checkoutCur + '</strong>. Approximate total: <strong class="ratib-ngenius-sar-total">' + checkoutCur + ' ' + displayApprox + '</strong> <span class="ratib-ngenius-rate-note">(USD × ' + rateStr + ')</span>.</p>';
 
         console.log('updatePaymentSummary - subtotal:', subtotal, 'years:', years, 'planLabel:', planLabel, 'inputPlan.value:', inputPlanEl ? inputPlanEl.value : '');
 

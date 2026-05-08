@@ -30,6 +30,21 @@ if (!is_finite($ratibUsdToSar) || $ratibUsdToSar <= 0) {
 }
 $ratibDisplayCheckoutCurrency = $ratibCheckoutCurrency;
 $ratibDisplayNgeniusLabel = ($ratibCheckoutCurrency === 'SAR') ? 'N-Genius KSA' : 'N-Genius';
+$ratibDefaultUsdRates = [
+    'USD' => 1.00,
+    'SAR' => 3.75,
+    'BDT' => 117.50,
+    'IDR' => 16000.00,
+    'ETB' => 57.00,
+    'PHP' => 57.00,
+    'KES' => 129.00,
+    'UGX' => 3800.00,
+    'NGN' => 1450.00,
+    'RWF' => 1300.00,
+    'LKR' => 300.00,
+    'NPR' => 133.00,
+    'THB' => 36.00,
+];
 $countryCurrencyByCode = [
     'BD' => 'BDT',
     'ET' => 'ETB',
@@ -82,6 +97,12 @@ if ($countryCodeRaw !== '' && isset($countryCurrencyByCode[$countryCodeRaw])) {
 }
 if ($ratibDisplayCheckoutCurrency !== 'SAR') {
     $ratibDisplayNgeniusLabel = 'N-Genius ' . $ratibDisplayCheckoutCurrency;
+}
+$ratibDisplayUsdRate = $ratibDefaultUsdRates[$ratibDisplayCheckoutCurrency] ?? 1.00;
+$ratibDisplayRateKey = 'NGENIUS_USD_TO_' . preg_replace('/[^A-Z]/', '', $ratibDisplayCheckoutCurrency);
+$ratibDisplayUsdRateEnv = (float) ratib_ngenius_env($ratibDisplayRateKey, (string) $ratibDisplayUsdRate);
+if (is_finite($ratibDisplayUsdRateEnv) && $ratibDisplayUsdRateEnv > 0) {
+    $ratibDisplayUsdRate = $ratibDisplayUsdRateEnv;
 }
 
 $path = $_SERVER['REQUEST_URI'] ?? '';
@@ -494,9 +515,9 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
                         $__showNgeniusNote = ($plan !== 'pro' && $planAmount);
                         if ($__showNgeniusNote) {
                             $__usdTotal = (float) $planAmount * 1.15;
-                            $__sarTotal = round($__usdTotal * $ratibUsdToSar, 2);
+                            $__displayTotal = round($__usdTotal * $ratibDisplayUsdRate, 2);
                             ?>
-                        <p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout (<?php echo htmlspecialchars($ratibDisplayNgeniusLabel, ENT_QUOTES, 'UTF-8'); ?>) is charged in <strong><?php echo htmlspecialchars($ratibDisplayCheckoutCurrency, ENT_QUOTES, 'UTF-8'); ?></strong>. Approximate total: <strong class="ratib-ngenius-sar-total"><?php echo htmlspecialchars($ratibDisplayCheckoutCurrency, ENT_QUOTES, 'UTF-8'); ?> <?php echo number_format($__sarTotal, 2); ?></strong> <span class="ratib-ngenius-rate-note">(USD × <?php echo htmlspecialchars(number_format($ratibUsdToSar, 2), ENT_QUOTES, 'UTF-8'); ?>)</span>.</p>
+                        <p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout (<?php echo htmlspecialchars($ratibDisplayNgeniusLabel, ENT_QUOTES, 'UTF-8'); ?>) is charged in <strong><?php echo htmlspecialchars($ratibDisplayCheckoutCurrency, ENT_QUOTES, 'UTF-8'); ?></strong>. Approximate total: <strong class="ratib-ngenius-sar-total"><?php echo htmlspecialchars($ratibDisplayCheckoutCurrency, ENT_QUOTES, 'UTF-8'); ?> <?php echo number_format($__displayTotal, 2); ?></strong> <span class="ratib-ngenius-rate-note">(USD × <?php echo htmlspecialchars(number_format($ratibDisplayUsdRate, 2), ENT_QUOTES, 'UTF-8'); ?>)</span>.</p>
                         <?php } ?>
                     </div>
                     <p class="small mb-0 payment-summary-footnote"><i class="fas fa-file-invoice me-2 payment-summary-footnote-icon"></i>Submit your request below. We will contact you about payment after review.</p>
@@ -619,6 +640,7 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
         'checkoutCurrency' => $ratibCheckoutCurrency,
         'displayCheckoutCurrency' => $ratibDisplayCheckoutCurrency,
         'displayNgeniusLabel' => $ratibDisplayNgeniusLabel,
+        'displayUsdRate' => (float) $ratibDisplayUsdRate,
         'usdToSar' => (float) $ratibUsdToSar,
         'openRegister' => $openRegister,
         'initialPlan' => $plan,
