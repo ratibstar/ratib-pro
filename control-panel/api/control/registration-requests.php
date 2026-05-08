@@ -283,7 +283,12 @@ if ($method === 'PUT') {
             @$ctrl->query("INSERT INTO control_registration_audit (registration_request_id, admin_id, action, old_payment_status, new_payment_status, old_plan_amount, new_plan_amount) VALUES (" . (int)$id . ", " . $adminId . ", 'update', " . $oldPay . ", " . $newPay . ", " . ($oldAmt === 'NULL' ? 'NULL' : $oldAmt) . ", " . ($newAmt === 'NULL' ? 'NULL' : $newAmt) . ")");
         }
     }
-    if ($paymentChanged && strtolower((string) ($paymentStatus ?? '')) === 'paid') {
+    $effectivePaymentStatus = $paymentStatus !== null && $paymentStatus !== ''
+        ? strtolower((string) $paymentStatus)
+        : strtolower((string) ($oldRow['payment_status'] ?? ''));
+    $shouldResyncAccounting = ($paymentChanged && $effectivePaymentStatus === 'paid')
+        || ($amountChanged && $effectivePaymentStatus === 'paid');
+    if ($shouldResyncAccounting) {
         $rowAfter = $ctrl->query('SELECT * FROM control_registration_requests WHERE id = ' . (int) $id . ' LIMIT 1')->fetch_assoc();
         if ($rowAfter) {
             require_once __DIR__ . '/../../includes/registration-accounting-sync.php';
