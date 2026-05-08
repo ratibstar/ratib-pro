@@ -905,16 +905,18 @@ a.live-status:hover {
 .promo-old {
   display: inline-block;
   margin-right: 0.3rem;
+  font-size: 0.82em;
   text-decoration-line: line-through;
-  text-decoration-thickness: 2px;
-  text-decoration-color: rgba(255, 99, 132, 0.9);
-  opacity: 0.78;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: rgba(255, 99, 132, 0.75);
+  opacity: 0.6;
   color: #9ba9b8;
 }
 .promo-new {
   display: inline-block;
-  font-weight: 700;
-  color: #f8f9fa;
+  font-size: 1.05em;
+  font-weight: 800;
+  color: #ffffff;
 }
 @keyframes buttonPulse {
   0%,
