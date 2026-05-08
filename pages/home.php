@@ -232,7 +232,7 @@ if ($plan === '') {
     $plan = 'pro';
 }
 $goldTestPriceYear1 = 650;
-$goldTestPriceMonth = 54;
+$goldTestPriceMonth = 5;
 $platinumTestPriceYear1 = 800;
 $platinumTestPriceMonth = 67;
 $goldListPriceYear1 = $goldTestPriceYear1 * 2;
