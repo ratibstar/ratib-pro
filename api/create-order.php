@@ -1010,6 +1010,14 @@ try {
             $orderBodySnippet = substr((string) $orderBodySnippet, 0, 260);
         }
         $clientMessage = 'Failed to create payment order.';
+        $orderHttpStatus = (int) ($orderRes['status'] ?? 0);
+        $orderCurlError = trim((string) ($orderRes['error'] ?? ''));
+        if ($orderHttpStatus > 0) {
+            $clientMessage .= ' HTTP ' . $orderHttpStatus . '.';
+        }
+        if ($orderCurlError !== '') {
+            $clientMessage .= ' cURL: ' . $orderCurlError . '.';
+        }
         if ($orderHint !== '') {
             $clientMessage .= ' ' . $orderHint;
         } elseif ($orderBodySnippet !== '') {
@@ -1017,8 +1025,8 @@ try {
         }
         jsonOut(502, [
             'message' => $clientMessage,
-            'order_http_status' => (int) ($orderRes['status'] ?? 0),
-            'order_curl_error' => (string) ($orderRes['error'] ?? ''),
+            'order_http_status' => $orderHttpStatus,
+            'order_curl_error' => $orderCurlError,
             'order_error_hint' => $orderHint,
             'order_error_body' => substr((string) ($orderRes['body'] ?? ''), 0, 800),
             'payment_config' => [
