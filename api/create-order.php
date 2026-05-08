@@ -722,7 +722,7 @@ function resolvePlanAmount(array $input): array
     }
 
     $priceTable = [
-        'gold' => [0 => 54.0, 1 => 650.0],
+        'gold' => [0 => 4.5, 1 => 5.0],
         'platinum' => [0 => 67.0, 1 => 800.0],
     ];
 
