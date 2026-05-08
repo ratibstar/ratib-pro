@@ -149,7 +149,16 @@ $controlCenterUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/admin/co
                     <span class="badge-count <?php echo $supportUnreadCount > 0 ? '' : 'd-none'; ?>" id="sidebarSupportChatsBadge"><?php echo $supportUnreadCount > 99 ? '99+' : (int) $supportUnreadCount; ?></span>
                 </a>
             </li>
-            <?php $registrationPageUrl = (defined('RATIB_PRO_URL') ? rtrim(RATIB_PRO_URL, '/') : rtrim(defined('SITE_URL') ? SITE_URL : '', '/')) . '/pages/home.php?open=register&plan=gold&years=1'; ?>
+            <?php
+            $registrationPageUrl = (defined('RATIB_PRO_URL') ? rtrim(RATIB_PRO_URL, '/') : rtrim(defined('SITE_URL') ? SITE_URL : '', '/')) . '/pages/home.php?open=register&plan=gold&years=1';
+            $registrationCountryCode = strtoupper(trim((string) ($_SESSION['country_code'] ?? (defined('COUNTRY_CODE') ? COUNTRY_CODE : ''))));
+            $registrationCountryName = trim((string) ($_SESSION['country_name'] ?? (defined('COUNTRY_NAME') ? COUNTRY_NAME : '')));
+            if ($registrationCountryCode !== '') {
+                $registrationPageUrl .= '&country_code=' . rawurlencode($registrationCountryCode);
+            } elseif ($registrationCountryName !== '') {
+                $registrationPageUrl .= '&country_name=' . rawurlencode($registrationCountryName);
+            }
+            ?>
             <li><a href="<?php echo htmlspecialchars($registrationPageUrl); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item"><i class="fas fa-file-signature"></i><span>Registration Page</span></a></li>
             <?php $designedAppUrl = defined('DESIGNED_APP_URL') ? trim((string) DESIGNED_APP_URL) : ''; ?>
             <?php if ($designedAppUrl !== ''): ?>

@@ -12,6 +12,8 @@
     function parseBootstrap() {
         var d = {
             checkoutCurrency: 'SAR',
+            displayCheckoutCurrency: 'SAR',
+            displayNgeniusLabel: 'N-Genius KSA',
             usdToSar: 3.75,
             openRegister: false,
             initialPlan: 'pro',
@@ -34,6 +36,12 @@
                 }
                 if (typeof o.usdToSar === 'number' && isFinite(o.usdToSar) && o.usdToSar > 0) {
                     d.usdToSar = o.usdToSar;
+                }
+                if (typeof o.displayCheckoutCurrency === 'string' && o.displayCheckoutCurrency.trim() !== '') {
+                    d.displayCheckoutCurrency = o.displayCheckoutCurrency.trim().toUpperCase();
+                }
+                if (typeof o.displayNgeniusLabel === 'string' && o.displayNgeniusLabel.trim() !== '') {
+                    d.displayNgeniusLabel = o.displayNgeniusLabel.trim();
                 }
                 if (typeof o.openRegister === 'boolean') {
                     d.openRegister = o.openRegister;
@@ -72,6 +80,8 @@
         HOME.initialYears = 1;
     }
     window.RATIB_CHECKOUT_CURRENCY = HOME.checkoutCurrency;
+    window.RATIB_DISPLAY_CHECKOUT_CURRENCY = HOME.displayCheckoutCurrency;
+    window.RATIB_DISPLAY_NGENIUS_LABEL = HOME.displayNgeniusLabel;
     window.RATIB_USD_TO_SAR = HOME.usdToSar;
     var openRegister = HOME.openRegister;
     var DISPLAY_MULTIPLIER = 2;
@@ -233,18 +243,16 @@
 
         var tax = subtotal * 0.15;
         var total = subtotal + tax;
-        var checkoutCur = (typeof window.RATIB_CHECKOUT_CURRENCY === 'string' && window.RATIB_CHECKOUT_CURRENCY)
-            ? String(window.RATIB_CHECKOUT_CURRENCY).toUpperCase() : 'SAR';
+        var checkoutCur = (typeof window.RATIB_DISPLAY_CHECKOUT_CURRENCY === 'string' && window.RATIB_DISPLAY_CHECKOUT_CURRENCY)
+            ? String(window.RATIB_DISPLAY_CHECKOUT_CURRENCY).toUpperCase() : 'SAR';
+        var ngeniusLabel = (typeof window.RATIB_DISPLAY_NGENIUS_LABEL === 'string' && window.RATIB_DISPLAY_NGENIUS_LABEL)
+            ? String(window.RATIB_DISPLAY_NGENIUS_LABEL) : 'N-Genius KSA';
         var usdToSar = (typeof window.RATIB_USD_TO_SAR === 'number' && isFinite(window.RATIB_USD_TO_SAR) && window.RATIB_USD_TO_SAR > 0)
             ? window.RATIB_USD_TO_SAR : 3.75;
         var ngeniusNote = '';
-        if (checkoutCur === 'SAR') {
-            var sarApprox = (total * usdToSar).toFixed(2);
-            var rateStr = usdToSar.toFixed(2);
-            ngeniusNote = '<p class="small mb-0 mt-2 ratib-ngenius-currency-note" style="color:#95a5a6;line-height:1.45;font-size:0.85rem;border-top:1px solid rgba(255,255,255,0.06);padding-top:0.65rem;">Card checkout (N-Genius KSA) is charged in <strong>SAR</strong>. Approximate total: <strong style="color:#bdc3c7;">SAR ' + sarApprox + '</strong> <span style="opacity:0.85;">(USD × ' + rateStr + ')</span>.</p>';
-        } else if (checkoutCur === 'USD') {
-            ngeniusNote = '<p class="small mb-0 mt-2 ratib-ngenius-currency-note" style="color:#95a5a6;line-height:1.45;font-size:0.85rem;border-top:1px solid rgba(255,255,255,0.06);padding-top:0.65rem;">Card checkout is in <strong>USD</strong> (no currency conversion).</p>';
-        }
+        var sarApprox = (total * usdToSar).toFixed(2);
+        var rateStr = usdToSar.toFixed(2);
+        ngeniusNote = '<p class="small mb-0 mt-2 ratib-ngenius-currency-note">Card checkout (' + ngeniusLabel + ') is charged in <strong>' + checkoutCur + '</strong>. Approximate total: <strong class="ratib-ngenius-sar-total">' + checkoutCur + ' ' + sarApprox + '</strong> <span class="ratib-ngenius-rate-note">(USD × ' + rateStr + ')</span>.</p>';
 
         console.log('updatePaymentSummary - subtotal:', subtotal, 'years:', years, 'planLabel:', planLabel, 'inputPlan.value:', inputPlanEl ? inputPlanEl.value : '');
 
@@ -253,24 +261,24 @@
             : (years + ' year' + (years > 1 ? 's' : ''));
         var listPrice = subtotal * DISPLAY_MULTIPLIER;
         var discountAmount = listPrice - subtotal;
-        summaryEl.innerHTML = '<h4 style="font-size: 1rem; margin-bottom: 0.75rem; color: #f1c40f;"><i class="fas fa-receipt me-2"></i>Payment Summary</h4>' +
-            '<div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">' +
-            '<span style="color: #aaa;">List Price</span>' +
-            '<span style="color: #fff; font-weight: 600;">$' + listPrice.toFixed(2) + '</span>' +
+        summaryEl.innerHTML = '<h4 class="payment-summary-title"><i class="fas fa-receipt me-2"></i>Payment Summary</h4>' +
+            '<div class="payment-summary-row">' +
+            '<span class="payment-summary-muted">List Price</span>' +
+            '<span class="payment-summary-value">$' + listPrice.toFixed(2) + '</span>' +
             '</div>' +
-            '<div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">' +
-            '<span style="color: #aaa;">Discount (50%)</span>' +
-            '<span style="color: #2ecc71; font-weight: 600;">-$' + discountAmount.toFixed(2) + '</span>' +
+            '<div class="payment-summary-row">' +
+            '<span class="payment-summary-muted">Discount (50%)</span>' +
+            '<span class="payment-summary-value payment-summary-discount">-$' + discountAmount.toFixed(2) + '</span>' +
             '</div>' +
-            '<div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">' +
-            '<span style="color: #aaa;">' + planLabel + ' Plan (' + durationLabel + ')</span>' +
-            '<span style="color: #fff; font-weight: 600;">$' + subtotal.toFixed(2) + '</span>' +
+            '<div class="payment-summary-row">' +
+            '<span class="payment-summary-muted">' + planLabel + ' Plan (' + durationLabel + ')</span>' +
+            '<span class="payment-summary-value">$' + subtotal.toFixed(2) + '</span>' +
             '</div>' +
-            '<div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">' +
-            '<span style="color: #aaa;">Tax (15%)</span>' +
-            '<span style="color: #fff; font-weight: 600;">$' + tax.toFixed(2) + '</span>' +
+            '<div class="payment-summary-row">' +
+            '<span class="payment-summary-muted">Tax (15%)</span>' +
+            '<span class="payment-summary-value">$' + tax.toFixed(2) + '</span>' +
             '</div>' +
-            '<div style="display: flex; justify-content: space-between; padding: 0.75rem 0 0.5rem 0; font-size: 1.1rem; font-weight: 700; color: #f1c40f;">' +
+            '<div class="payment-summary-total-row">' +
             '<span>Total</span>' +
             '<span>$' + total.toFixed(2) + '</span>' +
             '</div>' + ngeniusNote;

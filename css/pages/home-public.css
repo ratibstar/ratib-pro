@@ -1595,6 +1595,9 @@ a.live-status:hover {
   color: #fff;
   font-weight: 600;
 }
+.payment-summary-discount {
+  color: #2ecc71;
+}
 .payment-summary-total-row {
   display: flex;
   justify-content: space-between;

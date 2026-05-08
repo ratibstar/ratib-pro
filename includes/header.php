@@ -216,7 +216,18 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
                 <span>Notifications</span>
                 <span class="notification-badge badge bg-danger ms-1 d-none" id="headerNotificationBadge">0</span>
             </a>
-            <a href="<?php echo htmlspecialchars(pageUrl('home.php') . '?open=register', ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="nav-item nav-link nav-register-pro">
+            <?php
+            $registerProRoot = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : rtrim((string) getBaseUrl(), '/');
+            $registerProBase = $registerProRoot . '/pages/home.php?open=register&plan=gold&years=1';
+            $registerProCountryCode = strtoupper(trim((string) ($_SESSION['country_code'] ?? (defined('COUNTRY_CODE') ? COUNTRY_CODE : ''))));
+            $registerProCountryName = trim((string) ($_SESSION['country_name'] ?? (defined('COUNTRY_NAME') ? COUNTRY_NAME : '')));
+            if ($registerProCountryCode !== '') {
+                $registerProBase .= '&country_code=' . rawurlencode($registerProCountryCode);
+            } elseif ($registerProCountryName !== '') {
+                $registerProBase .= '&country_name=' . rawurlencode($registerProCountryName);
+            }
+            ?>
+            <a href="<?php echo htmlspecialchars($registerProBase, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="nav-item nav-link nav-register-pro">
                 <i class="nav-icon fas fa-external-link-alt"></i>
                 <span>Register Pro</span>
             </a>
