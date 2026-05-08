@@ -20,7 +20,7 @@
             initialPlan: 'pro',
             initialAmount: null,
             initialYears: 1,
-            goldMonth: 5,
+            goldMonth: 4.5,
             goldYear1: 5,
             platinumMonth: 67,
             platinumYear1: 800
