@@ -170,6 +170,15 @@ function ratib_ngenius_minor_units_from_usd_total(float $totalUsd): array
     if ($currency === '') {
         $currency = 'SAR';
     }
+    // Gateway checkout currency must remain merchant-supported (typically SAR or USD).
+    // Local country currencies are display-only on home.php note and must not be sent to N-Genius order API.
+    if ($currency !== 'SAR' && $currency !== 'USD') {
+        paymentLog('create-order unsupported checkout currency fallback', [
+            'configured_currency' => $currency,
+            'fallback_currency' => 'SAR',
+        ]);
+        $currency = 'SAR';
+    }
 
     if ($currency === 'USD') {
         return [
