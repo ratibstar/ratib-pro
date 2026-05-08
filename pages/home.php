@@ -231,7 +231,7 @@ $plan = $planRaw !== '' ? $planRaw : ($openRegister ? 'gold' : 'pro');
 if ($plan === '') {
     $plan = 'pro';
 }
-$goldTestPriceYear1 = 650;
+$goldTestPriceYear1 = 5;
 $goldTestPriceMonth = 5;
 $platinumTestPriceYear1 = 800;
 $platinumTestPriceMonth = 67;
