@@ -733,8 +733,8 @@ a.live-status:hover {
   color: #1a1a2a;
 }
 .price-card .card-plan {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 700;
   color: #fff;
   margin-bottom: 0.25rem;
   letter-spacing: -0.01em;
@@ -746,8 +746,8 @@ a.live-status:hover {
   color: #f1c40f;
 }
 .price-card .card-subtitle {
-  font-size: 0.8rem;
-  color: #888;
+  font-size: 0.9rem;
+  color: #b5bdc8;
   margin-bottom: 1rem;
 }
 .plan-year-wrap {
@@ -757,6 +757,7 @@ a.live-status:hover {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  justify-content: flex-start;
   margin-bottom: 0.5rem;
 }
 .price-card .card-price-old {
@@ -803,8 +804,8 @@ a.live-status:hover {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  font-size: 0.9rem;
-  color: #bbb;
+  font-size: 0.95rem;
+  color: #d2dae4;
   margin-bottom: 0.6rem;
 }
 .price-card .card-features li i {
@@ -871,12 +872,12 @@ a.live-status:hover {
   animation: buttonPulse 2s ease-in-out infinite;
 }
 .year-btn-card {
-  flex: 1;
-  min-width: 80px;
-  padding: 0.5rem 0.75rem;
+  flex: 0 1 116px;
+  min-width: 108px;
+  padding: 0.45rem 0.65rem;
   border-radius: 6px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
   border: 2px solid rgba(255, 255, 255, 0.2);
@@ -899,8 +900,8 @@ a.live-status:hover {
   color: #aaa;
 }
 .year-price-small {
-  font-size: 0.75rem;
-  opacity: 0.9;
+  font-size: 0.78rem;
+  opacity: 1;
 }
 .promo-old {
   display: inline-block;
@@ -1487,9 +1488,10 @@ a.live-status:hover {
   color: #5dade2;
 }
 .plan-btn-form {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.85rem;
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -1509,20 +1511,20 @@ a.live-status:hover {
   display: block;
 }
 .form-year-btn {
-  flex: 1;
-  min-width: 70px;
-  padding: 0.45rem 0.6rem;
+  flex: 0 1 140px;
+  min-width: 128px;
+  padding: 0.42rem 0.55rem;
   border-radius: 6px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   border: 2px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.05);
   color: #aaa;
   cursor: pointer;
 }
 .form-year-price {
-  font-size: 0.75rem;
-  opacity: 0.9;
+  font-size: 0.78rem;
+  opacity: 1;
 }
 /* Hide any legacy 2+ year options from stale deployed markup. */
 .year-btn[data-years]:not([data-years="0"]):not([data-years="1"]),
