@@ -18,6 +18,13 @@ $publicSiteRoot = (defined('SITE_URL') && is_string(SITE_URL) && SITE_URL !== ''
     ? rtrim(SITE_URL, '/')
     : ($host !== '' ? $scheme . '://' . $host . preg_replace('#/control-panel$#', '', $basePath, 1) : '');
 $registerProUrl = ($publicSiteRoot !== '' ? $publicSiteRoot : $baseUrl) . '/pages/home.php?open=register&plan=gold&years=1';
+$registerCountryCode = strtoupper(trim((string) ($_SESSION['country_code'] ?? '')));
+$registerCountryName = trim((string) ($_SESSION['country_name'] ?? ''));
+if ($registerCountryCode !== '') {
+    $registerProUrl .= '&country_code=' . rawurlencode($registerCountryCode);
+} elseif ($registerCountryName !== '') {
+    $registerProUrl .= '&country_name=' . rawurlencode($registerCountryName);
+}
 
 $allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $countries = [];

@@ -42,6 +42,13 @@ $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
 $apiBase = $baseUrl . '/api/control';
 $registerProUrl = $baseUrl . '/pages/home.php?open=register&plan=gold&years=1';
+$registerCountryCode = strtoupper(trim((string) ($_SESSION['country_code'] ?? '')));
+$registerCountryName = trim((string) ($_SESSION['country_name'] ?? ''));
+if ($registerCountryCode !== '') {
+    $registerProUrl .= '&country_code=' . rawurlencode($registerCountryCode);
+} elseif ($registerCountryName !== '') {
+    $registerProUrl .= '&country_name=' . rawurlencode($registerCountryName);
+}
 
 $chk = @$ctrl->query("SHOW TABLES LIKE 'control_support_chats'");
 $tableExists = ($chk && $chk->num_rows > 0);

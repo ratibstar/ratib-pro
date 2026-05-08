@@ -133,7 +133,17 @@ $renewalDate = function($created) {
     <?php if (empty($_GET['embedded'])): ?>
     <div class="control-header">
         <div class="control-nav">
-            <a href="<?php echo htmlspecialchars($baseUrl); ?>/pages/home.php?open=register" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm"><i class="fas fa-external-link-alt me-1"></i> Register Pro</a>
+            <?php
+            $registerProUrl = rtrim((string) $baseUrl, '/') . '/pages/home.php?open=register&plan=gold&years=1';
+            $registerCountryCode = strtoupper(trim((string) ($_SESSION['country_code'] ?? '')));
+            $registerCountryName = trim((string) ($_SESSION['country_name'] ?? ''));
+            if ($registerCountryCode !== '') {
+                $registerProUrl .= '&country_code=' . rawurlencode($registerCountryCode);
+            } elseif ($registerCountryName !== '') {
+                $registerProUrl .= '&country_name=' . rawurlencode($registerCountryName);
+            }
+            ?>
+            <a href="<?php echo htmlspecialchars($registerProUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm"><i class="fas fa-external-link-alt me-1"></i> Register Pro</a>
             <a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Back to Dashboard</a>
             <a href="<?php echo pageUrl('select-country.php'); ?>"><i class="fas fa-globe me-1"></i> Countries</a>
             <a href="<?php echo pageUrl('control/countries.php'); ?>"><i class="fas fa-list me-1"></i> Manage Countries</a>
