@@ -87,6 +87,22 @@ switch ($eventType) {
                         if ($stmt) {
                             $stmt->bind_param('i', $rid);
                             $stmt->execute();
+                            $didUpdate = ((int) $stmt->affected_rows) > 0;
+                            $stmt->close();
+                        } else {
+                            $didUpdate = false;
+                        }
+                        if ($didUpdate) {
+                            $syncInclude = __DIR__ . '/../control-panel/includes/registration-accounting-sync.php';
+                            if (file_exists($syncInclude)) {
+                                require_once $syncInclude;
+                                if (function_exists('syncPaidRegistrationToAccounting')) {
+                                    $rowRes = $conn->query("SELECT * FROM control_registration_requests WHERE id = " . (int) $rid . " LIMIT 1");
+                                    if ($rowRes && ($row = $rowRes->fetch_assoc())) {
+                                        syncPaidRegistrationToAccounting($conn, $row);
+                                    }
+                                }
+                            }
                         }
                     }
                 }

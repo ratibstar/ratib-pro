@@ -162,6 +162,24 @@ function syncControlPaymentStatus(?int $controlRequestId, string $status): void
     } else {
         paymentLog('verify control sync no-op (id not found or unchanged)', ['control_request_id' => $controlRequestId, 'payment_status' => $paymentStatus]);
     }
+
+    // Auto-sync paid registrations into accounting (receipt + draft journal + approval).
+    if ($paymentStatus === 'paid') {
+        $syncInclude = __DIR__ . '/../control-panel/includes/registration-accounting-sync.php';
+        if (file_exists($syncInclude)) {
+            require_once $syncInclude;
+            if (function_exists('syncPaidRegistrationToAccounting')) {
+                $rowRes = $conn->query("SELECT * FROM control_registration_requests WHERE id = " . (int) $controlRequestId . " LIMIT 1");
+                if ($rowRes && ($row = $rowRes->fetch_assoc())) {
+                    $syncResult = syncPaidRegistrationToAccounting($conn, $row);
+                    paymentLog('verify control accounting autosync', [
+                        'control_request_id' => $controlRequestId,
+                        'result' => $syncResult,
+                    ]);
+                }
+            }
+        }
+    }
 }
 
 function controlRequestExists($conn, int $controlRequestId): bool
