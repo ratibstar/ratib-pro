@@ -1004,8 +1004,19 @@ try {
         if (function_exists('ngenius_identity_response_hint')) {
             $orderHint = ngenius_identity_response_hint((string) ($orderRes['body'] ?? ''));
         }
+        $orderBodySnippet = trim((string) ($orderRes['body'] ?? ''));
+        if ($orderBodySnippet !== '') {
+            $orderBodySnippet = preg_replace('/\s+/', ' ', $orderBodySnippet);
+            $orderBodySnippet = substr((string) $orderBodySnippet, 0, 260);
+        }
+        $clientMessage = 'Failed to create payment order.';
+        if ($orderHint !== '') {
+            $clientMessage .= ' ' . $orderHint;
+        } elseif ($orderBodySnippet !== '') {
+            $clientMessage .= ' Gateway: ' . $orderBodySnippet;
+        }
         jsonOut(502, [
-            'message' => 'Failed to create payment order.',
+            'message' => $clientMessage,
             'order_http_status' => (int) ($orderRes['status'] ?? 0),
             'order_curl_error' => (string) ($orderRes['error'] ?? ''),
             'order_error_hint' => $orderHint,
