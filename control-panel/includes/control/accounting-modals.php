@@ -405,6 +405,29 @@ if (!empty($countries) && is_array($countries)) {
                 <a href="<?php echo htmlspecialchars($apiBase . '/accounting-registration-revenue-export.php?country_id=' . $countryId . '&scope=recognized'); ?>" class="btn btn-sm btn-outline-success"><i class="fas fa-file-csv"></i> Export Recognized</a>
                 <button type="button" class="btn btn-sm btn-primary" id="btnCpAccSyncRegistrationPaid"><i class="fas fa-link me-1"></i> Sync Paid Registrations</button>
             </div>
+            <div class="cp-acc-table-wrap mb-3">
+                <h6 class="mb-2">Recent paid registrations sync status</h6>
+                <table class="cp-acc-table">
+                    <thead>
+                        <tr><th>Request</th><th>Agency</th><th>Amount</th><th>Receipt</th><th>Journal</th><th>Updated</th></tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach (($recentRegPayRows ?? []) as $r): $rid = (int)($r['id'] ?? 0); $st = ($recentRegSyncStatus[$rid] ?? ['receipt' => false, 'journal' => false]); ?>
+                    <tr>
+                        <td>#<?php echo $rid; ?></td>
+                        <td><?php echo htmlspecialchars((string)($r['agency_name'] ?? '-')); ?></td>
+                        <td><?php echo number_format((float)($r['plan_amount'] ?? 0), 2); ?> SAR</td>
+                        <td><?php echo !empty($st['receipt']) ? '<span class="badge bg-success">Synced</span>' : '<span class="badge bg-warning text-dark">Missing</span>'; ?></td>
+                        <td><?php echo !empty($st['journal']) ? '<span class="badge bg-success">Synced</span>' : '<span class="badge bg-warning text-dark">Missing</span>'; ?></td>
+                        <td><?php echo htmlspecialchars((string)substr((string)($r['updated_at'] ?? $r['created_at'] ?? ''), 0, 19)); ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                    <?php if (empty($recentRegPayRows)): ?>
+                    <tr><td colspan="6"><div class="cp-acc-empty"><i class="fas fa-inbox"></i>No paid registrations found.</div></td></tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
             <div class="row g-3">
                 <div class="col-md-6">
                     <h6 class="mb-2">By Plan - Collected</h6>
