@@ -315,6 +315,7 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
                     <li><i class="fas fa-check"></i> Standard support</li>
                     <li><i class="fas fa-check"></i> Free Hosting with a domain</li>
                     <li><i class="fas fa-check"></i> Free for one year</li>
+                    <li><i class="fas fa-check"></i> 20 users</li>
                     <li><i class="fas fa-check"></i> Admin control panel</li>
                 </ul>
                 <a href="#register" id="goldRegisterBtn" class="btn-register js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Register</a>
@@ -342,7 +343,7 @@ $countries = ['Bangladesh', 'Uganda', 'Kenya', 'Sri Lanka', 'Philippines', 'Indo
                     <li><i class="fas fa-check"></i> Free for one year</li>
                     <li><i class="fas fa-check"></i> Admin control panel</li>
                     <li><i class="fas fa-check"></i> Custom integrations</li>
-                    <li><i class="fas fa-check"></i> API access</li>
+                    <li><i class="fas fa-check"></i> unlimited users</li>
                     <li><i class="fas fa-check"></i> White-label options</li>
                     <li><i class="fas fa-check"></i> Dedicated account manager</li>
                 </ul>
