@@ -13,6 +13,21 @@ if (!headers_sent()) {
     header('Pragma: no-cache');
     header('Expires: 0');
 }
+// Force a fresh URL for country-context registration links to avoid stale edge cache variants.
+$__isRegisterOpen = isset($_GET['open']) && trim((string) ($_GET['open'] ?? '')) === 'register';
+$__hasCountryCtx = (
+    trim((string) ($_GET['country_code'] ?? '')) !== '' ||
+    trim((string) ($_GET['country_name'] ?? '')) !== '' ||
+    trim((string) ($_GET['country_slug'] ?? '')) !== ''
+);
+if (!headers_sent() && $__isRegisterOpen && $__hasCountryCtx && !isset($_GET['cb'])) {
+    $qs = $_GET;
+    $qs['cb'] = (string) time();
+    $target = (string) (parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '/pages/home.php');
+    $redirectUrl = $target . '?' . http_build_query($qs);
+    header('Location: ' . $redirectUrl, true, 302);
+    exit;
+}
 
 // EN: Read checkout currency/exchange settings from environment with safe defaults.
 // AR: قراءة إعدادات عملة الدفع وسعر التحويل من البيئة مع قيم افتراضية آمنة.
