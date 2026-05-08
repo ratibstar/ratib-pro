@@ -949,6 +949,18 @@ if ($method === 'POST') {
             jsonOut(['success' => false, 'message' => 'Access denied']);
         }
         require_once __DIR__ . '/../../includes/registration-accounting-sync.php';
+        if (function_exists('registrationAccountingAutomationFlagEnabled') && !registrationAccountingAutomationFlagEnabled($ctrl)) {
+            $source = 'unknown';
+            if (function_exists('registrationAccountingAutomationFlagResolved')) {
+                $resolved = registrationAccountingAutomationFlagResolved($ctrl);
+                $source = (string) ($resolved['source'] ?? 'unknown');
+            }
+            jsonOut([
+                'success' => false,
+                'message' => 'Registration accounting auto-sync is disabled by feature flag control.accounting.enable_registration_payment_auto_sync',
+                'source' => $source,
+            ]);
+        }
         $limit = isset($input['limit']) ? (int) $input['limit'] : 2000;
         $result = backfillRegistrationAccountingSync($ctrl, $limit);
         jsonOut(['success' => true, 'message' => 'Sync complete', 'result' => $result]);

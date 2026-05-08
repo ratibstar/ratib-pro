@@ -8,6 +8,8 @@
  * Idempotent by matching the generated registration description/amount pair.
  */
 
+require_once __DIR__ . '/../../includes/tenant-rollout-flags.php';
+
 if (!function_exists('registrationAccountingResolveCountryId')) {
     function registrationAccountingResolveCountryId($mysqli, array $row)
     {
@@ -43,6 +45,53 @@ if (!function_exists('registrationAccountingResolveAgencyId')) {
         }
 
         return (int) $aid;
+    }
+}
+
+if (!function_exists('registrationAccountingAutomationFlagResolved')) {
+    /**
+     * Resolve rollout flag that controls automatic registration->accounting sync.
+     *
+     * @return array{flag_key:string,enabled:bool,value:int,source:string,tenant_id:int,country_id:int}
+     */
+    function registrationAccountingAutomationFlagResolved(mysqli $mysqli, array $row = []): array
+    {
+        $tenantId = 0;
+        $countryId = 0;
+        if (isset($row['agency_id']) && ctype_digit((string) $row['agency_id'])) {
+            $tenantId = (int) $row['agency_id'];
+        } elseif (isset($_SESSION['control_agency_id'])) {
+            $tenantId = (int) $_SESSION['control_agency_id'];
+        }
+        if (isset($row['country_id'])) {
+            $countryId = (int) $row['country_id'];
+        } elseif (isset($_SESSION['control_country_id'])) {
+            $countryId = (int) $_SESSION['control_country_id'];
+        }
+        if (!function_exists('trf_resolve_effective_flag')) {
+            return [
+                'flag_key' => 'control.accounting.enable_registration_payment_auto_sync',
+                'enabled' => true,
+                'value' => 1,
+                'source' => 'resolver_missing',
+                'tenant_id' => $tenantId,
+                'country_id' => $countryId,
+            ];
+        }
+        return trf_resolve_effective_flag(
+            $mysqli,
+            'control.accounting.enable_registration_payment_auto_sync',
+            $tenantId,
+            $countryId
+        );
+    }
+}
+
+if (!function_exists('registrationAccountingAutomationFlagEnabled')) {
+    function registrationAccountingAutomationFlagEnabled(mysqli $mysqli, array $row = []): bool
+    {
+        $resolved = registrationAccountingAutomationFlagResolved($mysqli, $row);
+        return isset($resolved['enabled']) ? (bool) $resolved['enabled'] : true;
     }
 }
 
@@ -88,6 +137,9 @@ if (!function_exists('syncPaidRegistrationToAccounting')) {
     function syncPaidRegistrationToAccounting($mysqli, array $row)
     {
         $out = ['receipt' => false, 'journal' => false, 'approval' => false, 'skipped' => true];
+        if (!registrationAccountingAutomationFlagEnabled($mysqli, $row)) {
+            return $out;
+        }
         $registrationId = (int) ($row['id'] ?? 0);
         if ($registrationId <= 0) {
             return $out;
@@ -221,6 +273,9 @@ if (!function_exists('backfillRegistrationAccountingSync')) {
     {
         $limit = max(1, min(5000, (int) $limit));
         $processed = $receiptsCreated = $journalsCreated = 0;
+        if (!registrationAccountingAutomationFlagEnabled($mysqli)) {
+            return ['processed' => 0, 'receipts_created' => 0, 'journals_created' => 0];
+        }
         $chk = @$mysqli->query("SHOW TABLES LIKE 'control_registration_requests'");
         if (!$chk || $chk->num_rows === 0) {
             return ['processed' => 0, 'receipts_created' => 0, 'journals_created' => 0];
