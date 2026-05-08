@@ -695,15 +695,22 @@
     box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
 }
 
-.partner-portal-home-header__left,
-.partner-portal-home-header__right {
+.partner-portal-home-header .header-left,
+.partner-portal-home-header .header-right {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.5rem 1rem;
 }
 
-.partner-portal-home-header__center {
+.partner-portal-home-header .header-left {
+    gap: 1.25rem;
+}
+
+.partner-portal-home-header .header-right {
+    gap: 0.5rem;
+}
+
+.partner-portal-home-header .header-center {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -713,54 +720,67 @@
     margin-inline: auto;
 }
 
-.partner-portal-home-header__brand {
-    color: #ffffff;
-    text-decoration: none;
-    font-size: 1.05rem;
-    font-weight: 800;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
+.partner-portal-home-header .header-left .phone {
+    color: #ddd;
+    font-size: 0.95rem;
 }
 
-.partner-portal-home-header__tagline {
-    margin-top: 0.1rem;
-    color: #9fb7d1;
-    font-size: 0.76rem;
-    font-weight: 600;
-    line-height: 1.3;
+.partner-portal-home-header .header-left .phone i {
+    color: #f1c40f;
+    margin-right: 0.35rem;
 }
 
-.partner-portal-home-header__phone,
-.partner-portal-home-header__link,
-.partner-portal-home-header__wa,
-.partner-portal-home-header__nav {
+.partner-portal-home-header .header-left a {
     color: #ddd;
     text-decoration: none;
     font-size: 0.95rem;
 }
 
-.partner-portal-home-header__phone i {
-    color: #f1c40f;
-    margin-right: 0.35rem;
-}
-
-.partner-portal-home-header__left a:hover {
+.partner-portal-home-header .header-left a:hover {
     color: #fff;
 }
 
-.partner-portal-home-header__wa {
+.partner-portal-home-header .header-center .logo {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-    color: #25d366;
+    text-decoration: none;
+    transition: transform 0.3s;
 }
 
-.partner-portal-home-header__wa:hover {
-    opacity: 0.9;
+.partner-portal-home-header .header-center .logo:hover {
+    transform: scale(1.05);
 }
 
-.partner-portal-home-header__nav {
+.partner-portal-home-header .header-center .logo img {
+    height: 44px;
+    width: auto;
+    display: block;
+}
+
+.partner-portal-home-header .header-center .tagline {
+    font-size: clamp(1.1rem, 1.6vw, 1.45rem);
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: 0.2px;
+    max-width: min(94vw, 680px);
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 0.1rem;
+    background: linear-gradient(90deg, #e94560, #f1c40f, #5dade2, #e94560);
+    background-size: 260% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 18px rgba(93, 173, 226, 0.22);
+    animation: taglineGradient 4.5s linear infinite;
+}
+
+@keyframes taglineGradient {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.partner-portal-home-header .nav-link {
     color: #bbb;
     text-decoration: none;
     padding: 0.4rem 0.75rem;
@@ -769,17 +789,17 @@
     transition: color 0.2s ease;
 }
 
-.partner-portal-home-header__nav:hover {
+.partner-portal-home-header .nav-link:hover {
     color: #fff;
 }
 
-.partner-portal-home-header__nav.is-active {
+.partner-portal-home-header .nav-link.active {
     background: #e94560;
     color: #ffffff;
     font-weight: 700;
 }
 
-.partner-portal-home-header__nav .badge-nav {
+.partner-portal-home-header .nav-link .badge-nav {
     font-size: 0.65rem;
     background: #f1c40f;
     color: #1a252f;
@@ -788,7 +808,7 @@
     margin-left: 0.25rem;
 }
 
-.partner-portal-home-header__portal-btn {
+.partner-portal-home-header .btn-client {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -802,26 +822,23 @@
     gap: 0.4rem;
 }
 
-.partner-portal-home-header__portal-btn:hover {
+.partner-portal-home-header .btn-client:hover {
     background: #e6b80a;
     color: #1a252f;
 }
 
-.partner-portal-home-header__brand {
-    display: inline-flex;
+.partner-portal-home-header .live-status {
+    display: flex;
     align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #25d366;
     text-decoration: none;
-    transition: transform 0.3s;
+    transition: opacity 0.2s;
 }
 
-.partner-portal-home-header__brand:hover {
-    transform: scale(1.05);
-}
-
-.partner-portal-home-header__brand img {
-    height: 44px;
-    width: auto;
-    display: block;
+.partner-portal-home-header .live-status:hover {
+    opacity: 0.9;
 }
 
 .live-dots {
@@ -849,11 +866,11 @@
     .partner-portal-home-header {
         padding: 0.75rem 0.9rem;
     }
-    .partner-portal-home-header__left,
-    .partner-portal-home-header__right {
+    .partner-portal-home-header .header-left,
+    .partner-portal-home-header .header-right {
         width: 100%;
     }
-    .partner-portal-home-header__center {
+    .partner-portal-home-header .header-center {
         order: -1;
         width: 100%;
         align-items: flex-start;
