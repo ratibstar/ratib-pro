@@ -90,6 +90,7 @@ $regRevenueThisMonth = 0;
 $regRevenueThisMonthRecognized = 0;
 $regRevenueByMonth = [];
 $recentRegPayRows = [];
+$recentRegSyncStatus = [];
 $chk2 = @$ctrl->query("SHOW TABLES LIKE 'control_registration_requests'");
 if ($chk2 && $chk2->num_rows > 0) {
     $reqGeo = '';
@@ -189,6 +190,57 @@ if ($chk2 && $chk2->num_rows > 0) {
     if ($resRegRecent) {
         while ($rr = $resRegRecent->fetch_assoc()) {
             $recentRegPayRows[] = $rr;
+        }
+    }
+
+    if (!empty($recentRegPayRows)) {
+        $ids = [];
+        foreach ($recentRegPayRows as $rr) {
+            $rid = (int) ($rr['id'] ?? 0);
+            if ($rid > 0) {
+                $ids[] = $rid;
+                $recentRegSyncStatus[$rid] = ['receipt' => false, 'journal' => false];
+            }
+        }
+        $ids = array_values(array_unique($ids));
+        if (!empty($ids)) {
+            $descTerms = [];
+            foreach ($ids as $rid) {
+                $descTerms[] = "'%request #" . (int) $rid . ")%'";
+            }
+            $descWhere = implode(' OR description LIKE ', $descTerms);
+
+            $chkRc = @$ctrl->query("SHOW TABLES LIKE 'control_receipts'");
+            if ($chkRc && $chkRc->num_rows > 0) {
+                $resRc = @$ctrl->query("SELECT description FROM control_receipts WHERE description LIKE " . $descWhere);
+                if ($resRc) {
+                    while ($rowRc = $resRc->fetch_assoc()) {
+                        $d = (string) ($rowRc['description'] ?? '');
+                        if (preg_match('/request #(\d+)\)/', $d, $m)) {
+                            $rid = (int) ($m[1] ?? 0);
+                            if ($rid > 0 && isset($recentRegSyncStatus[$rid])) {
+                                $recentRegSyncStatus[$rid]['receipt'] = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            $chkJe = @$ctrl->query("SHOW TABLES LIKE 'control_journal_entries'");
+            if ($chkJe && $chkJe->num_rows > 0) {
+                $resJe = @$ctrl->query("SELECT description FROM control_journal_entries WHERE description LIKE " . $descWhere);
+                if ($resJe) {
+                    while ($rowJe = $resJe->fetch_assoc()) {
+                        $d = (string) ($rowJe['description'] ?? '');
+                        if (preg_match('/request #(\d+)\)/', $d, $m)) {
+                            $rid = (int) ($m[1] ?? 0);
+                            if ($rid > 0 && isset($recentRegSyncStatus[$rid])) {
+                                $recentRegSyncStatus[$rid]['journal'] = true;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -642,6 +694,35 @@ $canManageAccountingUi = $canManageAccountingByPermission && $accountingWriteEna
                 <div class="small text-muted mb-2">Backfill missing links for already-paid registrations (safe to run more than once).</div>
                 <button type="button" class="btn btn-sm btn-primary" id="btnCpAccSyncRegistrationPaid" data-permission="control_accounting,manage_control_accounting" <?php echo $accountingWriteEnabled ? '' : 'disabled title="Disabled by feature flag control.accounting.enable_write_actions"'; ?>><i class="fas fa-link me-1"></i> Sync registration payments to accounting</button>
             </div></div>
+        </div>
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="p-3 rounded cp-acc-card-dark">
+                    <h6 class="mb-2">Recent paid registrations sync status</h6>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-sm acc-table">
+                            <thead>
+                                <tr><th>Request</th><th>Agency</th><th>Amount (USD)</th><th>Receipt</th><th>Journal</th><th>Updated</th></tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($recentRegPayRows as $r): $rid = (int)($r['id'] ?? 0); $st = $recentRegSyncStatus[$rid] ?? ['receipt' => false, 'journal' => false]; ?>
+                                <tr>
+                                    <td>#<?php echo $rid; ?></td>
+                                    <td><?php echo htmlspecialchars((string)($r['agency_name'] ?? '-')); ?></td>
+                                    <td><?php echo number_format((float)($r['plan_amount'] ?? 0), 2); ?></td>
+                                    <td><?php echo !empty($st['receipt']) ? '<span class="badge bg-success">Synced</span>' : '<span class="badge bg-warning text-dark">Missing</span>'; ?></td>
+                                    <td><?php echo !empty($st['journal']) ? '<span class="badge bg-success">Synced</span>' : '<span class="badge bg-warning text-dark">Missing</span>'; ?></td>
+                                    <td><?php echo htmlspecialchars((string)substr((string)($r['updated_at'] ?? $r['created_at'] ?? ''), 0, 19)); ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <?php if (empty($recentRegPayRows)): ?>
+                                <tr><td colspan="6" class="text-muted">No paid registrations found.</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="row g-3 mb-4">
             <div class="col-md-6"><div class="p-3 rounded cp-acc-card-dark"><h6 class="mb-3">By plan — collected</h6><canvas id="regRevenueByPlanChart" height="200"></canvas></div></div>
