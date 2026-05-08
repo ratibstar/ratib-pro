@@ -29,7 +29,9 @@ if (!empty($_GET['token'])) {
             exit;
         }
     }
-    header('Location: ' . pageUrl('partner-portal-login.php') . '?err=1', true, 302);
+    // One-time notice on login page (avoid ?err= in URL so refresh stays clean).
+    $_SESSION['partner_portal_flash_magic_link_failed'] = true;
+    header('Location: ' . pageUrl('partner-portal-login.php'), true, 302);
     exit;
 }
 

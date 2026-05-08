@@ -1,8 +1,17 @@
 <?php
 /**
- * Partner portal sign-in (magic token paste or agency ID + password).
+ * Partner portal sign-in (username + password).
  */
 require_once __DIR__ . '/../includes/config.php';
+
+$ppMagicLinkNotice = false;
+if (!empty($_SESSION['partner_portal_flash_magic_link_failed'])) {
+    $ppMagicLinkNotice = true;
+    unset($_SESSION['partner_portal_flash_magic_link_failed']);
+} elseif (!empty($_GET['err'])) {
+    // Legacy redirects used ?err=1 — still supported; JS strips query so refresh does not repeat.
+    $ppMagicLinkNotice = true;
+}
 
 $pageTitle = 'Partner portal sign-in';
 $v = time();
@@ -23,8 +32,10 @@ include __DIR__ . '/../includes/partner-portal-header.php';
         <div class="glass-card partner-portal-login-card">
             <h1 class="partner-portal-login-title"><span aria-hidden="true">🌍</span> Partner portal</h1>
             <p class="partner-portal-login-lead">Sign in with your username and password.</p>
-            <?php if (!empty($_GET['err'])): ?>
-                <p class="partner-portal-login-err" role="alert">That link is invalid or portal access is disabled. Contact your office.</p>
+            <?php if ($ppMagicLinkNotice): ?>
+                <p class="partner-portal-login-notice" role="status">
+                    If you opened an access link, it may be outdated or portal access was turned off. Sign in below with username and password, or ask your office for a new link.
+                </p>
             <?php endif; ?>
 
             <form id="ppLoginForm" class="partner-portal-login-form">

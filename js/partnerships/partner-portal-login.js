@@ -1,4 +1,17 @@
 (function () {
+    // Remove legacy ?err= from URL after load so refresh does not imply a new error.
+    try {
+        const u = new URL(window.location.href);
+        if (u.searchParams.has('err')) {
+            u.searchParams.delete('err');
+            const q = u.searchParams.toString();
+            const path = u.pathname + (q ? '?' + q : '') + u.hash;
+            window.history.replaceState({}, '', path);
+        }
+    } catch (e) {
+        /* ignore */
+    }
+
     const form = document.getElementById('ppLoginForm');
     const msg = document.getElementById('ppLoginMsg');
     if (!form) return;
