@@ -356,15 +356,60 @@ if (!function_exists('ratib_site_content_public_cache_path_for_read')) {
     }
 }
 
+if (!function_exists('ratib_site_content_normalize_sa_mobile_digits')) {
+    /**
+     * Saudi mobile: international form is 966 + 9 digits (12 total). Strip accidental trailing junk
+     * when editors paste merged numbers or cache rows pick up extra digits.
+     */
+    function ratib_site_content_normalize_sa_mobile_digits(string $digitsOnly): string
+    {
+        $d = preg_replace('/\D+/', '', $digitsOnly);
+        if ($d === '') {
+            return '';
+        }
+        if (strlen($d) >= 3 && substr($d, 0, 3) === '966') {
+            $tail = substr($d, 3);
+            if (strlen($tail) > 9) {
+                $tail = substr($tail, 0, 9);
+            }
+
+            return '966' . $tail;
+        }
+
+        return $d;
+    }
+}
+
 if (!function_exists('ratib_site_content_phone_digits_for_links')) {
     /**
-     * Strip non-digits from display text for tel:/wa.me. Fallback when empty or too short.
+     * Digits for tel:/wa.me — normalized for 966 mobiles so junk suffixes are not dialled.
      */
     function ratib_site_content_phone_digits_for_links(string $display, string $fallbackDigits = '966599863868'): string
     {
-        $d = preg_replace('/\D+/', '', $display);
+        $d = ratib_site_content_normalize_sa_mobile_digits(preg_replace('/\D+/', '', $display));
 
         return strlen($d) >= 8 ? $d : $fallbackDigits;
+    }
+}
+
+if (!function_exists('ratib_site_content_phone_display_for_public')) {
+    /**
+     * Visible label: keep CMS spacing when digits match canonical; otherwise format from canonical.
+     */
+    function ratib_site_content_phone_display_for_public(string $display, string $canonicalDigits): string
+    {
+        $raw = preg_replace('/\D/', '', $display);
+        if ($raw === $canonicalDigits) {
+            return $display;
+        }
+        if (strlen($canonicalDigits) === 12 && substr($canonicalDigits, 0, 3) === '966') {
+            $n = substr($canonicalDigits, 3);
+            if (strlen($n) === 9) {
+                return '+966 ' . substr($n, 0, 2) . ' ' . substr($n, 2, 3) . ' ' . substr($n, 5, 4);
+            }
+        }
+
+        return $display;
     }
 }
 
