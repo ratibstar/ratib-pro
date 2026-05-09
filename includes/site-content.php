@@ -79,11 +79,13 @@ if (!function_exists('ratib_site_content_db_credentials_app_to_control')) {
     }
 }
 
-if (!function_exists('ratib_site_content_db_try_mysqli')) {
+if (!function_exists('ratib_site_content_db_try_mysqli_once')) {
     /**
+     * Single mysqli attempt (no localhost fallback).
+     *
      * @param array{0:string,1:int,2:string,3:string,4:string} $cred
      */
-    function ratib_site_content_db_try_mysqli(array $cred): ?mysqli
+    function ratib_site_content_db_try_mysqli_once(array $cred): ?mysqli
     {
         [$host, $port, $user, $pass, $dbName] = $cred;
         if ($host === '' || $user === '' || $dbName === '') {
@@ -92,7 +94,7 @@ if (!function_exists('ratib_site_content_db_try_mysqli')) {
         try {
             $c = new mysqli($host, $user, $pass, $dbName, $port);
             if ($c->connect_errno) {
-                error_log('ratib_site_content_db: mysqli failed for user "' . $user . '" (' . $c->connect_errno . ') ' . $c->connect_error);
+                error_log('ratib_site_content_db: mysqli failed for user "' . $user . '" @ "' . $host . '" (' . $c->connect_errno . ') ' . $c->connect_error);
                 $c->close();
 
                 return null;
@@ -108,13 +110,38 @@ if (!function_exists('ratib_site_content_db_try_mysqli')) {
     }
 }
 
+if (!function_exists('ratib_site_content_db_try_mysqli')) {
+    /**
+     * Try mysqli; if host is "localhost" and connection fails, retry 127.0.0.1 (TCP vs socket mismatch on some hosts).
+     *
+     * @param array{0:string,1:int,2:string,3:string,4:string} $cred
+     */
+    function ratib_site_content_db_try_mysqli(array $cred): ?mysqli
+    {
+        $c = ratib_site_content_db_try_mysqli_once($cred);
+        if ($c instanceof mysqli) {
+            return $c;
+        }
+        [$host] = $cred;
+        if (strtolower((string) $host) === 'localhost') {
+            $cred2 = $cred;
+            $cred2[0] = '127.0.0.1';
+
+            return ratib_site_content_db_try_mysqli_once($cred2);
+        }
+
+        return null;
+    }
+}
+
 if (!function_exists('ratib_site_content_db')) {
     /**
-     * Connection order is tuned so the public site matches the CMS even when CONTROL_PANEL_DB_* is mis-set:
-     * 1) Explicit reader host (RATIB_SITE_CONTENT_DB_HOST) if present — operator-defined route.
-     * 2) get_control_lookup_conn() on SINGLE_URL_MODE — same proven credentials as control_agencies lookups (often DB_USER → control DB).
-     * 3) Primary merged credentials (CONTROL_PANEL_DB_USER || DB_USER).
-     * 4) App tenant user → CONTROL_PANEL_DB_NAME only (ignores CONTROL_PANEL_DB_USER).
+     * Connection order (important):
+     * 1) Dedicated reader when RATIB_SITE_CONTENT_DB_HOST is set.
+     * 2) get_control_lookup_conn() on SINGLE_URL_MODE — same link as agency/control lookups.
+     * 3) App DB_USER → CONTROL_PANEL_DB_NAME (before merged credentials): often has SELECT on ratib_site_content
+     *    when CONTROL_PANEL_DB_USER in env is wrong/stale — previously step 3 failed and step 4 never helped perception.
+     * 4) Merged credentials (CONTROL_PANEL_DB_USER || DB_USER) — override installs that use separate CP logins.
      */
     function ratib_site_content_db(): ?mysqli
     {
@@ -150,9 +177,9 @@ if (!function_exists('ratib_site_content_db')) {
             }
         }
 
-        $cred = ratib_site_content_db_credentials();
-        if ($cred !== null) {
-            $c = ratib_site_content_db_try_mysqli($cred);
+        $credApp = ratib_site_content_db_credentials_app_to_control();
+        if ($credApp !== null) {
+            $c = ratib_site_content_db_try_mysqli($credApp);
             if ($c instanceof mysqli) {
                 $conn = $c;
 
@@ -160,9 +187,9 @@ if (!function_exists('ratib_site_content_db')) {
             }
         }
 
-        $credApp = ratib_site_content_db_credentials_app_to_control();
-        if ($credApp !== null) {
-            $c = ratib_site_content_db_try_mysqli($credApp);
+        $cred = ratib_site_content_db_credentials();
+        if ($cred !== null) {
+            $c = ratib_site_content_db_try_mysqli($cred);
             if ($c instanceof mysqli) {
                 $conn = $c;
 
@@ -177,6 +204,8 @@ if (!function_exists('ratib_site_content_db')) {
 if (!function_exists('ratib_site_content_stmt_fetch_value')) {
     /**
      * Fetch single string column; works without mysqlnd (get_result unavailable).
+     * Without mysqlnd, mysqli_stmt::store_result() is required before bind_result/fetch — otherwise fetch fails and
+     * callers silently fall back to default CMS strings (looks like "connection" / sync failure).
      */
     function ratib_site_content_stmt_fetch_value(mysqli_stmt $stmt): ?string
     {
@@ -188,6 +217,10 @@ if (!function_exists('ratib_site_content_stmt_fetch_value')) {
             $row = $res->fetch_assoc();
 
             return isset($row['content_value']) ? (string) $row['content_value'] : null;
+        }
+        // mysqlnd not available — buffered result path:
+        if (!$stmt->store_result()) {
+            return null;
         }
         $contentValue = null;
         $stmt->bind_result($contentValue);
