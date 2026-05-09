@@ -1669,6 +1669,31 @@ body.ratib-saas-home {
   padding-bottom: clamp(1.5rem, 4vw, 2.5rem);
 }
 
+.ratib-hero__video-band.video-section.ratib-video {
+  padding-top: clamp(1.15rem, 2.8vw, 1.85rem);
+  padding-bottom: clamp(0.85rem, 2vw, 1.35rem);
+  margin-top: clamp(1rem, 2.8vw, 1.75rem);
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.ratib-hero__video-head.ratib-section__head {
+  margin-bottom: 1.1rem;
+  text-align: left;
+}
+
+.ratib-hero__video-title {
+  font-size: clamp(1.35rem, 2.45vw, 1.85rem);
+}
+
+.ratib-video--hero .ratib-video__shell {
+  max-width: min(680px, 100%);
+}
+
+.ratib-hero__photo--program img {
+  object-fit: contain;
+  background: #020617;
+}
+
 .ratib-video__shell {
   max-width: min(560px, 100%);
   margin-left: auto;
