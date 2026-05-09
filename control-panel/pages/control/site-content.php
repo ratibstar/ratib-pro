@@ -89,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
             $flashOk = true;
             if ($flashOk && function_exists('ratib_site_content_export_public_cache')) {
                 if (!ratib_site_content_export_public_cache()) {
-                    $flashCacheWarn = 'Saved to the database, but the public site cache file could not be written. The app tries <code>storage/ratib_site_content_home.json</code> first, then <code>cache/ratib_site_content_home.json</code>. Ensure PHP can create/write one of those directories (e.g. chmod 775 and correct owner).';
+                    $flashCacheWarn = 'Saved to the database, but the public site cache file could not be written. The app tries several paths (see <code>includes/site-content.php</code>): optional env <code>RATIB_SITE_CONTENT_CACHE_FILE</code>, then <code>storage/</code>, <code>cache/</code>, then <code>uploads/ratib_cms_cache/</code> (and other upload roots). Ensure PHP can write one of those, or set the env var to a writable absolute path.';
                 }
             }
         } else {

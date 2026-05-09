@@ -7,10 +7,13 @@ if (!function_exists('ratib_site_content_db_credentials')) {
     /**
      * Resolve connection params for reading ratib_site_content (control DB).
      * Public site often uses DB_NAME for the tenant DB; the CMS lives in CONTROL_PANEL_DB_NAME.
-     * Optional env (recommended when the app DB user has no access to the control DB):
-     *   RATIB_SITE_CONTENT_DB_HOST, RATIB_SITE_CONTENT_DB_PORT, RATIB_SITE_CONTENT_DB_USER,
-     *   RATIB_SITE_CONTENT_DB_PASS, RATIB_SITE_CONTENT_DB_NAME
-     * Or define CONTROL_PANEL_DB_USER / CONTROL_PANEL_DB_PASS in the host env file after DB_*.
+ * Optional env (recommended when the app DB user has no access to the control DB):
+ *   RATIB_SITE_CONTENT_DB_HOST, RATIB_SITE_CONTENT_DB_PORT, RATIB_SITE_CONTENT_DB_USER,
+ *   RATIB_SITE_CONTENT_DB_PASS, RATIB_SITE_CONTENT_DB_NAME
+ * Or define CONTROL_PANEL_DB_USER / CONTROL_PANEL_DB_PASS in the host env file after DB_*.
+ *
+ * Homepage JSON snapshot path (optional — overrides automatic candidates):
+ *   RATIB_SITE_CONTENT_CACHE_FILE=/absolute/or/project-relative/path/ratib_site_content_home.json
      *
      * @return array{0:string,1:int,2:string,3:string,4:string}|null
      */
@@ -129,32 +132,121 @@ if (!function_exists('ratib_site_content_get')) {
     }
 }
 
+if (!function_exists('ratib_site_content_cache_abs_project_root')) {
+    function ratib_site_content_cache_abs_project_root(): string
+    {
+        return dirname(__DIR__);
+    }
+}
+
+if (!function_exists('ratib_site_content_cache_path_is_absolute')) {
+    function ratib_site_content_cache_path_is_absolute(string $p): bool
+    {
+        if ($p === '') {
+            return false;
+        }
+        if ($p[0] === '/' || $p[0] === '\\') {
+            return true;
+        }
+
+        return strlen($p) > 2 && ctype_alpha($p[0]) && $p[1] === ':' && ($p[2] === '\\' || $p[2] === '/');
+    }
+}
+
+if (!function_exists('ratib_site_content_cache_resolve_optional_path')) {
+    /**
+     * Relative paths are resolved from the project root (parent of includes/).
+     */
+    function ratib_site_content_cache_resolve_optional_path(string $raw): string
+    {
+        $raw = trim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $raw));
+        if ($raw === '') {
+            return '';
+        }
+        if (ratib_site_content_cache_path_is_absolute($raw)) {
+            return $raw;
+        }
+
+        return ratib_site_content_cache_abs_project_root() . DIRECTORY_SEPARATOR . $raw;
+    }
+}
+
 if (!function_exists('ratib_site_content_cache_file_candidates')) {
     /**
-     * Ordered list of JSON snapshot paths (first preferred). Fallback helps when storage/ is not writable by PHP.
+     * Ordered list of JSON snapshot paths (first preferred).
+     * Tries: env RATIB_SITE_CONTENT_CACHE_FILE, constant RATIB_SITE_CONTENT_CACHE_FILE,
+     * storage/, cache/, then uploads/ratib_cms_cache/ under each candidate from ratib_uploads_base.php
+     * (same writable roots as worker document uploads — often works when storage/ is root-owned).
      *
      * @return list<string>
      */
     function ratib_site_content_cache_file_candidates(): array
     {
-        $root = dirname(__DIR__);
+        $root = ratib_site_content_cache_abs_project_root();
+        $out = [];
 
-        return [
-            $root . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'ratib_site_content_home.json',
-            $root . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'ratib_site_content_home.json',
-        ];
+        $envFile = getenv('RATIB_SITE_CONTENT_CACHE_FILE');
+        if ($envFile !== false && trim((string) $envFile) !== '') {
+            $out[] = ratib_site_content_cache_resolve_optional_path((string) $envFile);
+        }
+        if (defined('RATIB_SITE_CONTENT_CACHE_FILE') && (string) RATIB_SITE_CONTENT_CACHE_FILE !== '') {
+            $out[] = ratib_site_content_cache_resolve_optional_path((string) RATIB_SITE_CONTENT_CACHE_FILE);
+        }
+
+        $out[] = $root . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'ratib_site_content_home.json';
+        $out[] = $root . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'ratib_site_content_home.json';
+
+        $relUnderUpload = DIRECTORY_SEPARATOR . 'ratib_cms_cache' . DIRECTORY_SEPARATOR . 'ratib_site_content_home.json';
+        $uplPhp = $root . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'ratib_uploads_base.php';
+        if (is_readable($uplPhp)) {
+            require_once $uplPhp;
+            if (function_exists('ratib_uploads_read_valid_marker')) {
+                $marker = ratib_uploads_read_valid_marker();
+                if (is_string($marker) && $marker !== '') {
+                    $out[] = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $marker), DIRECTORY_SEPARATOR) . $relUnderUpload;
+                }
+            }
+            if (function_exists('ratib_uploads_candidate_base_dirs')) {
+                foreach (ratib_uploads_candidate_base_dirs(false) as $base) {
+                    $base = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $base), DIRECTORY_SEPARATOR);
+                    if ($base !== '') {
+                        $out[] = $base . $relUnderUpload;
+                    }
+                }
+            }
+        }
+
+        $seen = [];
+        $uniq = [];
+        foreach ($out as $p) {
+            if (!is_string($p) || $p === '') {
+                continue;
+            }
+            $norm = strtolower(str_replace('\\', '/', $p));
+            if (isset($seen[$norm])) {
+                continue;
+            }
+            $seen[$norm] = true;
+            $uniq[] = $p;
+        }
+
+        return $uniq;
     }
 }
 
 if (!function_exists('ratib_site_content_public_cache_path')) {
     /**
-     * Primary cache path (storage). May be unreadable/unwritable on some hosts — see ratib_site_content_cache_file_candidates().
+     * First candidate path (legacy / primary file name). See ratib_site_content_cache_file_candidates().
      */
     function ratib_site_content_public_cache_path(): string
     {
         $paths = ratib_site_content_cache_file_candidates();
 
-        return $paths[0];
+        if ($paths !== []) {
+            return $paths[0];
+        }
+
+        return ratib_site_content_cache_abs_project_root() . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'ratib_site_content_home.json';
     }
 }
 
