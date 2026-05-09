@@ -317,10 +317,9 @@ if (!function_exists('ratib_site_content_home_flat')) {
      */
     function ratib_site_content_home_flat(): array
     {
-        static $memo = null;
-        if ($memo !== null) {
-            return $memo;
-        }
+        // Do not use a cross-request static cache here: PHP-FPM workers would keep the first resolution
+        // (often stale JSON / defaults when MySQL was briefly unreachable) for the worker lifetime even
+        // after DB access and GRANTs are fixed — making the homepage appear "stuck" forever until restart.
         $defaults = ratib_site_content_defaults_home();
 
         $applyHomeCache = static function (array $cached, array $defaults): array {
@@ -339,9 +338,7 @@ if (!function_exists('ratib_site_content_home_flat')) {
         if (function_exists('ratib_site_content_home_flat_from_db')) {
             $live = ratib_site_content_home_flat_from_db($defaults);
             if ($live !== null) {
-                $memo = $live;
-
-                return $memo;
+                return $live;
             }
         }
 
@@ -351,9 +348,7 @@ if (!function_exists('ratib_site_content_home_flat')) {
             if ($rawDb !== null && $rawDb !== '') {
                 $cached = json_decode($rawDb, true);
                 if (is_array($cached)) {
-                    $memo = $applyHomeCache($cached, $defaults);
-
-                    return $memo;
+                    return $applyHomeCache($cached, $defaults);
                 }
             }
         }
@@ -372,9 +367,7 @@ if (!function_exists('ratib_site_content_home_flat')) {
                 if ($raw !== false && $raw !== '') {
                     $cached = json_decode($raw, true);
                     if (is_array($cached)) {
-                        $memo = $applyHomeCache($cached, $defaults);
-
-                        return $memo;
+                        return $applyHomeCache($cached, $defaults);
                     }
                 }
             }
@@ -384,9 +377,8 @@ if (!function_exists('ratib_site_content_home_flat')) {
         foreach ($defaults as $key => $defaultVal) {
             $out[$key] = ratib_site_content_get($key, $defaultVal);
         }
-        $memo = $out;
 
-        return $memo;
+        return $out;
     }
 }
 

@@ -119,11 +119,12 @@ if (!function_exists('ratib_site_content_db')) {
     function ratib_site_content_db(): ?mysqli
     {
         static $conn = null;
-        static $resolved = false;
-        if ($resolved) {
-            return $conn instanceof mysqli ? $conn : null;
+        // Cache only successful mysqli handles. Do not use a separate "resolved" flag — that would cache
+        // failure across requests and block reads until the PHP-FPM worker restarts.
+        // Note: do not ping()/close() here; ratib_site_content_db may reuse get_control_lookup_conn()'s link.
+        if ($conn instanceof mysqli) {
+            return $conn;
         }
-        $resolved = true;
 
         $dedicatedHost = getenv('RATIB_SITE_CONTENT_DB_HOST');
         $hasDedicatedHost = ($dedicatedHost !== false && trim((string) $dedicatedHost) !== '');
