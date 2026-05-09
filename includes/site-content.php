@@ -56,36 +56,120 @@ if (!function_exists('ratib_site_content_db_credentials')) {
     }
 }
 
-if (!function_exists('ratib_site_content_db')) {
-    function ratib_site_content_db(): ?mysqli
+if (!function_exists('ratib_site_content_db_credentials_app_to_control')) {
+    /**
+     * Same pattern as get_control_lookup_conn(): app DB_USER + DB_PASS opening CONTROL_PANEL_DB_NAME.
+     * Used when CONTROL_PANEL_DB_USER / CONTROL_PANEL_DB_PASS are wrong but the tenant user has SELECT on ratib_site_content.
+     *
+     * @return array{0:string,1:int,2:string,3:string,4:string}|null
+     */
+    function ratib_site_content_db_credentials_app_to_control(): ?array
     {
-        static $conn = null;
-        static $tried = false;
-        if ($tried) {
-            return $conn instanceof mysqli ? $conn : null;
-        }
-        $tried = true;
-        $cred = ratib_site_content_db_credentials();
-        if ($cred === null) {
+        if (!defined('CONTROL_PANEL_DB_NAME') || CONTROL_PANEL_DB_NAME === '') {
             return null;
         }
+        if (!defined('DB_HOST') || !defined('DB_USER') || (string) DB_USER === '') {
+            return null;
+        }
+        $host = (string) DB_HOST;
+        $port = defined('DB_PORT') ? (int) DB_PORT : 3306;
+        $pass = defined('DB_PASS') ? (string) DB_PASS : '';
+
+        return [$host, $port, (string) DB_USER, $pass, CONTROL_PANEL_DB_NAME];
+    }
+}
+
+if (!function_exists('ratib_site_content_db_try_mysqli')) {
+    /**
+     * @param array{0:string,1:int,2:string,3:string,4:string} $cred
+     */
+    function ratib_site_content_db_try_mysqli(array $cred): ?mysqli
+    {
         [$host, $port, $user, $pass, $dbName] = $cred;
+        if ($host === '' || $user === '' || $dbName === '') {
+            return null;
+        }
         try {
             $c = new mysqli($host, $user, $pass, $dbName, $port);
             if ($c->connect_errno) {
-                error_log('ratib_site_content_db: connection failed (' . $c->connect_errno . ') ' . $c->connect_error);
+                error_log('ratib_site_content_db: mysqli failed for user "' . $user . '" (' . $c->connect_errno . ') ' . $c->connect_error);
+                $c->close();
 
                 return null;
             }
             $c->set_charset('utf8mb4');
-            $conn = $c;
 
-            return $conn;
+            return $c;
         } catch (Throwable $e) {
             error_log('ratib_site_content_db: ' . $e->getMessage());
 
             return null;
         }
+    }
+}
+
+if (!function_exists('ratib_site_content_db')) {
+    /**
+     * Connection order is tuned so the public site matches the CMS even when CONTROL_PANEL_DB_* is mis-set:
+     * 1) Explicit reader host (RATIB_SITE_CONTENT_DB_HOST) if present — operator-defined route.
+     * 2) get_control_lookup_conn() on SINGLE_URL_MODE — same proven credentials as control_agencies lookups (often DB_USER → control DB).
+     * 3) Primary merged credentials (CONTROL_PANEL_DB_USER || DB_USER).
+     * 4) App tenant user → CONTROL_PANEL_DB_NAME only (ignores CONTROL_PANEL_DB_USER).
+     */
+    function ratib_site_content_db(): ?mysqli
+    {
+        static $conn = null;
+        static $resolved = false;
+        if ($resolved) {
+            return $conn instanceof mysqli ? $conn : null;
+        }
+        $resolved = true;
+
+        $dedicatedHost = getenv('RATIB_SITE_CONTENT_DB_HOST');
+        $hasDedicatedHost = ($dedicatedHost !== false && trim((string) $dedicatedHost) !== '');
+
+        if ($hasDedicatedHost) {
+            $cred = ratib_site_content_db_credentials();
+            if ($cred !== null) {
+                $c = ratib_site_content_db_try_mysqli($cred);
+                if ($c instanceof mysqli) {
+                    $conn = $c;
+
+                    return $conn;
+                }
+            }
+        }
+
+        if (defined('SINGLE_URL_MODE') && SINGLE_URL_MODE && function_exists('get_control_lookup_conn')) {
+            $lk = get_control_lookup_conn();
+            if ($lk instanceof mysqli) {
+                $conn = $lk;
+
+                return $conn;
+            }
+        }
+
+        $cred = ratib_site_content_db_credentials();
+        if ($cred !== null) {
+            $c = ratib_site_content_db_try_mysqli($cred);
+            if ($c instanceof mysqli) {
+                $conn = $c;
+
+                return $conn;
+            }
+        }
+
+        $credApp = ratib_site_content_db_credentials_app_to_control();
+        if ($credApp !== null) {
+            $c = ratib_site_content_db_try_mysqli($credApp);
+            if ($c instanceof mysqli) {
+                $conn = $c;
+
+                return $conn;
+            }
+        }
+
+        return null;
     }
 }
 
