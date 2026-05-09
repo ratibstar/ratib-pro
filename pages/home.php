@@ -261,175 +261,326 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236b21a8'/%3E%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
-    <title>RATIB — Recruitment Automation &amp; Tracking Intelligence Base | Ratib Recruitment Program</title>
+    <title>RATIB — Enterprise Recruitment OS &amp; Workforce Intelligence Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/chat-widget.css">
     <?php $ratibHomeCssV = (int) (@filemtime(__DIR__ . '/../css/pages/home-public.css') ?: time()); ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo $ratibHomeCssV; ?>">
 </head>
-<body>
+<body class="ratib-saas-home">
 
-    <header class="header">
-        <div class="header-left">
-            <a href="tel:+966599863868" class="phone"><i class="fas fa-phone-alt"></i> +966 59 986 3868</a>
-            <a href="#contact">Contact Us</a>
-            <a href="https://wa.me/966599863868" target="_blank" rel="noopener noreferrer" class="live-status" title="Chat on WhatsApp">
-                <div class="live-dots"><span></span><span></span><span></span></div>
-                <span>Live via WhatsApp</span>
-            </a>
+    <div class="ratib-saas-bg" aria-hidden="true">
+        <div class="ratib-saas-bg__gradient"></div>
+        <div class="ratib-saas-bg__grid"></div>
+        <div class="ratib-saas-bg__orb ratib-saas-bg__orb--a"></div>
+        <div class="ratib-saas-bg__orb ratib-saas-bg__orb--b"></div>
+    </div>
+
+    <div class="ratib-topbar">
+        <div class="ratib-topbar__inner ratib-container">
+            <div class="ratib-topbar__left">
+                <a href="tel:+966599863868" class="ratib-topbar__link"><i class="fas fa-phone-alt" aria-hidden="true"></i> +966 59 986 3868</a>
+                <a href="https://wa.me/966599863868" target="_blank" rel="noopener noreferrer" class="ratib-topbar__wa" title="WhatsApp">
+                    <span class="ratib-live-dot" aria-hidden="true"></span>
+                    Live on WhatsApp
+                </a>
+            </div>
+            <div class="ratib-topbar__right">
+                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>" class="ratib-topbar__link">Client login</a>
+                <span class="ratib-topbar__lang" role="group" aria-label="Language">
+                    <span class="ratib-lang ratib-lang--active">EN</span>
+                    <span class="ratib-lang-sep">·</span>
+                    <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-lang" title="Arabic experience inside partner portals">AR</a>
+                </span>
+            </div>
         </div>
-        <div class="header-center">
-            <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="logo">
-                <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="Ratib Company — Ratib Software Foundation for Information Technology">
+    </div>
+
+    <header class="ratib-nav-shell" id="ratib-main-header">
+        <div class="ratib-container ratib-nav-shell__inner">
+            <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-nav__brand">
+                <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="RATIB" width="120" height="36">
+                <span class="ratib-nav__brand-text">RATIB</span>
             </a>
-            <div class="tagline">RATIB — Recruitment Automation &amp; Tracking Intelligence Base</div>
-        </div>
-        <div class="header-right">
-            <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="nav-link">Home</a>
-            <a href="#programs" class="nav-link active">Our Programs <span class="badge-nav">Important</span></a>
-            <a href="#register" class="nav-link js-scroll-register">Register</a>
-            <a href="#video" class="nav-link">Video</a>
-            <a href="#featured" class="nav-link">Features</a>
-            <a href="#hosting" class="nav-link">Hosting</a>
-            <a href="#payment" class="nav-link">Payment Methods</a>
-            <a href="#support" class="nav-link">Technical Support</a>
-            <a href="#contact-options" class="nav-link">Contact Options</a>
-            <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" class="btn-partner-login"><i class="fas fa-right-to-bracket"></i> Partner Login</a>
-            <a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>" class="btn-client"><i class="fas fa-user"></i> Customer Portal</a>
+            <button type="button" class="ratib-nav__toggle" id="ratibNavToggle" aria-label="Open menu" aria-expanded="false" aria-controls="ratibNavMenu">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary">
+                <a href="#platform" class="ratib-nav__link">Platform</a>
+                <a href="#features" class="ratib-nav__link">Features</a>
+                <a href="#solutions" class="ratib-nav__link">Solutions</a>
+                <a href="#programs" class="ratib-nav__link">Pricing</a>
+                <a href="#agencies" class="ratib-nav__link">Agencies</a>
+                <a href="#tracking" class="ratib-nav__link">Tracking</a>
+                <a href="#api" class="ratib-nav__link">API</a>
+                <a href="#contact" class="ratib-nav__link">Contact</a>
+            </nav>
+            <div class="ratib-nav__cta">
+                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" class="ratib-btn ratib-btn--ghost">Partner Login</a>
+                <a href="#register" class="ratib-btn ratib-btn--primary js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">Get Started</a>
+            </div>
         </div>
     </header>
 
-    <!-- Animated Background Layers -->
-    <div class="bg-animated"></div>
-    <div class="bg-particles">
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-        <div class="particle"></div>
-    </div>
-    <div class="bg-hex"></div>
-    <div class="bg-overlay"></div>
+    <main class="ratib-main">
+        <section class="ratib-hero">
+            <div class="ratib-container ratib-hero__grid">
+                <div class="ratib-hero__copy">
+                    <p class="ratib-eyebrow">Recruitment Automation &amp; Tracking Intelligence Base</p>
+                    <h1 class="ratib-hero__title">Recruitment Automation &amp; <span class="ratib-text-gradient">Workforce Intelligence</span></h1>
+                    <p class="ratib-hero__lead">Orchestrate multi-agency recruitment with real-time tracking, stage automation, AI-assisted workflows, digital documents, e-invoicing, and operational analytics—built as enterprise SaaS, not generic software hosting.</p>
+                    <ul class="ratib-hero__bullets">
+                        <li><i class="fas fa-diagram-project"></i> Workflow automation across sending &amp; receiving stages</li>
+                        <li><i class="fas fa-building-user"></i> Multi-tenant agency &amp; domain isolation</li>
+                        <li><i class="fas fa-location-crosshairs"></i> GPS &amp; milestone tracking for field visibility</li>
+                        <li><i class="fas fa-bolt"></i> Signals, SLAs, and intelligent notifications</li>
+                    </ul>
+                    <div class="ratib-hero__actions">
+                        <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">Start agency</a>
+                        <a href="#video" class="ratib-btn ratib-btn--outline ratib-btn--lg"><i class="fas fa-play" aria-hidden="true"></i> Watch demo</a>
+                    </div>
+                </div>
+                <div class="ratib-hero__visual" aria-hidden="true">
+                    <div class="ratib-dash">
+                        <div class="ratib-dash__chrome">
+                            <span class="ratib-dash__dot"></span><span class="ratib-dash__dot"></span><span class="ratib-dash__dot"></span>
+                            <span class="ratib-dash__title">RATIB Command</span>
+                            <span class="ratib-dash__live"><span class="ratib-live-dot"></span> Live</span>
+                        </div>
+                        <div class="ratib-dash__body">
+                            <div class="ratib-dash__sidebar">
+                                <div class="ratib-dash__nav-item ratib-dash__nav-item--active">Pipeline</div>
+                                <div class="ratib-dash__nav-item">Workers</div>
+                                <div class="ratib-dash__nav-item">Agencies</div>
+                                <div class="ratib-dash__nav-item">Finance</div>
+                            </div>
+                            <div class="ratib-dash__main">
+                                <div class="ratib-dash__row">
+                                    <div class="ratib-kpi">
+                                        <span class="ratib-kpi__label">Active workers</span>
+                                        <span class="ratib-kpi__value">2,847</span>
+                                        <span class="ratib-kpi__delta ratib-kpi__delta--up">+18% WoW</span>
+                                    </div>
+                                    <div class="ratib-kpi">
+                                        <span class="ratib-kpi__label">Automation runs</span>
+                                        <span class="ratib-kpi__value">14.2k</span>
+                                        <span class="ratib-kpi__delta">last 7d</span>
+                                    </div>
+                                    <div class="ratib-kpi">
+                                        <span class="ratib-kpi__label">On-time stages</span>
+                                        <span class="ratib-kpi__value">94.6%</span>
+                                        <span class="ratib-kpi__delta ratib-kpi__delta--up">SLA safe</span>
+                                    </div>
+                                </div>
+                                <div class="ratib-dash__panel">
+                                    <div class="ratib-dash__panel-head">
+                                        <span>Recruitment stages</span>
+                                        <span class="ratib-pill">Auto</span>
+                                    </div>
+                                    <div class="ratib-stagebar">
+                                        <span class="ratib-stage ratib-stage--done">App</span>
+                                        <span class="ratib-stage ratib-stage--done">Verify</span>
+                                        <span class="ratib-stage ratib-stage--active">Medical</span>
+                                        <span class="ratib-stage">Embassy</span>
+                                        <span class="ratib-stage">Visa</span>
+                                        <span class="ratib-stage">Deploy</span>
+                                    </div>
+                                    <div class="ratib-mapstrip">
+                                        <i class="fas fa-satellite-dish"></i>
+                                        <span>GPS trace · Riyadh corridor · last ping 2m</span>
+                                        <span class="ratib-pill ratib-pill--muted">Verified</span>
+                                    </div>
+                                </div>
+                                <div class="ratib-dash__charts">
+                                    <div class="ratib-chart">
+                                        <div class="ratib-chart__legend">Throughput</div>
+                                        <div class="ratib-chart__bars">
+                                            <i style="height:40%"></i><i style="height:65%"></i><i style="height:52%"></i><i style="height:88%"></i><i style="height:72%"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ratib-chart">
+                                        <div class="ratib-chart__legend">Invoice sync</div>
+                                        <div class="ratib-spark"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <section class="hero-wrap">
-        <div class="hero-text">
-            <h1>Ratib <span>Recruitment</span> Program</h1>
-            <p class="desc" style="margin-top: -0.2rem; color: #f1c40f; font-weight: 700;">RATIB = Recruitment Automation &amp; Tracking Intelligence Base</p>
-            <p class="desc">RATIB (Recruitment Automation &amp; Tracking Intelligence Base) is a recruitment program for managing recruitment offices and companies with the electronic invoice system.</p>
-            <a href="#programs" class="btn-prices"><i class="fas fa-tags"></i> Prices</a>
-        </div>
-    </section>
+        <section class="ratib-section ratib-trust" id="platform">
+            <div class="ratib-container">
+                <header class="ratib-section__head">
+                    <h2 class="ratib-section__title">Built for regulated, high-volume recruitment operations</h2>
+                    <p class="ratib-section__sub">One intelligence layer across agencies, workers, finance, and compliance—without the noise of consumer dashboards.</p>
+                </header>
+                <div class="ratib-trust__grid">
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-network-wired"></i></div><h3>Multi-agency infrastructure</h3><p>Centralized platform with isolated tenants, domains, and data boundaries.</p></article>
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-satellite-dish"></i></div><h3>Real-time tracking</h3><p>Milestone, field, and document signals streamed to command views.</p></article>
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-wand-magic-sparkles"></i></div><h3>AI workflow automation</h3><p>Auto transitions, reminders, and guardrails tuned for recruitment SLAs.</p></article>
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-file-invoice-dollar"></i></div><h3>Electronic invoicing</h3><p>Financial rails aligned to operational events—not manual spreadsheets.</p></article>
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-shield-halved"></i></div><h3>Secure cloud platform</h3><p>Enterprise posture for data residency, access control, and audit trails.</p></article>
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-chart-area"></i></div><h3>Enterprise scale</h3><p>Designed for growing multi-country workforce programs and peak seasons.</p></article>
+                </div>
+            </div>
+        </section>
 
-    <!-- Company Introduction Section -->
-    <section class="company-intro">
-        <h2>Welcome to Ratib — Your Trusted Partner in Recruitment Technology</h2>
-        <p class="intro-text">
-            RATIB (Recruitment Automation &amp; Tracking Intelligence Base) is a leading provider of innovative recruitment management solutions. 
-            We specialize in creating powerful, user-friendly platforms that transform how recruitment agencies and companies manage 
-            their operations, from candidate tracking to electronic invoicing.
-        </p>
-        <div class="highlight-box">
-            <h3 class="company-highlight-title">
-                <i class="fas fa-star company-highlight-icon"></i>
-                Why Ratib Stands Out
-            </h3>
-            <p class="company-highlight-text">
-                With over 15 years of combined experience in software development and recruitment industry expertise, 
-                Ratib delivers cutting-edge solutions that streamline operations, reduce costs, and accelerate growth. 
-                Our platform combines advanced technology with intuitive design, making complex recruitment processes simple and efficient.
-            </p>
-        </div>
-        <div class="feature-list">
-            <div class="feature-item">
-                <i class="fas fa-rocket"></i>
-                <h3>Innovation First</h3>
-                <p>We continuously evolve our platform with the latest technologies to keep you ahead of the competition.</p>
+        <section class="ratib-section" id="features">
+            <div class="ratib-container">
+                <header class="ratib-section__head ratib-section__head--left">
+                    <p class="ratib-eyebrow">Platform</p>
+                    <h2 class="ratib-section__title">Twelve capabilities agencies run daily</h2>
+                </header>
+                <div class="ratib-feature-grid">
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-gears"></i></div><h3>Recruitment workflow engine</h3><p>Model stages, owners, and policies once—execute across every file.</p></article>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-id-badge"></i></div><h3>Applicant tracking</h3><p>Single record for documents, history, and deployment readiness.</p></article>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-shuffle"></i></div><h3>Smart stage automation</h3><p>Time-based and event-based progression with human override.</p></article>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-location-dot"></i></div><h3>GPS tracking intelligence</h3><p>Operational visibility for movements, check-ins, and exceptions.</p></article>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-globe"></i></div><h3>Multi-domain agencies</h3><p>Brand-forward portals while sharing core infrastructure.</p></article>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-file-signature"></i></div><h3>Digital contracts</h3><p>Signatures and renewals tied to lifecycle events.</p></article>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-coins"></i></div><h3>Financial management</h3><p>Ledger awareness from placement to invoice settlement.</p></article>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-receipt"></i></div><h3>Electronic invoices</h3><p>Automated issuance when stages complete or billing rules hit.</p></article>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-route"></i></div><h3>Worker lifecycle tracking</h3><p>From intake through arrival with immutable checkpoints.</p></article>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-bell"></i></div><h3>Real-time notifications</h3><p>Escalations to ops, partners, and candidates when risk appears.</p></article>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-chart-pie"></i></div><h3>Analytics dashboard</h3><p>Funnel integrity, velocity, and workforce quality in one surface.</p></article>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-plug"></i></div><h3>API integrations</h3><p>Connect HRIS, finance, messaging, and government feeds securely.</p></article>
+                </div>
             </div>
-            <div class="feature-item">
-                <i class="fas fa-shield-alt"></i>
-                <h3>Secure & Reliable</h3>
-                <p>Enterprise-grade security and 99.9% uptime guarantee ensure your data is always safe and accessible.</p>
-            </div>
-            <div class="feature-item">
-                <i class="fas fa-headset"></i>
-                <h3>Dedicated Support</h3>
-                <p>Our expert team provides 24/7 support to help you succeed with personalized assistance whenever you need it.</p>
-            </div>
-            <div class="feature-item">
-                <i class="fas fa-chart-line"></i>
-                <h3>Proven Results</h3>
-                <p>Join hundreds of successful agencies who have transformed their operations and increased efficiency with Ratib.</p>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="featured-section" id="featured">
-        <h2><i class="fas fa-star me-2"></i>Why Choose Ratib</h2>
-        <div class="featured-row">
-            <div class="featured-card">
-                <?php if (!empty($galleryImages[0])): ?><img src="<?php echo htmlspecialchars($galleryImages[0]); ?>" alt="Professional Team" class="card-img" loading="lazy"><?php else: ?><div class="card-icon"><i class="fas fa-users-cog"></i></div><?php endif; ?>
-                <h3>Professional Team</h3>
-                <p>Professional team of programmers, designers, and specialists in electronic marketing and smart mobile applications.</p>
-                <a href="#register" class="btn-more js-scroll-register">Learn More</a>
+        <section class="ratib-section ratib-pipeline-section" id="tracking">
+            <div class="ratib-container">
+                <header class="ratib-section__head">
+                    <p class="ratib-eyebrow">Live system view</p>
+                    <h2 class="ratib-section__title">End-to-end pipeline, instrumented</h2>
+                    <p class="ratib-section__sub">Every hop is measurable—automation, human review, and GPS/context signals in one operational spine.</p>
+                </header>
+                <div class="ratib-pipeline" role="list">
+                    <div class="ratib-pipeline__track" aria-hidden="true"></div>
+                    <div class="ratib-pipeline__item ratib-pipeline__item--complete" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Application</span><span class="ratib-pipeline__meta">Ingested</span></div>
+                    <div class="ratib-pipeline__item ratib-pipeline__item--complete" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Verification</span><span class="ratib-pipeline__meta">Auto pass</span></div>
+                    <div class="ratib-pipeline__item ratib-pipeline__item--active" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Medical</span><span class="ratib-pipeline__meta">In progress</span></div>
+                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Embassy</span><span class="ratib-pipeline__meta">Queued</span></div>
+                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Visa</span><span class="ratib-pipeline__meta">Docs OK</span></div>
+                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Ticket</span><span class="ratib-pipeline__meta">Automation</span></div>
+                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Arrival</span><span class="ratib-pipeline__meta">GPS</span></div>
+                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Deployment</span><span class="ratib-pipeline__meta">Close loop</span></div>
+                </div>
             </div>
-            <div class="featured-card">
-                <?php if (!empty($galleryImages[1])): ?><img src="<?php echo htmlspecialchars($galleryImages[1]); ?>" alt="Value & Service" class="card-img" loading="lazy"><?php else: ?><div class="card-icon"><i class="fas fa-tags"></i></div><?php endif; ?>
-                <h3>Competitive Value</h3>
-                <p>You will find lower prices elsewhere, but do they offer the same service? There may be hidden costs or missing features. Compare carefully.</p>
-                <a href="#programs" class="btn-more">View Prices</a>
-            </div>
-            <div class="featured-card">
-                <?php if (!empty($galleryImages[2])): ?><img src="<?php echo htmlspecialchars($galleryImages[2]); ?>" alt="24/7 Support" class="card-img" loading="lazy"><?php else: ?><div class="card-icon"><i class="fas fa-clock"></i></div><?php endif; ?>
-                <h3>Around the Clock</h3>
-                <p>Every day we work to ensure your software runs correctly and appropriately. Reliable support when you need it.</p>
-                <a href="#support" class="btn-more">Learn More</a>
-            </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="video-section" id="video">
-        <h2><i class="fas fa-play-circle me-2"></i>How it works</h2>
-        <p class="video-caption">Watch a short overview of the Ratib recruitment program.</p>
-        <div class="video-wrap">
-            <?php if ($videoExists): ?>
-            <video controls preload="metadata" class="home-video-player">
-                <source src="<?php echo htmlspecialchars($videoSrcRel, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
-                Your browser does not support the video tag. <a href="<?php echo htmlspecialchars($videoSrcRel, ENT_QUOTES, 'UTF-8'); ?>">Download the video</a>.
-            </video>
-            <?php else: ?>
-            <div class="video-fallback-box">
-                <i class="fas fa-video-slash fa-3x mb-3"></i>
-                <p>Add an MP4 to <code>assets/</code> — recommended name: <code>video.mp4</code></p>
-                <p class="small mb-0">Any <strong>.mp4</strong> file in the <code>assets</code> folder will be used automatically if <code>video.mp4</code> is not present.</p>
+        <section class="ratib-section ratib-ai-section" id="solutions">
+            <div class="ratib-container">
+                <header class="ratib-section__head ratib-section__head--left">
+                    <p class="ratib-eyebrow">AI operations</p>
+                    <h2 class="ratib-section__title">Automation that respects recruitment reality</h2>
+                </header>
+                <div class="ratib-ai-grid">
+                    <article class="ratib-ai-card ratib-ai-card--wide">
+                        <h3>Autonomous workflow engine</h3>
+                        <p>Policy-driven orchestration across branches, countries, and agency rules—reduce manual chasing while keeping auditors happy.</p>
+                        <div class="ratib-ai-visual">
+                            <div class="ratib-ai-row"><span class="ratib-pill">Rule</span> Stage ≥ medical → notify finance</div>
+                            <div class="ratib-ai-row"><span class="ratib-pill ratib-pill--accent">AI assist</span> Anomaly on doc bundle → hold + task</div>
+                            <div class="ratib-ai-row"><span class="ratib-pill">Outcome</span> Invoice draft ready</div>
+                        </div>
+                    </article>
+                    <article class="ratib-ai-card">
+                        <h3>Signals &amp; notifications</h3>
+                        <p>Threshold-based nudges to recruiters, agencies, and partners before SLAs breach.</p>
+                    </article>
+                    <article class="ratib-ai-card">
+                        <h3>Automated invoicing</h3>
+                        <p>Billing pulses tied to verified events—not approximations from email threads.</p>
+                    </article>
+                    <article class="ratib-ai-card">
+                        <h3>Agency automation</h3>
+                        <p>Playbooks per tenant: domains, entitlements, and templates without duplicating infrastructure.</p>
+                    </article>
+                </div>
             </div>
-            <?php endif; ?>
-        </div>
-    </section>
+        </section>
 
-    <section class="gallery-section" id="gallery">
-        <h2><i class="fas fa-images me-2"></i>Gallery</h2>
-        <?php if (!empty($galleryImages)): ?>
-        <div class="gallery-grid">
-            <?php foreach ($galleryImages as $img): ?>
-            <img src="<?php echo htmlspecialchars($img); ?>" alt="Ratib Program" loading="lazy">
-            <?php endforeach; ?>
-        </div>
-        <?php else: ?>
-        <div class="gallery-empty">
-            <i class="fas fa-images fa-3x mb-3 gallery-empty-icon"></i>
-            <p>Add images to <code>assets/images/</code> (jpg, png, webp, gif) to display them here.</p>
-        </div>
-        <?php endif; ?>
-    </section>
+        <section class="ratib-section ratib-eco" id="agencies">
+            <div class="ratib-container">
+                <header class="ratib-section__head">
+                    <p class="ratib-eyebrow">Multi-agency ecosystem</p>
+                    <h2 class="ratib-section__title">One RATIB core. Many independent agencies.</h2>
+                    <p class="ratib-section__sub">Tenant isolation with shared intelligence services—scale like Stripes global stack, purpose-built for workforce programs.</p>
+                </header>
+                <div class="ratib-eco__viz" aria-hidden="true">
+                    <div class="ratib-eco__core">
+                        <span class="ratib-eco__core-label">RATIB Core</span>
+                        <span class="ratib-eco__core-sub">Auth · Workflow · Tracking · Billing</span>
+                    </div>
+                    <div class="ratib-eco__spokes">
+                        <div class="ratib-eco__spoke"><span>Agency A</span><small>tenant + domain</small></div>
+                        <div class="ratib-eco__spoke"><span>Agency B</span><small>tenant + domain</small></div>
+                        <div class="ratib-eco__spoke"><span>Agency C</span><small>tenant + domain</small></div>
+                        <div class="ratib-eco__spoke ratib-eco__spoke--accent"><span>Custom domains</span><small>white-label edges</small></div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <section class="pricing-section" id="programs">
-        <h2>Plans & Pricing</h2>
-        <div class="pricing-row">
-            <div class="price-card gold">
-                <span class="card-badge">50% Off</span>
-                <div class="card-plan">Gold $<?php echo number_format((float)$goldListPriceYear1, 0); ?></div>
-                <div class="card-subtitle">Branded agency portal</div>
+        <section class="ratib-section ratib-analytics">
+            <div class="ratib-container">
+                <header class="ratib-section__head ratib-section__head--left">
+                    <p class="ratib-eyebrow">Telemetry</p>
+                    <h2 class="ratib-section__title">Operational analytics leadership cares about</h2>
+                </header>
+                <div class="ratib-analytics__grid">
+                    <article class="ratib-analytics-card"><h3>Tracking quality</h3><div class="ratib-metric"><span class="ratib-metric__val">98.2%</span><span class="ratib-metric__chart ratib-metric__chart--line"></span></div><p>Confidence-weighted milestone completion.</p></article>
+                    <article class="ratib-analytics-card"><h3>Active workers</h3><div class="ratib-metric"><span class="ratib-metric__val">2.8k</span><span class="ratib-metric__chart ratib-metric__chart--bars"></span></div><p>Live cohorts across programs &amp; regions.</p></article>
+                    <article class="ratib-analytics-card"><h3>Agency performance</h3><div class="ratib-metric"><span class="ratib-metric__val">+31%</span><span class="ratib-metric__note">velocity QoQ</span></div><p>Comparative throughput with fair baselines.</p></article>
+                    <article class="ratib-analytics-card"><h3>Automation coverage</h3><div class="ratib-metric"><span class="ratib-metric__val">76%</span><span class="ratib-metric__note">steps hands-free</span></div><p>Engine runs vs manual escalations.</p></article>
+                </div>
+            </div>
+        </section>
+
+        <section class="ratib-section ratib-api-strip" id="api">
+            <div class="ratib-container ratib-api-strip__inner">
+                <div>
+                    <p class="ratib-eyebrow">Developers</p>
+                    <h2 class="ratib-api-strip__title">APIs for the recruitment operating system</h2>
+                    <p class="ratib-api-strip__sub">Secure integration endpoints for agencies connecting HR, finance, and government verification stacks.</p>
+                </div>
+                <a href="#contact" class="ratib-btn ratib-btn--outline">Request API access</a>
+            </div>
+        </section>
+
+        <section class="pricing-section ratib-pricing-saas" id="programs">
+            <div class="ratib-container">
+                <header class="ratib-section__head">
+                    <p class="ratib-eyebrow">Pricing</p>
+                    <h2 class="ratib-section__title">Plans that scale with your agency footprint</h2>
+                    <p class="ratib-section__sub">Transparent tiers for evaluation, production, and enterprise procurement teams.</p>
+                </header>
+                <div class="pricing-row pricing-row--three">
+            <div class="price-card price-card-starter">
+                <span class="card-badge card-badge--muted">Evaluate</span>
+                <div class="card-plan">Starter</div>
+                <div class="card-subtitle">Discovery &amp; Pro onboarding</div>
+                <p class="card-price-saas">Custom scope</p>
+                <div class="card-divider"></div>
+                <ul class="card-features">
+                    <li><i class="fas fa-check"></i> Pro plan consultation</li>
+                    <li><i class="fas fa-check"></i> Workspace readiness review</li>
+                    <li><i class="fas fa-check"></i> Integration guidance</li>
+                    <li><i class="fas fa-check"></i> Dedicated success touchpoints</li>
+                </ul>
+                <a href="#register" class="btn-register btn-register-starter js-open-register" data-register-plan="pro" data-register-amount="" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Talk to us</a>
+            </div>
+            <div class="price-card gold price-card--featured">
+                <span class="card-badge">Popular</span>
+                <div class="card-plan">Business <span class="card-plan-note">list $<?php echo number_format((float)$goldListPriceYear1, 0); ?></span></div>
+                <div class="card-subtitle">Branded agency portal · Gold tier</div>
                 <div class="plan-year-wrap">
                     <div class="plan-year-buttons">
                         <button type="button" class="year-btn gold-year-btn year-btn-card year-btn-neutral" data-years="0" data-price="<?php echo (float)$goldTestPriceMonth; ?>">Monthly<br><span class="year-price-small"><span class="promo-old">$<?php echo number_format((float)$goldListPriceMonth, 2); ?></span> <span class="promo-new">$<?php echo number_format((float)$goldTestPriceMonth, 2); ?></span></span></button>
@@ -446,16 +597,15 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                     <li><i class="fas fa-check"></i> 20 users</li>
                     <li><i class="fas fa-check"></i> E-invoice system</li>
                     <li><i class="fas fa-check"></i> Standard support</li>
-                    <li><i class="fas fa-check"></i> Free Hosting with a domain</li>
-                    <li><i class="fas fa-check"></i> Free for one year</li>
+                    <li><i class="fas fa-check"></i> Managed infrastructure &amp; SSL</li>
                     <li><i class="fas fa-check"></i> Admin control panel</li>
                 </ul>
-                <a href="#register" id="goldRegisterBtn" class="btn-register js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Register</a>
+                <a href="#register" id="goldRegisterBtn" class="btn-register js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Start Business</a>
             </div>
             <div class="price-card platinum">
                 <span class="card-badge">50% Off</span>
-                <div class="card-plan">Platinum $<?php echo number_format((float)$platinumListPriceYear1, 0); ?></div>
-                <div class="card-subtitle">Full-featured solution</div>
+                <div class="card-plan">Enterprise <span class="card-plan-note">list $<?php echo number_format((float)$platinumListPriceYear1, 0); ?></span></div>
+                <div class="card-subtitle">Mission-critical programs · Platinum tier</div>
                 <div class="plan-year-wrap">
                     <div class="plan-year-buttons">
                         <button type="button" class="year-btn platinum-year-btn year-btn-card year-btn-neutral" data-years="0" data-price="<?php echo (float)$platinumTestPriceMonth; ?>">Monthly<br><span class="year-price-small"><span class="promo-old">$<?php echo number_format((float)$platinumListPriceMonth, 0); ?></span> <span class="promo-new">$<?php echo number_format((float)$platinumTestPriceMonth, 0); ?></span></span></button>
@@ -467,22 +617,22 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                 <span class="card-discount">50% Discount</span>
                 <div class="card-divider"></div>
                 <ul class="card-features">
-                    <li><i class="fas fa-check"></i> All Gold features</li>
+                    <li><i class="fas fa-check"></i> All Business features</li>
                     <li><i class="fas fa-check"></i> Unlimited users</li>
                     <li><i class="fas fa-check"></i> Priority support</li>
                     <li><i class="fas fa-check"></i> Advanced analytics</li>
                     <li><i class="fas fa-check"></i> Dedicated setup</li>
-                    <li><i class="fas fa-check"></i> Free Hosting with a domain</li>
-                    <li><i class="fas fa-check"></i> Free for one year</li>
+                    <li><i class="fas fa-check"></i> Managed infrastructure &amp; SSL</li>
                     <li><i class="fas fa-check"></i> Admin control panel</li>
                     <li><i class="fas fa-check"></i> Custom integrations</li>
                 </ul>
-                <a href="#register" id="platinumRegisterBtn" class="btn-register js-open-register" data-register-plan="platinum" data-register-amount="<?php echo (float)($plans['platinum']['amount'] ?? $platinumTestPriceYear1); ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Register</a>
+                <a href="#register" id="platinumRegisterBtn" class="btn-register js-open-register" data-register-plan="platinum" data-register-amount="<?php echo (float)($plans['platinum']['amount'] ?? $platinumTestPriceYear1); ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Start Enterprise</a>
             </div>
         </div>
-    </section>
+            </div>
+        </section>
 
-    <section class="register-section register-section-hidden" id="register">
+        <section class="register-section register-section-hidden ratib-register-wrap" id="register">
         <div class="ratib-info">
             <h2><i class="fas fa-info-circle me-2 register-info-icon"></i>What is Ratib Program?</h2>
             <p>Ratib is a professional platform for recruitment agencies and companies in worker-sending countries. Manage candidates, contracts, and compliance in one place.</p>
@@ -501,7 +651,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
             <p class="subtitle">Request <?php echo htmlspecialchars($planLabel); ?> plan access<?php if ($planAmount): ?> — $<?php echo number_format($planAmount); ?><?php if ($years !== null): ?><?php if ((int)$years === 0): ?> per month<?php elseif ((int)$years > 0): ?> for <?php echo (int)$years; ?> year<?php echo (int)$years > 1 ? 's' : ''; ?><?php else: ?> setup<?php endif; ?><?php else: ?> setup<?php endif; ?><?php endif; ?>. We will review and contact you.</p>
             <div class="mb-3">
                 <label class="form-label">Choose Plan</label>
-                <p class="small mb-2 form-plan-hint"><i class="fas fa-info-circle me-1"></i>Select <strong>Gold</strong> or <strong>Platinum</strong> to see the payment summary for your plan.</p>
+                <p class="small mb-2 form-plan-hint"><i class="fas fa-info-circle me-1"></i>Select <strong>Gold (Business)</strong> or <strong>Platinum (Enterprise)</strong> to see the payment summary for your plan.</p>
                 <div class="d-flex gap-2 flex-wrap mb-2">
                     <button type="button" class="btn plan-btn-form plan-btn-pro" data-plan="pro" data-amount="" data-years="1"><i class="fas fa-star me-1"></i> Pro</button>
                     <button type="button" class="btn plan-btn-form plan-btn-gold" data-plan="gold" data-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-years="1"><i class="fas fa-crown me-1"></i> Gold <span class="promo-old">$<?php echo number_format((float)$goldListPriceYear1, 0); ?></span> <span class="promo-new">$<?php echo number_format((float)$goldTestPriceYear1, 0); ?></span></button>
@@ -546,7 +696,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                 <!-- When Pro selected: hint to choose Gold/Platinum for pricing summary -->
                 <div id="paymentBlockPlaceholder" class="mb-4 <?php echo ($plan !== 'pro' && $planAmount) ? 'is-hidden' : ''; ?>">
                     <div class="payment-placeholder-box">
-                        <i class="fas fa-receipt me-2 payment-placeholder-icon"></i><strong>Pricing summary</strong> — Select <strong>Gold</strong> or <strong>Platinum</strong> at the top of this form to see plan totals here before you submit.
+                        <i class="fas fa-receipt me-2 payment-placeholder-icon"></i><strong>Pricing summary</strong> — Select <strong>Business (Gold)</strong> or <strong>Enterprise (Platinum)</strong> at the top of this form to see plan totals here before you submit.
                     </div>
                 </div>
                 <!-- Payment block: always in DOM; shown only for Gold/Platinum (JS toggles visibility) -->
@@ -608,109 +758,103 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
         </div>
     </section>
 
-    <section class="pricing-section" id="hosting">
-        <h2><i class="fas fa-server me-2"></i>Hosting</h2>
-        <p class="home-centered-copy">We provide secure hosting for your agency portal. Each plan includes database hosting and SSL. Contact us for custom hosting needs.</p>
-    </section>
+        <section class="video-section ratib-video" id="video">
+            <div class="ratib-container">
+                <header class="ratib-section__head ratib-section__head--left">
+                    <p class="ratib-eyebrow">Demo</p>
+                    <h2 class="ratib-section__title">See RATIB in motion</h2>
+                    <p class="video-caption">Product walkthrough — recruitment workflows, tracking surfaces, and agency controls.</p>
+                </header>
+                <div class="video-wrap">
+                    <?php if ($videoExists): ?>
+                    <video controls preload="metadata" class="home-video-player">
+                        <source src="<?php echo htmlspecialchars($videoSrcRel, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
+                        Your browser does not support the video tag. <a href="<?php echo htmlspecialchars($videoSrcRel, ENT_QUOTES, 'UTF-8'); ?>">Download the video</a>.
+                    </video>
+                    <?php else: ?>
+                    <div class="video-fallback-box">
+                        <i class="fas fa-video-slash fa-3x mb-3"></i>
+                        <p>Add an MP4 to <code>assets/</code> — recommended name: <code>video.mp4</code></p>
+                        <p class="small mb-0">Any <strong>.mp4</strong> file in the <code>assets</code> folder will be picked up automatically.</p>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </section>
 
-    <section class="pricing-section" id="payment">
-        <h2><i class="fas fa-credit-card me-2"></i>Payment Methods</h2>
-        <p class="home-centered-copy home-centered-copy-tight">We coordinate payment after you register — bank transfer and other options are available once your request is reviewed.</p>
-        <p class="home-centered-note">Use the <strong>Register Your Agency</strong> form above to choose your plan and submit your details.</p>
-        <div class="payment-method-grid">
-            <div class="payment-method-card">
-                <i class="fas fa-university fa-3x mb-3 payment-method-icon"></i>
-                <h3 class="payment-method-title">Bank Transfer</h3>
-                <p class="payment-method-copy">Traditional bank transfer. Payment details provided after registration approval.</p>
-                <a href="#register" class="btn btn-outline-light home-bank-register-btn js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">
-                    <i class="fas fa-arrow-right me-2"></i>Register First (Pay Later)
+        <section class="ratib-final-cta" aria-labelledby="ratib-final-cta-title">
+            <div class="ratib-final-cta__bg" aria-hidden="true"></div>
+            <div class="ratib-container ratib-final-cta__inner">
+                <h2 id="ratib-final-cta-title" class="ratib-final-cta__title">Transform your recruitment operations</h2>
+                <p class="ratib-final-cta__sub">Deploy enterprise RATIB infrastructure for your agency network—tracking, automation, and revenue operations unified.</p>
+                <div class="ratib-final-cta__actions">
+                    <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">Start now</a>
+                    <a href="mailto:ratibsrar@gmail.com?subject=RATIB%20demo%20request" class="ratib-btn ratib-btn--outline ratib-btn--lg">Book demo</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="ratib-footer-enterprise" id="contact">
+        <div class="ratib-container ratib-footer-enterprise__grid">
+            <div class="ratib-footer-enterprise__brand">
+                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-footer-enterprise__logo">
+                    <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="RATIB" width="112" height="32">
                 </a>
+                <p>Enterprise recruitment operating system — multi-agency workforce intelligence, automation, and real-time tracking.</p>
+            </div>
+            <div class="ratib-footer-col">
+                <h4>Platform</h4>
+                <ul>
+                    <li><a href="#platform">Overview</a></li>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#tracking">Tracking</a></li>
+                    <li><a href="#programs">Pricing</a></li>
+                    <li><a href="#api">APIs</a></li>
+                </ul>
+            </div>
+            <div class="ratib-footer-col">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="#solutions">Solutions</a></li>
+                    <li><a href="#agencies">Agencies</a></li>
+                    <li><a href="#video">Demo</a></li>
+                    <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>">Customer portal</a></li>
+                </ul>
+            </div>
+            <div class="ratib-footer-col">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/login.php'); ?>">Support tickets</a></li>
+                    <li><a href="https://wa.me/966599863868" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
+                    <li><a href="tel:+966599863868">+966 59 986 3868</a></li>
+                </ul>
+            </div>
+            <div class="ratib-footer-col">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="#register">Service registration</a></li>
+                    <li><a href="mailto:ratibsrar@gmail.com">ratibsrar@gmail.com</a></li>
+                </ul>
+            </div>
+            <div class="ratib-footer-col ratib-footer-enterprise__infra">
+                <h4>Infrastructure</h4>
+                <p class="ratib-footer-enterprise__infra-copy">Managed cloud, TLS, isolated tenants, and compliance-oriented audit trails.</p>
+                <div class="ratib-footer-social">
+                    <a href="https://wa.me/966599863868" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    <a href="mailto:ratibsrar@gmail.com" aria-label="Email"><i class="fas fa-envelope"></i></a>
+                </div>
+                <div class="footer-subscribe ratib-footer-newsletter">
+                    <label class="ratib-footer-newsletter__label" for="footerEmail">Updates</label>
+                    <input type="email" placeholder="Work email" id="footerEmail" name="footer_email" autocomplete="email" aria-label="Email for newsletter">
+                    <button type="button" class="btn-sub" id="footerSubscribe">Subscribe</button>
+                </div>
             </div>
         </div>
-    </section>
-
-    <section class="support-highlight" id="support">
-        <div class="support-card">
-            <div class="support-card-left">
-                <h3><i class="fas fa-headset me-2"></i>Technical Support</h3>
-                <p><i class="fas fa-phone-alt me-2 support-contact-icon"></i><a href="tel:+966599863868">+966 59 986 3868</a></p>
-                <p><i class="fas fa-map-marker-alt me-2 support-contact-icon"></i> Saudi Arabia/Riyadh</p>
-                <ul class="support-features">
-                    <li><i class="fas fa-check-circle"></i> Fast response</li>
-                    <li><i class="fas fa-check-circle"></i> Solves problems from the roots</li>
-                    <li><i class="fas fa-check-circle"></i> 15+ years combined experience</li>
-                </ul>
-            </div>
-            <a href="#contact" class="btn-support"><i class="fas fa-envelope me-2"></i>Contact Us</a>
-        </div>
-    </section>
-
-    <section class="contact-options" id="contact-options">
-        <h2><i class="fas fa-comments me-2"></i>Get in Touch</h2>
-        <div class="contact-options-row">
-            <div class="contact-option-card whatsapp">
-                <div class="opt-icon"><i class="fab fa-whatsapp"></i></div>
-                <h3>Start Instant Chat</h3>
-                <p>Need a quick reply and faster response? Talk to us via WhatsApp.</p>
-                <a href="https://wa.me/966599863868" target="_blank" rel="noopener noreferrer">Chat on WhatsApp</a>
-            </div>
-            <div class="contact-option-card ticket">
-                <div class="opt-icon"><i class="fas fa-life-ring"></i></div>
-                <h3>Open Ticket</h3>
-                <p>Have an inquiry? Open a ticket and we will reply to you as soon as possible.</p>
-                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>">Customer Portal</a>
-                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" style="margin-left:8px;">Partner Login</a>
-            </div>
-            <div class="contact-option-card email">
-                <div class="opt-icon"><i class="fas fa-envelope"></i></div>
-                <h3>Contact Us</h3>
-                <p>Send us an email and one of our sales staff will reply to you as soon as possible.</p>
-                <a href="mailto:ratibsrar@gmail.com">ratibsrar@gmail.com</a>
-            </div>
-        </div>
-    </section>
-
-    <section class="pricing-section" id="contact">
-        <h2><i class="fas fa-envelope me-2"></i>Contact Us</h2>
-        <p class="home-centered-copy">Phone: <a href="tel:+966599863868" class="contact-accent-link">+966 59 986 3868</a> &nbsp;|&nbsp; WhatsApp: <a href="https://wa.me/966599863868" target="_blank" rel="noopener noreferrer" class="contact-whatsapp-link">Chat now</a> &nbsp;|&nbsp; Email: <a href="mailto:ratibsrar@gmail.com" class="contact-accent-link">ratibsrar@gmail.com</a>. You can also use the registration form above to request a callback.</p>
-    </section>
-
-    <footer class="main-footer">
-        <div class="footer-grid">
-            <div class="footer-brand">
-                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="logo">
-                    <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="Ratib Company — Ratib Software Foundation for Information Technology">
-                </a>
-                <p>RATIB — Recruitment Automation &amp; Tracking Intelligence Base</p>
-            </div>
-            <div class="footer-col">
-                <h4>Quick Links</h4>
-                <ul>
-                    <li><a href="#payment">Payment Methods</a></li>
-                    <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>">Customer Portal</a></li>
-                    <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>">Partner Login</a></li>
-                    <li><a href="#register" class="js-scroll-register">Register New Account</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h4>Technical Support</h4>
-                <ul>
-                    <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/login.php'); ?>">Support Tickets</a></li>
-                    <li><a href="#support">Contact Us</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h4>Our Services</h4>
-                <ul>
-                    <li><a href="#programs">Ratib Recruitment Program</a></li>
-                    <li><a href="#hosting">Shared Hosting</a></li>
-                </ul>
-            </div>
-            <div class="footer-col footer-subscribe">
-                <h4>Newsletter</h4>
-                <input type="email" placeholder="Enter your email" id="footerEmail" aria-label="Email for newsletter">
-                <button type="button" class="btn-sub" id="footerSubscribe">Subscribe</button>
-                <p>Subscribe to our mailing list for exclusive offers.</p>
+        <div class="ratib-footer-enterprise__bottom">
+            <div class="ratib-container ratib-footer-enterprise__bottom-inner">
+                <span>&copy; <?php echo date('Y'); ?> RATIB — Ratib Software Foundation for Information Technology</span>
+                <span class="ratib-footer-enterprise__loc"><i class="fas fa-location-dot" aria-hidden="true"></i> Riyadh, Saudi Arabia</span>
             </div>
         </div>
     </footer>
