@@ -317,13 +317,41 @@ if (!function_exists('ratib_site_content_home_flat')) {
      */
     function ratib_site_content_home_flat(): array
     {
+        static $memo = null;
+        if ($memo !== null) {
+            return $memo;
+        }
         $defaults = ratib_site_content_defaults_home();
+
+        // Prefer JSON snapshot (written on CMS save) so public pages see edits without SELECT on control DB.
+        if (function_exists('ratib_site_content_public_cache_path')) {
+            $path = ratib_site_content_public_cache_path();
+            if (is_readable($path)) {
+                $raw = @file_get_contents($path);
+                if ($raw !== false && $raw !== '') {
+                    $cached = json_decode($raw, true);
+                    if (is_array($cached)) {
+                        $out = $defaults;
+                        foreach ($cached as $key => $val) {
+                            if (array_key_exists($key, $defaults)) {
+                                $out[$key] = (string) $val;
+                            }
+                        }
+                        $memo = $out;
+
+                        return $memo;
+                    }
+                }
+            }
+        }
+
         $out = [];
         foreach ($defaults as $key => $defaultVal) {
             $out[$key] = ratib_site_content_get($key, $defaultVal);
         }
+        $memo = $out;
 
-        return $out;
+        return $memo;
     }
 }
 

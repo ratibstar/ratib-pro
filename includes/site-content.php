@@ -129,7 +129,68 @@ if (!function_exists('ratib_site_content_get')) {
     }
 }
 
+if (!function_exists('ratib_site_content_public_cache_path')) {
+    /**
+     * Writable JSON snapshot of homepage CMS keys for public PHP when MySQL cannot read the control DB.
+     */
+    function ratib_site_content_public_cache_path(): string
+    {
+        return dirname(__DIR__) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'ratib_site_content_home.json';
+    }
+}
+
+if (!function_exists('ratib_site_content_phone_digits_for_links')) {
+    /**
+     * Strip non-digits from display text for tel:/wa.me. Fallback when empty or too short.
+     */
+    function ratib_site_content_phone_digits_for_links(string $display, string $fallbackDigits = '966599863868'): string
+    {
+        $d = preg_replace('/\D+/', '', $display);
+
+        return strlen($d) >= 8 ? $d : $fallbackDigits;
+    }
+}
+
 require_once __DIR__ . '/site-content-home-data.php';
+
+if (!function_exists('ratib_site_content_export_public_cache')) {
+    /**
+     * Call after saving in control panel: writes storage/ratib_site_content_home.json for public site reads.
+     */
+    function ratib_site_content_export_public_cache(): bool
+    {
+        if (!function_exists('ratib_site_content_defaults_home')) {
+            return false;
+        }
+        $defaults = ratib_site_content_defaults_home();
+        $out = [];
+        foreach ($defaults as $key => $def) {
+            $out[$key] = ratib_site_content_get($key, $def);
+        }
+        $path = ratib_site_content_public_cache_path();
+        $dir = dirname($path);
+        if (!is_dir($dir)) {
+            if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
+                error_log('ratib_site_content_export_public_cache: cannot create directory ' . $dir);
+
+                return false;
+            }
+        }
+        $json = json_encode($out, JSON_UNESCAPED_UNICODE);
+        if ($json === false) {
+            error_log('ratib_site_content_export_public_cache: json_encode failed');
+
+            return false;
+        }
+        if (@file_put_contents($path, $json, LOCK_EX) === false) {
+            error_log('ratib_site_content_export_public_cache: cannot write ' . $path);
+
+            return false;
+        }
+
+        return true;
+    }
+}
 
 if (!function_exists('ratib_site_content_defaults_public_home')) {
     /** @return array<string, string> */

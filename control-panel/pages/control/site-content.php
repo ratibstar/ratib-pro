@@ -54,6 +54,7 @@ if ($ctrl instanceof mysqli) {
 $allowedKeys = array_keys(ratib_site_content_defaults_home());
 $flashOk = false;
 $flashErr = '';
+$flashCacheWarn = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_save'])) {
     requireControlPermission('edit_control_system_settings');
@@ -86,6 +87,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
             }
             $stmt->close();
             $flashOk = true;
+            if ($flashOk && function_exists('ratib_site_content_export_public_cache')) {
+                if (!ratib_site_content_export_public_cache()) {
+                    $flashCacheWarn = 'Saved to the database, but the public site cache file could not be written. Ensure the web server can create/write <code>storage/ratib_site_content_home.json</code> (check <code>storage/</code> permissions).';
+                }
+            }
         } else {
             $flashErr = 'Could not prepare save statement.';
         }
@@ -123,6 +129,9 @@ startControlLayout('Public site content', [$editorCss], []);
 <?php endif; ?>
 <?php if ($flashErr !== ''): ?>
     <div class="alert alert-danger"><?php echo htmlspecialchars($flashErr, ENT_QUOTES, 'UTF-8'); ?></div>
+<?php endif; ?>
+<?php if ($flashCacheWarn !== ''): ?>
+    <div class="alert alert-warning"><?php echo $flashCacheWarn; ?></div>
 <?php endif; ?>
 
     <form method="post" action="" class="ratib-site-content-form">

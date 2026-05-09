@@ -15,6 +15,8 @@ build/
 
 # Runtime-selected upload root (server-specific; do not commit)
 storage/.ratib_effective_upload_root
+# Homepage CMS snapshot (generated on control-panel save; server-local)
+storage/ratib_site_content_home.json
 
 # Logs, cache, temp
 logs/

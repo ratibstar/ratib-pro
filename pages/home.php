@@ -262,6 +262,9 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
 
 require_once __DIR__ . '/../includes/site-content.php';
 $ratibHome = ratib_site_content_home_flat();
+$ratibPhoneDigits = function_exists('ratib_site_content_phone_digits_for_links')
+    ? ratib_site_content_phone_digits_for_links($ratibHome['home.topbar.phone_display'] ?? '')
+    : (preg_replace('/\D+/', '', (string) ($ratibHome['home.topbar.phone_display'] ?? '')) ?: '966599863868');
 $ratibPricingStarterLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.starter.features'] ?? '');
 $ratibPricingGoldLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.gold.features'] ?? '');
 $ratibPricingPlatinumLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.platinum.features'] ?? '');
@@ -301,8 +304,8 @@ $ratibProgSrc = [
     <div class="ratib-topbar">
         <div class="ratib-topbar__inner ratib-container">
             <div class="ratib-topbar__left">
-                <a href="tel:+966599863868" class="ratib-topbar__link"><i class="fas fa-phone-alt" aria-hidden="true"></i> <?php echo htmlspecialchars($ratibHome['home.topbar.phone_display'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                <a href="https://wa.me/966599863868" target="_blank" rel="noopener noreferrer" class="ratib-topbar__wa" title="WhatsApp">
+                <a href="tel:+<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-topbar__link"><i class="fas fa-phone-alt" aria-hidden="true"></i> <?php echo htmlspecialchars($ratibHome['home.topbar.phone_display'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="https://wa.me/<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="ratib-topbar__wa" title="WhatsApp">
                     <span class="ratib-live-dot" aria-hidden="true"></span>
                     <?php echo htmlspecialchars($ratibHome['home.topbar.wa_label'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
                 </a>
@@ -1001,8 +1004,8 @@ $ratibProgSrc = [
                 <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.support'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
                 <ul>
                     <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/login.php'); ?>">Support tickets</a></li>
-                    <li><a href="https://wa.me/966599863868" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
-                    <li><a href="tel:+966599863868"><?php echo htmlspecialchars($ratibHome['home.topbar.phone_display'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="https://wa.me/<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
+                    <li><a href="tel:+<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.topbar.phone_display'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
                 </ul>
             </div>
             <div class="ratib-footer-col">
@@ -1016,7 +1019,7 @@ $ratibProgSrc = [
                 <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.infra'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
                 <p class="ratib-footer-enterprise__infra-copy"><?php echo htmlspecialchars($ratibHome['home.footer.infra.copy'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 <div class="ratib-footer-social">
-                    <a href="https://wa.me/966599863868" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    <a href="https://wa.me/<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     <a href="mailto:ratibsrar@gmail.com" aria-label="Email"><i class="fas fa-envelope"></i></a>
                 </div>
                 <div class="footer-subscribe ratib-footer-newsletter">
