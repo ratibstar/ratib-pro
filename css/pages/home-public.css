@@ -169,6 +169,12 @@ body.ratib-saas-home {
   gap: 0.35rem;
 }
 
+/* Isolate phone display from adjacent digit runs (Unicode bidi; Arabic OS / mixed numerals). */
+.ratib-topbar__phone-text {
+  unicode-bidi: isolate;
+  direction: ltr;
+}
+
 .ratib-topbar__link:hover {
   color: var(--r-text);
 }

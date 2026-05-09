@@ -840,14 +840,19 @@
     }
 
     function tickAgencyCounter() {
-        document.querySelectorAll('.ratib-live-counter').forEach(function (el) {
-            var base = parseInt(el.getAttribute('data-ratib-counter'), 10);
-            if (!isFinite(base)) {
-                return;
-            }
-            var n = base + rnd(-2, 2);
-            el.textContent = String(n);
-        });
+        var el = document.getElementById('ratib-topbar-nodes-counter');
+        if (!el || !el.classList.contains('ratib-live-counter')) {
+            return;
+        }
+        var base = parseInt(el.getAttribute('data-ratib-counter'), 10);
+        if (!isFinite(base)) {
+            return;
+        }
+        var n = base + rnd(-2, 2);
+        if (n < 0) {
+            n = 0;
+        }
+        el.textContent = String(n);
     }
 
     function tickIntJitter() {

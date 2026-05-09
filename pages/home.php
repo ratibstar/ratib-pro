@@ -265,6 +265,13 @@ $ratibHome = ratib_site_content_home_flat();
 $ratibPhoneDigits = function_exists('ratib_site_content_phone_digits_for_links')
     ? ratib_site_content_phone_digits_for_links($ratibHome['home.topbar.phone_display'] ?? '')
     : (preg_replace('/\D+/', '', (string) ($ratibHome['home.topbar.phone_display'] ?? '')) ?: '966599863868');
+$ratibTopbarNodesDigits = preg_replace('/\D/', '', (string) ($ratibHome['home.topbar.nodes_count'] ?? '247'));
+$ratibTopbarNodesNum = $ratibTopbarNodesDigits !== '' ? (int) $ratibTopbarNodesDigits : 247;
+// Avoid billion-scale “counts” (usually a pasted phone fragment) confusing the top bar next to the phone.
+if ($ratibTopbarNodesNum > 999999 || strlen($ratibTopbarNodesDigits) > 6) {
+    $ratibTopbarNodesNum = 247;
+    $ratibTopbarNodesDigits = '247';
+}
 $ratibPricingStarterLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.starter.features'] ?? '');
 $ratibPricingGoldLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.gold.features'] ?? '');
 $ratibPricingPlatinumLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.platinum.features'] ?? '');
@@ -304,14 +311,14 @@ $ratibProgSrc = [
     <div class="ratib-topbar">
         <div class="ratib-topbar__inner ratib-container">
             <div class="ratib-topbar__left">
-                <a href="tel:+<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-topbar__link"><i class="fas fa-phone-alt" aria-hidden="true"></i> <?php echo htmlspecialchars($ratibHome['home.topbar.phone_display'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="tel:+<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-topbar__link" dir="ltr"><i class="fas fa-phone-alt" aria-hidden="true"></i> <span class="ratib-topbar__phone-text"><?php echo htmlspecialchars($ratibHome['home.topbar.phone_display'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                 <a href="https://wa.me/<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="ratib-topbar__wa" title="WhatsApp">
                     <span class="ratib-live-dot" aria-hidden="true"></span>
                     <?php echo htmlspecialchars($ratibHome['home.topbar.wa_label'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
                 </a>
             </div>
             <div class="ratib-topbar__right">
-                <span class="ratib-topbar__ops" aria-hidden="true"><span class="ratib-mono-tag"><?php echo htmlspecialchars($ratibHome['home.topbar.tls_label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><span class="ratib-topbar__ops-sep">·</span><span class="ratib-mono-tag"><span class="ratib-live-counter" data-ratib-counter="<?php echo htmlspecialchars(preg_replace('/\D/', '', (string) ($ratibHome['home.topbar.nodes_count'] ?? '247')), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.topbar.nodes_count'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span> <?php echo htmlspecialchars($ratibHome['home.topbar.nodes_suffix'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></span>
+                <span class="ratib-topbar__ops" aria-hidden="true" dir="ltr"><span class="ratib-mono-tag"><?php echo htmlspecialchars($ratibHome['home.topbar.tls_label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><span class="ratib-topbar__ops-sep">·</span><span class="ratib-mono-tag"><span id="ratib-topbar-nodes-counter" class="ratib-live-counter" data-ratib-counter="<?php echo htmlspecialchars($ratibTopbarNodesDigits, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) $ratibTopbarNodesNum, ENT_QUOTES, 'UTF-8'); ?></span> <?php echo htmlspecialchars($ratibHome['home.topbar.nodes_suffix'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></span>
                 <a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>" class="ratib-topbar__link"><?php echo htmlspecialchars($ratibHome['home.topbar.client_login'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 <span class="ratib-topbar__lang" role="group" aria-label="Language">
                     <span class="ratib-lang ratib-lang--active">EN</span>
@@ -1005,7 +1012,7 @@ $ratibProgSrc = [
                 <ul>
                     <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/login.php'); ?>">Support tickets</a></li>
                     <li><a href="https://wa.me/<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
-                    <li><a href="tel:+<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.topbar.phone_display'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="tel:+<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" dir="ltr"><span class="ratib-topbar__phone-text"><?php echo htmlspecialchars($ratibHome['home.topbar.phone_display'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a></li>
                 </ul>
             </div>
             <div class="ratib-footer-col">
