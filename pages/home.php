@@ -295,7 +295,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
             <a href="#payment" class="nav-link">Payment Methods</a>
             <a href="#support" class="nav-link">Technical Support</a>
             <a href="#contact-options" class="nav-link">Contact Options</a>
-            <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" class="nav-link">Partner Login</a>
+            <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" class="btn-partner-login"><i class="fas fa-right-to-bracket"></i> Partner Login</a>
             <a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>" class="btn-client"><i class="fas fa-user"></i> Customer Portal</a>
         </div>
     </header>

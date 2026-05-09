@@ -315,6 +315,22 @@ html {
   background: #e6b80a;
   color: #1a252f;
 }
+.btn-partner-login {
+  background: #5dade2;
+  color: #0f172a;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.btn-partner-login:hover {
+  background: #4a9bd2;
+  color: #0f172a;
+}
 .live-status {
   display: flex;
   align-items: center;
