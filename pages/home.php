@@ -262,19 +262,30 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
 
 require_once __DIR__ . '/../includes/site-content.php';
 $ratibHome = ratib_site_content_home_flat();
-// Top bar: always re-read from DB when possible so phone/wa never stick on baked defaults or stale JSON blobs.
-if (function_exists('ratib_site_content_get') && function_exists('ratib_site_content_defaults_home')) {
+// Top bar: one DB round-trip for all keys so phone/WA/nodes stay in sync (no mixed JSON vs row timing).
+$ratibTopbarKeys = [
+    'home.topbar.phone_display',
+    'home.topbar.wa_label',
+    'home.topbar.tls_label',
+    'home.topbar.nodes_count',
+    'home.topbar.nodes_suffix',
+    'home.topbar.client_login',
+];
+if (function_exists('ratib_site_content_fetch_key_values') && function_exists('ratib_site_content_defaults_home')) {
     $ratibDef = ratib_site_content_defaults_home();
-    foreach (
-        [
-            'home.topbar.phone_display',
-            'home.topbar.wa_label',
-            'home.topbar.tls_label',
-            'home.topbar.nodes_count',
-            'home.topbar.nodes_suffix',
-            'home.topbar.client_login',
-        ] as $ratibTbKey
-    ) {
+    $liveTopbar = ratib_site_content_fetch_key_values($ratibTopbarKeys);
+    foreach ($ratibTopbarKeys as $ratibTbKey) {
+        if (!array_key_exists($ratibTbKey, $ratibDef)) {
+            continue;
+        }
+        $ratibFallback = $ratibHome[$ratibTbKey] ?? $ratibDef[$ratibTbKey];
+        $ratibHome[$ratibTbKey] = array_key_exists($ratibTbKey, $liveTopbar)
+            ? $liveTopbar[$ratibTbKey]
+            : $ratibFallback;
+    }
+} elseif (function_exists('ratib_site_content_get') && function_exists('ratib_site_content_defaults_home')) {
+    $ratibDef = ratib_site_content_defaults_home();
+    foreach ($ratibTopbarKeys as $ratibTbKey) {
         if (!array_key_exists($ratibTbKey, $ratibDef)) {
             continue;
         }

@@ -250,6 +250,55 @@ if (!function_exists('ratib_site_content_fetch_value_by_key')) {
     }
 }
 
+if (!function_exists('ratib_site_content_fetch_key_values')) {
+    /**
+     * Batch load key => value in one SELECT so top-of-page fields (phone, WhatsApp, etc.) cannot disagree
+     * with each other due to separate queries or timing.
+     *
+     * @param list<string> $keys
+     *
+     * @return array<string, string> Only keys that exist in the table (missing keys omitted).
+     */
+    function ratib_site_content_fetch_key_values(array $keys): array
+    {
+        $clean = [];
+        foreach ($keys as $k) {
+            $k = (string) $k;
+            if (ratib_site_content_key_allowed($k)) {
+                $clean[$k] = true;
+            }
+        }
+        $uniq = array_keys($clean);
+        if ($uniq === []) {
+            return [];
+        }
+        $conn = ratib_site_content_db();
+        if (!$conn) {
+            return [];
+        }
+        $parts = [];
+        foreach ($uniq as $k) {
+            $parts[] = "'" . $conn->real_escape_string($k) . "'";
+        }
+        $sql = 'SELECT content_key, content_value FROM ratib_site_content WHERE content_key IN (' . implode(',', $parts) . ')';
+        $res = $conn->query($sql);
+        if ($res === false) {
+            error_log('ratib_site_content_fetch_key_values: query failed: ' . $conn->error);
+
+            return [];
+        }
+        $out = [];
+        while ($row = $res->fetch_assoc()) {
+            if (isset($row['content_key'], $row['content_value'])) {
+                $out[(string) $row['content_key']] = (string) $row['content_value'];
+            }
+        }
+        $res->free();
+
+        return $out;
+    }
+}
+
 if (!function_exists('ratib_site_content_get')) {
     function ratib_site_content_get(string $key, string $default = ''): string
     {
