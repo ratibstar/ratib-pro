@@ -295,6 +295,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
             <a href="#payment" class="nav-link">Payment Methods</a>
             <a href="#support" class="nav-link">Technical Support</a>
             <a href="#contact-options" class="nav-link">Contact Options</a>
+            <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" class="nav-link">Partner Login</a>
             <a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>" class="btn-client"><i class="fas fa-user"></i> Customer Portal</a>
         </div>
     </header>
@@ -658,6 +659,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                 <h3>Open Ticket</h3>
                 <p>Have an inquiry? Open a ticket and we will reply to you as soon as possible.</p>
                 <a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>">Customer Portal</a>
+                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" style="margin-left:8px;">Partner Login</a>
             </div>
             <div class="contact-option-card email">
                 <div class="opt-icon"><i class="fas fa-envelope"></i></div>
@@ -686,6 +688,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                 <ul>
                     <li><a href="#payment">Payment Methods</a></li>
                     <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>">Customer Portal</a></li>
+                    <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>">Partner Login</a></li>
                     <li><a href="#register" class="js-scroll-register">Register New Account</a></li>
                 </ul>
             </div>
