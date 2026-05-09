@@ -358,8 +358,8 @@ if (!function_exists('ratib_site_content_public_cache_path_for_read')) {
 
 if (!function_exists('ratib_site_content_normalize_sa_mobile_digits')) {
     /**
-     * Saudi mobile: international form is 966 + 9 digits (12 total). Strip accidental trailing junk
-     * when editors paste merged numbers or cache rows pick up extra digits.
+     * Saudi mobile: collapse accidental mega-pastes to 966 + 9 digits (12 total).
+     * Used only for unusually long digit strings — not for normal CMS edits.
      */
     function ratib_site_content_normalize_sa_mobile_digits(string $digitsOnly): string
     {
@@ -382,13 +382,20 @@ if (!function_exists('ratib_site_content_normalize_sa_mobile_digits')) {
 
 if (!function_exists('ratib_site_content_phone_digits_for_links')) {
     /**
-     * Digits for tel:/wa.me — normalized for 966 mobiles so junk suffixes are not dialled.
+     * Digits for tel:/wa.me — uses what you saved (digits only). Extra formatting is stripped;
+     * we only collapse absurdly long pasted strings so tel:/wa.me stay bounded.
      */
     function ratib_site_content_phone_digits_for_links(string $display, string $fallbackDigits = '966599863868'): string
     {
-        $d = ratib_site_content_normalize_sa_mobile_digits(preg_replace('/\D+/', '', $display));
+        $d = preg_replace('/\D+/', '', $display);
+        if (strlen($d) < 8) {
+            return $fallbackDigits;
+        }
+        if (strlen($d) > 18) {
+            $d = ratib_site_content_normalize_sa_mobile_digits($d);
+        }
 
-        return strlen($d) >= 8 ? $d : $fallbackDigits;
+        return $d;
     }
 }
 
