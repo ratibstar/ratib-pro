@@ -137,19 +137,28 @@ if (!function_exists('ratib_site_content_db_try_mysqli')) {
 if (!function_exists('ratib_site_content_db')) {
     /**
      * Connection order (important):
+     * 0) Control panel: always use $GLOBALS['control_conn'] — same mysqli as INSERT/UPDATE on site-content.php.
+     *    Otherwise the editor reads via ratib_site_content_get() from a different connection than Save and looks "disconnected".
      * 1) Dedicated reader when RATIB_SITE_CONTENT_DB_HOST is set.
      * 2) get_control_lookup_conn() on SINGLE_URL_MODE — same link as agency/control lookups.
-     * 3) App DB_USER → CONTROL_PANEL_DB_NAME (before merged credentials): often has SELECT on ratib_site_content
-     *    when CONTROL_PANEL_DB_USER in env is wrong/stale — previously step 3 failed and step 4 never helped perception.
-     * 4) Merged credentials (CONTROL_PANEL_DB_USER || DB_USER) — override installs that use separate CP logins.
+     * 3) App DB_USER → CONTROL_PANEL_DB_NAME (before merged credentials).
+     * 4) Merged credentials (CONTROL_PANEL_DB_USER || DB_USER).
      */
     function ratib_site_content_db(): ?mysqli
     {
         static $conn = null;
-        // Cache only successful mysqli handles. Do not use a separate "resolved" flag — that would cache
-        // failure across requests and block reads until the PHP-FPM worker restarts.
-        // Note: do not ping()/close() here; ratib_site_content_db may reuse get_control_lookup_conn()'s link.
-        if ($conn instanceof mysqli) {
+
+        if (defined('IS_CONTROL_PANEL') && IS_CONTROL_PANEL) {
+            $cp = $GLOBALS['control_conn'] ?? null;
+            if ($cp instanceof mysqli) {
+                $conn = $cp;
+
+                return $cp;
+            }
+            // Panel without control_conn: do not reuse a cached public-site connection from another request.
+            $conn = null;
+        } elseif ($conn instanceof mysqli) {
+            // Public / CLI: reuse pooled handle when valid.
             return $conn;
         }
 
