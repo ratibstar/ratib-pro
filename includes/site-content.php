@@ -514,17 +514,29 @@ if (!function_exists('ratib_site_content_public_cache_path')) {
 
 if (!function_exists('ratib_site_content_public_cache_path_for_read')) {
     /**
-     * First existing, readable cache file, or null.
+     * Best readable cache file: newest by mtime among all candidates.
+     * Previously the first path in the list won even when an older file existed — public could stay on stale
+     * phone/copy while the CMS had saved to another writable directory later in the list.
      */
     function ratib_site_content_public_cache_path_for_read(): ?string
     {
+        $bestPath = null;
+        $bestMtime = -1;
         foreach (ratib_site_content_cache_file_candidates() as $path) {
-            if (is_readable($path)) {
-                return $path;
+            if ($path === '' || !is_file($path) || !is_readable($path)) {
+                continue;
+            }
+            $mt = @filemtime($path);
+            if ($mt === false) {
+                continue;
+            }
+            if ($mt > $bestMtime) {
+                $bestMtime = $mt;
+                $bestPath = $path;
             }
         }
 
-        return null;
+        return $bestPath;
     }
 }
 
@@ -575,8 +587,8 @@ require_once __DIR__ . '/site-content-home-data.php';
 
 if (!function_exists('ratib_site_content_home_flat_from_db')) {
     /**
-     * Live ratib_site_content rows for homepage keys (one SELECT per key — works on every host).
-     * Returns null only when the control DB connection is unavailable (then caller uses caches).
+     * Live ratib_site_content rows for homepage keys — single SELECT … IN (…) via ratib_site_content_fetch_key_values.
+     * Returns null only when the marketing DB connection is unavailable (then caller uses caches).
      *
      * @param array<string, string> $defaults
      *
@@ -590,9 +602,19 @@ if (!function_exists('ratib_site_content_home_flat_from_db')) {
         if ($defaults === []) {
             return [];
         }
+        if (!function_exists('ratib_site_content_fetch_key_values')) {
+            $out = [];
+            foreach ($defaults as $key => $def) {
+                $out[$key] = ratib_site_content_get($key, $def);
+            }
+
+            return $out;
+        }
+        $keys = array_keys($defaults);
+        $rows = ratib_site_content_fetch_key_values($keys);
         $out = [];
         foreach ($defaults as $key => $def) {
-            $out[$key] = ratib_site_content_get($key, $def);
+            $out[$key] = array_key_exists($key, $rows) ? $rows[$key] : $def;
         }
 
         return $out;
@@ -610,9 +632,13 @@ if (!function_exists('ratib_site_content_export_public_cache')) {
             return false;
         }
         $defaults = ratib_site_content_defaults_home();
+        $keys = array_keys($defaults);
+        $rows = function_exists('ratib_site_content_fetch_key_values')
+            ? ratib_site_content_fetch_key_values($keys)
+            : [];
         $out = [];
         foreach ($defaults as $key => $def) {
-            $out[$key] = ratib_site_content_get($key, $def);
+            $out[$key] = array_key_exists($key, $rows) ? $rows[$key] : ratib_site_content_get($key, $def);
         }
         $json = json_encode($out, JSON_UNESCAPED_UNICODE);
         if ($json === false) {

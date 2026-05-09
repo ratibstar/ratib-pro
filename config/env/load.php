@@ -65,6 +65,77 @@ foreach ($env_candidates as $safe) {
         break;
     }
 }
+
+/*
+ * Project-root .env is NOT fully merged here — only bridge keys for CMS ↔ public homepage (ratib_site_content).
+ * config/env.php merges NGENIUS_* from .env only; without this step, RATIB_SITE_CONTENT_* in .env never reached getenv()
+ * and the live site kept falling back to JSON/defaults ("not connected" forever).
+ */
+if (!function_exists('ratib_env_load_bridge_dotenv')) {
+    /**
+     * @param string $path Absolute path to .env
+     */
+    function ratib_env_load_bridge_dotenv(string $path): void
+    {
+        if ($path === '' || !is_readable($path)) {
+            return;
+        }
+        $allowed = [
+            'CONTROL_PANEL_DB_NAME',
+            'CONTROL_PANEL_DB_USER',
+            'CONTROL_PANEL_DB_PASS',
+            'RATIB_SITE_CONTENT_DB_HOST',
+            'RATIB_SITE_CONTENT_DB_PORT',
+            'RATIB_SITE_CONTENT_DB_USER',
+            'RATIB_SITE_CONTENT_DB_PASS',
+            'RATIB_SITE_CONTENT_DB_NAME',
+            'RATIB_SITE_CONTENT_CACHE_FILE',
+            'RATIB_SITE_CONTENT_DIAG_SECRET',
+        ];
+        $lines = @file($path, FILE_IGNORE_NEW_LINES);
+        if (!is_array($lines)) {
+            return;
+        }
+        foreach ($lines as $line) {
+            $line = trim((string) $line);
+            if ($line === '' || $line[0] === '#') {
+                continue;
+            }
+            if (strncasecmp($line, 'export ', 7) === 0) {
+                $line = trim(substr($line, 7));
+            }
+            if (strpos($line, '=') === false) {
+                continue;
+            }
+            $parts = explode('=', $line, 2);
+            $key = trim((string) ($parts[0] ?? ''));
+            $val = trim((string) ($parts[1] ?? ''));
+            if ($key === '' || !in_array($key, $allowed, true)) {
+                continue;
+            }
+            $len = strlen($val);
+            if ($len >= 2) {
+                $q0 = $val[0];
+                $q1 = $val[$len - 1];
+                if (($q0 === '"' && $q1 === '"') || ($q0 === "'" && $q1 === "'")) {
+                    $val = substr($val, 1, -1);
+                }
+            }
+            putenv($key . '=' . $val);
+            $_ENV[$key] = $val;
+            $_SERVER[$key] = $val;
+        }
+    }
+}
+$ratibRoot = dirname(dirname($env_dir));
+ratib_env_load_bridge_dotenv($ratibRoot . DIRECTORY_SEPARATOR . '.env');
+if (!empty($_SERVER['DOCUMENT_ROOT'])) {
+    $ratibDoc = rtrim((string) $_SERVER['DOCUMENT_ROOT'], "/\\");
+    if ($ratibDoc !== '') {
+        ratib_env_load_bridge_dotenv($ratibDoc . DIRECTORY_SEPARATOR . '.env');
+    }
+}
+
 if ($env_file !== null) {
     require $env_file;
 } else {
