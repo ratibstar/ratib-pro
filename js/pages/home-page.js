@@ -817,4 +817,96 @@
     });
 })();
 
+/** Phase 3: subtle live telemetry (timestamps, sync age, micro jitter) — illustrative only. */
+(function ratibHomeLiveTelemetry() {
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+        return;
+    }
+
+    function rnd(min, max) {
+        return min + Math.floor(Math.random() * (max - min + 1));
+    }
+
+    function tickSyncAge() {
+        var m = rnd(1, 4);
+        var txt = m + 'm';
+        document.querySelectorAll('.ratib-live-sync-age').forEach(function (el) {
+            el.textContent = txt;
+        });
+        document.querySelectorAll('.ratib-live-ping').forEach(function (el) {
+            el.textContent = txt;
+        });
+    }
+
+    function tickAgencyCounter() {
+        document.querySelectorAll('.ratib-live-counter').forEach(function (el) {
+            var base = parseInt(el.getAttribute('data-ratib-counter'), 10);
+            if (!isFinite(base)) {
+                return;
+            }
+            var n = base + rnd(-2, 2);
+            el.textContent = String(n);
+        });
+    }
+
+    function tickIntJitter() {
+        document.querySelectorAll('[data-ratib-jitter]').forEach(function (el) {
+            var base = parseInt(el.getAttribute('data-ratib-jitter'), 10);
+            if (!isFinite(base)) {
+                return;
+            }
+            var n = base + rnd(-3, 3);
+            el.textContent = n.toLocaleString();
+        });
+    }
+
+    function tickPctJitter() {
+        document.querySelectorAll('[data-ratib-jitter-pct]').forEach(function (el) {
+            var base = parseFloat(el.getAttribute('data-ratib-jitter-pct'));
+            if (!isFinite(base)) {
+                return;
+            }
+            var v = base + (Math.random() * 0.12 - 0.06);
+            if (v < 90) {
+                v = 90;
+            }
+            if (v > 99.95) {
+                v = 99.95;
+            }
+            el.textContent = v.toFixed(1) + '%';
+        });
+    }
+
+    function tickEventClock() {
+        var el = document.querySelector('.ratib-live-clock');
+        if (!el) {
+            return;
+        }
+        function pad(x) {
+            return x < 10 ? '0' + x : String(x);
+        }
+        function run() {
+            var d = new Date();
+            el.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+            try {
+                el.setAttribute('datetime', d.toISOString());
+            } catch (e) {}
+        }
+        run();
+        setInterval(run, 1000);
+    }
+
+    tickSyncAge();
+    tickAgencyCounter();
+    tickIntJitter();
+    tickPctJitter();
+    tickEventClock();
+
+    setInterval(tickSyncAge, 48000 + rnd(0, 12000));
+    setInterval(tickAgencyCounter, 62000 + rnd(0, 8000));
+    setInterval(tickIntJitter, 44000 + rnd(0, 9000));
+    setInterval(tickPctJitter, 56000 + rnd(0, 11000));
+})();
+
 

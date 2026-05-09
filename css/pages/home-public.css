@@ -524,11 +524,63 @@ body.ratib-saas-home {
 
 .ratib-dash__chrome {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  padding: 0.55rem 1rem 0.65rem;
   border-bottom: 1px solid var(--r-border);
   background: rgba(0, 0, 0, 0.25);
+}
+
+.ratib-dash__chrome-main {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ratib-dash__chrome-sub {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+  font-size: 0.625rem;
+  font-family: var(--r-mono);
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+.ratib-dash__sep {
+  opacity: 0.45;
+  user-select: none;
+}
+
+.ratib-dash__panel-id {
+  color: #cbd5e1;
+}
+
+.ratib-dash__sync {
+  color: #a5b4fc;
+}
+
+.ratib-sync-label {
+  opacity: 0.75;
+  margin-right: 0.15rem;
+}
+
+.ratib-mono-ops {
+  letter-spacing: 0.02em;
+}
+
+.ratib-env-tag {
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: rgba(52, 211, 153, 0.12);
+  color: #6ee7b7;
+  font-weight: 700;
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .ratib-dash__dot {
@@ -647,6 +699,59 @@ body.ratib-saas-home {
   color: var(--r-green);
 }
 
+.ratib-dash__signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  align-items: center;
+}
+
+.ratib-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.625rem;
+  padding: 0.28rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(0, 0, 0, 0.22);
+  color: #cbd5e1;
+}
+
+.ratib-signal--ok {
+  border-color: rgba(52, 211, 153, 0.22);
+  color: #a7f3d0;
+}
+
+.ratib-signal--pulse {
+  border-color: rgba(167, 139, 250, 0.35);
+  color: #ddd6fe;
+  animation: ratibSignalPulse 3s ease-in-out infinite;
+}
+
+@keyframes ratibSignalPulse {
+  50% {
+    box-shadow: 0 0 14px rgba(139, 92, 246, 0.22);
+  }
+}
+
+.ratib-micro-delta {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--r-muted);
+  margin-left: 0.35rem;
+}
+
+.ratib-micro-delta--ok {
+  color: #6ee7b7;
+}
+
+.ratib-pill--subtle {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  font-weight: 600;
+}
+
 .ratib-dash__panel {
   border-radius: 10px;
   border: 1px solid var(--r-border);
@@ -658,6 +763,8 @@ body.ratib-saas-home {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
   font-size: 0.6875rem;
   color: var(--r-muted);
   margin-bottom: 0.5rem;
@@ -2826,5 +2933,329 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
 
   .ratib-nav-shell__inner {
     gap: 0.65rem;
+  }
+}
+
+/* =============================================================================
+   PHASE 3 — Productization: operational language, live feel, visibility surface
+   ============================================================================= */
+
+.ratib-mono-tag {
+  font-family: var(--r-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+}
+
+.ratib-topbar__ops {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-right: 0.25rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  margin-right: 0.35rem;
+}
+
+.ratib-topbar__ops-sep {
+  opacity: 0.45;
+}
+
+@media (max-width: 520px) {
+  .ratib-topbar__ops {
+    display: none;
+  }
+}
+
+/* Operational visibility section */
+.ratib-ops-visibility {
+  position: relative;
+}
+
+.ratib-ops__layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 960px) {
+  .ratib-ops__layout {
+    grid-template-columns: 1.35fr 1fr;
+    align-items: start;
+  }
+}
+
+.ratib-ops__panel {
+  border-radius: var(--r-radius);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(165deg, rgba(15, 23, 42, 0.92), rgba(5, 8, 22, 0.88));
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(139, 92, 246, 0.1) inset;
+  overflow: hidden;
+}
+
+.ratib-ops__panel-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.ratib-pill--live {
+  background: rgba(52, 211, 153, 0.12);
+  color: #6ee7b7;
+  font-size: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ratib-ops__preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
+  padding: 0.85rem;
+}
+
+@media (max-width: 599px) {
+  .ratib-ops__preview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ratib-ops__mini {
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--r-radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.28);
+  position: relative;
+}
+
+.ratib-ops__mini::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0.45;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 12px 12px;
+  pointer-events: none;
+}
+
+.ratib-ops__mini--wide {
+  grid-column: 1 / -1;
+}
+
+.ratib-ops__mini-label {
+  display: block;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--r-muted);
+  margin-bottom: 0.35rem;
+}
+
+.ratib-ops__mini-val {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 750;
+  font-family: var(--r-mono);
+  color: #f1f5f9;
+}
+
+.ratib-ops__mini-val--ok {
+  color: #6ee7b7;
+}
+
+.ratib-ops__mini-sub {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+
+.ratib-ops__sparkline {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 36px;
+  padding: 0 0.25rem 0.35rem;
+  opacity: 0.85;
+}
+
+.ratib-ops__sparkline span {
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.65), rgba(139, 92, 246, 0.1));
+  animation: ratibOpsSpark 2.8s ease-in-out infinite;
+}
+
+.ratib-ops__sparkline span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.ratib-ops__sparkline span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.ratib-ops__sparkline span:nth-child(4) {
+  animation-delay: 0.45s;
+}
+.ratib-ops__sparkline span:nth-child(5) {
+  animation-delay: 0.6s;
+}
+.ratib-ops__sparkline span:nth-child(6) {
+  animation-delay: 0.75s;
+}
+.ratib-ops__sparkline span:nth-child(7) {
+  animation-delay: 0.9s;
+}
+.ratib-ops__sparkline span:nth-child(8) {
+  animation-delay: 1.05s;
+}
+
+@keyframes ratibOpsSpark {
+  0%,
+  100% {
+    height: 28%;
+    opacity: 0.75;
+  }
+  50% {
+    height: 92%;
+    opacity: 1;
+  }
+}
+
+.ratib-ops__events {
+  border-radius: var(--r-radius);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.ratib-ops__events-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.65rem;
+}
+
+.ratib-ops__event-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0.65rem 0.65rem;
+  font-family: var(--r-mono);
+  font-size: 0.62rem;
+  line-height: 1.55;
+  color: #94a3b8;
+}
+
+.ratib-ops__event-list li {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.5rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.ratib-ops__event-list li:last-child {
+  border-bottom: none;
+}
+
+.ratib-ops__time {
+  color: #64748b;
+}
+
+.ratib-ops__evt {
+  color: #cbd5e1;
+  word-break: break-word;
+}
+
+.ratib-trust-band {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--r-radius);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ratib-trust-band__item {
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.ratib-trust-band__k {
+  display: block;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--r-muted);
+  margin-bottom: 0.25rem;
+}
+
+.ratib-trust-band__v {
+  color: #e2e8f0;
+}
+
+/* Footer system strip */
+.ratib-footer-system-strip {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0.65rem 0;
+}
+
+.ratib-footer-system-strip__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  justify-content: center;
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.ratib-footer-system-strip__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.ratib-footer-system-strip__item .ratib-mono-tag {
+  color: #475569;
+}
+
+/* Focus + interaction refinement */
+.ratib-btn:focus-visible,
+.ratib-nav__link:focus-visible,
+.ratib-topbar__link:focus-visible,
+.ratib-footer-col a:focus-visible {
+  outline: 2px solid rgba(139, 92, 246, 0.65);
+  outline-offset: 3px;
+}
+
+.ratib-trust-card,
+.ratib-feature-card,
+.ratib-analytics-card {
+  transition:
+    transform 0.35s cubic-bezier(0.33, 1, 0.68, 1),
+    border-color 0.35s cubic-bezier(0.33, 1, 0.68, 1),
+    box-shadow 0.35s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ratib-ops__sparkline span {
+    animation: none;
+    height: 55%;
   }
 }
