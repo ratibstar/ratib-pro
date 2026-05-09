@@ -429,6 +429,25 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                     </div>
                 </div>
             </div>
+            <div class="ratib-hero__photo-strip">
+                <div class="ratib-container">
+                    <p class="ratib-hero__photo-eyebrow">People &amp; operations</p>
+                    <div class="ratib-hero__photo-grid" role="list">
+                        <figure class="ratib-hero__photo" role="listitem">
+                            <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&amp;fit=crop&amp;w=800&amp;h=500&amp;q=80" alt="Recruitment and workforce team collaborating in a professional office" width="800" height="500" loading="lazy" decoding="async">
+                            <figcaption>Agency coordination</figcaption>
+                        </figure>
+                        <figure class="ratib-hero__photo" role="listitem">
+                            <img src="https://images.unsplash.com/photo-1553877522-4326936a8138?auto=format&amp;fit=crop&amp;w=800&amp;h=500&amp;q=80" alt="Enterprise workplace focused on operational delivery" width="800" height="500" loading="lazy" decoding="async">
+                            <figcaption>Operational delivery</figcaption>
+                        </figure>
+                        <figure class="ratib-hero__photo" role="listitem">
+                            <img src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&amp;fit=crop&amp;w=800&amp;h=500&amp;q=80" alt="Leadership meeting on workforce planning and compliance" width="800" height="500" loading="lazy" decoding="async">
+                            <figcaption>Leadership visibility</figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section class="ratib-section ratib-trust" id="platform">
@@ -845,19 +864,21 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                     <h2 class="ratib-section__title">See RATIB in motion</h2>
                     <p class="video-caption">Product walkthrough — recruitment workflows, tracking surfaces, and agency controls.</p>
                 </header>
-                <div class="video-wrap">
-                    <?php if ($videoExists): ?>
-                    <video controls preload="metadata" class="home-video-player">
-                        <source src="<?php echo htmlspecialchars($videoSrcRel, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
-                        Your browser does not support the video tag. <a href="<?php echo htmlspecialchars($videoSrcRel, ENT_QUOTES, 'UTF-8'); ?>">Download the video</a>.
-                    </video>
-                    <?php else: ?>
-                    <div class="video-fallback-box">
-                        <i class="fas fa-video-slash fa-3x mb-3"></i>
-                        <p>Add an MP4 to <code>assets/</code> — recommended name: <code>video.mp4</code></p>
-                        <p class="small mb-0">Any <strong>.mp4</strong> file in the <code>assets</code> folder will be picked up automatically.</p>
+                <div class="ratib-video__shell">
+                    <div class="video-wrap">
+                        <?php if ($videoExists): ?>
+                        <video controls preload="metadata" class="home-video-player">
+                            <source src="<?php echo htmlspecialchars($videoSrcRel, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
+                            Your browser does not support the video tag. <a href="<?php echo htmlspecialchars($videoSrcRel, ENT_QUOTES, 'UTF-8'); ?>">Download the video</a>.
+                        </video>
+                        <?php else: ?>
+                        <div class="video-fallback-box">
+                            <i class="fas fa-video-slash fa-3x mb-3"></i>
+                            <p>Add an MP4 to <code>assets/</code> — recommended name: <code>video.mp4</code></p>
+                            <p class="small mb-0">Any <strong>.mp4</strong> file in the <code>assets</code> folder will be picked up automatically.</p>
+                        </div>
+                        <?php endif; ?>
                     </div>
-                    <?php endif; ?>
                 </div>
             </div>
         </section>

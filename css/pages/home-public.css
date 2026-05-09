@@ -467,11 +467,12 @@ body.ratib-saas-home {
 }
 
 .ratib-hero__title {
-  font-size: clamp(2.25rem, 4.5vw, 3.35rem);
-  font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-  margin: 0 0 1rem;
+  font-size: clamp(1.35rem, 2.35vw, 1.95rem);
+  font-weight: 750;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.85rem;
+  max-width: 22rem;
 }
 
 .ratib-hero__lead {
@@ -508,6 +509,60 @@ body.ratib-saas-home {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+.ratib-hero__photo-strip {
+  margin-top: clamp(1.75rem, 4vw, 2.75rem);
+  padding-top: clamp(1.25rem, 3vw, 2rem);
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.ratib-hero__photo-eyebrow {
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.88);
+  margin: 0 0 1rem;
+}
+
+.ratib-hero__photo-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .ratib-hero__photo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+.ratib-hero__photo {
+  margin: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--r-border);
+  background: rgba(15, 23, 42, 0.45);
+  box-shadow:
+    0 14px 44px rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(139, 92, 246, 0.06) inset;
+}
+
+.ratib-hero__photo img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 8 / 5;
+  object-fit: cover;
+  display: block;
+}
+
+.ratib-hero__photo figcaption {
+  padding: 0.6rem 0.85rem;
+  font-size: 0.8125rem;
+  color: var(--r-muted);
+  border-top: 1px solid rgba(148, 163, 184, 0.1);
+  background: rgba(2, 6, 23, 0.35);
 }
 
 /* Dashboard mockup */
@@ -1407,9 +1462,36 @@ body.ratib-saas-home {
   margin-bottom: 1.25rem;
 }
 
+.video-section.ratib-video {
+  padding-top: clamp(1.5rem, 4vw, 2.5rem);
+  padding-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.ratib-video__shell {
+  max-width: min(560px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ratib-video .ratib-video__shell .video-wrap {
+  border-radius: 14px;
+}
+
 .video-wrap {
   border: 1px solid var(--r-border);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.video-wrap video.home-video-player {
+  display: block;
+  width: 100%;
+  max-height: min(34vh, 300px);
+  height: auto;
+  object-fit: contain;
+  vertical-align: middle;
 }
 
 .video-fallback-box {
@@ -2140,9 +2222,9 @@ body.ratib-saas-home::before {
 }
 
 .ratib-hero__title {
-  max-width: 16ch;
-  line-height: 1.06;
-  font-weight: 800;
+  max-width: min(24rem, 100%);
+  line-height: 1.16;
+  font-weight: 750;
   color: #f1f5f9;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
@@ -2839,10 +2921,6 @@ body.ratib-saas-home::before {
 }
 
 /* Video + final CTA */
-.ratib-video .video-wrap {
-  border-radius: 16px;
-}
-
 .ratib-final-cta__bg {
   background:
     radial-gradient(ellipse 80% 80% at 50% 120%, rgba(139, 92, 246, 0.2), transparent),
