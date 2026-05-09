@@ -324,8 +324,14 @@ if (!function_exists('ratib_site_content_home_flat')) {
         $defaults = ratib_site_content_defaults_home();
 
         // Prefer JSON snapshot (written on CMS save) so public pages see edits without SELECT on control DB.
-        if (function_exists('ratib_site_content_public_cache_path')) {
-            $path = ratib_site_content_public_cache_path();
+        $path = function_exists('ratib_site_content_public_cache_path_for_read')
+            ? ratib_site_content_public_cache_path_for_read()
+            : null;
+        if ($path === null && function_exists('ratib_site_content_public_cache_path')) {
+            $legacy = ratib_site_content_public_cache_path();
+            $path = is_readable($legacy) ? $legacy : null;
+        }
+        if ($path !== null && $path !== '') {
             if (is_readable($path)) {
                 $raw = @file_get_contents($path);
                 if ($raw !== false && $raw !== '') {

@@ -129,13 +129,48 @@ if (!function_exists('ratib_site_content_get')) {
     }
 }
 
+if (!function_exists('ratib_site_content_cache_file_candidates')) {
+    /**
+     * Ordered list of JSON snapshot paths (first preferred). Fallback helps when storage/ is not writable by PHP.
+     *
+     * @return list<string>
+     */
+    function ratib_site_content_cache_file_candidates(): array
+    {
+        $root = dirname(__DIR__);
+
+        return [
+            $root . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'ratib_site_content_home.json',
+            $root . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'ratib_site_content_home.json',
+        ];
+    }
+}
+
 if (!function_exists('ratib_site_content_public_cache_path')) {
     /**
-     * Writable JSON snapshot of homepage CMS keys for public PHP when MySQL cannot read the control DB.
+     * Primary cache path (storage). May be unreadable/unwritable on some hosts — see ratib_site_content_cache_file_candidates().
      */
     function ratib_site_content_public_cache_path(): string
     {
-        return dirname(__DIR__) . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'ratib_site_content_home.json';
+        $paths = ratib_site_content_cache_file_candidates();
+
+        return $paths[0];
+    }
+}
+
+if (!function_exists('ratib_site_content_public_cache_path_for_read')) {
+    /**
+     * First existing, readable cache file, or null.
+     */
+    function ratib_site_content_public_cache_path_for_read(): ?string
+    {
+        foreach (ratib_site_content_cache_file_candidates() as $path) {
+            if (is_readable($path)) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 }
 
@@ -167,28 +202,30 @@ if (!function_exists('ratib_site_content_export_public_cache')) {
         foreach ($defaults as $key => $def) {
             $out[$key] = ratib_site_content_get($key, $def);
         }
-        $path = ratib_site_content_public_cache_path();
-        $dir = dirname($path);
-        if (!is_dir($dir)) {
-            if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
-                error_log('ratib_site_content_export_public_cache: cannot create directory ' . $dir);
-
-                return false;
-            }
-        }
         $json = json_encode($out, JSON_UNESCAPED_UNICODE);
         if ($json === false) {
             error_log('ratib_site_content_export_public_cache: json_encode failed');
 
             return false;
         }
-        if (@file_put_contents($path, $json, LOCK_EX) === false) {
-            error_log('ratib_site_content_export_public_cache: cannot write ' . $path);
+        foreach (ratib_site_content_cache_file_candidates() as $path) {
+            $dir = dirname($path);
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0775, true);
+            }
+            if (@file_put_contents($path, $json, LOCK_EX) !== false) {
+                foreach (ratib_site_content_cache_file_candidates() as $other) {
+                    if ($other !== $path && is_file($other)) {
+                        @unlink($other);
+                    }
+                }
 
-            return false;
+                return true;
+            }
+            error_log('ratib_site_content_export_public_cache: cannot write ' . $path);
         }
 
-        return true;
+        return false;
     }
 }
 
