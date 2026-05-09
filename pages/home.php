@@ -634,7 +634,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
             <div class="support-card-left">
                 <h3><i class="fas fa-headset me-2"></i>Technical Support</h3>
                 <p><i class="fas fa-phone-alt me-2 support-contact-icon"></i><a href="tel:+966599863868">+966 59 986 3868</a></p>
-                <p><i class="fas fa-map-marker-alt me-2 support-contact-icon"></i> Al-Kharj — King Fahd Road</p>
+                <p><i class="fas fa-map-marker-alt me-2 support-contact-icon"></i> Saudi Arabia/Riyadh</p>
                 <ul class="support-features">
                     <li><i class="fas fa-check-circle"></i> Fast response</li>
                     <li><i class="fas fa-check-circle"></i> Solves problems from the roots</li>
