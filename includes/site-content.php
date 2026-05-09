@@ -3,17 +3,23 @@
  * Public marketing copy stored in the control-panel database (key/value).
  * Safe no-op if DB unavailable — callers use defaults.
  */
+if (!defined('RATIB_SITE_CONTENT_HOME_SNAPSHOT_KEY')) {
+    /** Reserved row in ratib_site_content: full homepage JSON when disk cache cannot be written. */
+    define('RATIB_SITE_CONTENT_HOME_SNAPSHOT_KEY', '__ratib_home_json_snapshot.v1__');
+}
+
 if (!function_exists('ratib_site_content_db_credentials')) {
     /**
      * Resolve connection params for reading ratib_site_content (control DB).
      * Public site often uses DB_NAME for the tenant DB; the CMS lives in CONTROL_PANEL_DB_NAME.
- * Optional env (recommended when the app DB user has no access to the control DB):
- *   RATIB_SITE_CONTENT_DB_HOST, RATIB_SITE_CONTENT_DB_PORT, RATIB_SITE_CONTENT_DB_USER,
- *   RATIB_SITE_CONTENT_DB_PASS, RATIB_SITE_CONTENT_DB_NAME
- * Or define CONTROL_PANEL_DB_USER / CONTROL_PANEL_DB_PASS in the host env file after DB_*.
- *
- * Homepage JSON snapshot path (optional — overrides automatic candidates):
- *   RATIB_SITE_CONTENT_CACHE_FILE=/absolute/or/project-relative/path/ratib_site_content_home.json
+     *
+     * Optional env (recommended when the app DB user has no access to the control DB):
+     *   RATIB_SITE_CONTENT_DB_HOST, RATIB_SITE_CONTENT_DB_PORT, RATIB_SITE_CONTENT_DB_USER,
+     *   RATIB_SITE_CONTENT_DB_PASS, RATIB_SITE_CONTENT_DB_NAME
+     * Or define CONTROL_PANEL_DB_USER / CONTROL_PANEL_DB_PASS in the host env file after DB_*.
+     *
+     * Homepage JSON snapshot path (optional — overrides automatic candidates):
+     *   RATIB_SITE_CONTENT_CACHE_FILE=/absolute/or/project-relative/path/ratib_site_content_home.json
      *
      * @return array{0:string,1:int,2:string,3:string,4:string}|null
      */
@@ -129,6 +135,90 @@ if (!function_exists('ratib_site_content_get')) {
         }
 
         return $val;
+    }
+}
+
+if (!function_exists('ratib_site_content_home_snapshot_db_read')) {
+    /**
+     * Full homepage JSON blob stored in DB when filesystem export is impossible (reserved content_key).
+     */
+    function ratib_site_content_home_snapshot_db_read(): ?string
+    {
+        $conn = ratib_site_content_db();
+        if (!$conn) {
+            return null;
+        }
+        $key = RATIB_SITE_CONTENT_HOME_SNAPSHOT_KEY;
+        $stmt = $conn->prepare('SELECT content_value FROM ratib_site_content WHERE content_key = ? LIMIT 1');
+        if (!$stmt) {
+            return null;
+        }
+        $stmt->bind_param('s', $key);
+        $val = ratib_site_content_stmt_fetch_value($stmt);
+        $stmt->close();
+        if ($val === null || $val === '') {
+            return null;
+        }
+
+        return $val;
+    }
+}
+
+if (!function_exists('ratib_site_content_home_snapshot_db_save')) {
+    function ratib_site_content_home_snapshot_db_save(string $json): bool
+    {
+        $conn = ratib_site_content_db();
+        if (!$conn) {
+            return false;
+        }
+        $key = RATIB_SITE_CONTENT_HOME_SNAPSHOT_KEY;
+        $stmt = $conn->prepare(
+            'INSERT INTO ratib_site_content (content_key, content_value) VALUES (?, ?)
+             ON DUPLICATE KEY UPDATE content_value = VALUES(content_value), updated_at = CURRENT_TIMESTAMP'
+        );
+        if (!$stmt) {
+            error_log('ratib_site_content_home_snapshot_db_save: prepare failed: ' . $conn->error);
+
+            return false;
+        }
+        $stmt->bind_param('ss', $key, $json);
+        $ok = $stmt->execute();
+        $stmt->close();
+        if (!$ok) {
+            error_log('ratib_site_content_home_snapshot_db_save: execute failed');
+        }
+
+        return $ok;
+    }
+}
+
+if (!function_exists('ratib_site_content_home_snapshot_db_delete')) {
+    function ratib_site_content_home_snapshot_db_delete(): void
+    {
+        $conn = ratib_site_content_db();
+        if (!$conn) {
+            return;
+        }
+        $key = RATIB_SITE_CONTENT_HOME_SNAPSHOT_KEY;
+        $stmt = $conn->prepare('DELETE FROM ratib_site_content WHERE content_key = ? LIMIT 1');
+        if (!$stmt) {
+            return;
+        }
+        $stmt->bind_param('s', $key);
+        $stmt->execute();
+        $stmt->close();
+    }
+}
+
+if (!function_exists('ratib_site_content_cache_unlink_json_candidates')) {
+    /** Remove snapshot files so an older JSON does not override DB snapshot reads. */
+    function ratib_site_content_cache_unlink_json_candidates(): void
+    {
+        foreach (ratib_site_content_cache_file_candidates() as $path) {
+            if ($path !== '' && is_file($path)) {
+                @unlink($path);
+            }
+        }
     }
 }
 
@@ -282,7 +372,8 @@ require_once __DIR__ . '/site-content-home-data.php';
 
 if (!function_exists('ratib_site_content_export_public_cache')) {
     /**
-     * Call after saving in control panel: writes storage/ratib_site_content_home.json for public site reads.
+     * After CMS save: write JSON snapshot to disk for fast public reads; if disk is not writable,
+     * store the same JSON in ratib_site_content under RATIB_SITE_CONTENT_HOME_SNAPSHOT_KEY.
      */
     function ratib_site_content_export_public_cache(): bool
     {
@@ -311,10 +402,19 @@ if (!function_exists('ratib_site_content_export_public_cache')) {
                         @unlink($other);
                     }
                 }
+                if (function_exists('ratib_site_content_home_snapshot_db_delete')) {
+                    ratib_site_content_home_snapshot_db_delete();
+                }
 
                 return true;
             }
             error_log('ratib_site_content_export_public_cache: cannot write ' . $path);
+        }
+
+        if (function_exists('ratib_site_content_home_snapshot_db_save') && ratib_site_content_home_snapshot_db_save($json)) {
+            ratib_site_content_cache_unlink_json_candidates();
+
+            return true;
         }
 
         return false;

@@ -351,6 +351,25 @@ if (!function_exists('ratib_site_content_home_flat')) {
             }
         }
 
+        // DB snapshot (same JSON as file cache) when hosting blocks all disk writes for PHP.
+        if (function_exists('ratib_site_content_home_snapshot_db_read')) {
+            $rawDb = ratib_site_content_home_snapshot_db_read();
+            if ($rawDb !== null && $rawDb !== '') {
+                $cached = json_decode($rawDb, true);
+                if (is_array($cached)) {
+                    $out = $defaults;
+                    foreach ($cached as $key => $val) {
+                        if (array_key_exists($key, $defaults)) {
+                            $out[$key] = (string) $val;
+                        }
+                    }
+                    $memo = $out;
+
+                    return $memo;
+                }
+            }
+        }
+
         $out = [];
         foreach ($defaults as $key => $defaultVal) {
             $out[$key] = ratib_site_content_get($key, $defaultVal);
