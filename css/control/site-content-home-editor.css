@@ -1,5 +1,6 @@
 /**
  * Dark workspace for Public site content editor (matches control sidebar aesthetic).
+ * Served from project-root /css/control/ (same pattern as system.css) — asset('css/control/...').
  * Scoped so Bootstrap cards on other pages stay unchanged.
  */
 .ratib-site-content-editor {
