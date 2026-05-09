@@ -60,13 +60,15 @@ RewriteRule ^(.*)$ public/index.php [QSA,L]
     Header set X-Frame-Options "SAMEORIGIN"
     Header set X-XSS-Protection "1; mode=block"
 
-    # Bypass cache for home pricing page + its critical assets.
-    SetEnvIf Request_URI "^/pages/home\.php$" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "^/js/pages/home-page\.js$" RATIB_NOCACHE=1
-    SetEnvIf Request_URI "^/css/pages/home-public\.css$" RATIB_NOCACHE=1
-    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0" env=RATIB_NOCACHE
+    # Bypass cache for home page + its JS/CSS + program preview SVGs (paths may include subdir installs).
+    SetEnvIf Request_URI "/pages/home\.php" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/js/pages/home-page\.js" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/css/pages/home-public\.css" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/assets/images/program-preview" RATIB_NOCACHE=1
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0, private" env=RATIB_NOCACHE
     Header set Pragma "no-cache" env=RATIB_NOCACHE
     Header set Expires "0" env=RATIB_NOCACHE
+    Header set Surrogate-Control "no-store" env=RATIB_NOCACHE
 </IfModule>
 
 # php_value / php_flag in .htaccess breaks PHP-FPM, LiteSpeed LSAPI, and many cPanel PHP handlers → HTTP 500 for EVERY PHP hit.

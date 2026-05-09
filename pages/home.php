@@ -6,12 +6,17 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 
-// Prevent stale HTML caching so pricing updates appear immediately.
+// Prevent stale HTML caching (browser + reverse proxies + some CDNs).
 if (!headers_sent()) {
-    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private');
     header('Cache-Control: post-check=0, pre-check=0', false);
     header('Pragma: no-cache');
-    header('Expires: 0');
+    header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+    // Surrogate-Control: respected by Cloudflare / Fastly-style edges when configured to honor origin.
+    header('Surrogate-Control: no-store');
+    // Cloudflare: separate CDN TTL from browser (Business+ sometimes); harmless if ignored.
+    header('CDN-Cache-Control: no-store');
+    header('Vary: Accept-Encoding', false);
 }
 
 // EN: Read checkout currency/exchange settings from environment with safe defaults.
