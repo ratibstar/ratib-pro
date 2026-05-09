@@ -312,6 +312,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
             </button>
             <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary">
                 <a href="#platform" class="ratib-nav__link">Platform</a>
+                <a href="#how-it-works" class="ratib-nav__link">How it works</a>
                 <a href="#features" class="ratib-nav__link">Features</a>
                 <a href="#solutions" class="ratib-nav__link">Solutions</a>
                 <a href="#programs" class="ratib-nav__link">Pricing</a>
@@ -323,7 +324,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
             </nav>
             <div class="ratib-nav__cta">
                 <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" class="ratib-btn ratib-btn--ghost">Partner Login</a>
-                <a href="#register" class="ratib-btn ratib-btn--primary js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">Get Started</a>
+                <a href="#register" class="ratib-btn ratib-btn--primary js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">Start agency infrastructure</a>
             </div>
         </div>
     </header>
@@ -334,7 +335,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                 <div class="ratib-hero__copy">
                     <p class="ratib-eyebrow">Recruitment Automation &amp; Tracking Intelligence Base</p>
                     <h1 class="ratib-hero__title">Recruitment Automation &amp; <span class="ratib-text-gradient">Workforce Intelligence</span></h1>
-                    <p class="ratib-hero__lead">Distributed agency operations on one orchestration layer: stage synchronization, workforce telemetry, compliance automation, and financial rails—built as enterprise infrastructure, not a generic admin skin.</p>
+                    <p class="ratib-hero__lead">Production control plane for sending-country agencies and host-market programs: lifecycle orchestration, workforce telemetry, compliance gates, and ledger-linked billing—same surfaces operations teams use daily, not a marketing shell.</p>
                     <ul class="ratib-hero__bullets">
                         <li><i class="fas fa-diagram-project"></i> Workflow orchestration &amp; stage sync across sending &amp; host markets</li>
                         <li><i class="fas fa-building-user"></i> Tenant isolation, RBAC, and per-agency domain edges</li>
@@ -342,8 +343,8 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                         <li><i class="fas fa-bolt"></i> Event-driven signals, escalations, and operational intelligence</li>
                     </ul>
                     <div class="ratib-hero__actions">
-                        <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">Start agency</a>
-                        <a href="#video" class="ratib-btn ratib-btn--outline ratib-btn--lg"><i class="fas fa-play" aria-hidden="true"></i> Watch demo</a>
+                        <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">Launch operations workspace</a>
+                        <a href="#video" class="ratib-btn ratib-btn--outline ratib-btn--lg"><i class="fas fa-play" aria-hidden="true"></i> Platform walkthrough</a>
                     </div>
                 </div>
                 <div class="ratib-hero__visual" aria-hidden="true">
@@ -359,7 +360,9 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                                 <span class="ratib-dash__sep">·</span>
                                 <span class="ratib-dash__panel-id" title="Control plane">cp-me-01a</span>
                                 <span class="ratib-dash__sep">·</span>
-                                <span class="ratib-dash__sync"><span class="ratib-sync-label">Sync</span> <span class="ratib-live-sync-age">2m</span></span>
+                                <span class="ratib-dash__sync"><span class="ratib-sync-label">Edge sync</span> <span class="ratib-live-sync-age">2m</span></span>
+                                <span class="ratib-dash__sep">·</span>
+                                <span title="UTC session clock">UTC <time class="ratib-live-clock" datetime=""></time></span>
                             </div>
                         </div>
                         <div class="ratib-dash__body">
@@ -376,10 +379,10 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                                         <span class="ratib-kpi__value ratib-live-nudge" data-ratib-jitter="2847">2,847</span>
                                         <span class="ratib-kpi__delta ratib-kpi__delta--up">+18% WoW</span>
                                     </div>
-                                    <div class="ratib-kpi" title="Orchestrator executions · rolling 7d">
-                                        <span class="ratib-kpi__label">Engine runs</span>
-                                        <span class="ratib-kpi__value">14.2k</span>
-                                        <span class="ratib-kpi__delta">7d window</span>
+                                    <div class="ratib-kpi" title="Committed lifecycle transitions · rolling 24h">
+                                        <span class="ratib-kpi__label">Stage commits (24h)</span>
+                                        <span class="ratib-kpi__value">412</span>
+                                        <span class="ratib-kpi__delta">event_log · shard A</span>
                                     </div>
                                     <div class="ratib-kpi" title="Stage SLAs met vs policy clock">
                                         <span class="ratib-kpi__label">SLA adherence</span>
@@ -388,40 +391,97 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                                     </div>
                                 </div>
                                 <div class="ratib-dash__signals">
-                                    <span class="ratib-signal ratib-signal--ok" title="No breached stage clocks in this shard"><i class="fas fa-shield-halved" aria-hidden="true"></i> SLA OK</span>
-                                    <span class="ratib-signal ratib-signal--ok" title="Document verification queue"><i class="fas fa-file-circle-check" aria-hidden="true"></i> KYC stable</span>
-                                    <span class="ratib-signal ratib-signal--pulse" title="AI routing confidence band"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> confidence 0.94</span>
+                                    <span class="ratib-signal ratib-signal--ok" title="No breached stage clocks in this shard"><i class="fas fa-shield-halved" aria-hidden="true"></i> SLA policy OK</span>
+                                    <span class="ratib-signal ratib-signal--ok" title="Document verification queue depth within SLO"><i class="fas fa-file-circle-check" aria-hidden="true"></i> KYC queue stable</span>
+                                    <span class="ratib-signal ratib-signal--ok" title="Orchestrator round-trip p95"><i class="fas fa-gauge-high" aria-hidden="true"></i> ORCH p95 238ms</span>
                                 </div>
-                                <div class="ratib-dash__panel">
-                                    <div class="ratib-dash__panel-head">
-                                        <span>Lifecycle pipeline</span>
-                                        <span class="ratib-pill" title="Automated transitions enabled">Orchestrator</span>
-                                        <span class="ratib-pill ratib-pill--subtle" title="Human gates where required">HITL</span>
-                                    </div>
-                                    <div class="ratib-stagebar">
-                                        <span class="ratib-stage ratib-stage--done">App</span>
-                                        <span class="ratib-stage ratib-stage--done">Verify</span>
-                                        <span class="ratib-stage ratib-stage--active">Medical</span>
-                                        <span class="ratib-stage">Embassy</span>
-                                        <span class="ratib-stage">Visa</span>
-                                        <span class="ratib-stage">Deploy</span>
-                                    </div>
-                                    <div class="ratib-mapstrip">
-                                        <i class="fas fa-satellite-dish" aria-hidden="true"></i>
-                                        <span>GPS · Riyadh corridor · ping <span class="ratib-live-ping">2m</span></span>
-                                        <span class="ratib-pill ratib-pill--muted" title="Geofence match">Geo OK</span>
-                                    </div>
+                                <div class="ratib-dash__toolbar ratib-mono-ops">
+                                    <span>Reconcile <span class="ratib-live-sync-age">2m</span></span>
+                                    <span class="ratib-dash__sep">·</span>
+                                    <span>Viewer <strong class="ratib-dash__strong">ops.supervisor</strong></span>
+                                    <span class="ratib-dash__sep">·</span>
+                                    <span class="ratib-pill ratib-pill--subtle">policy CL-2024-ME</span>
                                 </div>
-                                <div class="ratib-dash__charts">
-                                    <div class="ratib-chart" title="throughput · workers / day">
-                                        <div class="ratib-chart__legend">Throughput <span class="ratib-micro-delta">Δ stable</span></div>
-                                        <div class="ratib-chart__bars">
-                                            <i style="height:40%"></i><i style="height:65%"></i><i style="height:52%"></i><i style="height:88%"></i><i style="height:72%"></i>
+                                <p class="ratib-dash__context ratib-mono-ops">Pinned file <strong>WKR-ME-44821</strong> · corr <span class="ratib-dash__corr">ae7f9c2</span> · Medical clearance window</p>
+                                <div class="ratib-dash__workspace">
+                                    <div class="ratib-dash__panel ratib-dash__panel--table">
+                                        <div class="ratib-dash__panel-head">
+                                            <span>Recruitment records</span>
+                                            <span class="ratib-pill ratib-pill--subtle">tenant ACME · shard A</span>
+                                        </div>
+                                        <div class="ratib-dash-table-scroll">
+                                            <table class="ratib-dash-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col">Ref</th>
+                                                        <th scope="col">Stage</th>
+                                                        <th scope="col">SLA</th>
+                                                        <th scope="col">Owner</th>
+                                                        <th scope="col">Updated</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>WKR-ME-44821</td>
+                                                        <td><span class="ratib-dash-tag ratib-dash-tag--warn">Medical</span></td>
+                                                        <td class="ratib-dash-num">38h left</td>
+                                                        <td>n.alharbi</td>
+                                                        <td class="ratib-dash-num">14:06</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>WKR-UG-90213</td>
+                                                        <td><span class="ratib-dash-tag ratib-dash-tag--idle">Embassy</span></td>
+                                                        <td class="ratib-dash-num">queued</td>
+                                                        <td>queue</td>
+                                                        <td class="ratib-dash-num">13:58</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>WKR-BD-77104</td>
+                                                        <td><span class="ratib-dash-tag ratib-dash-tag--ok">Visa</span></td>
+                                                        <td class="ratib-dash-num">OK</td>
+                                                        <td>s.rehman</td>
+                                                        <td class="ratib-dash-num">13:41</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
-                                    <div class="ratib-chart" title="Finance connector latency">
-                                        <div class="ratib-chart__legend">Ledger sync <span class="ratib-micro-delta ratib-micro-delta--ok">&lt;400ms p95</span></div>
-                                        <div class="ratib-spark"></div>
+                                    <div class="ratib-dash__sidecol">
+                                        <div class="ratib-dash__panel ratib-dash__panel--stack">
+                                            <div class="ratib-dash__panel-head">
+                                                <span>Verification queue</span>
+                                                <span class="ratib-pill">depth 4</span>
+                                            </div>
+                                            <ul class="ratib-dash-qlist">
+                                                <li><span class="ratib-q-type">Med bundle</span><span class="ratib-q-meta">review · est 11m</span></li>
+                                                <li><span class="ratib-q-type">Emb. appointment</span><span class="ratib-q-meta">await scan</span></li>
+                                                <li><span class="ratib-q-type">Police cert</span><span class="ratib-q-meta">OCR hold</span></li>
+                                            </ul>
+                                        </div>
+                                        <div class="ratib-dash__panel ratib-dash__panel--stack">
+                                            <div class="ratib-dash__panel-head">
+                                                <span>Operational alerts</span>
+                                                <span class="ratib-pill ratib-pill--subtle">last 1h</span>
+                                            </div>
+                                            <ul class="ratib-dash-alerts">
+                                                <li class="ratib-dash-alerts__item ratib-dash-alerts__item--info"><span class="ratib-dash-alerts__sev">INFO</span> FIN webhook ACK · 312ms</li>
+                                                <li class="ratib-dash-alerts__item ratib-dash-alerts__item--warn"><span class="ratib-dash-alerts__sev">WARN</span> Embassy slot drift · agency B</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ratib-dash__footer">
+                                    <div class="ratib-mapstrip">
+                                        <i class="fas fa-location-crosshairs" aria-hidden="true"></i>
+                                        <span>GPS · Riyadh corridor · last ping <span class="ratib-live-ping">2m</span> · geofence match</span>
+                                        <span class="ratib-pill ratib-pill--muted">tracking OK</span>
+                                    </div>
+                                    <div class="ratib-dash-ledger" title="Finance connector · recent commits">
+                                        <div class="ratib-dash-ledger__head ratib-mono-ops">Ledger tail · FIN-ME</div>
+                                        <ul class="ratib-dash-ledger__rows ratib-mono-ops">
+                                            <li>INV-20481 posted · VAT line · <span class="ratib-micro-delta ratib-micro-delta--ok">sync 312ms</span></li>
+                                            <li>ACCR-TMP cleared · stage DEPLOY_OK</li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
@@ -454,16 +514,35 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
             <div class="ratib-container">
                 <header class="ratib-section__head">
                     <h2 class="ratib-section__title">Built for regulated, high-volume recruitment operations</h2>
-                    <p class="ratib-section__sub">Single operational intelligence plane across tenants: workforce telemetry, orchestration, billing hooks, and compliance monitoring—without toy dashboards.</p>
+                    <p class="ratib-section__sub">Deployed as a shared control plane: tenant-isolated data paths, encrypted transit, immutable workflow history, and finance-grade events organizations can reconcile—not narrative dashboards.</p>
                 </header>
                 <div class="ratib-trust__grid">
-                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-network-wired"></i></div><h3>Agency infrastructure mesh</h3><p>Shared control plane; isolated tenant data, domains, and RBAC boundaries.</p></article>
-                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-satellite-dish"></i></div><h3>Live workforce telemetry</h3><p>Milestone, field, and document events streamed to operational views.</p></article>
-                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-wand-magic-sparkles"></i></div><h3>Orchestration &amp; policy engine</h3><p>Stage automation, guardrails, and escalation paths aligned to SLA clocks.</p></article>
-                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-file-invoice-dollar"></i></div><h3>Event-linked finance</h3><p>Invoices and accruals triggered by verified lifecycle transitions—not spreadsheets.</p></article>
-                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-shield-halved"></i></div><h3>Security &amp; governance</h3><p>Encryption in transit, tenant isolation, audit trails, and role-scoped access.</p></article>
-                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-chart-area"></i></div><h3>Throughput at peak load</h3><p>Architecture tuned for multi-country programs and seasonal intake spikes.</p></article>
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-user-shield"></i></div><h3>RBAC &amp; scoped tenancy</h3><p>Role matrices per agency branch; least-privilege API keys; segregated operator sessions.</p></article>
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-clock-rotate-left"></i></div><h3>Audit trails &amp; workflow history</h3><p>Append-only stage transitions with actor, correlation id, and policy version stamped on each commit.</p></article>
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-lock"></i></div><h3>Encrypted infrastructure</h3><p>TLS 1.3 to the edge; tenant-scoped storage; session revocation and device-aware policies.</p></article>
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-stopwatch"></i></div><h3>SLA visibility</h3><p>Stage clocks, breach watches, and escalation routes before commitments slip—surfaced in ops consoles.</p></article>
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-clipboard-check"></i></div><h3>Compliance tracking</h3><p>Embassy, medical, and police bundles tracked as first-class artifacts with reviewer attribution.</p></article>
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-server"></i></div><h3>Continuity &amp; multi-region readiness</h3><p>Operational backups, replayable event streams, and expansion paths for secondary regions when procurement requires it.</p></article>
                 </div>
+            </div>
+        </section>
+
+        <section class="ratib-section ratib-how" id="how-it-works">
+            <div class="ratib-container">
+                <header class="ratib-section__head">
+                    <p class="ratib-eyebrow">Operational onboarding</p>
+                    <h2 class="ratib-section__title">How agencies go live on RATIB</h2>
+                    <p class="ratib-section__sub">From tenant provisioning to invoicing—one orchestrated spine with explicit human gates, auditable transitions, and connector-backed finance.</p>
+                </header>
+                <ol class="ratib-how__steps" aria-label="Deployment sequence">
+                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">01</span><strong class="ratib-how__title">Agency onboarding</strong><span class="ratib-how__desc">Tenant creation, RBAC, branded domains, sandbox → production promotion.</span></li>
+                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">02</span><strong class="ratib-how__title">Workflow configuration</strong><span class="ratib-how__desc">Stage graph, owners, SLA clocks, and verification bundles per corridor.</span></li>
+                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">03</span><strong class="ratib-how__title">Candidate intake</strong><span class="ratib-how__desc">Structured records, document capture, and deduped applicant system of record.</span></li>
+                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">04</span><strong class="ratib-how__title">Stage orchestration</strong><span class="ratib-how__desc">Automated hops plus HITL approvals; correlation ids across workers and finance.</span></li>
+                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">05</span><strong class="ratib-how__title">Tracking &amp; compliance</strong><span class="ratib-how__desc">GPS and milestone telemetry with policy-bound exception routing.</span></li>
+                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">06</span><strong class="ratib-how__title">Arrival &amp; deployment</strong><span class="ratib-how__desc">Host-market handover, closure events, and workforce activation signals.</span></li>
+                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">07</span><strong class="ratib-how__title">Reporting &amp; invoicing</strong><span class="ratib-how__desc">Executive telemetry, branch roll-ups, and ledger-linked issuance.</span></li>
+                </ol>
             </div>
         </section>
 
@@ -471,7 +550,8 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
             <div class="ratib-container">
                 <header class="ratib-section__head ratib-section__head--left">
                     <p class="ratib-eyebrow">Platform surface</p>
-                    <h2 class="ratib-section__title">Twelve control-plane capabilities</h2>
+                    <h2 class="ratib-section__title">Twelve capabilities operators touch daily</h2>
+                    <p class="ratib-section__sub ratib-section__sub--inline">Same modules used in production consoles—not vapor features.</p>
                 </header>
                 <div class="ratib-feature-grid">
                     <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-gears"></i></div><h3>Recruitment lifecycle engine</h3><p>Define stages, owners, policies once—execute across every worker file.</p></article>
@@ -499,14 +579,14 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                 </header>
                 <div class="ratib-pipeline" role="list">
                     <div class="ratib-pipeline__track" aria-hidden="true"></div>
-                    <div class="ratib-pipeline__item ratib-pipeline__item--complete" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Application</span><span class="ratib-pipeline__meta">Ingested</span></div>
-                    <div class="ratib-pipeline__item ratib-pipeline__item--complete" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Verification</span><span class="ratib-pipeline__meta">Auto pass</span></div>
-                    <div class="ratib-pipeline__item ratib-pipeline__item--active" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Medical</span><span class="ratib-pipeline__meta">In progress</span></div>
-                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Embassy</span><span class="ratib-pipeline__meta">Queued</span></div>
-                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Visa</span><span class="ratib-pipeline__meta">Docs OK</span></div>
-                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Ticket</span><span class="ratib-pipeline__meta">Automation</span></div>
-                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Arrival</span><span class="ratib-pipeline__meta">GPS</span></div>
-                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Deployment</span><span class="ratib-pipeline__meta">Close loop</span></div>
+                    <div class="ratib-pipeline__item ratib-pipeline__item--complete" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Application</span><span class="ratib-pipeline__meta">committed · 09 May 08:14 UTC</span></div>
+                    <div class="ratib-pipeline__item ratib-pipeline__item--complete" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Verification</span><span class="ratib-pipeline__meta">bundle OK · reviewer svc-bot</span></div>
+                    <div class="ratib-pipeline__item ratib-pipeline__item--active" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Medical</span><span class="ratib-pipeline__meta">clearance window · SLA 38h</span></div>
+                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Embassy</span><span class="ratib-pipeline__meta">slot queue · RUH consulate</span></div>
+                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Visa</span><span class="ratib-pipeline__meta">issue pending · workflow hold</span></div>
+                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Ticket</span><span class="ratib-pipeline__meta">carrier manifest · auto</span></div>
+                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Arrival</span><span class="ratib-pipeline__meta">handover GPS · geofence</span></div>
+                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Deployment</span><span class="ratib-pipeline__meta">FIN close · INV emitted</span></div>
                 </div>
             </div>
         </section>
@@ -514,30 +594,39 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
         <section class="ratib-section ratib-ai-section" id="solutions">
             <div class="ratib-container">
                 <header class="ratib-section__head ratib-section__head--left">
-                    <p class="ratib-eyebrow">Orchestration layer</p>
-                    <h2 class="ratib-section__title">Operational intelligence, policy-bound</h2>
+                    <p class="ratib-eyebrow">Operational scenarios</p>
+                    <h2 class="ratib-section__title">Where RATIB runs in production</h2>
+                    <p class="ratib-section__sub">Representative B2B programs on the same orchestration core—multi-tenant, audit-visible, connector-backed.</p>
                 </header>
-                <div class="ratib-ai-grid">
-                    <article class="ratib-ai-card ratib-ai-card--wide">
-                        <h3>Workflow orchestration core</h3>
-                        <p>Declarative policies across branches, corridors, and tenant rules—fewer manual chase loops, full intent trail for compliance.</p>
-                        <div class="ratib-ai-visual">
-                            <div class="ratib-ai-row"><span class="ratib-pill">Rule</span> stage ≥ MEDICAL_CLEAR → FIN_NOTIFY · priority P2</div>
-                            <div class="ratib-ai-row"><span class="ratib-pill ratib-pill--accent">Model</span> doc_bundle anomaly score &gt; θ → HITL_HOLD + task</div>
-                            <div class="ratib-ai-row"><span class="ratib-pill">Emit</span> INV_DRAFT · idempotency key attached</div>
+                <div class="ratib-ai-grid ratib-use-grid">
+                    <article class="ratib-ai-card ratib-ai-card--wide ratib-use-card ratib-use-card--wide">
+                        <h3>Recruitment agencies · multi-branch</h3>
+                        <p>Central intake with branch-level RBAC, quota splits, and consolidated reporting for owners—without duplicating worker records across offices.</p>
+                        <div class="ratib-ai-visual ratib-use-visual">
+                            <div class="ratib-ai-row"><span class="ratib-pill">Tenant</span> ACME · branches RUH · JED · DMM · shared pipeline graph</div>
+                            <div class="ratib-ai-row"><span class="ratib-pill ratib-pill--accent">Ops</span> stage owners mapped · SLA inherited from policy CL-2024-ME</div>
+                            <div class="ratib-ai-row"><span class="ratib-pill">Emit</span> nightly cohort rollup · exec dashboard · no CSV extracts</div>
                         </div>
                     </article>
-                    <article class="ratib-ai-card">
-                        <h3>Signal bus &amp; escalations</h3>
-                        <p>Threshold-based routing to recruiters, agencies, and partners before SLA clocks breach.</p>
+                    <article class="ratib-ai-card ratib-use-card">
+                        <h3>Overseas workforce operations</h3>
+                        <p>Corridor programs with sending-country compliance packs, host-market deployment rules, and milestone telemetry tied to billing milestones.</p>
                     </article>
-                    <article class="ratib-ai-card">
-                        <h3>Event-driven billing</h3>
-                        <p>Ledger events emitted from verified transitions—not reconstructed from email.</p>
+                    <article class="ratib-ai-card ratib-use-card">
+                        <h3>Multi-office recruitment firms</h3>
+                        <p>Shared candidate inventory with segregated finance and placement attribution—one platform, strict tenant edges between brands.</p>
                     </article>
-                    <article class="ratib-ai-card">
-                        <h3>Tenant runbooks</h3>
-                        <p>Per-agency entitlements, domains, and templates without forking the core stack.</p>
+                    <article class="ratib-ai-card ratib-use-card">
+                        <h3>Enterprise staffing coordination</h3>
+                        <p>Buyer mandates, bulk transitions, and SLA-backed escalations when intake spikes or sponsor deadlines move.</p>
+                    </article>
+                    <article class="ratib-ai-card ratib-use-card">
+                        <h3>Embassy processing workflows</h3>
+                        <p>Appointment queues, bundle completeness checks, and status feeds operators defend in audits—linked to worker files, not inboxes.</p>
+                    </article>
+                    <article class="ratib-ai-card ratib-use-card">
+                        <h3>Visa pipeline management</h3>
+                        <p>Medical → embassy → visa → ticket orchestration with explicit holds, reviewer attribution, and finance triggers only after verified hops.</p>
                     </article>
                 </div>
             </div>
@@ -548,7 +637,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                 <header class="ratib-section__head">
                     <p class="ratib-eyebrow">Multi-agency ecosystem</p>
                     <h2 class="ratib-section__title">One RATIB core. Many independent agencies.</h2>
-                    <p class="ratib-section__sub">Hard tenant boundaries on a shared orchestration substrate—identity, workflow engine, telemetry, and billing APIs as one product surface.</p>
+                    <p class="ratib-section__sub">Isolated production tenants on a shared control plane—identity, orchestration, telemetry, and finance connectors without duplicating stacks per agency.</p>
                 </header>
                 <div class="ratib-eco__viz" aria-hidden="true">
                     <div class="ratib-eco__core">
@@ -569,13 +658,14 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
             <div class="ratib-container">
                 <header class="ratib-section__head ratib-section__head--left">
                     <p class="ratib-eyebrow">Telemetry plane</p>
-                    <h2 class="ratib-section__title">Signals executives and ops leads actually watch</h2>
+                    <h2 class="ratib-section__title">Executive &amp; ops signals from live programs</h2>
+                    <p class="ratib-section__sub">Rolling aggregates from committed lifecycle events—same metrics surfaced in operational reviews.</p>
                 </header>
                 <div class="ratib-analytics__grid">
-                    <article class="ratib-analytics-card"><h3>Tracking fidelity</h3><div class="ratib-metric"><span class="ratib-metric__val ratib-live-nudge" data-ratib-jitter-pct="98.2">98.2%</span><span class="ratib-metric__chart ratib-metric__chart--line"></span></div><p>Confidence-weighted checkpoint completion vs policy graph.</p></article>
-                    <article class="ratib-analytics-card"><h3>In-motion cohort</h3><div class="ratib-metric"><span class="ratib-metric__val">2.8k</span><span class="ratib-metric__chart ratib-metric__chart--bars"></span></div><p>Workers in active lifecycle states across programs.</p></article>
-                    <article class="ratib-analytics-card"><h3>Throughput delta</h3><div class="ratib-metric"><span class="ratib-metric__val">+31%</span><span class="ratib-metric__note">QoQ velocity</span></div><p>Comparable agency throughput under normalized demand.</p></article>
-                    <article class="ratib-analytics-card"><h3>Orchestrator coverage</h3><div class="ratib-metric"><span class="ratib-metric__val">76%</span><span class="ratib-metric__note">automated hops</span></div><p>Engine-handled transitions vs explicit human tasks.</p></article>
+                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">snapshot · merged shards · UTC</p><h3>Checkpoint fidelity</h3><div class="ratib-metric"><span class="ratib-metric__val ratib-live-nudge" data-ratib-jitter-pct="98.2">98.2%</span><span class="ratib-metric__chart ratib-metric__chart--line" aria-hidden="true"></span></div><p>Completed checkpoints vs policy graph for in-motion cohorts.</p></article>
+                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">queue depth · 15m resolution</p><h3>Active lifecycle workload</h3><div class="ratib-metric"><span class="ratib-metric__val">2.8k</span><span class="ratib-metric__chart ratib-metric__chart--bars" aria-hidden="true"></span></div><p>Workers in non-terminal stages across connected agencies.</p></article>
+                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">normalized demand index</p><h3>Throughput vs baseline</h3><div class="ratib-metric"><span class="ratib-metric__val">+31%</span><span class="ratib-metric__note">QoQ</span></div><p>Comparable velocity after seasonal adjustment—not vanity growth.</p></article>
+                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">engine attribution · 7d</p><h3>Automated transition share</h3><div class="ratib-metric"><span class="ratib-metric__val">76%</span><span class="ratib-metric__note">engine-led hops</span></div><p>Remainder explicit HITL—policy requires human gates.</p></article>
                 </div>
             </div>
         </section>
@@ -585,7 +675,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                 <header class="ratib-section__head">
                     <p class="ratib-eyebrow">Operational visibility</p>
                     <h2 class="ratib-section__title">What mission control actually shows</h2>
-                    <p class="ratib-section__sub">A condensed view of how RATIB surfaces live workforce programs—health, throughput, automation, and verification—not a slide deck mock-up.</p>
+                    <p class="ratib-section__sub">Live-style aggregates you would expect in a deployed ops console: SLA posture, queue depth, automation outcomes, finance connector ACKs, and streamed events.</p>
                 </header>
                 <div class="ratib-ops__layout">
                     <div class="ratib-ops__panel ratib-ops__panel--preview">
@@ -639,6 +729,8 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                     <div class="ratib-trust-band__item"><span class="ratib-trust-band__k">Regions</span><span class="ratib-trust-band__v">ME primary · EU replication optional</span></div>
                     <div class="ratib-trust-band__item"><span class="ratib-trust-band__k">Data plane</span><span class="ratib-trust-band__v">encrypted · tenant-scoped · audit trail</span></div>
                     <div class="ratib-trust-band__item"><span class="ratib-trust-band__k">Identity</span><span class="ratib-trust-band__v">RBAC · SSO-ready · session revocation</span></div>
+                    <div class="ratib-trust-band__item"><span class="ratib-trust-band__k">Workflow history</span><span class="ratib-trust-band__v">immutable stage commits · correlation ids</span></div>
+                    <div class="ratib-trust-band__item"><span class="ratib-trust-band__k">Continuity</span><span class="ratib-trust-band__v">operational backups · replayable events</span></div>
                 </div>
             </div>
         </section>
@@ -674,7 +766,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                     <li><i class="fas fa-check"></i> Integration guidance</li>
                     <li><i class="fas fa-check"></i> Dedicated success touchpoints</li>
                 </ul>
-                <a href="#register" class="btn-register btn-register-starter js-open-register" data-register-plan="pro" data-register-amount="" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Talk to us</a>
+                <a href="#register" class="btn-register btn-register-starter js-open-register" data-register-plan="pro" data-register-amount="" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Talk to solutions</a>
             </div>
             <div class="price-card gold price-card--featured">
                 <span class="card-badge">Popular</span>
@@ -699,7 +791,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                     <li><i class="fas fa-check"></i> Managed infrastructure &amp; SSL</li>
                     <li><i class="fas fa-check"></i> Admin control panel</li>
                 </ul>
-                <a href="#register" id="goldRegisterBtn" class="btn-register js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Start Business</a>
+                <a href="#register" id="goldRegisterBtn" class="btn-register js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Deploy Business workspace</a>
             </div>
             <div class="price-card platinum">
                 <span class="card-badge">50% Off</span>
@@ -725,7 +817,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                     <li><i class="fas fa-check"></i> Admin control panel</li>
                     <li><i class="fas fa-check"></i> Custom integrations</li>
                 </ul>
-                <a href="#register" id="platinumRegisterBtn" class="btn-register js-open-register" data-register-plan="platinum" data-register-amount="<?php echo (float)($plans['platinum']['amount'] ?? $platinumTestPriceYear1); ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Start Enterprise</a>
+                <a href="#register" id="platinumRegisterBtn" class="btn-register js-open-register" data-register-plan="platinum" data-register-amount="<?php echo (float)($plans['platinum']['amount'] ?? $platinumTestPriceYear1); ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Deploy Enterprise workspace</a>
             </div>
         </div>
             </div>
@@ -860,9 +952,9 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
         <section class="video-section ratib-video" id="video">
             <div class="ratib-container">
                 <header class="ratib-section__head ratib-section__head--left">
-                    <p class="ratib-eyebrow">Demo</p>
-                    <h2 class="ratib-section__title">See RATIB in motion</h2>
-                    <p class="video-caption">Product walkthrough — recruitment workflows, tracking surfaces, and agency controls.</p>
+                    <p class="ratib-eyebrow">Product tour</p>
+                    <h2 class="ratib-section__title">Walk the surfaces your teams will run</h2>
+                    <p class="video-caption">Recorded against production-class navigation—pipeline boards, verification queues, finance hooks, and agency administration.</p>
                 </header>
                 <div class="ratib-video__shell">
                     <div class="video-wrap">
@@ -886,11 +978,11 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
         <section class="ratib-final-cta" aria-labelledby="ratib-final-cta-title">
             <div class="ratib-final-cta__bg" aria-hidden="true"></div>
             <div class="ratib-container ratib-final-cta__inner">
-                <h2 id="ratib-final-cta-title" class="ratib-final-cta__title">Transform your recruitment operations</h2>
-                <p class="ratib-final-cta__sub">Deploy enterprise RATIB infrastructure for your agency network—tracking, automation, and revenue operations unified.</p>
+                <h2 id="ratib-final-cta-title" class="ratib-final-cta__title">Put production-grade recruitment infrastructure online</h2>
+                <p class="ratib-final-cta__sub">Event orchestration, workforce telemetry, and ledger-backed billing on one deployed plane—built for agencies already running at scale.</p>
                 <div class="ratib-final-cta__actions">
-                    <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">Start now</a>
-                    <a href="mailto:ratibsrar@gmail.com?subject=RATIB%20demo%20request" class="ratib-btn ratib-btn--outline ratib-btn--lg">Book demo</a>
+                    <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">Start agency infrastructure</a>
+                    <a href="mailto:ratibsrar@gmail.com?subject=RATIB%20platform%20demo%20request" class="ratib-btn ratib-btn--outline ratib-btn--lg">Book platform demo</a>
                 </div>
             </div>
         </section>
@@ -908,6 +1000,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                 <h4>Platform</h4>
                 <ul>
                     <li><a href="#platform">Overview</a></li>
+                    <li><a href="#how-it-works">How it works</a></li>
                     <li><a href="#features">Features</a></li>
                     <li><a href="#tracking">Tracking</a></li>
                     <li><a href="#operational">Operational visibility</a></li>

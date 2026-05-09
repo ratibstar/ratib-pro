@@ -879,8 +879,8 @@
     }
 
     function tickEventClock() {
-        var el = document.querySelector('.ratib-live-clock');
-        if (!el) {
+        var els = document.querySelectorAll('.ratib-live-clock');
+        if (!els.length) {
             return;
         }
         function pad(x) {
@@ -888,10 +888,19 @@
         }
         function run() {
             var d = new Date();
-            el.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+            var txt = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+            var iso = '';
             try {
-                el.setAttribute('datetime', d.toISOString());
+                iso = d.toISOString();
             } catch (e) {}
+            els.forEach(function (el) {
+                el.textContent = txt;
+                if (iso) {
+                    try {
+                        el.setAttribute('datetime', iso);
+                    } catch (e2) {}
+                }
+            });
         }
         run();
         setInterval(run, 1000);
