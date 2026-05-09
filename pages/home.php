@@ -262,6 +262,26 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
 
 require_once __DIR__ . '/../includes/site-content.php';
 $ratibHome = ratib_site_content_home_flat();
+// Top bar: always re-read from DB when possible so phone/wa never stick on baked defaults or stale JSON blobs.
+if (function_exists('ratib_site_content_get') && function_exists('ratib_site_content_defaults_home')) {
+    $ratibDef = ratib_site_content_defaults_home();
+    foreach (
+        [
+            'home.topbar.phone_display',
+            'home.topbar.wa_label',
+            'home.topbar.tls_label',
+            'home.topbar.nodes_count',
+            'home.topbar.nodes_suffix',
+            'home.topbar.client_login',
+        ] as $ratibTbKey
+    ) {
+        if (!array_key_exists($ratibTbKey, $ratibDef)) {
+            continue;
+        }
+        $ratibFallback = $ratibHome[$ratibTbKey] ?? $ratibDef[$ratibTbKey];
+        $ratibHome[$ratibTbKey] = ratib_site_content_get($ratibTbKey, $ratibFallback);
+    }
+}
 // Visible phone text = exactly what the CMS saved (WYSIWYG). tel:/wa.me use normalized digits below.
 $ratibPhoneRaw = (string) ($ratibHome['home.topbar.phone_display'] ?? '');
 $ratibPhoneDigits = function_exists('ratib_site_content_phone_digits_for_links')
