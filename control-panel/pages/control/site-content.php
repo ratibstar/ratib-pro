@@ -52,6 +52,12 @@ if ($ctrl instanceof mysqli) {
 }
 
 $allowedKeys = array_keys(ratib_site_content_defaults_home());
+$defaults = ratib_site_content_defaults_home();
+$values = $defaults;
+foreach (array_keys($defaults) as $k) {
+    $values[$k] = ratib_site_content_get($k, $defaults[$k]);
+}
+
 $flashOk = false;
 $flashErr = '';
 $flashCacheWarn = '';
@@ -75,18 +81,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
         );
         if ($stmt) {
             foreach ($allowedKeys as $key) {
-                if (!array_key_exists($key, $posted)) {
-                    continue;
+                if (array_key_exists($key, $posted)) {
+                    $val = is_string($posted[$key]) ? $posted[$key] : '';
+                    $val = str_replace(["\r\n", "\r"], "\n", $val);
+                    $val = trim($val);
+                } else {
+                    $val = $values[$key];
                 }
-                $val = is_string($posted[$key]) ? $posted[$key] : '';
-                $val = str_replace(["\r\n", "\r"], "\n", $val);
-                $val = trim($val);
                 $paramKey = $key;
                 $stmt->bind_param('ss', $paramKey, $val);
                 $stmt->execute();
             }
             $stmt->close();
             $flashOk = true;
+            foreach (array_keys($defaults) as $k) {
+                $values[$k] = ratib_site_content_get($k, $defaults[$k]);
+            }
             if ($flashOk && function_exists('ratib_site_content_export_public_cache')) {
                 if (!ratib_site_content_export_public_cache()) {
                     $flashCacheWarn = 'Saved field rows, but the homepage snapshot could not be stored (no writable disk path and DB snapshot row failed). Check MySQL permissions for <code>ratib_site_content</code>, or fix filesystem permissions / set <code>RATIB_SITE_CONTENT_CACHE_FILE</code> — see <code>includes/site-content.php</code>.';
@@ -100,12 +110,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
 
 $_SESSION['ratib_site_content_nonce'] = bin2hex(random_bytes(16));
 $nonce = $_SESSION['ratib_site_content_nonce'];
-
-$defaults = ratib_site_content_defaults_home();
-$values = $defaults;
-foreach (array_keys($defaults) as $k) {
-    $values[$k] = ratib_site_content_get($k, $defaults[$k]);
-}
 
 // Must use site-root URL (not asset()/BASE_URL): css lives next to /css/control/system.css at project root.
 // asset('css/...') becomes /control-panel/css/... which browsers resolve relative to /pages/control/ → doubled control-panel path + 404.
