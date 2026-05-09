@@ -1892,3 +1892,939 @@ body.ratib-saas-home {
   border: 1px solid rgba(52, 211, 153, 0.35);
   color: #a7f3d0;
 }
+
+/* =============================================================================
+   PHASE 2 — Premium enterprise polish (motion, depth, rhythm)
+   Preserves all existing selectors; additive overrides only.
+   ============================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Film grain + vignette — readability-preserving */
+body.ratib-saas-home::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+body.ratib-saas-home::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 85% 65% at 50% 40%, transparent 35%, rgba(5, 8, 22, 0.55) 100%);
+}
+
+/* Background depth — third orb + finer grid */
+.ratib-saas-bg::after {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  left: 45%;
+  bottom: 25%;
+  border-radius: 50%;
+  filter: blur(72px);
+  background: rgba(34, 211, 238, 0.12);
+  animation: ratibOrbFloat 22s ease-in-out infinite;
+  animation-delay: -5s;
+}
+
+.ratib-saas-bg__grid {
+  opacity: 0.28;
+  background-size: 48px 48px;
+}
+
+/* Typography rhythm */
+.ratib-section__title {
+  line-height: 1.15;
+  font-weight: 750;
+}
+
+.ratib-section__sub {
+  max-width: 38rem;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+}
+
+.ratib-section__head--left .ratib-section__sub {
+  margin-left: 0;
+}
+
+/* Section flow — soft separators */
+.ratib-main > .ratib-section + .ratib-section {
+  position: relative;
+}
+
+.ratib-main > .ratib-section + .ratib-section::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: min(92%, 56rem);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(139, 92, 246, 0.45) 25%,
+    rgba(34, 211, 238, 0.22) 50%,
+    rgba(249, 115, 22, 0.2) 75%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.ratib-main > .pricing-section.ratib-pricing-saas::before,
+.ratib-main > .video-section.ratib-video::before,
+.ratib-main > .ratib-final-cta::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: min(92%, 56rem);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.35), transparent);
+  pointer-events: none;
+}
+
+.pricing-section.ratib-pricing-saas,
+.video-section.ratib-video,
+.ratib-final-cta {
+  position: relative;
+}
+
+/* --- Hero premium --- */
+.ratib-hero {
+  padding-top: clamp(3rem, 7vw, 5.5rem);
+  padding-bottom: clamp(3.5rem, 9vw, 6.5rem);
+}
+
+.ratib-hero__grid {
+  gap: clamp(2.25rem, 5vw, 4.5rem);
+  align-items: stretch;
+}
+
+.ratib-eyebrow {
+  margin-bottom: 1rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  color: rgba(34, 211, 238, 0.92);
+}
+
+.ratib-hero__title {
+  max-width: 16ch;
+  line-height: 1.06;
+  font-weight: 800;
+  color: #f1f5f9;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.ratib-text-gradient {
+  background: linear-gradient(122deg, #e9d5ff 0%, #c4b5fd 28%, #a78bfa 48%, #fb923c 78%, #fdba74 100%);
+  background-size: 140% 140%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ratibHeroGradient 10s ease infinite;
+  filter: drop-shadow(0 0 28px rgba(167, 139, 250, 0.28));
+}
+
+@keyframes ratibHeroGradient {
+  0%,
+  100% {
+    background-position: 0% 40%;
+  }
+  50% {
+    background-position: 100% 60%;
+  }
+}
+
+.ratib-hero__lead {
+  font-size: 1rem;
+  line-height: 1.62;
+  max-width: 36rem;
+  color: #b8c4d4;
+  letter-spacing: 0.01em;
+}
+
+/* Micro-feature list */
+.ratib-hero__bullets {
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.ratib-hero__bullets li {
+  padding: 0.65rem 0.85rem 0.65rem 0.75rem;
+  border-radius: var(--r-radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(139, 92, 246, 0.04));
+  align-items: center;
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
+}
+
+.ratib-hero__bullets li:hover {
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.12),
+    0 12px 36px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.ratib-hero__bullets i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-top: 0;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  background: rgba(139, 92, 246, 0.18);
+  color: #ddd6fe;
+  flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.12);
+}
+
+.ratib-hero__actions {
+  gap: 0.85rem;
+}
+
+.ratib-btn--primary {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.25),
+    0 8px 28px rgba(139, 92, 246, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+.ratib-btn--primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.14) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 0.55s ease;
+}
+
+.ratib-btn--primary:hover::after {
+  transform: translateX(120%);
+}
+
+.ratib-btn--primary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    0 16px 44px rgba(139, 92, 246, 0.55),
+    0 0 32px rgba(249, 115, 22, 0.15);
+}
+
+.ratib-btn--outline {
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.25) inset;
+  backdrop-filter: blur(8px);
+}
+
+.ratib-btn--outline:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 28px rgba(139, 92, 246, 0.22),
+    0 0 0 1px rgba(167, 139, 250, 0.45) inset;
+}
+
+.ratib-btn:active {
+  transform: translateY(0);
+}
+
+/* --- Command dashboard — depth & live motion --- */
+.ratib-hero__visual {
+  perspective: 1200px;
+}
+
+.ratib-dash {
+  position: relative;
+  transform-style: preserve-3d;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(165deg, rgba(15, 23, 42, 0.97) 0%, rgba(15, 23, 42, 0.72) 55%, rgba(15, 23, 42, 0.88) 100%);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.35),
+    0 32px 96px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(139, 92, 246, 0.14) inset,
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  animation: ratibDashFloat 14s ease-in-out infinite;
+}
+
+@keyframes ratibDashFloat {
+  0%,
+  100% {
+    transform: rotateX(0deg) translateY(0);
+  }
+  50% {
+    transform: rotateX(1.2deg) translateY(-4px);
+  }
+}
+
+.ratib-dash::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.12),
+    transparent 35%,
+    transparent 65%,
+    rgba(139, 92, 246, 0.25)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.65;
+}
+
+.ratib-dash__chrome {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(0, 0, 0, 0.35));
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+.ratib-dash__live .ratib-live-dot {
+  animation: ratibLiveBlink 1.4s ease-in-out infinite;
+}
+
+@keyframes ratibLiveBlink {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.85);
+  }
+  50% {
+    opacity: 0.65;
+    transform: scale(0.92);
+    box-shadow: 0 0 18px rgba(52, 211, 153, 1);
+  }
+}
+
+.ratib-kpi {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01));
+  animation: ratibKpiPulse 5s ease-in-out infinite;
+}
+
+.ratib-kpi::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -40%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  animation: ratibKpiSheen 6s ease-in-out infinite;
+}
+
+@keyframes ratibKpiPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(139, 92, 246, 0.08);
+  }
+}
+
+@keyframes ratibKpiSheen {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+.ratib-kpi:nth-child(1) {
+  animation-delay: 0s;
+}
+.ratib-kpi:nth-child(2) {
+  animation-delay: 0.4s;
+}
+.ratib-kpi:nth-child(3) {
+  animation-delay: 0.8s;
+}
+
+.ratib-stage--active {
+  animation: ratibStagePulse 2.2s ease-in-out infinite;
+}
+
+@keyframes ratibStagePulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 12px rgba(139, 92, 246, 0.35),
+      0 0 0 1px rgba(167, 139, 250, 0.45);
+  }
+  50% {
+    box-shadow:
+      0 0 22px rgba(139, 92, 246, 0.55),
+      0 0 0 1px rgba(196, 181, 253, 0.65);
+  }
+}
+
+.ratib-mapstrip {
+  padding: 0.45rem 0.5rem;
+  margin-top: 0.65rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(34, 211, 238, 0.12);
+}
+
+.ratib-mapstrip i {
+  animation: ratibIconPulse 2s ease infinite;
+}
+
+@keyframes ratibIconPulse {
+  50% {
+    color: var(--r-cyan);
+    filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.6));
+  }
+}
+
+.ratib-chart__bars i {
+  transform-origin: bottom center;
+  animation: ratibDashBarMotion 2.6s ease-in-out infinite;
+}
+
+.ratib-chart__bars i:nth-child(1) {
+  animation-duration: 2.4s;
+}
+.ratib-chart__bars i:nth-child(2) {
+  animation-duration: 2.8s;
+}
+.ratib-chart__bars i:nth-child(3) {
+  animation-duration: 2.2s;
+}
+.ratib-chart__bars i:nth-child(4) {
+  animation-duration: 3s;
+}
+.ratib-chart__bars i:nth-child(5) {
+  animation-duration: 2.5s;
+}
+
+@keyframes ratibDashBarMotion {
+  0%,
+  100% {
+    transform: scaleY(0.88);
+    filter: brightness(0.92);
+  }
+  50% {
+    transform: scaleY(1.08);
+    filter: brightness(1.12);
+  }
+}
+
+.ratib-spark {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.ratib-spark::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 14px;
+  height: 22px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 24' preserveAspectRatio='none'%3E%3Cpath d='M0 18 L15 8 L30 14 L45 4 L60 12 L75 6 L90 16 L105 10 L120 14 L120 24 L0 24 Z' fill='none' stroke='%2322d3ee' stroke-width='1.2' opacity='0.65'/%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+  opacity: 0.9;
+  animation: ratibSparkPath 3.5s ease-in-out infinite;
+}
+
+@keyframes ratibSparkPath {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: translateY(1px);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+}
+
+/* Trust + feature cards — glass & glow */
+.ratib-trust-card,
+.ratib-feature-card {
+  backdrop-filter: blur(12px);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+}
+
+.ratib-trust-card:hover,
+.ratib-feature-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(139, 92, 246, 0.45);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(139, 92, 246, 0.15) inset,
+    0 0 40px rgba(139, 92, 246, 0.08);
+}
+
+.ratib-trust-card__icon {
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.ratib-trust-card:hover .ratib-trust-card__icon {
+  transform: scale(1.06);
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.35);
+}
+
+.ratib-feature-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 11px;
+  margin-bottom: 0.85rem;
+  background: linear-gradient(145deg, rgba(249, 115, 22, 0.18), rgba(139, 92, 246, 0.12));
+  color: #fde68a;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.ratib-feature-card:hover .ratib-feature-card__icon {
+  transform: scale(1.08) rotate(-2deg);
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.15);
+}
+
+.ratib-feature-card h3 {
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+/* Pipeline — mission control */
+.ratib-pipeline-section .ratib-section__sub {
+  max-width: 36rem;
+}
+
+.ratib-pipeline {
+  padding: 2rem 0 1.5rem;
+  align-items: stretch;
+}
+
+.ratib-pipeline__track {
+  top: 2.25rem;
+  height: 3px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(52, 211, 153, 0.15),
+    rgba(52, 211, 153, 0.45) 20%,
+    rgba(139, 92, 246, 0.65) 55%,
+    rgba(249, 115, 22, 0.35) 85%,
+    rgba(249, 115, 22, 0.12)
+  );
+  background-size: 220% 100%;
+  animation: ratibPipelineFlow 4.5s linear infinite;
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.18);
+}
+
+@keyframes ratibPipelineFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.ratib-pipeline__track::after {
+  content: "";
+  position: absolute;
+  inset: -6px -4px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.25), transparent 65%);
+  opacity: 0.6;
+  animation: ratibPipelineGlow 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes ratibPipelineGlow {
+  50% {
+    opacity: 1;
+  }
+}
+
+.ratib-pipeline__item {
+  flex: 1 1 88px;
+  min-width: 76px;
+  padding-top: 0.25rem;
+}
+
+.ratib-pipeline__dot {
+  width: 14px;
+  height: 14px;
+  position: relative;
+}
+
+.ratib-pipeline__item--active .ratib-pipeline__dot::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  animation: ratibPipelineRing 2s ease-out infinite;
+}
+
+@keyframes ratibPipelineRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.ratib-pipeline__label {
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  color: #e2e8f0;
+}
+
+.ratib-pipeline__meta {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Multi-agency — infrastructure energy */
+.ratib-eco__viz {
+  position: relative;
+  padding: 2rem 0;
+}
+
+.ratib-eco__viz::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 120%;
+  height: 120%;
+  margin-left: -60%;
+  background: conic-gradient(
+    from 0deg at 50% 18%,
+    transparent 0deg,
+    rgba(139, 92, 246, 0.06) 45deg,
+    transparent 90deg,
+    rgba(34, 211, 238, 0.05) 180deg,
+    transparent 270deg,
+    rgba(249, 115, 22, 0.05) 315deg,
+    transparent 360deg
+  );
+  animation: ratibEcoRotate 32s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes ratibEcoRotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ratib-eco__core,
+.ratib-eco__spokes {
+  position: relative;
+  z-index: 1;
+}
+
+.ratib-eco__core {
+  overflow: visible;
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.25) inset,
+    0 24px 64px rgba(0, 0, 0, 0.45),
+    0 0 80px rgba(139, 92, 246, 0.12);
+}
+
+.ratib-eco__core::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -12px;
+  width: 2px;
+  height: 12px;
+  margin-left: -1px;
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.75), rgba(34, 211, 238, 0.35));
+  animation: ratibEcoBeam 2.2s ease-in-out infinite;
+}
+
+@keyframes ratibEcoBeam {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scaleY(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1.1);
+  }
+}
+
+.ratib-eco__spokes {
+  padding-top: 0.5rem;
+}
+
+.ratib-eco__spokes::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(139, 92, 246, 0.35),
+    rgba(34, 211, 238, 0.28),
+    rgba(249, 115, 22, 0.22),
+    transparent
+  );
+  opacity: 0.85;
+}
+
+.ratib-eco__spoke {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(15, 23, 42, 0.6));
+}
+
+.ratib-eco__spoke::before {
+  content: "";
+  display: block;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  margin: 0 auto 0.5rem;
+  border-radius: 50%;
+  background: rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.45);
+  animation: ratibEcoNode 3s ease-in-out infinite;
+}
+
+.ratib-eco__spoke:nth-child(2)::before {
+  animation-delay: 0.4s;
+}
+.ratib-eco__spoke:nth-child(3)::before {
+  animation-delay: 0.8s;
+}
+.ratib-eco__spoke:nth-child(4)::before {
+  animation-delay: 1.2s;
+}
+
+@keyframes ratibEcoNode {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+/* Analytics cards */
+.ratib-analytics-card {
+  backdrop-filter: blur(10px);
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.ratib-analytics-card:hover {
+  border-color: rgba(34, 211, 238, 0.22);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+.ratib-metric__chart--line::after {
+  animation: ratibMetricLine 2.8s ease-in-out infinite;
+}
+
+@keyframes ratibMetricLine {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scaleX(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleX(1.02);
+  }
+}
+
+/* AI cards polish */
+.ratib-ai-card {
+  backdrop-filter: blur(10px);
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.ratib-ai-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(139, 92, 246, 0.35);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+}
+
+.ratib-ai-row {
+  transition: border-color 0.2s ease;
+}
+
+.ratib-ai-row:hover {
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+/* API strip */
+.ratib-api-strip__inner {
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.1) inset,
+    0 20px 48px rgba(0, 0, 0, 0.25);
+}
+
+/* Video + final CTA */
+.ratib-video .video-wrap {
+  border-radius: 16px;
+}
+
+.ratib-final-cta__bg {
+  background:
+    radial-gradient(ellipse 80% 80% at 50% 120%, rgba(139, 92, 246, 0.2), transparent),
+    radial-gradient(ellipse 50% 40% at 20% 30%, rgba(249, 115, 22, 0.08), transparent);
+  animation: ratibCtaBg 16s ease-in-out infinite;
+}
+
+@keyframes ratibCtaBg {
+  50% {
+    opacity: 0.95;
+    filter: saturate(1.08);
+  }
+}
+
+/* Scroll reveal — progressive enhancement (see home-page.js) */
+.ratib-reveal {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal:not(.ratib-reveal-visible) {
+  opacity: 0;
+  transform: translateY(22px);
+}
+
+html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal:not(.ratib-reveal-visible) {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Responsive polish */
+@media (max-width: 1023px) {
+  .ratib-hero__visual {
+    max-width: min(100%, 540px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .ratib-dash {
+    animation: none;
+  }
+
+  .ratib-pipeline__item {
+    flex: 1 1 42%;
+  }
+
+  .ratib-pipeline__track {
+    display: none;
+  }
+
+  .ratib-eco__viz::before {
+    opacity: 0.5;
+  }
+}
+
+@media (max-width: 599px) {
+  .ratib-hero__title {
+    max-width: none;
+  }
+
+  .ratib-hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ratib-btn--lg {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ratib-dash__row {
+    grid-template-columns: 1fr;
+  }
+
+  .ratib-dash__charts {
+    grid-template-columns: 1fr;
+  }
+
+  .ratib-nav-shell__inner {
+    gap: 0.65rem;
+  }
+}

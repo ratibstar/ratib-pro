@@ -767,4 +767,54 @@
     }
 })();
 
+/** Phase 2: subtle scroll reveal — adds classes only; no DOM/markup changes. */
+(function ratibHomeScrollReveal() {
+    if (!window.IntersectionObserver) {
+        return;
+    }
+    var reduce =
+        window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+        return;
+    }
+    var main = document.querySelector('.ratib-main');
+    if (!main) {
+        return;
+    }
+    var sel =
+        '.ratib-hero, .ratib-section, .pricing-section.ratib-pricing-saas, .video-section.ratib-video, .ratib-final-cta';
+    var els = main.querySelectorAll(sel);
+    if (!els.length) {
+        return;
+    }
+    var html = document.documentElement;
+    els.forEach(function (el) {
+        el.classList.add('ratib-reveal');
+        var r = el.getBoundingClientRect();
+        var vh = window.innerHeight || document.documentElement.clientHeight;
+        if (r.top < vh * 0.92 && r.bottom > -40) {
+            el.classList.add('ratib-reveal-visible');
+        }
+    });
+    html.classList.add('ratib-reveal-init');
+    html.classList.add('ratib-reveal-ready');
+    var io = new IntersectionObserver(
+        function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('ratib-reveal-visible');
+                    io.unobserve(entry.target);
+                }
+            });
+        },
+        { rootMargin: '0px 0px -6% 0px', threshold: 0.06 }
+    );
+    els.forEach(function (el) {
+        if (!el.classList.contains('ratib-reveal-visible')) {
+            io.observe(el);
+        }
+    });
+})();
+
 
