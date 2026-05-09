@@ -95,6 +95,16 @@ $ratibUrl = defined('RATIB_PRO_URL') ? RATIB_PRO_URL : null;
             <i class="fas fa-clipboard-check"></i> View Requests
         </a>
     </div>
+
+    <?php if (function_exists('control_panel_page_with_control') && control_panel_page_with_control('control/site-content.php')) { ?>
+    <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings">
+        <h3><i class="fas fa-globe"></i> Public site content</h3>
+        <p>Edit hero copy and optional image paths on the public Ratib Program homepage.</p>
+        <a href="<?php echo pageUrl('control/site-content.php'); ?>?control=1" class="btn btn-primary">
+            <i class="fas fa-pen-to-square"></i> Edit homepage copy
+        </a>
+    </div>
+    <?php } ?>
 </div>
 
 <p class="control-settings-footer-note">

@@ -259,6 +259,14 @@ $ratibCountryIsLocked = ($ratibLockedCountryName !== '');
 if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true)) {
     array_unshift($countries, $ratibLockedCountryName);
 }
+
+require_once __DIR__ . '/../includes/site-content.php';
+$ratibHomeContent = ratib_site_content_public_home();
+$ratibProgSrc = [
+    ratib_site_content_asset_url($baseUrl, $ratibHomeContent['program_img'][0], 'assets/images/program-preview-pipeline.svg', __DIR__ . '/../assets/images/program-preview-pipeline.svg'),
+    ratib_site_content_asset_url($baseUrl, $ratibHomeContent['program_img'][1], 'assets/images/program-preview-workers.svg', __DIR__ . '/../assets/images/program-preview-workers.svg'),
+    ratib_site_content_asset_url($baseUrl, $ratibHomeContent['program_img'][2], 'assets/images/program-preview-finance.svg', __DIR__ . '/../assets/images/program-preview-finance.svg'),
+];
 ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -341,9 +349,9 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
         <section class="ratib-hero">
             <div class="ratib-container ratib-hero__grid">
                 <div class="ratib-hero__copy">
-                    <p class="ratib-eyebrow">Recruitment Automation &amp; Tracking Intelligence Base</p>
+                    <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHomeContent['eyebrow'], ENT_QUOTES, 'UTF-8'); ?></p>
                     <h1 class="ratib-hero__title">Recruitment Automation &amp; <span class="ratib-text-gradient">Workforce Intelligence</span></h1>
-                    <p class="ratib-hero__lead">Production control plane for sending-country agencies and host-market programs: lifecycle orchestration, workforce telemetry, compliance gates, and ledger-linked billing—same surfaces operations teams use daily, not a marketing shell.</p>
+                    <p class="ratib-hero__lead"><?php echo htmlspecialchars($ratibHomeContent['lead'], ENT_QUOTES, 'UTF-8'); ?></p>
                     <ul class="ratib-hero__bullets">
                         <li><i class="fas fa-diagram-project"></i> Workflow orchestration &amp; stage sync across sending &amp; host markets</li>
                         <li><i class="fas fa-building-user"></i> Tenant isolation, RBAC, and per-agency domain edges</li>
@@ -527,15 +535,15 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                     <p class="ratib-hero__photo-eyebrow">Program previews</p>
                     <div class="ratib-hero__photo-grid" role="list">
                         <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                            <img src="<?php echo htmlspecialchars($baseUrl . '/assets/images/program-preview-pipeline.svg?v=' . (int) (@filemtime(__DIR__ . '/../assets/images/program-preview-pipeline.svg') ?: 1), ENT_QUOTES, 'UTF-8'); ?>" alt="RATIB pipeline board with stages, SLA, and worker rows" width="800" height="500" loading="lazy" decoding="async">
+                            <img src="<?php echo htmlspecialchars($ratibProgSrc[0], ENT_QUOTES, 'UTF-8'); ?>" alt="RATIB pipeline board with stages, SLA, and worker rows" width="800" height="500" loading="lazy" decoding="async">
                             <figcaption>Pipeline board</figcaption>
                         </figure>
                         <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                            <img src="<?php echo htmlspecialchars($baseUrl . '/assets/images/program-preview-workers.svg?v=' . (int) (@filemtime(__DIR__ . '/../assets/images/program-preview-workers.svg') ?: 1), ENT_QUOTES, 'UTF-8'); ?>" alt="RATIB workers registry with stages, owners, and GPS context" width="800" height="500" loading="lazy" decoding="async">
+                            <img src="<?php echo htmlspecialchars($ratibProgSrc[1], ENT_QUOTES, 'UTF-8'); ?>" alt="RATIB workers registry with stages, owners, and GPS context" width="800" height="500" loading="lazy" decoding="async">
                             <figcaption>Workers registry</figcaption>
                         </figure>
                         <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                            <img src="<?php echo htmlspecialchars($baseUrl . '/assets/images/program-preview-finance.svg?v=' . (int) (@filemtime(__DIR__ . '/../assets/images/program-preview-finance.svg') ?: 1), ENT_QUOTES, 'UTF-8'); ?>" alt="RATIB finance view with invoices, throughput, and connector latency" width="800" height="500" loading="lazy" decoding="async">
+                            <img src="<?php echo htmlspecialchars($ratibProgSrc[2], ENT_QUOTES, 'UTF-8'); ?>" alt="RATIB finance view with invoices, throughput, and connector latency" width="800" height="500" loading="lazy" decoding="async">
                             <figcaption>Finance &amp; ledger</figcaption>
                         </figure>
                     </div>
@@ -546,8 +554,8 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
         <section class="ratib-section ratib-trust" id="platform">
             <div class="ratib-container">
                 <header class="ratib-section__head">
-                    <h2 class="ratib-section__title">Built for regulated, high-volume recruitment operations</h2>
-                    <p class="ratib-section__sub">Deployed as a shared control plane: tenant-isolated data paths, encrypted transit, immutable workflow history, and finance-grade events organizations can reconcile—not narrative dashboards.</p>
+                    <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHomeContent['platform_title'], ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <p class="ratib-section__sub"><?php echo htmlspecialchars($ratibHomeContent['platform_sub'], ENT_QUOTES, 'UTF-8'); ?></p>
                 </header>
                 <div class="ratib-trust__grid">
                     <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-user-shield"></i></div><h3>RBAC &amp; scoped tenancy</h3><p>Role matrices per agency branch; least-privilege API keys; segregated operator sessions.</p></article>
@@ -591,7 +599,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                     <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-id-badge"></i></div><h3>Applicant system of record</h3><p>Single longitudinal record: docs, history, readiness for deployment.</p></article>
                     <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-shuffle"></i></div><h3>Stage synchronization</h3><p>Event- and time-driven transitions with explicit human-in-the-loop gates.</p></article>
                     <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-location-dot"></i></div><h3>Field &amp; GPS telemetry</h3><p>Check-ins, corridors, and exception routing for operational visibility.</p></article>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-globe"></i></div><h3>Multi-domain tenancy</h3><p>Agency-branded edges on shared orchestration and identity substrate.</p></article>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-globe"></i></div><h3>Multi-domain tenancy</h3><p>Agency-branded edges on unified orchestration and identity substrate.</p></article>
                     <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-file-signature"></i></div><h3>Digital contracts</h3><p>Signatures and renewals bound to lifecycle state transitions.</p></article>
                     <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-coins"></i></div><h3>Operational finance hooks</h3><p>Placement-to-settlement awareness for controllers and agency billing.</p></article>
                     <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-receipt"></i></div><h3>E-invoicing rails</h3><p>Issuance when rules and verified events align—auditable downstream.</p></article>
@@ -636,7 +644,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                         <h3>Recruitment agencies · multi-branch</h3>
                         <p>Central intake with branch-level RBAC, quota splits, and consolidated reporting for owners—without duplicating worker records across offices.</p>
                         <div class="ratib-ai-visual ratib-use-visual">
-                            <div class="ratib-ai-row"><span class="ratib-pill">Tenant</span> ACME · branches RUH · JED · DMM · shared pipeline graph</div>
+                            <div class="ratib-ai-row"><span class="ratib-pill">Tenant</span> ACME · branches RUH · JED · DMM · unified pipeline graph</div>
                             <div class="ratib-ai-row"><span class="ratib-pill ratib-pill--accent">Ops</span> stage owners mapped · SLA inherited from policy CL-2024-ME</div>
                             <div class="ratib-ai-row"><span class="ratib-pill">Emit</span> nightly cohort rollup · exec dashboard · no CSV extracts</div>
                         </div>
@@ -647,7 +655,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                     </article>
                     <article class="ratib-ai-card ratib-use-card">
                         <h3>Multi-office recruitment firms</h3>
-                        <p>Shared candidate inventory with segregated finance and placement attribution—one platform, strict tenant edges between brands.</p>
+                        <p>Consolidated candidate inventory with segregated finance and placement attribution—one platform, strict tenant edges between brands.</p>
                     </article>
                     <article class="ratib-ai-card ratib-use-card">
                         <h3>Enterprise staffing coordination</h3>
@@ -670,7 +678,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                 <header class="ratib-section__head">
                     <p class="ratib-eyebrow">Multi-agency ecosystem</p>
                     <h2 class="ratib-section__title">One RATIB core. Many independent agencies.</h2>
-                    <p class="ratib-section__sub">Isolated production tenants on a shared control plane—identity, orchestration, telemetry, and finance connectors without duplicating stacks per agency.</p>
+                    <p class="ratib-section__sub">Isolated production tenants on one control plane—identity, orchestration, telemetry, and finance connectors without duplicating stacks per agency.</p>
                 </header>
                 <div class="ratib-eco__viz" aria-hidden="true">
                     <div class="ratib-eco__core">
@@ -698,7 +706,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
                     <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">snapshot · merged shards · UTC</p><h3>Checkpoint fidelity</h3><div class="ratib-metric"><span class="ratib-metric__val ratib-live-nudge" data-ratib-jitter-pct="98.2">98.2%</span><span class="ratib-metric__chart ratib-metric__chart--line" aria-hidden="true"></span></div><p>Completed checkpoints vs policy graph for in-motion cohorts.</p></article>
                     <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">queue depth · 15m resolution</p><h3>Active lifecycle workload</h3><div class="ratib-metric"><span class="ratib-metric__val">2.8k</span><span class="ratib-metric__chart ratib-metric__chart--bars" aria-hidden="true"></span></div><p>Workers in non-terminal stages across connected agencies.</p></article>
                     <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">normalized demand index</p><h3>Throughput vs baseline</h3><div class="ratib-metric"><span class="ratib-metric__val">+31%</span><span class="ratib-metric__note">QoQ</span></div><p>Comparable velocity after seasonal adjustment—not vanity growth.</p></article>
-                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">engine attribution · 7d</p><h3>Automated transition share</h3><div class="ratib-metric"><span class="ratib-metric__val">76%</span><span class="ratib-metric__note">engine-led hops</span></div><p>Remainder explicit HITL—policy requires human gates.</p></article>
+                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">engine attribution · 7d</p><h3>Automated transition ratio</h3><div class="ratib-metric"><span class="ratib-metric__val">76%</span><span class="ratib-metric__note">engine-led hops</span></div><p>Remainder explicit HITL—policy requires human gates.</p></article>
                 </div>
             </div>
         </section>

@@ -160,6 +160,7 @@ $controlCenterUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/admin/co
             }
             ?>
             <li><a href="<?php echo htmlspecialchars($registrationPageUrl); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item"><i class="fas fa-file-signature"></i><span>Registration Page</span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php')); ?>" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) === 'site-content.php' ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings"><i class="fas fa-file-lines"></i><span>Public site content</span></a></li>
             <?php $designedAppUrl = defined('DESIGNED_APP_URL') ? trim((string) DESIGNED_APP_URL) : ''; ?>
             <?php if ($designedAppUrl !== ''): ?>
             <li><a href="<?php echo htmlspecialchars($designedAppUrl); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item" data-permission="control_designed_site,view_control_designed_site"><i class="fas fa-palette"></i><span>Designed site</span></a></li>
