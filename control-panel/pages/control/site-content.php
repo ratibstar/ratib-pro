@@ -107,7 +107,15 @@ foreach (array_keys($defaults) as $k) {
     $values[$k] = ratib_site_content_get($k, $defaults[$k]);
 }
 
-$editorCss = asset('css/control/site-content-home-editor.css');
+// Must use site-root URL (not asset()/BASE_URL): css lives next to /css/control/system.css at project root.
+// asset('css/...') becomes /control-panel/css/... which browsers resolve relative to /pages/control/ → doubled control-panel path + 404.
+require_once __DIR__ . '/../../includes/control/request-url.php';
+$ratibPublicRoot = function_exists('control_ratib_pro_public_base_url')
+    ? control_ratib_pro_public_base_url()
+    : preg_replace('#/control-panel$#', '', control_request_origin_base());
+$ratibPublicRoot = rtrim((string) $ratibPublicRoot, '/');
+$editorCss = ($ratibPublicRoot !== '' ? $ratibPublicRoot : '') . '/css/control/site-content-home-editor.css';
+
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('Public site content', [$editorCss], []);
 
