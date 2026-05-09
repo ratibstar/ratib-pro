@@ -260,6 +260,8 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236b21a8'/%3E%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
     <title>RATIB — Enterprise Recruitment OS &amp; Workforce Intelligence Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -271,7 +273,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
     <?php $ratibHomeCssV = (int) (@filemtime(__DIR__ . '/../css/pages/home-public.css') ?: time()); ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo $ratibHomeCssV; ?>">
 </head>
-<body class="ratib-saas-home">
+<body class="ratib-saas-home" data-ratib-home-layout="video-hero-program-svgs">
 
     <div class="ratib-saas-bg" aria-hidden="true">
         <div class="ratib-saas-bg__gradient"></div>
@@ -330,6 +332,7 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
     </header>
 
     <main class="ratib-main">
+        <!-- RATIB public home layout: product tour video directly under hero grid; program preview SVGs below. Deploy fingerprint: search HTML for id="video" on hero band + data-ratib-home-layout on body. -->
         <section class="ratib-hero">
             <div class="ratib-container ratib-hero__grid">
                 <div class="ratib-hero__copy">

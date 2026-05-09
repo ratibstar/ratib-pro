@@ -3586,3 +3586,5 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
     height: 55%;
   }
 }
+
+/* bump: hero video band + program SVG previews (forces css ?v= refresh on deploy) */
