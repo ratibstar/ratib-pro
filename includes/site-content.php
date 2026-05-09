@@ -394,6 +394,74 @@ if (!function_exists('ratib_site_content_phone_digits_for_links')) {
 
 require_once __DIR__ . '/site-content-home-data.php';
 
+if (!function_exists('ratib_site_content_home_flat_from_db')) {
+    /**
+     * Live ratib_site_content rows for homepage keys — authoritative vs snapshot/file caches.
+     * Returns null only when the control DB connection is unavailable (then caller uses caches).
+     *
+     * @param array<string, string> $defaults
+     *
+     * @return array<string, string>|null
+     */
+    function ratib_site_content_home_flat_from_db(array $defaults): ?array
+    {
+        $conn = ratib_site_content_db();
+        if (!$conn) {
+            return null;
+        }
+        $keys = array_keys($defaults);
+        $n = count($keys);
+        if ($n === 0) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, $n, '?'));
+        $sql = 'SELECT content_key, content_value FROM ratib_site_content WHERE content_key IN (' . $placeholders . ')';
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            error_log('ratib_site_content_home_flat_from_db: prepare failed: ' . $conn->error);
+
+            return null;
+        }
+
+        $types = str_repeat('s', $n);
+        $bindArgs = array_merge([$types], $keys);
+        $refs = [];
+        foreach ($bindArgs as $i => $v) {
+            $refs[$i] = &$bindArgs[$i];
+        }
+        call_user_func_array([$stmt, 'bind_param'], $refs);
+
+        if (!$stmt->execute()) {
+            error_log('ratib_site_content_home_flat_from_db: execute failed');
+            $stmt->close();
+
+            return null;
+        }
+
+        $out = $defaults;
+        $res = $stmt->get_result();
+        if ($res !== false) {
+            while ($row = $res->fetch_assoc()) {
+                $k = isset($row['content_key']) ? (string) $row['content_key'] : '';
+                if ($k !== '' && array_key_exists($k, $defaults)) {
+                    $out[$k] = (string) ($row['content_value'] ?? '');
+                }
+            }
+            $stmt->close();
+
+            return $out;
+        }
+
+        $stmt->close();
+        foreach ($keys as $key) {
+            $out[$key] = ratib_site_content_get($key, $defaults[$key]);
+        }
+
+        return $out;
+    }
+}
+
 if (!function_exists('ratib_site_content_export_public_cache')) {
     /**
      * After CMS save: write JSON snapshot to disk for fast public reads; if disk is not writable,

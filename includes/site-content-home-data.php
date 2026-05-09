@@ -334,8 +334,18 @@ if (!function_exists('ratib_site_content_home_flat')) {
             return $out;
         };
 
-        // 1) DB snapshot row — updated whenever Save succeeds (including hosts where disk JSON cannot be replaced).
-        //    Must come BEFORE filesystem JSON so a stale leftover ratib_site_content_home.json cannot override fresh saves.
+        // 1) Live database rows (same source as the CMS). Always wins when MySQL is reachable so stale JSON/snapshot
+        //    cannot hide fresh saves.
+        if (function_exists('ratib_site_content_home_flat_from_db')) {
+            $live = ratib_site_content_home_flat_from_db($defaults);
+            if ($live !== null) {
+                $memo = $live;
+
+                return $memo;
+            }
+        }
+
+        // 2) DB snapshot row (single blob; used when row-level SELECT is not available).
         if (function_exists('ratib_site_content_home_snapshot_db_read')) {
             $rawDb = ratib_site_content_home_snapshot_db_read();
             if ($rawDb !== null && $rawDb !== '') {
@@ -348,7 +358,7 @@ if (!function_exists('ratib_site_content_home_flat')) {
             }
         }
 
-        // 2) JSON file snapshot (fast path when DB snapshot row was cleared after a successful disk write).
+        // 3) JSON file snapshot
         $path = function_exists('ratib_site_content_public_cache_path_for_read')
             ? ratib_site_content_public_cache_path_for_read()
             : null;
