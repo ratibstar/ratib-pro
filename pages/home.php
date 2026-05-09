@@ -261,11 +261,14 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
 }
 
 require_once __DIR__ . '/../includes/site-content.php';
-$ratibHomeContent = ratib_site_content_public_home();
+$ratibHome = ratib_site_content_home_flat();
+$ratibPricingStarterLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.starter.features'] ?? '');
+$ratibPricingGoldLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.gold.features'] ?? '');
+$ratibPricingPlatinumLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.platinum.features'] ?? '');
 $ratibProgSrc = [
-    ratib_site_content_asset_url($baseUrl, $ratibHomeContent['program_img'][0], 'assets/images/program-preview-pipeline.svg', __DIR__ . '/../assets/images/program-preview-pipeline.svg'),
-    ratib_site_content_asset_url($baseUrl, $ratibHomeContent['program_img'][1], 'assets/images/program-preview-workers.svg', __DIR__ . '/../assets/images/program-preview-workers.svg'),
-    ratib_site_content_asset_url($baseUrl, $ratibHomeContent['program_img'][2], 'assets/images/program-preview-finance.svg', __DIR__ . '/../assets/images/program-preview-finance.svg'),
+    ratib_site_content_asset_url($baseUrl, $ratibHome['home.program.img1'] ?? '', 'assets/images/program-preview-pipeline.svg', __DIR__ . '/../assets/images/program-preview-pipeline.svg'),
+    ratib_site_content_asset_url($baseUrl, $ratibHome['home.program.img2'] ?? '', 'assets/images/program-preview-workers.svg', __DIR__ . '/../assets/images/program-preview-workers.svg'),
+    ratib_site_content_asset_url($baseUrl, $ratibHome['home.program.img3'] ?? '', 'assets/images/program-preview-finance.svg', __DIR__ . '/../assets/images/program-preview-finance.svg'),
 ];
 ?>
 <!DOCTYPE html>
@@ -276,7 +279,7 @@ $ratibProgSrc = [
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236b21a8'/%3E%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
-    <title>RATIB — Enterprise Recruitment OS &amp; Workforce Intelligence Platform</title>
+    <title><?php echo htmlspecialchars($ratibHome['home.meta.page_title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -298,15 +301,15 @@ $ratibProgSrc = [
     <div class="ratib-topbar">
         <div class="ratib-topbar__inner ratib-container">
             <div class="ratib-topbar__left">
-                <a href="tel:+966599863868" class="ratib-topbar__link"><i class="fas fa-phone-alt" aria-hidden="true"></i> +966 59 986 3868</a>
+                <a href="tel:+966599863868" class="ratib-topbar__link"><i class="fas fa-phone-alt" aria-hidden="true"></i> <?php echo htmlspecialchars($ratibHome['home.topbar.phone_display'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 <a href="https://wa.me/966599863868" target="_blank" rel="noopener noreferrer" class="ratib-topbar__wa" title="WhatsApp">
                     <span class="ratib-live-dot" aria-hidden="true"></span>
-                    Live on WhatsApp
+                    <?php echo htmlspecialchars($ratibHome['home.topbar.wa_label'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
                 </a>
             </div>
             <div class="ratib-topbar__right">
-                <span class="ratib-topbar__ops" aria-hidden="true"><span class="ratib-mono-tag">TLS 1.3</span><span class="ratib-topbar__ops-sep">·</span><span class="ratib-mono-tag"><span class="ratib-live-counter" data-ratib-counter="247">247</span> nodes</span></span>
-                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>" class="ratib-topbar__link">Client login</a>
+                <span class="ratib-topbar__ops" aria-hidden="true"><span class="ratib-mono-tag"><?php echo htmlspecialchars($ratibHome['home.topbar.tls_label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><span class="ratib-topbar__ops-sep">·</span><span class="ratib-mono-tag"><span class="ratib-live-counter" data-ratib-counter="<?php echo htmlspecialchars(preg_replace('/\D/', '', (string) ($ratibHome['home.topbar.nodes_count'] ?? '247')), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.topbar.nodes_count'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span> <?php echo htmlspecialchars($ratibHome['home.topbar.nodes_suffix'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></span>
+                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>" class="ratib-topbar__link"><?php echo htmlspecialchars($ratibHome['home.topbar.client_login'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 <span class="ratib-topbar__lang" role="group" aria-label="Language">
                     <span class="ratib-lang ratib-lang--active">EN</span>
                     <span class="ratib-lang-sep">·</span>
@@ -326,20 +329,20 @@ $ratibProgSrc = [
                 <span></span><span></span><span></span>
             </button>
             <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary">
-                <a href="#platform" class="ratib-nav__link">Platform</a>
-                <a href="#how-it-works" class="ratib-nav__link">How it works</a>
-                <a href="#features" class="ratib-nav__link">Features</a>
-                <a href="#solutions" class="ratib-nav__link">Solutions</a>
-                <a href="#programs" class="ratib-nav__link">Pricing</a>
-                <a href="#agencies" class="ratib-nav__link">Agencies</a>
-                <a href="#tracking" class="ratib-nav__link">Tracking</a>
-                <a href="#operational" class="ratib-nav__link">Visibility</a>
-                <a href="#api" class="ratib-nav__link">API</a>
-                <a href="#contact" class="ratib-nav__link">Contact</a>
+                <a href="#platform" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="#how-it-works" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.how_it_works'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="#features" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.features'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="#solutions" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.solutions'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="#programs" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.programs'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="#agencies" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.agencies'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="#tracking" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.tracking'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="#operational" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.operational'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="#api" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.api'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="#contact" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.contact'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </nav>
             <div class="ratib-nav__cta">
-                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" class="ratib-btn ratib-btn--ghost">Partner Login</a>
-                <a href="#register" class="ratib-btn ratib-btn--primary js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">Start agency infrastructure</a>
+                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" class="ratib-btn ratib-btn--ghost"><?php echo htmlspecialchars($ratibHome['home.nav.cta_partner'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="#register" class="ratib-btn ratib-btn--primary js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><?php echo htmlspecialchars($ratibHome['home.nav.cta_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
         </div>
     </header>
@@ -349,18 +352,18 @@ $ratibProgSrc = [
         <section class="ratib-hero">
             <div class="ratib-container ratib-hero__grid">
                 <div class="ratib-hero__copy">
-                    <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHomeContent['eyebrow'], ENT_QUOTES, 'UTF-8'); ?></p>
-                    <h1 class="ratib-hero__title">Recruitment Automation &amp; <span class="ratib-text-gradient">Workforce Intelligence</span></h1>
-                    <p class="ratib-hero__lead"><?php echo htmlspecialchars($ratibHomeContent['lead'], ENT_QUOTES, 'UTF-8'); ?></p>
+                    <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.hero.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <h1 class="ratib-hero__title"><?php echo htmlspecialchars($ratibHome['home.hero.title_before'] ?? '', ENT_QUOTES, 'UTF-8'); ?> <span class="ratib-text-gradient"><?php echo htmlspecialchars($ratibHome['home.hero.title_gradient'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></h1>
+                    <p class="ratib-hero__lead"><?php echo htmlspecialchars($ratibHome['home.hero.lead'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                     <ul class="ratib-hero__bullets">
-                        <li><i class="fas fa-diagram-project"></i> Workflow orchestration &amp; stage sync across sending &amp; host markets</li>
-                        <li><i class="fas fa-building-user"></i> Tenant isolation, RBAC, and per-agency domain edges</li>
-                        <li><i class="fas fa-location-crosshairs"></i> Field &amp; milestone telemetry with SLA visibility</li>
-                        <li><i class="fas fa-bolt"></i> Event-driven signals, escalations, and operational intelligence</li>
+                        <li><i class="fas fa-diagram-project"></i> <?php echo htmlspecialchars($ratibHome['home.hero.bullet.1'] ?? '', ENT_QUOTES, 'UTF-8'); ?></li>
+                        <li><i class="fas fa-building-user"></i> <?php echo htmlspecialchars($ratibHome['home.hero.bullet.2'] ?? '', ENT_QUOTES, 'UTF-8'); ?></li>
+                        <li><i class="fas fa-location-crosshairs"></i> <?php echo htmlspecialchars($ratibHome['home.hero.bullet.3'] ?? '', ENT_QUOTES, 'UTF-8'); ?></li>
+                        <li><i class="fas fa-bolt"></i> <?php echo htmlspecialchars($ratibHome['home.hero.bullet.4'] ?? '', ENT_QUOTES, 'UTF-8'); ?></li>
                     </ul>
                     <div class="ratib-hero__actions">
-                        <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">Launch operations workspace</a>
-                        <a href="#video" class="ratib-btn ratib-btn--outline ratib-btn--lg"><i class="fas fa-play" aria-hidden="true"></i> Platform walkthrough</a>
+                        <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><?php echo htmlspecialchars($ratibHome['home.hero.cta_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                        <a href="#video" class="ratib-btn ratib-btn--outline ratib-btn--lg"><i class="fas fa-play" aria-hidden="true"></i> <?php echo htmlspecialchars($ratibHome['home.hero.cta_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                     </div>
                 </div>
                 <div class="ratib-hero__visual" aria-hidden="true">
@@ -508,9 +511,9 @@ $ratibProgSrc = [
             <div class="ratib-hero__video-band video-section ratib-video ratib-video--hero" id="video">
                 <div class="ratib-container">
                     <header class="ratib-hero__video-head ratib-section__head ratib-section__head--left">
-                        <p class="ratib-eyebrow">Product tour</p>
-                        <h2 class="ratib-section__title ratib-hero__video-title">Walk the surfaces your teams will run</h2>
-                        <p class="video-caption">Recorded walkthrough: pipelines, verification queues, finance hooks, and agency administration.</p>
+                        <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.video.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                        <h2 class="ratib-section__title ratib-hero__video-title"><?php echo htmlspecialchars($ratibHome['home.video.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+                        <p class="video-caption"><?php echo htmlspecialchars($ratibHome['home.video.caption'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                     </header>
                     <div class="ratib-video__shell">
                         <div class="video-wrap">
@@ -532,19 +535,19 @@ $ratibProgSrc = [
             </div>
             <div class="ratib-hero__photo-strip ratib-hero__program-strip">
                 <div class="ratib-container">
-                    <p class="ratib-hero__photo-eyebrow">Program previews</p>
+                    <p class="ratib-hero__photo-eyebrow"><?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                     <div class="ratib-hero__photo-grid" role="list">
                         <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                            <img src="<?php echo htmlspecialchars($ratibProgSrc[0], ENT_QUOTES, 'UTF-8'); ?>" alt="RATIB pipeline board with stages, SLA, and worker rows" width="800" height="500" loading="lazy" decoding="async">
-                            <figcaption>Pipeline board</figcaption>
+                            <img src="<?php echo htmlspecialchars($ratibProgSrc[0], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($ratibHome['home.program.alt.1'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
+                            <figcaption><?php echo htmlspecialchars($ratibHome['home.program.caption.1'] ?? '', ENT_QUOTES, 'UTF-8'); ?></figcaption>
                         </figure>
                         <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                            <img src="<?php echo htmlspecialchars($ratibProgSrc[1], ENT_QUOTES, 'UTF-8'); ?>" alt="RATIB workers registry with stages, owners, and GPS context" width="800" height="500" loading="lazy" decoding="async">
-                            <figcaption>Workers registry</figcaption>
+                            <img src="<?php echo htmlspecialchars($ratibProgSrc[1], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($ratibHome['home.program.alt.2'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
+                            <figcaption><?php echo htmlspecialchars($ratibHome['home.program.caption.2'] ?? '', ENT_QUOTES, 'UTF-8'); ?></figcaption>
                         </figure>
                         <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                            <img src="<?php echo htmlspecialchars($ratibProgSrc[2], ENT_QUOTES, 'UTF-8'); ?>" alt="RATIB finance view with invoices, throughput, and connector latency" width="800" height="500" loading="lazy" decoding="async">
-                            <figcaption>Finance &amp; ledger</figcaption>
+                            <img src="<?php echo htmlspecialchars($ratibProgSrc[2], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($ratibHome['home.program.alt.3'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
+                            <figcaption><?php echo htmlspecialchars($ratibHome['home.program.caption.3'] ?? '', ENT_QUOTES, 'UTF-8'); ?></figcaption>
                         </figure>
                     </div>
                 </div>
@@ -554,16 +557,17 @@ $ratibProgSrc = [
         <section class="ratib-section ratib-trust" id="platform">
             <div class="ratib-container">
                 <header class="ratib-section__head">
-                    <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHomeContent['platform_title'], ENT_QUOTES, 'UTF-8'); ?></h2>
-                    <p class="ratib-section__sub"><?php echo htmlspecialchars($ratibHomeContent['platform_sub'], ENT_QUOTES, 'UTF-8'); ?></p>
+                    <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHome['home.platform.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <p class="ratib-section__sub"><?php echo htmlspecialchars($ratibHome['home.platform.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </header>
                 <div class="ratib-trust__grid">
-                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-user-shield"></i></div><h3>RBAC &amp; scoped tenancy</h3><p>Role matrices per agency branch; least-privilege API keys; segregated operator sessions.</p></article>
-                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-clock-rotate-left"></i></div><h3>Audit trails &amp; workflow history</h3><p>Append-only stage transitions with actor, correlation id, and policy version stamped on each commit.</p></article>
-                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-lock"></i></div><h3>Encrypted infrastructure</h3><p>TLS 1.3 to the edge; tenant-scoped storage; session revocation and device-aware policies.</p></article>
-                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-stopwatch"></i></div><h3>SLA visibility</h3><p>Stage clocks, breach watches, and escalation routes before commitments slip—surfaced in ops consoles.</p></article>
-                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-clipboard-check"></i></div><h3>Compliance tracking</h3><p>Embassy, medical, and police bundles tracked as first-class artifacts with reviewer attribution.</p></article>
-                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas fa-server"></i></div><h3>Continuity &amp; multi-region readiness</h3><p>Operational backups, replayable event streams, and expansion paths for secondary regions when procurement requires it.</p></article>
+                    <?php
+                    $ratibTrustIcons = ['fa-user-shield', 'fa-clock-rotate-left', 'fa-lock', 'fa-stopwatch', 'fa-clipboard-check', 'fa-server'];
+                    for ($ti = 1; $ti <= 6; $ti++) {
+                        $ic = $ratibTrustIcons[$ti - 1] ?? 'fa-circle';
+                        ?>
+                    <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas <?php echo htmlspecialchars($ic, ENT_QUOTES, 'UTF-8'); ?>"></i></div><h3><?php echo htmlspecialchars($ratibHome['home.trust.' . $ti . '.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3><p><?php echo htmlspecialchars($ratibHome['home.trust.' . $ti . '.body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p></article>
+                    <?php } ?>
                 </div>
             </div>
         </section>
@@ -571,18 +575,15 @@ $ratibProgSrc = [
         <section class="ratib-section ratib-how" id="how-it-works">
             <div class="ratib-container">
                 <header class="ratib-section__head">
-                    <p class="ratib-eyebrow">Operational onboarding</p>
-                    <h2 class="ratib-section__title">How agencies go live on RATIB</h2>
-                    <p class="ratib-section__sub">From tenant provisioning to invoicing—one orchestrated spine with explicit human gates, auditable transitions, and connector-backed finance.</p>
+                    <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.how.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHome['home.how.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <p class="ratib-section__sub"><?php echo htmlspecialchars($ratibHome['home.how.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </header>
                 <ol class="ratib-how__steps" aria-label="Deployment sequence">
-                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">01</span><strong class="ratib-how__title">Agency onboarding</strong><span class="ratib-how__desc">Tenant creation, RBAC, branded domains, sandbox → production promotion.</span></li>
-                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">02</span><strong class="ratib-how__title">Workflow configuration</strong><span class="ratib-how__desc">Stage graph, owners, SLA clocks, and verification bundles per corridor.</span></li>
-                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">03</span><strong class="ratib-how__title">Candidate intake</strong><span class="ratib-how__desc">Structured records, document capture, and deduped applicant system of record.</span></li>
-                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">04</span><strong class="ratib-how__title">Stage orchestration</strong><span class="ratib-how__desc">Automated hops plus HITL approvals; correlation ids across workers and finance.</span></li>
-                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">05</span><strong class="ratib-how__title">Tracking &amp; compliance</strong><span class="ratib-how__desc">GPS and milestone telemetry with policy-bound exception routing.</span></li>
-                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">06</span><strong class="ratib-how__title">Arrival &amp; deployment</strong><span class="ratib-how__desc">Host-market handover, closure events, and workforce activation signals.</span></li>
-                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true">07</span><strong class="ratib-how__title">Reporting &amp; invoicing</strong><span class="ratib-how__desc">Executive telemetry, branch roll-ups, and ledger-linked issuance.</span></li>
+                    <?php for ($hi = 1; $hi <= 7; $hi++) {
+                        $hn = str_pad((string) $hi, 2, '0', STR_PAD_LEFT); ?>
+                    <li class="ratib-how__step"><span class="ratib-how__n" aria-hidden="true"><?php echo $hn; ?></span><strong class="ratib-how__title"><?php echo htmlspecialchars($ratibHome['home.how.step.' . $hi . '.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></strong><span class="ratib-how__desc"><?php echo htmlspecialchars($ratibHome['home.how.step.' . $hi . '.desc'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></li>
+                    <?php } ?>
                 </ol>
             </div>
         </section>
@@ -590,23 +591,18 @@ $ratibProgSrc = [
         <section class="ratib-section" id="features">
             <div class="ratib-container">
                 <header class="ratib-section__head ratib-section__head--left">
-                    <p class="ratib-eyebrow">Platform surface</p>
-                    <h2 class="ratib-section__title">Twelve capabilities operators touch daily</h2>
-                    <p class="ratib-section__sub ratib-section__sub--inline">Same modules used in production consoles—not vapor features.</p>
+                    <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.features.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHome['home.features.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <p class="ratib-section__sub ratib-section__sub--inline"><?php echo htmlspecialchars($ratibHome['home.features.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </header>
                 <div class="ratib-feature-grid">
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-gears"></i></div><h3>Recruitment lifecycle engine</h3><p>Define stages, owners, policies once—execute across every worker file.</p></article>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-id-badge"></i></div><h3>Applicant system of record</h3><p>Single longitudinal record: docs, history, readiness for deployment.</p></article>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-shuffle"></i></div><h3>Stage synchronization</h3><p>Event- and time-driven transitions with explicit human-in-the-loop gates.</p></article>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-location-dot"></i></div><h3>Field &amp; GPS telemetry</h3><p>Check-ins, corridors, and exception routing for operational visibility.</p></article>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-globe"></i></div><h3>Multi-domain tenancy</h3><p>Agency-branded edges on unified orchestration and identity substrate.</p></article>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-file-signature"></i></div><h3>Digital contracts</h3><p>Signatures and renewals bound to lifecycle state transitions.</p></article>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-coins"></i></div><h3>Operational finance hooks</h3><p>Placement-to-settlement awareness for controllers and agency billing.</p></article>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-receipt"></i></div><h3>E-invoicing rails</h3><p>Issuance when rules and verified events align—auditable downstream.</p></article>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-route"></i></div><h3>Worker lifecycle trace</h3><p>Immutable checkpoints from intake through arrival and handover.</p></article>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-bell"></i></div><h3>Operational alerting</h3><p>Escalations to ops, agencies, and partners before SLA breach.</p></article>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-chart-pie"></i></div><h3>Telemetry &amp; analytics</h3><p>Funnel integrity, velocity, and cohort quality in one executive surface.</p></article>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas fa-plug"></i></div><h3>Integration &amp; API fabric</h3><p>HRIS, ERP, messaging, and verification feeds via authenticated endpoints.</p></article>
+                    <?php
+                    $ratibFeatureIcons = ['fa-gears', 'fa-id-badge', 'fa-shuffle', 'fa-location-dot', 'fa-globe', 'fa-file-signature', 'fa-coins', 'fa-receipt', 'fa-route', 'fa-bell', 'fa-chart-pie', 'fa-plug'];
+                    for ($fi = 1; $fi <= 12; $fi++) {
+                        $fic = $ratibFeatureIcons[$fi - 1] ?? 'fa-circle';
+                        ?>
+                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas <?php echo htmlspecialchars($fic, ENT_QUOTES, 'UTF-8'); ?>"></i></div><h3><?php echo htmlspecialchars($ratibHome['home.features.' . $fi . '.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3><p><?php echo htmlspecialchars($ratibHome['home.features.' . $fi . '.body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p></article>
+                    <?php } ?>
                 </div>
             </div>
         </section>
@@ -614,20 +610,19 @@ $ratibProgSrc = [
         <section class="ratib-section ratib-pipeline-section" id="tracking">
             <div class="ratib-container">
                 <header class="ratib-section__head">
-                    <p class="ratib-eyebrow">Orchestration graph</p>
-                    <h2 class="ratib-section__title">End-to-end pipeline, instrumented</h2>
-                    <p class="ratib-section__sub">Each hop emits events to the orchestrator: automation runs, manual gates, document verification, and field telemetry in one auditable spine.</p>
+                    <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.pipeline.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHome['home.pipeline.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <p class="ratib-section__sub"><?php echo htmlspecialchars($ratibHome['home.pipeline.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </header>
                 <div class="ratib-pipeline" role="list">
                     <div class="ratib-pipeline__track" aria-hidden="true"></div>
-                    <div class="ratib-pipeline__item ratib-pipeline__item--complete" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Application</span><span class="ratib-pipeline__meta">committed · 09 May 08:14 UTC</span></div>
-                    <div class="ratib-pipeline__item ratib-pipeline__item--complete" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Verification</span><span class="ratib-pipeline__meta">bundle OK · reviewer svc-bot</span></div>
-                    <div class="ratib-pipeline__item ratib-pipeline__item--active" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Medical</span><span class="ratib-pipeline__meta">clearance window · SLA 38h</span></div>
-                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Embassy</span><span class="ratib-pipeline__meta">slot queue · RUH consulate</span></div>
-                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Visa</span><span class="ratib-pipeline__meta">issue pending · workflow hold</span></div>
-                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Ticket</span><span class="ratib-pipeline__meta">carrier manifest · auto</span></div>
-                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Arrival</span><span class="ratib-pipeline__meta">handover GPS · geofence</span></div>
-                    <div class="ratib-pipeline__item" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label">Deployment</span><span class="ratib-pipeline__meta">FIN close · INV emitted</span></div>
+                    <?php
+                    $ratibPipeState = ['ratib-pipeline__item--complete', 'ratib-pipeline__item--complete', 'ratib-pipeline__item--active', '', '', '', '', ''];
+                    for ($pi = 1; $pi <= 8; $pi++) {
+                        $pcls = trim('ratib-pipeline__item ' . ($ratibPipeState[$pi - 1] ?? ''));
+                        ?>
+                    <div class="<?php echo htmlspecialchars($pcls, ENT_QUOTES, 'UTF-8'); ?>" role="listitem"><span class="ratib-pipeline__dot"></span><span class="ratib-pipeline__label"><?php echo htmlspecialchars($ratibHome['home.pipeline.step.' . $pi . '.label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><span class="ratib-pipeline__meta"><?php echo htmlspecialchars($ratibHome['home.pipeline.step.' . $pi . '.meta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></div>
+                    <?php } ?>
                 </div>
             </div>
         </section>
@@ -635,40 +630,26 @@ $ratibProgSrc = [
         <section class="ratib-section ratib-ai-section" id="solutions">
             <div class="ratib-container">
                 <header class="ratib-section__head ratib-section__head--left">
-                    <p class="ratib-eyebrow">Operational scenarios</p>
-                    <h2 class="ratib-section__title">Where RATIB runs in production</h2>
-                    <p class="ratib-section__sub">Representative B2B programs on the same orchestration core—multi-tenant, audit-visible, connector-backed.</p>
+                    <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.solutions.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHome['home.solutions.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <p class="ratib-section__sub"><?php echo htmlspecialchars($ratibHome['home.solutions.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </header>
                 <div class="ratib-ai-grid ratib-use-grid">
                     <article class="ratib-ai-card ratib-ai-card--wide ratib-use-card ratib-use-card--wide">
-                        <h3>Recruitment agencies · multi-branch</h3>
-                        <p>Central intake with branch-level RBAC, quota splits, and consolidated reporting for owners—without duplicating worker records across offices.</p>
+                        <h3><?php echo htmlspecialchars($ratibHome['home.solutions.1.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3>
+                        <p><?php echo htmlspecialchars($ratibHome['home.solutions.1.body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                         <div class="ratib-ai-visual ratib-use-visual">
-                            <div class="ratib-ai-row"><span class="ratib-pill">Tenant</span> ACME · branches RUH · JED · DMM · unified pipeline graph</div>
-                            <div class="ratib-ai-row"><span class="ratib-pill ratib-pill--accent">Ops</span> stage owners mapped · SLA inherited from policy CL-2024-ME</div>
-                            <div class="ratib-ai-row"><span class="ratib-pill">Emit</span> nightly cohort rollup · exec dashboard · no CSV extracts</div>
+                            <div class="ratib-ai-row"><span class="ratib-pill"><?php echo htmlspecialchars($ratibHome['home.solutions.1.demo_row.1'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span> <?php echo htmlspecialchars($ratibHome['home.solutions.1.demo_row.1b'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                            <div class="ratib-ai-row"><span class="ratib-pill ratib-pill--accent"><?php echo htmlspecialchars($ratibHome['home.solutions.1.demo_row.2'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span> <?php echo htmlspecialchars($ratibHome['home.solutions.1.demo_row.2b'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                            <div class="ratib-ai-row"><span class="ratib-pill"><?php echo htmlspecialchars($ratibHome['home.solutions.1.demo_row.3'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span> <?php echo htmlspecialchars($ratibHome['home.solutions.1.demo_row.3b'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
                         </div>
                     </article>
+                    <?php for ($si = 2; $si <= 6; $si++) { ?>
                     <article class="ratib-ai-card ratib-use-card">
-                        <h3>Overseas workforce operations</h3>
-                        <p>Corridor programs with sending-country compliance packs, host-market deployment rules, and milestone telemetry tied to billing milestones.</p>
+                        <h3><?php echo htmlspecialchars($ratibHome['home.solutions.' . $si . '.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3>
+                        <p><?php echo htmlspecialchars($ratibHome['home.solutions.' . $si . '.body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                     </article>
-                    <article class="ratib-ai-card ratib-use-card">
-                        <h3>Multi-office recruitment firms</h3>
-                        <p>Consolidated candidate inventory with segregated finance and placement attribution—one platform, strict tenant edges between brands.</p>
-                    </article>
-                    <article class="ratib-ai-card ratib-use-card">
-                        <h3>Enterprise staffing coordination</h3>
-                        <p>Buyer mandates, bulk transitions, and SLA-backed escalations when intake spikes or sponsor deadlines move.</p>
-                    </article>
-                    <article class="ratib-ai-card ratib-use-card">
-                        <h3>Embassy processing workflows</h3>
-                        <p>Appointment queues, bundle completeness checks, and status feeds operators defend in audits—linked to worker files, not inboxes.</p>
-                    </article>
-                    <article class="ratib-ai-card ratib-use-card">
-                        <h3>Visa pipeline management</h3>
-                        <p>Medical → embassy → visa → ticket orchestration with explicit holds, reviewer attribution, and finance triggers only after verified hops.</p>
-                    </article>
+                    <?php } ?>
                 </div>
             </div>
         </section>
@@ -676,20 +657,20 @@ $ratibProgSrc = [
         <section class="ratib-section ratib-eco" id="agencies">
             <div class="ratib-container">
                 <header class="ratib-section__head">
-                    <p class="ratib-eyebrow">Multi-agency ecosystem</p>
-                    <h2 class="ratib-section__title">One RATIB core. Many independent agencies.</h2>
-                    <p class="ratib-section__sub">Isolated production tenants on one control plane—identity, orchestration, telemetry, and finance connectors without duplicating stacks per agency.</p>
+                    <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.agencies.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHome['home.agencies.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <p class="ratib-section__sub"><?php echo htmlspecialchars($ratibHome['home.agencies.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </header>
                 <div class="ratib-eco__viz" aria-hidden="true">
                     <div class="ratib-eco__core">
-                        <span class="ratib-eco__core-label">RATIB Core</span>
-                        <span class="ratib-eco__core-sub">IAM · Orchestrator · Telemetry · Ledger API</span>
+                        <span class="ratib-eco__core-label"><?php echo htmlspecialchars($ratibHome['home.agencies.core.label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+                        <span class="ratib-eco__core-sub"><?php echo htmlspecialchars($ratibHome['home.agencies.core.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
                     </div>
                     <div class="ratib-eco__spokes">
-                        <div class="ratib-eco__spoke"><span>Agency A</span><small>tenant + domain</small></div>
-                        <div class="ratib-eco__spoke"><span>Agency B</span><small>tenant + domain</small></div>
-                        <div class="ratib-eco__spoke"><span>Agency C</span><small>tenant + domain</small></div>
-                        <div class="ratib-eco__spoke ratib-eco__spoke--accent"><span>Custom domains</span><small>white-label edges</small></div>
+                        <?php for ($ei = 1; $ei <= 3; $ei++) { ?>
+                        <div class="ratib-eco__spoke"><span><?php echo htmlspecialchars($ratibHome['home.agencies.spoke.' . $ei . '.label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><small><?php echo htmlspecialchars($ratibHome['home.agencies.spoke.' . $ei . '.small'] ?? '', ENT_QUOTES, 'UTF-8'); ?></small></div>
+                        <?php } ?>
+                        <div class="ratib-eco__spoke ratib-eco__spoke--accent"><span><?php echo htmlspecialchars($ratibHome['home.agencies.spoke.4.label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><small><?php echo htmlspecialchars($ratibHome['home.agencies.spoke.4.small'] ?? '', ENT_QUOTES, 'UTF-8'); ?></small></div>
                     </div>
                 </div>
             </div>
@@ -698,15 +679,15 @@ $ratibProgSrc = [
         <section class="ratib-section ratib-analytics">
             <div class="ratib-container">
                 <header class="ratib-section__head ratib-section__head--left">
-                    <p class="ratib-eyebrow">Telemetry plane</p>
-                    <h2 class="ratib-section__title">Executive &amp; ops signals from live programs</h2>
-                    <p class="ratib-section__sub">Rolling aggregates from committed lifecycle events—same metrics surfaced in operational reviews.</p>
+                    <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.analytics.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHome['home.analytics.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <p class="ratib-section__sub"><?php echo htmlspecialchars($ratibHome['home.analytics.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </header>
                 <div class="ratib-analytics__grid">
-                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">snapshot · merged shards · UTC</p><h3>Checkpoint fidelity</h3><div class="ratib-metric"><span class="ratib-metric__val ratib-live-nudge" data-ratib-jitter-pct="98.2">98.2%</span><span class="ratib-metric__chart ratib-metric__chart--line" aria-hidden="true"></span></div><p>Completed checkpoints vs policy graph for in-motion cohorts.</p></article>
-                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">queue depth · 15m resolution</p><h3>Active lifecycle workload</h3><div class="ratib-metric"><span class="ratib-metric__val">2.8k</span><span class="ratib-metric__chart ratib-metric__chart--bars" aria-hidden="true"></span></div><p>Workers in non-terminal stages across connected agencies.</p></article>
-                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">normalized demand index</p><h3>Throughput vs baseline</h3><div class="ratib-metric"><span class="ratib-metric__val">+31%</span><span class="ratib-metric__note">QoQ</span></div><p>Comparable velocity after seasonal adjustment—not vanity growth.</p></article>
-                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops">engine attribution · 7d</p><h3>Automated transition ratio</h3><div class="ratib-metric"><span class="ratib-metric__val">76%</span><span class="ratib-metric__note">engine-led hops</span></div><p>Remainder explicit HITL—policy requires human gates.</p></article>
+                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops"><?php echo htmlspecialchars($ratibHome['home.analytics.1.stamp'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p><h3><?php echo htmlspecialchars($ratibHome['home.analytics.1.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3><div class="ratib-metric"><span class="ratib-metric__val ratib-live-nudge" data-ratib-jitter-pct="<?php echo htmlspecialchars(preg_replace('/[^\d.]/', '', (string) ($ratibHome['home.analytics.1.metric'] ?? '98.2')), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.analytics.1.metric'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><span class="ratib-metric__chart ratib-metric__chart--line" aria-hidden="true"></span></div><p><?php echo htmlspecialchars($ratibHome['home.analytics.1.body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p></article>
+                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops"><?php echo htmlspecialchars($ratibHome['home.analytics.2.stamp'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p><h3><?php echo htmlspecialchars($ratibHome['home.analytics.2.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3><div class="ratib-metric"><span class="ratib-metric__val"><?php echo htmlspecialchars($ratibHome['home.analytics.2.metric'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><span class="ratib-metric__chart ratib-metric__chart--bars" aria-hidden="true"></span></div><p><?php echo htmlspecialchars($ratibHome['home.analytics.2.body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p></article>
+                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops"><?php echo htmlspecialchars($ratibHome['home.analytics.3.stamp'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p><h3><?php echo htmlspecialchars($ratibHome['home.analytics.3.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3><div class="ratib-metric"><span class="ratib-metric__val"><?php echo htmlspecialchars($ratibHome['home.analytics.3.metric'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><span class="ratib-metric__note"><?php echo htmlspecialchars($ratibHome['home.analytics.3.note'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></div><p><?php echo htmlspecialchars($ratibHome['home.analytics.3.body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p></article>
+                    <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops"><?php echo htmlspecialchars($ratibHome['home.analytics.4.stamp'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p><h3><?php echo htmlspecialchars($ratibHome['home.analytics.4.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3><div class="ratib-metric"><span class="ratib-metric__val"><?php echo htmlspecialchars($ratibHome['home.analytics.4.metric'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><span class="ratib-metric__note"><?php echo htmlspecialchars($ratibHome['home.analytics.4.note'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></div><p><?php echo htmlspecialchars($ratibHome['home.analytics.4.body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p></article>
                 </div>
             </div>
         </section>
@@ -714,9 +695,9 @@ $ratibProgSrc = [
         <section class="ratib-section ratib-ops-visibility" id="operational">
             <div class="ratib-container">
                 <header class="ratib-section__head">
-                    <p class="ratib-eyebrow">Operational visibility</p>
-                    <h2 class="ratib-section__title">What mission control actually shows</h2>
-                    <p class="ratib-section__sub">Live-style aggregates you would expect in a deployed ops console: SLA posture, queue depth, automation outcomes, finance connector ACKs, and streamed events.</p>
+                    <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.ops.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHome['home.ops.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <p class="ratib-section__sub"><?php echo htmlspecialchars($ratibHome['home.ops.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </header>
                 <div class="ratib-ops__layout">
                     <div class="ratib-ops__panel ratib-ops__panel--preview">
@@ -766,12 +747,9 @@ $ratibProgSrc = [
                     </div>
                 </div>
                 <div class="ratib-trust-band">
-                    <div class="ratib-trust-band__item"><span class="ratib-trust-band__k">API edge</span><span class="ratib-trust-band__v">REST · TLS 1.3 · scoped keys</span></div>
-                    <div class="ratib-trust-band__item"><span class="ratib-trust-band__k">Regions</span><span class="ratib-trust-band__v">ME primary · EU replication optional</span></div>
-                    <div class="ratib-trust-band__item"><span class="ratib-trust-band__k">Data plane</span><span class="ratib-trust-band__v">encrypted · tenant-scoped · audit trail</span></div>
-                    <div class="ratib-trust-band__item"><span class="ratib-trust-band__k">Identity</span><span class="ratib-trust-band__v">RBAC · SSO-ready · session revocation</span></div>
-                    <div class="ratib-trust-band__item"><span class="ratib-trust-band__k">Workflow history</span><span class="ratib-trust-band__v">immutable stage commits · correlation ids</span></div>
-                    <div class="ratib-trust-band__item"><span class="ratib-trust-band__k">Continuity</span><span class="ratib-trust-band__v">operational backups · replayable events</span></div>
+                    <?php for ($oi = 1; $oi <= 6; $oi++) { ?>
+                    <div class="ratib-trust-band__item"><span class="ratib-trust-band__k"><?php echo htmlspecialchars($ratibHome['home.ops.band.' . $oi . '.k'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><span class="ratib-trust-band__v"><?php echo htmlspecialchars($ratibHome['home.ops.band.' . $oi . '.v'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></div>
+                    <?php } ?>
                 </div>
             </div>
         </section>
@@ -779,40 +757,39 @@ $ratibProgSrc = [
         <section class="ratib-section ratib-api-strip" id="api">
             <div class="ratib-container ratib-api-strip__inner">
                 <div>
-                    <p class="ratib-eyebrow">Developers</p>
-                    <h2 class="ratib-api-strip__title">APIs for the recruitment operating system</h2>
-                    <p class="ratib-api-strip__sub">Versioned integration endpoints for HRIS, ERP, verification vendors, and internal data lakes—authenticated, rate-aware, observable.</p>
+                    <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.api.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <h2 class="ratib-api-strip__title"><?php echo htmlspecialchars($ratibHome['home.api.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <p class="ratib-api-strip__sub"><?php echo htmlspecialchars($ratibHome['home.api.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </div>
-                <a href="#contact" class="ratib-btn ratib-btn--outline">Request API access</a>
+                <a href="#contact" class="ratib-btn ratib-btn--outline"><?php echo htmlspecialchars($ratibHome['home.api.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
         </section>
 
         <section class="pricing-section ratib-pricing-saas" id="programs">
             <div class="ratib-container">
                 <header class="ratib-section__head">
-                    <p class="ratib-eyebrow">Pricing</p>
-                    <h2 class="ratib-section__title">Plans that scale with your agency footprint</h2>
-                    <p class="ratib-section__sub">Transparent tiers for evaluation, production, and enterprise procurement teams.</p>
+                    <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.pricing.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHome['home.pricing.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <p class="ratib-section__sub"><?php echo htmlspecialchars($ratibHome['home.pricing.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </header>
                 <div class="pricing-row pricing-row--three">
             <div class="price-card price-card-starter">
-                <span class="card-badge card-badge--muted">Evaluate</span>
-                <div class="card-plan">Starter</div>
-                <div class="card-subtitle">Discovery &amp; Pro onboarding</div>
-                <p class="card-price-saas">Custom scope</p>
+                <span class="card-badge card-badge--muted"><?php echo htmlspecialchars($ratibHome['home.pricing.starter.badge'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+                <div class="card-plan"><?php echo htmlspecialchars($ratibHome['home.pricing.starter.plan'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="card-subtitle"><?php echo htmlspecialchars($ratibHome['home.pricing.starter.subtitle'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                <p class="card-price-saas"><?php echo htmlspecialchars($ratibHome['home.pricing.starter.price_line'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 <div class="card-divider"></div>
                 <ul class="card-features">
-                    <li><i class="fas fa-check"></i> Pro plan consultation</li>
-                    <li><i class="fas fa-check"></i> Workspace readiness review</li>
-                    <li><i class="fas fa-check"></i> Integration guidance</li>
-                    <li><i class="fas fa-check"></i> Dedicated success touchpoints</li>
+                    <?php foreach ($ratibPricingStarterLines as $ratibLine) { ?>
+                    <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ratibLine, ENT_QUOTES, 'UTF-8'); ?></li>
+                    <?php } ?>
                 </ul>
-                <a href="#register" class="btn-register btn-register-starter js-open-register" data-register-plan="pro" data-register-amount="" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Talk to solutions</a>
+                <a href="#register" class="btn-register btn-register-starter js-open-register" data-register-plan="pro" data-register-amount="" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratibHome['home.pricing.starter.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
             <div class="price-card gold price-card--featured">
-                <span class="card-badge">Popular</span>
-                <div class="card-plan">Business <span class="card-plan-note">list $<?php echo number_format((float)$goldListPriceYear1, 0); ?></span></div>
-                <div class="card-subtitle">Branded agency portal · Gold tier</div>
+                <span class="card-badge"><?php echo htmlspecialchars($ratibHome['home.pricing.gold.badge'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+                <div class="card-plan"><?php echo htmlspecialchars($ratibHome['home.pricing.gold.plan_word'] ?? '', ENT_QUOTES, 'UTF-8'); ?> <span class="card-plan-note">list $<?php echo number_format((float)$goldListPriceYear1, 0); ?></span></div>
+                <div class="card-subtitle"><?php echo htmlspecialchars($ratibHome['home.pricing.gold.subtitle'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
                 <div class="plan-year-wrap">
                     <div class="plan-year-buttons">
                         <button type="button" class="year-btn gold-year-btn year-btn-card year-btn-neutral" data-years="0" data-price="<?php echo (float)$goldTestPriceMonth; ?>">Monthly<br><span class="year-price-small"><span class="promo-old">$<?php echo number_format((float)$goldListPriceMonth, 2); ?></span> <span class="promo-new">$<?php echo number_format((float)$goldTestPriceMonth, 2); ?></span></span></button>
@@ -821,23 +798,19 @@ $ratibProgSrc = [
                 </div>
                 <p class="card-price-old" id="goldOldPrice">$<?php echo number_format((float)$goldListPriceYear1, 0); ?></p>
                 <p class="card-price" id="goldPrice">$<?php echo number_format((float)$goldTestPriceYear1, 0); ?> <span id="goldPriceLabel">for 1 year</span></p>
-                <span class="card-discount">50% Discount</span>
+                <span class="card-discount"><?php echo htmlspecialchars($ratibHome['home.pricing.gold.discount_label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
                 <div class="card-divider"></div>
                 <ul class="card-features">
-                    <li><i class="fas fa-check"></i> Candidate & document management</li>
-                    <li><i class="fas fa-check"></i> Your branded portal</li>
-                    <li><i class="fas fa-check"></i> 20 users</li>
-                    <li><i class="fas fa-check"></i> E-invoice system</li>
-                    <li><i class="fas fa-check"></i> Standard support</li>
-                    <li><i class="fas fa-check"></i> Managed infrastructure &amp; SSL</li>
-                    <li><i class="fas fa-check"></i> Admin control panel</li>
+                    <?php foreach ($ratibPricingGoldLines as $ratibLine) { ?>
+                    <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ratibLine, ENT_QUOTES, 'UTF-8'); ?></li>
+                    <?php } ?>
                 </ul>
-                <a href="#register" id="goldRegisterBtn" class="btn-register js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Deploy Business workspace</a>
+                <a href="#register" id="goldRegisterBtn" class="btn-register js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratibHome['home.pricing.gold.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
             <div class="price-card platinum">
-                <span class="card-badge">50% Off</span>
-                <div class="card-plan">Enterprise <span class="card-plan-note">list $<?php echo number_format((float)$platinumListPriceYear1, 0); ?></span></div>
-                <div class="card-subtitle">Mission-critical programs · Platinum tier</div>
+                <span class="card-badge"><?php echo htmlspecialchars($ratibHome['home.pricing.platinum.badge'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+                <div class="card-plan"><?php echo htmlspecialchars($ratibHome['home.pricing.platinum.plan_word'] ?? '', ENT_QUOTES, 'UTF-8'); ?> <span class="card-plan-note">list $<?php echo number_format((float)$platinumListPriceYear1, 0); ?></span></div>
+                <div class="card-subtitle"><?php echo htmlspecialchars($ratibHome['home.pricing.platinum.subtitle'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
                 <div class="plan-year-wrap">
                     <div class="plan-year-buttons">
                         <button type="button" class="year-btn platinum-year-btn year-btn-card year-btn-neutral" data-years="0" data-price="<?php echo (float)$platinumTestPriceMonth; ?>">Monthly<br><span class="year-price-small"><span class="promo-old">$<?php echo number_format((float)$platinumListPriceMonth, 0); ?></span> <span class="promo-new">$<?php echo number_format((float)$platinumTestPriceMonth, 0); ?></span></span></button>
@@ -846,19 +819,14 @@ $ratibProgSrc = [
                 </div>
                 <p class="card-price-old" id="platinumOldPrice">$<?php echo number_format((float)$platinumListPriceYear1, 0); ?></p>
                 <p class="card-price" id="platinumPrice">$<?php echo number_format((float)$platinumTestPriceYear1, 0); ?> <span id="platinumPriceLabel">for 1 year</span></p>
-                <span class="card-discount">50% Discount</span>
+                <span class="card-discount"><?php echo htmlspecialchars($ratibHome['home.pricing.platinum.discount_label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
                 <div class="card-divider"></div>
                 <ul class="card-features">
-                    <li><i class="fas fa-check"></i> All Business features</li>
-                    <li><i class="fas fa-check"></i> Unlimited users</li>
-                    <li><i class="fas fa-check"></i> Priority support</li>
-                    <li><i class="fas fa-check"></i> Advanced analytics</li>
-                    <li><i class="fas fa-check"></i> Dedicated setup</li>
-                    <li><i class="fas fa-check"></i> Managed infrastructure &amp; SSL</li>
-                    <li><i class="fas fa-check"></i> Admin control panel</li>
-                    <li><i class="fas fa-check"></i> Custom integrations</li>
+                    <?php foreach ($ratibPricingPlatinumLines as $ratibLine) { ?>
+                    <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ratibLine, ENT_QUOTES, 'UTF-8'); ?></li>
+                    <?php } ?>
                 </ul>
-                <a href="#register" id="platinumRegisterBtn" class="btn-register js-open-register" data-register-plan="platinum" data-register-amount="<?php echo (float)($plans['platinum']['amount'] ?? $platinumTestPriceYear1); ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> Deploy Enterprise workspace</a>
+                <a href="#register" id="platinumRegisterBtn" class="btn-register js-open-register" data-register-plan="platinum" data-register-amount="<?php echo (float)($plans['platinum']['amount'] ?? $platinumTestPriceYear1); ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratibHome['home.pricing.platinum.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
         </div>
             </div>
@@ -866,24 +834,20 @@ $ratibProgSrc = [
 
         <section class="register-section register-section-hidden ratib-register-wrap" id="register">
         <div class="ratib-info">
-            <h2><i class="fas fa-info-circle me-2 register-info-icon"></i>What is Ratib Program?</h2>
-            <p>Ratib is a professional platform for recruitment agencies and companies in worker-sending countries. Manage candidates, contracts, and compliance in one place.</p>
+            <h2><i class="fas fa-info-circle me-2 register-info-icon"></i><?php echo htmlspecialchars($ratibHome['home.register.info.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+            <p><?php echo htmlspecialchars($ratibHome['home.register.info.intro'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
             <ul class="checklist">
-                <li><i class="fas fa-check-circle"></i><span><strong>Recruitment management</strong> — Handle workers and candidates efficiently</span></li>
-                <li><i class="fas fa-check-circle"></i><span><strong>Pro plan</strong> — Your own branded agency portal</span></li>
-                <li><i class="fas fa-check-circle"></i><span><strong>Worker-sending countries</strong> — Bangladesh, Uganda, Kenya, Philippines, and more</span></li>
-                <li><i class="fas fa-check-circle"></i><span><strong>Contracts & compliance</strong> — Track documents and meet regulations</span></li>
-                <li><i class="fas fa-check-circle"></i><span><strong>Simple onboarding</strong> — Register your agency and we'll set you up</span></li>
-                <li><i class="fas fa-check-circle"></i><span><strong>Document tracking</strong> — Licenses, visas, medical reports in one dashboard</span></li>
-                <li><i class="fas fa-check-circle"></i><span><strong>Reporting & analytics</strong> — Track placements, status, and performance</span></li>
+                <?php for ($ci = 1; $ci <= 7; $ci++) { ?>
+                <li><i class="fas fa-check-circle"></i><span><?php echo strip_tags($ratibHome['home.register.check.' . $ci] ?? '', '<strong>'); ?></span></li>
+                <?php } ?>
             </ul>
         </div>
         <div class="form-card">
-            <h1><i class="fas fa-building me-2"></i>Register Your Agency</h1>
+            <h1><i class="fas fa-building me-2"></i><?php echo htmlspecialchars($ratibHome['home.register.form.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h1>
             <p class="subtitle">Request <?php echo htmlspecialchars($planLabel); ?> plan access<?php if ($planAmount): ?> — $<?php echo number_format($planAmount); ?><?php if ($years !== null): ?><?php if ((int)$years === 0): ?> per month<?php elseif ((int)$years > 0): ?> for <?php echo (int)$years; ?> year<?php echo (int)$years > 1 ? 's' : ''; ?><?php else: ?> setup<?php endif; ?><?php else: ?> setup<?php endif; ?><?php endif; ?>. We will review and contact you.</p>
             <div class="mb-3">
                 <label class="form-label">Choose Plan</label>
-                <p class="small mb-2 form-plan-hint"><i class="fas fa-info-circle me-1"></i>Select <strong>Gold (Business)</strong> or <strong>Platinum (Enterprise)</strong> to see the payment summary for your plan.</p>
+                <p class="small mb-2 form-plan-hint"><i class="fas fa-info-circle me-1"></i><?php echo strip_tags($ratibHome['home.register.form.plan_hint'] ?? '', '<strong>'); ?></p>
                 <div class="d-flex gap-2 flex-wrap mb-2">
                     <button type="button" class="btn plan-btn-form plan-btn-pro" data-plan="pro" data-amount="" data-years="1"><i class="fas fa-star me-1"></i> Pro</button>
                     <button type="button" class="btn plan-btn-form plan-btn-gold" data-plan="gold" data-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-years="1"><i class="fas fa-crown me-1"></i> Gold <span class="promo-old">$<?php echo number_format((float)$goldListPriceYear1, 0); ?></span> <span class="promo-new">$<?php echo number_format((float)$goldTestPriceYear1, 0); ?></span></button>
@@ -928,14 +892,14 @@ $ratibProgSrc = [
                 <!-- When Pro selected: hint to choose Gold/Platinum for pricing summary -->
                 <div id="paymentBlockPlaceholder" class="mb-4 <?php echo ($plan !== 'pro' && $planAmount) ? 'is-hidden' : ''; ?>">
                     <div class="payment-placeholder-box">
-                        <i class="fas fa-receipt me-2 payment-placeholder-icon"></i><strong>Pricing summary</strong> — Select <strong>Business (Gold)</strong> or <strong>Enterprise (Platinum)</strong> at the top of this form to see plan totals here before you submit.
+                        <i class="fas fa-receipt me-2 payment-placeholder-icon"></i><?php echo strip_tags($ratibHome['home.register.payment_placeholder'] ?? '', '<strong>'); ?>
                     </div>
                 </div>
                 <!-- Payment block: always in DOM; shown only for Gold/Platinum (JS toggles visibility) -->
                 <div id="paymentBlockWrap" class="payment-block-wrap mb-4 <?php echo ($plan !== 'pro' && $planAmount) ? '' : 'is-hidden'; ?>">
                     <!-- Payment Summary -->
                     <div class="mb-4 payment-summary-box payment-summary-panel">
-                        <h4 class="payment-summary-title"><i class="fas fa-receipt me-2"></i>Payment Summary</h4>
+                        <h4 class="payment-summary-title"><i class="fas fa-receipt me-2"></i><?php echo htmlspecialchars($ratibHome['home.register.payment_summary.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
                         <?php
                         $__payableSubtotal = $planAmount ? (float)$planAmount : 0.0;
                         $__listSubtotal = $__payableSubtotal * 2;
@@ -982,10 +946,10 @@ $ratibProgSrc = [
                         <?php endif; ?>
                         <?php } ?>
                     </div>
-                    <p class="small mb-0 payment-summary-footnote"><i class="fas fa-file-invoice me-2 payment-summary-footnote-icon"></i>Submit your request below. We will contact you about payment after review.</p>
+                    <p class="small mb-0 payment-summary-footnote"><i class="fas fa-file-invoice me-2 payment-summary-footnote-icon"></i><?php echo htmlspecialchars($ratibHome['home.register.payment_summary.footer'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </div>
                 
-                <button type="submit" class="btn btn-primary btn-submit" id="btnSubmit"><i class="fas fa-paper-plane me-2"></i>Submit Request</button>
+                <button type="submit" class="btn btn-primary btn-submit" id="btnSubmit"><i class="fas fa-paper-plane me-2"></i><?php echo htmlspecialchars($ratibHome['home.register.submit'] ?? '', ENT_QUOTES, 'UTF-8'); ?></button>
             </form>
         </div>
     </section>
@@ -993,11 +957,11 @@ $ratibProgSrc = [
         <section class="ratib-final-cta" aria-labelledby="ratib-final-cta-title">
             <div class="ratib-final-cta__bg" aria-hidden="true"></div>
             <div class="ratib-container ratib-final-cta__inner">
-                <h2 id="ratib-final-cta-title" class="ratib-final-cta__title">Put production-grade recruitment infrastructure online</h2>
-                <p class="ratib-final-cta__sub">Event orchestration, workforce telemetry, and ledger-backed billing on one deployed plane—built for agencies already running at scale.</p>
+                <h2 id="ratib-final-cta-title" class="ratib-final-cta__title"><?php echo htmlspecialchars($ratibHome['home.final_cta.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
+                <p class="ratib-final-cta__sub"><?php echo htmlspecialchars($ratibHome['home.final_cta.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 <div class="ratib-final-cta__actions">
-                    <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1">Start agency infrastructure</a>
-                    <a href="mailto:ratibsrar@gmail.com?subject=RATIB%20platform%20demo%20request" class="ratib-btn ratib-btn--outline ratib-btn--lg">Book platform demo</a>
+                    <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                    <a href="mailto:ratibsrar@gmail.com?subject=RATIB%20platform%20demo%20request" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 </div>
             </div>
         </section>
@@ -1009,70 +973,70 @@ $ratibProgSrc = [
                 <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-footer-enterprise__logo">
                     <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="RATIB" width="112" height="32">
                 </a>
-                <p>Enterprise recruitment operating system — multi-agency workforce intelligence, automation, and real-time tracking.</p>
+                <p><?php echo htmlspecialchars($ratibHome['home.footer.brand'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
             </div>
             <div class="ratib-footer-col">
-                <h4>Platform</h4>
+                <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
                 <ul>
-                    <li><a href="#platform">Overview</a></li>
-                    <li><a href="#how-it-works">How it works</a></li>
-                    <li><a href="#features">Features</a></li>
-                    <li><a href="#tracking">Tracking</a></li>
-                    <li><a href="#operational">Operational visibility</a></li>
-                    <li><a href="#programs">Pricing</a></li>
-                    <li><a href="#api">APIs</a></li>
+                    <li><a href="#platform"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.overview'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="#how-it-works"><?php echo htmlspecialchars($ratibHome['home.nav.how_it_works'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="#features"><?php echo htmlspecialchars($ratibHome['home.nav.features'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="#tracking"><?php echo htmlspecialchars($ratibHome['home.nav.tracking'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="#operational"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.ops_visibility'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="#programs"><?php echo htmlspecialchars($ratibHome['home.nav.programs'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="#api"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.apis'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
                 </ul>
             </div>
             <div class="ratib-footer-col">
-                <h4>Company</h4>
+                <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.company'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
                 <ul>
-                    <li><a href="#solutions">Solutions</a></li>
-                    <li><a href="#agencies">Agencies</a></li>
-                    <li><a href="#operational">Visibility</a></li>
-                    <li><a href="#video">Demo</a></li>
+                    <li><a href="#solutions"><?php echo htmlspecialchars($ratibHome['home.footer.link.solutions'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="#agencies"><?php echo htmlspecialchars($ratibHome['home.nav.agencies'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="#operational"><?php echo htmlspecialchars($ratibHome['home.nav.operational'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="#video"><?php echo htmlspecialchars($ratibHome['home.footer.link.demo'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
                     <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>">Customer portal</a></li>
                 </ul>
             </div>
             <div class="ratib-footer-col">
-                <h4>Support</h4>
+                <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.support'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
                 <ul>
                     <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/login.php'); ?>">Support tickets</a></li>
                     <li><a href="https://wa.me/966599863868" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
-                    <li><a href="tel:+966599863868">+966 59 986 3868</a></li>
+                    <li><a href="tel:+966599863868"><?php echo htmlspecialchars($ratibHome['home.topbar.phone_display'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
                 </ul>
             </div>
             <div class="ratib-footer-col">
-                <h4>Legal</h4>
+                <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.legal'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
                 <ul>
-                    <li><a href="#register">Service registration</a></li>
+                    <li><a href="#register"><?php echo htmlspecialchars($ratibHome['home.footer.link.service_registration'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
                     <li><a href="mailto:ratibsrar@gmail.com">ratibsrar@gmail.com</a></li>
                 </ul>
             </div>
             <div class="ratib-footer-col ratib-footer-enterprise__infra">
-                <h4>Infrastructure</h4>
-                <p class="ratib-footer-enterprise__infra-copy">Managed cloud, TLS, isolated tenants, and compliance-oriented audit trails.</p>
+                <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.infra'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
+                <p class="ratib-footer-enterprise__infra-copy"><?php echo htmlspecialchars($ratibHome['home.footer.infra.copy'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 <div class="ratib-footer-social">
                     <a href="https://wa.me/966599863868" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
                     <a href="mailto:ratibsrar@gmail.com" aria-label="Email"><i class="fas fa-envelope"></i></a>
                 </div>
                 <div class="footer-subscribe ratib-footer-newsletter">
-                    <label class="ratib-footer-newsletter__label" for="footerEmail">Updates</label>
-                    <input type="email" placeholder="Work email" id="footerEmail" name="footer_email" autocomplete="email" aria-label="Email for newsletter">
-                    <button type="button" class="btn-sub" id="footerSubscribe">Subscribe</button>
+                    <label class="ratib-footer-newsletter__label" for="footerEmail"><?php echo htmlspecialchars($ratibHome['home.footer.newsletter.label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></label>
+                    <input type="email" placeholder="<?php echo htmlspecialchars($ratibHome['home.footer.newsletter.placeholder'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" id="footerEmail" name="footer_email" autocomplete="email" aria-label="Email for newsletter">
+                    <button type="button" class="btn-sub" id="footerSubscribe"><?php echo htmlspecialchars($ratibHome['home.footer.newsletter.button'] ?? '', ENT_QUOTES, 'UTF-8'); ?></button>
                 </div>
             </div>
         </div>
         <div class="ratib-footer-system-strip">
             <div class="ratib-container ratib-footer-system-strip__inner">
-                <span class="ratib-footer-system-strip__item"><span class="ratib-mono-tag">uptime</span> target 99.95% SLA · synthetic checks</span>
-                <span class="ratib-footer-system-strip__item"><span class="ratib-mono-tag">requests</span> API gateway · rate limits · idempotent writes</span>
-                <span class="ratib-footer-system-strip__item"><span class="ratib-mono-tag">events</span> orchestrator · audit · replay-safe logs</span>
+                <span class="ratib-footer-system-strip__item"><span class="ratib-mono-tag">uptime</span> <?php echo htmlspecialchars($ratibHome['home.footer.strip.1'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+                <span class="ratib-footer-system-strip__item"><span class="ratib-mono-tag">requests</span> <?php echo htmlspecialchars($ratibHome['home.footer.strip.2'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+                <span class="ratib-footer-system-strip__item"><span class="ratib-mono-tag">events</span> <?php echo htmlspecialchars($ratibHome['home.footer.strip.3'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
             </div>
         </div>
         <div class="ratib-footer-enterprise__bottom">
             <div class="ratib-container ratib-footer-enterprise__bottom-inner">
-                <span>&copy; <?php echo date('Y'); ?> RATIB — Ratib Software Foundation for Information Technology</span>
-                <span class="ratib-footer-enterprise__loc"><i class="fas fa-location-dot" aria-hidden="true"></i> Riyadh, Saudi Arabia</span>
+                <span>&copy; <?php echo date('Y'); ?> <?php echo htmlspecialchars($ratibHome['home.footer.copyright_suffix'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
+                <span class="ratib-footer-enterprise__loc"><i class="fas fa-location-dot" aria-hidden="true"></i> <?php echo htmlspecialchars($ratibHome['home.footer.location'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
             </div>
         </div>
     </footer>
@@ -1106,7 +1070,7 @@ $ratibProgSrc = [
         <div class="chat-widget-header">
             <div class="chat-widget-header-info">
                 <div class="chat-widget-header-avatar" aria-hidden="true"><i class="fas fa-wand-magic-sparkles"></i></div>
-                <div class="chat-widget-header-text"><h3>Ratib Assistant</h3><p class="online">Help guides &amp; live support</p></div>
+                <div class="chat-widget-header-text"><h3><?php echo htmlspecialchars($ratibHome['home.chat.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3><p class="online"><?php echo htmlspecialchars($ratibHome['home.chat.subtitle'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p></div>
             </div>
             <div class="chat-widget-header-actions">
                 <button type="button" class="chat-widget-clear" id="chatWidgetClear" aria-label="Clear conversation" title="Clear assistant chat"><i class="fas fa-trash-alt"></i></button>

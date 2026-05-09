@@ -29,22 +29,6 @@ if (!function_exists('ratib_site_content_db')) {
     }
 }
 
-if (!function_exists('ratib_site_content_defaults_public_home')) {
-    /** @return array<string, string> */
-    function ratib_site_content_defaults_public_home(): array
-    {
-        return [
-            'home.hero.eyebrow' => 'Recruitment Automation & Tracking Intelligence Base',
-            'home.hero.lead' => 'Production control plane for sending-country agencies and host-market programs: lifecycle orchestration, workforce telemetry, compliance gates, and ledger-linked billing—same surfaces operations teams use daily, not a marketing shell.',
-            'home.platform.title' => 'Built for regulated, high-volume recruitment operations',
-            'home.platform.sub' => 'Deployed as a control plane: tenant-isolated data paths, encrypted transit, immutable workflow history, and finance-grade events organizations can reconcile—not narrative dashboards.',
-            'home.program.img1' => '',
-            'home.program.img2' => '',
-            'home.program.img3' => '',
-        ];
-    }
-}
-
 if (!function_exists('ratib_site_content_get')) {
     function ratib_site_content_get(string $key, string $default = ''): string
     {
@@ -68,29 +52,36 @@ if (!function_exists('ratib_site_content_get')) {
     }
 }
 
+require_once __DIR__ . '/site-content-home-data.php';
+
+if (!function_exists('ratib_site_content_defaults_public_home')) {
+    /** @return array<string, string> */
+    function ratib_site_content_defaults_public_home(): array
+    {
+        return ratib_site_content_defaults_home();
+    }
+}
+
 if (!function_exists('ratib_site_content_public_home')) {
     /**
-     * Resolved copy for pages/home.php (merged with defaults).
+     * Resolved copy for pages/home.php (subset for legacy callers).
      *
      * @return array{eyebrow:string,lead:string,platform_title:string,platform_sub:string,program_img:array{0:string,1:string,2:string}}
      */
     function ratib_site_content_public_home(): array
     {
-        $d = ratib_site_content_defaults_public_home();
-        $eyebrow = ratib_site_content_get('home.hero.eyebrow', $d['home.hero.eyebrow']);
-        $lead = ratib_site_content_get('home.hero.lead', $d['home.hero.lead']);
-        $platformTitle = ratib_site_content_get('home.platform.title', $d['home.platform.title']);
-        $platformSub = ratib_site_content_get('home.platform.sub', $d['home.platform.sub']);
-        $img1 = ratib_site_content_get('home.program.img1', $d['home.program.img1']);
-        $img2 = ratib_site_content_get('home.program.img2', $d['home.program.img2']);
-        $img3 = ratib_site_content_get('home.program.img3', $d['home.program.img3']);
+        $f = ratib_site_content_home_flat();
 
         return [
-            'eyebrow' => $eyebrow,
-            'lead' => $lead,
-            'platform_title' => $platformTitle,
-            'platform_sub' => $platformSub,
-            'program_img' => [$img1, $img2, $img3],
+            'eyebrow' => $f['home.hero.eyebrow'] ?? '',
+            'lead' => $f['home.hero.lead'] ?? '',
+            'platform_title' => $f['home.platform.title'] ?? '',
+            'platform_sub' => $f['home.platform.sub'] ?? '',
+            'program_img' => [
+                $f['home.program.img1'] ?? '',
+                $f['home.program.img2'] ?? '',
+                $f['home.program.img3'] ?? '',
+            ],
         ];
     }
 }

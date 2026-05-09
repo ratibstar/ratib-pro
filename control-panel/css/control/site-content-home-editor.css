@@ -1,0 +1,162 @@
+/**
+ * Dark workspace for Public site content editor (matches control sidebar aesthetic).
+ * Scoped so Bootstrap cards on other pages stay unchanged.
+ */
+.ratib-site-content-editor {
+    --rsce-bg: #0f1419;
+    --rsce-surface: #151b24;
+    --rsce-elevated: #1a2230;
+    --rsce-border: rgba(148, 163, 184, 0.18);
+    --rsce-text: #e8edf5;
+    --rsce-muted: #94a3b8;
+    --rsce-accent: #8b5cf6;
+    --rsce-accent-dim: rgba(139, 92, 246, 0.15);
+}
+
+.ratib-site-content-editor.ratib-site-content-editor--dark {
+    color: var(--rsce-text);
+    background: var(--rsce-bg);
+    border-radius: 12px;
+    padding: 1rem 1.25rem 2rem;
+    margin: -0.5rem -0.25rem 0;
+}
+
+.ratib-site-content-editor--dark .ratib-site-content-intro {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(59, 130, 246, 0.08));
+    border: 1px solid var(--rsce-border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.ratib-site-content-editor--dark .ratib-site-content-intro strong {
+    color: var(--rsce-text);
+}
+
+.ratib-site-content-editor--dark .ratib-site-content-intro code,
+.ratib-site-content-editor--dark .text-muted {
+    color: var(--rsce-muted) !important;
+}
+
+.ratib-site-content-editor--dark .alert {
+    border-radius: 10px;
+    border-width: 1px;
+}
+
+.ratib-site-content-editor--dark .alert-warning {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.35);
+    color: #fcd34d;
+}
+
+.ratib-site-content-editor--dark .alert-success {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.35);
+    color: #86efac;
+}
+
+.ratib-site-content-editor--dark .alert-danger {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+}
+
+.ratib-site-content-editor--dark details.ratib-site-content-details {
+    background: var(--rsce-surface);
+    border: 1px solid var(--rsce-border);
+    border-radius: 10px;
+    margin-bottom: 0.65rem;
+    overflow: hidden;
+}
+
+.ratib-site-content-editor--dark details.ratib-site-content-details summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 0.85rem 1.1rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--rsce-text);
+    background: var(--rsce-elevated);
+    border-bottom: 1px solid var(--rsce-border);
+    user-select: none;
+}
+
+.ratib-site-content-editor--dark details.ratib-site-content-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.ratib-site-content-editor--dark details.ratib-site-content-details summary::before {
+    content: "\f078";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    margin-right: 0.5rem;
+    font-size: 0.7rem;
+    opacity: 0.7;
+    display: inline-block;
+    transition: transform 0.15s ease;
+}
+
+.ratib-site-content-editor--dark details.ratib-site-content-details[open] summary::before {
+    transform: rotate(-180deg);
+}
+
+.ratib-site-content-editor--dark details.ratib-site-content-details .ratib-site-content-details__body {
+    padding: 1rem 1.1rem 1.15rem;
+}
+
+.ratib-site-content-editor--dark .form-label {
+    color: var(--rsce-muted);
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-bottom: 0.35rem;
+}
+
+.ratib-site-content-editor--dark .form-control {
+    background: var(--rsce-bg);
+    border: 1px solid var(--rsce-border);
+    color: var(--rsce-text);
+    border-radius: 8px;
+}
+
+.ratib-site-content-editor--dark .form-control:focus {
+    background: #0c1016;
+    border-color: rgba(139, 92, 246, 0.55);
+    color: var(--rsce-text);
+    box-shadow: 0 0 0 3px var(--rsce-accent-dim);
+}
+
+.ratib-site-content-editor--dark .form-control::placeholder {
+    color: rgba(148, 163, 184, 0.45);
+}
+
+.ratib-site-content-editor--dark textarea.form-control {
+    min-height: auto;
+}
+
+.ratib-site-content-editor--dark .ratib-site-content-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin-top: 1.5rem;
+    padding: 1rem 0 0;
+    background: linear-gradient(to top, var(--rsce-bg) 70%, transparent);
+}
+
+.ratib-site-content-editor--dark .ratib-site-content-actions .btn-primary {
+    background: linear-gradient(135deg, #7c3aed, #6366f1);
+    border: none;
+}
+
+.ratib-site-content-editor--dark .ratib-site-content-actions .btn-outline-secondary {
+    border-color: var(--rsce-border);
+    color: var(--rsce-muted);
+}
+
+.ratib-site-content-editor--dark .ratib-site-content-actions .btn-outline-secondary:hover {
+    background: var(--rsce-elevated);
+    color: var(--rsce-text);
+}
+
+.module-content .ratib-site-content-editor--dark + * {
+    margin-top: 0;
+}
