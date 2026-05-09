@@ -392,27 +392,6 @@ if (!function_exists('ratib_site_content_phone_digits_for_links')) {
     }
 }
 
-if (!function_exists('ratib_site_content_phone_display_for_public')) {
-    /**
-     * Visible label: keep CMS spacing when digits match canonical; otherwise format from canonical.
-     */
-    function ratib_site_content_phone_display_for_public(string $display, string $canonicalDigits): string
-    {
-        $raw = preg_replace('/\D/', '', $display);
-        if ($raw === $canonicalDigits) {
-            return $display;
-        }
-        if (strlen($canonicalDigits) === 12 && substr($canonicalDigits, 0, 3) === '966') {
-            $n = substr($canonicalDigits, 3);
-            if (strlen($n) === 9) {
-                return '+966 ' . substr($n, 0, 2) . ' ' . substr($n, 2, 3) . ' ' . substr($n, 5, 4);
-            }
-        }
-
-        return $display;
-    }
-}
-
 require_once __DIR__ . '/site-content-home-data.php';
 
 if (!function_exists('ratib_site_content_export_public_cache')) {

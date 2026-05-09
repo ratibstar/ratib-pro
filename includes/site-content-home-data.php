@@ -323,7 +323,32 @@ if (!function_exists('ratib_site_content_home_flat')) {
         }
         $defaults = ratib_site_content_defaults_home();
 
-        // Prefer JSON snapshot (written on CMS save) so public pages see edits without SELECT on control DB.
+        $applyHomeCache = static function (array $cached, array $defaults): array {
+            $out = $defaults;
+            foreach ($cached as $key => $val) {
+                if (array_key_exists($key, $defaults)) {
+                    $out[$key] = (string) $val;
+                }
+            }
+
+            return $out;
+        };
+
+        // 1) DB snapshot row — updated whenever Save succeeds (including hosts where disk JSON cannot be replaced).
+        //    Must come BEFORE filesystem JSON so a stale leftover ratib_site_content_home.json cannot override fresh saves.
+        if (function_exists('ratib_site_content_home_snapshot_db_read')) {
+            $rawDb = ratib_site_content_home_snapshot_db_read();
+            if ($rawDb !== null && $rawDb !== '') {
+                $cached = json_decode($rawDb, true);
+                if (is_array($cached)) {
+                    $memo = $applyHomeCache($cached, $defaults);
+
+                    return $memo;
+                }
+            }
+        }
+
+        // 2) JSON file snapshot (fast path when DB snapshot row was cleared after a successful disk write).
         $path = function_exists('ratib_site_content_public_cache_path_for_read')
             ? ratib_site_content_public_cache_path_for_read()
             : null;
@@ -337,35 +362,10 @@ if (!function_exists('ratib_site_content_home_flat')) {
                 if ($raw !== false && $raw !== '') {
                     $cached = json_decode($raw, true);
                     if (is_array($cached)) {
-                        $out = $defaults;
-                        foreach ($cached as $key => $val) {
-                            if (array_key_exists($key, $defaults)) {
-                                $out[$key] = (string) $val;
-                            }
-                        }
-                        $memo = $out;
+                        $memo = $applyHomeCache($cached, $defaults);
 
                         return $memo;
                     }
-                }
-            }
-        }
-
-        // DB snapshot (same JSON as file cache) when hosting blocks all disk writes for PHP.
-        if (function_exists('ratib_site_content_home_snapshot_db_read')) {
-            $rawDb = ratib_site_content_home_snapshot_db_read();
-            if ($rawDb !== null && $rawDb !== '') {
-                $cached = json_decode($rawDb, true);
-                if (is_array($cached)) {
-                    $out = $defaults;
-                    foreach ($cached as $key => $val) {
-                        if (array_key_exists($key, $defaults)) {
-                            $out[$key] = (string) $val;
-                        }
-                    }
-                    $memo = $out;
-
-                    return $memo;
                 }
             }
         }
