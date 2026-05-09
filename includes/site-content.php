@@ -201,34 +201,43 @@ if (!function_exists('ratib_site_content_db')) {
     }
 }
 
-if (!function_exists('ratib_site_content_stmt_fetch_value')) {
+if (!function_exists('ratib_site_content_key_allowed')) {
     /**
-     * Fetch single string column; works without mysqlnd (get_result unavailable).
-     * Without mysqlnd, mysqli_stmt::store_result() is required before bind_result/fetch — otherwise fetch fails and
-     * callers silently fall back to default CMS strings (looks like "connection" / sync failure).
+     * Keys are internal dotted identifiers — never pass user-controlled strings here without validation.
      */
-    function ratib_site_content_stmt_fetch_value(mysqli_stmt $stmt): ?string
+    function ratib_site_content_key_allowed(string $key): bool
     {
-        if (!$stmt->execute()) {
+        return $key !== '' && (bool) preg_match('/^[a-zA-Z0-9._-]{1,190}$/', $key);
+    }
+}
+
+if (!function_exists('ratib_site_content_fetch_value_by_key')) {
+    /**
+     * Read one cell via mysqli::query() (max compatibility). Prepared statements break on some PHP builds
+     * without mysqlnd / with buggy libmysqlclient + mysqli_stmt combinations — this path matches phpMyAdmin-style reads.
+     *
+     * @return ?string null when missing row or query error
+     */
+    function ratib_site_content_fetch_value_by_key(mysqli $conn, string $key): ?string
+    {
+        if (!ratib_site_content_key_allowed($key)) {
             return null;
         }
-        $res = $stmt->get_result();
-        if ($res !== false) {
-            $row = $res->fetch_assoc();
+        $esc = $conn->real_escape_string($key);
+        $sql = "SELECT content_value FROM ratib_site_content WHERE content_key = '" . $esc . "' LIMIT 1";
+        $res = $conn->query($sql);
+        if ($res === false) {
+            error_log('ratib_site_content_fetch_value_by_key: query failed: ' . $conn->error);
 
-            return isset($row['content_value']) ? (string) $row['content_value'] : null;
-        }
-        // mysqlnd not available — buffered result path:
-        if (!$stmt->store_result()) {
             return null;
         }
-        $contentValue = null;
-        $stmt->bind_result($contentValue);
-        if ($stmt->fetch()) {
-            return $contentValue !== null ? (string) $contentValue : '';
+        $row = $res->fetch_assoc();
+        $res->free();
+        if ($row === null || !array_key_exists('content_value', $row)) {
+            return null;
         }
 
-        return null;
+        return (string) $row['content_value'];
     }
 }
 
@@ -239,20 +248,13 @@ if (!function_exists('ratib_site_content_get')) {
         if (!$conn) {
             return $default;
         }
-        $stmt = $conn->prepare('SELECT content_value FROM ratib_site_content WHERE content_key = ? LIMIT 1');
-        if (!$stmt) {
-            error_log('ratib_site_content_get: prepare failed: ' . $conn->error);
-
-            return $default;
-        }
-        $stmt->bind_param('s', $key);
-        $val = ratib_site_content_stmt_fetch_value($stmt);
-        $stmt->close();
-        if ($val === null) {
-            return $default;
+        // Prefer mysqli::query — mysqli_stmt prepared SELECT fails on many hosts without mysqlnd.
+        $val = ratib_site_content_fetch_value_by_key($conn, $key);
+        if ($val !== null) {
+            return $val;
         }
 
-        return $val;
+        return $default;
     }
 }
 
@@ -267,13 +269,7 @@ if (!function_exists('ratib_site_content_home_snapshot_db_read')) {
             return null;
         }
         $key = RATIB_SITE_CONTENT_HOME_SNAPSHOT_KEY;
-        $stmt = $conn->prepare('SELECT content_value FROM ratib_site_content WHERE content_key = ? LIMIT 1');
-        if (!$stmt) {
-            return null;
-        }
-        $stmt->bind_param('s', $key);
-        $val = ratib_site_content_stmt_fetch_value($stmt);
-        $stmt->close();
+        $val = ratib_site_content_fetch_value_by_key($conn, $key);
         if ($val === null || $val === '') {
             return null;
         }
