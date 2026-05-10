@@ -76,6 +76,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.video.eyebrow'] = 'Product tour';
         $d['home.video.title'] = 'Walk the surfaces your teams will run';
         $d['home.video.caption'] = 'Recorded walkthrough: pipelines, verification queues, finance hooks, and agency administration.';
+        $d['home.video.file'] = '';
 
         $d['home.program.strip_eyebrow'] = 'Program previews';
         $d['home.program.caption.1'] = 'Pipeline board';
@@ -558,6 +559,7 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                     ['key' => 'home.video.eyebrow', 'label' => 'Eyebrow', 'type' => 'text'],
                     ['key' => 'home.video.title', 'label' => 'Title', 'type' => 'text'],
                     ['key' => 'home.video.caption', 'label' => 'Caption', 'type' => 'textarea', 'rows' => 2],
+                    ['key' => 'home.video.file', 'label' => 'Video file (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
                 ],
             ],
             [
@@ -571,9 +573,9 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                     ['key' => 'home.program.alt.1', 'label' => 'Image 1 alt text', 'type' => 'text'],
                     ['key' => 'home.program.alt.2', 'label' => 'Image 2 alt text', 'type' => 'text'],
                     ['key' => 'home.program.alt.3', 'label' => 'Image 3 alt text', 'type' => 'text'],
-                    ['key' => 'home.program.img1', 'label' => 'Image 1 path or URL (optional)', 'type' => 'text', 'class' => 'font-monospace small'],
-                    ['key' => 'home.program.img2', 'label' => 'Image 2 path or URL (optional)', 'type' => 'text', 'class' => 'font-monospace small'],
-                    ['key' => 'home.program.img3', 'label' => 'Image 3 path or URL (optional)', 'type' => 'text', 'class' => 'font-monospace small'],
+                    ['key' => 'home.program.img1', 'label' => 'Image 1 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
+                    ['key' => 'home.program.img2', 'label' => 'Image 2 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
+                    ['key' => 'home.program.img3', 'label' => 'Image 3 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
                 ],
             ],
             [

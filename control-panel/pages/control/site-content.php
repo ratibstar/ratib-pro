@@ -34,10 +34,93 @@ function ratib_control_site_content_render_field(array $field, array $values): v
     echo '<label class="form-label" for="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">' . $label . '</label>';
     if ($type === 'textarea') {
         echo '<textarea class="form-control' . htmlspecialchars($extraClass, ENT_QUOTES, 'UTF-8') . '" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="content[' . $nameKey . ']" rows="' . $rows . '" maxlength="65000">' . htmlspecialchars($val, ENT_QUOTES, 'UTF-8') . '</textarea>';
+    } elseif ($type === 'media_image' || $type === 'media_video') {
+        $accept = $type === 'media_video'
+            ? 'video/mp4,video/webm,video/quicktime'
+            : 'image/jpeg,image/png,image/webp,image/gif,image/svg+xml';
+        $hint = $type === 'media_video'
+            ? 'Upload video or keep URL/path. Supported: mp4, webm, mov.'
+            : 'Upload image or keep URL/path. Supported: jpg, png, webp, gif, svg.';
+        echo '<input type="text" class="form-control' . htmlspecialchars($extraClass, ENT_QUOTES, 'UTF-8') . '" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="content[' . $nameKey . ']" value="' . htmlspecialchars($val, ENT_QUOTES, 'UTF-8') . '" maxlength="65000">';
+        echo '<div class="mt-2 d-flex flex-column gap-2">';
+        echo '<input type="file" class="form-control form-control-sm" name="media_upload[' . $nameKey . ']" accept="' . htmlspecialchars($accept, ENT_QUOTES, 'UTF-8') . '">';
+        echo '<small class="text-muted">' . htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') . '</small>';
+        if (trim((string) $val) !== '') {
+            echo '<small class="text-muted">Current: <code>' . htmlspecialchars((string) $val, ENT_QUOTES, 'UTF-8') . '</code></small>';
+            echo '<label class="form-check-label"><input class="form-check-input me-1" type="checkbox" name="media_delete[' . $nameKey . ']" value="1">Delete current file/path</label>';
+        }
+        echo '</div>';
     } else {
         echo '<input type="text" class="form-control' . htmlspecialchars($extraClass, ENT_QUOTES, 'UTF-8') . '" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="content[' . $nameKey . ']" value="' . htmlspecialchars($val, ENT_QUOTES, 'UTF-8') . '" maxlength="65000">';
     }
     echo '</div>';
+}
+
+/**
+ * @return array{ok:bool,path:string,error:string}
+ */
+function ratib_control_site_content_store_media(array $file, string $kind): array
+{
+    if (!isset($file['tmp_name'], $file['name'], $file['error'])) {
+        return ['ok' => false, 'path' => '', 'error' => 'Invalid upload payload.'];
+    }
+    $err = (int) $file['error'];
+    if ($err !== UPLOAD_ERR_OK) {
+        return ['ok' => false, 'path' => '', 'error' => 'Upload failed (error ' . $err . ').'];
+    }
+    $tmp = (string) $file['tmp_name'];
+    if ($tmp === '' || !is_uploaded_file($tmp)) {
+        return ['ok' => false, 'path' => '', 'error' => 'Upload temp file missing.'];
+    }
+    $name = (string) $file['name'];
+    $ext = strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
+    $allow = $kind === 'video'
+        ? ['mp4', 'webm', 'mov']
+        : ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
+    if ($ext === '' || !in_array($ext, $allow, true)) {
+        return ['ok' => false, 'path' => '', 'error' => 'Unsupported file type: ' . $ext];
+    }
+    $size = isset($file['size']) ? (int) $file['size'] : 0;
+    $max = $kind === 'video' ? 80 * 1024 * 1024 : 12 * 1024 * 1024;
+    if ($size <= 0 || $size > $max) {
+        return ['ok' => false, 'path' => '', 'error' => 'File size must be between 1 byte and ' . (string) $max . ' bytes.'];
+    }
+
+    $root = dirname(__DIR__, 3);
+    $targetDir = $root . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'ratib_cms_media';
+    if (!is_dir($targetDir) && !@mkdir($targetDir, 0775, true) && !is_dir($targetDir)) {
+        return ['ok' => false, 'path' => '', 'error' => 'Cannot create uploads/ratib_cms_media directory.'];
+    }
+    if (!is_writable($targetDir)) {
+        return ['ok' => false, 'path' => '', 'error' => 'uploads/ratib_cms_media is not writable by PHP.'];
+    }
+
+    $safeBase = preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) pathinfo($name, PATHINFO_FILENAME));
+    $safeBase = trim((string) $safeBase, '-');
+    if ($safeBase === '') {
+        $safeBase = $kind === 'video' ? 'video' : 'image';
+    }
+    $finalName = 'home-' . $kind . '-' . date('Ymd-His') . '-' . substr(md5(uniqid('', true)), 0, 8) . '-' . $safeBase . '.' . $ext;
+    $abs = $targetDir . DIRECTORY_SEPARATOR . $finalName;
+    if (!@move_uploaded_file($tmp, $abs)) {
+        return ['ok' => false, 'path' => '', 'error' => 'Failed moving uploaded file.'];
+    }
+    @chmod($abs, 0644);
+
+    return ['ok' => true, 'path' => 'uploads/ratib_cms_media/' . $finalName, 'error' => ''];
+}
+
+function ratib_control_site_content_try_delete_media_file(string $storedPath): void
+{
+    $storedPath = ltrim(str_replace('\\', '/', trim($storedPath)), '/');
+    if ($storedPath === '' || strpos($storedPath, 'uploads/ratib_cms_media/') !== 0) {
+        return;
+    }
+    $root = dirname(__DIR__, 3);
+    $abs = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $storedPath);
+    if (is_file($abs)) {
+        @unlink($abs);
+    }
 }
 
 /**
@@ -102,6 +185,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
     } else {
         $posted = $_POST['content'] ?? null;
         $posted = is_array($posted) ? $posted : [];
+        $mediaMap = [
+            'home.video.file' => 'video',
+            'home.program.img1' => 'image',
+            'home.program.img2' => 'image',
+            'home.program.img3' => 'image',
+        ];
+        $deleteReq = $_POST['media_delete'] ?? [];
+        $deleteReq = is_array($deleteReq) ? $deleteReq : [];
+        foreach ($mediaMap as $mKey => $mKind) {
+            $oldVal = trim((string) ($values[$mKey] ?? ''));
+            if (isset($deleteReq[$mKey]) && (string) $deleteReq[$mKey] === '1') {
+                $posted[$mKey] = '';
+                ratib_control_site_content_try_delete_media_file($oldVal);
+            }
+            if (
+                isset($_FILES['media_upload'])
+                && isset($_FILES['media_upload']['error'][$mKey])
+                && (int) $_FILES['media_upload']['error'][$mKey] !== UPLOAD_ERR_NO_FILE
+            ) {
+                $f = [
+                    'name' => $_FILES['media_upload']['name'][$mKey] ?? '',
+                    'type' => $_FILES['media_upload']['type'][$mKey] ?? '',
+                    'tmp_name' => $_FILES['media_upload']['tmp_name'][$mKey] ?? '',
+                    'error' => $_FILES['media_upload']['error'][$mKey] ?? UPLOAD_ERR_NO_FILE,
+                    'size' => $_FILES['media_upload']['size'][$mKey] ?? 0,
+                ];
+                $up = ratib_control_site_content_store_media($f, $mKind);
+                if (!$up['ok']) {
+                    $flashErr = 'Media upload failed for ' . $mKey . ': ' . $up['error'];
+                    break;
+                }
+                $posted[$mKey] = $up['path'];
+                if ($oldVal !== '' && $oldVal !== $up['path']) {
+                    ratib_control_site_content_try_delete_media_file($oldVal);
+                }
+            }
+        }
+        if ($flashErr !== '') {
+            foreach (array_keys($defaults) as $k) {
+                if (array_key_exists($k, $posted)) {
+                    $values[$k] = is_string($posted[$k]) ? $posted[$k] : '';
+                }
+            }
+            goto ratib_site_content_post_done;
+        }
         $stmt = $ctrl->prepare(
             'INSERT INTO ratib_site_content (content_key, content_value) VALUES (?, ?)
              ON DUPLICATE KEY UPDATE content_value = VALUES(content_value), updated_at = CURRENT_TIMESTAMP'
@@ -148,6 +276,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
         }
     }
 }
+ratib_site_content_post_done:
 
 $_SESSION['ratib_site_content_nonce'] = bin2hex(random_bytes(16));
 $nonce = $_SESSION['ratib_site_content_nonce'];
@@ -200,7 +329,7 @@ startControlLayout('Public site content', [$editorCss], []);
     </script>
 <?php endif; ?>
 
-    <form method="post" action="" class="ratib-site-content-form">
+    <form method="post" action="" class="ratib-site-content-form" enctype="multipart/form-data">
         <input type="hidden" name="_nonce" value="<?php echo htmlspecialchars($nonce, ENT_QUOTES, 'UTF-8'); ?>">
         <input type="hidden" name="_rev" value="<?php echo htmlspecialchars($pageRevision, ENT_QUOTES, 'UTF-8'); ?>">
         <input type="hidden" name="ratib_site_content_save" value="1">

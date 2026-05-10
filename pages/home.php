@@ -165,40 +165,14 @@ $path = $_SERVER['REQUEST_URI'] ?? '';
 $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
 
-// EN: Resolve hero video source from preferred names, then fallback to any MP4 in /assets.
-// AR: تحديد فيديو العرض من أسماء مفضلة أولاً ثم الرجوع لأي ملف MP4 داخل /assets.
-// Video: prefer assets/video.mp4; also accept common uploads (e.g. "Ratib program.mp4") or any single .mp4 in assets/
+// EN: Resolve hero video source:
+// 1) CMS key home.video.file (URL or relative path), then
+// 2) legacy assets/video.mp4 scan fallback.
 $assetsDir = __DIR__ . '/../assets';
-$videoPreferred = ['video.mp4', 'Ratib program.mp4', 'Ratib Program.mp4'];
-$videoPath = '';
-$videoFileName = '';
-foreach ($videoPreferred as $name) {
-    $p = $assetsDir . DIRECTORY_SEPARATOR . $name;
-    if (is_file($p)) {
-        $videoPath = $p;
-        $videoFileName = $name;
-        break;
-    }
-}
-if ($videoFileName === '' && is_dir($assetsDir)) {
-    foreach (scandir($assetsDir) as $f) {
-        if ($f === '.' || $f === '..') {
-            continue;
-        }
-        $full = $assetsDir . DIRECTORY_SEPARATOR . $f;
-        if (!is_file($full)) {
-            continue;
-        }
-        if (strtolower((string) pathinfo($f, PATHINFO_EXTENSION)) === 'mp4') {
-            $videoPath = $full;
-            $videoFileName = $f;
-            break;
-        }
-    }
-}
-$videoExists = $videoFileName !== '';
-$videoSrcRel = $videoExists ? ('../assets/' . rawurlencode($videoFileName)) : '';
-$videoUrl = $videoExists ? ($baseUrl . '/assets/' . rawurlencode($videoFileName)) : '';
+$videoExists = false;
+$videoSrcRel = '';
+$videoUrl = '';
+$videoStored = '';
 
 // EN: Build gallery image list from assets/images for dynamic rendering in the page.
 // AR: تجهيز قائمة صور المعرض من assets/images لعرضها ديناميكياً في الصفحة.
@@ -330,6 +304,56 @@ $ratibProgSrc = [
     ratib_site_content_asset_url($baseUrl, $ratibHome['home.program.img2'] ?? '', 'assets/images/program-preview-workers.svg', __DIR__ . '/../assets/images/program-preview-workers.svg'),
     ratib_site_content_asset_url($baseUrl, $ratibHome['home.program.img3'] ?? '', 'assets/images/program-preview-finance.svg', __DIR__ . '/../assets/images/program-preview-finance.svg'),
 ];
+$videoStored = trim((string) ($ratibHome['home.video.file'] ?? ''));
+if ($videoStored !== '') {
+    if (preg_match('#^https?://#i', $videoStored)) {
+        $videoSrcRel = $videoStored;
+        $videoUrl = $videoStored;
+        $videoExists = true;
+    } else {
+        $rel = ltrim(str_replace('\\', '/', $videoStored), '/');
+        $fs = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+        $v = is_file($fs) ? (int) filemtime($fs) : time();
+        $videoUrl = rtrim($baseUrl, '/') . '/' . $rel . '?v=' . $v;
+        $videoSrcRel = $videoUrl;
+        $videoExists = true;
+    }
+}
+if (!$videoExists) {
+    // AR: توافق رجعي — دعم الملفات القديمة في assets حتى بدون مفتاح CMS.
+    $videoPreferred = ['video.mp4', 'Ratib program.mp4', 'Ratib Program.mp4'];
+    $videoPath = '';
+    $videoFileName = '';
+    foreach ($videoPreferred as $name) {
+        $p = $assetsDir . DIRECTORY_SEPARATOR . $name;
+        if (is_file($p)) {
+            $videoPath = $p;
+            $videoFileName = $name;
+            break;
+        }
+    }
+    if ($videoFileName === '' && is_dir($assetsDir)) {
+        foreach (scandir($assetsDir) as $f) {
+            if ($f === '.' || $f === '..') {
+                continue;
+            }
+            $full = $assetsDir . DIRECTORY_SEPARATOR . $f;
+            if (!is_file($full)) {
+                continue;
+            }
+            if (strtolower((string) pathinfo($f, PATHINFO_EXTENSION)) === 'mp4') {
+                $videoPath = $full;
+                $videoFileName = $f;
+                break;
+            }
+        }
+    }
+    if ($videoFileName !== '') {
+        $videoExists = true;
+        $videoSrcRel = '../assets/' . rawurlencode($videoFileName);
+        $videoUrl = $baseUrl . '/assets/' . rawurlencode($videoFileName);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
