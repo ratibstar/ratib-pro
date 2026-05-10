@@ -248,7 +248,7 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-28';
+    : '20260210-29';
 /** Proof token for View Source: if this block is missing on the live site, the request is not using this home.php (wrong path, cache, or mirror). */
 $ratibHomePhpMtime = (string) (int) (@filemtime(__FILE__) ?: 0);
 $ratibHome = ratib_site_content_home_flat(false);
@@ -455,9 +455,10 @@ if ($ratibNavProductTourLabel === '') {
                     <path fill="currentColor" d="M11 4h2l-2 16h-2l2-16z"/>
                 </symbol>
                 <symbol id="ratib-ng-contact" viewBox="0 0 24 24"><path fill="currentColor" d="M4 7h16v11H4V7zm1 2 7 4.5 7-4.5V17H5V9z"/></symbol>
+                <symbol id="ratib-ng-partner" viewBox="0 0 24 24"><path fill="currentColor" d="M8 12a3 3 0 116 0 3 3 0 01-6 0zm9-1a2 2 0 11-4 0 2 2 0 014 0zM4 18c0-2.5 3-4 7-4s7 1.5 7 4v1H4v-1zm12 0v-.5c0-1.5 2-2.5 4-2.5s4 1 4 2.5V19h-8z"/></symbol>
             </svg>
             <div class="ratib-nav__cta">
-                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" class="ratib-btn ratib-btn--ghost"><?php echo htmlspecialchars($ratibHome['home.nav.cta_partner'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" class="ratib-btn ratib-btn--ghost ratib-nav__partner-login"><span class="ratib-nav__partner-icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-partner"/></svg></span><span class="ratib-nav__partner-label"><?php echo htmlspecialchars($ratibHome['home.nav.cta_partner'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
             </div>
         </div>
     </header>
