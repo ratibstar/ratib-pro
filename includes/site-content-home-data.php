@@ -58,7 +58,6 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         }
 
         $d['home.nav.cta_partner'] = 'Partner Login';
-        $d['home.nav.cta_primary'] = 'Start agency infrastructure';
 
         $d['home.hero.eyebrow'] = 'Recruitment Automation & Tracking Intelligence Base';
         $d['home.hero.lead'] = 'Production control plane for sending-country agencies and host-market programs: lifecycle orchestration, workforce telemetry, compliance gates, and ledger-linked billing—same surfaces operations teams use daily, not a marketing shell.';
@@ -589,7 +588,6 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                     ['key' => 'home.nav.api', 'label' => 'API', 'type' => 'text'],
                     ['key' => 'home.nav.contact', 'label' => 'Contact', 'type' => 'text'],
                     ['key' => 'home.nav.cta_partner', 'label' => 'CTA · Partner Login', 'type' => 'text'],
-                    ['key' => 'home.nav.cta_primary', 'label' => 'CTA · Start agency infrastructure', 'type' => 'text'],
                 ],
             ],
             [
