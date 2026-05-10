@@ -40,6 +40,27 @@ function ratib_control_site_content_render_field(array $field, array $values): v
     echo '</div>';
 }
 
+/**
+ * Monotonic revision for ratib_site_content rows (unix seconds as string).
+ * Used to block stale-tab overwrites when multiple CMS tabs are open.
+ */
+function ratib_control_site_content_revision(?mysqli $ctrl): string
+{
+    if (!$ctrl instanceof mysqli) {
+        return '';
+    }
+    try {
+        $res = $ctrl->query("SELECT COALESCE(UNIX_TIMESTAMP(MAX(updated_at)), 0) AS rev FROM ratib_site_content");
+        if ($res && ($row = $res->fetch_assoc())) {
+            return (string) ($row['rev'] ?? '0');
+        }
+    } catch (Throwable $e) {
+        // Ignore revision read failures; save path still has its own error handling.
+    }
+
+    return '';
+}
+
 $ctrl = $GLOBALS['control_conn'] ?? null;
 $tableOk = false;
 if ($ctrl instanceof mysqli) {
@@ -61,6 +82,7 @@ foreach (array_keys($defaults) as $k) {
 $flashOk = false;
 $flashErr = '';
 $flashCacheWarn = '';
+$pageRevision = ratib_control_site_content_revision($ctrl);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_save'])) {
     requireControlPermission('edit_control_system_settings');
@@ -72,6 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
         $flashErr = 'Database unavailable.';
     } elseif (!$tableOk) {
         $flashErr = 'Table ratib_site_content missing. Run sql/ratib_site_content.sql on the control database.';
+    } elseif ($pageRevision !== '' && (string) ($_POST['_rev'] ?? '') !== $pageRevision) {
+        $flashErr = 'This editor tab is outdated (content changed in another tab/session). Refresh the page, then apply your edits again.';
     } else {
         $posted = $_POST['content'] ?? null;
         $posted = is_array($posted) ? $posted : [];
@@ -104,6 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
             $stmt->close();
             if ($saveOk) {
                 $flashOk = true;
+                $pageRevision = ratib_control_site_content_revision($ctrl);
                 foreach (array_keys($defaults) as $k) {
                     $values[$k] = ratib_site_content_get($k, $defaults[$k]);
                 }
@@ -161,6 +186,7 @@ startControlLayout('Public site content', [$editorCss], []);
 
     <form method="post" action="" class="ratib-site-content-form">
         <input type="hidden" name="_nonce" value="<?php echo htmlspecialchars($nonce, ENT_QUOTES, 'UTF-8'); ?>">
+        <input type="hidden" name="_rev" value="<?php echo htmlspecialchars($pageRevision, ENT_QUOTES, 'UTF-8'); ?>">
         <input type="hidden" name="ratib_site_content_save" value="1">
 
 <?php
