@@ -69,8 +69,12 @@ if (function_exists('ratib_site_content_home_flat')) {
     }
 }
 
+$dbPhoneTrim = $phoneVal !== null ? trim((string) $phoneVal) : null;
+$flatPhoneTrim = $resolvedPhonePreview !== null ? trim((string) $resolvedPhonePreview) : null;
+
 $payload = [
     'ok' => true,
+    'http_host' => isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : '',
     'ratib_site_content_db' => $dbOk,
     'ratib_site_content_table_readable' => $tableReadable,
     'env_RATIB_SITE_CONTENT_PUBLIC_SOURCE' => getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE') !== false
@@ -83,6 +87,8 @@ $payload = [
     'resolved_home_topbar_phone_display' => $resolvedPhonePreview,
     /** Same values pages/home.php registration block uses — compare with phpMyAdmin rows for these keys. */
     'resolved_registration_sample' => $resolvedRegister,
+    /** true when direct SELECT for phone equals ratib_site_content_home_flat() output — if false, deploy/cache/read path mismatch. */
+    'phone_flat_equals_db_direct_fetch' => ($dbPhoneTrim !== null && $flatPhoneTrim !== null && $dbPhoneTrim === $flatPhoneTrim),
     'batch_keys_present_count' => count($batch),
     'batch_register_keys_present' => array_reduce(
         $registerSampleKeys,
