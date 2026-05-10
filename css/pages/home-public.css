@@ -142,10 +142,10 @@ body.ratib-saas-home {
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   background:
     linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(5, 8, 22, 0.88) 100%),
-    radial-gradient(ellipse 120% 180% at 0% 0%, rgba(27, 176, 203, 0.07), transparent 45%),
-    radial-gradient(ellipse 100% 160% at 100% 0%, rgba(124, 98, 200, 0.06), transparent 50%),
-    radial-gradient(ellipse 80% 120% at 50% 100%, rgba(47, 168, 128, 0.05), transparent 55%);
-  backdrop-filter: blur(20px) saturate(1.12);
+    radial-gradient(ellipse 120% 180% at 0% 0%, rgba(27, 176, 203, 0.11), transparent 45%),
+    radial-gradient(ellipse 100% 160% at 100% 0%, rgba(124, 98, 200, 0.1), transparent 50%),
+    radial-gradient(ellipse 80% 120% at 50% 100%, rgba(47, 168, 128, 0.08), transparent 55%);
+  backdrop-filter: blur(20px) saturate(1.35);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
 }
 
@@ -164,7 +164,7 @@ body.ratib-saas-home {
     rgba(47, 168, 128, 0.32) 72%,
     rgba(217, 164, 40, 0.28) 100%
   );
-  opacity: 0.62;
+  opacity: 0.85;
   pointer-events: none;
 }
 
@@ -250,7 +250,7 @@ body.ratib-saas-home {
 .ratib-topbar__wa:hover {
   color: #ecfdf5;
   border-color: rgba(52, 211, 153, 0.55);
-  box-shadow: 0 0 15px rgba(52, 211, 153, 0.22);
+  box-shadow: 0 0 28px rgba(52, 211, 153, 0.22);
   transform: translateY(-1px);
 }
 
@@ -315,19 +315,19 @@ body.ratib-saas-home {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   background:
     linear-gradient(180deg, rgba(11, 15, 35, 0.92) 0%, rgba(5, 8, 22, 0.78) 55%, rgba(5, 8, 22, 0.72) 100%),
-    radial-gradient(ellipse 90% 120% at 15% -30%, rgba(124, 98, 200, 0.14), transparent 55%),
-    radial-gradient(ellipse 70% 100% at 85% -20%, rgba(27, 176, 203, 0.09), transparent 50%),
-    radial-gradient(ellipse 60% 80% at 50% 120%, rgba(200, 90, 130, 0.05), transparent 45%);
-  backdrop-filter: blur(22px) saturate(1.12);
+    radial-gradient(ellipse 90% 120% at 15% -30%, rgba(124, 98, 200, 0.2), transparent 55%),
+    radial-gradient(ellipse 70% 100% at 85% -20%, rgba(27, 176, 203, 0.14), transparent 50%),
+    radial-gradient(ellipse 60% 80% at 50% 120%, rgba(200, 90, 130, 0.08), transparent 45%);
+  backdrop-filter: blur(22px) saturate(1.4);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.22);
 }
 
 .ratib-nav-shell.is-scrolled {
   background:
     linear-gradient(180deg, rgba(5, 8, 18, 0.94) 0%, rgba(5, 8, 22, 0.9) 100%),
-    radial-gradient(ellipse 80% 100% at 20% 0%, rgba(124, 98, 200, 0.08), transparent 45%);
-  backdrop-filter: blur(24px) saturate(1.08);
-  border-bottom-color: rgba(124, 98, 200, 0.16);
+    radial-gradient(ellipse 80% 100% at 20% 0%, rgba(124, 98, 200, 0.12), transparent 45%);
+  backdrop-filter: blur(24px) saturate(1.25);
+  border-bottom-color: rgba(124, 98, 200, 0.22);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.45),
     0 1px 0 rgba(255, 255, 255, 0.05) inset;
@@ -356,7 +356,7 @@ body.ratib-saas-home {
   display: block;
   height: 40px;
   width: auto;
-  filter: drop-shadow(0 0 12px rgba(124, 98, 200, 0.22));
+  filter: drop-shadow(0 0 14px rgba(139, 92, 246, 0.35));
 }
 
 .ratib-nav__brand-text {
@@ -376,12 +376,12 @@ body.ratib-saas-home {
   gap: 5px;
   width: 46px;
   height: 46px;
-  border: 1px solid rgba(124, 98, 200, 0.26);
+  border: 1px solid rgba(139, 92, 246, 0.35);
   border-radius: var(--r-radius-sm);
-  background: linear-gradient(145deg, rgba(124, 98, 200, 0.09), rgba(15, 23, 42, 0.9));
+  background: linear-gradient(145deg, rgba(139, 92, 246, 0.14), rgba(15, 23, 42, 0.9));
   cursor: pointer;
   padding: 0;
-  box-shadow: 0 0 16px rgba(124, 98, 200, 0.1);
+  box-shadow: 0 0 22px rgba(139, 92, 246, 0.18);
 }
 
 .ratib-nav__toggle span {
@@ -486,10 +486,10 @@ body.ratib-saas-home {
 @keyframes ratibSemanticPulse {
   0%,
   100% {
-    filter: brightness(1) saturate(0.88) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+    filter: brightness(1) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
   }
   50% {
-    filter: brightness(1.04) saturate(0.88) drop-shadow(0 0 10px var(--ratib-pulse, rgba(148, 163, 184, 0.26)));
+    filter: brightness(1.1) drop-shadow(0 0 14px var(--ratib-pulse, rgba(148, 163, 184, 0.45)));
   }
 }
 
@@ -535,7 +535,7 @@ body.ratib-saas-home {
   .ratib-nav__partner-icon {
     animation: ratibSemanticPulse 4.5s ease-in-out infinite;
     animation-delay: 1.65s;
-    --ratib-pulse: rgba(217, 164, 40, 0.38);
+    --ratib-pulse: rgba(245, 158, 11, 0.55);
   }
 }
 
@@ -546,49 +546,49 @@ body.ratib-saas-home {
   }
 }
 
-/* Tab label tints at rest (moderated vs pure neon) */
+/* Tab label tints at rest */
 .ratib-nav__link:is([href="#platform"], [href$="#platform"]) .ratib-nav__label {
-  color: #9dcbf8;
+  color: #bae6fd;
 }
 
 .ratib-nav__link:is([href="#how-it-works"], [href$="#how-it-works"]) .ratib-nav__label {
-  color: #8fcbb8;
+  color: #a7f3d0;
 }
 
 .ratib-nav__link:is([href="#features"], [href$="#features"]) .ratib-nav__label {
-  color: #c9cfe8;
+  color: #e0e7ff;
 }
 
 .ratib-nav__link:is([href="#solutions"], [href$="#solutions"]) .ratib-nav__label {
-  color: #e8dcc8;
+  color: #ffedd5;
 }
 
 .ratib-nav__link:is([href="#programs"], [href$="#programs"]) .ratib-nav__label {
-  color: #e8dfb8;
+  color: #fef3c7;
 }
 
 .ratib-nav__link:is([href="#agencies"], [href$="#agencies"]) .ratib-nav__label {
-  color: #c5d4eb;
+  color: #dbeafe;
 }
 
 .ratib-nav__link:is([href="#tracking"], [href$="#tracking"]) .ratib-nav__label {
-  color: #b0e8df;
+  color: #ccfbf1;
 }
 
 .ratib-nav__link:is([href="#operational"], [href$="#operational"]) .ratib-nav__label {
-  color: #e8da7a;
+  color: #fef08a;
 }
 
 .ratib-nav__link:is([href="#api"], [href$="#api"]) .ratib-nav__label {
-  color: #d4e8b8;
+  color: #ecfccb;
 }
 
 .ratib-nav__link:is([href="#contact"], [href$="#contact"]) .ratib-nav__label {
-  color: #e8bcc4;
+  color: #fecdd3;
 }
 
 .ratib-nav__link--product-tour .ratib-nav__label {
-  color: #dfcae8;
+  color: #fae8ff;
 }
 
 /* Per-section icon tiles + pulse hue (CSS var --ratib-pulse on each tile) */
@@ -597,14 +597,14 @@ body.ratib-saas-home {
   color: #e0f2fe;
   background: linear-gradient(145deg, rgba(14, 165, 233, 0.45), rgba(12, 74, 110, 0.78));
   border-color: rgba(56, 189, 248, 0.55);
-  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+  box-shadow: 0 6px 22px rgba(56, 189, 248, 0.3);
 }
 
 .ratib-nav__link:is([href="#platform"], [href$="#platform"]):hover {
   color: #f0f9ff;
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(8, 47, 73, 0.12));
   border-color: rgba(125, 211, 252, 0.45);
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.2);
+  box-shadow: 0 0 26px rgba(56, 189, 248, 0.2);
 }
 
 .ratib-nav__link:is([href="#how-it-works"], [href$="#how-it-works"]) .ratib-nav__icon {
@@ -612,14 +612,14 @@ body.ratib-saas-home {
   color: #ecfdf5;
   background: linear-gradient(145deg, rgba(16, 185, 129, 0.48), rgba(6, 78, 59, 0.72));
   border-color: rgba(52, 211, 153, 0.55);
-  box-shadow: 0 4px 15px rgba(52, 211, 153, 0.26);
+  box-shadow: 0 6px 22px rgba(52, 211, 153, 0.26);
 }
 
 .ratib-nav__link:is([href="#how-it-works"], [href$="#how-it-works"]):hover {
   color: #ecfdf5;
   background: linear-gradient(135deg, rgba(52, 211, 153, 0.18), rgba(6, 95, 70, 0.12));
   border-color: rgba(110, 231, 183, 0.45);
-  box-shadow: 0 0 14px rgba(52, 211, 153, 0.18);
+  box-shadow: 0 0 24px rgba(52, 211, 153, 0.18);
 }
 
 .ratib-nav__link:is([href="#features"], [href$="#features"]) .ratib-nav__icon {
@@ -627,14 +627,14 @@ body.ratib-saas-home {
   color: #eef2ff;
   background: linear-gradient(145deg, rgba(79, 70, 229, 0.52), rgba(49, 46, 129, 0.72));
   border-color: rgba(129, 140, 248, 0.55);
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.28);
+  box-shadow: 0 6px 22px rgba(99, 102, 241, 0.28);
 }
 
 .ratib-nav__link:is([href="#features"], [href$="#features"]):hover {
   color: #eef2ff;
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(55, 48, 163, 0.12));
   border-color: rgba(165, 180, 252, 0.45);
-  box-shadow: 0 0 14px rgba(99, 102, 241, 0.22);
+  box-shadow: 0 0 26px rgba(99, 102, 241, 0.22);
 }
 
 .ratib-nav__link:is([href="#solutions"], [href$="#solutions"]) .ratib-nav__icon {
@@ -642,14 +642,14 @@ body.ratib-saas-home {
   color: #fff7ed;
   background: linear-gradient(145deg, rgba(249, 115, 22, 0.48), rgba(124, 45, 18, 0.62));
   border-color: rgba(251, 146, 60, 0.55);
-  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.26);
+  box-shadow: 0 6px 22px rgba(249, 115, 22, 0.26);
 }
 
 .ratib-nav__link:is([href="#solutions"], [href$="#solutions"]):hover {
   color: #fff7ed;
   background: linear-gradient(135deg, rgba(249, 115, 22, 0.18), rgba(154, 52, 18, 0.12));
   border-color: rgba(253, 186, 116, 0.48);
-  box-shadow: 0 0 14px rgba(249, 115, 22, 0.2);
+  box-shadow: 0 0 24px rgba(249, 115, 22, 0.2);
 }
 
 /* Pricing — CMS label often "Pricing"; section #programs */
@@ -658,14 +658,14 @@ body.ratib-saas-home {
   color: #fffbeb;
   background: linear-gradient(145deg, rgba(245, 158, 11, 0.48), rgba(120, 53, 15, 0.68));
   border-color: rgba(251, 191, 36, 0.58);
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.28);
+  box-shadow: 0 6px 22px rgba(245, 158, 11, 0.28);
 }
 
 .ratib-nav__link:is([href="#programs"], [href$="#programs"]):hover {
   color: #fffbeb;
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(146, 64, 14, 0.14));
   border-color: rgba(253, 224, 71, 0.5);
-  box-shadow: 0 0 14px rgba(245, 158, 11, 0.22);
+  box-shadow: 0 0 26px rgba(245, 158, 11, 0.22);
 }
 
 .ratib-nav__link:is([href="#agencies"], [href$="#agencies"]) .ratib-nav__icon {
@@ -673,14 +673,14 @@ body.ratib-saas-home {
   color: #eff6ff;
   background: linear-gradient(145deg, rgba(37, 99, 235, 0.48), rgba(23, 37, 84, 0.78));
   border-color: rgba(96, 165, 250, 0.55);
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.28);
+  box-shadow: 0 6px 22px rgba(59, 130, 246, 0.28);
 }
 
 .ratib-nav__link:is([href="#agencies"], [href$="#agencies"]):hover {
   color: #eff6ff;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.16), rgba(30, 58, 138, 0.12));
   border-color: rgba(147, 197, 253, 0.45);
-  box-shadow: 0 0 14px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 24px rgba(59, 130, 246, 0.2);
 }
 
 .ratib-nav__link:is([href="#tracking"], [href$="#tracking"]) .ratib-nav__icon {
@@ -688,14 +688,14 @@ body.ratib-saas-home {
   color: #f0fdfa;
   background: linear-gradient(145deg, rgba(13, 148, 136, 0.48), rgba(15, 118, 110, 0.72));
   border-color: rgba(45, 212, 191, 0.55);
-  box-shadow: 0 4px 15px rgba(20, 184, 166, 0.26);
+  box-shadow: 0 6px 22px rgba(20, 184, 166, 0.26);
 }
 
 .ratib-nav__link:is([href="#tracking"], [href$="#tracking"]):hover {
   color: #f0fdfa;
   background: linear-gradient(135deg, rgba(20, 184, 166, 0.16), rgba(15, 118, 110, 0.12));
   border-color: rgba(94, 234, 212, 0.45);
-  box-shadow: 0 0 14px rgba(20, 184, 166, 0.2);
+  box-shadow: 0 0 24px rgba(20, 184, 166, 0.2);
 }
 
 /* Visibility — CMS label often "Visibility"; section #operational */
@@ -704,14 +704,14 @@ body.ratib-saas-home {
   color: #fefce8;
   background: linear-gradient(145deg, rgba(234, 179, 8, 0.42), rgba(113, 63, 18, 0.62));
   border-color: rgba(250, 204, 21, 0.55);
-  box-shadow: 0 4px 15px rgba(234, 179, 8, 0.22);
+  box-shadow: 0 6px 22px rgba(234, 179, 8, 0.22);
 }
 
 .ratib-nav__link:is([href="#operational"], [href$="#operational"]):hover {
   color: #fefce8;
   background: linear-gradient(135deg, rgba(234, 179, 8, 0.18), rgba(113, 63, 18, 0.12));
   border-color: rgba(253, 224, 71, 0.48);
-  box-shadow: 0 0 14px rgba(234, 179, 8, 0.2);
+  box-shadow: 0 0 26px rgba(234, 179, 8, 0.2);
 }
 
 .ratib-nav__link:is([href="#api"], [href$="#api"]) .ratib-nav__icon {
@@ -719,14 +719,14 @@ body.ratib-saas-home {
   color: #f7fee7;
   background: linear-gradient(145deg, rgba(101, 163, 13, 0.52), rgba(28, 69, 17, 0.72));
   border-color: rgba(163, 230, 53, 0.5);
-  box-shadow: 0 4px 15px rgba(132, 204, 22, 0.24);
+  box-shadow: 0 6px 22px rgba(132, 204, 22, 0.24);
 }
 
 .ratib-nav__link:is([href="#api"], [href$="#api"]):hover {
   color: #f7fee7;
   background: linear-gradient(135deg, rgba(163, 230, 53, 0.16), rgba(63, 98, 18, 0.12));
   border-color: rgba(217, 249, 157, 0.45);
-  box-shadow: 0 0 14px rgba(163, 230, 53, 0.18);
+  box-shadow: 0 0 24px rgba(163, 230, 53, 0.18);
 }
 
 .ratib-nav__link:is([href="#contact"], [href$="#contact"]) .ratib-nav__icon {
@@ -734,19 +734,19 @@ body.ratib-saas-home {
   color: #fff1f2;
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.48), rgba(136, 19, 55, 0.68));
   border-color: rgba(253, 164, 175, 0.55);
-  box-shadow: 0 4px 15px rgba(251, 113, 133, 0.26);
+  box-shadow: 0 6px 22px rgba(251, 113, 133, 0.26);
 }
 
 .ratib-nav__link:is([href="#contact"], [href$="#contact"]):hover {
   color: #fff1f2;
   background: linear-gradient(135deg, rgba(251, 113, 133, 0.18), rgba(159, 18, 57, 0.12));
   border-color: rgba(254, 205, 211, 0.48);
-  box-shadow: 0 0 14px rgba(251, 113, 133, 0.22);
+  box-shadow: 0 0 26px rgba(251, 113, 133, 0.22);
 }
 
 /* Demo / hero video band (#video) — same semantic family as video/pic */
 .ratib-nav__link:is([href="#video"], [href$="#video"]) .ratib-nav__label {
-  color: #dfcae8;
+  color: #fae8ff;
 }
 
 .ratib-nav__link:is([href="#video"], [href$="#video"]) .ratib-nav__icon {
@@ -754,23 +754,23 @@ body.ratib-saas-home {
   color: #fdf4ff;
   background: linear-gradient(145deg, rgba(192, 38, 211, 0.55), rgba(91, 33, 182, 0.62));
   border-color: rgba(232, 121, 249, 0.58);
-  box-shadow: 0 4px 15px rgba(192, 38, 211, 0.32);
+  box-shadow: 0 6px 22px rgba(192, 38, 211, 0.32);
 }
 
 .ratib-nav__link:is([href="#video"], [href$="#video"]):hover {
   color: #fdf4ff;
   border-color: rgba(217, 70, 239, 0.45);
   background: linear-gradient(135deg, rgba(147, 51, 234, 0.28), rgba(76, 29, 149, 0.18));
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.28);
+  box-shadow: 0 0 28px rgba(168, 85, 247, 0.28);
 }
 
 .ratib-nav__link:is([href="#video"], [href$="#video"]):hover .ratib-nav__icon {
-  box-shadow: 0 6px 18px rgba(217, 70, 239, 0.42);
+  box-shadow: 0 8px 26px rgba(217, 70, 239, 0.42);
 }
 
 /* Registration (#register) — outreach / contact family */
 .ratib-nav__link:is([href="#register"], [href$="#register"]) .ratib-nav__label {
-  color: #e8bcc4;
+  color: #fecdd3;
 }
 
 .ratib-nav__link:is([href="#register"], [href$="#register"]) .ratib-nav__icon {
@@ -778,14 +778,14 @@ body.ratib-saas-home {
   color: #fff1f2;
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.48), rgba(136, 19, 55, 0.68));
   border-color: rgba(253, 164, 175, 0.55);
-  box-shadow: 0 4px 15px rgba(251, 113, 133, 0.26);
+  box-shadow: 0 6px 22px rgba(251, 113, 133, 0.26);
 }
 
 .ratib-nav__link:is([href="#register"], [href$="#register"]):hover {
   color: #fff1f2;
   background: linear-gradient(135deg, rgba(251, 113, 133, 0.18), rgba(159, 18, 57, 0.12));
   border-color: rgba(254, 205, 211, 0.48);
-  box-shadow: 0 0 14px rgba(251, 113, 133, 0.22);
+  box-shadow: 0 0 26px rgba(251, 113, 133, 0.22);
 }
 
 /* video/pic — media (fuchsia), distinct from Features indigo */
@@ -796,26 +796,26 @@ body.ratib-saas-home {
   color: #fdf4ff;
   background: linear-gradient(145deg, rgba(192, 38, 211, 0.55), rgba(91, 33, 182, 0.62));
   border-color: rgba(232, 121, 249, 0.58);
-  box-shadow: 0 6px 20px rgba(192, 38, 211, 0.38);
+  box-shadow: 0 8px 28px rgba(192, 38, 211, 0.38);
 }
 
 .ratib-nav__link--product-tour {
   color: #fdf4ff;
   border: 1px solid rgba(217, 70, 239, 0.45);
   background: linear-gradient(135deg, rgba(147, 51, 234, 0.38), rgba(76, 29, 149, 0.28));
-  box-shadow: 0 0 15px rgba(168, 85, 247, 0.28);
+  box-shadow: 0 0 28px rgba(168, 85, 247, 0.28);
 }
 
 .ratib-nav__link--product-tour:hover {
   color: #ffffff;
   border-color: rgba(232, 121, 249, 0.65);
   background: linear-gradient(135deg, rgba(168, 85, 247, 0.48), rgba(91, 33, 182, 0.35));
-  box-shadow: 0 0 22px rgba(217, 70, 239, 0.35);
+  box-shadow: 0 0 36px rgba(217, 70, 239, 0.35);
   transform: translateY(-1px);
 }
 
 .ratib-nav__link--product-tour:hover .ratib-nav__icon {
-  box-shadow: 0 8px 22px rgba(217, 70, 239, 0.48);
+  box-shadow: 0 10px 34px rgba(217, 70, 239, 0.48);
 }
 
 .ratib-nav__cta {
@@ -2846,11 +2846,11 @@ body.ratib-program-lightbox-open {
   color: #fffbeb;
   background: linear-gradient(145deg, rgba(217, 119, 6, 0.38), rgba(69, 26, 3, 0.72));
   border-color: rgba(251, 191, 36, 0.55);
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.26);
+  box-shadow: 0 6px 22px rgba(245, 158, 11, 0.26);
 }
 
 .ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--customer-portal .ratib-nav__label {
-  color: #e8dfb8;
+  color: #fef3c7;
 }
 
 .ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--customer-portal {
@@ -2871,11 +2871,11 @@ body.ratib-program-lightbox-open {
   color: #eef2ff;
   background: linear-gradient(145deg, rgba(79, 70, 229, 0.52), rgba(49, 46, 129, 0.72));
   border-color: rgba(129, 140, 248, 0.55);
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.28);
+  box-shadow: 0 6px 22px rgba(99, 102, 241, 0.28);
 }
 
 .ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--support-tickets .ratib-nav__label {
-  color: #c9cfe8;
+  color: #e0e7ff;
 }
 
 .ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--support-tickets:hover {
@@ -2889,11 +2889,11 @@ body.ratib-program-lightbox-open {
   color: #ecfdf5;
   background: linear-gradient(145deg, rgba(16, 185, 129, 0.52), rgba(6, 78, 59, 0.72));
   border-color: rgba(52, 211, 153, 0.55);
-  box-shadow: 0 4px 15px rgba(52, 211, 153, 0.26);
+  box-shadow: 0 6px 22px rgba(52, 211, 153, 0.26);
 }
 
 .ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--whatsapp .ratib-nav__label {
-  color: #8fcbb8;
+  color: #a7f3d0;
 }
 
 .ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--whatsapp:hover {
@@ -2907,11 +2907,11 @@ body.ratib-program-lightbox-open {
   color: #e0f2fe;
   background: linear-gradient(145deg, rgba(14, 165, 233, 0.48), rgba(12, 74, 110, 0.72));
   border-color: rgba(56, 189, 248, 0.55);
-  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.26);
+  box-shadow: 0 6px 22px rgba(56, 189, 248, 0.26);
 }
 
 .ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--phone .ratib-nav__label {
-  color: #9dcbf8;
+  color: #bae6fd;
 }
 
 .ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--phone:hover {
@@ -2925,11 +2925,11 @@ body.ratib-program-lightbox-open {
   color: #fff1f2;
   background: linear-gradient(145deg, rgba(251, 113, 133, 0.48), rgba(136, 19, 55, 0.68));
   border-color: rgba(253, 164, 175, 0.55);
-  box-shadow: 0 4px 15px rgba(251, 113, 133, 0.26);
+  box-shadow: 0 6px 22px rgba(251, 113, 133, 0.26);
 }
 
 .ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--mailto .ratib-nav__label {
-  color: #e8bcc4;
+  color: #fecdd3;
 }
 
 .ratib-footer-enterprise .ratib-nav__link.ratib-footer-link--mailto:hover {
