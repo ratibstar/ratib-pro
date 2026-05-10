@@ -822,27 +822,127 @@
     function initProgramStripMarqueeAndLightbox() {
         var mqRoot = document.querySelector('[data-ratib-program-marquee]');
         if (mqRoot) {
+            var viewport = mqRoot.querySelector('.ratib-program-marquee__viewport');
             var track = mqRoot.querySelector('.ratib-program-marquee__track');
-            var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-            if (mq.matches) {
+            var mqReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+            if (mqReduce.matches) {
                 mqRoot.classList.add('ratib-program-marquee--no-motion');
-            } else if (track) {
-                function setMarqueeDuration() {
-                    var half = track.scrollWidth / 2;
-                    if (half > 0) {
-                        var sec = Math.max(22, Math.min(130, half / 38));
-                        track.style.setProperty('--ratib-program-marquee-duration', sec + 's');
+                if (viewport && track) {
+                    function wrapNm() {
+                        var w = track.scrollWidth / 2;
+                        if (w <= 0) {
+                            return;
+                        }
+                        while (viewport.scrollLeft >= w) {
+                            viewport.scrollLeft -= w;
+                        }
+                        while (viewport.scrollLeft < 0) {
+                            viewport.scrollLeft += w;
+                        }
+                    }
+                    viewport.addEventListener(
+                        'wheel',
+                        function (ev) {
+                            if (!viewport.contains(ev.target)) {
+                                return;
+                            }
+                            var dy = ev.deltaY;
+                            var dx = ev.deltaX;
+                            var d = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+                            if (!d) {
+                                return;
+                            }
+                            ev.preventDefault();
+                            viewport.scrollLeft += d * 1.15;
+                            wrapNm();
+                        },
+                        { passive: false }
+                    );
+                }
+            } else if (track && viewport) {
+                mqRoot.classList.add('ratib-program-marquee--js-marquee');
+                var loopW = 0;
+                var tabHidden = false;
+                var hoverPause = false;
+                var lastTs = 0;
+                var rafId = 0;
+                /** ~px/s — higher = faster auto-scroll (was ~38px/s via CSS duration). */
+                var speedPxSec = 88;
+
+                function measureLoop() {
+                    loopW = track.scrollWidth / 2;
+                }
+
+                function wrapScrollLeft() {
+                    if (loopW <= 0) {
+                        return;
+                    }
+                    while (viewport.scrollLeft >= loopW) {
+                        viewport.scrollLeft -= loopW;
+                    }
+                    while (viewport.scrollLeft < 0) {
+                        viewport.scrollLeft += loopW;
                     }
                 }
-                setMarqueeDuration();
-                window.addEventListener('load', setMarqueeDuration);
-                window.addEventListener('resize', setMarqueeDuration);
+
+                function onWheelMarquee(ev) {
+                    if (!viewport.contains(ev.target)) {
+                        return;
+                    }
+                    var dy = ev.deltaY;
+                    var dx = ev.deltaX;
+                    var delta = Math.abs(dx) > Math.abs(dy) ? dx : dy;
+                    if (!delta) {
+                        return;
+                    }
+                    ev.preventDefault();
+                    viewport.scrollLeft += delta * 1.15;
+                    wrapScrollLeft();
+                }
+
+                function tick(now) {
+                    var t = now !== undefined ? now : performance.now();
+                    if (!lastTs) {
+                        lastTs = t;
+                    }
+                    var dt = Math.min(0.045, (t - lastTs) / 1000);
+                    lastTs = t;
+                    if (!tabHidden && !hoverPause && loopW > 0) {
+                        viewport.scrollLeft += speedPxSec * dt;
+                        wrapScrollLeft();
+                    }
+                    rafId = window.requestAnimationFrame(tick);
+                }
+
+                measureLoop();
+                window.addEventListener('load', measureLoop);
+                window.addEventListener('resize', measureLoop);
                 if (window.ResizeObserver) {
                     try {
-                        var ro = new ResizeObserver(setMarqueeDuration);
-                        ro.observe(track);
+                        var roMarq = new ResizeObserver(function () {
+                            measureLoop();
+                        });
+                        roMarq.observe(track);
                     } catch (eRo) {}
                 }
+
+                viewport.addEventListener('mouseenter', function () {
+                    hoverPause = true;
+                });
+                viewport.addEventListener('mouseleave', function () {
+                    hoverPause = false;
+                    lastTs = 0;
+                });
+                viewport.addEventListener('wheel', onWheelMarquee, { passive: false });
+
+                document.addEventListener('visibilitychange', function () {
+                    tabHidden = document.hidden;
+                    if (!tabHidden) {
+                        lastTs = 0;
+                    }
+                });
+
+                rafId = window.requestAnimationFrame(tick);
             }
         }
 

@@ -1788,46 +1788,40 @@ body.ratib-saas-home {
   object-fit: cover;
 }
 
-/* Program strip: auto marquee + click-to-zoom */
+/* Program strip: auto marquee (JS scroll) + wheel pan + click-to-zoom */
 .ratib-cms-media-strip.ratib-program-marquee {
   overflow: visible;
 }
 
 .ratib-program-marquee__viewport {
-  overflow: hidden;
-  margin-top: 0.35rem;
-  padding-bottom: 0.5rem;
-  border-radius: 12px;
-}
-
-.ratib-program-marquee:not(.ratib-program-marquee--no-motion) .ratib-program-marquee__track {
-  animation: ratib-program-marquee-scroll var(--ratib-program-marquee-duration, 48s) linear infinite;
-  will-change: transform;
-}
-
-.ratib-program-marquee:not(.ratib-program-marquee--no-motion) .ratib-program-marquee__viewport:hover .ratib-program-marquee__track {
-  animation-play-state: paused;
-}
-
-@keyframes ratib-program-marquee-scroll {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.ratib-program-marquee--no-motion .ratib-program-marquee__viewport {
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x proximity;
+  margin-top: 0.35rem;
+  padding-bottom: 0.5rem;
+  border-radius: 12px;
+  scroll-behavior: auto;
+  touch-action: pan-x pinch-zoom;
 }
 
-.ratib-program-marquee--no-motion .ratib-program-marquee__track {
-  animation: none;
+/* JS-driven loop: hide scrollbar; wheel still scrolls horizontally */
+.ratib-program-marquee--js-marquee .ratib-program-marquee__viewport {
+  cursor: default;
+  scrollbar-width: none;
+}
+
+.ratib-program-marquee--js-marquee .ratib-program-marquee__viewport::-webkit-scrollbar {
+  display: none;
+  height: 0;
+}
+
+.ratib-program-marquee--js-marquee .ratib-program-marquee__viewport:hover {
+  cursor: ew-resize;
+}
+
+.ratib-program-marquee--no-motion .ratib-program-marquee__viewport {
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
 }
 
 .ratib-program-strip__thumb {
