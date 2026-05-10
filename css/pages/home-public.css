@@ -4,7 +4,7 @@
  */
 
 [id] {
-  scroll-margin-top: 142px;
+  scroll-margin-top: 170px;
 }
 
 :root {
@@ -25,23 +25,11 @@
   --r-radius: 14px;
   --r-radius-sm: 10px;
   --r-space: clamp(1rem, 3vw, 2rem);
-  --r-max: 1360px;
+  --r-max: 1540px;
   --ratib-pink: #e94560;
   --ratib-yellow: #fbbf24;
   --ratib-dark: #1e293b;
   --ratib-darker: #0f172a;
-  /* Header nav — semantic accent tokens (modern multi-tone strip) */
-  --hdr-tone-platform: #22d3ee;
-  --hdr-tone-tour: #c4b5fd;
-  --hdr-tone-agency: #34d399;
-  --hdr-tone-features: #a78bfa;
-  --hdr-tone-solutions: #fb923c;
-  --hdr-tone-programs: #f472b6;
-  --hdr-tone-agencies: #60a5fa;
-  --hdr-tone-tracking: #2dd4bf;
-  --hdr-tone-ops: #fbbf24;
-  --hdr-tone-api: #4ade80;
-  --hdr-tone-contact: #f472b6;
 }
 
 *,
@@ -349,8 +337,8 @@ body.ratib-saas-home {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  min-height: 104px;
-  padding-block: 0.85rem;
+  min-height: 112px;
+  padding-block: 0.95rem;
 }
 
 .ratib-nav__brand {
@@ -414,44 +402,35 @@ body.ratib-saas-home {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.15rem;
+  gap: 0.35rem;
   flex: 1;
 }
 
-/* Wide desktops: allow horizontal scroll so 11+ tabs are never clipped (body uses overflow-x: hidden). */
+/* Wide desktops: wrap to multiple rows — no horizontal scrollbar; links stay readable at full width. */
 @media (min-width: 1100px) {
   .ratib-nav__menu {
     min-width: 0;
-    justify-content: flex-start;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 2px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
-  }
-
-  .ratib-nav__menu::-webkit-scrollbar {
-    height: 5px;
-  }
-
-  .ratib-nav__menu::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.4);
-    border-radius: 999px;
+    justify-content: center;
+    align-content: center;
+    flex-wrap: wrap;
+    row-gap: 0.45rem;
+    column-gap: 0.4rem;
+    overflow: visible;
+    padding-bottom: 0.15rem;
   }
 }
 
 .ratib-nav__link {
-  position: relative;
-  color: rgba(226, 232, 240, 0.88);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: rgba(226, 232, 240, 0.92);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
-  padding: 0.58rem 0.72rem;
-  padding-left: 1.15rem;
-  border-radius: 10px;
+  letter-spacing: -0.02em;
+  padding: 0.52rem 0.75rem 0.52rem 0.55rem;
+  border-radius: 12px;
   border: 1px solid transparent;
   transition:
     color 0.18s ease,
@@ -461,28 +440,44 @@ body.ratib-saas-home {
     transform 0.18s ease;
 }
 
-.ratib-nav__link::before {
-  content: "";
-  position: absolute;
-  left: 0.45rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--hdr-dot, rgba(148, 163, 184, 0.65));
-  box-shadow: 0 0 10px var(--hdr-dot-glow, rgba(148, 163, 184, 0.35));
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.ratib-nav__icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 1.28rem;
+  line-height: 1;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
-.ratib-nav__link:hover::before {
-  transform: translateY(-50%) scale(1.25);
+.ratib-nav__icon i {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
 
-/* Per-section tones (anchor hash + tour slot) */
-.ratib-nav__link[href="#platform"] {
-  --hdr-dot: var(--hdr-tone-platform);
-  --hdr-dot-glow: rgba(34, 211, 238, 0.55);
+.ratib-nav__link:hover .ratib-nav__icon {
+  transform: scale(1.07) translateY(-1px);
+}
+
+.ratib-nav__label {
+  white-space: nowrap;
+}
+
+/* Per-section tones — large icon tiles + matching hover washes */
+.ratib-nav__link[href="#platform"] .ratib-nav__icon {
+  color: #7df3ff;
+  background: linear-gradient(145deg, rgba(34, 211, 238, 0.42), rgba(8, 51, 68, 0.72));
+  border-color: rgba(34, 211, 238, 0.5);
+  box-shadow: 0 6px 22px rgba(34, 211, 238, 0.28);
 }
 
 .ratib-nav__link[href="#platform"]:hover {
@@ -492,9 +487,11 @@ body.ratib-saas-home {
   box-shadow: 0 0 24px rgba(34, 211, 238, 0.12);
 }
 
-.ratib-nav__link[href="#how-it-works"] {
-  --hdr-dot: var(--hdr-tone-agency);
-  --hdr-dot-glow: rgba(52, 211, 153, 0.55);
+.ratib-nav__link[href="#how-it-works"] .ratib-nav__icon {
+  color: #6ee7b7;
+  background: linear-gradient(145deg, rgba(52, 211, 153, 0.4), rgba(6, 78, 59, 0.65));
+  border-color: rgba(52, 211, 153, 0.48);
+  box-shadow: 0 6px 22px rgba(52, 211, 153, 0.22);
 }
 
 .ratib-nav__link[href="#how-it-works"]:hover {
@@ -504,9 +501,11 @@ body.ratib-saas-home {
   box-shadow: 0 0 22px rgba(52, 211, 153, 0.12);
 }
 
-.ratib-nav__link[href="#features"] {
-  --hdr-dot: var(--hdr-tone-features);
-  --hdr-dot-glow: rgba(167, 139, 250, 0.55);
+.ratib-nav__link[href="#features"] .ratib-nav__icon {
+  color: #ddd6fe;
+  background: linear-gradient(145deg, rgba(167, 139, 250, 0.45), rgba(59, 7, 100, 0.65));
+  border-color: rgba(167, 139, 250, 0.5);
+  box-shadow: 0 6px 22px rgba(167, 139, 250, 0.22);
 }
 
 .ratib-nav__link[href="#features"]:hover {
@@ -516,9 +515,11 @@ body.ratib-saas-home {
   box-shadow: 0 0 22px rgba(167, 139, 250, 0.14);
 }
 
-.ratib-nav__link[href="#solutions"] {
-  --hdr-dot: var(--hdr-tone-solutions);
-  --hdr-dot-glow: rgba(251, 146, 60, 0.55);
+.ratib-nav__link[href="#solutions"] .ratib-nav__icon {
+  color: #fdba74;
+  background: linear-gradient(145deg, rgba(251, 146, 60, 0.42), rgba(124, 45, 18, 0.58));
+  border-color: rgba(251, 146, 60, 0.48);
+  box-shadow: 0 6px 22px rgba(251, 146, 60, 0.2);
 }
 
 .ratib-nav__link[href="#solutions"]:hover {
@@ -528,9 +529,11 @@ body.ratib-saas-home {
   box-shadow: 0 0 22px rgba(251, 146, 60, 0.12);
 }
 
-.ratib-nav__link[href="#programs"] {
-  --hdr-dot: var(--hdr-tone-programs);
-  --hdr-dot-glow: rgba(244, 114, 182, 0.55);
+.ratib-nav__link[href="#programs"] .ratib-nav__icon {
+  color: #fbcfe8;
+  background: linear-gradient(145deg, rgba(244, 114, 182, 0.42), rgba(131, 24, 67, 0.58));
+  border-color: rgba(244, 114, 182, 0.48);
+  box-shadow: 0 6px 22px rgba(244, 114, 182, 0.22);
 }
 
 .ratib-nav__link[href="#programs"]:hover {
@@ -540,9 +543,11 @@ body.ratib-saas-home {
   box-shadow: 0 0 22px rgba(244, 114, 182, 0.12);
 }
 
-.ratib-nav__link[href="#agencies"] {
-  --hdr-dot: var(--hdr-tone-agencies);
-  --hdr-dot-glow: rgba(96, 165, 250, 0.55);
+.ratib-nav__link[href="#agencies"] .ratib-nav__icon {
+  color: #93c5fd;
+  background: linear-gradient(145deg, rgba(96, 165, 250, 0.42), rgba(23, 37, 84, 0.72));
+  border-color: rgba(96, 165, 250, 0.48);
+  box-shadow: 0 6px 22px rgba(96, 165, 250, 0.22);
 }
 
 .ratib-nav__link[href="#agencies"]:hover {
@@ -552,9 +557,11 @@ body.ratib-saas-home {
   box-shadow: 0 0 22px rgba(96, 165, 250, 0.12);
 }
 
-.ratib-nav__link[href="#tracking"] {
-  --hdr-dot: var(--hdr-tone-tracking);
-  --hdr-dot-glow: rgba(45, 212, 191, 0.55);
+.ratib-nav__link[href="#tracking"] .ratib-nav__icon {
+  color: #5eead4;
+  background: linear-gradient(145deg, rgba(45, 212, 191, 0.4), rgba(15, 118, 110, 0.62));
+  border-color: rgba(45, 212, 191, 0.48);
+  box-shadow: 0 6px 22px rgba(45, 212, 191, 0.22);
 }
 
 .ratib-nav__link[href="#tracking"]:hover {
@@ -564,9 +571,11 @@ body.ratib-saas-home {
   box-shadow: 0 0 22px rgba(45, 212, 191, 0.12);
 }
 
-.ratib-nav__link[href="#operational"] {
-  --hdr-dot: var(--hdr-tone-ops);
-  --hdr-dot-glow: rgba(251, 191, 36, 0.55);
+.ratib-nav__link[href="#operational"] .ratib-nav__icon {
+  color: #fcd34d;
+  background: linear-gradient(145deg, rgba(251, 191, 36, 0.38), rgba(120, 53, 15, 0.58));
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow: 0 6px 22px rgba(251, 191, 36, 0.18);
 }
 
 .ratib-nav__link[href="#operational"]:hover {
@@ -576,9 +585,11 @@ body.ratib-saas-home {
   box-shadow: 0 0 22px rgba(251, 191, 36, 0.12);
 }
 
-.ratib-nav__link[href="#api"] {
-  --hdr-dot: var(--hdr-tone-api);
-  --hdr-dot-glow: rgba(74, 222, 128, 0.55);
+.ratib-nav__link[href="#api"] .ratib-nav__icon {
+  color: #86efac;
+  background: linear-gradient(145deg, rgba(74, 222, 128, 0.4), rgba(20, 83, 45, 0.65));
+  border-color: rgba(74, 222, 128, 0.48);
+  box-shadow: 0 6px 22px rgba(74, 222, 128, 0.2);
 }
 
 .ratib-nav__link[href="#api"]:hover {
@@ -588,9 +599,11 @@ body.ratib-saas-home {
   box-shadow: 0 0 22px rgba(74, 222, 128, 0.12);
 }
 
-.ratib-nav__link[href="#contact"] {
-  --hdr-dot: var(--hdr-tone-contact);
-  --hdr-dot-glow: rgba(244, 114, 182, 0.55);
+.ratib-nav__link[href="#contact"] .ratib-nav__icon {
+  color: #f9a8d4;
+  background: linear-gradient(145deg, rgba(244, 114, 182, 0.45), rgba(131, 24, 67, 0.62));
+  border-color: rgba(244, 114, 182, 0.5);
+  box-shadow: 0 6px 22px rgba(244, 114, 182, 0.24);
 }
 
 .ratib-nav__link[href="#contact"]:hover {
@@ -601,9 +614,17 @@ body.ratib-saas-home {
 }
 
 /* video/pic — tour slot (dynamic href #video | #program-previews | #platform) */
+.ratib-nav__link--product-tour .ratib-nav__icon {
+  width: 2.65rem;
+  height: 2.65rem;
+  font-size: 1.38rem;
+  color: #f5e9ff;
+  background: linear-gradient(145deg, rgba(167, 139, 250, 0.55), rgba(76, 29, 149, 0.62));
+  border-color: rgba(196, 181, 253, 0.58);
+  box-shadow: 0 8px 28px rgba(139, 92, 246, 0.38);
+}
+
 .ratib-nav__link--product-tour {
-  --hdr-dot: var(--hdr-tone-tour);
-  --hdr-dot-glow: rgba(196, 181, 253, 0.65);
   color: rgba(237, 233, 254, 0.98);
   border: 1px solid rgba(167, 139, 250, 0.45);
   background: linear-gradient(135deg, rgba(109, 40, 217, 0.35), rgba(76, 29, 149, 0.2));
@@ -616,6 +637,10 @@ body.ratib-saas-home {
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.45), rgba(91, 33, 182, 0.28));
   box-shadow: 0 0 36px rgba(167, 139, 250, 0.28);
   transform: translateY(-1px);
+}
+
+.ratib-nav__link--product-tour:hover .ratib-nav__icon {
+  box-shadow: 0 10px 34px rgba(167, 139, 250, 0.45);
 }
 
 .ratib-nav__cta {

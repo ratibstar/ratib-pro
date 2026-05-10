@@ -793,7 +793,9 @@
         a.className = 'ratib-nav__link ratib-nav__link--product-tour';
         a.setAttribute('data-ratib-product-tour-tab', '1');
         a.setAttribute('data-ratib-product-tour-fallback', '1');
-        a.textContent = 'video/pic';
+        a.innerHTML =
+            '<span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-photo-video"></i></span>' +
+            '<span class="ratib-nav__label">video/pic</span>';
         platform.parentNode.insertBefore(a, platform.nextSibling);
     }
     if (document.readyState === 'loading') {

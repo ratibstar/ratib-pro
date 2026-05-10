@@ -248,7 +248,7 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-26';
+    : '20260210-27';
 /** Proof token for View Source: if this block is missing on the live site, the request is not using this home.php (wrong path, cache, or mirror). */
 $ratibHomePhpMtime = (string) (int) (@filemtime(__FILE__) ?: 0);
 $ratibHome = ratib_site_content_home_flat(false);
@@ -428,17 +428,17 @@ if ($ratibNavProductTourLabel === '') {
             <!-- Main sticky header nav (not ratib-topbar). Order: Platform · video/pic · agency · Features · … · Contact. -->
             <!-- ratib-home-nav-build: ui-rev=<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?> home.php-mtime=<?php echo htmlspecialchars($ratibHomePhpMtime, ENT_QUOTES, 'UTF-8'); ?> primary-links=11 — search HTML for "ratib-home-nav-build" after deploy. -->
             <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary" data-ratib-primary-nav-links="11" data-ratib-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
-                <a href="#platform" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                <a href="<?php echo htmlspecialchars($ratibNavProductTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--product-tour" data-ratib-product-tour-tab="1"><?php echo htmlspecialchars($ratibNavProductTourLabel, ENT_QUOTES, 'UTF-8'); ?></a>
-                <a href="#how-it-works" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.how_it_works'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                <a href="#features" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.features'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                <a href="#solutions" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.solutions'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                <a href="#programs" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.programs'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                <a href="#agencies" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.agencies'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                <a href="#tracking" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.tracking'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                <a href="#operational" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.operational'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                <a href="#api" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.api'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                <a href="#contact" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.contact'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="#platform" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-layer-group"></i></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="<?php echo htmlspecialchars($ratibNavProductTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--product-tour" data-ratib-product-tour-tab="1"><span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-photo-video"></i></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibNavProductTourLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="#how-it-works" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-building-user"></i></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.how_it_works'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="#features" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-wand-magic-sparkles"></i></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.features'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="#solutions" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-puzzle-piece"></i></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.solutions'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="#programs" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-tags"></i></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.programs'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="#agencies" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-city"></i></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.agencies'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="#tracking" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-location-crosshairs"></i></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.tracking'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="#operational" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-eye"></i></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.operational'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="#api" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-code"></i></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.api'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="#contact" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-envelope-open-text"></i></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.contact'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
             </nav>
             <div class="ratib-nav__cta">
                 <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" class="ratib-btn ratib-btn--ghost"><?php echo htmlspecialchars($ratibHome['home.nav.cta_partner'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
