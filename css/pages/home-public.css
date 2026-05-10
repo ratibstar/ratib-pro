@@ -1781,8 +1781,10 @@ body.ratib-saas-home {
 }
 
 .ratib-cms-media-strip__item--program .ratib-hero__photo img {
+  width: 100%;
   aspect-ratio: 16 / 10;
-  max-height: min(42vw, 200px);
+  max-height: min(44vw, 220px);
+  min-height: 120px;
   object-fit: cover;
 }
 

@@ -308,21 +308,28 @@ if (function_exists('ratib_site_content_home_program_slots_from_flat')) {
     foreach (ratib_site_content_home_program_slots_from_flat($ratibHome) as $idx => $slot) {
         $num = $idx + 1;
         $stored = trim((string) ($slot['src'] ?? ''));
-        if ($stored === '' && $num > 3) {
-            continue;
-        }
-        $fbRel = $ratibProgFallbackRel[$num] ?? '';
-        $fbFs = $ratibProgFallbackFs[$num] ?? '';
-        if ($num <= 3 && $stored === '') {
+        $cap = trim((string) ($slot['caption'] ?? ''));
+        $alt = trim((string) ($slot['alt'] ?? ''));
+
+        if ($num <= 3) {
+            $fbRel = $ratibProgFallbackRel[$num] ?? '';
+            $fbFs = $ratibProgFallbackFs[$num] ?? '';
+            if ($stored === '') {
+                $imgSrc = ratib_site_content_asset_url($baseUrl, '', $fbRel, $fbFs);
+            } else {
+                $imgSrc = ratib_site_content_asset_url($baseUrl, $stored, '', '');
+            }
+        } elseif ($stored !== '') {
+            $imgSrc = ratib_site_content_asset_url($baseUrl, $stored, '', '');
+        } elseif ($cap !== '' || $alt !== '') {
+            $c = ($idx % 3) + 1;
+            $fbRel = $ratibProgFallbackRel[$c] ?? '';
+            $fbFs = $ratibProgFallbackFs[$c] ?? '';
             $imgSrc = ratib_site_content_asset_url($baseUrl, '', $fbRel, $fbFs);
         } else {
-            $imgSrc = ratib_site_content_asset_url(
-                $baseUrl,
-                $stored,
-                $fbRel !== '' ? $fbRel : '',
-                $fbFs !== '' ? $fbFs : __FILE__
-            );
+            continue;
         }
+
         if (trim($imgSrc) === '') {
             continue;
         }
