@@ -16,7 +16,7 @@ if (!function_exists('ratib_site_content_db_credentials')) {
      * Optional env (recommended when the app DB user has no access to the control DB):
      *   RATIB_SITE_CONTENT_DB_HOST, RATIB_SITE_CONTENT_DB_PORT, RATIB_SITE_CONTENT_DB_USER,
      *   RATIB_SITE_CONTENT_DB_PASS, RATIB_SITE_CONTENT_DB_NAME
-     * Or define CONTROL_PANEL_DB_USER / CONTROL_PANEL_DB_PASS in the host env file after DB_*.
+     * Or getenv CONTROL_DB_USER / CONTROL_DB_PASS (same as control-panel/config/env.php), CONTROL_PANEL_DB_USER / CONTROL_PANEL_DB_PASS, or DB_*.
      *
      * Homepage JSON snapshot path (optional — overrides automatic candidates):
      *   RATIB_SITE_CONTENT_CACHE_FILE=/absolute/or/project-relative/path/ratib_site_content_home.json
@@ -29,21 +29,45 @@ if (!function_exists('ratib_site_content_db_credentials')) {
             return null;
         }
         $host = getenv('RATIB_SITE_CONTENT_DB_HOST');
-        $host = ($host !== false && $host !== '') ? (string) $host : (defined('DB_HOST') ? DB_HOST : '');
+        if ($host === false || $host === '') {
+            $hCp = getenv('CONTROL_DB_HOST');
+            $host = ($hCp !== false && $hCp !== '') ? (string) $hCp : (defined('DB_HOST') ? DB_HOST : '');
+        } else {
+            $host = (string) $host;
+        }
         $portRaw = getenv('RATIB_SITE_CONTENT_DB_PORT');
-        $port = ($portRaw !== false && $portRaw !== '') ? (int) $portRaw : (defined('DB_PORT') ? (int) DB_PORT : 3306);
+        if ($portRaw !== false && $portRaw !== '') {
+            $port = (int) $portRaw;
+        } else {
+            $pCp = getenv('CONTROL_DB_PORT');
+            $port = ($pCp !== false && $pCp !== '') ? (int) $pCp : (defined('DB_PORT') ? (int) DB_PORT : 3306);
+        }
         $dbName = getenv('RATIB_SITE_CONTENT_DB_NAME');
         $dbName = ($dbName !== false && $dbName !== '') ? (string) $dbName : CONTROL_PANEL_DB_NAME;
 
         $user = getenv('RATIB_SITE_CONTENT_DB_USER');
         if ($user === false || $user === '') {
-            $user = (defined('CONTROL_PANEL_DB_USER') && (string) CONTROL_PANEL_DB_USER !== '') ? (string) CONTROL_PANEL_DB_USER : (defined('DB_USER') ? (string) DB_USER : '');
+            $uCp = getenv('CONTROL_DB_USER');
+            if ($uCp !== false && $uCp !== '') {
+                $user = (string) $uCp;
+            } elseif (defined('CONTROL_PANEL_DB_USER') && (string) CONTROL_PANEL_DB_USER !== '') {
+                $user = (string) CONTROL_PANEL_DB_USER;
+            } else {
+                $user = defined('DB_USER') ? (string) DB_USER : '';
+            }
         } else {
             $user = (string) $user;
         }
         $pass = getenv('RATIB_SITE_CONTENT_DB_PASS');
         if ($pass === false) {
-            $pass = (defined('CONTROL_PANEL_DB_PASS')) ? (string) CONTROL_PANEL_DB_PASS : (defined('DB_PASS') ? (string) DB_PASS : '');
+            $pEnv = getenv('CONTROL_DB_PASS');
+            if ($pEnv !== false) {
+                $pass = (string) $pEnv;
+            } elseif (defined('CONTROL_PANEL_DB_PASS')) {
+                $pass = (string) CONTROL_PANEL_DB_PASS;
+            } else {
+                $pass = defined('DB_PASS') ? (string) DB_PASS : '';
+            }
         } else {
             $pass = (string) $pass;
         }

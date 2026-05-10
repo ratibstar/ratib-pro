@@ -54,6 +54,7 @@ $payload = [
     'ok' => true,
     'ratib_site_content_db' => $dbOk,
     'ratib_site_content_table_readable' => $tableReadable,
+    'env_has_CONTROL_DB_USER' => getenv('CONTROL_DB_USER') !== false && trim((string) getenv('CONTROL_DB_USER')) !== '',
     'phone_key_present_in_batch' => array_key_exists($phoneKey, $batch),
     'wa_key_present_in_batch' => array_key_exists('home.topbar.wa_label', $batch),
     'phone_value_length' => $phoneVal !== null ? strlen($phoneVal) : null,

@@ -85,6 +85,11 @@ if (!function_exists('ratib_env_load_bridge_dotenv')) {
             'DB_USER',
             'DB_PASS',
             'DB_NAME',
+            // Same names as control-panel/config/env.php — lets pages/home.php open ratib_site_content with the same MySQL user as the CMS when .env sets these.
+            'CONTROL_DB_HOST',
+            'CONTROL_DB_PORT',
+            'CONTROL_DB_USER',
+            'CONTROL_DB_PASS',
             'CONTROL_PANEL_DB_NAME',
             'CONTROL_PANEL_DB_USER',
             'CONTROL_PANEL_DB_PASS',
