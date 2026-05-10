@@ -299,11 +299,31 @@ if ($ratibTopbarNodesNum > 999999 || strlen($ratibTopbarNodesDigits) > 6) {
 $ratibPricingStarterLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.starter.features'] ?? '');
 $ratibPricingGoldLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.gold.features'] ?? '');
 $ratibPricingPlatinumLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.platinum.features'] ?? '');
-$ratibProgSrc = [
-    ratib_site_content_asset_url($baseUrl, $ratibHome['home.program.img1'] ?? '', 'assets/images/program-preview-pipeline.svg', __DIR__ . '/../assets/images/program-preview-pipeline.svg'),
-    ratib_site_content_asset_url($baseUrl, $ratibHome['home.program.img2'] ?? '', 'assets/images/program-preview-workers.svg', __DIR__ . '/../assets/images/program-preview-workers.svg'),
-    ratib_site_content_asset_url($baseUrl, $ratibHome['home.program.img3'] ?? '', 'assets/images/program-preview-finance.svg', __DIR__ . '/../assets/images/program-preview-finance.svg'),
+$ratibProgFallbackRel = [
+    1 => 'assets/images/program-preview-pipeline.svg',
+    2 => 'assets/images/program-preview-workers.svg',
+    3 => 'assets/images/program-preview-finance.svg',
 ];
+$ratibProgFallbackFs = [
+    1 => __DIR__ . '/../assets/images/program-preview-pipeline.svg',
+    2 => __DIR__ . '/../assets/images/program-preview-workers.svg',
+    3 => __DIR__ . '/../assets/images/program-preview-finance.svg',
+];
+$ratibProgSrc = [];
+for ($rpi = 1; $rpi <= 6; $rpi++) {
+    $stored = (string) ($ratibHome['home.program.img' . $rpi] ?? '');
+    if ($rpi <= 3) {
+        $ratibProgSrc[$rpi] = ratib_site_content_asset_url(
+            $baseUrl,
+            $stored,
+            $ratibProgFallbackRel[$rpi],
+            $ratibProgFallbackFs[$rpi]
+        );
+    } else {
+        $ratibProgSrc[$rpi] = trim($stored) !== '' ? ratib_site_content_asset_url($baseUrl, $stored, '', __FILE__) : '';
+    }
+}
+$ratibVideoSources = [];
 $videoStored = trim((string) ($ratibHome['home.video.file'] ?? ''));
 if ($videoStored !== '') {
     if (preg_match('#^https?://#i', $videoStored)) {
@@ -322,6 +342,34 @@ if ($videoStored !== '') {
         $videoSrcRel = $videoUrl;
         $videoExists = true;
     }
+}
+if ($videoExists && $videoSrcRel !== '') {
+    $ratibVideoSources[] = $videoSrcRel;
+}
+for ($vix = 2; $vix <= 3; $vix++) {
+    $extraStored = trim((string) ($ratibHome['home.video.file' . $vix] ?? ''));
+    if ($extraStored === '') {
+        continue;
+    }
+    $u = '';
+    if (preg_match('#^https?://#i', $extraStored)) {
+        $u = $extraStored;
+    } elseif (function_exists('ratib_site_content_media_public_url') && ratib_site_content_media_public_url($baseUrl, $extraStored) !== '') {
+        $u = ratib_site_content_media_public_url($baseUrl, $extraStored);
+    } else {
+        $rel = ltrim(str_replace('\\', '/', $extraStored), '/');
+        $fs = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+        $v = is_file($fs) ? (int) filemtime($fs) : time();
+        $u = rtrim($baseUrl, '/') . '/' . $rel . '?v=' . $v;
+    }
+    if ($u !== '') {
+        $ratibVideoSources[] = $u;
+    }
+}
+if (!$videoExists && !empty($ratibVideoSources)) {
+    $videoSrcRel = (string) $ratibVideoSources[0];
+    $videoUrl = $videoSrcRel;
+    $videoExists = true;
 }
 if (!$videoExists) {
     // AR: توافق رجعي — دعم الملفات القديمة في assets حتى بدون مفتاح CMS.
@@ -356,6 +404,7 @@ if (!$videoExists) {
         $videoExists = true;
         $videoSrcRel = '../assets/' . rawurlencode($videoFileName);
         $videoUrl = $baseUrl . '/assets/' . rawurlencode($videoFileName);
+        $ratibVideoSources[] = $videoSrcRel;
     }
 }
 ?>
@@ -626,19 +675,25 @@ if (!$videoExists) {
                 <div class="ratib-container">
                     <p class="ratib-hero__photo-eyebrow"><?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                     <div class="ratib-hero__photo-grid" role="list">
+                        <?php for ($pgi = 1; $pgi <= 6; $pgi++) { ?>
+                        <?php if (($ratibProgSrc[$pgi] ?? '') === '') { continue; } ?>
                         <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                            <img src="<?php echo htmlspecialchars($ratibProgSrc[0], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($ratibHome['home.program.alt.1'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
-                            <figcaption><?php echo htmlspecialchars($ratibHome['home.program.caption.1'] ?? '', ENT_QUOTES, 'UTF-8'); ?></figcaption>
+                            <img src="<?php echo htmlspecialchars((string) $ratibProgSrc[$pgi], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($ratibHome['home.program.alt.' . $pgi] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
+                            <figcaption><?php echo htmlspecialchars($ratibHome['home.program.caption.' . $pgi] ?? '', ENT_QUOTES, 'UTF-8'); ?></figcaption>
                         </figure>
-                        <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                            <img src="<?php echo htmlspecialchars($ratibProgSrc[1], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($ratibHome['home.program.alt.2'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
-                            <figcaption><?php echo htmlspecialchars($ratibHome['home.program.caption.2'] ?? '', ENT_QUOTES, 'UTF-8'); ?></figcaption>
-                        </figure>
-                        <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                            <img src="<?php echo htmlspecialchars($ratibProgSrc[2], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($ratibHome['home.program.alt.3'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
-                            <figcaption><?php echo htmlspecialchars($ratibHome['home.program.caption.3'] ?? '', ENT_QUOTES, 'UTF-8'); ?></figcaption>
-                        </figure>
+                        <?php } ?>
                     </div>
+                    <?php if (count($ratibVideoSources) > 1): ?>
+                    <div class="row g-3 mt-2">
+                        <?php foreach (array_slice($ratibVideoSources, 1) as $extraVideoSrc): ?>
+                        <div class="col-12 col-md-6">
+                            <video controls preload="metadata" class="home-video-player w-100" playsinline>
+                                <source src="<?php echo htmlspecialchars($extraVideoSrc, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
+                            </video>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </section>

@@ -16,6 +16,35 @@ requireControlPermission(CONTROL_PERM_SYSTEM_SETTINGS, 'view_control_system_sett
 
 require_once __DIR__ . '/../../../includes/site-content.php';
 
+function ratib_control_site_content_media_preview_url(string $val): string
+{
+    $val = trim($val);
+    if ($val === '') {
+        return '';
+    }
+    if (preg_match('#^https?://#i', $val)) {
+        return $val;
+    }
+    $baseUrl = defined('BASE_URL') ? (string) BASE_URL : '';
+    if ($baseUrl === '') {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        $baseUrl = $host !== '' ? ($scheme . '://' . $host) : '';
+    }
+    if ($baseUrl === '') {
+        return '';
+    }
+    if (function_exists('ratib_site_content_media_public_url')) {
+        $tok = ratib_site_content_media_public_url($baseUrl, $val);
+        if ($tok !== '') {
+            return $tok;
+        }
+    }
+    $rel = ltrim(str_replace('\\', '/', $val), '/');
+
+    return rtrim($baseUrl, '/') . '/' . $rel;
+}
+
 /**
  * @param array<string, string> $values
  */
@@ -47,6 +76,14 @@ function ratib_control_site_content_render_field(array $field, array $values): v
         echo '<small class="text-muted">' . htmlspecialchars($hint, ENT_QUOTES, 'UTF-8') . '</small>';
         if (trim((string) $val) !== '') {
             echo '<small class="text-muted">Current: <code>' . htmlspecialchars((string) $val, ENT_QUOTES, 'UTF-8') . '</code></small>';
+            $previewUrl = ratib_control_site_content_media_preview_url((string) $val);
+            if ($previewUrl !== '') {
+                if ($type === 'media_video') {
+                    echo '<video controls preload="metadata" style="max-width:360px;border-radius:10px;background:#060b19"><source src="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '"></video>';
+                } else {
+                    echo '<img src="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '" alt="Preview" style="max-width:220px;max-height:140px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.15);">';
+                }
+            }
             echo '<label class="form-check-label"><input class="form-check-input me-1" type="checkbox" name="media_delete[' . $nameKey . ']" value="1">Delete current file/path</label>';
         }
         echo '</div>';
@@ -196,9 +233,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
         $posted = is_array($posted) ? $posted : [];
         $mediaMap = [
             'home.video.file' => 'video',
+            'home.video.file2' => 'video',
+            'home.video.file3' => 'video',
             'home.program.img1' => 'image',
             'home.program.img2' => 'image',
             'home.program.img3' => 'image',
+            'home.program.img4' => 'image',
+            'home.program.img5' => 'image',
+            'home.program.img6' => 'image',
         ];
         $deleteReq = $_POST['media_delete'] ?? [];
         $deleteReq = is_array($deleteReq) ? $deleteReq : [];
