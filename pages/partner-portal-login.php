@@ -74,4 +74,6 @@ include __DIR__ . '/../includes/partner-portal-header.php';
     </div>
 </div>
 
+<?php include __DIR__ . '/../includes/ratib-home-public-footer.php'; ?>
+
 <?php include __DIR__ . '/../includes/partner-portal-footer.php'; ?>

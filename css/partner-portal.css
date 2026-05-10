@@ -32,6 +32,18 @@
 .partner-portal-body.ratib-saas-home .partner-portal-shell {
     position: relative;
     z-index: 10;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* Full-bleed marketing footer (counteract shell horizontal padding) */
+.partner-portal-body.ratib-saas-home .partner-portal-shell > .ratib-footer-enterprise {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    width: calc(100% + 2rem);
+    margin-top: auto;
 }
 
 .partner-portal-top {
