@@ -322,6 +322,30 @@ body.ratib-saas-home {
   flex: 1;
 }
 
+/* Wide desktops: allow horizontal scroll so 11+ tabs are never clipped (body uses overflow-x: hidden). */
+@media (min-width: 1100px) {
+  .ratib-nav__menu {
+    min-width: 0;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+  }
+
+  .ratib-nav__menu::-webkit-scrollbar {
+    height: 5px;
+  }
+
+  .ratib-nav__menu::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.4);
+    border-radius: 999px;
+  }
+}
+
 .ratib-nav__link {
   color: var(--r-muted);
   text-decoration: none;
