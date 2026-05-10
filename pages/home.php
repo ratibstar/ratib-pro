@@ -248,7 +248,7 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-22';
+    : '20260210-23';
 /** Proof token for View Source: if this block is missing on the live site, the request is not using this home.php (wrong path, cache, or mirror). */
 $ratibHomePhpMtime = (string) (int) (@filemtime(__FILE__) ?: 0);
 $ratibHome = ratib_site_content_home_flat(false);

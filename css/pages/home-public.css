@@ -382,6 +382,11 @@ body.ratib-saas-home {
   gap: 0.5rem;
 }
 
+/* Hide header register CTA (removed from PHP; defensive for cached HTML / stale deploys). Partner Login (.ratib-btn--ghost) stays. */
+.ratib-nav-shell .ratib-nav__cta > a.ratib-btn--primary {
+  display: none !important;
+}
+
 @media (max-width: 1099px) {
   .ratib-nav-shell__inner {
   flex-wrap: wrap;
