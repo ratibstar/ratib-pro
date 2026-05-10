@@ -243,131 +243,7 @@ if ($ratibCmsRev !== '') {
         exit;
     }
 }
-// Bump via env RATIB_HOME_UI_REV on the server after upload, or edit the fallback string when deploying marquee/lightbox/CSS.
-// Ensures ?v= on CSS/JS changes even when the host preserves old file mtimes (FTP / sync tools).
-$ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
-$ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
-    ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-32';
-/** Proof token for View Source: if this block is missing on the live site, the request is not using this home.php (wrong path, cache, or mirror). */
-clearstatcache(true, __FILE__);
-$ratibHomePhpMtime = (string) (int) (@filemtime(__FILE__) ?: 0);
-/** Append to CSS/JS ?v= when CDN/host preserves mtimes (set in env or config: RATIB_HOME_ASSET_EXTRA_BUST=manual-20260210). */
-$ratibHomeAssetExtraBustRaw = getenv('RATIB_HOME_ASSET_EXTRA_BUST');
-$ratibHomeAssetExtraQ = ($ratibHomeAssetExtraBustRaw !== false && trim((string) $ratibHomeAssetExtraBustRaw) !== '')
-    ? '-' . preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeAssetExtraBustRaw))
-    : '';
-$ratibHome = ratib_site_content_home_flat(false);
-if (function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
-    ratib_site_content_home_ensure_header_nav_labels($ratibHome);
-}
-$ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
-    ? ratib_site_content_db_fingerprint()
-    : '';
-// Top bar: one DB round-trip for all keys so phone/WA/nodes stay in sync (no mixed JSON vs row timing).
-$ratibTopbarKeys = [
-    'home.topbar.phone_display',
-    'home.topbar.wa_label',
-    'home.topbar.tls_label',
-    'home.topbar.nodes_count',
-    'home.topbar.nodes_suffix',
-    'home.topbar.client_login',
-];
-if (function_exists('ratib_site_content_fetch_key_values') && function_exists('ratib_site_content_defaults_home')) {
-    $ratibDef = ratib_site_content_defaults_home();
-    $liveTopbar = ratib_site_content_fetch_key_values($ratibTopbarKeys);
-    foreach ($ratibTopbarKeys as $ratibTbKey) {
-        if (!array_key_exists($ratibTbKey, $ratibDef)) {
-            continue;
-        }
-        $ratibFallback = $ratibHome[$ratibTbKey] ?? $ratibDef[$ratibTbKey];
-        $ratibHome[$ratibTbKey] = array_key_exists($ratibTbKey, $liveTopbar)
-            ? $liveTopbar[$ratibTbKey]
-            : $ratibFallback;
-    }
-} elseif (function_exists('ratib_site_content_get') && function_exists('ratib_site_content_defaults_home')) {
-    $ratibDef = ratib_site_content_defaults_home();
-    foreach ($ratibTopbarKeys as $ratibTbKey) {
-        if (!array_key_exists($ratibTbKey, $ratibDef)) {
-            continue;
-        }
-        $ratibFallback = $ratibHome[$ratibTbKey] ?? $ratibDef[$ratibTbKey];
-        $ratibHome[$ratibTbKey] = ratib_site_content_get($ratibTbKey, $ratibFallback);
-    }
-}
-// Visible phone text = exactly what the CMS saved (WYSIWYG). tel:/wa.me use normalized digits below.
-$ratibPhoneRaw = (string) ($ratibHome['home.topbar.phone_display'] ?? '');
-$ratibPhoneDigits = function_exists('ratib_site_content_phone_digits_for_links')
-    ? ratib_site_content_phone_digits_for_links($ratibPhoneRaw)
-    : (preg_replace('/\D+/', '', $ratibPhoneRaw) ?: '966599863868');
-$ratibTopbarNodesDigits = preg_replace('/\D/', '', (string) ($ratibHome['home.topbar.nodes_count'] ?? '247'));
-$ratibTopbarNodesNum = $ratibTopbarNodesDigits !== '' ? (int) $ratibTopbarNodesDigits : 247;
-// Avoid billion-scale “counts” (usually a pasted phone fragment) confusing the top bar next to the phone.
-if ($ratibTopbarNodesNum > 999999 || strlen($ratibTopbarNodesDigits) > 6) {
-    $ratibTopbarNodesNum = 247;
-    $ratibTopbarNodesDigits = '247';
-}
-$ratibPricingStarterLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.starter.features'] ?? '');
-$ratibPricingGoldLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.gold.features'] ?? '');
-$ratibPricingPlatinumLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.platinum.features'] ?? '');
-// Public site: show a program card only when the CMS slot has a real image/video URL or token (no caption-only placeholders).
-$ratibProgSlotsOut = [];
-if (function_exists('ratib_site_content_home_program_slots_from_flat')) {
-    foreach (ratib_site_content_home_program_slots_from_flat($ratibHome) as $slot) {
-        $stored = trim((string) ($slot['src'] ?? ''));
-        if ($stored === '') {
-            continue;
-        }
-        $imgSrc = ratib_site_content_asset_url($baseUrl, $stored, '', '');
-        if (trim($imgSrc) === '') {
-            continue;
-        }
-        $ratibProgSlotsOut[] = [
-            'src' => $imgSrc,
-            'alt' => (string) ($slot['alt'] ?? ''),
-            'caption' => (string) ($slot['caption'] ?? ''),
-        ];
-    }
-}
-
-$ratibVideoSources = [];
-$videoExists = false;
-$videoSrcRel = '';
-$videoUrl = '';
-if (function_exists('ratib_site_content_home_video_src_strings_from_flat') && function_exists('ratib_site_content_home_resolve_video_display_url')) {
-    foreach (ratib_site_content_home_video_src_strings_from_flat($ratibHome) as $vs) {
-        $u = ratib_site_content_home_resolve_video_display_url((string) $vs, $baseUrl);
-        if ($u !== '') {
-            $ratibVideoSources[] = $u;
-        }
-    }
-}
-if ($ratibVideoSources !== []) {
-    $videoExists = true;
-    $videoSrcRel = (string) $ratibVideoSources[0];
-    $videoUrl = $videoSrcRel;
-}
-// Video clips come only from CMS (home.video.slots_json) — no automatic assets/*.mp4 pickup.
-
-$ratibVideoSlotsRawCheck = trim((string) ($ratibHome['home.video.slots_json'] ?? ''));
-$ratibVideoClearedInCms = false;
-if ($ratibVideoSlotsRawCheck !== '') {
-    $ratibVideoSlotsDecoded = json_decode($ratibVideoSlotsRawCheck, true);
-    $ratibVideoClearedInCms = is_array($ratibVideoSlotsDecoded) && count($ratibVideoSlotsDecoded) === 0;
-}
-// Hide the whole video band (heading + strip) when there is nothing to show and CMS did not ask for the empty-state hint.
-$ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$ratibVideoClearedInCms);
-// Header link "video/pic" scroll target: walkthrough video when present, else screenshot strip, else platform section.
-$ratibNavProductTourHref = '#platform';
-if ($ratibShowHomeVideoBand) {
-    $ratibNavProductTourHref = '#video';
-} elseif (!empty($ratibProgSlotsOut)) {
-    $ratibNavProductTourHref = '#program-previews';
-}
-$ratibNavProductTourLabel = trim((string) ($ratibHome['home.nav.product_tour'] ?? ''));
-if ($ratibNavProductTourLabel === '') {
-    $ratibNavProductTourLabel = 'video/pic';
-}
+require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
 ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -386,14 +262,7 @@ if ($ratibNavProductTourLabel === '') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/chat-widget.css">
-    <?php
-    $ratibHomeCssPath = __DIR__ . '/../css/pages/home-public.css';
-    clearstatcache(true, $ratibHomeCssPath);
-    $ratibHomeCssTs = (int) (@filemtime($ratibHomeCssPath) ?: time());
-    /* home.php mtime in ?v= forces new CSS URL after any home deploy (FTP often keeps old css mtimes). */
-    $ratibHomeCssQ = $ratibHomeCssTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
-    ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo htmlspecialchars($ratibHomeCssQ, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo htmlspecialchars($ratibHomePublicCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <style id="ratib-nav-css-fallback">
       /* Layout-only rescue if main CSS is stale; no borders/backgrounds here so home-public.css colours still win */
       #ratibNavMenu .ratib-nav__link{display:inline-flex!important;align-items:center!important;gap:.5rem!important}
@@ -405,80 +274,7 @@ if ($ratibNavProductTourLabel === '') {
 </head>
 <body class="ratib-saas-home" data-ratib-home-layout="video-hero-program-svgs" data-ratib-home-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-deploy="<?php echo htmlspecialchars($ratibHomePhpMtime . '-' . $ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
 
-    <div class="ratib-saas-bg" aria-hidden="true">
-        <div class="ratib-saas-bg__gradient"></div>
-        <div class="ratib-saas-bg__grid"></div>
-        <div class="ratib-saas-bg__orb ratib-saas-bg__orb--a"></div>
-        <div class="ratib-saas-bg__orb ratib-saas-bg__orb--b"></div>
-    </div>
-
-    <div class="ratib-topbar">
-        <div class="ratib-topbar__inner ratib-container">
-            <div class="ratib-topbar__left">
-                <a href="tel:+<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-topbar__link" dir="ltr"><i class="fas fa-phone-alt" aria-hidden="true"></i> <span class="ratib-topbar__phone-text"><?php echo htmlspecialchars($ratibPhoneRaw, ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="https://wa.me/<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="ratib-topbar__wa" title="WhatsApp">
-                    <span class="ratib-live-dot" aria-hidden="true"></span>
-                    <?php echo htmlspecialchars($ratibHome['home.topbar.wa_label'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
-                </a>
-            </div>
-            <div class="ratib-topbar__right">
-                <span class="ratib-topbar__ops" aria-hidden="true" dir="ltr"><span class="ratib-mono-tag"><?php echo htmlspecialchars($ratibHome['home.topbar.tls_label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><span class="ratib-topbar__ops-sep">·</span><span class="ratib-mono-tag"><span id="ratib-topbar-nodes-counter" class="ratib-live-counter" data-ratib-counter="<?php echo htmlspecialchars($ratibTopbarNodesDigits, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) $ratibTopbarNodesNum, ENT_QUOTES, 'UTF-8'); ?></span> <?php echo htmlspecialchars($ratibHome['home.topbar.nodes_suffix'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></span>
-                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>" class="ratib-topbar__link"><?php echo htmlspecialchars($ratibHome['home.topbar.client_login'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                <span class="ratib-topbar__lang" role="group" aria-label="Language">
-                    <span class="ratib-lang ratib-lang--active">EN</span>
-                    <span class="ratib-lang-sep">·</span>
-                    <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-lang" title="Arabic experience inside partner portals">AR</a>
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <header class="ratib-nav-shell" id="ratib-main-header">
-        <div class="ratib-container ratib-nav-shell__inner">
-            <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-nav__brand">
-                <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="RATIB" width="120" height="36">
-                <span class="ratib-nav__brand-text">RATIB</span>
-            </a>
-            <button type="button" class="ratib-nav__toggle" id="ratibNavToggle" aria-label="Open menu" aria-expanded="false" aria-controls="ratibNavMenu">
-                <span></span><span></span><span></span>
-            </button>
-            <!-- Main sticky header nav (not ratib-topbar). Order: Platform · video/pic · agency · Features · … · Contact. -->
-            <!-- ratib-home-nav-build: ui-rev=<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?> home.php-mtime=<?php echo htmlspecialchars($ratibHomePhpMtime, ENT_QUOTES, 'UTF-8'); ?> primary-links=11 — search HTML for "ratib-home-nav-build" after deploy. -->
-            <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary" data-ratib-primary-nav-links="11" data-ratib-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-nav-visual="svg-glyphs-semantic-<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
-                <a href="#platform" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-platform"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="<?php echo htmlspecialchars($ratibNavProductTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--product-tour" data-ratib-product-tour-tab="1"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-video"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibNavProductTourLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="#how-it-works" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-agency"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.how_it_works'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="#features" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-features"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.features'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="#solutions" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.solutions'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="#programs" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-programs"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.programs'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="#agencies" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-agencies"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.agencies'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="#tracking" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-tracking"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.tracking'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="#operational" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-operational"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.operational'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="#api" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-api"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.api'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="#contact" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-contact"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.contact'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-            </nav>
-            <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="0" height="0" class="ratib-nav-glyph-sprite" style="position:absolute;width:0;height:0;overflow:hidden">
-                <symbol id="ratib-ng-platform" viewBox="0 0 24 24"><path fill="currentColor" d="M3 3h7v7H3V3zm11 0h7v7h-7V3zM3 14h7v7H3v-7zm11 0h7v7h-7v-7z"/></symbol>
-                <symbol id="ratib-ng-video" viewBox="0 0 24 24"><path fill="currentColor" d="M5 8h9v8H5a2 2 0 01-2-2v-4a2 2 0 012-2zm11 2l6 4v4l-6 4V10z"/></symbol>
-                <symbol id="ratib-ng-agency" viewBox="0 0 24 24"><path fill="currentColor" d="M6 21h12V11l-6-3.6L6 11v10zm3-10h2v5H9v-5zm5 0h2v5h-2v-5z"/></symbol>
-                <symbol id="ratib-ng-features" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2l2.2 5.5H20l-4.4 3.2 1.7 5.3L12 15.2 7.7 16l1.7-5.3L5 7.5h5.8L12 2z"/></symbol>
-                <symbol id="ratib-ng-solutions" viewBox="0 0 24 24"><path fill="currentColor" d="M11 3h2v5h5v2h-5v5h-2v-5H6V8h5V3z"/></symbol>
-                <symbol id="ratib-ng-programs" viewBox="0 0 24 24"><path fill="currentColor" d="M5 11l7-5 8 8-7 5H5v-8zm2 2v7h8v-7l-4-3-4 3z"/></symbol>
-                <symbol id="ratib-ng-agencies" viewBox="0 0 24 24"><path fill="currentColor" d="M4 22h4v-9H4v9zm7 0h4V11h-4v11zm7 0h4v-6h-4v6zM7 11h2v2H7v-2zm9 0h2v5h-2v-5z"/></symbol>
-                <symbol id="ratib-ng-tracking" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 3v3H9v2h3v3h2v-3h3v-2h-3V7h-2z"/></symbol>
-                <symbol id="ratib-ng-operational" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5c-5.45 0-9.33 3.56-10 7 .67 3.44 4.55 7 10 7s9.33-3.56 10-7c-.67-3.44-4.55-7-10-7zm0 11a4 4 0 110-8 4 4 0 010 8z"/></symbol>
-                <symbol id="ratib-ng-api" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M7 8l-4 4 4 4 1.4-1.4L5.8 12l2.6-2.6L7 8zm10 0l-1.4 1.4L18.2 12l-2.6 2.6L17 16l4-4-4-4z"/>
-                    <path fill="currentColor" d="M11 4h2l-2 16h-2l2-16z"/>
-                </symbol>
-                <symbol id="ratib-ng-contact" viewBox="0 0 24 24"><path fill="currentColor" d="M4 7h16v11H4V7zm1 2 7 4.5 7-4.5V17H5V9z"/></symbol>
-                <symbol id="ratib-ng-partner" viewBox="0 0 24 24"><path fill="currentColor" d="M8 12a3 3 0 116 0 3 3 0 01-6 0zm9-1a2 2 0 11-4 0 2 2 0 014 0zM4 18c0-2.5 3-4 7-4s7 1.5 7 4v1H4v-1zm12 0v-.5c0-1.5 2-2.5 4-2.5s4 1 4 2.5V19h-8z"/></symbol>
-            </svg>
-            <div class="ratib-nav__cta">
-                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/partner-portal-login.php'); ?>" class="ratib-btn ratib-btn--ghost ratib-nav__partner-login"><span class="ratib-nav__partner-icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-partner"/></svg></span><span class="ratib-nav__partner-label"><?php echo htmlspecialchars($ratibHome['home.nav.cta_partner'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-            </div>
-        </div>
-    </header>
+<?php include __DIR__ . '/../includes/ratib-home-public-chrome-top.php'; ?>
 
     <main class="ratib-main">
         <!-- RATIB public home layout: product tour video directly under hero grid; program preview SVGs below. Deploy fingerprint: search HTML for id="video" on hero band + data-ratib-home-layout on body. -->

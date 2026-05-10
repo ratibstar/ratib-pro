@@ -23,6 +23,17 @@
     gap: 1rem;
 }
 
+/* Public home chrome replaces legacy mega header on partner-portal-login */
+.partner-portal-login-page--home-chrome {
+    flex: 1;
+    padding-top: 0.35rem;
+}
+
+.partner-portal-body.ratib-saas-home .partner-portal-shell {
+    position: relative;
+    z-index: 10;
+}
+
 .partner-portal-top {
     display: flex;
     align-items: center;

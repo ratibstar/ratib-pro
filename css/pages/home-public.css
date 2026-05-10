@@ -843,6 +843,13 @@ body.ratib-saas-home {
   box-shadow: 0 6px 24px rgba(245, 158, 11, 0.35);
 }
 
+/* Current page (e.g. partner-portal-login): non-interactive Partner Login pill */
+.ratib-nav-shell .ratib-nav__cta .ratib-nav__partner-login.ratib-btn--ghost.is-current {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0.96;
+}
+
 @media (max-width: 1099px) {
   .ratib-nav-shell__inner {
   flex-wrap: wrap;
