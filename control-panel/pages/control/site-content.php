@@ -325,8 +325,7 @@ function ratib_control_site_content_apply_video_slots_post(array &$posted, array
 }
 
 /**
- * Editor UI: do not list legacy caption-only rows (e.g. “Program screen 8”) with no image.
- * Always offer the first three slots (public homepage SVG fallbacks) and every slot that has a src.
+ * Editor UI: show every slot returned by the resolver (unlimited). Empty starter row if there is nothing yet.
  *
  * @param list<array{caption:string, alt:string, src:string}> $rows
  *
@@ -334,18 +333,11 @@ function ratib_control_site_content_apply_video_slots_post(array &$posted, array
  */
 function ratib_control_site_content_program_rows_for_editor(array $rows): array
 {
-    $out = [];
-    foreach ($rows as $idx => $row) {
-        $src = trim((string) ($row['src'] ?? ''));
-        if ($src !== '' || $idx < 3) {
-            $out[] = $row;
-        }
-    }
-    if ($out === []) {
+    if ($rows === []) {
         return [['caption' => '', 'alt' => '', 'src' => '']];
     }
 
-    return $out;
+    return $rows;
 }
 
 /**
@@ -378,7 +370,7 @@ function ratib_control_site_content_render_program_slots_editor(array $values): 
     );
     echo '<div class="ratib-cms-slots ratib-cms-slots--program border rounded p-3 mb-2 bg-dark bg-opacity-25" translate="no">';
     echo '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">';
-    echo '<p class="small text-muted mb-0 flex-grow-1" lang="en">Images on the public homepage. Only the <strong>first three</strong> slots (placeholders) and rows with an <strong>image URL/upload</strong> are listed — use <strong>Add row</strong> / <strong>Remove row</strong>. Saving replaces the stored list with what you see here.</p>';
+    echo '<p class="small text-muted mb-0 flex-grow-1" lang="en">Program preview images (unlimited). Each row is one card on the public homepage. Use <strong>Add row</strong> / <strong>Remove row</strong>. Saving stores the full list in <code>home.program.slots_json</code>.</p>';
     echo '<button type="button" class="btn btn-sm btn-outline-light flex-shrink-0" data-ratib-slot-add="program" lang="en"><i class="fas fa-plus" aria-hidden="true"></i> Add row</button>';
     echo '</div>';
     echo '<div id="ratib-program-slots-rows">';

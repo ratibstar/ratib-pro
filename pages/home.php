@@ -293,39 +293,21 @@ if ($ratibTopbarNodesNum > 999999 || strlen($ratibTopbarNodesDigits) > 6) {
 $ratibPricingStarterLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.starter.features'] ?? '');
 $ratibPricingGoldLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.gold.features'] ?? '');
 $ratibPricingPlatinumLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.platinum.features'] ?? '');
-$ratibProgFallbackRel = [
-    1 => 'assets/images/program-preview-pipeline.svg',
-    2 => 'assets/images/program-preview-workers.svg',
-    3 => 'assets/images/program-preview-finance.svg',
-];
-$ratibProgFallbackFs = [
-    1 => __DIR__ . '/../assets/images/program-preview-pipeline.svg',
-    2 => __DIR__ . '/../assets/images/program-preview-workers.svg',
-    3 => __DIR__ . '/../assets/images/program-preview-finance.svg',
-];
+// Single placeholder when a slot has caption/alt but no image URL yet (same rule for every slot — no special rows 1–3).
+$ratibProgPlaceholderRel = 'assets/images/program-preview-pipeline.svg';
+$ratibProgPlaceholderFs = __DIR__ . '/../assets/images/program-preview-pipeline.svg';
+
 $ratibProgSlotsOut = [];
 if (function_exists('ratib_site_content_home_program_slots_from_flat')) {
-    foreach (ratib_site_content_home_program_slots_from_flat($ratibHome) as $idx => $slot) {
-        $num = $idx + 1;
+    foreach (ratib_site_content_home_program_slots_from_flat($ratibHome) as $slot) {
         $stored = trim((string) ($slot['src'] ?? ''));
         $cap = trim((string) ($slot['caption'] ?? ''));
         $alt = trim((string) ($slot['alt'] ?? ''));
 
-        if ($num <= 3) {
-            $fbRel = $ratibProgFallbackRel[$num] ?? '';
-            $fbFs = $ratibProgFallbackFs[$num] ?? '';
-            if ($stored === '') {
-                $imgSrc = ratib_site_content_asset_url($baseUrl, '', $fbRel, $fbFs);
-            } else {
-                $imgSrc = ratib_site_content_asset_url($baseUrl, $stored, '', '');
-            }
-        } elseif ($stored !== '') {
+        if ($stored !== '') {
             $imgSrc = ratib_site_content_asset_url($baseUrl, $stored, '', '');
         } elseif ($cap !== '' || $alt !== '') {
-            $c = ($idx % 3) + 1;
-            $fbRel = $ratibProgFallbackRel[$c] ?? '';
-            $fbFs = $ratibProgFallbackFs[$c] ?? '';
-            $imgSrc = ratib_site_content_asset_url($baseUrl, '', $fbRel, $fbFs);
+            $imgSrc = ratib_site_content_asset_url($baseUrl, '', $ratibProgPlaceholderRel, $ratibProgPlaceholderFs);
         } else {
             continue;
         }
