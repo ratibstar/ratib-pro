@@ -158,6 +158,18 @@ $controlCenterUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/admin/co
             } elseif ($registrationCountryName !== '') {
                 $registrationPageUrl .= '&country_name=' . rawurlencode($registrationCountryName);
             }
+            // Cache buster for public homepage copy: changes whenever CMS rows update.
+            if (isset($ctrl) && $ctrl instanceof mysqli) {
+                try {
+                    $revRes = $ctrl->query("SELECT COALESCE(UNIX_TIMESTAMP(MAX(updated_at)), 0) AS rev FROM ratib_site_content");
+                    if ($revRes && ($revRow = $revRes->fetch_assoc())) {
+                        $rev = (string) ($revRow['rev'] ?? '0');
+                        if ($rev !== '' && $rev !== '0') {
+                            $registrationPageUrl .= '&cms_rev=' . rawurlencode($rev);
+                        }
+                    }
+                } catch (Throwable $e) { /* ignore */ }
+            }
             ?>
             <li><a href="<?php echo htmlspecialchars($registrationPageUrl); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item"><i class="fas fa-file-signature"></i><span>Registration Page</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php')); ?>" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) === 'site-content.php' ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings"><i class="fas fa-file-lines"></i><span>Public site content</span></a></li>

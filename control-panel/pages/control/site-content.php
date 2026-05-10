@@ -248,6 +248,9 @@ foreach ($groups as $gx => $group) {
 if (function_exists('control_ratib_pro_public_base_url')) {
     $ratibPublicHomeUrl = rtrim((string) control_ratib_pro_public_base_url(), '/') . '/pages/home.php';
 }
+if ($pageRevision !== '') {
+    $ratibPublicHomeUrl .= (strpos($ratibPublicHomeUrl, '?') !== false ? '&' : '?') . 'cms_rev=' . rawurlencode($pageRevision);
+}
 ?>
             <a href="<?php echo htmlspecialchars($ratibPublicHomeUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary ms-2">Open public home</a>
 <?php elseif (!$tableOk): ?>
