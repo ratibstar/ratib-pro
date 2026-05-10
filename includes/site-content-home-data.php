@@ -427,11 +427,19 @@ if (!function_exists('ratib_site_content_home_flat')) {
         // 3) JSON file snapshot
         if ($dbOnlyFallback || $skipDiskJson) {
             $out = [];
+            $hasAnyDbValue = false;
             foreach ($defaults as $key => $defaultVal) {
-                $out[$key] = ratib_site_content_get($key, $defaultVal);
+                $val = ratib_site_content_get($key, $defaultVal);
+                $out[$key] = $val;
+                if ((string) $val !== (string) $defaultVal) {
+                    $hasAnyDbValue = true;
+                }
             }
-
-            return $out;
+            // db_only means "prefer live DB", but when DB is unreachable this would otherwise collapse to hardcoded
+            // defaults on the public page. If no DB value is reachable, allow disk snapshot fallback as a safety net.
+            if ($hasAnyDbValue || $skipDiskJson) {
+                return $out;
+            }
         }
 
         $path = function_exists('ratib_site_content_public_cache_path_for_read')
