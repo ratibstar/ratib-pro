@@ -125,7 +125,7 @@ function ratib_control_site_content_render_field(array $field, array $values): v
             $previewUrl = ratib_control_site_content_media_preview_url((string) $val);
             if ($previewUrl !== '') {
                 if ($type === 'media_video') {
-                    echo '<video controls preload="metadata" style="max-width:360px;border-radius:10px;background:#060b19"><source src="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '"></video>';
+                    echo '<video controls preload="metadata" style="max-width:260px;max-height:146px;border-radius:10px;background:#060b19"><source src="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '"></video>';
                 } else {
                     echo '<img src="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '" alt="Preview" style="max-width:220px;max-height:140px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.15);">';
                 }

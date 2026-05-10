@@ -1727,6 +1727,65 @@ body.ratib-saas-home {
   vertical-align: middle;
 }
 
+/* Homepage CMS: videos + program images as compact horizontal scroll rows */
+.ratib-cms-media-strip {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+  margin-top: 0.35rem;
+  padding-bottom: 0.5rem;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.ratib-cms-media-strip__track {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 1rem;
+  width: max-content;
+  max-width: 100%;
+  padding: 0.2rem 0;
+}
+
+.ratib-cms-media-strip__item--video {
+  flex: 0 0 auto;
+  width: min(300px, 82vw);
+  scroll-snap-align: start;
+}
+
+.ratib-cms-media-strip__video-wrap.video-wrap {
+  max-height: none;
+}
+
+.ratib-cms-media-strip__video-wrap video.home-video-player,
+.ratib-cms-media-strip__video-wrap .ratib-cms-media-strip__video {
+  max-height: min(48vw, 220px);
+  width: 100%;
+  object-fit: contain;
+}
+
+.ratib-cms-media-strip--program .ratib-cms-media-strip__track--program {
+  align-items: stretch;
+}
+
+.ratib-cms-media-strip__item--program {
+  flex: 0 0 auto;
+  width: min(260px, 78vw);
+  scroll-snap-align: start;
+}
+
+.ratib-cms-media-strip__item--program .ratib-hero__photo {
+  margin: 0;
+  height: 100%;
+}
+
+.ratib-cms-media-strip__item--program .ratib-hero__photo img {
+  aspect-ratio: 16 / 10;
+  max-height: min(42vw, 200px);
+  object-fit: cover;
+}
+
 .video-fallback-box {
   background: rgba(0, 0, 0, 0.35);
 }

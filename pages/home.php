@@ -407,6 +407,9 @@ if (!$videoExists) {
         $ratibVideoSources[] = $videoSrcRel;
     }
 }
+if ($videoExists && $videoSrcRel !== '' && empty($ratibVideoSources)) {
+    $ratibVideoSources[] = $videoSrcRel;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -653,47 +656,50 @@ if (!$videoExists) {
                         <h2 class="ratib-section__title ratib-hero__video-title"><?php echo htmlspecialchars($ratibHome['home.video.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
                         <p class="video-caption"><?php echo htmlspecialchars($ratibHome['home.video.caption'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                     </header>
+                    <?php if (!empty($ratibVideoSources)): ?>
+                    <div class="ratib-cms-media-strip ratib-cms-media-strip--video" role="region" aria-label="<?php echo htmlspecialchars($ratibHome['home.video.title'] ?? 'Videos', ENT_QUOTES, 'UTF-8'); ?>">
+                        <div class="ratib-cms-media-strip__track">
+                            <?php foreach ($ratibVideoSources as $rvSrc): ?>
+                            <div class="ratib-cms-media-strip__item ratib-cms-media-strip__item--video">
+                                <div class="video-wrap ratib-cms-media-strip__video-wrap">
+                                    <video controls preload="metadata" class="home-video-player ratib-cms-media-strip__video" playsinline>
+                                        <source src="<?php echo htmlspecialchars((string) $rvSrc, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php elseif (!$videoExists): ?>
                     <div class="ratib-video__shell">
                         <div class="video-wrap">
-                            <?php if ($videoExists): ?>
-                            <video controls preload="metadata" class="home-video-player" playsinline>
-                                <source src="<?php echo htmlspecialchars($videoSrcRel, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
-                                Your browser does not support the video tag. <a href="<?php echo htmlspecialchars($videoSrcRel, ENT_QUOTES, 'UTF-8'); ?>">Download the video</a>.
-                            </video>
-                            <?php else: ?>
                             <div class="video-fallback-box">
                                 <i class="fas fa-video-slash fa-3x mb-3"></i>
                                 <p>Add an MP4 to <code>assets/</code> — recommended name: <code>video.mp4</code></p>
                                 <p class="small mb-0">Any <strong>.mp4</strong> file in the <code>assets</code> folder will be picked up automatically.</p>
                             </div>
-                            <?php endif; ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="ratib-hero__photo-strip ratib-hero__program-strip">
                 <div class="ratib-container">
                     <p class="ratib-hero__photo-eyebrow"><?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
-                    <div class="ratib-hero__photo-grid" role="list">
-                        <?php for ($pgi = 1; $pgi <= 10; $pgi++) { ?>
-                        <?php if (($ratibProgSrc[$pgi] ?? '') === '') { continue; } ?>
-                        <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                            <img src="<?php echo htmlspecialchars((string) $ratibProgSrc[$pgi], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($ratibHome['home.program.alt.' . $pgi] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
-                            <figcaption><?php echo htmlspecialchars($ratibHome['home.program.caption.' . $pgi] ?? '', ENT_QUOTES, 'UTF-8'); ?></figcaption>
-                        </figure>
-                        <?php } ?>
-                    </div>
-                    <?php if (count($ratibVideoSources) > 1): ?>
-                    <div class="row g-3 mt-2">
-                        <?php foreach (array_slice($ratibVideoSources, 1) as $extraVideoSrc): ?>
-                        <div class="col-12 col-md-6">
-                            <video controls preload="metadata" class="home-video-player w-100" playsinline>
-                                <source src="<?php echo htmlspecialchars($extraVideoSrc, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
-                            </video>
+                    <div class="ratib-cms-media-strip ratib-cms-media-strip--program" role="region" aria-label="<?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? 'Program previews', ENT_QUOTES, 'UTF-8'); ?>">
+                        <div class="ratib-cms-media-strip__track ratib-cms-media-strip__track--program">
+                            <?php for ($pgi = 1; $pgi <= 10; $pgi++) { ?>
+                            <?php if (($ratibProgSrc[$pgi] ?? '') === '') { continue; } ?>
+                            <div class="ratib-cms-media-strip__item ratib-cms-media-strip__item--program">
+                                <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
+                                    <img src="<?php echo htmlspecialchars((string) $ratibProgSrc[$pgi], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($ratibHome['home.program.alt.' . $pgi] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
+                                    <figcaption><?php echo htmlspecialchars($ratibHome['home.program.caption.' . $pgi] ?? '', ENT_QUOTES, 'UTF-8'); ?></figcaption>
+                                </figure>
+                            </div>
+                            <?php } ?>
                         </div>
-                        <?php endforeach; ?>
                     </div>
-                    <?php endif; ?>
                 </div>
             </div>
         </section>
