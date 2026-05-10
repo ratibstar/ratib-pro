@@ -832,11 +832,10 @@
                 startX: ev.clientX,
                 startScroll: viewport.scrollLeft,
                 dragged: false,
+                captured: false,
             };
-            try {
-                viewport.setPointerCapture(ev.pointerId);
-            } catch (eCap) {}
-            viewport.classList.add('ratib-program-marquee__viewport--dragging');
+            /* Do NOT setPointerCapture here — it retargets the click to the viewport so
+               [data-ratib-program-open] never receives the synthetic click. Capture only after drag intent. */
         });
 
         viewport.addEventListener('pointermove', function (ev) {
@@ -846,6 +845,11 @@
             var dx = ev.clientX - dragState.startX;
             if (!dragState.dragged && Math.abs(dx) > dragThreshold) {
                 dragState.dragged = true;
+                try {
+                    viewport.setPointerCapture(ev.pointerId);
+                    dragState.captured = true;
+                } catch (eCap) {}
+                viewport.classList.add('ratib-program-marquee__viewport--dragging');
             }
             if (dragState.dragged) {
                 viewport.scrollLeft = dragState.startScroll - dx;
@@ -857,9 +861,11 @@
             if (!dragState || ev.pointerId !== dragState.pointerId) {
                 return;
             }
-            try {
-                viewport.releasePointerCapture(ev.pointerId);
-            } catch (eRel) {}
+            if (dragState.captured) {
+                try {
+                    viewport.releasePointerCapture(ev.pointerId);
+                } catch (eRel) {}
+            }
             viewport.classList.remove('ratib-program-marquee__viewport--dragging');
             if (dragState.dragged) {
                 viewport.setAttribute('data-ratib-marquee-suppress-click', '1');
