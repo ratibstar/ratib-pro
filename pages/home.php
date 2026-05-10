@@ -248,8 +248,9 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-31';
+    : '20260210-32';
 /** Proof token for View Source: if this block is missing on the live site, the request is not using this home.php (wrong path, cache, or mirror). */
+clearstatcache(true, __FILE__);
 $ratibHomePhpMtime = (string) (int) (@filemtime(__FILE__) ?: 0);
 /** Append to CSS/JS ?v= when CDN/host preserves mtimes (set in env or config: RATIB_HOME_ASSET_EXTRA_BUST=manual-20260210). */
 $ratibHomeAssetExtraBustRaw = getenv('RATIB_HOME_ASSET_EXTRA_BUST');
@@ -386,7 +387,9 @@ if ($ratibNavProductTourLabel === '') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/chat-widget.css">
     <?php
-    $ratibHomeCssTs = (int) (@filemtime(__DIR__ . '/../css/pages/home-public.css') ?: time());
+    $ratibHomeCssPath = __DIR__ . '/../css/pages/home-public.css';
+    clearstatcache(true, $ratibHomeCssPath);
+    $ratibHomeCssTs = (int) (@filemtime($ratibHomeCssPath) ?: time());
     /* home.php mtime in ?v= forces new CSS URL after any home deploy (FTP often keeps old css mtimes). */
     $ratibHomeCssQ = $ratibHomeCssTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
     ?>
@@ -1248,7 +1251,9 @@ if ($ratibNavProductTourLabel === '') {
         'platinumMonth' => (float) $platinumTestPriceMonth,
         'platinumYear1' => (float) ($plans['platinum']['amount'] ?? $platinumTestPriceYear1),
     ];
-    $ratibHomeJsTs = (int) (@filemtime(__DIR__ . '/../js/pages/home-page.js') ?: time());
+    $ratibHomeJsPath = __DIR__ . '/../js/pages/home-page.js';
+    clearstatcache(true, $ratibHomeJsPath);
+    $ratibHomeJsTs = (int) (@filemtime($ratibHomeJsPath) ?: time());
     $ratibHomeJsQ = $ratibHomeJsTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
     ?>
     <script>
