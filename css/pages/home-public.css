@@ -4,7 +4,7 @@
  */
 
 [id] {
-  scroll-margin-top: 96px;
+  scroll-margin-top: 112px;
 }
 
 :root {
@@ -256,7 +256,8 @@ body.ratib-saas-home {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  min-height: 64px;
+  min-height: 88px;
+  padding-block: 0.65rem;
 }
 
 .ratib-nav__brand {
@@ -271,7 +272,7 @@ body.ratib-saas-home {
 
 .ratib-nav__brand img {
   display: block;
-  height: 32px;
+  height: 36px;
   width: auto;
 }
 
@@ -351,7 +352,7 @@ body.ratib-saas-home {
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
-  padding: 0.45rem 0.65rem;
+  padding: 0.55rem 0.7rem;
   border-radius: 8px;
   transition:
     color 0.15s,
