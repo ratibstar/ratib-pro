@@ -366,7 +366,8 @@ if (!function_exists('ratib_site_content_fetch_key_values')) {
             return [];
         }
         $out = [];
-        $chunkSize = 80;
+        // Keep chunks moderate: very large IN (...) lists occasionally fail on strict hosts (packet/size/sql_mode).
+        $chunkSize = 60;
         $chunks = array_chunk($uniq, $chunkSize);
         foreach ($chunks as $chunk) {
             $parts = [];
@@ -382,6 +383,17 @@ if (!function_exists('ratib_site_content_fetch_key_values')) {
                     ratib_site_content_db(true);
 
                     return ratib_site_content_fetch_key_values($keys, false);
+                }
+                // Do not drop keys for this chunk — fetch row-by-row (same connection) so the homepage cannot mix
+                // fresh rows with defaults/cache for only some fields (e.g. phone vs WhatsApp).
+                foreach ($chunk as $k) {
+                    if (array_key_exists($k, $out)) {
+                        continue;
+                    }
+                    $one = ratib_site_content_fetch_value_by_key($conn, $k, false);
+                    if ($one !== null) {
+                        $out[$k] = $one;
+                    }
                 }
 
                 continue;
