@@ -380,6 +380,12 @@ if (!function_exists('ratib_site_content_home_flat')) {
             return $out;
         };
 
+        $finalizeHomeFlat = static function (array $base): array {
+            return function_exists('ratib_site_content_home_merge_legacy_media_into_values')
+                ? ratib_site_content_home_merge_legacy_media_into_values($base)
+                : $base;
+        };
+
         // Optional env (see .env.example): RATIB_SITE_CONTENT_PUBLIC_SOURCE=db_only
         // Skips disk/DB-blob JSON fallbacks so a stale snapshot cannot mask CMS rows — only live SELECT + per-key reads.
         // Uses ratib_site_content_public_source_resolved() so config/env/out_ratib_sa.php constant works when putenv is stripped.
@@ -398,7 +404,7 @@ if (!function_exists('ratib_site_content_home_flat')) {
         if (function_exists('ratib_site_content_home_flat_from_db')) {
             $live = ratib_site_content_home_flat_from_db($defaults);
             if ($live !== null) {
-                return $live;
+                return $finalizeHomeFlat($live);
             }
         }
 
@@ -410,9 +416,11 @@ if (!function_exists('ratib_site_content_home_flat')) {
                 if (is_array($cached)) {
                     $merged = $applyHomeCache($cached, $defaults);
 
-                    return function_exists('ratib_site_content_home_flat_overlay_live_db')
-                        ? ratib_site_content_home_flat_overlay_live_db($merged, $defaults)
-                        : $merged;
+                    return $finalizeHomeFlat(
+                        function_exists('ratib_site_content_home_flat_overlay_live_db')
+                            ? ratib_site_content_home_flat_overlay_live_db($merged, $defaults)
+                            : $merged
+                    );
                 }
             }
         }
@@ -431,7 +439,7 @@ if (!function_exists('ratib_site_content_home_flat')) {
             // db_only means "prefer live DB", but when DB is unreachable this would otherwise collapse to hardcoded
             // defaults on the public page. If no DB value is reachable, allow disk snapshot fallback as a safety net.
             if ($hasAnyDbValue || $skipDiskJson) {
-                return $out;
+                return $finalizeHomeFlat($out);
             }
         }
 
@@ -450,9 +458,11 @@ if (!function_exists('ratib_site_content_home_flat')) {
                     if (is_array($cached)) {
                         $merged = $applyHomeCache($cached, $defaults);
 
-                        return function_exists('ratib_site_content_home_flat_overlay_live_db')
-                            ? ratib_site_content_home_flat_overlay_live_db($merged, $defaults)
-                            : $merged;
+                        return $finalizeHomeFlat(
+                            function_exists('ratib_site_content_home_flat_overlay_live_db')
+                                ? ratib_site_content_home_flat_overlay_live_db($merged, $defaults)
+                                : $merged
+                        );
                     }
                 }
             }
@@ -463,7 +473,7 @@ if (!function_exists('ratib_site_content_home_flat')) {
             $out[$key] = ratib_site_content_get($key, $defaultVal);
         }
 
-        return $out;
+        return $finalizeHomeFlat($out);
     }
 }
 

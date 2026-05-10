@@ -232,3 +232,48 @@ if (!function_exists('ratib_site_content_home_resolve_video_display_url')) {
         return rtrim($baseUrl, '/') . '/' . $rel . '?v=' . $v;
     }
 }
+
+if (!function_exists('ratib_site_content_home_legacy_media_db_keys')) {
+    /**
+     * Pre–slots_json keys still stored in ratib_site_content but omitted from defaults (not loaded by batch SELECT).
+     *
+     * @return list<string>
+     */
+    function ratib_site_content_home_legacy_media_db_keys(): array
+    {
+        $keys = [];
+        for ($i = 1; $i <= 500; $i++) {
+            $keys[] = 'home.program.img' . $i;
+            $keys[] = 'home.program.caption.' . $i;
+            $keys[] = 'home.program.alt.' . $i;
+        }
+        $keys[] = 'home.video.file';
+        for ($i = 2; $i <= 99; $i++) {
+            $keys[] = 'home.video.file' . $i;
+        }
+
+        return $keys;
+    }
+}
+
+if (!function_exists('ratib_site_content_home_merge_legacy_media_into_values')) {
+    /**
+     * Overlay legacy flat keys so JSON merge + CMS editors see uploads saved under home.program.imgN / home.video.fileN.
+     *
+     * @param array<string, string> $values
+     *
+     * @return array<string, string>
+     */
+    function ratib_site_content_home_merge_legacy_media_into_values(array $values): array
+    {
+        if (!function_exists('ratib_site_content_fetch_key_values')) {
+            return $values;
+        }
+        $extra = ratib_site_content_fetch_key_values(ratib_site_content_home_legacy_media_db_keys());
+        foreach ($extra as $k => $v) {
+            $values[$k] = $v;
+        }
+
+        return $values;
+    }
+}

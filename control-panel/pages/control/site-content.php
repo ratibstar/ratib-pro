@@ -459,6 +459,9 @@ $values = $defaults;
 foreach (array_keys($defaults) as $k) {
     $values[$k] = ratib_site_content_get($k, $defaults[$k]);
 }
+if (function_exists('ratib_site_content_home_merge_legacy_media_into_values')) {
+    $values = ratib_site_content_home_merge_legacy_media_into_values($values);
+}
 
 $flashOk = false;
 $flashErr = '';
@@ -530,6 +533,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
                 $pageRevision = ratib_control_site_content_revision($ctrl);
                 foreach (array_keys($defaults) as $k) {
                     $values[$k] = ratib_site_content_get($k, $defaults[$k]);
+                }
+                if (function_exists('ratib_site_content_home_merge_legacy_media_into_values')) {
+                    $values = ratib_site_content_home_merge_legacy_media_into_values($values);
                 }
                 if (function_exists('ratib_site_content_export_public_cache')) {
                     if (!ratib_site_content_export_public_cache()) {
