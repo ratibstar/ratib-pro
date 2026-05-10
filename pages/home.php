@@ -589,7 +589,7 @@ require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
                     for ($fi = 1; $fi <= 12; $fi++) {
                         $fic = $ratibFeatureIcons[$fi - 1] ?? 'fa-circle';
                         ?>
-                    <article class="ratib-feature-card"><div class="ratib-feature-card__icon"><i class="fas <?php echo htmlspecialchars($fic, ENT_QUOTES, 'UTF-8'); ?>"></i></div><h3><?php echo htmlspecialchars($ratibHome['home.features.' . $fi . '.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3><p><?php echo htmlspecialchars($ratibHome['home.features.' . $fi . '.body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p></article>
+                    <article class="ratib-feature-card ratib-feature-card--tone<?php echo (int) $fi; ?>"><div class="ratib-feature-card__icon"><i class="fas <?php echo htmlspecialchars($fic, ENT_QUOTES, 'UTF-8'); ?>"></i></div><h3><?php echo htmlspecialchars($ratibHome['home.features.' . $fi . '.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3><p><?php echo htmlspecialchars($ratibHome['home.features.' . $fi . '.body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p></article>
                     <?php } ?>
                 </div>
             </div>
