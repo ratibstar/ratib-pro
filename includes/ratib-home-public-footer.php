@@ -1,14 +1,26 @@
 <?php
 /**
- * Public marketing footer — same markup as pages/home.php.
+ * Public marketing footer — pill links match header nav (SVG glyphs + semantic colors).
  *
  * Expects: $baseUrl, $ratibHome, $ratibPhoneDigits, $ratibPhoneRaw (from ratib-home-public-nav-bootstrap.php).
  * Optional $ratibHomeNavHrefPrefix: when set (e.g. partner-portal-login), hash links target home.php#… .
+ *
+ * SVG symbols reference #ratib-ng-* from the header sprite (same document).
  *
  * @var string $baseUrl
  * @var array<string,mixed> $ratibHome
  */
 $ratibFooterPrefix = isset($ratibHomeNavHrefPrefix) ? (string) $ratibHomeNavHrefPrefix : '';
+$ratibFp = $ratibFooterPrefix;
+
+$ratibFooterPricingLabel = trim((string) ($ratibHome['home.footer.link.platform.pricing'] ?? ''));
+if ($ratibFooterPricingLabel === '') {
+    $ratibFooterPricingLabel = (string) ($ratibHome['home.nav.programs'] ?? '');
+}
+
+$ratibGlyph = function (string $symbolId): string {
+    return '<span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#' . htmlspecialchars($symbolId, ENT_QUOTES, 'UTF-8') . '"/></svg></span>';
+};
 ?>
     <footer class="ratib-footer-enterprise" id="contact">
         <div class="ratib-container ratib-footer-enterprise__grid">
@@ -20,39 +32,73 @@ $ratibFooterPrefix = isset($ratibHomeNavHrefPrefix) ? (string) $ratibHomeNavHref
             </div>
             <div class="ratib-footer-col">
                 <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
-                <ul>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#platform', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.overview'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#how-it-works', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.nav.how_it_works'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#features', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.nav.features'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#tracking', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.nav.tracking'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#operational', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.ops_visibility'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#programs', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.platform.pricing'] ?? '') ?: (string) ($ratibHome['home.nav.programs'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#api', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.apis'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                <ul class="ratib-footer-enterprise__link-list">
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#platform', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-platform'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.overview'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#how-it-works', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-agency'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.how_it_works'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#features', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-features'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.features'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#tracking', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-tracking'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.tracking'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#operational', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-operational'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.ops_visibility'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#programs', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-programs'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibFooterPricingLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#api', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-api'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.apis'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
                 </ul>
             </div>
             <div class="ratib-footer-col">
                 <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.company'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
-                <ul>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#solutions', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.solutions'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#agencies', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.nav.agencies'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#operational', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.nav.operational'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#video', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.demo'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.company.customer_portal'] ?? 'Customer portal', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                <ul class="ratib-footer-enterprise__link-list">
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#solutions', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-solutions'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.solutions'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#agencies', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-agencies'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.agencies'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#operational', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-operational'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.operational'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#video', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-video'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.demo'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--customer-portal"><?php echo $ratibGlyph('ratib-ng-partner'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.company.customer_portal'] ?? 'Customer portal', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
                 </ul>
             </div>
             <div class="ratib-footer-col">
                 <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.support'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
-                <ul>
-                    <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/login.php'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.support.tickets'] ?? 'Support tickets', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="https://wa.me/<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($ratibHome['home.footer.link.support.whatsapp'] ?? 'WhatsApp', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="tel:+<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" dir="ltr"><span class="ratib-topbar__phone-text"><?php echo htmlspecialchars($ratibPhoneRaw, ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+                <ul class="ratib-footer-enterprise__link-list">
+                    <li>
+                        <a href="<?php echo htmlspecialchars($baseUrl . '/pages/login.php'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--support-tickets"><?php echo $ratibGlyph('ratib-ng-contact'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.support.tickets'] ?? 'Support tickets', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="https://wa.me/<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--whatsapp"><span class="ratib-nav__icon ratib-nav__icon--fa" aria-hidden="true"><i class="fab fa-whatsapp"></i></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.support.whatsapp'] ?? 'WhatsApp', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="tel:+<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" dir="ltr" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--phone"><span class="ratib-nav__icon ratib-nav__icon--fa" aria-hidden="true"><i class="fas fa-phone-alt"></i></span><span class="ratib-nav__label ratib-topbar__phone-text"><?php echo htmlspecialchars($ratibPhoneRaw, ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
                 </ul>
             </div>
             <div class="ratib-footer-col">
                 <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.legal'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
-                <ul>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#register', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.service_registration'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="mailto:ratibsrar@gmail.com">ratibsrar@gmail.com</a></li>
+                <ul class="ratib-footer-enterprise__link-list">
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#register', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-programs'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.service_registration'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="mailto:ratibsrar@gmail.com" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--mailto"><?php echo $ratibGlyph('ratib-ng-contact'); ?><span class="ratib-nav__label">ratibsrar@gmail.com</span></a>
+                    </li>
                 </ul>
             </div>
             <div class="ratib-footer-col ratib-footer-enterprise__infra">
