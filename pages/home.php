@@ -248,7 +248,7 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-20';
+    : '20260210-21';
 /** Proof token for View Source: if this block is missing on the live site, the request is not using this home.php (wrong path, cache, or mirror). */
 $ratibHomePhpMtime = (string) (int) (@filemtime(__FILE__) ?: 0);
 $ratibHome = ratib_site_content_home_flat(false);
@@ -351,7 +351,7 @@ if ($ratibVideoSlotsRawCheck !== '') {
 }
 // Hide the whole video band (heading + strip) when there is nothing to show and CMS did not ask for the empty-state hint.
 $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$ratibVideoClearedInCms);
-// Header link "Product tour" scroll target: walkthrough video when present, else screenshot strip, else platform section.
+// Header link "video/pic" scroll target: walkthrough video when present, else screenshot strip, else platform section.
 $ratibNavProductTourHref = '#platform';
 if ($ratibShowHomeVideoBand) {
     $ratibNavProductTourHref = '#video';
@@ -360,7 +360,7 @@ if ($ratibShowHomeVideoBand) {
 }
 $ratibNavProductTourLabel = trim((string) ($ratibHome['home.nav.product_tour'] ?? ''));
 if ($ratibNavProductTourLabel === '') {
-    $ratibNavProductTourLabel = 'Product tour';
+    $ratibNavProductTourLabel = 'video/pic';
 }
 ?>
 <!DOCTYPE html>
@@ -425,7 +425,7 @@ if ($ratibNavProductTourLabel === '') {
             <button type="button" class="ratib-nav__toggle" id="ratibNavToggle" aria-label="Open menu" aria-expanded="false" aria-controls="ratibNavMenu">
                 <span></span><span></span><span></span>
             </button>
-            <!-- Main sticky header nav (not ratib-topbar). Order: Platform · Product tour · agency · Features · … · Contact. -->
+            <!-- Main sticky header nav (not ratib-topbar). Order: Platform · video/pic · agency · Features · … · Contact. -->
             <!-- ratib-home-nav-build: ui-rev=<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?> home.php-mtime=<?php echo htmlspecialchars($ratibHomePhpMtime, ENT_QUOTES, 'UTF-8'); ?> primary-links=11 — search HTML for "ratib-home-nav-build" after deploy. -->
             <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary" data-ratib-primary-nav-links="11" data-ratib-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
                 <a href="#platform" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
@@ -636,7 +636,7 @@ if ($ratibNavProductTourLabel === '') {
                         <div class="video-wrap">
                             <div class="video-fallback-box">
                                 <i class="fas fa-video-slash fa-3x mb-3"></i>
-                                <p>Add videos in <strong>Public site content</strong> (Product tour section): upload an MP4 or choose an existing file for each slot.</p>
+                                <p>Add videos in <strong>Public site content</strong> (video/pic section): upload an MP4 or choose an existing file for each slot.</p>
                             </div>
                         </div>
                     </div>

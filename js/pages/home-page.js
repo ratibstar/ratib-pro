@@ -768,7 +768,7 @@
     }
 })();
 
-/** If the server HTML is stale/cached and omits Product tour, insert it after Platform (same href rules as PHP). */
+/** If the server HTML is stale/cached and omits video/pic nav, insert it after Platform (same href rules as PHP). */
 (function ratibHomeEnsureProductTourNavTab() {
     function productTourHref() {
         if (document.getElementById('video')) {
@@ -793,7 +793,7 @@
         a.className = 'ratib-nav__link ratib-nav__link--product-tour';
         a.setAttribute('data-ratib-product-tour-tab', '1');
         a.setAttribute('data-ratib-product-tour-fallback', '1');
-        a.textContent = 'Product tour';
+        a.textContent = 'video/pic';
         platform.parentNode.insertBefore(a, platform.nextSibling);
     }
     if (document.readyState === 'loading') {

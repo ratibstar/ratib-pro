@@ -29,11 +29,11 @@ if (!function_exists('ratib_site_content_defaults_home')) {
      */
     function ratib_site_content_defaults_home(): array
     {
-        /* Same order as header nav on pages/home.php (Platform · agency · Product tour · Features · … · Contact). */
+        /* Same order as header nav on pages/home.php (Platform · agency · video/pic · Features · … · Contact). */
         $nav = [
             'platform' => 'Platform',
             'how_it_works' => 'agency',
-            'product_tour' => 'Product tour',
+            'product_tour' => 'video/pic',
             'features' => 'Features',
             'solutions' => 'Solutions',
             'programs' => 'Pricing',
@@ -76,7 +76,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.hero.cta_primary'] = 'Launch operations workspace';
         $d['home.hero.cta_secondary'] = 'Platform walkthrough';
 
-        $d['home.video.eyebrow'] = 'Product tour';
+        $d['home.video.eyebrow'] = 'video/pic';
         $d['home.video.title'] = 'Walk the surfaces your teams will run';
         $d['home.video.caption'] = 'Recorded walkthrough: pipelines, verification queues, finance hooks, and agency administration.';
         $d['home.video.slots_json'] = '[]';
@@ -362,11 +362,11 @@ if (!function_exists('ratib_site_content_home_flat_overlay_live_db')) {
 
 if (!function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
     /**
-     * After ratib_site_content_home_flat(): ensure header nav keys exist and Product tour has a label.
+     * After ratib_site_content_home_flat(): ensure header nav keys exist and video/pic nav has a label.
      *
      * - Missing keys (e.g. home.nav.product_tour absent from an old on-disk JSON snapshot) are filled from
      *   ratib_site_content_defaults_home() so the new tab can render.
-     * - home.nav.product_tour: if the value is empty, use the default — avoids a blank tab when the key was never saved.
+     * - home.nav.product_tour: if the value is empty, use the default — avoids a blank tab when the key was never saved (label: video/pic).
      * - Other non-empty values are left as-is: a DB row for home.nav.how_it_works = "How it works" still wins until
      *   you change it in Public site content to "agency" (or clear that row so defaults apply).
      *
@@ -579,7 +579,7 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                 'fields' => [
                     ['key' => 'home.nav.platform', 'label' => 'Platform', 'type' => 'text'],
                     ['key' => 'home.nav.how_it_works', 'label' => 'agency (#how-it-works)', 'type' => 'text'],
-                    ['key' => 'home.nav.product_tour', 'label' => 'Product tour', 'type' => 'text'],
+                    ['key' => 'home.nav.product_tour', 'label' => 'Nav · video/pic', 'type' => 'text'],
                     ['key' => 'home.nav.features', 'label' => 'Features', 'type' => 'text'],
                     ['key' => 'home.nav.solutions', 'label' => 'Solutions', 'type' => 'text'],
                     ['key' => 'home.nav.programs', 'label' => 'Pricing', 'type' => 'text'],
@@ -610,7 +610,7 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
             ],
             [
                 'id' => 'video',
-                'title' => 'Product tour (video band)',
+                'title' => 'video/pic (video band)',
                 'fields' => [
                     ['key' => 'home.video.eyebrow', 'label' => 'Eyebrow', 'type' => 'text'],
                     ['key' => 'home.video.title', 'label' => 'Title', 'type' => 'text'],

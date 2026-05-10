@@ -363,7 +363,7 @@ body.ratib-saas-home {
   background: rgba(255, 255, 255, 0.04);
 }
 
-/* Product tour — second slot in main sticky nav (after Platform). */
+/* video/pic nav — second slot in main sticky nav (after Platform). */
 .ratib-nav__link--product-tour {
   color: rgba(196, 181, 253, 0.98);
   border: 1px solid rgba(167, 139, 250, 0.35);

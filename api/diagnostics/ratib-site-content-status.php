@@ -97,7 +97,7 @@ $payload = [
     'resolved_home_nav_platform' => $resolvedPlatform,
     /** DB row wins until you save a new value in Public site content (default is now "agency"). */
     'resolved_home_nav_how_it_works' => $resolvedNavHow,
-    /** Filled from defaults if missing/empty so the Product tour tab can render. */
+    /** Filled from defaults if missing/empty so the video/pic nav tab can render. */
     'resolved_home_nav_product_tour' => $resolvedNavTour,
     'resolved_home_topbar_phone_display' => $resolvedPhonePreview,
     /** Same values pages/home.php registration block uses — compare with phpMyAdmin rows for these keys. */
