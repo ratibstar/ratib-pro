@@ -248,7 +248,7 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-9';
+    : '20260210-10';
 $ratibHome = ratib_site_content_home_flat(false);
 $ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
     ? ratib_site_content_db_fingerprint()
@@ -630,7 +630,9 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
                 <div class="ratib-container">
                     <p class="ratib-hero__photo-eyebrow"><?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                     <div class="ratib-cms-media-strip ratib-cms-media-strip--program ratib-program-marquee" data-ratib-program-marquee role="region" aria-label="<?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? 'Program previews', ENT_QUOTES, 'UTF-8'); ?>">
-                        <div class="ratib-program-marquee__viewport">
+                        <div class="ratib-program-marquee__shell">
+                            <button type="button" class="ratib-program-marquee__scroll-btn ratib-program-marquee__scroll-btn--prev" data-ratib-program-marquee-scroll-prev aria-label="Scroll previews left"><span aria-hidden="true">&#8249;</span></button>
+                            <div class="ratib-program-marquee__viewport">
                             <div class="ratib-cms-media-strip__track ratib-cms-media-strip__track--program ratib-program-marquee__track">
                                 <?php for ($ratibMarqueePass = 0; $ratibMarqueePass < 2; $ratibMarqueePass++) { ?>
                                     <?php foreach ($ratibProgSlotsOut as $ratibProgSlot) {
@@ -647,6 +649,8 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
                                     <?php } ?>
                                 <?php } ?>
                             </div>
+                            </div>
+                            <button type="button" class="ratib-program-marquee__scroll-btn ratib-program-marquee__scroll-btn--next" data-ratib-program-marquee-scroll-next aria-label="Scroll previews right"><span aria-hidden="true">&#8250;</span></button>
                         </div>
                     </div>
                 </div>
@@ -657,10 +661,11 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
                     <button type="button" class="ratib-program-lightbox__close" data-ratib-program-lightbox-close aria-label="Close preview">&times;</button>
                     <div class="ratib-program-lightbox__stage">
                         <img src="" alt="" class="ratib-program-lightbox__img" id="ratib-program-lightbox-img" decoding="async">
-                        <button type="button" class="ratib-program-lightbox__nav ratib-program-lightbox__nav--prev" data-ratib-program-lightbox-prev aria-label="Previous image">&#8249;</button>
-                        <button type="button" class="ratib-program-lightbox__nav ratib-program-lightbox__nav--next" data-ratib-program-lightbox-next aria-label="Next image">&#8250;</button>
+                        <button type="button" class="ratib-program-lightbox__nav ratib-program-lightbox__nav--prev" data-ratib-program-lightbox-prev aria-label="Previous image"><span class="ratib-program-lightbox__nav-text" aria-hidden="true">Prev</span></button>
+                        <button type="button" class="ratib-program-lightbox__nav ratib-program-lightbox__nav--next" data-ratib-program-lightbox-next aria-label="Next image"><span class="ratib-program-lightbox__nav-text" aria-hidden="true">Next</span></button>
                     </div>
                     <p class="ratib-program-lightbox__caption" id="ratib-program-lightbox-caption" hidden></p>
+                    <p class="ratib-program-lightbox__counter" id="ratib-program-lightbox-counter" hidden aria-live="polite"></p>
                 </div>
             </div>
             <?php endif; ?>

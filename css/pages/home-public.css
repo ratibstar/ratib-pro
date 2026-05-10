@@ -1788,31 +1788,93 @@ body.ratib-saas-home {
   object-fit: cover;
 }
 
-/* Program strip: auto marquee (JS scroll) + wheel pan + click-to-zoom */
+/* Program strip: auto marquee (JS scroll) + wheel pan + drag + scrollbar + edge buttons + click-to-zoom */
 .ratib-cms-media-strip.ratib-program-marquee {
   overflow: visible;
+}
+
+.ratib-program-marquee__shell {
+  display: flex;
+  align-items: stretch;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  position: relative;
+}
+
+.ratib-program-marquee__shell .ratib-program-marquee__viewport {
+  margin-top: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.ratib-program-marquee__scroll-btn {
+  flex-shrink: 0;
+  align-self: center;
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 3rem;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(15, 23, 42, 0.85);
+  color: #e2e8f0;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.ratib-program-marquee__scroll-btn:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(148, 163, 184, 0.55);
+}
+
+.ratib-program-marquee__scroll-btn:focus-visible {
+  outline: 2px solid rgba(139, 92, 246, 0.95);
+  outline-offset: 2px;
+}
+
+@media (max-width: 520px) {
+  .ratib-program-marquee__scroll-btn {
+    width: 2rem;
+    min-width: 2rem;
+    height: 2.6rem;
+    font-size: 1.2rem;
+  }
 }
 
 .ratib-program-marquee__viewport {
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
-  margin-top: 0.35rem;
   padding-bottom: 0.5rem;
   border-radius: 12px;
   scroll-behavior: auto;
   touch-action: pan-x pinch-zoom;
 }
 
-/* JS-driven loop: hide scrollbar; wheel still scrolls horizontally */
+/* JS-driven loop: thin scrollbar so users can drag it manually */
 .ratib-program-marquee--js-marquee .ratib-program-marquee__viewport {
   cursor: default;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) rgba(15, 23, 42, 0.35);
 }
 
 .ratib-program-marquee--js-marquee .ratib-program-marquee__viewport::-webkit-scrollbar {
-  display: none;
-  height: 0;
+  height: 8px;
+}
+
+.ratib-program-marquee--js-marquee .ratib-program-marquee__viewport::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+}
+
+.ratib-program-marquee--js-marquee .ratib-program-marquee__viewport::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.35);
+  border-radius: 999px;
 }
 
 .ratib-program-marquee--js-marquee .ratib-program-marquee__viewport:hover {
@@ -1907,14 +1969,17 @@ body.ratib-program-lightbox-open {
   top: 50%;
   z-index: 5;
   transform: translateY(-50%);
-  width: 2.75rem;
+  min-width: 4rem;
   height: 2.75rem;
-  padding: 0;
-  border-radius: 999px;
+  padding: 0 0.65rem;
+  border-radius: 10px;
   border: 1px solid rgba(148, 163, 184, 0.45);
   background: rgba(15, 23, 42, 0.88);
   color: #e2e8f0;
-  font-size: 1.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   line-height: 1;
   cursor: pointer;
   display: grid;
@@ -1922,6 +1987,10 @@ body.ratib-program-lightbox-open {
   transition: background 0.15s ease, border-color 0.15s ease;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
   pointer-events: auto;
+}
+
+.ratib-program-lightbox__nav-text {
+  pointer-events: none;
 }
 
 .ratib-program-lightbox__nav:hover {
@@ -1979,6 +2048,17 @@ body.ratib-program-lightbox-open {
 }
 
 .ratib-program-lightbox__caption[hidden] {
+  display: none !important;
+}
+
+.ratib-program-lightbox__counter {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(148, 163, 184, 0.98);
+  letter-spacing: 0.06em;
+}
+
+.ratib-program-lightbox__counter[hidden] {
   display: none !important;
 }
 

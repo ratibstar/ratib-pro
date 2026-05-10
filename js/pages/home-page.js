@@ -877,6 +877,43 @@
         viewport.addEventListener('pointercancel', endDrag);
     }
 
+    function attachProgramStripScrollButtons(root, viewport, track) {
+        if (!root || !viewport || !track) {
+            return;
+        }
+        var btnPrev = root.querySelector('[data-ratib-program-marquee-scroll-prev]');
+        var btnNext = root.querySelector('[data-ratib-program-marquee-scroll-next]');
+        if (!btnPrev || !btnNext) {
+            return;
+        }
+        function wrapViewport() {
+            var w = track.scrollWidth / 2;
+            if (w <= 0) {
+                return;
+            }
+            while (viewport.scrollLeft >= w) {
+                viewport.scrollLeft -= w;
+            }
+            while (viewport.scrollLeft < 0) {
+                viewport.scrollLeft += w;
+            }
+        }
+        function scrollStep() {
+            var cw = viewport.clientWidth || 360;
+            return Math.round(Math.min(420, Math.max(160, cw * 0.78)));
+        }
+        btnPrev.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            viewport.scrollLeft -= scrollStep();
+            wrapViewport();
+        });
+        btnNext.addEventListener('click', function (ev) {
+            ev.preventDefault();
+            viewport.scrollLeft += scrollStep();
+            wrapViewport();
+        });
+    }
+
     function initProgramStripMarqueeAndLightbox() {
         var mqRoot = document.querySelector('[data-ratib-program-marquee]');
         if (mqRoot) {
@@ -917,6 +954,7 @@
                         { passive: false }
                     );
                     attachProgramStripDrag(viewport, wrapNm);
+                    attachProgramStripScrollButtons(mqRoot, viewport, track);
                 }
             } else if (track && viewport) {
                 mqRoot.classList.add('ratib-program-marquee--js-marquee');
@@ -995,6 +1033,7 @@
                 viewport.addEventListener('wheel', onWheelMarquee, { passive: false });
 
                 attachProgramStripDrag(viewport, wrapScrollLeft);
+                attachProgramStripScrollButtons(mqRoot, viewport, track);
 
                 document.addEventListener('visibilitychange', function () {
                     tabHidden = document.hidden;
@@ -1008,24 +1047,13 @@
         }
 
         var mqForSlides = document.querySelector('[data-ratib-program-marquee]');
+        /* First half of buttons = one marquee cycle (unique slides); second half is duplicate for infinite scroll. */
         var slides = [];
         if (mqForSlides) {
             var allProgOpen = mqForSlides.querySelectorAll('[data-ratib-program-open]');
-            var seen = Object.create(null);
-            for (var pi = 0; pi < allProgOpen.length; pi++) {
-                var b = allProgOpen[pi];
-                var full = b.getAttribute('data-full-src') || '';
-                var im = b.querySelector('img');
-                if (!full && im) {
-                    full = im.getAttribute('src') || '';
-                }
-                var capK = String(b.getAttribute('data-caption') || '');
-                var key = full + '\x01' + capK;
-                if (!seen[key]) {
-                    seen[key] = true;
-                    slides.push(b);
-                }
-            }
+            var total = allProgOpen.length;
+            var halfCount = Math.floor(total / 2);
+            slides = Array.prototype.slice.call(allProgOpen, 0, halfCount > 0 ? halfCount : total);
         }
 
         var lb = document.getElementById('ratib-program-lightbox');
@@ -1034,6 +1062,7 @@
         }
         var imgEl = lb.querySelector('.ratib-program-lightbox__img');
         var capEl = lb.querySelector('.ratib-program-lightbox__caption');
+        var counterEl = document.getElementById('ratib-program-lightbox-counter');
         var prevBtn = lb.querySelector('[data-ratib-program-lightbox-prev]');
         var nextBtn = lb.querySelector('[data-ratib-program-lightbox-next]');
         var lbIndex = 0;
@@ -1062,14 +1091,28 @@
             if (!full && im0) {
                 full = im0.getAttribute('src') || '';
             }
-            for (var si = 0; si < slides.length; si++) {
+            var capBtn = String(btn.getAttribute('data-caption') || '');
+            var si;
+            for (si = 0; si < slides.length; si++) {
                 var b = slides[si];
                 var f = b.getAttribute('data-full-src') || '';
                 var im = b.querySelector('img');
                 if (!f && im) {
                     f = im.getAttribute('src') || '';
                 }
-                if (full && f === full) {
+                var capS = String(b.getAttribute('data-caption') || '');
+                if (full && f === full && capBtn === capS) {
+                    return si;
+                }
+            }
+            for (si = 0; si < slides.length; si++) {
+                var b2 = slides[si];
+                var f2 = b2.getAttribute('data-full-src') || '';
+                var im2 = b2.querySelector('img');
+                if (!f2 && im2) {
+                    f2 = im2.getAttribute('src') || '';
+                }
+                if (full && f2 === full) {
                     return si;
                 }
             }
@@ -1099,6 +1142,15 @@
                 capEl.textContent = t;
                 capEl.hidden = !t;
             }
+            if (counterEl) {
+                if (slides.length > 1) {
+                    counterEl.textContent = String(lbIndex + 1) + ' / ' + String(slides.length);
+                    counterEl.hidden = false;
+                } else {
+                    counterEl.textContent = '';
+                    counterEl.hidden = true;
+                }
+            }
         }
 
         function openLbAt(i) {
@@ -1120,6 +1172,10 @@
             if (capEl) {
                 capEl.textContent = '';
                 capEl.hidden = true;
+            }
+            if (counterEl) {
+                counterEl.textContent = '';
+                counterEl.hidden = true;
             }
         }
 
