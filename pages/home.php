@@ -248,7 +248,7 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-30';
+    : '20260210-31';
 /** Proof token for View Source: if this block is missing on the live site, the request is not using this home.php (wrong path, cache, or mirror). */
 $ratibHomePhpMtime = (string) (int) (@filemtime(__FILE__) ?: 0);
 /** Append to CSS/JS ?v= when CDN/host preserves mtimes (set in env or config: RATIB_HOME_ASSET_EXTRA_BUST=manual-20260210). */
@@ -387,11 +387,20 @@ if ($ratibNavProductTourLabel === '') {
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/chat-widget.css">
     <?php
     $ratibHomeCssTs = (int) (@filemtime(__DIR__ . '/../css/pages/home-public.css') ?: time());
-    $ratibHomeCssQ = $ratibHomeCssTs . '-' . $ratibHomeUiRev . $ratibHomeAssetExtraQ;
+    /* home.php mtime in ?v= forces new CSS URL after any home deploy (FTP often keeps old css mtimes). */
+    $ratibHomeCssQ = $ratibHomeCssTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
     ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo htmlspecialchars($ratibHomeCssQ, ENT_QUOTES, 'UTF-8'); ?>">
+    <style id="ratib-nav-css-fallback">
+      /* Layout-only rescue if main CSS is stale; no borders/backgrounds here so home-public.css colours still win */
+      #ratibNavMenu .ratib-nav__link{display:inline-flex!important;align-items:center!important;gap:.5rem!important}
+      #ratibNavMenu .ratib-nav__icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;width:2.5rem!important;height:2.5rem!important}
+      #ratibNavMenu .ratib-nav__glyph{width:1.35rem!important;height:1.35rem!important;display:block!important}
+      .ratib-nav__partner-login{display:inline-flex!important;align-items:center!important;gap:.45rem!important}
+      .ratib-nav__partner-icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;width:2.2rem!important;height:2.2rem!important}
+    </style>
 </head>
-<body class="ratib-saas-home" data-ratib-home-layout="video-hero-program-svgs" data-ratib-home-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
+<body class="ratib-saas-home" data-ratib-home-layout="video-hero-program-svgs" data-ratib-home-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-deploy="<?php echo htmlspecialchars($ratibHomePhpMtime . '-' . $ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
 
     <div class="ratib-saas-bg" aria-hidden="true">
         <div class="ratib-saas-bg__gradient"></div>
@@ -1240,7 +1249,7 @@ if ($ratibNavProductTourLabel === '') {
         'platinumYear1' => (float) ($plans['platinum']['amount'] ?? $platinumTestPriceYear1),
     ];
     $ratibHomeJsTs = (int) (@filemtime(__DIR__ . '/../js/pages/home-page.js') ?: time());
-    $ratibHomeJsQ = $ratibHomeJsTs . '-' . $ratibHomeUiRev . $ratibHomeAssetExtraQ;
+    $ratibHomeJsQ = $ratibHomeJsTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
     ?>
     <script>
     (function () {
