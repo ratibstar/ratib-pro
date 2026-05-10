@@ -248,7 +248,7 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-8';
+    : '20260210-9';
 $ratibHome = ratib_site_content_home_flat(false);
 $ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
     ? ratib_site_content_db_fingerprint()
@@ -655,9 +655,11 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
                 <div class="ratib-program-lightbox__backdrop" data-ratib-program-lightbox-close tabindex="-1"></div>
                 <div class="ratib-program-lightbox__panel" role="dialog" aria-modal="true" aria-label="Program image preview">
                     <button type="button" class="ratib-program-lightbox__close" data-ratib-program-lightbox-close aria-label="Close preview">&times;</button>
-                    <button type="button" class="ratib-program-lightbox__nav ratib-program-lightbox__nav--prev" data-ratib-program-lightbox-prev aria-label="Previous image">&#8249;</button>
-                    <button type="button" class="ratib-program-lightbox__nav ratib-program-lightbox__nav--next" data-ratib-program-lightbox-next aria-label="Next image">&#8250;</button>
-                    <img src="" alt="" class="ratib-program-lightbox__img" id="ratib-program-lightbox-img" decoding="async">
+                    <div class="ratib-program-lightbox__stage">
+                        <img src="" alt="" class="ratib-program-lightbox__img" id="ratib-program-lightbox-img" decoding="async">
+                        <button type="button" class="ratib-program-lightbox__nav ratib-program-lightbox__nav--prev" data-ratib-program-lightbox-prev aria-label="Previous image">&#8249;</button>
+                        <button type="button" class="ratib-program-lightbox__nav ratib-program-lightbox__nav--next" data-ratib-program-lightbox-next aria-label="Next image">&#8250;</button>
+                    </div>
                     <p class="ratib-program-lightbox__caption" id="ratib-program-lightbox-caption" hidden></p>
                 </div>
             </div>

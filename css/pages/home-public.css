@@ -1866,6 +1866,7 @@ body.ratib-program-lightbox-open {
   display: grid;
   place-items: center;
   padding: min(2rem, 5vw);
+  overflow: visible;
 }
 
 .ratib-program-lightbox[hidden] {
@@ -1890,19 +1891,28 @@ body.ratib-program-lightbox-open {
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
+  overflow: visible;
+}
+
+/* Image + prev/next: arrows sit on top of the photo (not outside the panel, so they are not clipped). */
+.ratib-program-lightbox__stage {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  line-height: 0;
 }
 
 .ratib-program-lightbox__nav {
   position: absolute;
   top: 50%;
-  z-index: 2;
+  z-index: 5;
   transform: translateY(-50%);
   width: 2.75rem;
   height: 2.75rem;
   padding: 0;
   border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.45);
-  background: rgba(15, 23, 42, 0.82);
+  background: rgba(15, 23, 42, 0.88);
   color: #e2e8f0;
   font-size: 1.65rem;
   line-height: 1;
@@ -1910,10 +1920,12 @@ body.ratib-program-lightbox-open {
   display: grid;
   place-items: center;
   transition: background 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
 }
 
 .ratib-program-lightbox__nav:hover {
-  background: rgba(30, 41, 59, 0.92);
+  background: rgba(30, 41, 59, 0.95);
   border-color: rgba(148, 163, 184, 0.65);
 }
 
@@ -1923,11 +1935,11 @@ body.ratib-program-lightbox-open {
 }
 
 .ratib-program-lightbox__nav--prev {
-  left: max(-3rem, -6vw);
+  left: 0.5rem;
 }
 
 .ratib-program-lightbox__nav--next {
-  right: max(-3rem, -6vw);
+  right: 0.5rem;
 }
 
 .ratib-program-lightbox__nav[hidden] {
@@ -1953,6 +1965,8 @@ body.ratib-program-lightbox-open {
   object-fit: contain;
   border-radius: 12px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  position: relative;
+  z-index: 0;
 }
 
 .ratib-program-lightbox__caption {

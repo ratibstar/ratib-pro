@@ -1011,9 +1011,21 @@
         var slides = [];
         if (mqForSlides) {
             var allProgOpen = mqForSlides.querySelectorAll('[data-ratib-program-open]');
-            var total = allProgOpen.length;
-            var halfCount = Math.floor(total / 2);
-            slides = Array.prototype.slice.call(allProgOpen, 0, halfCount > 0 ? halfCount : total);
+            var seen = Object.create(null);
+            for (var pi = 0; pi < allProgOpen.length; pi++) {
+                var b = allProgOpen[pi];
+                var full = b.getAttribute('data-full-src') || '';
+                var im = b.querySelector('img');
+                if (!full && im) {
+                    full = im.getAttribute('src') || '';
+                }
+                var capK = String(b.getAttribute('data-caption') || '');
+                var key = full + '\x01' + capK;
+                if (!seen[key]) {
+                    seen[key] = true;
+                    slides.push(b);
+                }
+            }
         }
 
         var lb = document.getElementById('ratib-program-lightbox');
