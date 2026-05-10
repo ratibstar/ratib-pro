@@ -80,6 +80,8 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.video.slots_json'] = '[]';
 
         $d['home.program.strip_eyebrow'] = 'Program previews';
+        $d['home.program.strip_hint'] =
+            'Scroll with the side arrows or the scrollbar under the previews. Click any screenshot to open it — then use Previous / Next under the image to view every preview in one session.';
         $d['home.program.slots_json'] = '[]';
 
         $d['home.platform.title'] = 'Built for regulated, high-volume recruitment operations';
@@ -575,6 +577,7 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                 'title' => 'Program preview strip',
                 'fields' => [
                     ['key' => 'home.program.strip_eyebrow', 'label' => 'Eyebrow', 'type' => 'text'],
+                    ['key' => 'home.program.strip_hint', 'label' => 'How to use (hint under eyebrow)', 'type' => 'textarea', 'rows' => 2],
                 ],
                 'render_slots' => 'program',
             ],

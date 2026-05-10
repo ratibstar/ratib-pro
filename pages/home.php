@@ -248,7 +248,7 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-11';
+    : '20260210-12';
 $ratibHome = ratib_site_content_home_flat(false);
 $ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
     ? ratib_site_content_db_fingerprint()
@@ -626,9 +626,17 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
             </div>
             <?php endif; ?>
             <?php if (!empty($ratibProgSlotsOut)): ?>
-            <div class="ratib-hero__photo-strip ratib-hero__program-strip">
+            <div class="ratib-hero__photo-strip ratib-hero__program-strip" id="program-previews">
                 <div class="ratib-container">
                     <p class="ratib-hero__photo-eyebrow"><?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <?php
+                    $ratibProgHint = trim((string) ($ratibHome['home.program.strip_hint'] ?? ''));
+                    if ($ratibProgHint !== '') {
+                        ?>
+                    <p class="ratib-program-strip-hint"><?php echo htmlspecialchars($ratibProgHint, ENT_QUOTES, 'UTF-8'); ?></p>
+                        <?php
+                    }
+                    ?>
                     <div class="ratib-cms-media-strip ratib-cms-media-strip--program ratib-program-marquee" data-ratib-program-marquee role="region" aria-label="<?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? 'Program previews', ENT_QUOTES, 'UTF-8'); ?>">
                         <div class="ratib-program-marquee__shell">
                             <button type="button" class="ratib-program-marquee__scroll-btn ratib-program-marquee__scroll-btn--prev" data-ratib-program-marquee-scroll-prev aria-label="Scroll previews left"><span aria-hidden="true">&#8249;</span></button>
@@ -674,6 +682,13 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
                             <span class="ratib-program-lightbox__btn-ic" aria-hidden="true">&#8250;</span>
                         </button>
                     </div>
+                </div>
+            </div>
+            <?php else: ?>
+            <div class="ratib-hero__photo-strip ratib-hero__program-strip ratib-hero__program-strip--empty" id="program-previews">
+                <div class="ratib-container">
+                    <p class="ratib-hero__photo-eyebrow"><?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? 'Program previews', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <p class="ratib-program-strip-empty"><strong>No preview screenshots yet.</strong> In <strong>Control Panel → Public site content → Program preview strip</strong>, upload or choose an image for each slot and save. Then this row will show scroll arrows, the scrollbar, and clicking opens the viewer with Previous / Next.</p>
                 </div>
             </div>
             <?php endif; ?>
