@@ -309,6 +309,41 @@ if (!function_exists('ratib_site_content_defaults_home')) {
     }
 }
 
+if (!function_exists('ratib_site_content_home_flat_overlay_live_db')) {
+    /**
+     * After reading JSON/blob snapshot, merge any rows found in ratib_site_content on top.
+     * Prevents stale cache files (written when DB was down or from another path) from masking live CMS data.
+     *
+     * @param array<string, string> $base
+     * @param array<string, string> $defaults
+     *
+     * @return array<string, string>
+     */
+    function ratib_site_content_home_flat_overlay_live_db(array $base, array $defaults): array
+    {
+        if (!function_exists('ratib_site_content_fetch_key_values') || !function_exists('ratib_site_content_db')) {
+            return $base;
+        }
+        ratib_site_content_db(true);
+        if (!ratib_site_content_db()) {
+            return $base;
+        }
+        $keys = array_keys($defaults);
+        $rows = ratib_site_content_fetch_key_values($keys);
+        if ($rows === []) {
+            return $base;
+        }
+        $out = $base;
+        foreach ($rows as $k => $v) {
+            if (isset($defaults[$k])) {
+                $out[$k] = (string) $v;
+            }
+        }
+
+        return $out;
+    }
+}
+
 if (!function_exists('ratib_site_content_home_flat')) {
     /**
      * Resolved key => value for homepage (DB overrides defaults).
@@ -348,7 +383,11 @@ if (!function_exists('ratib_site_content_home_flat')) {
             if ($rawDb !== null && $rawDb !== '') {
                 $cached = json_decode($rawDb, true);
                 if (is_array($cached)) {
-                    return $applyHomeCache($cached, $defaults);
+                    $merged = $applyHomeCache($cached, $defaults);
+
+                    return function_exists('ratib_site_content_home_flat_overlay_live_db')
+                        ? ratib_site_content_home_flat_overlay_live_db($merged, $defaults)
+                        : $merged;
                 }
             }
         }
@@ -367,7 +406,11 @@ if (!function_exists('ratib_site_content_home_flat')) {
                 if ($raw !== false && $raw !== '') {
                     $cached = json_decode($raw, true);
                     if (is_array($cached)) {
-                        return $applyHomeCache($cached, $defaults);
+                        $merged = $applyHomeCache($cached, $defaults);
+
+                        return function_exists('ratib_site_content_home_flat_overlay_live_db')
+                            ? ratib_site_content_home_flat_overlay_live_db($merged, $defaults)
+                            : $merged;
                     }
                 }
             }
