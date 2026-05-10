@@ -188,19 +188,75 @@ function ratib_control_site_content_store_media(array $file, string $kind): arra
 
 function ratib_control_site_content_try_delete_media_file(string $storedPath): void
 {
+    $storedPath = trim($storedPath);
+    if ($storedPath === '') {
+        return;
+    }
+
+    $mediaDir = function_exists('ratib_site_content_media_storage_dir')
+        ? ratib_site_content_media_storage_dir()
+        : (dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'ratib_cms_media');
+
     $name = function_exists('ratib_site_content_media_filename_from_token')
         ? ratib_site_content_media_filename_from_token($storedPath)
         : '';
-    if ($name === '') {
+    if ($name !== '') {
+        $abs = rtrim($mediaDir, '/\\') . DIRECTORY_SEPARATOR . $name;
+        if (is_file($abs)) {
+            @unlink($abs);
+        }
+
         return;
     }
-    $base = function_exists('ratib_site_content_media_storage_dir')
-        ? ratib_site_content_media_storage_dir()
-        : (dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'ratib_cms_media');
-    $abs = rtrim($base, '/\\') . DIRECTORY_SEPARATOR . $name;
-    if (is_file($abs)) {
-        @unlink($abs);
+
+    if (preg_match('#^https?://#i', $storedPath)) {
+        return;
     }
+
+    $rel = str_replace('\\', '/', ltrim($storedPath, '/'));
+    if ($rel === '' || strpos($rel, '..') !== false) {
+        return;
+    }
+
+    $projectRoot = dirname(__DIR__, 3);
+    $abs = $projectRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+    $realRoot = realpath($projectRoot);
+    $realAbs = @realpath($abs);
+    if ($realRoot !== false && $realAbs !== false && strpos($realAbs, $realRoot) === 0 && is_file($realAbs)) {
+        @unlink($realAbs);
+    }
+}
+
+/**
+ * Remove legacy flat keys from DB after saves use slots_json only — otherwise merge overlays resurrect “deleted” media.
+ */
+function ratib_control_site_content_purge_legacy_home_media_rows(mysqli $ctrl): bool
+{
+    if (!function_exists('ratib_site_content_home_legacy_media_db_keys')
+        || !function_exists('ratib_site_content_key_allowed')) {
+        return false;
+    }
+    $keys = ratib_site_content_home_legacy_media_db_keys();
+    foreach (array_chunk($keys, 80) as $chunk) {
+        $parts = [];
+        foreach ($chunk as $k) {
+            if (!ratib_site_content_key_allowed((string) $k)) {
+                continue;
+            }
+            $parts[] = "'" . $ctrl->real_escape_string((string) $k) . "'";
+        }
+        if ($parts === []) {
+            continue;
+        }
+        $sql = 'DELETE FROM ratib_site_content WHERE content_key IN (' . implode(',', $parts) . ')';
+        if (!$ctrl->query($sql)) {
+            error_log('ratib_control_site_content_purge_legacy_home_media_rows: ' . $ctrl->error);
+
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /**
@@ -563,6 +619,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
             }
             $stmt->close();
             if ($saveOk) {
+                ratib_control_site_content_purge_legacy_home_media_rows($ctrl);
                 $flashOk = true;
                 $pageRevision = ratib_control_site_content_revision($ctrl);
                 foreach (array_keys($defaults) as $k) {
