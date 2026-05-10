@@ -619,18 +619,34 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
             <div class="ratib-hero__photo-strip ratib-hero__program-strip">
                 <div class="ratib-container">
                     <p class="ratib-hero__photo-eyebrow"><?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
-                    <div class="ratib-cms-media-strip ratib-cms-media-strip--program" role="region" aria-label="<?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? 'Program previews', ENT_QUOTES, 'UTF-8'); ?>">
-                        <div class="ratib-cms-media-strip__track ratib-cms-media-strip__track--program">
-                            <?php foreach ($ratibProgSlotsOut as $ratibProgSlot) { ?>
+                    <div class="ratib-cms-media-strip ratib-cms-media-strip--program ratib-program-marquee" data-ratib-program-marquee role="region" aria-label="<?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? 'Program previews', ENT_QUOTES, 'UTF-8'); ?>">
+                        <div class="ratib-program-marquee__viewport">
+                            <div class="ratib-cms-media-strip__track ratib-cms-media-strip__track--program ratib-program-marquee__track">
+                                <?php for ($ratibMarqueePass = 0; $ratibMarqueePass < 2; $ratibMarqueePass++) { ?>
+                                    <?php foreach ($ratibProgSlotsOut as $ratibProgSlot) {
+                                        $ratibProgSrc = (string) $ratibProgSlot['src'];
+                                        ?>
                             <div class="ratib-cms-media-strip__item ratib-cms-media-strip__item--program">
                                 <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                                    <img src="<?php echo htmlspecialchars((string) $ratibProgSlot['src'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars((string) $ratibProgSlot['alt'], ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
+                                    <button type="button" class="ratib-program-strip__thumb" data-ratib-program-open data-full-src="<?php echo htmlspecialchars($ratibProgSrc, ENT_QUOTES, 'UTF-8'); ?>" data-caption="<?php echo htmlspecialchars((string) $ratibProgSlot['caption'], ENT_QUOTES, 'UTF-8'); ?>" aria-label="<?php echo htmlspecialchars('View larger: ' . ((string) $ratibProgSlot['caption'] !== '' ? (string) $ratibProgSlot['caption'] : (string) $ratibProgSlot['alt']), ENT_QUOTES, 'UTF-8'); ?>">
+                                        <img src="<?php echo htmlspecialchars($ratibProgSrc, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars((string) $ratibProgSlot['alt'], ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
+                                    </button>
                                     <figcaption><?php echo htmlspecialchars((string) $ratibProgSlot['caption'], ENT_QUOTES, 'UTF-8'); ?></figcaption>
                                 </figure>
                             </div>
-                            <?php } ?>
+                                    <?php } ?>
+                                <?php } ?>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
+            <div class="ratib-program-lightbox" id="ratib-program-lightbox" hidden data-ratib-program-lightbox>
+                <div class="ratib-program-lightbox__backdrop" data-ratib-program-lightbox-close tabindex="-1"></div>
+                <div class="ratib-program-lightbox__panel" role="dialog" aria-modal="true" aria-label="Program image preview">
+                    <button type="button" class="ratib-program-lightbox__close" data-ratib-program-lightbox-close aria-label="Close preview">&times;</button>
+                    <img src="" alt="" class="ratib-program-lightbox__img" id="ratib-program-lightbox-img" decoding="async">
+                    <p class="ratib-program-lightbox__caption" id="ratib-program-lightbox-caption" hidden></p>
                 </div>
             </div>
             <?php endif; ?>
