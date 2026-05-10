@@ -58,11 +58,18 @@ if ($dbOk && function_exists('ratib_site_content_fetch_key_values')) {
 }
 
 $resolvedPlatform = null;
+$resolvedNavHow = null;
+$resolvedNavTour = null;
 $resolvedPhonePreview = null;
 $resolvedRegister = [];
 if (function_exists('ratib_site_content_home_flat')) {
-    $flat = ratib_site_content_home_flat();
+    $flat = ratib_site_content_home_flat(false);
+    if (function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
+        ratib_site_content_home_ensure_header_nav_labels($flat);
+    }
     $resolvedPlatform = isset($flat['home.nav.platform']) ? (string) $flat['home.nav.platform'] : null;
+    $resolvedNavHow = isset($flat['home.nav.how_it_works']) ? (string) $flat['home.nav.how_it_works'] : null;
+    $resolvedNavTour = isset($flat['home.nav.product_tour']) ? (string) $flat['home.nav.product_tour'] : null;
     $resolvedPhonePreview = isset($flat['home.topbar.phone_display']) ? (string) $flat['home.topbar.phone_display'] : null;
     foreach ($registerSampleKeys as $rk) {
         $resolvedRegister[$rk] = isset($flat[$rk]) ? (string) $flat[$rk] : null;
@@ -88,6 +95,10 @@ $payload = [
         ? trim((string) getenv('RATIB_SITE_CONTENT_SKIP_DISK_JSON_CACHE'))
         : '',
     'resolved_home_nav_platform' => $resolvedPlatform,
+    /** DB row wins until you save a new value in Public site content (default is now "agency"). */
+    'resolved_home_nav_how_it_works' => $resolvedNavHow,
+    /** Filled from defaults if missing/empty so the Product tour tab can render. */
+    'resolved_home_nav_product_tour' => $resolvedNavTour,
     'resolved_home_topbar_phone_display' => $resolvedPhonePreview,
     /** Same values pages/home.php registration block uses — compare with phpMyAdmin rows for these keys. */
     'resolved_registration_sample' => $resolvedRegister,

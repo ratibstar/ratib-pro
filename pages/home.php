@@ -248,8 +248,11 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-16';
+    : '20260210-17';
 $ratibHome = ratib_site_content_home_flat(false);
+if (function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
+    ratib_site_content_home_ensure_header_nav_labels($ratibHome);
+}
 $ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
     ? ratib_site_content_db_fingerprint()
     : '';

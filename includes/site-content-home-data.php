@@ -360,6 +360,49 @@ if (!function_exists('ratib_site_content_home_flat_overlay_live_db')) {
     }
 }
 
+if (!function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
+    /**
+     * After ratib_site_content_home_flat(): ensure header nav keys exist and Product tour has a label.
+     *
+     * - Missing keys (e.g. home.nav.product_tour absent from an old on-disk JSON snapshot) are filled from
+     *   ratib_site_content_defaults_home() so the new tab can render.
+     * - home.nav.product_tour: if the value is empty, use the default — avoids a blank tab when the key was never saved.
+     * - Other non-empty values are left as-is: a DB row for home.nav.how_it_works = "How it works" still wins until
+     *   you change it in Public site content to "agency" (or clear that row so defaults apply).
+     *
+     * @param array<string, string> $flat
+     */
+    function ratib_site_content_home_ensure_header_nav_labels(array &$flat): void
+    {
+        if (!function_exists('ratib_site_content_defaults_home')) {
+            return;
+        }
+        $def = ratib_site_content_defaults_home();
+        $navKeys = [
+            'home.nav.platform',
+            'home.nav.how_it_works',
+            'home.nav.product_tour',
+            'home.nav.features',
+            'home.nav.solutions',
+            'home.nav.programs',
+            'home.nav.agencies',
+            'home.nav.tracking',
+            'home.nav.operational',
+            'home.nav.api',
+            'home.nav.contact',
+        ];
+        foreach ($navKeys as $k) {
+            if (!array_key_exists($k, $flat) && isset($def[$k])) {
+                $flat[$k] = $def[$k];
+            }
+        }
+        $pt = 'home.nav.product_tour';
+        if (trim((string) ($flat[$pt] ?? '')) === '' && isset($def[$pt])) {
+            $flat[$pt] = $def[$pt];
+        }
+    }
+}
+
 if (!function_exists('ratib_site_content_home_flat')) {
     /**
      * Resolved key => value for homepage (DB overrides defaults).
