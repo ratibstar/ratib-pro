@@ -143,10 +143,16 @@ if (!function_exists('ratib_site_content_db')) {
      * 2) get_control_lookup_conn() on SINGLE_URL_MODE — same link as agency/control lookups.
      * 3) App DB_USER → CONTROL_PANEL_DB_NAME (before merged credentials).
      * 4) Merged credentials (CONTROL_PANEL_DB_USER || DB_USER).
+     *
+     * @param bool $resetCachedPool When true, drop the public worker's cached mysqli (e.g. after "server has gone away").
      */
-    function ratib_site_content_db(): ?mysqli
+    function ratib_site_content_db(bool $resetCachedPool = false): ?mysqli
     {
         static $conn = null;
+
+        if ($resetCachedPool) {
+            $conn = null;
+        }
 
         if (defined('IS_CONTROL_PANEL') && IS_CONTROL_PANEL) {
             $cp = $GLOBALS['control_conn'] ?? null;
@@ -158,8 +164,11 @@ if (!function_exists('ratib_site_content_db')) {
             // Panel without control_conn: do not reuse a cached public-site connection from another request.
             $conn = null;
         } elseif ($conn instanceof mysqli) {
-            // Public / CLI: reuse pooled handle when valid.
-            return $conn;
+            // Public / CLI: reuse only if the server link is still alive (avoids "works once" then silent failures after wait_timeout).
+            if (@$conn->ping()) {
+                return $conn;
+            }
+            $conn = null;
         }
 
         $dedicatedHost = getenv('RATIB_SITE_CONTENT_DB_HOST');
@@ -220,6 +229,14 @@ if (!function_exists('ratib_site_content_key_allowed')) {
     }
 }
 
+if (!function_exists('ratib_site_content_mysqli_lost_connection')) {
+    function ratib_site_content_mysqli_lost_connection(int $errno): bool
+    {
+        // 2006 = MySQL server has gone away, 2013 = Lost connection during query
+        return $errno === 2006 || $errno === 2013;
+    }
+}
+
 if (!function_exists('ratib_site_content_fetch_value_by_key')) {
     /**
      * Read one cell via mysqli::query() (max compatibility). Prepared statements break on some PHP builds
@@ -227,7 +244,7 @@ if (!function_exists('ratib_site_content_fetch_value_by_key')) {
      *
      * @return ?string null when missing row or query error
      */
-    function ratib_site_content_fetch_value_by_key(mysqli $conn, string $key): ?string
+    function ratib_site_content_fetch_value_by_key(mysqli $conn, string $key, bool $allowReconnect = true): ?string
     {
         if (!ratib_site_content_key_allowed($key)) {
             return null;
@@ -236,7 +253,15 @@ if (!function_exists('ratib_site_content_fetch_value_by_key')) {
         $sql = "SELECT content_value FROM ratib_site_content WHERE content_key = '" . $esc . "' LIMIT 1";
         $res = $conn->query($sql);
         if ($res === false) {
+            $errno = (int) $conn->errno;
             error_log('ratib_site_content_fetch_value_by_key: query failed: ' . $conn->error);
+            if ($allowReconnect && ratib_site_content_mysqli_lost_connection($errno) && function_exists('ratib_site_content_db')) {
+                ratib_site_content_db(true);
+                $c2 = ratib_site_content_db();
+                if ($c2 instanceof mysqli) {
+                    return ratib_site_content_fetch_value_by_key($c2, $key, false);
+                }
+            }
 
             return null;
         }
@@ -259,7 +284,7 @@ if (!function_exists('ratib_site_content_fetch_key_values')) {
      *
      * @return array<string, string> Only keys that exist in the table (missing keys omitted).
      */
-    function ratib_site_content_fetch_key_values(array $keys): array
+    function ratib_site_content_fetch_key_values(array $keys, bool $allowReconnect = true): array
     {
         $clean = [];
         foreach ($keys as $k) {
@@ -287,7 +312,13 @@ if (!function_exists('ratib_site_content_fetch_key_values')) {
             $sql = 'SELECT content_key, content_value FROM ratib_site_content WHERE content_key IN (' . implode(',', $parts) . ')';
             $res = $conn->query($sql);
             if ($res === false) {
+                $errno = (int) $conn->errno;
                 error_log('ratib_site_content_fetch_key_values: chunk query failed: ' . $conn->error);
+                if ($allowReconnect && ratib_site_content_mysqli_lost_connection($errno) && function_exists('ratib_site_content_db')) {
+                    ratib_site_content_db(true);
+
+                    return ratib_site_content_fetch_key_values($keys, false);
+                }
 
                 continue;
             }
