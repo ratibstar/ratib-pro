@@ -360,9 +360,13 @@ if (!function_exists('ratib_site_content_home_flat')) {
     /**
      * Resolved key => value for homepage (DB overrides defaults).
      *
+     * @param bool $mergeLegacyMedia When true (default), overlays legacy flat keys (home.program.imgN, home.video.fileN)
+     *                               so the control panel and migrations still see old uploads. The public homepage passes false
+     *                               so removed media does not reappear from leftover legacy rows or JSON↔legacy merge.
+     *
      * @return array<string, string>
      */
-    function ratib_site_content_home_flat(): array
+    function ratib_site_content_home_flat(bool $mergeLegacyMedia = true): array
     {
         // Do not use a cross-request static cache here: PHP-FPM workers would keep the first resolution
         // (often stale JSON / defaults when MySQL was briefly unreachable) for the worker lifetime even
@@ -380,10 +384,12 @@ if (!function_exists('ratib_site_content_home_flat')) {
             return $out;
         };
 
-        $finalizeHomeFlat = static function (array $base): array {
-            return function_exists('ratib_site_content_home_merge_legacy_media_into_values')
-                ? ratib_site_content_home_merge_legacy_media_into_values($base)
-                : $base;
+        $finalizeHomeFlat = static function (array $base) use ($mergeLegacyMedia): array {
+            if (!$mergeLegacyMedia || !function_exists('ratib_site_content_home_merge_legacy_media_into_values')) {
+                return $base;
+            }
+
+            return ratib_site_content_home_merge_legacy_media_into_values($base);
         };
 
         // Optional env (see .env.example): RATIB_SITE_CONTENT_PUBLIC_SOURCE=db_only

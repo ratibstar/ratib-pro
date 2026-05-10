@@ -1,7 +1,9 @@
 <?php
 /**
  * Unlimited homepage program images + videos via JSON slots (home.program.slots_json, home.video.slots_json).
- * Legacy numbered keys (home.program.imgN, home.video.fileN) are still read when JSON is empty.
+ * Legacy numbered keys are still read when slots_json is absent/empty only if those keys are present in $flat
+ * (e.g. control panel loads ratib_site_content_home_flat(true) and merges legacy rows from DB).
+ * Public homepage uses flat(false) and JSON-only slot resolution so removed media does not reappear.
  */
 
 if (!function_exists('ratib_site_content_home_normalize_program_slots')) {
@@ -114,17 +116,13 @@ if (!function_exists('ratib_site_content_home_program_slots_from_flat')) {
             return [];
         }
 
+        // JSON only — do not pull caption/src/alt from legacy home.program.imgN rows (otherwise deleted media reappears).
         $rows = ratib_site_content_home_normalize_program_slots($d);
-        $legacyMax = ratib_site_content_home_legacy_program_max_slot($flat);
-        $max = max(count($rows), $legacyMax);
         $merged = [];
-        for ($i = 0; $i < $max; $i++) {
-            $slotNum = $i + 1;
-            $jsonRow = $rows[$i] ?? ['caption' => '', 'alt' => '', 'src' => ''];
-            $legRow = ratib_site_content_home_legacy_program_row_at($flat, $slotNum);
-            $src = trim((string) ($jsonRow['src'] ?? '')) !== '' ? trim((string) $jsonRow['src']) : $legRow['src'];
-            $cap = trim((string) ($jsonRow['caption'] ?? '')) !== '' ? trim((string) $jsonRow['caption']) : $legRow['caption'];
-            $alt = trim((string) ($jsonRow['alt'] ?? '')) !== '' ? trim((string) $jsonRow['alt']) : $legRow['alt'];
+        foreach ($rows as $jsonRow) {
+            $src = trim((string) ($jsonRow['src'] ?? ''));
+            $cap = trim((string) ($jsonRow['caption'] ?? ''));
+            $alt = trim((string) ($jsonRow['alt'] ?? ''));
             if ($src === '' && $cap === '' && $alt === '') {
                 continue;
             }
@@ -189,18 +187,10 @@ if (!function_exists('ratib_site_content_home_video_src_strings_from_flat')) {
             $jsonSrcs[] = is_array($row) ? trim((string) ($row['src'] ?? '')) : trim((string) $row);
         }
 
-        $max = max(count($jsonSrcs), count($legacyList));
-        $merged = [];
-        for ($i = 0; $i < $max; $i++) {
-            $j = $jsonSrcs[$i] ?? '';
-            $l = $legacyList[$i] ?? '';
-            $pick = ($j !== '') ? $j : $l;
-            if ($pick !== '') {
-                $merged[] = $pick;
-            }
-        }
-
-        return $merged;
+        // JSON only — no legacy home.video.file* fill-in per slot (matches public flat without legacy overlay).
+        return array_values(array_filter($jsonSrcs, static function ($s) {
+            return trim((string) $s) !== '';
+        }));
     }
 }
 

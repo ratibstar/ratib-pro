@@ -243,7 +243,7 @@ if ($ratibCmsRev !== '') {
         exit;
     }
 }
-$ratibHome = ratib_site_content_home_flat();
+$ratibHome = ratib_site_content_home_flat(false);
 $ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
     ? ratib_site_content_db_fingerprint()
     : '';
