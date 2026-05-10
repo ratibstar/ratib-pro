@@ -45,17 +45,28 @@ $cachePath = function_exists('ratib_site_content_public_cache_path_for_read')
 $cacheBasename = ($cachePath !== null && $cachePath !== '') ? basename($cachePath) : null;
 $cacheMtime = ($cachePath !== null && is_file($cachePath)) ? @filemtime($cachePath) : null;
 
+$registerSampleKeys = [
+    'home.register.info.title',
+    'home.register.form.title',
+    'home.register.submit',
+    'home.register.payment_summary.title',
+];
+$batchKeys = array_merge([$phoneKey, 'home.topbar.wa_label', 'home.nav.platform'], $registerSampleKeys);
 $batch = [];
 if ($dbOk && function_exists('ratib_site_content_fetch_key_values')) {
-    $batch = ratib_site_content_fetch_key_values([$phoneKey, 'home.topbar.wa_label']);
+    $batch = ratib_site_content_fetch_key_values($batchKeys);
 }
 
 $resolvedPlatform = null;
 $resolvedPhonePreview = null;
+$resolvedRegister = [];
 if (function_exists('ratib_site_content_home_flat')) {
     $flat = ratib_site_content_home_flat();
     $resolvedPlatform = isset($flat['home.nav.platform']) ? (string) $flat['home.nav.platform'] : null;
     $resolvedPhonePreview = isset($flat['home.topbar.phone_display']) ? (string) $flat['home.topbar.phone_display'] : null;
+    foreach ($registerSampleKeys as $rk) {
+        $resolvedRegister[$rk] = isset($flat[$rk]) ? (string) $flat[$rk] : null;
+    }
 }
 
 $payload = [
@@ -70,6 +81,16 @@ $payload = [
         : '',
     'resolved_home_nav_platform' => $resolvedPlatform,
     'resolved_home_topbar_phone_display' => $resolvedPhonePreview,
+    /** Same values pages/home.php registration block uses — compare with phpMyAdmin rows for these keys. */
+    'resolved_registration_sample' => $resolvedRegister,
+    'batch_keys_present_count' => count($batch),
+    'batch_register_keys_present' => array_reduce(
+        $registerSampleKeys,
+        static function (int $carry, string $k) use ($batch): int {
+            return $carry + (array_key_exists($k, $batch) ? 1 : 0);
+        },
+        0
+    ),
     'env_has_CONTROL_DB_USER' => getenv('CONTROL_DB_USER') !== false && trim((string) getenv('CONTROL_DB_USER')) !== '',
     'phone_key_present_in_batch' => array_key_exists($phoneKey, $batch),
     'wa_key_present_in_batch' => array_key_exists('home.topbar.wa_label', $batch),
