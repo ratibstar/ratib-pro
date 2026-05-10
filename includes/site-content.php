@@ -723,6 +723,32 @@ if (!function_exists('ratib_site_content_db_fingerprint')) {
     }
 }
 
+if (!function_exists('ratib_site_content_revision_token')) {
+    /**
+     * Monotonic content revision token based on ratib_site_content.updated_at (unix timestamp as string).
+     * Empty string when DB is unavailable.
+     */
+    function ratib_site_content_revision_token(): string
+    {
+        $c = ratib_site_content_db();
+        if (!$c instanceof mysqli) {
+            return '';
+        }
+        $res = @$c->query("SELECT COALESCE(UNIX_TIMESTAMP(MAX(updated_at)), 0) AS rev FROM ratib_site_content");
+        if ($res === false) {
+            return '';
+        }
+        $row = $res->fetch_assoc();
+        $res->free();
+        $rev = is_array($row) ? (string) ($row['rev'] ?? '0') : '0';
+        if ($rev === '' || $rev === '0') {
+            return '';
+        }
+
+        return $rev;
+    }
+}
+
 require_once __DIR__ . '/site-content-home-data.php';
 
 if (!function_exists('ratib_site_content_home_flat_from_db')) {

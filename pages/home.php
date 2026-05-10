@@ -261,6 +261,20 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
 }
 
 require_once __DIR__ . '/../includes/site-content.php';
+// Canonicalize homepage URL to current CMS revision so browser/CDN tabs don't stick to stale HTML across saves.
+$ratibCmsRev = function_exists('ratib_site_content_revision_token') ? ratib_site_content_revision_token() : '';
+if ($ratibCmsRev !== '') {
+    $currentRev = isset($_GET['cms_rev']) ? (string) $_GET['cms_rev'] : '';
+    if ($currentRev !== $ratibCmsRev && !headers_sent()) {
+        $qs = $_GET;
+        $qs['cms_rev'] = $ratibCmsRev;
+        $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/pages/home.php'), PHP_URL_PATH);
+        $path = is_string($path) && $path !== '' ? $path : '/pages/home.php';
+        $newUrl = $path . '?' . http_build_query($qs);
+        header('Location: ' . $newUrl, true, 302);
+        exit;
+    }
+}
 $ratibHome = ratib_site_content_home_flat();
 $ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
     ? ratib_site_content_db_fingerprint()
