@@ -311,9 +311,13 @@ if (!function_exists('ratib_site_content_defaults_home')) {
 
         $d['home.footer.link.platform.overview'] = 'Overview';
         $d['home.footer.link.platform.ops_visibility'] = 'Operational visibility';
+        $d['home.footer.link.platform.pricing'] = 'Pricing';
         $d['home.footer.link.platform.apis'] = 'APIs';
         $d['home.footer.link.solutions'] = 'Solutions';
         $d['home.footer.link.demo'] = 'Demo';
+        $d['home.footer.link.company.customer_portal'] = 'Customer portal';
+        $d['home.footer.link.support.tickets'] = 'Support tickets';
+        $d['home.footer.link.support.whatsapp'] = 'WhatsApp';
         $d['home.footer.link.service_registration'] = 'Service registration';
 
         $d['home.chat.title'] = 'Ratib Assistant';
@@ -883,9 +887,13 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                     ['key' => 'home.footer.location', 'label' => 'Location line', 'type' => 'text'],
                     ['key' => 'home.footer.link.platform.overview', 'label' => 'Link · Overview', 'type' => 'text'],
                     ['key' => 'home.footer.link.platform.ops_visibility', 'label' => 'Link · Operational visibility', 'type' => 'text'],
+                    ['key' => 'home.footer.link.platform.pricing', 'label' => 'Link · Pricing (#programs)', 'type' => 'text'],
                     ['key' => 'home.footer.link.platform.apis', 'label' => 'Link · APIs', 'type' => 'text'],
                     ['key' => 'home.footer.link.solutions', 'label' => 'Link · Solutions', 'type' => 'text'],
                     ['key' => 'home.footer.link.demo', 'label' => 'Link · Demo', 'type' => 'text'],
+                    ['key' => 'home.footer.link.company.customer_portal', 'label' => 'Link · Customer portal', 'type' => 'text'],
+                    ['key' => 'home.footer.link.support.tickets', 'label' => 'Link · Support tickets', 'type' => 'text'],
+                    ['key' => 'home.footer.link.support.whatsapp', 'label' => 'Link · WhatsApp', 'type' => 'text'],
                     ['key' => 'home.footer.link.service_registration', 'label' => 'Link · Service registration', 'type' => 'text'],
                 ],
             ],

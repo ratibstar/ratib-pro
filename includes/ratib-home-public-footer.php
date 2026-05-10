@@ -26,7 +26,7 @@ $ratibFooterPrefix = isset($ratibHomeNavHrefPrefix) ? (string) $ratibHomeNavHref
                     <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#features', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.nav.features'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
                     <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#tracking', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.nav.tracking'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
                     <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#operational', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.ops_visibility'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#programs', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.nav.programs'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#programs', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.platform.pricing'] ?? '') ?: (string) ($ratibHome['home.nav.programs'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></a></li>
                     <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#api', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.apis'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
                 </ul>
             </div>
@@ -37,14 +37,14 @@ $ratibFooterPrefix = isset($ratibHomeNavHrefPrefix) ? (string) $ratibHomeNavHref
                     <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#agencies', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.nav.agencies'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
                     <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#operational', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.nav.operational'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
                     <li><a href="<?php echo htmlspecialchars($ratibFooterPrefix . '#video', ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.demo'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a></li>
-                    <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>">Customer portal</a></li>
+                    <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.company.customer_portal'] ?? 'Customer portal', ENT_QUOTES, 'UTF-8'); ?></a></li>
                 </ul>
             </div>
             <div class="ratib-footer-col">
                 <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.support'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
                 <ul>
-                    <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/login.php'); ?>">Support tickets</a></li>
-                    <li><a href="https://wa.me/<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
+                    <li><a href="<?php echo htmlspecialchars($baseUrl . '/pages/login.php'); ?>"><?php echo htmlspecialchars($ratibHome['home.footer.link.support.tickets'] ?? 'Support tickets', ENT_QUOTES, 'UTF-8'); ?></a></li>
+                    <li><a href="https://wa.me/<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($ratibHome['home.footer.link.support.whatsapp'] ?? 'WhatsApp', ENT_QUOTES, 'UTF-8'); ?></a></li>
                     <li><a href="tel:+<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" dir="ltr"><span class="ratib-topbar__phone-text"><?php echo htmlspecialchars($ratibPhoneRaw, ENT_QUOTES, 'UTF-8'); ?></span></a></li>
                 </ul>
             </div>
