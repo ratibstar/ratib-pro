@@ -80,6 +80,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
              ON DUPLICATE KEY UPDATE content_value = VALUES(content_value), updated_at = CURRENT_TIMESTAMP'
         );
         if ($stmt) {
+            // mysqli_stmt::bind_param binds by reference — use fresh scalars each iteration (classic PHP pitfall).
+            $saveOk = true;
+            $saveErrMsg = '';
             foreach ($allowedKeys as $key) {
                 if (array_key_exists($key, $posted)) {
                     $val = is_string($posted[$key]) ? $posted[$key] : '';
@@ -88,19 +91,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
                 } else {
                     $val = $values[$key];
                 }
-                $paramKey = $key;
-                $stmt->bind_param('ss', $paramKey, $val);
-                $stmt->execute();
+                $bindKey = $key;
+                $bindVal = $val;
+                $stmt->bind_param('ss', $bindKey, $bindVal);
+                if (!$stmt->execute()) {
+                    $saveOk = false;
+                    $saveErrMsg = $stmt->error !== '' ? $stmt->error : ('MySQL error ' . (string) $stmt->errno);
+                    error_log('ratib_site_content_save: execute failed for key ' . $key . ': ' . $saveErrMsg);
+                    break;
+                }
             }
             $stmt->close();
-            $flashOk = true;
-            foreach (array_keys($defaults) as $k) {
-                $values[$k] = ratib_site_content_get($k, $defaults[$k]);
-            }
-            if ($flashOk && function_exists('ratib_site_content_export_public_cache')) {
-                if (!ratib_site_content_export_public_cache()) {
-                    $flashCacheWarn = 'Saved field rows, but the homepage snapshot could not be stored (no writable disk path and DB snapshot row failed). Check MySQL permissions for <code>ratib_site_content</code>, or fix filesystem permissions / set <code>RATIB_SITE_CONTENT_CACHE_FILE</code> — see <code>includes/site-content.php</code>.';
+            if ($saveOk) {
+                $flashOk = true;
+                foreach (array_keys($defaults) as $k) {
+                    $values[$k] = ratib_site_content_get($k, $defaults[$k]);
                 }
+                if (function_exists('ratib_site_content_export_public_cache')) {
+                    if (!ratib_site_content_export_public_cache()) {
+                        $flashCacheWarn = 'Saved field rows, but the homepage snapshot could not be stored (no writable disk path and DB snapshot row failed). Check MySQL permissions for <code>ratib_site_content</code>, or fix filesystem permissions / set <code>RATIB_SITE_CONTENT_CACHE_FILE</code> — see <code>includes/site-content.php</code>.';
+                    }
+                }
+            } else {
+                $flashErr = 'Save failed: ' . htmlspecialchars($saveErrMsg, ENT_QUOTES, 'UTF-8');
             }
         } else {
             $flashErr = 'Could not prepare save statement.';
