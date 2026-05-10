@@ -86,13 +86,14 @@ function ratib_control_site_content_store_media(array $file, string $kind): arra
         return ['ok' => false, 'path' => '', 'error' => 'File size must be between 1 byte and ' . (string) $max . ' bytes.'];
     }
 
-    $root = dirname(__DIR__, 3);
-    $targetDir = $root . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'ratib_cms_media';
+    $targetDir = function_exists('ratib_site_content_media_storage_dir')
+        ? ratib_site_content_media_storage_dir()
+        : (dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'ratib_cms_media');
     if (!is_dir($targetDir) && !@mkdir($targetDir, 0775, true) && !is_dir($targetDir)) {
-        return ['ok' => false, 'path' => '', 'error' => 'Cannot create uploads/ratib_cms_media directory.'];
+        return ['ok' => false, 'path' => '', 'error' => 'Cannot create media directory: ' . $targetDir];
     }
     if (!is_writable($targetDir)) {
-        return ['ok' => false, 'path' => '', 'error' => 'uploads/ratib_cms_media is not writable by PHP.'];
+        return ['ok' => false, 'path' => '', 'error' => 'Media directory is not writable by PHP: ' . $targetDir];
     }
 
     $safeBase = preg_replace('/[^a-zA-Z0-9_-]+/', '-', (string) pathinfo($name, PATHINFO_FILENAME));
@@ -107,17 +108,25 @@ function ratib_control_site_content_store_media(array $file, string $kind): arra
     }
     @chmod($abs, 0644);
 
-    return ['ok' => true, 'path' => 'uploads/ratib_cms_media/' . $finalName, 'error' => ''];
+    $token = function_exists('ratib_site_content_media_token_from_filename')
+        ? ratib_site_content_media_token_from_filename($finalName)
+        : ('scmedia:' . $finalName);
+
+    return ['ok' => true, 'path' => $token, 'error' => ''];
 }
 
 function ratib_control_site_content_try_delete_media_file(string $storedPath): void
 {
-    $storedPath = ltrim(str_replace('\\', '/', trim($storedPath)), '/');
-    if ($storedPath === '' || strpos($storedPath, 'uploads/ratib_cms_media/') !== 0) {
+    $name = function_exists('ratib_site_content_media_filename_from_token')
+        ? ratib_site_content_media_filename_from_token($storedPath)
+        : '';
+    if ($name === '') {
         return;
     }
-    $root = dirname(__DIR__, 3);
-    $abs = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $storedPath);
+    $base = function_exists('ratib_site_content_media_storage_dir')
+        ? ratib_site_content_media_storage_dir()
+        : (dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'ratib_cms_media');
+    $abs = rtrim($base, '/\\') . DIRECTORY_SEPARATOR . $name;
     if (is_file($abs)) {
         @unlink($abs);
     }

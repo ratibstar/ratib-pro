@@ -310,6 +310,10 @@ if ($videoStored !== '') {
         $videoSrcRel = $videoStored;
         $videoUrl = $videoStored;
         $videoExists = true;
+    } elseif (function_exists('ratib_site_content_media_public_url') && ratib_site_content_media_public_url($baseUrl, $videoStored) !== '') {
+        $videoSrcRel = ratib_site_content_media_public_url($baseUrl, $videoStored);
+        $videoUrl = $videoSrcRel;
+        $videoExists = true;
     } else {
         $rel = ltrim(str_replace('\\', '/', $videoStored), '/');
         $fs = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);

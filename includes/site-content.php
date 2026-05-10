@@ -878,6 +878,59 @@ if (!function_exists('ratib_site_content_public_home')) {
 }
 
 if (!function_exists('ratib_site_content_asset_url')) {
+    if (!function_exists('ratib_site_content_media_storage_dir')) {
+        function ratib_site_content_media_storage_dir(): string
+        {
+            $root = dirname(__DIR__);
+            if (!function_exists('ratib_uploads_base_dir')) {
+                $uploadsBaseFile = __DIR__ . '/ratib_uploads_base.php';
+                if (is_file($uploadsBaseFile)) {
+                    require_once $uploadsBaseFile;
+                }
+            }
+            if (function_exists('ratib_uploads_base_dir')) {
+                $base = (string) ratib_uploads_base_dir();
+                if ($base !== '') {
+                    return rtrim($base, '/\\') . DIRECTORY_SEPARATOR . 'ratib_cms_media';
+                }
+            }
+
+            return $root . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'ratib_cms_media';
+        }
+    }
+    if (!function_exists('ratib_site_content_media_token_from_filename')) {
+        function ratib_site_content_media_token_from_filename(string $fileName): string
+        {
+            return 'scmedia:' . $fileName;
+        }
+    }
+    if (!function_exists('ratib_site_content_media_filename_from_token')) {
+        function ratib_site_content_media_filename_from_token(string $stored): string
+        {
+            $stored = trim($stored);
+            if (strpos($stored, 'scmedia:') !== 0) {
+                return '';
+            }
+            $name = substr($stored, 8);
+            $name = basename(str_replace('\\', '/', $name));
+            if (!preg_match('/^[a-zA-Z0-9._-]+$/', $name)) {
+                return '';
+            }
+
+            return $name;
+        }
+    }
+    if (!function_exists('ratib_site_content_media_public_url')) {
+        function ratib_site_content_media_public_url(string $baseUrl, string $stored): string
+        {
+            $name = ratib_site_content_media_filename_from_token($stored);
+            if ($name === '') {
+                return '';
+            }
+
+            return rtrim($baseUrl, '/') . '/api/site-content-media.php?f=' . rawurlencode($name);
+        }
+    }
     /**
      * @param string $stored     Empty = use fallback; or full URL; or site-relative path e.g. assets/images/x.svg
      * @param string $fallbackRel from project root, e.g. assets/images/program-preview-pipeline.svg
@@ -889,6 +942,14 @@ if (!function_exists('ratib_site_content_asset_url')) {
         if ($stored !== '') {
             if (preg_match('#^https?://#i', $stored)) {
                 return $stored;
+            }
+            $tokUrl = ratib_site_content_media_public_url($baseUrl, $stored);
+            if ($tokUrl !== '') {
+                $name = ratib_site_content_media_filename_from_token($stored);
+                $mediaFs = ratib_site_content_media_storage_dir() . DIRECTORY_SEPARATOR . $name;
+                $v = is_file($mediaFs) ? (int) filemtime($mediaFs) : time();
+
+                return $tokUrl . '&v=' . $v;
             }
             $rel = ltrim(str_replace('\\', '/', $stored), '/');
             $root = dirname(__DIR__);
