@@ -293,25 +293,15 @@ if ($ratibTopbarNodesNum > 999999 || strlen($ratibTopbarNodesDigits) > 6) {
 $ratibPricingStarterLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.starter.features'] ?? '');
 $ratibPricingGoldLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.gold.features'] ?? '');
 $ratibPricingPlatinumLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.platinum.features'] ?? '');
-// Single placeholder when a slot has caption/alt but no image URL yet (same rule for every slot — no special rows 1–3).
-$ratibProgPlaceholderRel = 'assets/images/program-preview-pipeline.svg';
-$ratibProgPlaceholderFs = __DIR__ . '/../assets/images/program-preview-pipeline.svg';
-
+// Public site: show a program card only when the CMS slot has a real image/video URL or token (no caption-only placeholders).
 $ratibProgSlotsOut = [];
 if (function_exists('ratib_site_content_home_program_slots_from_flat')) {
     foreach (ratib_site_content_home_program_slots_from_flat($ratibHome) as $slot) {
         $stored = trim((string) ($slot['src'] ?? ''));
-        $cap = trim((string) ($slot['caption'] ?? ''));
-        $alt = trim((string) ($slot['alt'] ?? ''));
-
-        if ($stored !== '') {
-            $imgSrc = ratib_site_content_asset_url($baseUrl, $stored, '', '');
-        } elseif ($cap !== '' || $alt !== '') {
-            $imgSrc = ratib_site_content_asset_url($baseUrl, '', $ratibProgPlaceholderRel, $ratibProgPlaceholderFs);
-        } else {
+        if ($stored === '') {
             continue;
         }
-
+        $imgSrc = ratib_site_content_asset_url($baseUrl, $stored, '', '');
         if (trim($imgSrc) === '') {
             continue;
         }
@@ -348,6 +338,8 @@ if ($ratibVideoSlotsRawCheck !== '') {
     $ratibVideoSlotsDecoded = json_decode($ratibVideoSlotsRawCheck, true);
     $ratibVideoClearedInCms = is_array($ratibVideoSlotsDecoded) && count($ratibVideoSlotsDecoded) === 0;
 }
+// Hide the whole video band (heading + strip) when there is nothing to show and CMS did not ask for the empty-state hint.
+$ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$ratibVideoClearedInCms);
 ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -587,6 +579,7 @@ if ($ratibVideoSlotsRawCheck !== '') {
                     </div>
                 </div>
             </div>
+            <?php if ($ratibShowHomeVideoBand): ?>
             <div class="ratib-hero__video-band video-section ratib-video ratib-video--hero" id="video">
                 <div class="ratib-container">
                     <header class="ratib-hero__video-head ratib-section__head ratib-section__head--left">
@@ -614,13 +607,14 @@ if ($ratibVideoSlotsRawCheck !== '') {
                         <div class="video-wrap">
                             <div class="video-fallback-box">
                                 <i class="fas fa-video-slash fa-3x mb-3"></i>
-                                <p>Add videos in <strong>Public site content</strong> (Product tour), or upload an MP4 under <code>assets/</code> and reference it in the CMS.</p>
+                                <p>Add videos in <strong>Public site content</strong> (Product tour section): upload an MP4 or choose an existing file for each slot.</p>
                             </div>
                         </div>
                     </div>
                     <?php endif; ?>
                 </div>
             </div>
+            <?php endif; ?>
             <?php if (!empty($ratibProgSlotsOut)): ?>
             <div class="ratib-hero__photo-strip ratib-hero__program-strip">
                 <div class="ratib-container">
