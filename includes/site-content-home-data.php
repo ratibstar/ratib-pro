@@ -29,10 +29,11 @@ if (!function_exists('ratib_site_content_defaults_home')) {
      */
     function ratib_site_content_defaults_home(): array
     {
+        /* Same order as header nav on pages/home.php (Platform · agency · Product tour · Features · … · Contact). */
         $nav = [
             'platform' => 'Platform',
+            'how_it_works' => 'agency',
             'product_tour' => 'Product tour',
-            'how_it_works' => 'How it works',
             'features' => 'Features',
             'solutions' => 'Solutions',
             'programs' => 'Pricing',
@@ -534,8 +535,8 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                 'title' => 'Header navigation labels',
                 'fields' => [
                     ['key' => 'home.nav.platform', 'label' => 'Platform', 'type' => 'text'],
+                    ['key' => 'home.nav.how_it_works', 'label' => 'agency (#how-it-works)', 'type' => 'text'],
                     ['key' => 'home.nav.product_tour', 'label' => 'Product tour', 'type' => 'text'],
-                    ['key' => 'home.nav.how_it_works', 'label' => 'How it works', 'type' => 'text'],
                     ['key' => 'home.nav.features', 'label' => 'Features', 'type' => 'text'],
                     ['key' => 'home.nav.solutions', 'label' => 'Solutions', 'type' => 'text'],
                     ['key' => 'home.nav.programs', 'label' => 'Pricing', 'type' => 'text'],

@@ -248,7 +248,7 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-15';
+    : '20260210-16';
 $ratibHome = ratib_site_content_home_flat(false);
 $ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
     ? ratib_site_content_db_fingerprint()
@@ -420,6 +420,7 @@ if ($ratibNavProductTourLabel === '') {
             <button type="button" class="ratib-nav__toggle" id="ratibNavToggle" aria-label="Open menu" aria-expanded="false" aria-controls="ratibNavMenu">
                 <span></span><span></span><span></span>
             </button>
+            <!-- Nav order: Platform · agency · Product tour · Features · Solutions · Pricing · Agencies · Tracking · Visibility · API · Contact (not the thin top bar). -->
             <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary">
                 <a href="#platform" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 <a href="#how-it-works" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.how_it_works'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
