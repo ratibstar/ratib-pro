@@ -31,6 +31,9 @@ require_once __DIR__ . '/../../includes/site-content.php';
 
 $conn = function_exists('ratib_site_content_db') ? ratib_site_content_db() : null;
 $dbOk = $conn instanceof mysqli;
+$tableReadable = $dbOk && function_exists('ratib_site_content_db_can_read_table')
+    ? ratib_site_content_db_can_read_table($conn)
+    : false;
 $phoneKey = 'home.topbar.phone_display';
 $phoneVal = ($dbOk && function_exists('ratib_site_content_fetch_value_by_key'))
     ? ratib_site_content_fetch_value_by_key($conn, $phoneKey)
@@ -50,6 +53,7 @@ if ($dbOk && function_exists('ratib_site_content_fetch_key_values')) {
 $payload = [
     'ok' => true,
     'ratib_site_content_db' => $dbOk,
+    'ratib_site_content_table_readable' => $tableReadable,
     'phone_key_present_in_batch' => array_key_exists($phoneKey, $batch),
     'wa_key_present_in_batch' => array_key_exists('home.topbar.wa_label', $batch),
     'phone_value_length' => $phoneVal !== null ? strlen($phoneVal) : null,

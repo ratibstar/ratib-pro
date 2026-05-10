@@ -134,15 +134,30 @@ if (!function_exists('ratib_site_content_db_try_mysqli')) {
     }
 }
 
+if (!function_exists('ratib_site_content_db_can_read_table')) {
+    /**
+     * True when this mysqli can SELECT from ratib_site_content (GRANT / wrong schema / missing table).
+     */
+    function ratib_site_content_db_can_read_table(mysqli $c): bool
+    {
+        $res = @$c->query('SELECT 1 FROM ratib_site_content LIMIT 1');
+
+        return $res !== false;
+    }
+}
+
 if (!function_exists('ratib_site_content_db')) {
     /**
      * Connection order (important):
      * 0) Control panel: always use $GLOBALS['control_conn'] — same mysqli as INSERT/UPDATE on site-content.php.
      *    Otherwise the editor reads via ratib_site_content_get() from a different connection than Save and looks "disconnected".
-     * 1) Dedicated reader when RATIB_SITE_CONTENT_DB_HOST is set.
-     * 2) get_control_lookup_conn() on SINGLE_URL_MODE — same link as agency/control lookups.
-     * 3) App DB_USER → CONTROL_PANEL_DB_NAME (before merged credentials).
-     * 4) Merged credentials (CONTROL_PANEL_DB_USER || DB_USER).
+     * 1) Dedicated reader when RATIB_SITE_CONTENT_DB_HOST is set (same as merged credentials — attempted first when env points away from DB_HOST).
+     * 2) Merged credentials (RATIB_SITE_CONTENT_DB_* / CONTROL_PANEL_DB_USER / DB_* → CONTROL_PANEL_DB_NAME).
+     * 3) App DB_USER → CONTROL_PANEL_DB_NAME (explicit corridor user).
+     * 4) get_control_lookup_conn() on SINGLE_URL_MODE — must still pass SELECT on ratib_site_content (shared mysqli is not closed).
+     *
+     * Each candidate is accepted only if SELECT on ratib_site_content succeeds. Otherwise PHP would "connect" to the
+     * control DB but return empty reads — leaving stale JSON/cache visible forever.
      *
      * @param bool $resetCachedPool When true, drop the public worker's cached mysqli (e.g. after "server has gone away").
      */
@@ -171,6 +186,22 @@ if (!function_exists('ratib_site_content_db')) {
             $conn = null;
         }
 
+        $acceptOwned = static function (?mysqli $c): ?mysqli {
+            if (!$c instanceof mysqli) {
+                return null;
+            }
+            if (ratib_site_content_db_can_read_table($c)) {
+                return $c;
+            }
+            error_log(
+                'ratib_site_content_db: mysqli connected but ratib_site_content not readable ('
+                . $c->errno . ') ' . $c->error
+            );
+            $c->close();
+
+            return null;
+        };
+
         $dedicatedHost = getenv('RATIB_SITE_CONTENT_DB_HOST');
         $hasDedicatedHost = ($dedicatedHost !== false && trim((string) $dedicatedHost) !== '');
 
@@ -178,6 +209,7 @@ if (!function_exists('ratib_site_content_db')) {
             $cred = ratib_site_content_db_credentials();
             if ($cred !== null) {
                 $c = ratib_site_content_db_try_mysqli($cred);
+                $c = $acceptOwned($c);
                 if ($c instanceof mysqli) {
                     $conn = $c;
 
@@ -186,10 +218,12 @@ if (!function_exists('ratib_site_content_db')) {
             }
         }
 
-        if (defined('SINGLE_URL_MODE') && SINGLE_URL_MODE && function_exists('get_control_lookup_conn')) {
-            $lk = get_control_lookup_conn();
-            if ($lk instanceof mysqli) {
-                $conn = $lk;
+        $credMerged = ratib_site_content_db_credentials();
+        if ($credMerged !== null) {
+            $c = ratib_site_content_db_try_mysqli($credMerged);
+            $c = $acceptOwned($c);
+            if ($c instanceof mysqli) {
+                $conn = $c;
 
                 return $conn;
             }
@@ -198,6 +232,7 @@ if (!function_exists('ratib_site_content_db')) {
         $credApp = ratib_site_content_db_credentials_app_to_control();
         if ($credApp !== null) {
             $c = ratib_site_content_db_try_mysqli($credApp);
+            $c = $acceptOwned($c);
             if ($c instanceof mysqli) {
                 $conn = $c;
 
@@ -205,13 +240,18 @@ if (!function_exists('ratib_site_content_db')) {
             }
         }
 
-        $cred = ratib_site_content_db_credentials();
-        if ($cred !== null) {
-            $c = ratib_site_content_db_try_mysqli($cred);
-            if ($c instanceof mysqli) {
-                $conn = $c;
+        if (defined('SINGLE_URL_MODE') && SINGLE_URL_MODE && function_exists('get_control_lookup_conn')) {
+            $lk = get_control_lookup_conn();
+            if ($lk instanceof mysqli && ratib_site_content_db_can_read_table($lk)) {
+                $conn = $lk;
 
                 return $conn;
+            }
+            if ($lk instanceof mysqli) {
+                error_log(
+                    'ratib_site_content_db: get_control_lookup_conn() mysqli cannot read ratib_site_content ('
+                    . $lk->errno . ') ' . $lk->error
+                );
             }
         }
 
