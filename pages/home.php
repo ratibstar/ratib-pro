@@ -248,7 +248,7 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-14';
+    : '20260210-15';
 $ratibHome = ratib_site_content_home_flat(false);
 $ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
     ? ratib_site_content_db_fingerprint()
@@ -353,6 +353,10 @@ if ($ratibShowHomeVideoBand) {
 } elseif (!empty($ratibProgSlotsOut)) {
     $ratibNavProductTourHref = '#program-previews';
 }
+$ratibNavProductTourLabel = trim((string) ($ratibHome['home.nav.product_tour'] ?? ''));
+if ($ratibNavProductTourLabel === '') {
+    $ratibNavProductTourLabel = 'Product tour';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -418,8 +422,8 @@ if ($ratibShowHomeVideoBand) {
             </button>
             <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary">
                 <a href="#platform" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                <a href="<?php echo htmlspecialchars($ratibNavProductTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.product_tour'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 <a href="#how-it-works" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.how_it_works'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratibNavProductTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><?php echo htmlspecialchars($ratibNavProductTourLabel, ENT_QUOTES, 'UTF-8'); ?></a>
                 <a href="#features" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.features'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 <a href="#solutions" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.solutions'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 <a href="#programs" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.programs'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
