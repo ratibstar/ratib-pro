@@ -989,6 +989,28 @@ body.ratib-saas-home {
   z-index: 10;
 }
 
+/* Main column headings & metric emphasis — muted slate (not pure white on dark bg) */
+.ratib-main .ratib-section__title {
+  color: #d8e1ec;
+}
+
+.ratib-main .ratib-analytics-card h3 {
+  color: #c6d0dc;
+}
+
+.ratib-main .ratib-metric__val {
+  color: #dce5f0;
+}
+
+.ratib-main .ratib-trust-card h3,
+.ratib-main .ratib-ai-card h3 {
+  color: #cad6e4;
+}
+
+.ratib-main .ratib-api-strip__title {
+  color: #d8e1ec;
+}
+
 .ratib-eyebrow {
   font-size: 0.75rem;
   font-weight: 600;
@@ -1300,6 +1322,7 @@ body.ratib-saas-home {
   font-size: 1.125rem;
   font-weight: 700;
   font-family: var(--r-mono);
+  color: #dce5f0;
 }
 
 .ratib-kpi__delta {
@@ -2727,6 +2750,7 @@ body.ratib-program-lightbox-open {
   font-weight: 800;
   letter-spacing: -0.02em;
   margin: 0 0 1rem;
+  color: #dce5f0;
 }
 
 .ratib-final-cta__sub {
@@ -3561,7 +3585,7 @@ body.ratib-saas-home::before {
   max-width: min(24rem, 100%);
   line-height: 1.16;
   font-weight: 750;
-  color: #f1f5f9;
+  color: #e8edf7;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
@@ -4202,7 +4226,7 @@ section#features .ratib-section__head .ratib-eyebrow {
 }
 
 section#features .ratib-section__head .ratib-section__title {
-  color: #f8fafc;
+  color: #e2e9f2;
 }
 
 section#features .ratib-feature-card--tone1 h3 {
@@ -4775,7 +4799,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   font-size: 1.125rem;
   font-weight: 750;
   font-family: var(--r-mono);
-  color: #f1f5f9;
+  color: #d8e2ee;
 }
 
 .ratib-ops__mini-val--ok {
@@ -4958,7 +4982,7 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   display: block;
   font-size: 0.8125rem;
   margin-bottom: 0.35rem;
-  color: #f1f5f9;
+  color: #d1dae6;
 }
 
 .ratib-how__desc {
