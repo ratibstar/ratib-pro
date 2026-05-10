@@ -794,7 +794,7 @@
         a.setAttribute('data-ratib-product-tour-tab', '1');
         a.setAttribute('data-ratib-product-tour-fallback', '1');
         a.innerHTML =
-            '<span class="ratib-nav__icon" aria-hidden="true"><i class="fas fa-photo-video"></i></span>' +
+            '<span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-video"/></svg></span>' +
             '<span class="ratib-nav__label">video/pic</span>';
         platform.parentNode.insertBefore(a, platform.nextSibling);
     }

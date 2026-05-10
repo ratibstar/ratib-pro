@@ -460,8 +460,17 @@ body.ratib-saas-home {
     background 0.2s ease;
 }
 
-.ratib-nav__icon i {
+.ratib-nav__glyph {
+  width: 1.42rem;
+  height: 1.42rem;
+  display: block;
+  flex-shrink: 0;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+}
+
+.ratib-nav__link--product-tour .ratib-nav__glyph {
+  width: 1.52rem;
+  height: 1.52rem;
 }
 
 .ratib-nav__link:hover .ratib-nav__icon {
@@ -470,6 +479,51 @@ body.ratib-saas-home {
 
 .ratib-nav__label {
   white-space: nowrap;
+}
+
+/* Tab label tints at rest (mixed colors — not only on hover) */
+.ratib-nav__link[href="#platform"] .ratib-nav__label {
+  color: rgba(165, 243, 252, 0.95);
+}
+
+.ratib-nav__link[href="#how-it-works"] .ratib-nav__label {
+  color: rgba(167, 243, 208, 0.95);
+}
+
+.ratib-nav__link[href="#features"] .ratib-nav__label {
+  color: rgba(221, 214, 254, 0.95);
+}
+
+.ratib-nav__link[href="#solutions"] .ratib-nav__label {
+  color: rgba(254, 215, 170, 0.95);
+}
+
+.ratib-nav__link[href="#programs"] .ratib-nav__label {
+  color: rgba(251, 207, 232, 0.95);
+}
+
+.ratib-nav__link[href="#agencies"] .ratib-nav__label {
+  color: rgba(191, 219, 254, 0.95);
+}
+
+.ratib-nav__link[href="#tracking"] .ratib-nav__label {
+  color: rgba(153, 246, 228, 0.95);
+}
+
+.ratib-nav__link[href="#operational"] .ratib-nav__label {
+  color: rgba(253, 224, 71, 0.95);
+}
+
+.ratib-nav__link[href="#api"] .ratib-nav__label {
+  color: rgba(187, 247, 208, 0.95);
+}
+
+.ratib-nav__link[href="#contact"] .ratib-nav__label {
+  color: rgba(251, 207, 232, 0.95);
+}
+
+.ratib-nav__link--product-tour .ratib-nav__label {
+  color: rgba(237, 233, 254, 0.98);
 }
 
 /* Per-section tones — large icon tiles + matching hover washes */
