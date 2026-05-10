@@ -243,6 +243,12 @@ if ($ratibCmsRev !== '') {
         exit;
     }
 }
+// Bump via env RATIB_HOME_UI_REV on the server after upload, or edit the fallback string when deploying marquee/lightbox/CSS.
+// Ensures ?v= on CSS/JS changes even when the host preserves old file mtimes (FTP / sync tools).
+$ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
+$ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
+    ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
+    : '20260210-3';
 $ratibHome = ratib_site_content_home_flat(false);
 $ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
     ? ratib_site_content_db_fingerprint()
@@ -344,9 +350,10 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-    <!-- ratib-cms-build: site-content=<?php echo (int) (@filemtime(__DIR__ . '/../includes/site-content.php') ?: 0); ?> home-data=<?php echo (int) (@filemtime(__DIR__ . '/../includes/site-content-home-data.php') ?: 0); ?> load=<?php echo (int) (@filemtime(__DIR__ . '/../config/env/load.php') ?: 0); ?> cms-src=<?php echo htmlspecialchars(function_exists('ratib_site_content_public_source_resolved') ? ratib_site_content_public_source_resolved() : '', ENT_QUOTES, 'UTF-8'); ?> phone-len=<?php echo (int) strlen((string) ($ratibHome['home.topbar.phone_display'] ?? '')); ?> dbfp=<?php echo htmlspecialchars($ratibDbFingerprint, ENT_QUOTES, 'UTF-8'); ?> -->
+    <!-- ratib-cms-build: site-content=<?php echo (int) (@filemtime(__DIR__ . '/../includes/site-content.php') ?: 0); ?> home-data=<?php echo (int) (@filemtime(__DIR__ . '/../includes/site-content-home-data.php') ?: 0); ?> load=<?php echo (int) (@filemtime(__DIR__ . '/../config/env/load.php') ?: 0); ?> cms-src=<?php echo htmlspecialchars(function_exists('ratib_site_content_public_source_resolved') ? ratib_site_content_public_source_resolved() : '', ENT_QUOTES, 'UTF-8'); ?> phone-len=<?php echo (int) strlen((string) ($ratibHome['home.topbar.phone_display'] ?? '')); ?> dbfp=<?php echo htmlspecialchars($ratibDbFingerprint, ENT_QUOTES, 'UTF-8'); ?> ui-rev=<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?> -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="ratib-home-ui-rev" content="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236b21a8'/%3E%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
@@ -357,10 +364,13 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/chat-widget.css">
-    <?php $ratibHomeCssV = (int) (@filemtime(__DIR__ . '/../css/pages/home-public.css') ?: time()); ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo $ratibHomeCssV; ?>">
+    <?php
+    $ratibHomeCssTs = (int) (@filemtime(__DIR__ . '/../css/pages/home-public.css') ?: time());
+    $ratibHomeCssQ = $ratibHomeCssTs . '-' . $ratibHomeUiRev;
+    ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo htmlspecialchars($ratibHomeCssQ, ENT_QUOTES, 'UTF-8'); ?>">
 </head>
-<body class="ratib-saas-home" data-ratib-home-layout="video-hero-program-svgs">
+<body class="ratib-saas-home" data-ratib-home-layout="video-hero-program-svgs" data-ratib-home-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
 
     <div class="ratib-saas-bg" aria-hidden="true">
         <div class="ratib-saas-bg__gradient"></div>
@@ -1157,7 +1167,8 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
         'platinumMonth' => (float) $platinumTestPriceMonth,
         'platinumYear1' => (float) ($plans['platinum']['amount'] ?? $platinumTestPriceYear1),
     ];
-    $ratibHomeJsV = (int) (@filemtime(__DIR__ . '/../js/pages/home-page.js') ?: time());
+    $ratibHomeJsTs = (int) (@filemtime(__DIR__ . '/../js/pages/home-page.js') ?: time());
+    $ratibHomeJsQ = $ratibHomeJsTs . '-' . $ratibHomeUiRev;
     ?>
     <script>
     (function () {
@@ -1191,7 +1202,7 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
     })();
     </script>
     <script type="application/json" id="ratib-home-bootstrap"><?php echo json_encode($ratibHomeBootstrap, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
-    <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/home-page.js?v=<?php echo $ratibHomeJsV; ?>"></script>
+    <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/home-page.js?v=<?php echo htmlspecialchars($ratibHomeJsQ, ENT_QUOTES, 'UTF-8'); ?>"></script>
 
     <!-- Chat Widget - Auto-answer support -->
     <button class="chat-widget-button" id="chatWidgetButton" aria-label="Open Chat"><i class="fas fa-comments"></i></button>

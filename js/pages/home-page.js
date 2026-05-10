@@ -1006,7 +1006,13 @@
         });
     }
 
-    initProgramStripMarqueeAndLightbox();
+    try {
+        initProgramStripMarqueeAndLightbox();
+    } catch (eProg) {
+        if (typeof console !== 'undefined' && console.error) {
+            console.error('ratib program strip init failed', eProg);
+        }
+    }
 
     tickSyncAge();
     tickAgencyCounter();
