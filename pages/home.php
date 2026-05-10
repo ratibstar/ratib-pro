@@ -1122,6 +1122,37 @@ $ratibProgSrc = [
     ];
     $ratibHomeJsV = (int) (@filemtime(__DIR__ . '/../js/pages/home-page.js') ?: time());
     ?>
+    <script>
+    (function () {
+        var currentRev = <?php echo json_encode((string) $ratibCmsRev); ?>;
+        if (!currentRev) return;
+        function go(nextRev) {
+            try {
+                var u = new URL(window.location.href);
+                if (u.searchParams.get('cms_rev') === String(nextRev)) return;
+                u.searchParams.set('cms_rev', String(nextRev));
+                window.location.replace(u.toString());
+            } catch (e) {}
+        }
+        function check() {
+            try {
+                var latest = localStorage.getItem('ratib_cms_rev') || '';
+                if (latest && latest !== currentRev) {
+                    go(latest);
+                }
+            } catch (e) {}
+        }
+        window.addEventListener('storage', function (ev) {
+            if (ev && ev.key === 'ratib_cms_rev' && ev.newValue) {
+                go(ev.newValue);
+            }
+        });
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) check();
+        });
+        window.addEventListener('focus', check);
+    })();
+    </script>
     <script type="application/json" id="ratib-home-bootstrap"><?php echo json_encode($ratibHomeBootstrap, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/home-page.js?v=<?php echo $ratibHomeJsV; ?>"></script>
 

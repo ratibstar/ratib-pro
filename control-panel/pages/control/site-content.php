@@ -189,6 +189,16 @@ startControlLayout('Public site content', [$editorCss], []);
 <?php if ($ctrlDbFingerprint !== ''): ?>
     <div class="small text-muted mb-2">DB fingerprint: <code><?php echo htmlspecialchars($ctrlDbFingerprint, ENT_QUOTES, 'UTF-8'); ?></code></div>
 <?php endif; ?>
+<?php if ($flashOk && $pageRevision !== ''): ?>
+    <script>
+    (function () {
+        try {
+            localStorage.setItem('ratib_cms_rev', <?php echo json_encode((string) $pageRevision); ?>);
+            localStorage.setItem('ratib_cms_rev_ts', String(Date.now()));
+        } catch (e) {}
+    })();
+    </script>
+<?php endif; ?>
 
     <form method="post" action="" class="ratib-site-content-form">
         <input type="hidden" name="_nonce" value="<?php echo htmlspecialchars($nonce, ENT_QUOTES, 'UTF-8'); ?>">
