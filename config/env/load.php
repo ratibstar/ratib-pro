@@ -100,6 +100,8 @@ if (!function_exists('ratib_env_load_bridge_dotenv')) {
             'RATIB_SITE_CONTENT_DB_NAME',
             'RATIB_SITE_CONTENT_CACHE_FILE',
             'RATIB_SITE_CONTENT_DIAG_SECRET',
+            'RATIB_SITE_CONTENT_PUBLIC_SOURCE',
+            'RATIB_SITE_CONTENT_SKIP_DISK_JSON_CACHE',
         ];
         $lines = @file($path, FILE_IGNORE_NEW_LINES);
         if (!is_array($lines)) {

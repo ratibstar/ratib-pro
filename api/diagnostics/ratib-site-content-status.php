@@ -50,10 +50,26 @@ if ($dbOk && function_exists('ratib_site_content_fetch_key_values')) {
     $batch = ratib_site_content_fetch_key_values([$phoneKey, 'home.topbar.wa_label']);
 }
 
+$resolvedPlatform = null;
+$resolvedPhonePreview = null;
+if (function_exists('ratib_site_content_home_flat')) {
+    $flat = ratib_site_content_home_flat();
+    $resolvedPlatform = isset($flat['home.nav.platform']) ? (string) $flat['home.nav.platform'] : null;
+    $resolvedPhonePreview = isset($flat['home.topbar.phone_display']) ? (string) $flat['home.topbar.phone_display'] : null;
+}
+
 $payload = [
     'ok' => true,
     'ratib_site_content_db' => $dbOk,
     'ratib_site_content_table_readable' => $tableReadable,
+    'env_RATIB_SITE_CONTENT_PUBLIC_SOURCE' => getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE') !== false
+        ? trim((string) getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE'))
+        : '',
+    'env_RATIB_SITE_CONTENT_SKIP_DISK_JSON_CACHE' => getenv('RATIB_SITE_CONTENT_SKIP_DISK_JSON_CACHE') !== false
+        ? trim((string) getenv('RATIB_SITE_CONTENT_SKIP_DISK_JSON_CACHE'))
+        : '',
+    'resolved_home_nav_platform' => $resolvedPlatform,
+    'resolved_home_topbar_phone_display' => $resolvedPhonePreview,
     'env_has_CONTROL_DB_USER' => getenv('CONTROL_DB_USER') !== false && trim((string) getenv('CONTROL_DB_USER')) !== '',
     'phone_key_present_in_batch' => array_key_exists($phoneKey, $batch),
     'wa_key_present_in_batch' => array_key_exists('home.topbar.wa_label', $batch),

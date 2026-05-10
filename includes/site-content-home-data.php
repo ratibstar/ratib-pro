@@ -369,6 +369,16 @@ if (!function_exists('ratib_site_content_home_flat')) {
             return $out;
         };
 
+        // Optional env (see .env.example): RATIB_SITE_CONTENT_PUBLIC_SOURCE=db_only
+        // Skips disk/DB-blob JSON fallbacks so a stale snapshot cannot mask CMS rows — only live SELECT + per-key reads.
+        $srcRaw = getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE');
+        $dbOnlyFallback = ($srcRaw !== false && strtolower(trim((string) $srcRaw)) === 'db_only');
+
+        // Optional: skip only JSON files on disk (lighter than db_only). Truthy: 1, true, yes, on.
+        $skipDiskJsonRaw = getenv('RATIB_SITE_CONTENT_SKIP_DISK_JSON_CACHE');
+        $skipDiskJson = $skipDiskJsonRaw !== false
+            && in_array(strtolower(trim((string) $skipDiskJsonRaw)), ['1', 'true', 'yes', 'on'], true);
+
         // 1) Live database rows (same source as the CMS). Always wins when MySQL is reachable so stale JSON/snapshot
         //    cannot hide fresh saves.
         if (function_exists('ratib_site_content_home_flat_from_db')) {
@@ -379,7 +389,7 @@ if (!function_exists('ratib_site_content_home_flat')) {
         }
 
         // 2) DB snapshot row (single blob; used when row-level SELECT is not available).
-        if (function_exists('ratib_site_content_home_snapshot_db_read')) {
+        if (!$dbOnlyFallback && function_exists('ratib_site_content_home_snapshot_db_read')) {
             $rawDb = ratib_site_content_home_snapshot_db_read();
             if ($rawDb !== null && $rawDb !== '') {
                 $cached = json_decode($rawDb, true);
@@ -394,6 +404,15 @@ if (!function_exists('ratib_site_content_home_flat')) {
         }
 
         // 3) JSON file snapshot
+        if ($dbOnlyFallback || $skipDiskJson) {
+            $out = [];
+            foreach ($defaults as $key => $defaultVal) {
+                $out[$key] = ratib_site_content_get($key, $defaultVal);
+            }
+
+            return $out;
+        }
+
         $path = function_exists('ratib_site_content_public_cache_path_for_read')
             ? ratib_site_content_public_cache_path_for_read()
             : null;
