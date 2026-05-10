@@ -876,3 +876,4 @@ if (!function_exists('ratib_site_content_asset_url')) {
         return rtrim($baseUrl, '/') . '/' . ltrim($fallbackRel, '/') . '?v=' . $v;
     }
 }
+
