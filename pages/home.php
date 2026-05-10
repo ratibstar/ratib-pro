@@ -262,6 +262,9 @@ if ($ratibCountryIsLocked && !in_array($ratibLockedCountryName, $countries, true
 
 require_once __DIR__ . '/../includes/site-content.php';
 $ratibHome = ratib_site_content_home_flat();
+$ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
+    ? ratib_site_content_db_fingerprint()
+    : '';
 // Top bar: one DB round-trip for all keys so phone/WA/nodes stay in sync (no mixed JSON vs row timing).
 $ratibTopbarKeys = [
     'home.topbar.phone_display',
@@ -317,7 +320,7 @@ $ratibProgSrc = [
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-    <!-- ratib-cms-build: site-content=<?php echo (int) (@filemtime(__DIR__ . '/../includes/site-content.php') ?: 0); ?> home-data=<?php echo (int) (@filemtime(__DIR__ . '/../includes/site-content-home-data.php') ?: 0); ?> load=<?php echo (int) (@filemtime(__DIR__ . '/../config/env/load.php') ?: 0); ?> cms-src=<?php echo htmlspecialchars(function_exists('ratib_site_content_public_source_resolved') ? ratib_site_content_public_source_resolved() : '', ENT_QUOTES, 'UTF-8'); ?> phone-len=<?php echo (int) strlen((string) ($ratibHome['home.topbar.phone_display'] ?? '')); ?> -->
+    <!-- ratib-cms-build: site-content=<?php echo (int) (@filemtime(__DIR__ . '/../includes/site-content.php') ?: 0); ?> home-data=<?php echo (int) (@filemtime(__DIR__ . '/../includes/site-content-home-data.php') ?: 0); ?> load=<?php echo (int) (@filemtime(__DIR__ . '/../config/env/load.php') ?: 0); ?> cms-src=<?php echo htmlspecialchars(function_exists('ratib_site_content_public_source_resolved') ? ratib_site_content_public_source_resolved() : '', ENT_QUOTES, 'UTF-8'); ?> phone-len=<?php echo (int) strlen((string) ($ratibHome['home.topbar.phone_display'] ?? '')); ?> dbfp=<?php echo htmlspecialchars($ratibDbFingerprint, ENT_QUOTES, 'UTF-8'); ?> -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">

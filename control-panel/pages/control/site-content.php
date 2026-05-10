@@ -83,6 +83,9 @@ $flashOk = false;
 $flashErr = '';
 $flashCacheWarn = '';
 $pageRevision = ratib_control_site_content_revision($ctrl);
+$ctrlDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
+    ? ratib_site_content_db_fingerprint($ctrl instanceof mysqli ? $ctrl : null)
+    : '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_save'])) {
     requireControlPermission('edit_control_system_settings');
@@ -182,6 +185,9 @@ startControlLayout('Public site content', [$editorCss], []);
 <?php endif; ?>
 <?php if ($flashCacheWarn !== ''): ?>
     <div class="alert alert-warning"><?php echo $flashCacheWarn; ?></div>
+<?php endif; ?>
+<?php if ($ctrlDbFingerprint !== ''): ?>
+    <div class="small text-muted mb-2">DB fingerprint: <code><?php echo htmlspecialchars($ctrlDbFingerprint, ENT_QUOTES, 'UTF-8'); ?></code></div>
 <?php endif; ?>
 
     <form method="post" action="" class="ratib-site-content-form">

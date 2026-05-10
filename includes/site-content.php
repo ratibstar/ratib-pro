@@ -694,6 +694,35 @@ if (!function_exists('ratib_site_content_phone_digits_for_links')) {
     }
 }
 
+if (!function_exists('ratib_site_content_db_fingerprint')) {
+    /**
+     * Safe DB identity string for troubleshooting (no secrets).
+     * Example: db=outratib_control_panel_db;host=mysql01;port=3306;user=outratib_out@localhost
+     */
+    function ratib_site_content_db_fingerprint(?mysqli $conn = null): string
+    {
+        $c = $conn instanceof mysqli ? $conn : ratib_site_content_db();
+        if (!$c instanceof mysqli) {
+            return '';
+        }
+        $res = @$c->query("SELECT DATABASE() AS dbn, @@hostname AS hst, @@port AS prt, CURRENT_USER() AS curu");
+        if ($res === false) {
+            return '';
+        }
+        $row = $res->fetch_assoc();
+        $res->free();
+        if (!is_array($row)) {
+            return '';
+        }
+        $dbn = isset($row['dbn']) ? (string) $row['dbn'] : '';
+        $hst = isset($row['hst']) ? (string) $row['hst'] : '';
+        $prt = isset($row['prt']) ? (string) $row['prt'] : '';
+        $cur = isset($row['curu']) ? (string) $row['curu'] : '';
+
+        return 'db=' . $dbn . ';host=' . $hst . ';port=' . $prt . ';user=' . $cur;
+    }
+}
+
 require_once __DIR__ . '/site-content-home-data.php';
 
 if (!function_exists('ratib_site_content_home_flat_from_db')) {
