@@ -819,6 +819,58 @@
 
 /** Program preview strip: horizontal marquee + click-to-enlarge. Must run for all users (incl. prefers-reduced-motion). */
 (function ratibHomeProgramStrip() {
+    function attachProgramStripDrag(viewport, wrapFn) {
+        var dragThreshold = 8;
+        var dragState = null;
+
+        viewport.addEventListener('pointerdown', function (ev) {
+            if (ev.button !== 0) {
+                return;
+            }
+            dragState = {
+                pointerId: ev.pointerId,
+                startX: ev.clientX,
+                startScroll: viewport.scrollLeft,
+                dragged: false,
+            };
+            try {
+                viewport.setPointerCapture(ev.pointerId);
+            } catch (eCap) {}
+            viewport.classList.add('ratib-program-marquee__viewport--dragging');
+        });
+
+        viewport.addEventListener('pointermove', function (ev) {
+            if (!dragState || ev.pointerId !== dragState.pointerId) {
+                return;
+            }
+            var dx = ev.clientX - dragState.startX;
+            if (!dragState.dragged && Math.abs(dx) > dragThreshold) {
+                dragState.dragged = true;
+            }
+            if (dragState.dragged) {
+                viewport.scrollLeft = dragState.startScroll - dx;
+                wrapFn();
+            }
+        });
+
+        function endDrag(ev) {
+            if (!dragState || ev.pointerId !== dragState.pointerId) {
+                return;
+            }
+            try {
+                viewport.releasePointerCapture(ev.pointerId);
+            } catch (eRel) {}
+            viewport.classList.remove('ratib-program-marquee__viewport--dragging');
+            if (dragState.dragged) {
+                viewport.setAttribute('data-ratib-marquee-suppress-click', '1');
+            }
+            dragState = null;
+        }
+
+        viewport.addEventListener('pointerup', endDrag);
+        viewport.addEventListener('pointercancel', endDrag);
+    }
+
     function initProgramStripMarqueeAndLightbox() {
         var mqRoot = document.querySelector('[data-ratib-program-marquee]');
         if (mqRoot) {
@@ -858,6 +910,7 @@
                         },
                         { passive: false }
                     );
+                    attachProgramStripDrag(viewport, wrapNm);
                 }
             } else if (track && viewport) {
                 mqRoot.classList.add('ratib-program-marquee--js-marquee');
@@ -935,6 +988,8 @@
                 });
                 viewport.addEventListener('wheel', onWheelMarquee, { passive: false });
 
+                attachProgramStripDrag(viewport, wrapScrollLeft);
+
                 document.addEventListener('visibilitychange', function () {
                     tabHidden = document.hidden;
                     if (!tabHidden) {
@@ -946,12 +1001,95 @@
             }
         }
 
+        var mqForSlides = document.querySelector('[data-ratib-program-marquee]');
+        var slides = [];
+        if (mqForSlides) {
+            var allProgOpen = mqForSlides.querySelectorAll('[data-ratib-program-open]');
+            var total = allProgOpen.length;
+            var halfCount = Math.floor(total / 2);
+            slides = Array.prototype.slice.call(allProgOpen, 0, halfCount > 0 ? halfCount : total);
+        }
+
         var lb = document.getElementById('ratib-program-lightbox');
         if (!lb) {
             return;
         }
         var imgEl = lb.querySelector('.ratib-program-lightbox__img');
         var capEl = lb.querySelector('.ratib-program-lightbox__caption');
+        var prevBtn = lb.querySelector('[data-ratib-program-lightbox-prev]');
+        var nextBtn = lb.querySelector('[data-ratib-program-lightbox-next]');
+        var lbIndex = 0;
+
+        function readSlideFromBtn(btn) {
+            var full = btn.getAttribute('data-full-src') || '';
+            var im = btn.querySelector('img');
+            var altText = im ? im.getAttribute('alt') || '' : '';
+            var cap = btn.getAttribute('data-caption');
+            if (cap === null || typeof cap === 'undefined') {
+                cap = '';
+            }
+            if (!full && im) {
+                full = im.getAttribute('src') || '';
+            }
+            return { src: full, alt: altText, caption: cap };
+        }
+
+        function indexOfProgramSlide(btn) {
+            var idx = slides.indexOf(btn);
+            if (idx >= 0) {
+                return idx;
+            }
+            var full = btn.getAttribute('data-full-src') || '';
+            var im0 = btn.querySelector('img');
+            if (!full && im0) {
+                full = im0.getAttribute('src') || '';
+            }
+            for (var si = 0; si < slides.length; si++) {
+                var b = slides[si];
+                var f = b.getAttribute('data-full-src') || '';
+                var im = b.querySelector('img');
+                if (!f && im) {
+                    f = im.getAttribute('src') || '';
+                }
+                if (full && f === full) {
+                    return si;
+                }
+            }
+            return 0;
+        }
+
+        function syncLbNav() {
+            var hide = slides.length <= 1;
+            if (prevBtn) {
+                prevBtn.hidden = hide;
+            }
+            if (nextBtn) {
+                nextBtn.hidden = hide;
+            }
+        }
+
+        function applyLbIndex(i) {
+            if (!slides.length || !imgEl) {
+                return;
+            }
+            lbIndex = (i % slides.length + slides.length) % slides.length;
+            var o = readSlideFromBtn(slides[lbIndex]);
+            imgEl.src = o.src || '';
+            imgEl.alt = o.alt || '';
+            if (capEl) {
+                var t = (o.caption || '').trim();
+                capEl.textContent = t;
+                capEl.hidden = !t;
+            }
+        }
+
+        function openLbAt(i) {
+            applyLbIndex(i);
+            lb.hidden = false;
+            lb.classList.add('ratib-program-lightbox--open');
+            document.body.classList.add('ratib-program-lightbox-open');
+            syncLbNav();
+        }
 
         function closeLb() {
             lb.hidden = true;
@@ -967,21 +1105,6 @@
             }
         }
 
-        function openLb(src, alt, caption) {
-            if (imgEl) {
-                imgEl.src = src || '';
-                imgEl.alt = alt || '';
-            }
-            if (capEl) {
-                var t = (caption || '').trim();
-                capEl.textContent = t;
-                capEl.hidden = !t;
-            }
-            lb.hidden = false;
-            lb.classList.add('ratib-program-lightbox--open');
-            document.body.classList.add('ratib-program-lightbox-open');
-        }
-
         document.addEventListener('click', function (ev) {
             var closeHit = ev.target.closest('[data-ratib-program-lightbox-close]');
             if (closeHit && !lb.hidden) {
@@ -989,27 +1112,53 @@
                 closeLb();
                 return;
             }
+
+            var vpMarq = ev.target.closest('.ratib-program-marquee__viewport');
+            if (vpMarq && vpMarq.getAttribute('data-ratib-marquee-suppress-click')) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                vpMarq.removeAttribute('data-ratib-marquee-suppress-click');
+                return;
+            }
+
+            if (!lb.hidden) {
+                if (ev.target.closest('[data-ratib-program-lightbox-prev]')) {
+                    ev.preventDefault();
+                    openLbAt(lbIndex - 1);
+                    return;
+                }
+                if (ev.target.closest('[data-ratib-program-lightbox-next]')) {
+                    ev.preventDefault();
+                    openLbAt(lbIndex + 1);
+                    return;
+                }
+            }
+
             var btn = ev.target.closest('[data-ratib-program-open]');
             if (!btn) {
                 return;
             }
             ev.preventDefault();
-            var full = btn.getAttribute('data-full-src') || '';
-            var im = btn.querySelector('img');
-            var altText = im ? im.getAttribute('alt') || '' : '';
-            var cap = btn.getAttribute('data-caption');
-            if (cap === null || typeof cap === 'undefined') {
-                cap = '';
-            }
-            if (!full && im) {
-                full = im.getAttribute('src') || '';
-            }
-            openLb(full, altText, cap);
+            openLbAt(indexOfProgramSlide(btn));
         });
 
         document.addEventListener('keydown', function (ev) {
-            if (ev.key === 'Escape' && !lb.hidden) {
+            if (lb.hidden) {
+                return;
+            }
+            if (ev.key === 'Escape') {
                 closeLb();
+                return;
+            }
+            if (slides.length <= 1) {
+                return;
+            }
+            if (ev.key === 'ArrowLeft') {
+                ev.preventDefault();
+                openLbAt(lbIndex - 1);
+            } else if (ev.key === 'ArrowRight') {
+                ev.preventDefault();
+                openLbAt(lbIndex + 1);
             }
         });
     }
