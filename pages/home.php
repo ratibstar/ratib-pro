@@ -248,9 +248,14 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-29';
+    : '20260210-30';
 /** Proof token for View Source: if this block is missing on the live site, the request is not using this home.php (wrong path, cache, or mirror). */
 $ratibHomePhpMtime = (string) (int) (@filemtime(__FILE__) ?: 0);
+/** Append to CSS/JS ?v= when CDN/host preserves mtimes (set in env or config: RATIB_HOME_ASSET_EXTRA_BUST=manual-20260210). */
+$ratibHomeAssetExtraBustRaw = getenv('RATIB_HOME_ASSET_EXTRA_BUST');
+$ratibHomeAssetExtraQ = ($ratibHomeAssetExtraBustRaw !== false && trim((string) $ratibHomeAssetExtraBustRaw) !== '')
+    ? '-' . preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeAssetExtraBustRaw))
+    : '';
 $ratibHome = ratib_site_content_home_flat(false);
 if (function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
     ratib_site_content_home_ensure_header_nav_labels($ratibHome);
@@ -382,7 +387,7 @@ if ($ratibNavProductTourLabel === '') {
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/chat-widget.css">
     <?php
     $ratibHomeCssTs = (int) (@filemtime(__DIR__ . '/../css/pages/home-public.css') ?: time());
-    $ratibHomeCssQ = $ratibHomeCssTs . '-' . $ratibHomeUiRev;
+    $ratibHomeCssQ = $ratibHomeCssTs . '-' . $ratibHomeUiRev . $ratibHomeAssetExtraQ;
     ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo htmlspecialchars($ratibHomeCssQ, ENT_QUOTES, 'UTF-8'); ?>">
 </head>
@@ -1235,7 +1240,7 @@ if ($ratibNavProductTourLabel === '') {
         'platinumYear1' => (float) ($plans['platinum']['amount'] ?? $platinumTestPriceYear1),
     ];
     $ratibHomeJsTs = (int) (@filemtime(__DIR__ . '/../js/pages/home-page.js') ?: time());
-    $ratibHomeJsQ = $ratibHomeJsTs . '-' . $ratibHomeUiRev;
+    $ratibHomeJsQ = $ratibHomeJsTs . '-' . $ratibHomeUiRev . $ratibHomeAssetExtraQ;
     ?>
     <script>
     (function () {
