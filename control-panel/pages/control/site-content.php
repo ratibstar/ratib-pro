@@ -63,18 +63,6 @@ function ratib_control_site_content_media_preview_url(string $val): string
 }
 
 /**
- * True when program strip slot N has no caption, alt, or image (optional slots stay collapsed).
- */
-function ratib_control_site_content_program_slot_unused(array $values, int $n): bool
-{
-    $c = trim((string) ($values['home.program.caption.' . $n] ?? ''));
-    $a = trim((string) ($values['home.program.alt.' . $n] ?? ''));
-    $img = trim((string) ($values['home.program.img' . $n] ?? ''));
-
-    return $c === '' && $a === '' && $img === '';
-}
-
-/**
  * @param array<string, string> $values
  */
 function ratib_control_site_content_render_field(array $field, array $values): void
@@ -88,41 +76,7 @@ function ratib_control_site_content_render_field(array $field, array $values): v
     $id = 'f_' . preg_replace('/[^a-zA-Z0-9]+/', '_', $key);
     $nameKey = htmlspecialchars($key, ENT_QUOTES, 'UTF-8');
 
-    $mediaGroup = '';
-    $mediaSlot = 0;
-    if (preg_match('/^home\.program\.caption\.(\d+)$/', $key, $mm)) {
-        $mediaGroup = 'program';
-        $mediaSlot = (int) ($mm[1] ?? 0);
-    } elseif (preg_match('/^home\.program\.alt\.(\d+)$/', $key, $mm)) {
-        $mediaGroup = 'program';
-        $mediaSlot = (int) ($mm[1] ?? 0);
-    } elseif (preg_match('/^home\.program\.img(\d+)$/', $key, $mm)) {
-        $mediaGroup = 'program';
-        $mediaSlot = (int) ($mm[1] ?? 0);
-    } elseif ($key === 'home.video.file' || preg_match('/^home\.video\.file(\d+)$/', $key, $mm)) {
-        $mediaGroup = 'video';
-        $mediaSlot = $key === 'home.video.file' ? 1 : (int) ($mm[1] ?? 0);
-    }
-
-    $isHiddenMediaSlot = false;
-    if ($mediaGroup === 'program' && $mediaSlot > 3 && ratib_control_site_content_program_slot_unused($values, $mediaSlot)) {
-        $isHiddenMediaSlot = true;
-    }
-    if ($mediaGroup === 'video' && $mediaSlot > 1 && trim((string) $val) === '') {
-        $isHiddenMediaSlot = true;
-    }
-
-    $isExtraSlot = ($mediaGroup === 'program' && $mediaSlot > 3) || ($mediaGroup === 'video' && $mediaSlot > 1);
-    $slotAttrs = '';
-    if ($mediaGroup !== '' && $mediaSlot > 0) {
-        $slotAttrs .= ' data-media-group="' . htmlspecialchars($mediaGroup, ENT_QUOTES, 'UTF-8') . '"';
-        $slotAttrs .= ' data-media-slot="' . htmlspecialchars((string) $mediaSlot, ENT_QUOTES, 'UTF-8') . '"';
-        if ($isHiddenMediaSlot) {
-            $slotAttrs .= ' data-media-hidden="1" style="display:none"';
-        }
-    }
-
-    echo '<div class="mb-3"' . $slotAttrs . '>';
+    echo '<div class="mb-3">';
     echo '<label class="form-label" for="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">' . $label . '</label>';
     if ($type === 'textarea') {
         echo '<textarea class="form-control' . htmlspecialchars($extraClass, ENT_QUOTES, 'UTF-8') . '" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="content[' . $nameKey . ']" rows="' . $rows . '" maxlength="65000">' . htmlspecialchars($val, ENT_QUOTES, 'UTF-8') . '</textarea>';
@@ -148,12 +102,6 @@ function ratib_control_site_content_render_field(array $field, array $values): v
                 }
             }
             echo '<label class="form-check-label"><input class="form-check-input me-1" type="checkbox" name="media_delete[' . $nameKey . ']" value="1">Delete current file/path</label>';
-        }
-        if (($type === 'media_image' || $type === 'media_video') && !$isExtraSlot) {
-            echo '<button type="button" class="btn btn-sm btn-outline-warning align-self-start" data-media-clear="' . htmlspecialchars($mediaGroup, ENT_QUOTES, 'UTF-8') . '" data-media-clear-slot="' . htmlspecialchars((string) $mediaSlot, ENT_QUOTES, 'UTF-8') . '">Clear media</button>';
-        }
-        if ($isExtraSlot) {
-            echo '<button type="button" class="btn btn-sm btn-outline-danger align-self-start" data-media-remove="' . htmlspecialchars($mediaGroup, ENT_QUOTES, 'UTF-8') . '" data-media-remove-slot="' . htmlspecialchars((string) $mediaSlot, ENT_QUOTES, 'UTF-8') . '">Remove this slot</button>';
         }
         echo '</div>';
     } else {
@@ -239,6 +187,218 @@ function ratib_control_site_content_try_delete_media_file(string $storedPath): v
 }
 
 /**
+ * @param array<string, mixed> $posted
+ * @param array<string, string> $priorValues
+ *
+ * @return string Error message or ''
+ */
+function ratib_control_site_content_apply_program_slots_post(array &$posted, array $files, array $post): string
+{
+    if (!function_exists('ratib_site_content_home_program_slots_from_flat')) {
+        return '';
+    }
+    $captions = isset($post['program_slot_caption']) && is_array($post['program_slot_caption']) ? $post['program_slot_caption'] : [];
+    $alts = isset($post['program_slot_alt']) && is_array($post['program_slot_alt']) ? $post['program_slot_alt'] : [];
+    $srcsIn = isset($post['program_slot_src']) && is_array($post['program_slot_src']) ? $post['program_slot_src'] : [];
+    $prevs = isset($post['program_slot_prev_src']) && is_array($post['program_slot_prev_src']) ? $post['program_slot_prev_src'] : [];
+    $dels = isset($post['program_slot_delete_media']) && is_array($post['program_slot_delete_media']) ? $post['program_slot_delete_media'] : [];
+
+    $n = max(count($captions), count($alts), count($srcsIn), count($prevs), count($dels));
+    if (isset($files['program_slot_upload']['name']) && is_array($files['program_slot_upload']['name'])) {
+        $n = max($n, count($files['program_slot_upload']['name']));
+    }
+
+    $items = [];
+    for ($i = 0; $i < $n; $i++) {
+        $cap = trim((string) ($captions[$i] ?? ''));
+        $alt = trim((string) ($alts[$i] ?? ''));
+        $src = trim((string) ($srcsIn[$i] ?? ''));
+        $prev = trim((string) ($prevs[$i] ?? ''));
+
+        if (isset($dels[$i]) && (string) $dels[$i] === '1') {
+            $toDel = $prev !== '' ? $prev : $src;
+            ratib_control_site_content_try_delete_media_file($toDel);
+            $src = '';
+        }
+
+        $fe = isset($files['program_slot_upload']['error'][$i]) ? (int) $files['program_slot_upload']['error'][$i] : UPLOAD_ERR_NO_FILE;
+        if ($fe === UPLOAD_ERR_OK) {
+            $f = [
+                'name' => $files['program_slot_upload']['name'][$i] ?? '',
+                'type' => $files['program_slot_upload']['type'][$i] ?? '',
+                'tmp_name' => $files['program_slot_upload']['tmp_name'][$i] ?? '',
+                'error' => $fe,
+                'size' => isset($files['program_slot_upload']['size'][$i]) ? (int) $files['program_slot_upload']['size'][$i] : 0,
+            ];
+            $up = ratib_control_site_content_store_media($f, 'image');
+            if (!$up['ok']) {
+                return 'Program image upload failed (row ' . (string) ($i + 1) . '): ' . $up['error'];
+            }
+            if ($prev !== '' && $prev !== $up['path']) {
+                ratib_control_site_content_try_delete_media_file($prev);
+            }
+            $src = $up['path'];
+        }
+
+        if ($cap === '' && $alt === '' && $src === '') {
+            continue;
+        }
+        $items[] = ['caption' => $cap, 'alt' => $alt, 'src' => $src];
+    }
+
+    $posted['home.program.slots_json'] = json_encode($items, JSON_UNESCAPED_UNICODE);
+
+    return '';
+}
+
+/**
+ * @param array<string, mixed> $posted
+ *
+ * @return string Error message or ''
+ */
+function ratib_control_site_content_apply_video_slots_post(array &$posted, array $files, array $post): string
+{
+    $srcsIn = isset($post['video_slot_src']) && is_array($post['video_slot_src']) ? $post['video_slot_src'] : [];
+    $prevs = isset($post['video_slot_prev_src']) && is_array($post['video_slot_prev_src']) ? $post['video_slot_prev_src'] : [];
+    $dels = isset($post['video_slot_delete_media']) && is_array($post['video_slot_delete_media']) ? $post['video_slot_delete_media'] : [];
+
+    $n = max(count($srcsIn), count($prevs), count($dels));
+    if (isset($files['video_slot_upload']['name']) && is_array($files['video_slot_upload']['name'])) {
+        $n = max($n, count($files['video_slot_upload']['name']));
+    }
+
+    $rows = [];
+    for ($i = 0; $i < $n; $i++) {
+        $src = trim((string) ($srcsIn[$i] ?? ''));
+        $prev = trim((string) ($prevs[$i] ?? ''));
+
+        if (isset($dels[$i]) && (string) $dels[$i] === '1') {
+            $toDel = $prev !== '' ? $prev : $src;
+            ratib_control_site_content_try_delete_media_file($toDel);
+            $src = '';
+        }
+
+        $fe = isset($files['video_slot_upload']['error'][$i]) ? (int) $files['video_slot_upload']['error'][$i] : UPLOAD_ERR_NO_FILE;
+        if ($fe === UPLOAD_ERR_OK) {
+            $f = [
+                'name' => $files['video_slot_upload']['name'][$i] ?? '',
+                'type' => $files['video_slot_upload']['type'][$i] ?? '',
+                'tmp_name' => $files['video_slot_upload']['tmp_name'][$i] ?? '',
+                'error' => $fe,
+                'size' => isset($files['video_slot_upload']['size'][$i]) ? (int) $files['video_slot_upload']['size'][$i] : 0,
+            ];
+            $up = ratib_control_site_content_store_media($f, 'video');
+            if (!$up['ok']) {
+                return 'Video upload failed (row ' . (string) ($i + 1) . '): ' . $up['error'];
+            }
+            if ($prev !== '' && $prev !== $up['path']) {
+                ratib_control_site_content_try_delete_media_file($prev);
+            }
+            $src = $up['path'];
+        }
+
+        if ($src !== '') {
+            $rows[] = ['src' => $src];
+        }
+    }
+
+    $posted['home.video.slots_json'] = json_encode($rows, JSON_UNESCAPED_UNICODE);
+
+    return '';
+}
+
+/**
+ * @param array<string, string> $values
+ */
+function ratib_control_site_content_render_program_slots_editor(array $values): void
+{
+    if (!function_exists('ratib_site_content_home_program_slots_from_flat')) {
+        return;
+    }
+    $rows = ratib_site_content_home_program_slots_from_flat($values);
+    echo '<div class="ratib-cms-slots ratib-cms-slots--program border rounded p-3 mb-2 bg-dark bg-opacity-25">';
+    echo '<p class="small text-muted mb-2">Images on the public homepage (unlimited). Each row: caption, alt text, then URL or upload.</p>';
+    echo '<div id="ratib-program-slots-rows">';
+    foreach ($rows as $idx => $row) {
+        ratib_control_site_content_render_program_slot_row($idx, $row);
+    }
+    echo '</div>';
+    echo '<button type="button" class="btn btn-sm btn-outline-light mt-2" id="ratib-program-slot-add" data-ratib-slot-add="program">Add image +</button>';
+    echo '</div>';
+}
+
+/**
+ * @param array{caption?:string, alt?:string, src?:string} $row
+ */
+function ratib_control_site_content_render_program_slot_row(int $idx, array $row): void
+{
+    $cap = htmlspecialchars((string) ($row['caption'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $alt = htmlspecialchars((string) ($row['alt'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $src = htmlspecialchars((string) ($row['src'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $prev = htmlspecialchars((string) ($row['src'] ?? ''), ENT_QUOTES, 'UTF-8');
+    echo '<div class="ratib-cms-slot-row border-bottom border-secondary pb-3 mb-3" data-slot-row="program">';
+    echo '<div class="small text-muted mb-1">Image #' . (string) ($idx + 1) . '</div>';
+    echo '<div class="mb-2"><label class="form-label">Caption</label><input type="text" class="form-control form-control-sm" name="program_slot_caption[]" value="' . $cap . '" maxlength="65000"></div>';
+    echo '<div class="mb-2"><label class="form-label">Alt text</label><input type="text" class="form-control form-control-sm" name="program_slot_alt[]" value="' . $alt . '" maxlength="65000"></div>';
+    echo '<div class="mb-2"><label class="form-label">Image URL / path / token</label><input type="text" class="form-control form-control-sm font-monospace" name="program_slot_src[]" value="' . $src . '" maxlength="65000"></div>';
+    echo '<input type="hidden" name="program_slot_prev_src[]" value="' . $prev . '">';
+    echo '<input type="file" class="form-control form-control-sm mb-2" name="program_slot_upload[]" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml">';
+    echo '<input type="hidden" name="program_slot_delete_media[]" value="0" class="ratib-slot-del-hidden">';
+    if (trim((string) ($row['src'] ?? '')) !== '') {
+        $previewUrl = ratib_control_site_content_media_preview_url((string) ($row['src'] ?? ''));
+        if ($previewUrl !== '') {
+            echo '<div class="mb-2"><img src="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '" alt="" style="max-width:180px;max-height:100px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.15);"></div>';
+        }
+        echo '<label class="form-check-label small"><input class="form-check-input ratib-slot-del-cb me-1" type="checkbox" value="1"> Delete uploaded file for this row</label>';
+    }
+    echo '<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-danger" data-ratib-slot-remove="program">Remove row</button></div>';
+    echo '</div>';
+}
+
+/**
+ * @param array<string, string> $values
+ */
+function ratib_control_site_content_render_video_slots_editor(array $values): void
+{
+    if (!function_exists('ratib_site_content_home_video_src_strings_from_flat')) {
+        return;
+    }
+    $srcs = ratib_site_content_home_video_src_strings_from_flat($values);
+    if ($srcs === []) {
+        $srcs = [''];
+    }
+    echo '<div class="ratib-cms-slots ratib-cms-slots--video border rounded p-3 mb-2 bg-dark bg-opacity-25">';
+    echo '<p class="small text-muted mb-2">Videos on the public homepage (unlimited horizontal row). MP4 / WebM / MOV.</p>';
+    echo '<div id="ratib-video-slots-rows">';
+    foreach ($srcs as $idx => $sv) {
+        ratib_control_site_content_render_video_slot_row($idx, (string) $sv);
+    }
+    echo '</div>';
+    echo '<button type="button" class="btn btn-sm btn-outline-light mt-2" id="ratib-video-slot-add" data-ratib-slot-add="video">Add video +</button>';
+    echo '</div>';
+}
+
+function ratib_control_site_content_render_video_slot_row(int $idx, string $src): void
+{
+    $es = htmlspecialchars($src, ENT_QUOTES, 'UTF-8');
+    echo '<div class="ratib-cms-slot-row border-bottom border-secondary pb-3 mb-3" data-slot-row="video">';
+    echo '<div class="small text-muted mb-1">Video #' . (string) ($idx + 1) . '</div>';
+    echo '<div class="mb-2"><label class="form-label">Video URL / path / token</label><input type="text" class="form-control form-control-sm font-monospace" name="video_slot_src[]" value="' . $es . '" maxlength="65000"></div>';
+    echo '<input type="hidden" name="video_slot_prev_src[]" value="' . $es . '">';
+    echo '<input type="file" class="form-control form-control-sm mb-2" name="video_slot_upload[]" accept="video/mp4,video/webm,video/quicktime">';
+    echo '<input type="hidden" name="video_slot_delete_media[]" value="0" class="ratib-slot-del-hidden">';
+    if (trim($src) !== '') {
+        $previewUrl = ratib_control_site_content_media_preview_url($src);
+        if ($previewUrl !== '') {
+            echo '<div class="mb-2"><video controls preload="metadata" style="max-width:260px;max-height:146px;border-radius:10px;background:#060b19"><source src="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '"></video></div>';
+        }
+        echo '<label class="form-check-label small"><input class="form-check-input ratib-slot-del-cb me-1" type="checkbox" value="1"> Delete uploaded file for this row</label>';
+    }
+    echo '<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-danger" data-ratib-slot-remove="video">Remove row</button></div>';
+    echo '</div>';
+}
+
+/**
  * Monotonic revision for ratib_site_content rows (unix seconds as string).
  * Used to block stale-tab overwrites when multiple CMS tabs are open.
  */
@@ -300,44 +460,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
     } else {
         $posted = $_POST['content'] ?? null;
         $posted = is_array($posted) ? $posted : [];
-        $mediaMap = [];
-        foreach ($allowedKeys as $k) {
-            if ($k === 'home.video.file' || preg_match('/^home\.video\.file\d+$/', $k)) {
-                $mediaMap[$k] = 'video';
-            } elseif (preg_match('/^home\.program\.img\d+$/', $k)) {
-                $mediaMap[$k] = 'image';
-            }
+        $slotErr = ratib_control_site_content_apply_program_slots_post($posted, $_FILES, $_POST);
+        if ($slotErr === '') {
+            $slotErr = ratib_control_site_content_apply_video_slots_post($posted, $_FILES, $_POST);
         }
-        $deleteReq = $_POST['media_delete'] ?? [];
-        $deleteReq = is_array($deleteReq) ? $deleteReq : [];
-        foreach ($mediaMap as $mKey => $mKind) {
-            $oldVal = trim((string) ($values[$mKey] ?? ''));
-            if (isset($deleteReq[$mKey]) && (string) $deleteReq[$mKey] === '1') {
-                $posted[$mKey] = '';
-                ratib_control_site_content_try_delete_media_file($oldVal);
-            }
-            if (
-                isset($_FILES['media_upload'])
-                && isset($_FILES['media_upload']['error'][$mKey])
-                && (int) $_FILES['media_upload']['error'][$mKey] !== UPLOAD_ERR_NO_FILE
-            ) {
-                $f = [
-                    'name' => $_FILES['media_upload']['name'][$mKey] ?? '',
-                    'type' => $_FILES['media_upload']['type'][$mKey] ?? '',
-                    'tmp_name' => $_FILES['media_upload']['tmp_name'][$mKey] ?? '',
-                    'error' => $_FILES['media_upload']['error'][$mKey] ?? UPLOAD_ERR_NO_FILE,
-                    'size' => $_FILES['media_upload']['size'][$mKey] ?? 0,
-                ];
-                $up = ratib_control_site_content_store_media($f, $mKind);
-                if (!$up['ok']) {
-                    $flashErr = 'Media upload failed for ' . $mKey . ': ' . $up['error'];
-                    break;
-                }
-                $posted[$mKey] = $up['path'];
-                if ($oldVal !== '' && $oldVal !== $up['path']) {
-                    ratib_control_site_content_try_delete_media_file($oldVal);
-                }
-            }
+        if ($slotErr !== '') {
+            $flashErr = $slotErr;
         }
         if ($flashErr !== '') {
             foreach (array_keys($defaults) as $k) {
@@ -461,17 +589,17 @@ foreach ($groups as $gx => $group) {
             <summary><?php echo $gtitle; ?></summary>
             <div class="ratib-site-content-details__body">
     <?php
-    $groupIdRawPre = (string) ($group['id'] ?? '');
-    if ($groupIdRawPre === 'video' || $groupIdRawPre === 'program') {
-        $btnLabelTop = $groupIdRawPre === 'video' ? 'Add one more video +' : 'Add one more image +';
-        echo '<p class="small text-muted mb-2">Optional extras — click <strong>+</strong> to reveal another slot. Primary fields are below.</p>';
-        echo '<button type="button" class="btn btn-sm btn-outline-light mb-3" data-media-add="' . htmlspecialchars($groupIdRawPre, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($btnLabelTop, ENT_QUOTES, 'UTF-8') . '</button>';
-    }
     foreach ($group['fields'] ?? [] as $field) {
         if (!isset($field['key'])) {
             continue;
         }
         ratib_control_site_content_render_field($field, $values);
+    }
+    $renderSlots = isset($group['render_slots']) ? (string) $group['render_slots'] : '';
+    if ($renderSlots === 'program') {
+        ratib_control_site_content_render_program_slots_editor($values);
+    } elseif ($renderSlots === 'video') {
+        ratib_control_site_content_render_video_slots_editor($values);
     }
     if (!empty($group['repeat']) && is_array($group['repeat'])) {
         $r = $group['repeat'];
@@ -493,11 +621,6 @@ foreach ($groups as $gx => $group) {
                 ratib_control_site_content_render_field($row, $values);
             }
         }
-    }
-    $groupIdRaw = (string) ($group['id'] ?? '');
-    if ($groupIdRaw === 'video' || $groupIdRaw === 'program') {
-        $btnLabel = $groupIdRaw === 'video' ? 'Add one more video +' : 'Add one more image +';
-        echo '<button type="button" class="btn btn-sm btn-outline-secondary mt-3" data-media-add="' . htmlspecialchars($groupIdRaw, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($btnLabel, ENT_QUOTES, 'UTF-8') . '</button>';
     }
     ?>
             </div>
@@ -529,75 +652,86 @@ if ($pageRevision !== '') {
 </div>
 <script>
 (function () {
-    function revealNext(group) {
-        var sel = '[data-media-group="' + group + '"][data-media-hidden="1"]';
-        var next = document.querySelector(sel);
-        if (!next) return false;
-        var slot = next.getAttribute('data-media-slot') || '';
-        if (group === 'program' && slot) {
-            var nodes = document.querySelectorAll('[data-media-group="program"][data-media-slot="' + slot + '"][data-media-hidden="1"]');
-            if (!nodes.length) return false;
-            nodes.forEach(function (el) {
-                el.style.display = '';
-                el.removeAttribute('data-media-hidden');
-            });
-            var focusEl = document.querySelector('[data-media-group="program"][data-media-slot="' + slot + '"] input');
-            if (focusEl && typeof focusEl.focus === 'function') focusEl.focus();
-            return true;
+    function syncDeleteHidden(row) {
+        if (!row) return;
+        var hidden = row.querySelector('.ratib-slot-del-hidden');
+        var cb = row.querySelector('.ratib-slot-del-cb');
+        if (hidden && cb) hidden.value = cb.checked ? '1' : '0';
+    }
+    function bindRow(row) {
+        if (!row) return;
+        var cb = row.querySelector('.ratib-slot-del-cb');
+        if (cb && !cb._ratibDelBound) {
+            cb._ratibDelBound = true;
+            cb.addEventListener('change', function () { syncDeleteHidden(row); });
         }
-        next.style.display = '';
-        next.removeAttribute('data-media-hidden');
-        var input = next.querySelector('input, textarea, select');
-        if (input && typeof input.focus === 'function') input.focus();
-        return true;
+        syncDeleteHidden(row);
     }
-    function clearSlot(el) {
-        if (!el) return;
-        var textInput = el.querySelector('input[type="text"]');
-        if (textInput) textInput.value = '';
-        var fileInput = el.querySelector('input[type="file"]');
-        if (fileInput) fileInput.value = '';
-        var delInput = el.querySelector('input[type="checkbox"][name^="media_delete["]');
-        if (delInput) delInput.checked = true;
+    function clearProgramRow(row) {
+        row.querySelectorAll('input[type="text"], textarea').forEach(function (el) { el.value = ''; });
+        var file = row.querySelector('input[type="file"]');
+        if (file) file.value = '';
+        var prev = row.querySelector('input[name="program_slot_prev_src[]"]');
+        if (prev) prev.value = '';
+        var hidden = row.querySelector('.ratib-slot-del-hidden');
+        if (hidden) hidden.value = '0';
+        var cb = row.querySelector('.ratib-slot-del-cb');
+        if (cb) cb.checked = false;
+        row.querySelectorAll('.mb-2 img, .mb-2 video, label.form-check-label').forEach(function (n) { n.remove(); });
     }
-    function hideSlot(el) {
-        if (!el) return;
-        clearSlot(el);
-        el.style.display = 'none';
-        el.setAttribute('data-media-hidden', '1');
+    function clearVideoRow(row) {
+        row.querySelectorAll('input[type="text"]').forEach(function (el) { el.value = ''; });
+        var file = row.querySelector('input[type="file"]');
+        if (file) file.value = '';
+        var prev = row.querySelector('input[name="video_slot_prev_src[]"]');
+        if (prev) prev.value = '';
+        var hidden = row.querySelector('.ratib-slot-del-hidden');
+        if (hidden) hidden.value = '0';
+        var cb = row.querySelector('.ratib-slot-del-cb');
+        if (cb) cb.checked = false;
+        row.querySelectorAll('.mb-2 video, label.form-check-label').forEach(function (n) { n.remove(); });
     }
+    document.querySelectorAll('.ratib-cms-slot-row[data-slot-row]').forEach(bindRow);
     document.addEventListener('click', function (ev) {
-        var btn = ev.target && ev.target.closest ? ev.target.closest('[data-media-add]') : null;
-        if (btn) {
-            var group = btn.getAttribute('data-media-add') || '';
-            if (!group) return;
-            var ok = revealNext(group);
-            if (!ok) {
-                document.querySelectorAll('[data-media-add="' + group + '"]').forEach(function (b) {
-                    b.disabled = true;
-                    b.textContent = 'No more slots available';
-                });
-            }
+        var addBtn = ev.target && ev.target.closest ? ev.target.closest('[data-ratib-slot-add]') : null;
+        if (addBtn) {
+            var kind = addBtn.getAttribute('data-ratib-slot-add') || '';
+            var wrap = kind === 'program' ? document.getElementById('ratib-program-slots-rows') : document.getElementById('ratib-video-slots-rows');
+            if (!wrap) return;
+            var protoSel = kind === 'program' ? '.ratib-cms-slot-row[data-slot-row="program"]' : '.ratib-cms-slot-row[data-slot-row="video"]';
+            var proto = wrap.querySelector(protoSel);
+            if (!proto) return;
+            var clone = proto.cloneNode(true);
+            if (kind === 'program') clearProgramRow(clone); else clearVideoRow(clone);
+            var n = wrap.querySelectorAll(protoSel).length;
+            var label = clone.querySelector('.small.text-muted.mb-1');
+            if (label) label.textContent = (kind === 'program' ? 'Image #' : 'Video #') + (n + 1);
+            wrap.appendChild(clone);
+            bindRow(clone);
+            var inp = clone.querySelector('input[type="text"], textarea');
+            if (inp && inp.focus) inp.focus();
             return;
         }
-        var clrBtn = ev.target && ev.target.closest ? ev.target.closest('[data-media-clear]') : null;
-        if (clrBtn) {
-            var wrap = clrBtn.closest('.mb-3');
-            clearSlot(wrap);
+        var rm = ev.target && ev.target.closest ? ev.target.closest('[data-ratib-slot-remove]') : null;
+        if (rm) {
+            var row = rm.closest('.ratib-cms-slot-row');
+            var container = row ? row.parentElement : null;
+            if (!row || !container) return;
+            var kind = rm.getAttribute('data-ratib-slot-remove') || '';
+            var protoSel = kind === 'program' ? '.ratib-cms-slot-row[data-slot-row="program"]' : '.ratib-cms-slot-row[data-slot-row="video"]';
+            if (container.querySelectorAll(protoSel).length <= 1) {
+                if (kind === 'program') clearProgramRow(row); else clearVideoRow(row);
+                bindRow(row);
+                return;
+            }
+            row.remove();
             return;
         }
-        var delBtn = ev.target && ev.target.closest ? ev.target.closest('[data-media-remove][data-media-remove-slot]') : null;
-        if (delBtn) {
-            var g = delBtn.getAttribute('data-media-remove') || '';
-            var s = delBtn.getAttribute('data-media-remove-slot') || '';
-            if (!g || !s) return;
-            if (g === 'program') {
-                document.querySelectorAll('[data-media-group="program"][data-media-slot="' + s + '"]').forEach(hideSlot);
-            } else {
-                var slotEl = document.querySelector('[data-media-group="' + g + '"][data-media-slot="' + s + '"]');
-                hideSlot(slotEl);
-            }
-        }
+    });
+    document.querySelectorAll('.ratib-site-content-form').forEach(function (form) {
+        form.addEventListener('submit', function () {
+            form.querySelectorAll('.ratib-cms-slot-row[data-slot-row]').forEach(syncDeleteHidden);
+        });
     });
 })();
 </script>

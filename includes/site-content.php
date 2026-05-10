@@ -863,16 +863,20 @@ if (!function_exists('ratib_site_content_public_home')) {
     {
         $f = ratib_site_content_home_flat();
 
+        $p1 = $p2 = $p3 = '';
+        if (function_exists('ratib_site_content_home_program_slots_from_flat')) {
+            $items = ratib_site_content_home_program_slots_from_flat($f);
+            $p1 = trim((string) ($items[0]['src'] ?? ''));
+            $p2 = trim((string) ($items[1]['src'] ?? ''));
+            $p3 = trim((string) ($items[2]['src'] ?? ''));
+        }
+
         return [
             'eyebrow' => $f['home.hero.eyebrow'] ?? '',
             'lead' => $f['home.hero.lead'] ?? '',
             'platform_title' => $f['home.platform.title'] ?? '',
             'platform_sub' => $f['home.platform.sub'] ?? '',
-            'program_img' => [
-                $f['home.program.img1'] ?? '',
-                $f['home.program.img2'] ?? '',
-                $f['home.program.img3'] ?? '',
-            ],
+            'program_img' => [$p1, $p2, $p3],
         ];
     }
 }

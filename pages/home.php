@@ -165,14 +165,8 @@ $path = $_SERVER['REQUEST_URI'] ?? '';
 $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
 
-// EN: Resolve hero video source:
-// 1) CMS key home.video.file (URL or relative path), then
-// 2) legacy assets/video.mp4 scan fallback.
+// EN: Shared paths for gallery images and legacy hero video fallback (assets/*.mp4 when CMS has no clips).
 $assetsDir = __DIR__ . '/../assets';
-$videoExists = false;
-$videoSrcRel = '';
-$videoUrl = '';
-$videoStored = '';
 
 // EN: Build gallery image list from assets/images for dynamic rendering in the page.
 // AR: تجهيز قائمة صور المعرض من assets/images لعرضها ديناميكياً في الصفحة.
@@ -309,67 +303,53 @@ $ratibProgFallbackFs = [
     2 => __DIR__ . '/../assets/images/program-preview-workers.svg',
     3 => __DIR__ . '/../assets/images/program-preview-finance.svg',
 ];
-$ratibProgSrc = [];
-for ($rpi = 1; $rpi <= 10; $rpi++) {
-    $stored = (string) ($ratibHome['home.program.img' . $rpi] ?? '');
-    if ($rpi <= 3) {
-        $ratibProgSrc[$rpi] = ratib_site_content_asset_url(
-            $baseUrl,
-            $stored,
-            $ratibProgFallbackRel[$rpi],
-            $ratibProgFallbackFs[$rpi]
-        );
-    } else {
-        $ratibProgSrc[$rpi] = trim($stored) !== '' ? ratib_site_content_asset_url($baseUrl, $stored, '', __FILE__) : '';
+$ratibProgSlotsOut = [];
+if (function_exists('ratib_site_content_home_program_slots_from_flat')) {
+    foreach (ratib_site_content_home_program_slots_from_flat($ratibHome) as $idx => $slot) {
+        $num = $idx + 1;
+        $stored = trim((string) ($slot['src'] ?? ''));
+        if ($stored === '' && $num > 3) {
+            continue;
+        }
+        $fbRel = $ratibProgFallbackRel[$num] ?? '';
+        $fbFs = $ratibProgFallbackFs[$num] ?? '';
+        if ($num <= 3 && $stored === '') {
+            $imgSrc = ratib_site_content_asset_url($baseUrl, '', $fbRel, $fbFs);
+        } else {
+            $imgSrc = ratib_site_content_asset_url(
+                $baseUrl,
+                $stored,
+                $fbRel !== '' ? $fbRel : '',
+                $fbFs !== '' ? $fbFs : __FILE__
+            );
+        }
+        if (trim($imgSrc) === '') {
+            continue;
+        }
+        $ratibProgSlotsOut[] = [
+            'src' => $imgSrc,
+            'alt' => (string) ($slot['alt'] ?? ''),
+            'caption' => (string) ($slot['caption'] ?? ''),
+        ];
     }
 }
+
 $ratibVideoSources = [];
-$videoStored = trim((string) ($ratibHome['home.video.file'] ?? ''));
-if ($videoStored !== '') {
-    if (preg_match('#^https?://#i', $videoStored)) {
-        $videoSrcRel = $videoStored;
-        $videoUrl = $videoStored;
-        $videoExists = true;
-    } elseif (function_exists('ratib_site_content_media_public_url') && ratib_site_content_media_public_url($baseUrl, $videoStored) !== '') {
-        $videoSrcRel = ratib_site_content_media_public_url($baseUrl, $videoStored);
-        $videoUrl = $videoSrcRel;
-        $videoExists = true;
-    } else {
-        $rel = ltrim(str_replace('\\', '/', $videoStored), '/');
-        $fs = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
-        $v = is_file($fs) ? (int) filemtime($fs) : time();
-        $videoUrl = rtrim($baseUrl, '/') . '/' . $rel . '?v=' . $v;
-        $videoSrcRel = $videoUrl;
-        $videoExists = true;
+$videoExists = false;
+$videoSrcRel = '';
+$videoUrl = '';
+if (function_exists('ratib_site_content_home_video_src_strings_from_flat') && function_exists('ratib_site_content_home_resolve_video_display_url')) {
+    foreach (ratib_site_content_home_video_src_strings_from_flat($ratibHome) as $vs) {
+        $u = ratib_site_content_home_resolve_video_display_url((string) $vs, $baseUrl);
+        if ($u !== '') {
+            $ratibVideoSources[] = $u;
+        }
     }
 }
-if ($videoExists && $videoSrcRel !== '') {
-    $ratibVideoSources[] = $videoSrcRel;
-}
-for ($vix = 2; $vix <= 6; $vix++) {
-    $extraStored = trim((string) ($ratibHome['home.video.file' . $vix] ?? ''));
-    if ($extraStored === '') {
-        continue;
-    }
-    $u = '';
-    if (preg_match('#^https?://#i', $extraStored)) {
-        $u = $extraStored;
-    } elseif (function_exists('ratib_site_content_media_public_url') && ratib_site_content_media_public_url($baseUrl, $extraStored) !== '') {
-        $u = ratib_site_content_media_public_url($baseUrl, $extraStored);
-    } else {
-        $rel = ltrim(str_replace('\\', '/', $extraStored), '/');
-        $fs = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
-        $v = is_file($fs) ? (int) filemtime($fs) : time();
-        $u = rtrim($baseUrl, '/') . '/' . $rel . '?v=' . $v;
-    }
-    if ($u !== '') {
-        $ratibVideoSources[] = $u;
-    }
-}
-if (!$videoExists && !empty($ratibVideoSources)) {
+if ($ratibVideoSources !== []) {
+    $videoExists = true;
     $videoSrcRel = (string) $ratibVideoSources[0];
     $videoUrl = $videoSrcRel;
-    $videoExists = true;
 }
 if (!$videoExists) {
     // AR: توافق رجعي — دعم الملفات القديمة في assets حتى بدون مفتاح CMS.
@@ -689,12 +669,11 @@ if ($videoExists && $videoSrcRel !== '' && empty($ratibVideoSources)) {
                     <p class="ratib-hero__photo-eyebrow"><?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                     <div class="ratib-cms-media-strip ratib-cms-media-strip--program" role="region" aria-label="<?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? 'Program previews', ENT_QUOTES, 'UTF-8'); ?>">
                         <div class="ratib-cms-media-strip__track ratib-cms-media-strip__track--program">
-                            <?php for ($pgi = 1; $pgi <= 10; $pgi++) { ?>
-                            <?php if (($ratibProgSrc[$pgi] ?? '') === '') { continue; } ?>
+                            <?php foreach ($ratibProgSlotsOut as $ratibProgSlot) { ?>
                             <div class="ratib-cms-media-strip__item ratib-cms-media-strip__item--program">
                                 <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                                    <img src="<?php echo htmlspecialchars((string) $ratibProgSrc[$pgi], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($ratibHome['home.program.alt.' . $pgi] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
-                                    <figcaption><?php echo htmlspecialchars($ratibHome['home.program.caption.' . $pgi] ?? '', ENT_QUOTES, 'UTF-8'); ?></figcaption>
+                                    <img src="<?php echo htmlspecialchars((string) $ratibProgSlot['src'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars((string) $ratibProgSlot['alt'], ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
+                                    <figcaption><?php echo htmlspecialchars((string) $ratibProgSlot['caption'], ENT_QUOTES, 'UTF-8'); ?></figcaption>
                                 </figure>
                             </div>
                             <?php } ?>

@@ -3,6 +3,7 @@
  * Public homepage (pages/home.php) — default copy keys + control-panel editor layout.
  * Keys are flat strings stored in ratib_site_content.content_key.
  */
+require_once __DIR__ . '/site-content-home-slots.php';
 
 if (!function_exists('ratib_site_content_public_source_resolved')) {
     /**
@@ -76,34 +77,10 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.video.eyebrow'] = 'Product tour';
         $d['home.video.title'] = 'Walk the surfaces your teams will run';
         $d['home.video.caption'] = 'Recorded walkthrough: pipelines, verification queues, finance hooks, and agency administration.';
-        $d['home.video.file'] = '';
-        $d['home.video.file2'] = '';
-        $d['home.video.file3'] = '';
-        $d['home.video.file4'] = '';
-        $d['home.video.file5'] = '';
-        $d['home.video.file6'] = '';
+        $d['home.video.slots_json'] = '[]';
 
         $d['home.program.strip_eyebrow'] = 'Program previews';
-        $d['home.program.caption.1'] = 'Pipeline board';
-        $d['home.program.caption.2'] = 'Workers registry';
-        $d['home.program.caption.3'] = 'Finance & ledger';
-        $d['home.program.caption.4'] = 'Operations snapshot';
-        $d['home.program.caption.5'] = 'Compliance timeline';
-        $d['home.program.caption.6'] = 'Agency performance';
-        $d['home.program.caption.7'] = 'Program screen 7';
-        $d['home.program.caption.8'] = 'Program screen 8';
-        $d['home.program.caption.9'] = 'Program screen 9';
-        $d['home.program.caption.10'] = 'Program screen 10';
-        $d['home.program.alt.1'] = 'RATIB pipeline board with stages, SLA, and worker rows';
-        $d['home.program.alt.2'] = 'RATIB workers registry with stages, owners, and GPS context';
-        $d['home.program.alt.3'] = 'RATIB finance view with invoices, throughput, and connector latency';
-        $d['home.program.alt.4'] = 'RATIB operations snapshot';
-        $d['home.program.alt.5'] = 'RATIB compliance timeline';
-        $d['home.program.alt.6'] = 'RATIB agency performance board';
-        $d['home.program.alt.7'] = 'RATIB program image 7';
-        $d['home.program.alt.8'] = 'RATIB program image 8';
-        $d['home.program.alt.9'] = 'RATIB program image 9';
-        $d['home.program.alt.10'] = 'RATIB program image 10';
+        $d['home.program.slots_json'] = ratib_site_content_home_default_program_slots_json();
 
         $d['home.platform.title'] = 'Built for regulated, high-volume recruitment operations';
         $d['home.platform.sub'] = 'Deployed as a control plane: tenant-isolated data paths, encrypted transit, immutable workflow history, and finance-grade events organizations can reconcile—not narrative dashboards.';
@@ -339,17 +316,6 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.chat.title'] = 'Ratib Assistant';
         $d['home.chat.subtitle'] = 'Help guides & live support';
 
-        $d['home.program.img1'] = '';
-        $d['home.program.img2'] = '';
-        $d['home.program.img3'] = '';
-        $d['home.program.img4'] = '';
-        $d['home.program.img5'] = '';
-        $d['home.program.img6'] = '';
-        $d['home.program.img7'] = '';
-        $d['home.program.img8'] = '';
-        $d['home.program.img9'] = '';
-        $d['home.program.img10'] = '';
-
         return $d;
     }
 }
@@ -516,32 +482,6 @@ if (!function_exists('ratib_site_content_home_nl_lines')) {
     }
 }
 
-if (!function_exists('ratib_site_content_home_editor_program_fields')) {
-    /**
-     * Caption + alt + upload grouped per image slot (easier than listing all captions then all uploads).
-     *
-     * @return list<array<string, mixed>>
-     */
-    function ratib_site_content_home_editor_program_fields(): array
-    {
-        $fields = [
-            ['key' => 'home.program.strip_eyebrow', 'label' => 'Eyebrow', 'type' => 'text'],
-        ];
-        for ($i = 1; $i <= 10; $i++) {
-            $fields[] = ['key' => 'home.program.caption.' . $i, 'label' => 'Image ' . $i . ' caption', 'type' => 'text'];
-            $fields[] = ['key' => 'home.program.alt.' . $i, 'label' => 'Image ' . $i . ' alt text', 'type' => 'text'];
-            $fields[] = [
-                'key' => 'home.program.img' . $i,
-                'label' => 'Image ' . $i . ' (upload, URL, or relative path)',
-                'type' => 'media_image',
-                'class' => 'font-monospace small',
-            ];
-        }
-
-        return $fields;
-    }
-}
-
 if (!function_exists('ratib_site_content_home_editor_groups')) {
     /**
      * Declarative editor sections for control-panel/pages/control/site-content.php
@@ -611,18 +551,16 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                     ['key' => 'home.video.eyebrow', 'label' => 'Eyebrow', 'type' => 'text'],
                     ['key' => 'home.video.title', 'label' => 'Title', 'type' => 'text'],
                     ['key' => 'home.video.caption', 'label' => 'Caption', 'type' => 'textarea', 'rows' => 2],
-                    ['key' => 'home.video.file', 'label' => 'Video file (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
-                    ['key' => 'home.video.file2', 'label' => 'Video 2 (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
-                    ['key' => 'home.video.file3', 'label' => 'Video 3 (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
-                    ['key' => 'home.video.file4', 'label' => 'Video 4 (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
-                    ['key' => 'home.video.file5', 'label' => 'Video 5 (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
-                    ['key' => 'home.video.file6', 'label' => 'Video 6 (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
                 ],
+                'render_slots' => 'video',
             ],
             [
                 'id' => 'program',
                 'title' => 'Program preview strip',
-                'fields' => ratib_site_content_home_editor_program_fields(),
+                'fields' => [
+                    ['key' => 'home.program.strip_eyebrow', 'label' => 'Eyebrow', 'type' => 'text'],
+                ],
+                'render_slots' => 'program',
             ],
             [
                 'id' => 'platform',
