@@ -10,11 +10,17 @@
 if (defined('DB_NAME')) {
     return;
 }
-define('DB_HOST', 'localhost');
-define('DB_PORT', 3306);
-define('DB_USER', 'outratib_out');
-define('DB_PASS', '9s%BpMr1]dfb');
-define('DB_NAME', 'outratib_out');
+// Prefer project-root .env (merged in load.php via ratib_env_load_bridge_dotenv) so credentials are not only hardcoded.
+$dbHost = getenv('DB_HOST');
+$dbPort = getenv('DB_PORT');
+$dbUser = getenv('DB_USER');
+$dbPass = getenv('DB_PASS');
+$dbName = getenv('DB_NAME');
+define('DB_HOST', ($dbHost !== false && $dbHost !== '') ? (string) $dbHost : 'localhost');
+define('DB_PORT', ($dbPort !== false && $dbPort !== '') ? (int) $dbPort : 3306);
+define('DB_USER', ($dbUser !== false && $dbUser !== '') ? (string) $dbUser : 'outratib_out');
+define('DB_PASS', ($dbPass !== false && $dbPass !== '') ? (string) $dbPass : '9s%BpMr1]dfb');
+define('DB_NAME', ($dbName !== false && $dbName !== '') ? (string) $dbName : 'outratib_out');
 define('CONTROL_PANEL_DB_NAME', getenv('CONTROL_PANEL_DB_NAME') ?: 'outratib_control_panel_db');
 
 define('SITE_URL', 'https://out.ratib.sa');

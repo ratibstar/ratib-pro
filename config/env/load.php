@@ -67,9 +67,8 @@ foreach ($env_candidates as $safe) {
 }
 
 /*
- * Project-root .env is NOT fully merged here — only bridge keys for CMS ↔ public homepage (ratib_site_content).
- * config/env.php merges NGENIUS_* from .env only; without this step, RATIB_SITE_CONTENT_* in .env never reached getenv()
- * and the live site kept falling back to JSON/defaults ("not connected" forever).
+ * Project-root .env is NOT fully merged here — only bridge keys (DB_*, CONTROL_PANEL_*, RATIB_SITE_CONTENT_* …).
+ * config/env.php merges NGENIUS_* from .env only; without this step those keys never reached getenv() before host profiles.
  */
 if (!function_exists('ratib_env_load_bridge_dotenv')) {
     /**
@@ -81,6 +80,11 @@ if (!function_exists('ratib_env_load_bridge_dotenv')) {
             return;
         }
         $allowed = [
+            'DB_HOST',
+            'DB_PORT',
+            'DB_USER',
+            'DB_PASS',
+            'DB_NAME',
             'CONTROL_PANEL_DB_NAME',
             'CONTROL_PANEL_DB_USER',
             'CONTROL_PANEL_DB_PASS',

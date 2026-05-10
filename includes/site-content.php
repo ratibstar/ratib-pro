@@ -276,24 +276,28 @@ if (!function_exists('ratib_site_content_fetch_key_values')) {
         if (!$conn) {
             return [];
         }
-        $parts = [];
-        foreach ($uniq as $k) {
-            $parts[] = "'" . $conn->real_escape_string($k) . "'";
-        }
-        $sql = 'SELECT content_key, content_value FROM ratib_site_content WHERE content_key IN (' . implode(',', $parts) . ')';
-        $res = $conn->query($sql);
-        if ($res === false) {
-            error_log('ratib_site_content_fetch_key_values: query failed: ' . $conn->error);
-
-            return [];
-        }
         $out = [];
-        while ($row = $res->fetch_assoc()) {
-            if (isset($row['content_key'], $row['content_value'])) {
-                $out[(string) $row['content_key']] = (string) $row['content_value'];
+        $chunkSize = 80;
+        $chunks = array_chunk($uniq, $chunkSize);
+        foreach ($chunks as $chunk) {
+            $parts = [];
+            foreach ($chunk as $k) {
+                $parts[] = "'" . $conn->real_escape_string($k) . "'";
             }
+            $sql = 'SELECT content_key, content_value FROM ratib_site_content WHERE content_key IN (' . implode(',', $parts) . ')';
+            $res = $conn->query($sql);
+            if ($res === false) {
+                error_log('ratib_site_content_fetch_key_values: chunk query failed: ' . $conn->error);
+
+                continue;
+            }
+            while ($row = $res->fetch_assoc()) {
+                if (isset($row['content_key'], $row['content_value'])) {
+                    $out[(string) $row['content_key']] = (string) $row['content_value'];
+                }
+            }
+            $res->free();
         }
-        $res->free();
 
         return $out;
     }
