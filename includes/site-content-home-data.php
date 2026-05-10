@@ -516,6 +516,32 @@ if (!function_exists('ratib_site_content_home_nl_lines')) {
     }
 }
 
+if (!function_exists('ratib_site_content_home_editor_program_fields')) {
+    /**
+     * Caption + alt + upload grouped per image slot (easier than listing all captions then all uploads).
+     *
+     * @return list<array<string, mixed>>
+     */
+    function ratib_site_content_home_editor_program_fields(): array
+    {
+        $fields = [
+            ['key' => 'home.program.strip_eyebrow', 'label' => 'Eyebrow', 'type' => 'text'],
+        ];
+        for ($i = 1; $i <= 10; $i++) {
+            $fields[] = ['key' => 'home.program.caption.' . $i, 'label' => 'Image ' . $i . ' caption', 'type' => 'text'];
+            $fields[] = ['key' => 'home.program.alt.' . $i, 'label' => 'Image ' . $i . ' alt text', 'type' => 'text'];
+            $fields[] = [
+                'key' => 'home.program.img' . $i,
+                'label' => 'Image ' . $i . ' (upload, URL, or relative path)',
+                'type' => 'media_image',
+                'class' => 'font-monospace small',
+            ];
+        }
+
+        return $fields;
+    }
+}
+
 if (!function_exists('ratib_site_content_home_editor_groups')) {
     /**
      * Declarative editor sections for control-panel/pages/control/site-content.php
@@ -596,39 +622,7 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
             [
                 'id' => 'program',
                 'title' => 'Program preview strip',
-                'fields' => [
-                    ['key' => 'home.program.strip_eyebrow', 'label' => 'Eyebrow', 'type' => 'text'],
-                    ['key' => 'home.program.caption.1', 'label' => 'Image 1 caption', 'type' => 'text'],
-                    ['key' => 'home.program.caption.2', 'label' => 'Image 2 caption', 'type' => 'text'],
-                    ['key' => 'home.program.caption.3', 'label' => 'Image 3 caption', 'type' => 'text'],
-                    ['key' => 'home.program.caption.4', 'label' => 'Image 4 caption', 'type' => 'text'],
-                    ['key' => 'home.program.caption.5', 'label' => 'Image 5 caption', 'type' => 'text'],
-                    ['key' => 'home.program.caption.6', 'label' => 'Image 6 caption', 'type' => 'text'],
-                    ['key' => 'home.program.caption.7', 'label' => 'Image 7 caption', 'type' => 'text'],
-                    ['key' => 'home.program.caption.8', 'label' => 'Image 8 caption', 'type' => 'text'],
-                    ['key' => 'home.program.caption.9', 'label' => 'Image 9 caption', 'type' => 'text'],
-                    ['key' => 'home.program.caption.10', 'label' => 'Image 10 caption', 'type' => 'text'],
-                    ['key' => 'home.program.alt.1', 'label' => 'Image 1 alt text', 'type' => 'text'],
-                    ['key' => 'home.program.alt.2', 'label' => 'Image 2 alt text', 'type' => 'text'],
-                    ['key' => 'home.program.alt.3', 'label' => 'Image 3 alt text', 'type' => 'text'],
-                    ['key' => 'home.program.alt.4', 'label' => 'Image 4 alt text', 'type' => 'text'],
-                    ['key' => 'home.program.alt.5', 'label' => 'Image 5 alt text', 'type' => 'text'],
-                    ['key' => 'home.program.alt.6', 'label' => 'Image 6 alt text', 'type' => 'text'],
-                    ['key' => 'home.program.alt.7', 'label' => 'Image 7 alt text', 'type' => 'text'],
-                    ['key' => 'home.program.alt.8', 'label' => 'Image 8 alt text', 'type' => 'text'],
-                    ['key' => 'home.program.alt.9', 'label' => 'Image 9 alt text', 'type' => 'text'],
-                    ['key' => 'home.program.alt.10', 'label' => 'Image 10 alt text', 'type' => 'text'],
-                    ['key' => 'home.program.img1', 'label' => 'Image 1 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
-                    ['key' => 'home.program.img2', 'label' => 'Image 2 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
-                    ['key' => 'home.program.img3', 'label' => 'Image 3 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
-                    ['key' => 'home.program.img4', 'label' => 'Image 4 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
-                    ['key' => 'home.program.img5', 'label' => 'Image 5 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
-                    ['key' => 'home.program.img6', 'label' => 'Image 6 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
-                    ['key' => 'home.program.img7', 'label' => 'Image 7 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
-                    ['key' => 'home.program.img8', 'label' => 'Image 8 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
-                    ['key' => 'home.program.img9', 'label' => 'Image 9 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
-                    ['key' => 'home.program.img10', 'label' => 'Image 10 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
-                ],
+                'fields' => ratib_site_content_home_editor_program_fields(),
             ],
             [
                 'id' => 'platform',

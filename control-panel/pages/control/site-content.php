@@ -46,6 +46,18 @@ function ratib_control_site_content_media_preview_url(string $val): string
 }
 
 /**
+ * True when program strip slot N has no caption, alt, or image (optional slots stay collapsed).
+ */
+function ratib_control_site_content_program_slot_unused(array $values, int $n): bool
+{
+    $c = trim((string) ($values['home.program.caption.' . $n] ?? ''));
+    $a = trim((string) ($values['home.program.alt.' . $n] ?? ''));
+    $img = trim((string) ($values['home.program.img' . $n] ?? ''));
+
+    return $c === '' && $a === '' && $img === '';
+}
+
+/**
  * @param array<string, string> $values
  */
 function ratib_control_site_content_render_field(array $field, array $values): void
@@ -61,20 +73,29 @@ function ratib_control_site_content_render_field(array $field, array $values): v
 
     $mediaGroup = '';
     $mediaSlot = 0;
-    if (preg_match('/^home\.program\.img(\d+)$/', $key, $mm)) {
+    if (preg_match('/^home\.program\.caption\.(\d+)$/', $key, $mm)) {
+        $mediaGroup = 'program';
+        $mediaSlot = (int) ($mm[1] ?? 0);
+    } elseif (preg_match('/^home\.program\.alt\.(\d+)$/', $key, $mm)) {
+        $mediaGroup = 'program';
+        $mediaSlot = (int) ($mm[1] ?? 0);
+    } elseif (preg_match('/^home\.program\.img(\d+)$/', $key, $mm)) {
         $mediaGroup = 'program';
         $mediaSlot = (int) ($mm[1] ?? 0);
     } elseif ($key === 'home.video.file' || preg_match('/^home\.video\.file(\d+)$/', $key, $mm)) {
         $mediaGroup = 'video';
         $mediaSlot = $key === 'home.video.file' ? 1 : (int) ($mm[1] ?? 0);
     }
+
     $isHiddenMediaSlot = false;
-    if ($mediaGroup === 'program' && $mediaSlot > 3 && trim((string) $val) === '') {
+    if ($mediaGroup === 'program' && $mediaSlot > 3 && ratib_control_site_content_program_slot_unused($values, $mediaSlot)) {
         $isHiddenMediaSlot = true;
     }
     if ($mediaGroup === 'video' && $mediaSlot > 1 && trim((string) $val) === '') {
         $isHiddenMediaSlot = true;
     }
+
+    $isExtraSlot = ($mediaGroup === 'program' && $mediaSlot > 3) || ($mediaGroup === 'video' && $mediaSlot > 1);
     $slotAttrs = '';
     if ($mediaGroup !== '' && $mediaSlot > 0) {
         $slotAttrs .= ' data-media-group="' . htmlspecialchars($mediaGroup, ENT_QUOTES, 'UTF-8') . '"';
@@ -110,6 +131,12 @@ function ratib_control_site_content_render_field(array $field, array $values): v
                 }
             }
             echo '<label class="form-check-label"><input class="form-check-input me-1" type="checkbox" name="media_delete[' . $nameKey . ']" value="1">Delete current file/path</label>';
+        }
+        if (($type === 'media_image' || $type === 'media_video') && !$isExtraSlot) {
+            echo '<button type="button" class="btn btn-sm btn-outline-warning align-self-start" data-media-clear="' . htmlspecialchars($mediaGroup, ENT_QUOTES, 'UTF-8') . '" data-media-clear-slot="' . htmlspecialchars((string) $mediaSlot, ENT_QUOTES, 'UTF-8') . '">Clear media</button>';
+        }
+        if ($isExtraSlot) {
+            echo '<button type="button" class="btn btn-sm btn-outline-danger align-self-start" data-media-remove="' . htmlspecialchars($mediaGroup, ENT_QUOTES, 'UTF-8') . '" data-media-remove-slot="' . htmlspecialchars((string) $mediaSlot, ENT_QUOTES, 'UTF-8') . '">Remove this slot</button>';
         }
         echo '</div>';
     } else {
@@ -418,6 +445,12 @@ foreach ($groups as $gx => $group) {
             <summary><?php echo $gtitle; ?></summary>
             <div class="ratib-site-content-details__body">
     <?php
+    $groupIdRawPre = (string) ($group['id'] ?? '');
+    if ($groupIdRawPre === 'video' || $groupIdRawPre === 'program') {
+        $btnLabelTop = $groupIdRawPre === 'video' ? 'Add one more video +' : 'Add one more image +';
+        echo '<p class="small text-muted mb-2">Optional extras — click <strong>+</strong> to reveal another slot. Primary fields are below.</p>';
+        echo '<button type="button" class="btn btn-sm btn-outline-light mb-3" data-media-add="' . htmlspecialchars($groupIdRawPre, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($btnLabelTop, ENT_QUOTES, 'UTF-8') . '</button>';
+    }
     foreach ($group['fields'] ?? [] as $field) {
         if (!isset($field['key'])) {
             continue;
@@ -448,7 +481,7 @@ foreach ($groups as $gx => $group) {
     $groupIdRaw = (string) ($group['id'] ?? '');
     if ($groupIdRaw === 'video' || $groupIdRaw === 'program') {
         $btnLabel = $groupIdRaw === 'video' ? 'Add one more video +' : 'Add one more image +';
-        echo '<button type="button" class="btn btn-sm btn-outline-light mt-2" data-media-add="' . htmlspecialchars($groupIdRaw, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($btnLabel, ENT_QUOTES, 'UTF-8') . '</button>';
+        echo '<button type="button" class="btn btn-sm btn-outline-secondary mt-3" data-media-add="' . htmlspecialchars($groupIdRaw, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($btnLabel, ENT_QUOTES, 'UTF-8') . '</button>';
     }
     ?>
             </div>
@@ -484,21 +517,70 @@ if ($pageRevision !== '') {
         var sel = '[data-media-group="' + group + '"][data-media-hidden="1"]';
         var next = document.querySelector(sel);
         if (!next) return false;
+        var slot = next.getAttribute('data-media-slot') || '';
+        if (group === 'program' && slot) {
+            var nodes = document.querySelectorAll('[data-media-group="program"][data-media-slot="' + slot + '"][data-media-hidden="1"]');
+            if (!nodes.length) return false;
+            nodes.forEach(function (el) {
+                el.style.display = '';
+                el.removeAttribute('data-media-hidden');
+            });
+            var focusEl = document.querySelector('[data-media-group="program"][data-media-slot="' + slot + '"] input');
+            if (focusEl && typeof focusEl.focus === 'function') focusEl.focus();
+            return true;
+        }
         next.style.display = '';
         next.removeAttribute('data-media-hidden');
         var input = next.querySelector('input, textarea, select');
         if (input && typeof input.focus === 'function') input.focus();
         return true;
     }
+    function clearSlot(el) {
+        if (!el) return;
+        var textInput = el.querySelector('input[type="text"]');
+        if (textInput) textInput.value = '';
+        var fileInput = el.querySelector('input[type="file"]');
+        if (fileInput) fileInput.value = '';
+        var delInput = el.querySelector('input[type="checkbox"][name^="media_delete["]');
+        if (delInput) delInput.checked = true;
+    }
+    function hideSlot(el) {
+        if (!el) return;
+        clearSlot(el);
+        el.style.display = 'none';
+        el.setAttribute('data-media-hidden', '1');
+    }
     document.addEventListener('click', function (ev) {
         var btn = ev.target && ev.target.closest ? ev.target.closest('[data-media-add]') : null;
-        if (!btn) return;
-        var group = btn.getAttribute('data-media-add') || '';
-        if (!group) return;
-        var ok = revealNext(group);
-        if (!ok) {
-            btn.disabled = true;
-            btn.textContent = 'No more slots available';
+        if (btn) {
+            var group = btn.getAttribute('data-media-add') || '';
+            if (!group) return;
+            var ok = revealNext(group);
+            if (!ok) {
+                document.querySelectorAll('[data-media-add="' + group + '"]').forEach(function (b) {
+                    b.disabled = true;
+                    b.textContent = 'No more slots available';
+                });
+            }
+            return;
+        }
+        var clrBtn = ev.target && ev.target.closest ? ev.target.closest('[data-media-clear]') : null;
+        if (clrBtn) {
+            var wrap = clrBtn.closest('.mb-3');
+            clearSlot(wrap);
+            return;
+        }
+        var delBtn = ev.target && ev.target.closest ? ev.target.closest('[data-media-remove][data-media-remove-slot]') : null;
+        if (delBtn) {
+            var g = delBtn.getAttribute('data-media-remove') || '';
+            var s = delBtn.getAttribute('data-media-remove-slot') || '';
+            if (!g || !s) return;
+            if (g === 'program') {
+                document.querySelectorAll('[data-media-group="program"][data-media-slot="' + s + '"]').forEach(hideSlot);
+            } else {
+                var slotEl = document.querySelector('[data-media-group="' + g + '"][data-media-slot="' + s + '"]');
+                hideSlot(slotEl);
+            }
         }
     });
 })();
