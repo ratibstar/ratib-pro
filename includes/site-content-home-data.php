@@ -328,16 +328,17 @@ if (!function_exists('ratib_site_content_home_flat_overlay_live_db')) {
         if (!ratib_site_content_db()) {
             return $base;
         }
-        $keys = array_keys($defaults);
-        $rows = ratib_site_content_fetch_key_values($keys);
-        if ($rows === []) {
-            return $base;
-        }
+        $rows = ratib_site_content_fetch_key_values(array_keys($defaults));
         $out = $base;
-        foreach ($rows as $k => $v) {
-            if (isset($defaults[$k])) {
-                $out[$k] = (string) $v;
+        foreach ($defaults as $k => $def) {
+            if (array_key_exists($k, $rows)) {
+                $out[$k] = (string) $rows[$k];
+
+                continue;
             }
+            // Same rule as ratib_site_content_home_flat_from_db: never trust stale cache for a key if the row exists.
+            $fb = $base[$k] ?? $def;
+            $out[$k] = ratib_site_content_get($k, $fb);
         }
 
         return $out;

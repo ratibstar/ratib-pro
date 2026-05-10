@@ -725,7 +725,10 @@ if (!function_exists('ratib_site_content_home_flat_from_db')) {
         $rows = ratib_site_content_fetch_key_values($keys);
         $out = [];
         foreach ($defaults as $key => $def) {
-            $out[$key] = array_key_exists($key, $rows) ? $rows[$key] : $def;
+            // Never use PHP $def when a row may exist: batch IN (...) can omit keys; per-key read matches CMS.
+            $out[$key] = array_key_exists($key, $rows)
+                ? $rows[$key]
+                : ratib_site_content_get($key, $def);
         }
 
         return $out;
