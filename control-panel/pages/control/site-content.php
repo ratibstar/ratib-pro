@@ -325,6 +325,47 @@ function ratib_control_site_content_apply_video_slots_post(array &$posted, array
 }
 
 /**
+ * Editor UI: do not list legacy caption-only rows (e.g. “Program screen 8”) with no image.
+ * Always offer the first three slots (public homepage SVG fallbacks) and every slot that has a src.
+ *
+ * @param list<array{caption:string, alt:string, src:string}> $rows
+ *
+ * @return list<array{caption:string, alt:string, src:string}>
+ */
+function ratib_control_site_content_program_rows_for_editor(array $rows): array
+{
+    $out = [];
+    foreach ($rows as $idx => $row) {
+        $src = trim((string) ($row['src'] ?? ''));
+        if ($src !== '' || $idx < 3) {
+            $out[] = $row;
+        }
+    }
+    if ($out === []) {
+        return [['caption' => '', 'alt' => '', 'src' => '']];
+    }
+
+    return $out;
+}
+
+/**
+ * @param list<string> $srcs
+ *
+ * @return list<string>
+ */
+function ratib_control_site_content_video_srcs_for_editor(array $srcs): array
+{
+    $fil = [];
+    foreach ($srcs as $s) {
+        if (trim((string) $s) !== '') {
+            $fil[] = (string) $s;
+        }
+    }
+
+    return $fil === [] ? [''] : $fil;
+}
+
+/**
  * @param array<string, string> $values
  */
 function ratib_control_site_content_render_program_slots_editor(array $values): void
@@ -332,10 +373,12 @@ function ratib_control_site_content_render_program_slots_editor(array $values): 
     if (!function_exists('ratib_site_content_home_program_slots_from_flat')) {
         return;
     }
-    $rows = ratib_site_content_home_program_slots_from_flat($values);
+    $rows = ratib_control_site_content_program_rows_for_editor(
+        ratib_site_content_home_program_slots_from_flat($values)
+    );
     echo '<div class="ratib-cms-slots ratib-cms-slots--program border rounded p-3 mb-2 bg-dark bg-opacity-25" translate="no">';
     echo '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">';
-    echo '<p class="small text-muted mb-0 flex-grow-1" lang="en">Images on the public homepage (unlimited). Each row: caption, alt text, image URL or upload. <strong>Captions</strong> are the labels shown under each card on the live site — they are not the “+” add button (use <strong>Add row</strong> below).</p>';
+    echo '<p class="small text-muted mb-0 flex-grow-1" lang="en">Images on the public homepage. Only the <strong>first three</strong> slots (placeholders) and rows with an <strong>image URL/upload</strong> are listed — use <strong>Add row</strong> / <strong>Remove row</strong>. Saving replaces the stored list with what you see here.</p>';
     echo '<button type="button" class="btn btn-sm btn-outline-light flex-shrink-0" data-ratib-slot-add="program" lang="en"><i class="fas fa-plus" aria-hidden="true"></i> Add row</button>';
     echo '</div>';
     echo '<div id="ratib-program-slots-rows">';
@@ -383,13 +426,12 @@ function ratib_control_site_content_render_video_slots_editor(array $values): vo
     if (!function_exists('ratib_site_content_home_video_src_strings_from_flat')) {
         return;
     }
-    $srcs = ratib_site_content_home_video_src_strings_from_flat($values);
-    if ($srcs === []) {
-        $srcs = [''];
-    }
+    $srcs = ratib_control_site_content_video_srcs_for_editor(
+        ratib_site_content_home_video_src_strings_from_flat($values)
+    );
     echo '<div class="ratib-cms-slots ratib-cms-slots--video border rounded p-3 mb-2 bg-dark bg-opacity-25" translate="no">';
     echo '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">';
-    echo '<p class="small text-muted mb-0 flex-grow-1" lang="en">Videos on the public homepage (unlimited). MP4 / WebM / MOV. Use <strong>Add row</strong> for more clips. <strong>Remove row</strong> deletes that slot when you Save.</p>';
+    echo '<p class="small text-muted mb-0 flex-grow-1" lang="en">Videos on the public homepage. MP4 / WebM / MOV. Empty placeholders are hidden — use <strong>Add row</strong> for another clip. <strong>Remove row</strong> removes that slot when you Save.</p>';
     echo '<button type="button" class="btn btn-sm btn-outline-light flex-shrink-0" data-ratib-slot-add="video" lang="en"><i class="fas fa-plus" aria-hidden="true"></i> Add row</button>';
     echo '</div>';
     echo '<div id="ratib-video-slots-rows">';
