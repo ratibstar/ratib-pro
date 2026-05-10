@@ -36,13 +36,18 @@ define('ADMIN_CONTROL_CENTER_ENABLED', true);
 /*
  * Homepage CMS (ratib_site_content): default to DB-only resolution on this host so stale disk/json
  * snapshots cannot hide fresh saves. Override in .env: RATIB_SITE_CONTENT_PUBLIC_SOURCE=auto
- * (restore blob + file fallbacks when MySQL is intentionally unavailable).
+ * RATIB_CMS_HOME_PUBLIC_SOURCE is also defined because some PHP-FPM pools strip putenv(); homepage reads the constant.
  */
-$_ratibPubSrc = getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE');
-if ($_ratibPubSrc === false || trim((string) $_ratibPubSrc) === '') {
-    putenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE=db_only');
-    $_ENV['RATIB_SITE_CONTENT_PUBLIC_SOURCE'] = 'db_only';
-    $_SERVER['RATIB_SITE_CONTENT_PUBLIC_SOURCE'] = 'db_only';
+if (!defined('RATIB_CMS_HOME_PUBLIC_SOURCE')) {
+    $_ratibPubSrc = getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE');
+    if ($_ratibPubSrc === false || trim((string) $_ratibPubSrc) === '') {
+        define('RATIB_CMS_HOME_PUBLIC_SOURCE', 'db_only');
+        putenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE=db_only');
+        $_ENV['RATIB_SITE_CONTENT_PUBLIC_SOURCE'] = 'db_only';
+        $_SERVER['RATIB_SITE_CONTENT_PUBLIC_SOURCE'] = 'db_only';
+    } else {
+        define('RATIB_CMS_HOME_PUBLIC_SOURCE', trim((string) $_ratibPubSrc));
+    }
 }
 
 /*

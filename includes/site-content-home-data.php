@@ -4,6 +4,24 @@
  * Keys are flat strings stored in ratib_site_content.content_key.
  */
 
+if (!function_exists('ratib_site_content_public_source_resolved')) {
+    /**
+     * Effective RATIB_SITE_CONTENT_PUBLIC_SOURCE (getenv + host-profile constant). Lowercase token.
+     */
+    function ratib_site_content_public_source_resolved(): string
+    {
+        $g = getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE');
+        if ($g !== false && trim((string) $g) !== '') {
+            return strtolower(trim((string) $g));
+        }
+        if (defined('RATIB_CMS_HOME_PUBLIC_SOURCE') && (string) RATIB_CMS_HOME_PUBLIC_SOURCE !== '') {
+            return strtolower(trim((string) RATIB_CMS_HOME_PUBLIC_SOURCE));
+        }
+
+        return '';
+    }
+}
+
 if (!function_exists('ratib_site_content_defaults_home')) {
     /**
      * @return array<string, string>
@@ -371,8 +389,11 @@ if (!function_exists('ratib_site_content_home_flat')) {
 
         // Optional env (see .env.example): RATIB_SITE_CONTENT_PUBLIC_SOURCE=db_only
         // Skips disk/DB-blob JSON fallbacks so a stale snapshot cannot mask CMS rows — only live SELECT + per-key reads.
-        $srcRaw = getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE');
-        $dbOnlyFallback = ($srcRaw !== false && strtolower(trim((string) $srcRaw)) === 'db_only');
+        // Uses ratib_site_content_public_source_resolved() so config/env/out_ratib_sa.php constant works when putenv is stripped.
+        $srcEffective = function_exists('ratib_site_content_public_source_resolved')
+            ? ratib_site_content_public_source_resolved()
+            : '';
+        $dbOnlyFallback = ($srcEffective === 'db_only');
 
         // Optional: skip only JSON files on disk (lighter than db_only). Truthy: 1, true, yes, on.
         $skipDiskJsonRaw = getenv('RATIB_SITE_CONTENT_SKIP_DISK_JSON_CACHE');

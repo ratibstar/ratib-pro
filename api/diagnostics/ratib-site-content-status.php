@@ -80,6 +80,10 @@ $payload = [
     'env_RATIB_SITE_CONTENT_PUBLIC_SOURCE' => getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE') !== false
         ? trim((string) getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE'))
         : '',
+    'effective_RATIB_SITE_CONTENT_PUBLIC_SOURCE' => function_exists('ratib_site_content_public_source_resolved')
+        ? ratib_site_content_public_source_resolved()
+        : '',
+    'defined_RATIB_CMS_HOME_PUBLIC_SOURCE' => defined('RATIB_CMS_HOME_PUBLIC_SOURCE') ? (string) RATIB_CMS_HOME_PUBLIC_SOURCE : null,
     'env_RATIB_SITE_CONTENT_SKIP_DISK_JSON_CACHE' => getenv('RATIB_SITE_CONTENT_SKIP_DISK_JSON_CACHE') !== false
         ? trim((string) getenv('RATIB_SITE_CONTENT_SKIP_DISK_JSON_CACHE'))
         : '',
