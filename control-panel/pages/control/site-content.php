@@ -15,6 +15,7 @@ require_once __DIR__ . '/../../includes/control-permissions.php';
 requireControlPermission(CONTROL_PERM_SYSTEM_SETTINGS, 'view_control_system_settings');
 
 require_once __DIR__ . '/../../../includes/site-content.php';
+require_once __DIR__ . '/../../includes/control/request-url.php';
 
 function ratib_control_site_content_media_preview_url(string $val): string
 {
@@ -25,7 +26,23 @@ function ratib_control_site_content_media_preview_url(string $val): string
     if (preg_match('#^https?://#i', $val)) {
         return $val;
     }
-    $baseUrl = defined('BASE_URL') ? (string) BASE_URL : '';
+    // Must use public site root (not /control-panel/...): media is served from /api/site-content-media.php at app root.
+    $baseUrl = '';
+    if (function_exists('control_ratib_pro_public_base_url')) {
+        $baseUrl = rtrim((string) control_ratib_pro_public_base_url(), '/');
+    }
+    if ($baseUrl === '' && defined('SITE_URL') && (string) SITE_URL !== '') {
+        $baseUrl = rtrim((string) SITE_URL, '/');
+    }
+    if ($baseUrl === '' && defined('RATIB_PRO_URL') && (string) RATIB_PRO_URL !== '') {
+        $baseUrl = rtrim((string) RATIB_PRO_URL, '/');
+    }
+    if ($baseUrl === '') {
+        $baseUrl = defined('BASE_URL') ? rtrim((string) BASE_URL, '/') : '';
+        if ($baseUrl !== '' && str_contains($baseUrl, '/control-panel')) {
+            $baseUrl = preg_replace('#/control-panel/?$#', '', $baseUrl) ?? $baseUrl;
+        }
+    }
     if ($baseUrl === '') {
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
@@ -383,7 +400,6 @@ $nonce = $_SESSION['ratib_site_content_nonce'];
 
 // Must use site-root URL (not asset()/BASE_URL): css lives next to /css/control/system.css at project root.
 // asset('css/...') becomes /control-panel/css/... which browsers resolve relative to /pages/control/ → doubled control-panel path + 404.
-require_once __DIR__ . '/../../includes/control/request-url.php';
 $ratibPublicRoot = function_exists('control_ratib_pro_public_base_url')
     ? control_ratib_pro_public_base_url()
     : preg_replace('#/control-panel$#', '', control_request_origin_base());
