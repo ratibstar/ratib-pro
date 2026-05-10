@@ -34,6 +34,18 @@ define('OBSERVABILITY_DASHBOARD_ENABLED', true);
 define('ADMIN_CONTROL_CENTER_ENABLED', true);
 
 /*
+ * Homepage CMS (ratib_site_content): default to DB-only resolution on this host so stale disk/json
+ * snapshots cannot hide fresh saves. Override in .env: RATIB_SITE_CONTENT_PUBLIC_SOURCE=auto
+ * (restore blob + file fallbacks when MySQL is intentionally unavailable).
+ */
+$_ratibPubSrc = getenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE');
+if ($_ratibPubSrc === false || trim((string) $_ratibPubSrc) === '') {
+    putenv('RATIB_SITE_CONTENT_PUBLIC_SOURCE=db_only');
+    $_ENV['RATIB_SITE_CONTENT_PUBLIC_SOURCE'] = 'db_only';
+    $_SERVER['RATIB_SITE_CONTENT_PUBLIC_SOURCE'] = 'db_only';
+}
+
+/*
  * Optional: if public_html/uploads is not writable by PHP, partner agency file uploads use
  * ../ratib_uploads automatically, or set an absolute path:
  *   define('RATIB_UPLOADS_BASE', '/home/outratib/ratib_uploads');

@@ -347,8 +347,8 @@ body.ratib-saas-home {
 
 @media (max-width: 1099px) {
   .ratib-nav-shell__inner {
-    flex-wrap: wrap;
-  }
+  flex-wrap: wrap;
+}
   .ratib-nav__toggle {
     margin-left: auto;
   }
@@ -540,7 +540,7 @@ body.ratib-saas-home {
 @media (min-width: 640px) {
   .ratib-hero__photo-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
+  gap: 1rem;
   }
 }
 
@@ -919,8 +919,8 @@ body.ratib-saas-home {
 @media (min-width: 520px) {
   .ratib-dash__workspace {
     grid-template-columns: 1.28fr 1fr;
-    align-items: stretch;
-  }
+  align-items: stretch;
+}
 }
 
 .ratib-dash__panel--table {
@@ -3024,9 +3024,9 @@ body.ratib-saas-home::before {
 
 .ratib-eco__spoke {
   display: flex;
-  flex-direction: column;
+    flex-direction: column;
   align-items: center;
-  text-align: center;
+    text-align: center;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.04), rgba(15, 23, 42, 0.6));
 }
 
