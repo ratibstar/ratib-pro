@@ -340,44 +340,13 @@ if ($ratibVideoSources !== []) {
     $videoSrcRel = (string) $ratibVideoSources[0];
     $videoUrl = $videoSrcRel;
 }
-if (!$videoExists) {
-    // AR: توافق رجعي — دعم الملفات القديمة في assets حتى بدون مفتاح CMS.
-    $videoPreferred = ['video.mp4', 'Ratib program.mp4', 'Ratib Program.mp4'];
-    $videoPath = '';
-    $videoFileName = '';
-    foreach ($videoPreferred as $name) {
-        $p = $assetsDir . DIRECTORY_SEPARATOR . $name;
-        if (is_file($p)) {
-            $videoPath = $p;
-            $videoFileName = $name;
-            break;
-        }
-    }
-    if ($videoFileName === '' && is_dir($assetsDir)) {
-        foreach (scandir($assetsDir) as $f) {
-            if ($f === '.' || $f === '..') {
-                continue;
-            }
-            $full = $assetsDir . DIRECTORY_SEPARATOR . $f;
-            if (!is_file($full)) {
-                continue;
-            }
-            if (strtolower((string) pathinfo($f, PATHINFO_EXTENSION)) === 'mp4') {
-                $videoPath = $full;
-                $videoFileName = $f;
-                break;
-            }
-        }
-    }
-    if ($videoFileName !== '') {
-        $videoExists = true;
-        $videoSrcRel = '../assets/' . rawurlencode($videoFileName);
-        $videoUrl = $baseUrl . '/assets/' . rawurlencode($videoFileName);
-        $ratibVideoSources[] = $videoSrcRel;
-    }
-}
-if ($videoExists && $videoSrcRel !== '' && empty($ratibVideoSources)) {
-    $ratibVideoSources[] = $videoSrcRel;
+// Video clips come only from CMS (home.video.slots_json) — no automatic assets/*.mp4 pickup.
+
+$ratibVideoSlotsRawCheck = trim((string) ($ratibHome['home.video.slots_json'] ?? ''));
+$ratibVideoClearedInCms = false;
+if ($ratibVideoSlotsRawCheck !== '') {
+    $ratibVideoSlotsDecoded = json_decode($ratibVideoSlotsRawCheck, true);
+    $ratibVideoClearedInCms = is_array($ratibVideoSlotsDecoded) && count($ratibVideoSlotsDecoded) === 0;
 }
 ?>
 <!DOCTYPE html>
@@ -640,19 +609,19 @@ if ($videoExists && $videoSrcRel !== '' && empty($ratibVideoSources)) {
                             <?php endforeach; ?>
                         </div>
                     </div>
-                    <?php elseif (!$videoExists): ?>
+                    <?php elseif (!$videoExists && !$ratibVideoClearedInCms): ?>
                     <div class="ratib-video__shell">
                         <div class="video-wrap">
                             <div class="video-fallback-box">
                                 <i class="fas fa-video-slash fa-3x mb-3"></i>
-                                <p>Add an MP4 to <code>assets/</code> — recommended name: <code>video.mp4</code></p>
-                                <p class="small mb-0">Any <strong>.mp4</strong> file in the <code>assets</code> folder will be picked up automatically.</p>
+                                <p>Add videos in <strong>Public site content</strong> (Product tour), or upload an MP4 under <code>assets/</code> and reference it in the CMS.</p>
                             </div>
                         </div>
                     </div>
                     <?php endif; ?>
                 </div>
             </div>
+            <?php if (!empty($ratibProgSlotsOut)): ?>
             <div class="ratib-hero__photo-strip ratib-hero__program-strip">
                 <div class="ratib-container">
                     <p class="ratib-hero__photo-eyebrow"><?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
@@ -670,6 +639,7 @@ if ($videoExists && $videoSrcRel !== '' && empty($ratibVideoSources)) {
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
         </section>
 
         <section class="ratib-section ratib-trust" id="platform">

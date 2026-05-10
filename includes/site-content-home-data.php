@@ -80,7 +80,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.video.slots_json'] = '[]';
 
         $d['home.program.strip_eyebrow'] = 'Program previews';
-        $d['home.program.slots_json'] = ratib_site_content_home_default_program_slots_json();
+        $d['home.program.slots_json'] = '[]';
 
         $d['home.platform.title'] = 'Built for regulated, high-volume recruitment operations';
         $d['home.platform.sub'] = 'Deployed as a control plane: tenant-isolated data paths, encrypted transit, immutable workflow history, and finance-grade events organizations can reconcile—not narrative dashboards.';

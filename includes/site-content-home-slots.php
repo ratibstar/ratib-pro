@@ -101,23 +101,17 @@ if (!function_exists('ratib_site_content_home_program_slots_from_flat')) {
 
         if ($raw === '') {
             $compact = $legacyOnlyCompact($flat);
-            if (count($compact) > 0) {
-                return $compact;
-            }
-            $def = json_decode(ratib_site_content_home_default_program_slots_json(), true);
 
-            return is_array($def) ? ratib_site_content_home_normalize_program_slots($def) : [];
+            return count($compact) > 0 ? ratib_site_content_home_normalize_program_slots($compact) : [];
         }
 
         $d = json_decode($raw, true);
-        if (!is_array($d) || count($d) === 0) {
-            $compact = $legacyOnlyCompact($flat);
-            if (count($compact) > 0) {
-                return $compact;
-            }
-            $def = json_decode(ratib_site_content_home_default_program_slots_json(), true);
-
-            return is_array($def) ? ratib_site_content_home_normalize_program_slots($def) : [];
+        if (!is_array($d)) {
+            return [];
+        }
+        // Saved [] means “no program cards” — do not resurrect marketing defaults or legacy merge here.
+        if (count($d) === 0) {
+            return [];
         }
 
         $rows = ratib_site_content_home_normalize_program_slots($d);
@@ -183,8 +177,11 @@ if (!function_exists('ratib_site_content_home_video_src_strings_from_flat')) {
         }
 
         $d = json_decode($raw, true);
-        if (!is_array($d) || count($d) === 0) {
+        if (!is_array($d)) {
             return $legacyList;
+        }
+        if (count($d) === 0) {
+            return [];
         }
 
         $jsonSrcs = [];
