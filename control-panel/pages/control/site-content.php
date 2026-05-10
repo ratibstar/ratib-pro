@@ -59,7 +59,32 @@ function ratib_control_site_content_render_field(array $field, array $values): v
     $id = 'f_' . preg_replace('/[^a-zA-Z0-9]+/', '_', $key);
     $nameKey = htmlspecialchars($key, ENT_QUOTES, 'UTF-8');
 
-    echo '<div class="mb-3">';
+    $mediaGroup = '';
+    $mediaSlot = 0;
+    if (preg_match('/^home\.program\.img(\d+)$/', $key, $mm)) {
+        $mediaGroup = 'program';
+        $mediaSlot = (int) ($mm[1] ?? 0);
+    } elseif ($key === 'home.video.file' || preg_match('/^home\.video\.file(\d+)$/', $key, $mm)) {
+        $mediaGroup = 'video';
+        $mediaSlot = $key === 'home.video.file' ? 1 : (int) ($mm[1] ?? 0);
+    }
+    $isHiddenMediaSlot = false;
+    if ($mediaGroup === 'program' && $mediaSlot > 3 && trim((string) $val) === '') {
+        $isHiddenMediaSlot = true;
+    }
+    if ($mediaGroup === 'video' && $mediaSlot > 1 && trim((string) $val) === '') {
+        $isHiddenMediaSlot = true;
+    }
+    $slotAttrs = '';
+    if ($mediaGroup !== '' && $mediaSlot > 0) {
+        $slotAttrs .= ' data-media-group="' . htmlspecialchars($mediaGroup, ENT_QUOTES, 'UTF-8') . '"';
+        $slotAttrs .= ' data-media-slot="' . htmlspecialchars((string) $mediaSlot, ENT_QUOTES, 'UTF-8') . '"';
+        if ($isHiddenMediaSlot) {
+            $slotAttrs .= ' data-media-hidden="1" style="display:none"';
+        }
+    }
+
+    echo '<div class="mb-3"' . $slotAttrs . '>';
     echo '<label class="form-label" for="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">' . $label . '</label>';
     if ($type === 'textarea') {
         echo '<textarea class="form-control' . htmlspecialchars($extraClass, ENT_QUOTES, 'UTF-8') . '" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="content[' . $nameKey . ']" rows="' . $rows . '" maxlength="65000">' . htmlspecialchars($val, ENT_QUOTES, 'UTF-8') . '</textarea>';
@@ -231,17 +256,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
     } else {
         $posted = $_POST['content'] ?? null;
         $posted = is_array($posted) ? $posted : [];
-        $mediaMap = [
-            'home.video.file' => 'video',
-            'home.video.file2' => 'video',
-            'home.video.file3' => 'video',
-            'home.program.img1' => 'image',
-            'home.program.img2' => 'image',
-            'home.program.img3' => 'image',
-            'home.program.img4' => 'image',
-            'home.program.img5' => 'image',
-            'home.program.img6' => 'image',
-        ];
+        $mediaMap = [];
+        foreach ($allowedKeys as $k) {
+            if ($k === 'home.video.file' || preg_match('/^home\.video\.file\d+$/', $k)) {
+                $mediaMap[$k] = 'video';
+            } elseif (preg_match('/^home\.program\.img\d+$/', $k)) {
+                $mediaMap[$k] = 'image';
+            }
+        }
         $deleteReq = $_POST['media_delete'] ?? [];
         $deleteReq = is_array($deleteReq) ? $deleteReq : [];
         foreach ($mediaMap as $mKey => $mKind) {
@@ -423,6 +445,11 @@ foreach ($groups as $gx => $group) {
             }
         }
     }
+    $groupIdRaw = (string) ($group['id'] ?? '');
+    if ($groupIdRaw === 'video' || $groupIdRaw === 'program') {
+        $btnLabel = $groupIdRaw === 'video' ? 'Add one more video +' : 'Add one more image +';
+        echo '<button type="button" class="btn btn-sm btn-outline-light mt-2" data-media-add="' . htmlspecialchars($groupIdRaw, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($btnLabel, ENT_QUOTES, 'UTF-8') . '</button>';
+    }
     ?>
             </div>
         </details>
@@ -451,5 +478,30 @@ if ($pageRevision !== '') {
         </div>
     </form>
 </div>
+<script>
+(function () {
+    function revealNext(group) {
+        var sel = '[data-media-group="' + group + '"][data-media-hidden="1"]';
+        var next = document.querySelector(sel);
+        if (!next) return false;
+        next.style.display = '';
+        next.removeAttribute('data-media-hidden');
+        var input = next.querySelector('input, textarea, select');
+        if (input && typeof input.focus === 'function') input.focus();
+        return true;
+    }
+    document.addEventListener('click', function (ev) {
+        var btn = ev.target && ev.target.closest ? ev.target.closest('[data-media-add]') : null;
+        if (!btn) return;
+        var group = btn.getAttribute('data-media-add') || '';
+        if (!group) return;
+        var ok = revealNext(group);
+        if (!ok) {
+            btn.disabled = true;
+            btn.textContent = 'No more slots available';
+        }
+    });
+})();
+</script>
 <?php endControlLayout(); ?>
 

@@ -310,7 +310,7 @@ $ratibProgFallbackFs = [
     3 => __DIR__ . '/../assets/images/program-preview-finance.svg',
 ];
 $ratibProgSrc = [];
-for ($rpi = 1; $rpi <= 6; $rpi++) {
+for ($rpi = 1; $rpi <= 10; $rpi++) {
     $stored = (string) ($ratibHome['home.program.img' . $rpi] ?? '');
     if ($rpi <= 3) {
         $ratibProgSrc[$rpi] = ratib_site_content_asset_url(
@@ -346,7 +346,7 @@ if ($videoStored !== '') {
 if ($videoExists && $videoSrcRel !== '') {
     $ratibVideoSources[] = $videoSrcRel;
 }
-for ($vix = 2; $vix <= 3; $vix++) {
+for ($vix = 2; $vix <= 6; $vix++) {
     $extraStored = trim((string) ($ratibHome['home.video.file' . $vix] ?? ''));
     if ($extraStored === '') {
         continue;
@@ -675,7 +675,7 @@ if (!$videoExists) {
                 <div class="ratib-container">
                     <p class="ratib-hero__photo-eyebrow"><?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                     <div class="ratib-hero__photo-grid" role="list">
-                        <?php for ($pgi = 1; $pgi <= 6; $pgi++) { ?>
+                        <?php for ($pgi = 1; $pgi <= 10; $pgi++) { ?>
                         <?php if (($ratibProgSrc[$pgi] ?? '') === '') { continue; } ?>
                         <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
                             <img src="<?php echo htmlspecialchars((string) $ratibProgSrc[$pgi], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($ratibHome['home.program.alt.' . $pgi] ?? '', ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">

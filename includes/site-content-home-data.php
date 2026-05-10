@@ -79,6 +79,9 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.video.file'] = '';
         $d['home.video.file2'] = '';
         $d['home.video.file3'] = '';
+        $d['home.video.file4'] = '';
+        $d['home.video.file5'] = '';
+        $d['home.video.file6'] = '';
 
         $d['home.program.strip_eyebrow'] = 'Program previews';
         $d['home.program.caption.1'] = 'Pipeline board';
@@ -87,12 +90,20 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.program.caption.4'] = 'Operations snapshot';
         $d['home.program.caption.5'] = 'Compliance timeline';
         $d['home.program.caption.6'] = 'Agency performance';
+        $d['home.program.caption.7'] = 'Program screen 7';
+        $d['home.program.caption.8'] = 'Program screen 8';
+        $d['home.program.caption.9'] = 'Program screen 9';
+        $d['home.program.caption.10'] = 'Program screen 10';
         $d['home.program.alt.1'] = 'RATIB pipeline board with stages, SLA, and worker rows';
         $d['home.program.alt.2'] = 'RATIB workers registry with stages, owners, and GPS context';
         $d['home.program.alt.3'] = 'RATIB finance view with invoices, throughput, and connector latency';
         $d['home.program.alt.4'] = 'RATIB operations snapshot';
         $d['home.program.alt.5'] = 'RATIB compliance timeline';
         $d['home.program.alt.6'] = 'RATIB agency performance board';
+        $d['home.program.alt.7'] = 'RATIB program image 7';
+        $d['home.program.alt.8'] = 'RATIB program image 8';
+        $d['home.program.alt.9'] = 'RATIB program image 9';
+        $d['home.program.alt.10'] = 'RATIB program image 10';
 
         $d['home.platform.title'] = 'Built for regulated, high-volume recruitment operations';
         $d['home.platform.sub'] = 'Deployed as a control plane: tenant-isolated data paths, encrypted transit, immutable workflow history, and finance-grade events organizations can reconcile—not narrative dashboards.';
@@ -334,6 +345,10 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.program.img4'] = '';
         $d['home.program.img5'] = '';
         $d['home.program.img6'] = '';
+        $d['home.program.img7'] = '';
+        $d['home.program.img8'] = '';
+        $d['home.program.img9'] = '';
+        $d['home.program.img10'] = '';
 
         return $d;
     }
@@ -573,6 +588,9 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                     ['key' => 'home.video.file', 'label' => 'Video file (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
                     ['key' => 'home.video.file2', 'label' => 'Video 2 (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
                     ['key' => 'home.video.file3', 'label' => 'Video 3 (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
+                    ['key' => 'home.video.file4', 'label' => 'Video 4 (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
+                    ['key' => 'home.video.file5', 'label' => 'Video 5 (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
+                    ['key' => 'home.video.file6', 'label' => 'Video 6 (upload, URL, or relative path)', 'type' => 'media_video', 'class' => 'font-monospace small'],
                 ],
             ],
             [
@@ -586,18 +604,30 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                     ['key' => 'home.program.caption.4', 'label' => 'Image 4 caption', 'type' => 'text'],
                     ['key' => 'home.program.caption.5', 'label' => 'Image 5 caption', 'type' => 'text'],
                     ['key' => 'home.program.caption.6', 'label' => 'Image 6 caption', 'type' => 'text'],
+                    ['key' => 'home.program.caption.7', 'label' => 'Image 7 caption', 'type' => 'text'],
+                    ['key' => 'home.program.caption.8', 'label' => 'Image 8 caption', 'type' => 'text'],
+                    ['key' => 'home.program.caption.9', 'label' => 'Image 9 caption', 'type' => 'text'],
+                    ['key' => 'home.program.caption.10', 'label' => 'Image 10 caption', 'type' => 'text'],
                     ['key' => 'home.program.alt.1', 'label' => 'Image 1 alt text', 'type' => 'text'],
                     ['key' => 'home.program.alt.2', 'label' => 'Image 2 alt text', 'type' => 'text'],
                     ['key' => 'home.program.alt.3', 'label' => 'Image 3 alt text', 'type' => 'text'],
                     ['key' => 'home.program.alt.4', 'label' => 'Image 4 alt text', 'type' => 'text'],
                     ['key' => 'home.program.alt.5', 'label' => 'Image 5 alt text', 'type' => 'text'],
                     ['key' => 'home.program.alt.6', 'label' => 'Image 6 alt text', 'type' => 'text'],
+                    ['key' => 'home.program.alt.7', 'label' => 'Image 7 alt text', 'type' => 'text'],
+                    ['key' => 'home.program.alt.8', 'label' => 'Image 8 alt text', 'type' => 'text'],
+                    ['key' => 'home.program.alt.9', 'label' => 'Image 9 alt text', 'type' => 'text'],
+                    ['key' => 'home.program.alt.10', 'label' => 'Image 10 alt text', 'type' => 'text'],
                     ['key' => 'home.program.img1', 'label' => 'Image 1 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
                     ['key' => 'home.program.img2', 'label' => 'Image 2 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
                     ['key' => 'home.program.img3', 'label' => 'Image 3 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
                     ['key' => 'home.program.img4', 'label' => 'Image 4 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
                     ['key' => 'home.program.img5', 'label' => 'Image 5 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
                     ['key' => 'home.program.img6', 'label' => 'Image 6 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
+                    ['key' => 'home.program.img7', 'label' => 'Image 7 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
+                    ['key' => 'home.program.img8', 'label' => 'Image 8 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
+                    ['key' => 'home.program.img9', 'label' => 'Image 9 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
+                    ['key' => 'home.program.img10', 'label' => 'Image 10 (upload, URL, or relative path)', 'type' => 'media_image', 'class' => 'font-monospace small'],
                 ],
             ],
             [
