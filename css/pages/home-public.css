@@ -4196,6 +4196,63 @@ section#features.ratib-section > .ratib-container {
   box-shadow: 0 8px 26px rgba(139, 92, 246, 0.28);
 }
 
+/* Feature section headline + card titles — hues aligned with each tile */
+section#features .ratib-section__head .ratib-eyebrow {
+  color: rgba(34, 211, 238, 0.88);
+}
+
+section#features .ratib-section__head .ratib-section__title {
+  color: #f8fafc;
+}
+
+section#features .ratib-feature-card--tone1 h3 {
+  color: #bae6fd;
+}
+
+section#features .ratib-feature-card--tone2 h3 {
+  color: #f5d0fe;
+}
+
+section#features .ratib-feature-card--tone3 h3 {
+  color: #a7f3d0;
+}
+
+section#features .ratib-feature-card--tone4 h3 {
+  color: #e0e7ff;
+}
+
+section#features .ratib-feature-card--tone5 h3 {
+  color: #ffedd5;
+}
+
+section#features .ratib-feature-card--tone6 h3 {
+  color: #fef3c7;
+}
+
+section#features .ratib-feature-card--tone7 h3 {
+  color: #dbeafe;
+}
+
+section#features .ratib-feature-card--tone8 h3 {
+  color: #ccfbf1;
+}
+
+section#features .ratib-feature-card--tone9 h3 {
+  color: #fef08a;
+}
+
+section#features .ratib-feature-card--tone10 h3 {
+  color: #d9f99d;
+}
+
+section#features .ratib-feature-card--tone11 h3 {
+  color: #fecdd3;
+}
+
+section#features .ratib-feature-card--tone12 h3 {
+  color: #ddd6fe;
+}
+
 /* Pipeline — mission control */
 .ratib-pipeline-section .ratib-section__sub {
   max-width: 36rem;
