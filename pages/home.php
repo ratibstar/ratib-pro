@@ -248,7 +248,7 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-12';
+    : '20260210-13';
 $ratibHome = ratib_site_content_home_flat(false);
 $ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
     ? ratib_site_content_db_fingerprint()
@@ -669,19 +669,19 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
                     <button type="button" class="ratib-program-lightbox__close" data-ratib-program-lightbox-close aria-label="Close preview">&times;</button>
                     <div class="ratib-program-lightbox__stage">
                         <img src="" alt="" class="ratib-program-lightbox__img" id="ratib-program-lightbox-img" decoding="async">
+                        <div class="ratib-program-lightbox__overlay-nav" id="ratib-program-lightbox-controls" hidden>
+                            <button type="button" class="ratib-program-lightbox__btn ratib-program-lightbox__btn--prev" data-ratib-program-lightbox-prev aria-label="Previous image">
+                                <span class="ratib-program-lightbox__btn-ic" aria-hidden="true">&#8249;</span>
+                                <span class="ratib-program-lightbox__btn-lbl">Prev</span>
+                            </button>
+                            <span class="ratib-program-lightbox__counter" id="ratib-program-lightbox-counter" aria-live="polite"></span>
+                            <button type="button" class="ratib-program-lightbox__btn ratib-program-lightbox__btn--next" data-ratib-program-lightbox-next aria-label="Next image">
+                                <span class="ratib-program-lightbox__btn-lbl">Next</span>
+                                <span class="ratib-program-lightbox__btn-ic" aria-hidden="true">&#8250;</span>
+                            </button>
+                        </div>
                     </div>
                     <p class="ratib-program-lightbox__caption" id="ratib-program-lightbox-caption" hidden></p>
-                    <div class="ratib-program-lightbox__controls" id="ratib-program-lightbox-controls" hidden>
-                        <button type="button" class="ratib-program-lightbox__btn ratib-program-lightbox__btn--prev" data-ratib-program-lightbox-prev aria-label="Previous image">
-                            <span class="ratib-program-lightbox__btn-ic" aria-hidden="true">&#8249;</span>
-                            <span class="ratib-program-lightbox__btn-lbl">Previous</span>
-                        </button>
-                        <span class="ratib-program-lightbox__counter" id="ratib-program-lightbox-counter" aria-live="polite"></span>
-                        <button type="button" class="ratib-program-lightbox__btn ratib-program-lightbox__btn--next" data-ratib-program-lightbox-next aria-label="Next image">
-                            <span class="ratib-program-lightbox__btn-lbl">Next</span>
-                            <span class="ratib-program-lightbox__btn-ic" aria-hidden="true">&#8250;</span>
-                        </button>
-                    </div>
                 </div>
             </div>
             <?php else: ?>

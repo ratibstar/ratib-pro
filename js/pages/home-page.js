@@ -1047,25 +1047,13 @@
         }
 
         var mqForSlides = document.querySelector('[data-ratib-program-marquee]');
-        /* One entry per unique preview (dedupe duplicated marquee row + odd DOM edge cases). */
+        /* First half of thumbnails = one full marquee cycle (same order as CMS slots). The second half is only for infinite scroll — do not dedupe by URL or duplicate captions collapse to one slide and hide Prev/Next. */
         var slides = [];
         if (mqForSlides) {
             var allProgOpen = mqForSlides.querySelectorAll('[data-ratib-program-open]');
-            var seenSlide = Object.create(null);
-            for (var pi = 0; pi < allProgOpen.length; pi++) {
-                var btnS = allProgOpen[pi];
-                var fullS = btnS.getAttribute('data-full-src') || '';
-                var imS = btnS.querySelector('img');
-                if (!fullS && imS) {
-                    fullS = imS.getAttribute('src') || '';
-                }
-                var capS = String(btnS.getAttribute('data-caption') || '');
-                var keyS = fullS + '\x01' + capS;
-                if (!seenSlide[keyS]) {
-                    seenSlide[keyS] = true;
-                    slides.push(btnS);
-                }
-            }
+            var total = allProgOpen.length;
+            var halfCount = Math.floor(total / 2);
+            slides = Array.prototype.slice.call(allProgOpen, 0, halfCount > 0 ? halfCount : total);
         }
 
         var lb = document.getElementById('ratib-program-lightbox');
