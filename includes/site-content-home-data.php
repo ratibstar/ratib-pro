@@ -31,6 +31,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
     {
         $nav = [
             'platform' => 'Platform',
+            'product_tour' => 'Product tour',
             'how_it_works' => 'How it works',
             'features' => 'Features',
             'solutions' => 'Solutions',
@@ -533,6 +534,7 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                 'title' => 'Header navigation labels',
                 'fields' => [
                     ['key' => 'home.nav.platform', 'label' => 'Platform', 'type' => 'text'],
+                    ['key' => 'home.nav.product_tour', 'label' => 'Product tour', 'type' => 'text'],
                     ['key' => 'home.nav.how_it_works', 'label' => 'How it works', 'type' => 'text'],
                     ['key' => 'home.nav.features', 'label' => 'Features', 'type' => 'text'],
                     ['key' => 'home.nav.solutions', 'label' => 'Solutions', 'type' => 'text'],

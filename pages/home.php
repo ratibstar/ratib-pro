@@ -248,7 +248,7 @@ if ($ratibCmsRev !== '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260210-13';
+    : '20260210-14';
 $ratibHome = ratib_site_content_home_flat(false);
 $ratibDbFingerprint = function_exists('ratib_site_content_db_fingerprint')
     ? ratib_site_content_db_fingerprint()
@@ -346,6 +346,13 @@ if ($ratibVideoSlotsRawCheck !== '') {
 }
 // Hide the whole video band (heading + strip) when there is nothing to show and CMS did not ask for the empty-state hint.
 $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$ratibVideoClearedInCms);
+// Header link "Product tour" scroll target: walkthrough video when present, else screenshot strip, else platform section.
+$ratibNavProductTourHref = '#platform';
+if ($ratibShowHomeVideoBand) {
+    $ratibNavProductTourHref = '#video';
+} elseif (!empty($ratibProgSlotsOut)) {
+    $ratibNavProductTourHref = '#program-previews';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -411,6 +418,7 @@ $ratibShowHomeVideoBand = !empty($ratibVideoSources) || (!$videoExists && !$rati
             </button>
             <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary">
                 <a href="#platform" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratibNavProductTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.product_tour'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 <a href="#how-it-works" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.how_it_works'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 <a href="#features" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.features'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 <a href="#solutions" class="ratib-nav__link"><?php echo htmlspecialchars($ratibHome['home.nav.solutions'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
