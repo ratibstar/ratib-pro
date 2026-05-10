@@ -758,12 +758,48 @@
             var open = menu.classList.toggle('is-open');
             toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
         });
-        menu.querySelectorAll('a').forEach(function (a) {
-            a.addEventListener('click', function () {
-                menu.classList.remove('is-open');
-                toggle.setAttribute('aria-expanded', 'false');
-            });
+        menu.addEventListener('click', function (ev) {
+            if (!ev.target.closest('a')) {
+                return;
+            }
+            menu.classList.remove('is-open');
+            toggle.setAttribute('aria-expanded', 'false');
         });
+    }
+})();
+
+/** If the server HTML is stale/cached and omits Product tour, insert it after Platform (same href rules as PHP). */
+(function ratibHomeEnsureProductTourNavTab() {
+    function productTourHref() {
+        if (document.getElementById('video')) {
+            return '#video';
+        }
+        if (document.getElementById('program-previews')) {
+            return '#program-previews';
+        }
+        return '#platform';
+    }
+    function run() {
+        var nav = document.getElementById('ratibNavMenu');
+        if (!nav || nav.querySelector('[data-ratib-product-tour-tab]')) {
+            return;
+        }
+        var platform = nav.querySelector('a[href="#platform"]');
+        if (!platform || !platform.parentNode) {
+            return;
+        }
+        var a = document.createElement('a');
+        a.href = productTourHref();
+        a.className = 'ratib-nav__link ratib-nav__link--product-tour';
+        a.setAttribute('data-ratib-product-tour-tab', '1');
+        a.setAttribute('data-ratib-product-tour-fallback', '1');
+        a.textContent = 'Product tour';
+        platform.parentNode.insertBefore(a, platform.nextSibling);
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', run);
+    } else {
+        run();
     }
 })();
 
