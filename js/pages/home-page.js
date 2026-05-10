@@ -1047,13 +1047,25 @@
         }
 
         var mqForSlides = document.querySelector('[data-ratib-program-marquee]');
-        /* First half of buttons = one marquee cycle (unique slides); second half is duplicate for infinite scroll. */
+        /* One entry per unique preview (dedupe duplicated marquee row + odd DOM edge cases). */
         var slides = [];
         if (mqForSlides) {
             var allProgOpen = mqForSlides.querySelectorAll('[data-ratib-program-open]');
-            var total = allProgOpen.length;
-            var halfCount = Math.floor(total / 2);
-            slides = Array.prototype.slice.call(allProgOpen, 0, halfCount > 0 ? halfCount : total);
+            var seenSlide = Object.create(null);
+            for (var pi = 0; pi < allProgOpen.length; pi++) {
+                var btnS = allProgOpen[pi];
+                var fullS = btnS.getAttribute('data-full-src') || '';
+                var imS = btnS.querySelector('img');
+                if (!fullS && imS) {
+                    fullS = imS.getAttribute('src') || '';
+                }
+                var capS = String(btnS.getAttribute('data-caption') || '');
+                var keyS = fullS + '\x01' + capS;
+                if (!seenSlide[keyS]) {
+                    seenSlide[keyS] = true;
+                    slides.push(btnS);
+                }
+            }
         }
 
         var lb = document.getElementById('ratib-program-lightbox');
@@ -1062,9 +1074,8 @@
         }
         var imgEl = lb.querySelector('.ratib-program-lightbox__img');
         var capEl = lb.querySelector('.ratib-program-lightbox__caption');
+        var controlsEl = document.getElementById('ratib-program-lightbox-controls');
         var counterEl = document.getElementById('ratib-program-lightbox-counter');
-        var prevBtn = lb.querySelector('[data-ratib-program-lightbox-prev]');
-        var nextBtn = lb.querySelector('[data-ratib-program-lightbox-next]');
         var lbIndex = 0;
 
         function readSlideFromBtn(btn) {
@@ -1121,11 +1132,8 @@
 
         function syncLbNav() {
             var hide = slides.length <= 1;
-            if (prevBtn) {
-                prevBtn.hidden = hide;
-            }
-            if (nextBtn) {
-                nextBtn.hidden = hide;
+            if (controlsEl) {
+                controlsEl.hidden = hide;
             }
         }
 
@@ -1143,13 +1151,8 @@
                 capEl.hidden = !t;
             }
             if (counterEl) {
-                if (slides.length > 1) {
-                    counterEl.textContent = String(lbIndex + 1) + ' / ' + String(slides.length);
-                    counterEl.hidden = false;
-                } else {
-                    counterEl.textContent = '';
-                    counterEl.hidden = true;
-                }
+                counterEl.textContent =
+                    slides.length > 1 ? String(lbIndex + 1) + ' / ' + String(slides.length) : '';
             }
         }
 
@@ -1175,7 +1178,6 @@
             }
             if (counterEl) {
                 counterEl.textContent = '';
-                counterEl.hidden = true;
             }
         }
 
