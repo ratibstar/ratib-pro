@@ -63,6 +63,23 @@ function ratib_control_site_content_media_preview_url(string $val): string
 }
 
 /**
+ * English-labelled upload control (native file inputs follow the browser/OS language).
+ *
+ * @param string $fieldName e.g. program_slot_upload[]
+ */
+function ratib_control_site_content_render_slot_file_field(string $fieldName, string $accept): void
+{
+    echo '<div class="ratib-fake-file-wrap mb-2" data-ratib-fake-file translate="no">';
+    echo '<div class="small text-muted mb-1" lang="en">Upload file (optional)</div>';
+    echo '<div class="input-group input-group-sm ratib-fake-file-inputgroup">';
+    echo '<button type="button" class="btn btn-outline-secondary ratib-fake-file-btn" lang="en">Browse…</button>';
+    echo '<span class="form-control ratib-fake-file-label text-truncate" lang="en">No file chosen</span>';
+    echo '</div>';
+    echo '<input type="file" class="ratib-real-file visually-hidden" name="' . htmlspecialchars($fieldName, ENT_QUOTES, 'UTF-8') . '" accept="' . htmlspecialchars($accept, ENT_QUOTES, 'UTF-8') . '" tabindex="-1" aria-label="Upload file">';
+    echo '</div>';
+}
+
+/**
  * @param array<string, string> $values
  */
 function ratib_control_site_content_render_field(array $field, array $values): void
@@ -316,14 +333,17 @@ function ratib_control_site_content_render_program_slots_editor(array $values): 
         return;
     }
     $rows = ratib_site_content_home_program_slots_from_flat($values);
-    echo '<div class="ratib-cms-slots ratib-cms-slots--program border rounded p-3 mb-2 bg-dark bg-opacity-25">';
-    echo '<p class="small text-muted mb-2">Images on the public homepage (unlimited). Each row: caption, alt text, then URL or upload.</p>';
+    echo '<div class="ratib-cms-slots ratib-cms-slots--program border rounded p-3 mb-2 bg-dark bg-opacity-25" translate="no">';
+    echo '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">';
+    echo '<p class="small text-muted mb-0 flex-grow-1" lang="en">Images on the public homepage (unlimited). Each row: caption, alt text, image URL or upload. <strong>Captions</strong> are the labels shown under each card on the live site — they are not the “+” add button (use <strong>Add row</strong> below).</p>';
+    echo '<button type="button" class="btn btn-sm btn-outline-light flex-shrink-0" data-ratib-slot-add="program" lang="en"><i class="fas fa-plus" aria-hidden="true"></i> Add row</button>';
+    echo '</div>';
     echo '<div id="ratib-program-slots-rows">';
     foreach ($rows as $idx => $row) {
         ratib_control_site_content_render_program_slot_row($idx, $row);
     }
     echo '</div>';
-    echo '<button type="button" class="btn btn-sm btn-outline-light mt-2" id="ratib-program-slot-add" data-ratib-slot-add="program">Add image +</button>';
+    echo '<button type="button" class="btn btn-sm btn-outline-light mt-2" id="ratib-program-slot-add" data-ratib-slot-add="program" lang="en"><i class="fas fa-plus me-1" aria-hidden="true"></i>Add row</button>';
     echo '</div>';
 }
 
@@ -342,7 +362,7 @@ function ratib_control_site_content_render_program_slot_row(int $idx, array $row
     echo '<div class="mb-2"><label class="form-label">Alt text</label><input type="text" class="form-control form-control-sm" name="program_slot_alt[]" value="' . $alt . '" maxlength="65000"></div>';
     echo '<div class="mb-2"><label class="form-label">Image URL / path / token</label><input type="text" class="form-control form-control-sm font-monospace" name="program_slot_src[]" value="' . $src . '" maxlength="65000"></div>';
     echo '<input type="hidden" name="program_slot_prev_src[]" value="' . $prev . '">';
-    echo '<input type="file" class="form-control form-control-sm mb-2" name="program_slot_upload[]" accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml">';
+    ratib_control_site_content_render_slot_file_field('program_slot_upload[]', 'image/jpeg,image/png,image/webp,image/gif,image/svg+xml');
     echo '<input type="hidden" name="program_slot_delete_media[]" value="0" class="ratib-slot-del-hidden">';
     if (trim((string) ($row['src'] ?? '')) !== '') {
         $previewUrl = ratib_control_site_content_media_preview_url((string) ($row['src'] ?? ''));
@@ -351,7 +371,7 @@ function ratib_control_site_content_render_program_slot_row(int $idx, array $row
         }
         echo '<label class="form-check-label small"><input class="form-check-input ratib-slot-del-cb me-1" type="checkbox" value="1"> Delete uploaded file for this row</label>';
     }
-    echo '<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-danger" data-ratib-slot-remove="program">Remove row</button></div>';
+    echo '<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-danger" data-ratib-slot-remove="program" lang="en"><i class="fas fa-minus me-1" aria-hidden="true"></i>Remove row</button></div>';
     echo '</div>';
 }
 
@@ -367,14 +387,17 @@ function ratib_control_site_content_render_video_slots_editor(array $values): vo
     if ($srcs === []) {
         $srcs = [''];
     }
-    echo '<div class="ratib-cms-slots ratib-cms-slots--video border rounded p-3 mb-2 bg-dark bg-opacity-25">';
-    echo '<p class="small text-muted mb-2">Videos on the public homepage (unlimited horizontal row). MP4 / WebM / MOV.</p>';
+    echo '<div class="ratib-cms-slots ratib-cms-slots--video border rounded p-3 mb-2 bg-dark bg-opacity-25" translate="no">';
+    echo '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">';
+    echo '<p class="small text-muted mb-0 flex-grow-1" lang="en">Videos on the public homepage (unlimited). MP4 / WebM / MOV. Use <strong>Add row</strong> for more clips. <strong>Remove row</strong> deletes that slot when you Save.</p>';
+    echo '<button type="button" class="btn btn-sm btn-outline-light flex-shrink-0" data-ratib-slot-add="video" lang="en"><i class="fas fa-plus" aria-hidden="true"></i> Add row</button>';
+    echo '</div>';
     echo '<div id="ratib-video-slots-rows">';
     foreach ($srcs as $idx => $sv) {
         ratib_control_site_content_render_video_slot_row($idx, (string) $sv);
     }
     echo '</div>';
-    echo '<button type="button" class="btn btn-sm btn-outline-light mt-2" id="ratib-video-slot-add" data-ratib-slot-add="video">Add video +</button>';
+    echo '<button type="button" class="btn btn-sm btn-outline-light mt-2" id="ratib-video-slot-add" data-ratib-slot-add="video" lang="en"><i class="fas fa-plus me-1" aria-hidden="true"></i>Add row</button>';
     echo '</div>';
 }
 
@@ -385,7 +408,7 @@ function ratib_control_site_content_render_video_slot_row(int $idx, string $src)
     echo '<div class="small text-muted mb-1">Video #' . (string) ($idx + 1) . '</div>';
     echo '<div class="mb-2"><label class="form-label">Video URL / path / token</label><input type="text" class="form-control form-control-sm font-monospace" name="video_slot_src[]" value="' . $es . '" maxlength="65000"></div>';
     echo '<input type="hidden" name="video_slot_prev_src[]" value="' . $es . '">';
-    echo '<input type="file" class="form-control form-control-sm mb-2" name="video_slot_upload[]" accept="video/mp4,video/webm,video/quicktime">';
+    ratib_control_site_content_render_slot_file_field('video_slot_upload[]', 'video/mp4,video/webm,video/quicktime');
     echo '<input type="hidden" name="video_slot_delete_media[]" value="0" class="ratib-slot-del-hidden">';
     if (trim($src) !== '') {
         $previewUrl = ratib_control_site_content_media_preview_url($src);
@@ -394,7 +417,7 @@ function ratib_control_site_content_render_video_slot_row(int $idx, string $src)
         }
         echo '<label class="form-check-label small"><input class="form-check-input ratib-slot-del-cb me-1" type="checkbox" value="1"> Delete uploaded file for this row</label>';
     }
-    echo '<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-danger" data-ratib-slot-remove="video">Remove row</button></div>';
+    echo '<div class="mt-2"><button type="button" class="btn btn-sm btn-outline-danger" data-ratib-slot-remove="video" lang="en"><i class="fas fa-minus me-1" aria-hidden="true"></i>Remove row</button></div>';
     echo '</div>';
 }
 
@@ -538,7 +561,7 @@ require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('Public site content', [$editorCss], []);
 
 ?>
-<div class="ratib-site-content-editor ratib-site-content-editor--dark">
+<div class="ratib-site-content-editor ratib-site-content-editor--dark" lang="en">
     <div class="ratib-site-content-intro mb-3">
         <strong><i class="fas fa-globe me-2"></i>Full public homepage copy</strong>
         <p class="mb-0 small text-muted">Edit English marketing text for <code>pages/home.php</code> (hero through footer). Values are stored as keys in <code>ratib_site_content</code> on the control database. Expand a section below—use <strong>Save</strong> at the bottom.</p>
@@ -667,10 +690,15 @@ if ($pageRevision !== '') {
         }
         syncDeleteHidden(row);
     }
+    function resetFakeFile(row) {
+        var real = row.querySelector('.ratib-real-file');
+        if (real) real.value = '';
+        var lab = row.querySelector('.ratib-fake-file-label');
+        if (lab) lab.textContent = 'No file chosen';
+    }
     function clearProgramRow(row) {
         row.querySelectorAll('input[type="text"], textarea').forEach(function (el) { el.value = ''; });
-        var file = row.querySelector('input[type="file"]');
-        if (file) file.value = '';
+        resetFakeFile(row);
         var prev = row.querySelector('input[name="program_slot_prev_src[]"]');
         if (prev) prev.value = '';
         var hidden = row.querySelector('.ratib-slot-del-hidden');
@@ -681,8 +709,7 @@ if ($pageRevision !== '') {
     }
     function clearVideoRow(row) {
         row.querySelectorAll('input[type="text"]').forEach(function (el) { el.value = ''; });
-        var file = row.querySelector('input[type="file"]');
-        if (file) file.value = '';
+        resetFakeFile(row);
         var prev = row.querySelector('input[name="video_slot_prev_src[]"]');
         if (prev) prev.value = '';
         var hidden = row.querySelector('.ratib-slot-del-hidden');
@@ -692,7 +719,23 @@ if ($pageRevision !== '') {
         row.querySelectorAll('.mb-2 video, label.form-check-label').forEach(function (n) { n.remove(); });
     }
     document.querySelectorAll('.ratib-cms-slot-row[data-slot-row]').forEach(bindRow);
+    document.addEventListener('change', function (ev) {
+        var t = ev.target;
+        if (!t || !t.classList || !t.classList.contains('ratib-real-file')) return;
+        var wrap = t.closest('[data-ratib-fake-file]');
+        var label = wrap && wrap.querySelector('.ratib-fake-file-label');
+        var f = t.files && t.files[0];
+        if (label) label.textContent = f ? f.name : 'No file chosen';
+    });
     document.addEventListener('click', function (ev) {
+        var fakeBtn = ev.target && ev.target.closest ? ev.target.closest('.ratib-fake-file-btn') : null;
+        if (fakeBtn) {
+            ev.preventDefault();
+            var wrap = fakeBtn.closest('[data-ratib-fake-file]');
+            var real = wrap && wrap.querySelector('.ratib-real-file');
+            if (real) real.click();
+            return;
+        }
         var addBtn = ev.target && ev.target.closest ? ev.target.closest('[data-ratib-slot-add]') : null;
         if (addBtn) {
             var kind = addBtn.getAttribute('data-ratib-slot-add') || '';

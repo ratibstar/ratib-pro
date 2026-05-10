@@ -41,6 +41,41 @@ if (!function_exists('ratib_site_content_home_default_program_slots_json')) {
     }
 }
 
+if (!function_exists('ratib_site_content_home_legacy_program_row_at')) {
+    /**
+     * Legacy slot N (1-based): home.program.imgN, caption.N, alt.N
+     *
+     * @param array<string, string> $flat
+     *
+     * @return array{caption:string, alt:string, src:string}
+     */
+    function ratib_site_content_home_legacy_program_row_at(array $flat, int $n): array
+    {
+        return [
+            'caption' => trim((string) ($flat['home.program.caption.' . $n] ?? '')),
+            'alt' => trim((string) ($flat['home.program.alt.' . $n] ?? '')),
+            'src' => trim((string) ($flat['home.program.img' . $n] ?? '')),
+        ];
+    }
+}
+
+if (!function_exists('ratib_site_content_home_legacy_program_max_slot')) {
+    /**
+     * Highest legacy slot index (1..500) that has any value.
+     */
+    function ratib_site_content_home_legacy_program_max_slot(array $flat): int
+    {
+        for ($n = 500; $n >= 1; $n--) {
+            $r = ratib_site_content_home_legacy_program_row_at($flat, $n);
+            if ($r['src'] !== '' || $r['caption'] !== '' || $r['alt'] !== '') {
+                return $n;
+            }
+        }
+
+        return 0;
+    }
+}
+
 if (!function_exists('ratib_site_content_home_program_slots_from_flat')) {
     /**
      * @param array<string, string> $flat
@@ -50,60 +85,70 @@ if (!function_exists('ratib_site_content_home_program_slots_from_flat')) {
     function ratib_site_content_home_program_slots_from_flat(array $flat): array
     {
         $raw = trim((string) ($flat['home.program.slots_json'] ?? ''));
-        if ($raw !== '') {
-            $d = json_decode($raw, true);
-            if (is_array($d) && count($d) > 0) {
-                return ratib_site_content_home_normalize_program_slots($d);
+
+        $legacyOnlyCompact = static function (array $flatIn): array {
+            $out = [];
+            for ($i = 1; $i <= 500; $i++) {
+                $r = ratib_site_content_home_legacy_program_row_at($flatIn, $i);
+                if ($r['src'] === '' && $r['caption'] === '' && $r['alt'] === '') {
+                    continue;
+                }
+                $out[] = $r;
             }
+
+            return ratib_site_content_home_normalize_program_slots($out);
+        };
+
+        if ($raw === '') {
+            $compact = $legacyOnlyCompact($flat);
+            if (count($compact) > 0) {
+                return $compact;
+            }
+            $def = json_decode(ratib_site_content_home_default_program_slots_json(), true);
+
+            return is_array($def) ? ratib_site_content_home_normalize_program_slots($def) : [];
         }
 
-        $out = [];
-        for ($i = 1; $i <= 500; $i++) {
-            $src = trim((string) ($flat['home.program.img' . $i] ?? ''));
-            $cap = trim((string) ($flat['home.program.caption.' . $i] ?? ''));
-            $alt = trim((string) ($flat['home.program.alt.' . $i] ?? ''));
+        $d = json_decode($raw, true);
+        if (!is_array($d) || count($d) === 0) {
+            $compact = $legacyOnlyCompact($flat);
+            if (count($compact) > 0) {
+                return $compact;
+            }
+            $def = json_decode(ratib_site_content_home_default_program_slots_json(), true);
+
+            return is_array($def) ? ratib_site_content_home_normalize_program_slots($def) : [];
+        }
+
+        $rows = ratib_site_content_home_normalize_program_slots($d);
+        $legacyMax = ratib_site_content_home_legacy_program_max_slot($flat);
+        $max = max(count($rows), $legacyMax);
+        $merged = [];
+        for ($i = 0; $i < $max; $i++) {
+            $slotNum = $i + 1;
+            $jsonRow = $rows[$i] ?? ['caption' => '', 'alt' => '', 'src' => ''];
+            $legRow = ratib_site_content_home_legacy_program_row_at($flat, $slotNum);
+            $src = trim((string) ($jsonRow['src'] ?? '')) !== '' ? trim((string) $jsonRow['src']) : $legRow['src'];
+            $cap = trim((string) ($jsonRow['caption'] ?? '')) !== '' ? trim((string) $jsonRow['caption']) : $legRow['caption'];
+            $alt = trim((string) ($jsonRow['alt'] ?? '')) !== '' ? trim((string) $jsonRow['alt']) : $legRow['alt'];
             if ($src === '' && $cap === '' && $alt === '') {
                 continue;
             }
-            $out[] = ['caption' => $cap, 'alt' => $alt, 'src' => $src];
-        }
-        if (count($out) > 0) {
-            return ratib_site_content_home_normalize_program_slots($out);
+            $merged[] = ['caption' => $cap, 'alt' => $alt, 'src' => $src];
         }
 
-        $def = json_decode(ratib_site_content_home_default_program_slots_json(), true);
-
-        return is_array($def) ? ratib_site_content_home_normalize_program_slots($def) : [];
+        return ratib_site_content_home_normalize_program_slots($merged);
     }
 }
 
-if (!function_exists('ratib_site_content_home_video_src_strings_from_flat')) {
+if (!function_exists('ratib_site_content_home_legacy_video_src_list')) {
     /**
-     * Ordered list of stored video references (tokens, paths, or URLs).
-     *
      * @param array<string, string> $flat
      *
      * @return list<string>
      */
-    function ratib_site_content_home_video_src_strings_from_flat(array $flat): array
+    function ratib_site_content_home_legacy_video_src_list(array $flat): array
     {
-        $raw = trim((string) ($flat['home.video.slots_json'] ?? ''));
-        if ($raw !== '') {
-            $d = json_decode($raw, true);
-            if (is_array($d) && count($d) > 0) {
-                $srcs = [];
-                foreach ($d as $row) {
-                    $s = is_array($row) ? trim((string) ($row['src'] ?? '')) : trim((string) $row);
-                    if ($s !== '') {
-                        $srcs[] = $s;
-                    }
-                }
-                if (count($srcs) > 0) {
-                    return $srcs;
-                }
-            }
-        }
-
         $keys = ['home.video.file'];
         for ($i = 2; $i <= 99; $i++) {
             $keys[] = 'home.video.file' . $i;
@@ -117,6 +162,48 @@ if (!function_exists('ratib_site_content_home_video_src_strings_from_flat')) {
         }
 
         return $srcs;
+    }
+}
+
+if (!function_exists('ratib_site_content_home_video_src_strings_from_flat')) {
+    /**
+     * Ordered list of stored video references (tokens, paths, or URLs).
+     * Merges JSON slots with legacy home.video.file* so empty JSON src cells still pick up old uploads.
+     *
+     * @param array<string, string> $flat
+     *
+     * @return list<string>
+     */
+    function ratib_site_content_home_video_src_strings_from_flat(array $flat): array
+    {
+        $legacyList = ratib_site_content_home_legacy_video_src_list($flat);
+        $raw = trim((string) ($flat['home.video.slots_json'] ?? ''));
+        if ($raw === '') {
+            return $legacyList;
+        }
+
+        $d = json_decode($raw, true);
+        if (!is_array($d) || count($d) === 0) {
+            return $legacyList;
+        }
+
+        $jsonSrcs = [];
+        foreach ($d as $row) {
+            $jsonSrcs[] = is_array($row) ? trim((string) ($row['src'] ?? '')) : trim((string) $row);
+        }
+
+        $max = max(count($jsonSrcs), count($legacyList));
+        $merged = [];
+        for ($i = 0; $i < $max; $i++) {
+            $j = $jsonSrcs[$i] ?? '';
+            $l = $legacyList[$i] ?? '';
+            $pick = ($j !== '') ? $j : $l;
+            if ($pick !== '') {
+                $merged[] = $pick;
+            }
+        }
+
+        return $merged;
     }
 }
 

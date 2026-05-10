@@ -161,3 +161,14 @@
 .module-content .ratib-site-content-editor--dark + * {
     margin-top: 0;
 }
+
+/* English-labelled upload row (see ratib_control_site_content_render_slot_file_field) */
+.ratib-site-content-editor--dark .ratib-fake-file-inputgroup .ratib-fake-file-label {
+    display: flex;
+    align-items: center;
+    font-size: 0.8rem;
+    min-height: 31px;
+    background: var(--rsce-bg);
+    border-color: var(--rsce-border);
+    color: var(--rsce-muted);
+}
