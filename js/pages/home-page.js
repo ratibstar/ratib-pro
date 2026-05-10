@@ -817,100 +817,8 @@
     });
 })();
 
-/** Phase 3: subtle live telemetry (timestamps, sync age, micro jitter) — illustrative only. */
-(function ratibHomeLiveTelemetry() {
-    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) {
-        return;
-    }
-
-    function rnd(min, max) {
-        return min + Math.floor(Math.random() * (max - min + 1));
-    }
-
-    function tickSyncAge() {
-        var m = rnd(1, 4);
-        var txt = m + 'm';
-        document.querySelectorAll('.ratib-live-sync-age').forEach(function (el) {
-            el.textContent = txt;
-        });
-        document.querySelectorAll('.ratib-live-ping').forEach(function (el) {
-            el.textContent = txt;
-        });
-    }
-
-    function tickAgencyCounter() {
-        var el = document.getElementById('ratib-topbar-nodes-counter');
-        if (!el || !el.classList.contains('ratib-live-counter')) {
-            return;
-        }
-        var base = parseInt(el.getAttribute('data-ratib-counter'), 10);
-        if (!isFinite(base)) {
-            return;
-        }
-        var n = base + rnd(-2, 2);
-        if (n < 0) {
-            n = 0;
-        }
-        el.textContent = String(n);
-    }
-
-    function tickIntJitter() {
-        document.querySelectorAll('[data-ratib-jitter]').forEach(function (el) {
-            var base = parseInt(el.getAttribute('data-ratib-jitter'), 10);
-            if (!isFinite(base)) {
-                return;
-            }
-            var n = base + rnd(-3, 3);
-            el.textContent = n.toLocaleString();
-        });
-    }
-
-    function tickPctJitter() {
-        document.querySelectorAll('[data-ratib-jitter-pct]').forEach(function (el) {
-            var base = parseFloat(el.getAttribute('data-ratib-jitter-pct'));
-            if (!isFinite(base)) {
-                return;
-            }
-            var v = base + (Math.random() * 0.12 - 0.06);
-            if (v < 90) {
-                v = 90;
-            }
-            if (v > 99.95) {
-                v = 99.95;
-            }
-            el.textContent = v.toFixed(1) + '%';
-        });
-    }
-
-    function tickEventClock() {
-        var els = document.querySelectorAll('.ratib-live-clock');
-        if (!els.length) {
-            return;
-        }
-        function pad(x) {
-            return x < 10 ? '0' + x : String(x);
-        }
-        function run() {
-            var d = new Date();
-            var txt = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
-            var iso = '';
-            try {
-                iso = d.toISOString();
-            } catch (e) {}
-            els.forEach(function (el) {
-                el.textContent = txt;
-                if (iso) {
-                    try {
-                        el.setAttribute('datetime', iso);
-                    } catch (e2) {}
-                }
-            });
-        }
-        run();
-        setInterval(run, 1000);
-    }
-
+/** Program preview strip: horizontal marquee + click-to-enlarge. Must run for all users (incl. prefers-reduced-motion). */
+(function ratibHomeProgramStrip() {
     function initProgramStripMarqueeAndLightbox() {
         var mqRoot = document.querySelector('[data-ratib-program-marquee]');
         if (mqRoot) {
@@ -1012,6 +920,101 @@
         if (typeof console !== 'undefined' && console.error) {
             console.error('ratib program strip init failed', eProg);
         }
+    }
+})();
+
+/** Phase 3: subtle live telemetry (timestamps, sync age, micro jitter) — illustrative only. */
+(function ratibHomeLiveTelemetry() {
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) {
+        return;
+    }
+
+    function rnd(min, max) {
+        return min + Math.floor(Math.random() * (max - min + 1));
+    }
+
+    function tickSyncAge() {
+        var m = rnd(1, 4);
+        var txt = m + 'm';
+        document.querySelectorAll('.ratib-live-sync-age').forEach(function (el) {
+            el.textContent = txt;
+        });
+        document.querySelectorAll('.ratib-live-ping').forEach(function (el) {
+            el.textContent = txt;
+        });
+    }
+
+    function tickAgencyCounter() {
+        var el = document.getElementById('ratib-topbar-nodes-counter');
+        if (!el || !el.classList.contains('ratib-live-counter')) {
+            return;
+        }
+        var base = parseInt(el.getAttribute('data-ratib-counter'), 10);
+        if (!isFinite(base)) {
+            return;
+        }
+        var n = base + rnd(-2, 2);
+        if (n < 0) {
+            n = 0;
+        }
+        el.textContent = String(n);
+    }
+
+    function tickIntJitter() {
+        document.querySelectorAll('[data-ratib-jitter]').forEach(function (el) {
+            var base = parseInt(el.getAttribute('data-ratib-jitter'), 10);
+            if (!isFinite(base)) {
+                return;
+            }
+            var n = base + rnd(-3, 3);
+            el.textContent = n.toLocaleString();
+        });
+    }
+
+    function tickPctJitter() {
+        document.querySelectorAll('[data-ratib-jitter-pct]').forEach(function (el) {
+            var base = parseFloat(el.getAttribute('data-ratib-jitter-pct'));
+            if (!isFinite(base)) {
+                return;
+            }
+            var v = base + (Math.random() * 0.12 - 0.06);
+            if (v < 90) {
+                v = 90;
+            }
+            if (v > 99.95) {
+                v = 99.95;
+            }
+            el.textContent = v.toFixed(1) + '%';
+        });
+    }
+
+    function tickEventClock() {
+        var els = document.querySelectorAll('.ratib-live-clock');
+        if (!els.length) {
+            return;
+        }
+        function pad(x) {
+            return x < 10 ? '0' + x : String(x);
+        }
+        function run() {
+            var d = new Date();
+            var txt = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+            var iso = '';
+            try {
+                iso = d.toISOString();
+            } catch (e) {}
+            els.forEach(function (el) {
+                el.textContent = txt;
+                if (iso) {
+                    try {
+                        el.setAttribute('datetime', iso);
+                    } catch (e2) {}
+                }
+            });
+        }
+        run();
+        setInterval(run, 1000);
     }
 
     tickSyncAge();
