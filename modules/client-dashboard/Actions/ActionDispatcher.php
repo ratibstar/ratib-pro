@@ -20,6 +20,13 @@ final class Ratib_ClientDashboard_Action_Dispatcher
         require_once dirname(__DIR__) . '/Actions/CancelAction.php';
         require_once dirname(__DIR__) . '/Actions/RetryPaymentAction.php';
         require_once dirname(__DIR__) . '/Actions/OpenTicketAction.php';
+        require_once dirname(__DIR__) . '/Tenant/TenantScope.php';
+        require_once dirname(__DIR__) . '/Policy/PolicyEngine.php';
+        require_once dirname(__DIR__) . '/Reliability/ActionReliabilityLayer.php';
+        require_once dirname(__DIR__) . '/Events/InternalEventBus.php';
+        require_once dirname(__DIR__) . '/Async/AsyncCoordinationLayer.php';
+        require_once dirname(__DIR__) . '/Lifecycle/ServiceLifecycleCoordinator.php';
+        require_once dirname(__DIR__) . '/Governance/GovernanceFacade.php';
 
         $map = [
             'renew' => Ratib_ClientDashboard_Action_Renew::class,
@@ -42,8 +49,49 @@ final class Ratib_ClientDashboard_Action_Dispatcher
 
         $conn = isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli ? $GLOBALS['conn'] : null;
         $uid = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
+        $tenant = Ratib_ClientDashboard_TenantScope::fromSession();
+
+        $correlationId = isset($input['correlation_id']) ? trim((string) $input['correlation_id']) : '';
+        if ($correlationId === '') {
+            $correlationId = bin2hex(random_bytes(8));
+        }
+
+        $policy = new Ratib_ClientDashboard_PolicyEngine();
+        $gate = $policy->assertMutationAllowed($verb);
+        if (!$gate['allowed']) {
+            return self::wrapDenial($verb, $targetId, $correlationId, $gate['code'], $gate['message']);
+        }
+
+        $cached = Ratib_ClientDashboard_ActionReliabilityLayer::tryReplay($conn, $tenant, $verb, $targetId, $input);
+        if ($cached !== null) {
+            $lifecycle = new Ratib_ClientDashboard_ServiceLifecycleCoordinator();
+            $replayObs = new Ratib_ClientDashboard_ObservabilityHub();
+            $replayObs->setCorrelationId($correlationId);
+            $clean = $cached;
+            unset($clean['governance'], $clean['observability']);
+
+            return Ratib_ClientDashboard_GovernanceFacade::augmentActionResponse(
+                array_merge($clean, [
+                    'meta' => array_merge((array) ($clean['meta'] ?? []), ['idempotent_replay' => true]),
+                    'observability' => $replayObs->snapshotSlice(),
+                ]),
+                $correlationId,
+                $replayObs->traceId(),
+                null,
+                $lifecycle,
+                $verb
+            );
+        }
+
         $obs = new Ratib_ClientDashboard_ObservabilityHub();
+        $obs->setCorrelationId($correlationId);
         $ctx = new Ratib_ClientDashboard_Action_Context($conn, $uid, $verb, $targetId, $input, $obs);
+
+        $lifecycle = new Ratib_ClientDashboard_ServiceLifecycleCoordinator();
+        $lcGate = $lifecycle->mapActionToLifecycle($verb, null);
+        if (!$lcGate['allowed']) {
+            return self::wrapDenial($verb, $targetId, $correlationId, 'lifecycle_denied', $lcGate['notes']);
+        }
 
         /** @var Ratib_ClientDashboard_Action_Interface $handler */
         $class = $map[$verb];
@@ -52,25 +100,68 @@ final class Ratib_ClientDashboard_Action_Dispatcher
         try {
             $result = $handler->execute($ctx);
             $ok = !empty($result['ok']);
-            $ctx->obs->recordAction($verb, $ok, ['target' => $targetId]);
+            $ctx->obs->recordAction($verb, $ok, ['target' => $targetId, 'correlation_id' => $correlationId]);
             Ratib_ClientDashboard_AuditLogger::log($conn, 'action', [
                 'action' => $verb,
                 'target_id' => $targetId,
                 'ok' => $ok,
                 'code' => $result['code'] ?? null,
+                'correlation_id' => $correlationId,
+                'trace_id' => $ctx->obs->traceId(),
             ]);
 
-            return array_merge(
+            Ratib_ClientDashboard_InternalEventBus::publish($conn, 'action.completed', [
+                'verb' => $verb,
+                'target_id' => $targetId,
+                'ok' => $ok,
+                'tenant' => $tenant->toMeta(),
+                'correlation_id' => $correlationId,
+            ]);
+
+            $asyncEnv = null;
+            if ($ok && ($policy->preferAsyncQueue() || in_array($verb, ['renew', 'retry_payment'], true))) {
+                $asyncEnv = Ratib_ClientDashboard_AsyncCoordinationLayer::enqueue(
+                    $conn,
+                    $verb,
+                    $targetId,
+                    $tenant,
+                    $correlationId,
+                    ['code' => $result['code'] ?? null]
+                );
+            }
+
+            $merged = array_merge(
                 [
                     'observability' => $ctx->obs->snapshotSlice(),
                 ],
                 $result
             );
-        } catch (Throwable $e) {
-            $ctx->obs->recordAction($verb, false, ['error' => $e->getMessage()]);
+
+            $merged = Ratib_ClientDashboard_GovernanceFacade::augmentActionResponse(
+                $merged,
+                $correlationId,
+                $ctx->obs->traceId(),
+                $asyncEnv,
+                $lifecycle,
+                $verb
+            );
+
+            Ratib_ClientDashboard_ActionReliabilityLayer::remember($conn, $tenant, $verb, $targetId, $input, $merged);
+
+            return $merged;
+        } catch (\Throwable $e) {
+            $ctx->obs->recordAction($verb, false, ['error' => $e->getMessage(), 'correlation_id' => $correlationId]);
             Ratib_ClientDashboard_AuditLogger::log($conn, 'action_error', [
                 'action' => $verb,
                 'target_id' => $targetId,
+                'error' => $e->getMessage(),
+                'correlation_id' => $correlationId,
+            ]);
+            Ratib_ClientDashboard_InternalEventBus::publish($conn, 'action.failed', [
+                'verb' => $verb,
+                'target_id' => $targetId,
+                'tenant' => $tenant->toMeta(),
+                'correlation_id' => $correlationId,
                 'error' => $e->getMessage(),
             ]);
 
@@ -80,7 +171,37 @@ final class Ratib_ClientDashboard_Action_Dispatcher
                 'message' => 'Action handler failed safely',
                 'meta' => ['detail' => 'logged'],
                 'observability' => $ctx->obs->snapshotSlice(),
+                'governance' => [
+                    'correlation_id' => $correlationId,
+                    'trace_id' => $ctx->obs->traceId(),
+                    'lifecycle' => $lifecycle->mapActionToLifecycle($verb, null),
+                    'async' => null,
+                ],
             ];
         }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function wrapDenial(string $verb, string $targetId, string $correlationId, string $code, string $message): array
+    {
+        $obs = new Ratib_ClientDashboard_ObservabilityHub();
+        $obs->setCorrelationId($correlationId);
+        $lifecycle = new Ratib_ClientDashboard_ServiceLifecycleCoordinator();
+
+        return [
+            'ok' => false,
+            'code' => $code,
+            'message' => $message,
+            'meta' => ['target_id' => $targetId],
+            'observability' => $obs->snapshotSlice(),
+            'governance' => [
+                'correlation_id' => $correlationId,
+                'trace_id' => $obs->traceId(),
+                'lifecycle' => $lifecycle->mapActionToLifecycle($verb, null),
+                'async' => null,
+            ],
+        ];
     }
 }

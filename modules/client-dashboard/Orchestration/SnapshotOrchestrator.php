@@ -28,27 +28,39 @@ final class Ratib_ClientDashboard_SnapshotOrchestrator
         require_once dirname(__DIR__) . '/Subscription/SubscriptionStateEngine.php';
         require_once dirname(__DIR__) . '/Health/ServiceHealthLayer.php';
         require_once dirname(__DIR__) . '/Security/ClientSecuritySnapshotBuilder.php';
+        require_once dirname(__DIR__) . '/Governance/GovernanceFacade.php';
 
         $obs = new Ratib_ClientDashboard_ObservabilityHub();
+        $obs->setCorrelationId(bin2hex(random_bytes(8)));
         $ctx = Ratib_ClientDashboard_AdapterContext::fromSession($conn, $obs);
 
         $base = Ratib_ClientDashboard_SnapshotBuilder::build($conn);
         $widgets = $base['widgets'];
 
+        $t0 = microtime(true);
         $ordersAdapter = new Ratib_ClientDashboard_OrdersAdapter();
         $orders = $ordersAdapter->fetchNormalized($ctx);
+        $obs->recordAdapterTiming('orders', (microtime(true) - $t0) * 1000.0);
 
+        $t0 = microtime(true);
         $billingAdapter = new Ratib_ClientDashboard_BillingAdapter();
         $billingRaw = $billingAdapter->fetchNormalized($ctx);
+        $obs->recordAdapterTiming('billing', (microtime(true) - $t0) * 1000.0);
 
+        $t0 = microtime(true);
         $domainsAdapter = new Ratib_ClientDashboard_DomainsAdapter();
         $domainPack = $domainsAdapter->fetchNormalized($ctx);
+        $obs->recordAdapterTiming('domains', (microtime(true) - $t0) * 1000.0);
 
+        $t0 = microtime(true);
         $hostingAdapter = new Ratib_ClientDashboard_HostingAdapter();
         $hostingRows = $hostingAdapter->fetchNormalized($ctx);
+        $obs->recordAdapterTiming('hosting', (microtime(true) - $t0) * 1000.0);
 
+        $t0 = microtime(true);
         $infraAdapter = new Ratib_ClientDashboard_InfrastructureAdapter();
         $infra = $infraAdapter->fetchAwareness($ctx);
+        $obs->recordAdapterTiming('infrastructure', (microtime(true) - $t0) * 1000.0);
 
         $registry = new Ratib_ClientDashboard_ServiceRegistry();
         $services = $registry->merge($hostingRows, $domainPack['domains'] ?? []);
@@ -114,7 +126,29 @@ final class Ratib_ClientDashboard_SnapshotOrchestrator
         $base['infrastructure'] = $infra;
         $base['observability'] = $obs->snapshotSlice();
 
-        return $base;
+        try {
+            return Ratib_ClientDashboard_GovernanceFacade::mergeSnapshot(
+                $base,
+                $ctx,
+                $obs,
+                $orders,
+                $services,
+                $billingSync,
+                $subscription,
+                $infra,
+                $notifications,
+                $domainPack['domains'] ?? []
+            );
+        } catch (\Throwable $e) {
+            $obs->markDegraded('governance_merge', true);
+            $base['observability'] = $obs->snapshotSlice();
+            $base['governance'] = [
+                'error' => 'governance_degraded',
+                'message' => 'Governance layer skipped safely.',
+            ];
+
+            return $base;
+        }
     }
 
     private static function resolveSource(string $legacy, Ratib_ClientDashboard_ObservabilityHub $obs): string
