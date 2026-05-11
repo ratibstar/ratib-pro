@@ -807,6 +807,9 @@
 
 /** If server HTML is stale/cached and omits infra tabs, inject them into the top nav. */
 (function ratibHomeEnsureInfraNavTabs() {
+    var MARKETPLACE_HREF = '/modules/infrastructure-marketplace/Views/marketplace/index.php';
+    var STATUS_HREF = '/modules/infrastructure-marketplace/Views/client/services.php';
+
     function mkLink(href, glyphId, label, attrName) {
         var a = document.createElement('a');
         a.href = href;
@@ -816,6 +819,74 @@
             '<span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="' + glyphId + '"/></svg></span>' +
             '<span class="ratib-nav__label">' + label + '</span>';
         return a;
+    }
+    function isInfraNavClick(ev) {
+        if (!ev) {
+            return false;
+        }
+        return ev.button === 0 && !ev.defaultPrevented && !ev.metaKey && !ev.ctrlKey && !ev.shiftKey && !ev.altKey;
+    }
+    function ensureInlinePanel() {
+        var panel = document.getElementById('ratib-infra-inline-panel');
+        if (panel) {
+            return panel;
+        }
+        var anchor = document.getElementById('ratib-main-header') || document.getElementById('ratibNavMenu');
+        if (!anchor || !anchor.parentNode) {
+            return null;
+        }
+        panel = document.createElement('section');
+        panel.id = 'ratib-infra-inline-panel';
+        panel.className = 'ratib-infra-inline-panel';
+        panel.hidden = true;
+        panel.innerHTML =
+            '<div class="ratib-infra-inline-panel__head">' +
+                '<strong id="ratib-infra-inline-panel-title" class="ratib-infra-inline-panel__title">Infrastructure</strong>' +
+                '<button type="button" class="ratib-infra-inline-panel__close" aria-label="Close infrastructure panel">Close</button>' +
+            '</div>' +
+            '<div class="ratib-infra-inline-panel__body">' +
+                '<iframe id="ratib-infra-inline-frame" class="ratib-infra-inline-panel__frame" loading="lazy" referrerpolicy="same-origin" title="Infrastructure panel"></iframe>' +
+            '</div>';
+        anchor.parentNode.insertBefore(panel, anchor.nextSibling);
+        return panel;
+    }
+    function bindInfraNavBehavior(link, title, href, key) {
+        if (!link || link.getAttribute('data-ratib-infra-inline-bound') === '1') {
+            return;
+        }
+        link.setAttribute('data-ratib-infra-tab-key', key);
+        link.setAttribute('data-ratib-infra-inline-bound', '1');
+        link.addEventListener('click', function (ev) {
+            if (!isInfraNavClick(ev)) {
+                return;
+            }
+            ev.preventDefault();
+            var panel = ensureInlinePanel();
+            if (!panel) {
+                window.location.href = href;
+                return;
+            }
+            var frame = panel.querySelector('#ratib-infra-inline-frame');
+            var heading = panel.querySelector('#ratib-infra-inline-panel-title');
+            if (!frame || !heading) {
+                window.location.href = href;
+                return;
+            }
+            var isSame = frame.getAttribute('data-ratib-active-key') === key && panel.hidden === false;
+            if (isSame) {
+                panel.hidden = true;
+                link.classList.remove('is-active');
+                return;
+            }
+            heading.textContent = title;
+            frame.src = href + (href.indexOf('?') === -1 ? '?' : '&') + 'embed=1';
+            frame.setAttribute('data-ratib-active-key', key);
+            panel.hidden = false;
+            document.querySelectorAll('[data-ratib-infra-tab-key]').forEach(function (el) {
+                el.classList.toggle('is-active', el.getAttribute('data-ratib-infra-tab-key') === key);
+            });
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
     }
     function run() {
         var nav = document.getElementById('ratibNavMenu');
@@ -829,18 +900,36 @@
             return;
         }
         if (!hasMarketplace) {
-            var marketplace = mkLink('/modules/infrastructure-marketplace/Views/marketplace/index.php', '#ratib-ng-platform', 'Marketplace', 'data-ratib-infra-marketplace-tab');
+            var marketplace = mkLink(MARKETPLACE_HREF, '#ratib-ng-platform', 'Marketplace', 'data-ratib-infra-marketplace-tab');
             contact.parentNode.insertBefore(marketplace, contact.nextSibling);
+            hasMarketplace = marketplace;
         }
         if (!hasInfraStatus) {
             var marker = nav.querySelector('[data-ratib-infra-marketplace-tab]') || contact.nextSibling;
-            var infraStatus = mkLink('/modules/infrastructure-marketplace/Views/client/services.php', '#ratib-ng-tracking', 'Infra Status', 'data-ratib-infra-status-tab');
+            var infraStatus = mkLink(STATUS_HREF, '#ratib-ng-tracking', 'Infra Status', 'data-ratib-infra-status-tab');
             if (marker && marker.parentNode) {
                 marker.parentNode.insertBefore(infraStatus, marker.nextSibling);
             } else {
                 nav.appendChild(infraStatus);
             }
+            hasInfraStatus = infraStatus;
         }
+        var closeBtn;
+        var panel = ensureInlinePanel();
+        if (panel) {
+            closeBtn = panel.querySelector('.ratib-infra-inline-panel__close');
+            if (closeBtn && closeBtn.getAttribute('data-ratib-infra-close-bound') !== '1') {
+                closeBtn.setAttribute('data-ratib-infra-close-bound', '1');
+                closeBtn.addEventListener('click', function () {
+                    panel.hidden = true;
+                    document.querySelectorAll('[data-ratib-infra-tab-key]').forEach(function (el) {
+                        el.classList.remove('is-active');
+                    });
+                });
+            }
+        }
+        bindInfraNavBehavior(hasMarketplace, 'Infrastructure Marketplace', MARKETPLACE_HREF, 'marketplace');
+        bindInfraNavBehavior(hasInfraStatus, 'Infrastructure Status', STATUS_HREF, 'status');
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', run);

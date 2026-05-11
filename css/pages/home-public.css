@@ -5404,3 +5404,75 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
 }
 
 /* bump: hero video band + program SVG previews (forces css ?v= refresh on deploy) */
+
+/* Inline infrastructure panel under top nav (same-page marketplace/status preview). */
+.ratib-nav__link[data-ratib-infra-marketplace-tab].is-active,
+.ratib-nav__link[data-ratib-infra-status-tab].is-active {
+  border-color: rgba(117, 104, 184, 0.65);
+  background: rgba(117, 104, 184, 0.15);
+  color: #efeaff;
+}
+
+.ratib-infra-inline-panel {
+  position: relative;
+  z-index: 12;
+  width: min(var(--r-max), calc(100% - (var(--r-space) * 2)));
+  margin: 0.75rem auto 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(13, 19, 36, 0.92), rgba(7, 11, 20, 0.95));
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+}
+
+.ratib-infra-inline-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ratib-infra-inline-panel__title {
+  color: #e8eef9;
+  font-size: 0.96rem;
+  letter-spacing: 0.01em;
+}
+
+.ratib-infra-inline-panel__close {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #dbe4f5;
+  padding: 0.22rem 0.62rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ratib-infra-inline-panel__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.ratib-infra-inline-panel__body {
+  width: 100%;
+}
+
+.ratib-infra-inline-panel__frame {
+  display: block;
+  width: 100%;
+  min-height: 72vh;
+  border: 0;
+  background: #070b14;
+}
+
+@media (max-width: 860px) {
+  .ratib-infra-inline-panel {
+    width: calc(100% - 1rem);
+    margin-top: 0.5rem;
+  }
+
+  .ratib-infra-inline-panel__frame {
+    min-height: 64vh;
+  }
+}
