@@ -73,4 +73,17 @@ final class ModuleConfig
         $v = getenv('RATIB_INFRA_CPANEL_API_TOKEN');
         return is_string($v) && trim($v) !== '' ? trim($v) : null;
     }
+
+    public static function defaultMarketplaceCurrency(): string
+    {
+        $v = getenv('RATIB_INFRA_DEFAULT_CURRENCY');
+        return is_string($v) && trim($v) !== '' ? strtoupper(trim($v)) : 'USD';
+    }
+
+    public static function queuePressureThreshold(): int
+    {
+        $v = getenv('RATIB_INFRA_QUEUE_PRESSURE_THRESHOLD');
+        $n = is_string($v) ? (int) $v : 2000;
+        return $n > 100 ? $n : 2000;
+    }
 }

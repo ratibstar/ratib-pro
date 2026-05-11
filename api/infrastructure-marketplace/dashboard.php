@@ -20,6 +20,10 @@ require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstra
 use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
 use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
+use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
+use Ratib\InfrastructureMarketplace\Providers\Capabilities\CapabilityDiscoveryService;
+use Ratib\InfrastructureMarketplace\Providers\Health\ProviderHealthService;
 use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
 use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
@@ -67,9 +71,12 @@ $payload = [
 
 try {
     $pdo = DatabaseConnectionFactory::createPdo();
+    $metrics = new InfrastructureMetrics(new InfrastructureEventEmitter());
     $jobs = new ProvisioningJobRepository($pdo);
     $counts = $jobs->statusCounts();
     $payload['queue']['depth'] = $jobs->queueDepth();
+    $metrics->queueDepth($jobs->queueDepth());
+    $metrics->queuePressure(min(1, $jobs->queueDepth() / 2000));
     $payload['jobs'] = $counts;
     $payload['failed'] = [
         'failed' => (int) ($counts['FAILED'] ?? 0),
@@ -95,6 +102,29 @@ try {
         }
     }
     $payload['workers'] = $workers === [] ? ['status' => 'no workers reporting'] : $workers;
+
+    $activations = new ProviderActivationRegistry($pdo);
+    $providerHealth = new ProviderHealthService($activations, $metrics);
+    $capabilities = new CapabilityDiscoveryService($activations);
+    $payload['providers']['health_snapshot'] = $providerHealth->healthSnapshot(null, null);
+    $payload['providers']['capabilities_hosting'] = $capabilities->discover('hosting', null, null);
+
+    $orderRows = $pdo->query(
+        'SELECT status, COUNT(*) c FROM ratib_infra_orders GROUP BY status'
+    );
+    $orderCounts = [];
+    if ($orderRows instanceof PDOStatement) {
+        while ($r = $orderRows->fetch(PDO::FETCH_ASSOC)) {
+            if (!is_array($r)) {
+                continue;
+            }
+            $s = (string) ($r['status'] ?? '');
+            $c = (int) ($r['c'] ?? 0);
+            $orderCounts[$s] = $c;
+            $metrics->orderConversionMetric($s, $c);
+        }
+    }
+    $payload['traces']['order_counts'] = $orderCounts;
 
     $auditRows = $pdo->query(
         'SELECT action_type, created_at

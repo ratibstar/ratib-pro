@@ -16,4 +16,10 @@ Phase 3 additions:
 - ratib_infra_audit_entries for immutable operational and admin action history.
 - ratib_infra_secret_refs as encrypted secret reference preparation (no plaintext storage).
 
+Phase 4 additions:
+- ratib_infra_provider_activations for scoped provider enable/disable and priority weighting.
+- ratib_infra_orders for idempotent tenant-safe order pipeline with provisioning linkage.
+- ratib_infra_domain_search_cache for async domain-search caching abstraction.
+- ratib_infra_services for exposed infrastructure service lifecycle tracking.
+
 Indexes always include tenant_id where applicable for isolation. Foreign keys to core tenant/agency tables only when those tables exist in the same database (split-DB deployments would use UUID references).

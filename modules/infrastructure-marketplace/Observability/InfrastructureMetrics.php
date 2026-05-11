@@ -64,5 +64,43 @@ final class InfrastructureMetrics
             'status' => $status,
         ]);
     }
+
+    public function providerSla(string $provider, float $uptimeRatio): void
+    {
+        $this->events->metric('provider_sla_ratio', [
+            'provider' => $provider,
+            'uptime_ratio' => round($uptimeRatio, 5),
+        ]);
+    }
+
+    public function provisioningSuccessRatio(float $ratio): void
+    {
+        $this->events->metric('provisioning_success_ratio', [
+            'ratio' => round($ratio, 5),
+        ]);
+    }
+
+    public function orderConversionMetric(string $stage, int $count): void
+    {
+        $this->events->metric('order_conversion_metric', [
+            'stage' => $stage,
+            'count' => $count,
+        ]);
+    }
+
+    public function queuePressure(float $pressureRatio): void
+    {
+        $this->events->metric('queue_pressure_ratio', [
+            'ratio' => round($pressureRatio, 5),
+        ]);
+    }
+
+    public function lifecycleEvent(string $eventType, string $state): void
+    {
+        $this->events->metric('lifecycle_event_analytics', [
+            'event_type' => $eventType,
+            'state' => $state,
+        ]);
+    }
 }
 

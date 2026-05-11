@@ -1,0 +1,65 @@
+.ratib-infra-marketplace-view {
+  background: #080d18;
+  color: #dce8ff;
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+}
+
+.infra-market-wrap {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 20px 14px 30px;
+}
+
+.infra-market-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.infra-market-card {
+  border: 1px solid #1b2d4f;
+  border-radius: 12px;
+  background: #0e1628;
+  padding: 14px;
+}
+
+.infra-market-card h3 {
+  margin: 0 0 8px;
+  color: #bdd0ff;
+}
+
+.infra-market-card p {
+  margin: 0 0 8px;
+  color: #a8bce7;
+}
+
+.infra-market-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.infra-btn {
+  border: 1px solid #2a4d9a;
+  background: #163368;
+  color: #e9f1ff;
+  border-radius: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.infra-status-badge {
+  display: inline-block;
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 3px 8px;
+  border: 1px solid #2d4f8d;
+}
+
+.infra-status-badge--queued { background: #3e2b00; color: #ffd889; }
+.infra-status-badge--running { background: #032b3d; color: #89deff; }
+.infra-status-badge--completed { background: #0e3b20; color: #a2f5b9; }
+.infra-status-badge--failed { background: #4a1119; color: #ffc2cc; }
+.infra-status-badge--dead_letter { background: #4f2f00; color: #ffd7a6; }
+
