@@ -64,10 +64,14 @@ try {
     $snapshot = $health->healthSnapshot($tenantId, $agencyId);
     foreach ($snapshot as $row) {
         if (is_array($row) && ($row['status'] ?? '') === 'unavailable') {
-            $alerts->providerOutage((string) ($row['provider_type'] ?? 'unknown'));
+            try {
+                $alerts->providerOutage((string) ($row['provider_type'] ?? 'unknown'));
+            } catch (\Throwable $e) {
+                // Snapshot must succeed even if event bus / alerting is unavailable.
+            }
         }
     }
-    echo json_encode([
+    $payload = [
         'ok' => true,
         'health' => $snapshot,
         'capabilities' => [
@@ -76,9 +80,20 @@ try {
             'dns' => $discovery->discover('dns', $tenantId, $agencyId),
             'ssl' => $discovery->discover('ssl', $tenantId, $agencyId),
         ],
-    ], JSON_UNESCAPED_SLASHES);
+    ];
+    $json = json_encode($payload, JSON_UNESCAPED_SLASHES);
+    if (!\is_string($json)) {
+        throw new \RuntimeException('providers_json_encode_failed');
+    }
+    echo $json;
 } catch (\Throwable $e) {
-    http_response_code(500);
-    echo json_encode(['ok' => false, 'message' => 'Provider snapshot unavailable'], JSON_UNESCAPED_SLASHES);
+    http_response_code(200);
+    echo json_encode([
+        'ok' => false,
+        'message' => 'Provider snapshot unavailable',
+        'health' => [],
+        'capabilities' => (object) [],
+        'error_hint' => 'Check ratib_infra_provider_activations rows (provider_class must be loadable), PHP error log, and that infra PDO and event bus can run in this request.',
+    ], JSON_UNESCAPED_SLASHES);
 }
 

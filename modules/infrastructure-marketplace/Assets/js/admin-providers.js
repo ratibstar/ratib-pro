@@ -56,7 +56,11 @@
       var capsEmpty = capabilityTotal(data.capabilities || {}) === 0;
 
       if (noticeEl) {
-        if (data && (data.degraded || data.message)) {
+        if (data && data.ok === false && data.message) {
+          noticeEl.hidden = false;
+          noticeEl.textContent =
+            data.message + (data.error_hint ? '\n\n' + data.error_hint : '');
+        } else if (data && (data.degraded || data.message)) {
           noticeEl.hidden = false;
           noticeEl.textContent = data.message || 'Response is degraded; see panels below.';
         } else if (data && data.ok && allUnavailable && capsEmpty) {
