@@ -48,6 +48,8 @@
       setText('infra-deployment', message);
       setText('infra-warnings', message);
       setText('infra-drills', message);
+      setText('infra-release-history', message);
+      setText('infra-rollout-scope', message);
     });
 
   fetch('/api/infrastructure-marketplace/ops-queue.php', { credentials: 'same-origin' })
@@ -81,6 +83,21 @@
       setText('infra-deployment', formatObject(((report.sections || {}).deployment || {}).checks || {}));
       setText('infra-warnings', (report.recommendations || []).join('\n') || 'No warnings.');
       setText('infra-drills', 'Use /api/infrastructure-marketplace/recovery-drill.php in DRY-RUN mode.');
+      var envChecks = ((report.sections || {}).environment || {}).checks || [];
+      setText('infra-rollout-scope', formatObject(envChecks[7] || envChecks[0] || {}));
+    })
+    .catch(function () {});
+
+  fetch('/api/infrastructure-marketplace/deployment-audit.php', { credentials: 'same-origin' })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data || !data.ok) return;
+      var rows = Array.isArray(data.rows) ? data.rows : [];
+      if (!rows.length) {
+        setText('infra-release-history', 'No deployment audits recorded yet.');
+        return;
+      }
+      setText('infra-release-history', 'Latest: ' + String(rows[0].release_id || '') + '\nStatus: ' + String(rows[0].prelaunch_status || '') + '\nScore: ' + String(rows[0].prelaunch_score || ''));
     })
     .catch(function () {});
 })();

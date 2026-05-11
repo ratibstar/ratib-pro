@@ -102,6 +102,12 @@ final class ModuleRegistry
             ],
             [
                 'method' => 'GET',
+                'pattern' => '/api/infrastructure-marketplace/deployment-audit.php',
+                'handler' => 'module endpoint file: api/infrastructure-marketplace/deployment-audit.php',
+                'auth' => 'optional',
+            ],
+            [
+                'method' => 'GET',
                 'pattern' => '/api/infrastructure-marketplace/domain-search.php',
                 'handler' => 'module endpoint file: api/infrastructure-marketplace/domain-search.php',
                 'auth' => 'optional',
