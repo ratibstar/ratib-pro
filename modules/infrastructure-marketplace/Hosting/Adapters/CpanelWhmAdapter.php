@@ -11,26 +11,48 @@ use Ratib\InfrastructureMarketplace\Hosting\DTOs\HostingUsageSnapshot;
 use Ratib\InfrastructureMarketplace\Http\Clients\CurlHttpClient;
 use Ratib\InfrastructureMarketplace\Http\Contracts\HttpClientInterface;
 use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
+use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
 final class CpanelWhmAdapter implements HostingProvisioningInterface
 {
     private readonly HttpClientInterface $http;
+    private readonly SecretManager $secrets;
 
     public function __construct(
-        ?HttpClientInterface $http = null
+        ?HttpClientInterface $http = null,
+        ?SecretManager $secrets = null
     ) {
         $this->http = $http ?? new CurlHttpClient();
+        $this->secrets = $secrets ?? SecretManager::withEnvProvider();
     }
 
     public function createAccount(TenantContext $tenant, ProvisioningPayload $payload): array
     {
         $query = $payload->attributes();
+        $username = (string) ($query['username'] ?? '');
+        $package = (string) ($query['plan'] ?? $query['pkgname'] ?? '');
+        if ($username === '' || $package === '') {
+            return $this->errorResult('create_account', $username, 'validation', false, 'username and package are required');
+        }
+        if (!$this->packageExists($tenant, $package)) {
+            return $this->errorResult('create_account', $username, 'validation', false, 'Package not found: ' . $package);
+        }
+        $existing = $this->accountSummary($tenant, $username);
+        if ($existing !== null) {
+            return (new HostingOperationResult(true, 'create_account', $username, [
+                'idempotent' => true,
+                'account' => $existing,
+            ]))->toArray();
+        }
         return $this->callWhmApi('createacct', $tenant, $query, 'create_account');
     }
 
     public function suspendAccount(TenantContext $tenant, string $externalReference): array
     {
-        return $this->callWhmApi('suspendacct', $tenant, ['user' => $externalReference], 'suspend_account');
+        $result = $this->callWhmApi('suspendacct', $tenant, ['user' => $externalReference], 'suspend_account');
+        $verify = $this->accountSummary($tenant, $externalReference);
+        $result['data']['suspended_verified'] = is_array($verify) && ((string) ($verify['suspended'] ?? '') === '1');
+        return $result;
     }
 
     public function unsuspendAccount(TenantContext $tenant, string $externalReference): array
@@ -40,6 +62,10 @@ final class CpanelWhmAdapter implements HostingProvisioningInterface
 
     public function terminateAccount(TenantContext $tenant, string $externalReference): array
     {
+        $before = $this->accountSummary($tenant, $externalReference);
+        if ($before === null) {
+            return (new HostingOperationResult(true, 'terminate_account', $externalReference, ['idempotent' => true]))->toArray();
+        }
         return $this->callWhmApi('removeacct', $tenant, ['user' => $externalReference], 'terminate_account');
     }
 
@@ -68,8 +94,7 @@ final class CpanelWhmAdapter implements HostingProvisioningInterface
 
     public function usageMetrics(TenantContext $tenant, string $externalReference): array
     {
-        $raw = $this->callWhmApiRaw('accountsummary', $tenant, ['user' => $externalReference]);
-        $acct = $raw['data']['acct'][0] ?? [];
+        $acct = $this->accountSummary($tenant, $externalReference);
         if (!is_array($acct)) {
             return (new HostingUsageSnapshot($externalReference, 0.0, 0.0, 0.0))->toArray();
         }
@@ -81,6 +106,34 @@ final class CpanelWhmAdapter implements HostingProvisioningInterface
             (float) ($acct['diskused'] ?? 0)
         );
         return $snapshot->toArray();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function accountDiagnostics(TenantContext $tenant, string $externalReference): array
+    {
+        $acct = $this->accountSummary($tenant, $externalReference);
+        if ($acct === null) {
+            return ['exists' => false];
+        }
+        return [
+            'exists' => true,
+            'metadata' => [
+                'domain' => (string) ($acct['domain'] ?? ''),
+                'ip' => (string) ($acct['ip'] ?? ''),
+                'owner' => (string) ($acct['owner'] ?? ''),
+                'suspended' => ((string) ($acct['suspended'] ?? '') === '1'),
+                'ssl_status' => (string) ($acct['ssl'] ?? 'unknown'),
+            ],
+            'quota_sync' => [
+                'quota_mb' => (float) ($acct['quota'] ?? 0),
+                'disk_used_mb' => (float) ($acct['diskused'] ?? 0),
+            ],
+            'bandwidth_sync' => [
+                'bandwidth_mb' => (float) ($acct['bwusage'] ?? 0),
+            ],
+        ];
     }
 
     public function getCapabilityMatrix(): array
@@ -112,7 +165,8 @@ final class CpanelWhmAdapter implements HostingProvisioningInterface
             return (new HostingOperationResult(true, $operation, $reference !== '' ? $reference : null, $raw))->toArray();
         } catch (\Throwable $e) {
             $reference = (string) ($query['user'] ?? $query['username'] ?? '');
-            return (new HostingOperationResult(false, $operation, $reference !== '' ? $reference : null, [], $e->getMessage()))->toArray();
+            $classified = $this->classifyError($e);
+            return $this->errorResult($operation, $reference, $classified['class'], $classified['transient'], $classified['message']);
         }
     }
 
@@ -125,7 +179,7 @@ final class CpanelWhmAdapter implements HostingProvisioningInterface
         unset($tenant);
         $base = ModuleConfig::cpanelWhmBaseUrl();
         $user = ModuleConfig::cpanelWhmUsername();
-        $token = ModuleConfig::cpanelWhmToken();
+        $token = $this->secrets->getSecret('RATIB_INFRA_CPANEL', 'API_TOKEN') ?? ModuleConfig::cpanelWhmToken();
         if ($base === null || $user === null || $token === null) {
             throw new \RuntimeException('Missing cPanel/WHM credentials in environment.');
         }
@@ -142,6 +196,67 @@ final class CpanelWhmAdapter implements HostingProvisioningInterface
         }
 
         return $response->json() ?? [];
+    }
+
+    private function packageExists(TenantContext $tenant, string $packageName): bool
+    {
+        $packages = $this->listPackages($tenant);
+        foreach ($packages as $pkg) {
+            if ((string) ($pkg['name'] ?? '') === $packageName) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function accountSummary(TenantContext $tenant, string $username): ?array
+    {
+        $raw = $this->callWhmApiRaw('accountsummary', $tenant, ['user' => $username]);
+        $acct = $raw['data']['acct'][0] ?? null;
+        return is_array($acct) ? $acct : null;
+    }
+
+    /**
+     * @return array{class:string,transient:bool,message:string}
+     */
+    private function classifyError(\Throwable $e): array
+    {
+        $msg = strtolower($e->getMessage());
+        $isTransient = str_contains($msg, 'timed out')
+            || str_contains($msg, 'temporar')
+            || str_contains($msg, '429')
+            || preg_match('/status 5\\d\\d/', $msg) === 1;
+
+        $class = 'unknown';
+        if (str_contains($msg, 'missing') || str_contains($msg, 'required')) {
+            $class = 'validation';
+        } elseif (str_contains($msg, '401') || str_contains($msg, '403') || str_contains($msg, 'unauthor')) {
+            $class = 'auth';
+        } elseif (str_contains($msg, 'timeout') || str_contains($msg, 'timed out')) {
+            $class = 'network_timeout';
+        } elseif (str_contains($msg, 'status 5')) {
+            $class = 'provider_unavailable';
+        }
+
+        return [
+            'class' => $class,
+            'transient' => $isTransient,
+            'message' => 'WHM operation failed',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function errorResult(string $operation, string $reference, string $class, bool $transient, string $message): array
+    {
+        $base = (new HostingOperationResult(false, $operation, $reference !== '' ? $reference : null, [], $message))->toArray();
+        $base['error_class'] = $class;
+        $base['transient'] = $transient;
+        return $base;
     }
 }
 

@@ -35,5 +35,34 @@ final class InfrastructureMetrics
             'status' => $status,
         ]);
     }
+
+    public function queueDepth(int $depth): void
+    {
+        $this->events->metric('queue_depth', ['depth' => $depth]);
+    }
+
+    public function workerHealth(string $worker, string $status): void
+    {
+        $this->events->metric('worker_health', [
+            'worker' => $worker,
+            'status' => $status,
+        ]);
+    }
+
+    public function providerErrorCounter(string $provider, string $reason): void
+    {
+        $this->events->metric('provider_error_count', [
+            'provider' => $provider,
+            'reason' => $reason,
+        ]);
+    }
+
+    public function externalDependencyStatus(string $dependency, string $status): void
+    {
+        $this->events->metric('external_dependency_status', [
+            'dependency' => $dependency,
+            'status' => $status,
+        ]);
+    }
 }
 

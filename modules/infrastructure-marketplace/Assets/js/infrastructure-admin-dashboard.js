@@ -24,6 +24,12 @@
       setText('infra-providers', formatObject(data.providers || {}));
       setText('infra-catalog', formatObject(data.catalog || {}));
       setText('infra-jobs', formatObject(data.jobs || {}));
+      setText('infra-workers', formatObject(data.workers || {}));
+      setText('infra-failed', formatObject(data.failed || {}));
+      setText('infra-reconcile', formatObject(data.reconciliation || {}));
+      setText('infra-diagnostics', formatObject(data.diagnostics || {}));
+      setText('infra-traces', formatObject(data.traces || {}));
+      setText('infra-audit', formatObject(data.audit || {}));
     })
     .catch(function (err) {
       var message = 'Unable to load dashboard data: ' + (err && err.message ? err.message : 'unknown');
@@ -32,6 +38,12 @@
       setText('infra-providers', message);
       setText('infra-catalog', message);
       setText('infra-jobs', message);
+      setText('infra-workers', message);
+      setText('infra-failed', message);
+      setText('infra-reconcile', message);
+      setText('infra-diagnostics', message);
+      setText('infra-traces', message);
+      setText('infra-audit', message);
     });
 })();
 

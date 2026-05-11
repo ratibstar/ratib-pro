@@ -11,4 +11,9 @@ Tables (prefix ratib_infra_*):
 
 Phase 2 migration adds pluralized operational tables while keeping phase 1 intact for safe rollback paths.
 
+Phase 3 additions:
+- ratib_infra_worker_heartbeats for daemon health and runtime memory telemetry.
+- ratib_infra_audit_entries for immutable operational and admin action history.
+- ratib_infra_secret_refs as encrypted secret reference preparation (no plaintext storage).
+
 Indexes always include tenant_id where applicable for isolation. Foreign keys to core tenant/agency tables only when those tables exist in the same database (split-DB deployments would use UUID references).

@@ -1,0 +1,32 @@
+<?php
+declare(strict_types=1);
+
+namespace Ratib\InfrastructureMarketplace\Compliance;
+
+use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
+use Ratib\InfrastructureMarketplace\Domain\TenantContext;
+
+final class TenantIsolationCompliance
+{
+    public function __construct(
+        private readonly InfrastructureAuditLogger $audit
+    ) {}
+
+    public function assertTenantOperation(TenantContext $tenant, string $operation): void
+    {
+        if ($tenant->tenantId() === null && $tenant->agencyId() === null) {
+            throw new \RuntimeException('Tenant context missing for operation: ' . $operation);
+        }
+    }
+
+    public function logAccess(TenantContext $tenant, string $actor, string $action): void
+    {
+        $this->audit->appendImmutable('tenant_isolation_access', [
+            'actor' => $actor,
+            'tenant_id' => $tenant->tenantId(),
+            'agency_id' => $tenant->agencyId(),
+            'action' => $action,
+        ]);
+    }
+}
+

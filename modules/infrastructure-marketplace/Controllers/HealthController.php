@@ -19,7 +19,9 @@ final class HealthController
             'enabled' => ModuleConfig::isModuleEnabled(),
             'queue_driver' => ModuleConfig::defaultQueueDriver(),
             'queue_max_attempts' => ModuleConfig::queueMaxAttempts(),
+            'lock_ttl_seconds' => ModuleConfig::workerLockTtlSeconds(),
             'cpanel_configured' => ModuleConfig::cpanelWhmBaseUrl() !== null && ModuleConfig::cpanelWhmUsername() !== null,
+            'state_machine' => 'enabled',
         ];
     }
 }

@@ -46,7 +46,14 @@ final class ModuleConfig
     public static function queueDeadLetterState(): string
     {
         $v = getenv('RATIB_INFRA_QUEUE_DEAD_STATE');
-        return is_string($v) && trim($v) !== '' ? trim($v) : 'dead_letter';
+        return is_string($v) && trim($v) !== '' ? strtoupper(trim($v)) : 'DEAD_LETTER';
+    }
+
+    public static function workerLockTtlSeconds(): int
+    {
+        $v = getenv('RATIB_INFRA_LOCK_TTL_SECONDS');
+        $n = is_string($v) ? (int) $v : 180;
+        return $n > 0 ? $n : 180;
     }
 
     public static function cpanelWhmBaseUrl(): ?string
