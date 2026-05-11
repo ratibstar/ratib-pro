@@ -146,9 +146,13 @@ try {
     $payload['diagnostics']['db'] = 'Dashboard DB query unavailable';
 }
 
-(new InfrastructureEventEmitter())->structuredLog('info', 'Infrastructure dashboard snapshot generated', [
-    'queue_driver' => ModuleConfig::defaultQueueDriver(),
-]);
+try {
+    (new InfrastructureEventEmitter())->structuredLog('info', 'Infrastructure dashboard snapshot generated', [
+        'queue_driver' => ModuleConfig::defaultQueueDriver(),
+    ]);
+} catch (\Throwable $e) {
+    $payload['diagnostics']['eventbus'] = 'eventbus_unavailable';
+}
 
 echo json_encode($payload, JSON_UNESCAPED_SLASHES);
 
