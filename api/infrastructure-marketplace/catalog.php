@@ -29,7 +29,12 @@ try {
     $controller = new CatalogController($pdo);
     echo json_encode($controller->index($tenantId, $agencyId, $currency), JSON_UNESCAPED_SLASHES);
 } catch (\Throwable $e) {
-    http_response_code(500);
-    echo json_encode(['ok' => false, 'message' => 'Catalog unavailable'], JSON_UNESCAPED_SLASHES);
+    http_response_code(200);
+    echo json_encode([
+        'ok' => true,
+        'currency' => isset($currency) ? strtoupper((string) $currency) : ModuleConfig::defaultMarketplaceCurrency(),
+        'items' => [],
+        'warning' => 'catalog_source_unavailable',
+    ], JSON_UNESCAPED_SLASHES);
 }
 

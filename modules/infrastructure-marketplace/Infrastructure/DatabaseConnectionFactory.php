@@ -15,6 +15,8 @@ final class DatabaseConnectionFactory
             return self::connect($dsn, (string) $user, (string) $pass);
         }
 
+        self::ensureLegacyDbConstantsLoaded();
+
         if (defined('DB_HOST') && defined('DB_NAME') && defined('DB_USER') && defined('DB_PASS')) {
             $host = (string) DB_HOST;
             $db = (string) DB_NAME;
@@ -32,6 +34,17 @@ final class DatabaseConnectionFactory
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
             \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
         ]);
+    }
+
+    private static function ensureLegacyDbConstantsLoaded(): void
+    {
+        if (defined('DB_HOST') && defined('DB_NAME') && defined('DB_USER') && defined('DB_PASS')) {
+            return;
+        }
+        $config = dirname(__DIR__, 3) . '/includes/config.php';
+        if (is_file($config)) {
+            require_once $config;
+        }
     }
 }
 
