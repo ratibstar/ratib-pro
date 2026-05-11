@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Ratib\InfrastructureMarketplace\Verification;
 
+use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
+
 final class MigrationVerifier
 {
     public function __construct(
@@ -31,10 +33,7 @@ final class MigrationVerifier
 
         $missing = [];
         foreach ($requiredTables as $table) {
-            $stmt = $this->pdo->prepare('SHOW TABLES LIKE :t');
-            $stmt->execute(['t' => $table]);
-            $row = $stmt->fetch(\PDO::FETCH_NUM);
-            if (!is_array($row)) {
+            if (!SchemaHelpers::tableExists($this->pdo, $table)) {
                 $missing[] = $table;
             }
         }

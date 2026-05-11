@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Ratib\InfrastructureMarketplace\Health;
 
 use Ratib\InfrastructureMarketplace\Diagnostics\ProviderDiagnosticsService;
+use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
 use Ratib\InfrastructureMarketplace\Verification\EnvironmentVerifier;
 use Ratib\InfrastructureMarketplace\Verification\MigrationVerifier;
 use Ratib\InfrastructureMarketplace\Verification\QueueWorkerVerifier;
@@ -103,9 +104,7 @@ final class PrelaunchHealthService
 
     private function tableExists(string $table): bool
     {
-        $stmt = $this->pdo->prepare('SHOW TABLES LIKE :t');
-        $stmt->execute(['t' => $table]);
-        return is_array($stmt->fetch(\PDO::FETCH_NUM));
+        return SchemaHelpers::tableExists($this->pdo, $table);
     }
 
     /**

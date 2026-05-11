@@ -21,8 +21,9 @@ final class DatabaseConnectionFactory
             $host = (string) DB_HOST;
             $db = self::legacyInfraDatabaseName();
             $port = defined('DB_PORT') ? (int) DB_PORT : 3306;
+            [$user, $pass] = self::legacyInfraCredentials();
             $legacyDsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port, $db);
-            return self::connect($legacyDsn, (string) DB_USER, (string) DB_PASS);
+            return self::connect($legacyDsn, $user, $pass);
         }
 
         throw new \RuntimeException('Infrastructure DB connection is not configured.');
@@ -66,6 +67,27 @@ final class DatabaseConnectionFactory
         }
 
         throw new \RuntimeException('Infrastructure DB name is not configured (DB_NAME / RATIB_PRO_DB_NAME / RATIB_INFRA_DB_NAME).');
+    }
+
+    /**
+     * Optional app-DB credentials when control-panel DB_USER cannot access RATIB_PRO_DB_NAME.
+     *
+     * @return array{0:string,1:string}
+     */
+    private static function legacyInfraCredentials(): array
+    {
+        $user = (string) DB_USER;
+        $pass = (string) DB_PASS;
+        $iu = getenv('RATIB_INFRA_DB_USER');
+        if (is_string($iu) && trim($iu) !== '') {
+            $user = trim($iu);
+        }
+        $ip = getenv('RATIB_INFRA_DB_PASS');
+        if ($ip !== false && $ip !== '') {
+            $pass = (string) $ip;
+        }
+
+        return [$user, $pass];
     }
 }
 
