@@ -10,6 +10,9 @@ declare(strict_types=1);
 
 return <<<'TXT'
 <!--
-<li><a href="/api/infrastructure-marketplace/health.php" class="sidebar-item" target="_blank" rel="noopener" data-permission="control_system_settings"><i class="fas fa-cloud"></i><span>Infrastructure (health)</span></a></li>
+<li><a href="/modules/infrastructure-marketplace/Views/admin/control.php" class="sidebar-item" data-permission="control_system_settings"><i class="fas fa-sliders-h"></i><span>Infrastructure Control</span></a></li>
+<li><a href="/modules/infrastructure-marketplace/Views/admin/dashboard.php" class="sidebar-item" data-permission="control_system_settings"><i class="fas fa-chart-line"></i><span>Infrastructure Dashboard</span></a></li>
+<li><a href="/modules/infrastructure-marketplace/Views/admin/providers.php" class="sidebar-item" data-permission="control_system_settings"><i class="fas fa-plug"></i><span>Infrastructure Providers</span></a></li>
+<li><a href="/api/infrastructure-marketplace/health.php" class="sidebar-item" target="_blank" rel="noopener" data-permission="control_system_settings"><i class="fas fa-heartbeat"></i><span>Infrastructure Health API</span></a></li>
 -->
 TXT;

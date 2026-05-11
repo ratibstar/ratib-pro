@@ -113,6 +113,12 @@ final class ModuleRegistry
                 'auth' => 'optional',
             ],
             [
+                'method' => 'POST',
+                'pattern' => '/api/infrastructure-marketplace/control-update.php',
+                'handler' => 'module endpoint file: api/infrastructure-marketplace/control-update.php',
+                'auth' => 'optional',
+            ],
+            [
                 'method' => 'GET',
                 'pattern' => '/modules/infrastructure-marketplace/Views/admin/dashboard.php',
                 'handler' => 'module view file',
@@ -121,6 +127,12 @@ final class ModuleRegistry
             [
                 'method' => 'GET',
                 'pattern' => '/modules/infrastructure-marketplace/Views/admin/providers.php',
+                'handler' => 'module view file',
+                'auth' => 'optional',
+            ],
+            [
+                'method' => 'GET',
+                'pattern' => '/modules/infrastructure-marketplace/Views/admin/control.php',
                 'handler' => 'module view file',
                 'auth' => 'optional',
             ],
@@ -160,6 +172,11 @@ final class ModuleRegistry
             [
                 'label' => 'Infrastructure providers',
                 'href' => '/modules/infrastructure-marketplace/Views/admin/providers.php',
+                'permission_hint' => 'control_system_settings',
+            ],
+            [
+                'label' => 'Infrastructure control center',
+                'href' => '/modules/infrastructure-marketplace/Views/admin/control.php',
                 'permission_hint' => 'control_system_settings',
             ],
             [
