@@ -24,7 +24,7 @@ $clientServicesJsV = (int) (@filemtime($clientServicesJsPath) ?: time());
     <section class="infra-market-grid">
         <article class="infra-market-card">
             <h3>Active Services</h3>
-            <pre id="infra-client-services">Loading...</pre>
+            <div id="infra-client-services">Loading...</div>
         </article>
         <article class="infra-market-card">
             <h3>Domain Search (placeholder)</h3>
