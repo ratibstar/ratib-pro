@@ -2,6 +2,9 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
+$clientServicesJsPath = dirname(__DIR__, 2) . '/Assets/js/client-services.js';
+clearstatcache(true, $clientServicesJsPath);
+$clientServicesJsV = (int) (@filemtime($clientServicesJsPath) ?: time());
 ?>
 <!doctype html>
 <html lang="en">
@@ -30,7 +33,7 @@ require_once dirname(__DIR__, 2) . '/bootstrap.php';
         </article>
     </section>
 </main>
-<script src="/modules/infrastructure-marketplace/Assets/js/client-services.js"></script>
+<script src="/modules/infrastructure-marketplace/Assets/js/client-services.js?v=<?php echo (int) $clientServicesJsV; ?>"></script>
 </body>
 </html>
 

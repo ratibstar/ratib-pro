@@ -1,9 +1,40 @@
 <?php
 declare(strict_types=1);
 
+ini_set('display_errors', '0');
+error_reporting(0);
+
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+
+$__dashboardPayloadFallback = [
+    'health' => ['module_enabled' => false, 'queue_driver' => 'unknown'],
+    'queue' => ['driver' => 'unknown'],
+    'providers' => ['status' => 'unavailable'],
+    'jobs' => ['status' => 'unavailable'],
+    'diagnostics' => ['status' => 'runtime_fallback'],
+];
+
+register_shutdown_function(static function () use (&$__dashboardPayloadFallback): void {
+    $e = error_get_last();
+    if ($e === null) {
+        return;
+    }
+    $fatal = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
+    if (!in_array((int) ($e['type'] ?? 0), $fatal, true)) {
+        return;
+    }
+    if (!headers_sent()) {
+        http_response_code(200);
+        header('Content-Type: application/json; charset=UTF-8');
+    }
+    echo json_encode(array_merge($__dashboardPayloadFallback, [
+        'diagnostics' => array_merge((array)($__dashboardPayloadFallback['diagnostics'] ?? []), [
+            'fatal_recovered' => true,
+        ]),
+    ]), JSON_UNESCAPED_SLASHES);
+});
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -68,6 +99,7 @@ $payload = [
         'status' => 'audit query not executed',
     ],
 ];
+$__dashboardPayloadFallback = $payload;
 
 try {
     $pdo = DatabaseConnectionFactory::createPdo();

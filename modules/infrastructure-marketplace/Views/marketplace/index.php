@@ -2,6 +2,9 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
+$marketplaceJsPath = dirname(__DIR__, 2) . '/Assets/js/marketplace-catalog.js';
+clearstatcache(true, $marketplaceJsPath);
+$marketplaceJsV = (int) (@filemtime($marketplaceJsPath) ?: time());
 ?>
 <!doctype html>
 <html lang="en">
@@ -26,7 +29,7 @@ require_once dirname(__DIR__, 2) . '/bootstrap.php';
         <article class="infra-market-card"><p>Loading catalog...</p></article>
     </section>
 </main>
-<script src="/modules/infrastructure-marketplace/Assets/js/marketplace-catalog.js"></script>
+<script src="/modules/infrastructure-marketplace/Assets/js/marketplace-catalog.js?v=<?php echo (int) $marketplaceJsV; ?>"></script>
 </body>
 </html>
 
