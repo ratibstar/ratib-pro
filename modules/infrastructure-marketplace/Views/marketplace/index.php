@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
 $marketplaceJsPath = dirname(__DIR__, 2) . '/Assets/js/marketplace-catalog.js';
 clearstatcache(true, $marketplaceJsPath);

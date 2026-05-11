@@ -879,7 +879,9 @@
                 return;
             }
             heading.textContent = title;
-            frame.src = href + (href.indexOf('?') === -1 ? '?' : '&') + 'embed=1';
+            frame.src = href
+                + (href.indexOf('?') === -1 ? '?' : '&')
+                + 'embed=1&_rt=' + String(Date.now());
             frame.setAttribute('data-ratib-active-key', key);
             panel.hidden = false;
             document.querySelectorAll('[data-ratib-infra-tab-key]').forEach(function (el) {
