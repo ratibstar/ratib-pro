@@ -8,10 +8,14 @@ use Ratib\InfrastructureMarketplace\SSL\Validation\HttpValidationPreparation;
 
 final class CertificateLifecycleManager
 {
-    public function __construct(
-        private readonly DnsValidationPreparation $dnsValidation,
-        private readonly HttpValidationPreparation $httpValidation
-    ) {}
+    private DnsValidationPreparation $dnsValidation;
+    private HttpValidationPreparation $httpValidation;
+
+    public function __construct(DnsValidationPreparation $dnsValidation, HttpValidationPreparation $httpValidation) {
+        $this->dnsValidation = $dnsValidation;
+        $this->httpValidation = $httpValidation;
+    }
+
 
     /**
      * @return array<string, mixed>

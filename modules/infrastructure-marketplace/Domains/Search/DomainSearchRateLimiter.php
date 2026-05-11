@@ -5,9 +5,12 @@ namespace Ratib\InfrastructureMarketplace\Domains\Search;
 
 final class DomainSearchRateLimiter
 {
-    public function __construct(
-        private readonly \PDO $pdo
-    ) {}
+    private \PDO $pdo;
+
+    public function __construct(\PDO $pdo) {
+        $this->pdo = $pdo;
+    }
+
 
     public function allow(string $scopeKey, int $maxPerMinute = 30): bool
     {

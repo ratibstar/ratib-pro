@@ -7,10 +7,14 @@ use Ratib\InfrastructureMarketplace\Observability\InfrastructureAlertingService;
 
 final class SslExpirationMonitor
 {
-    public function __construct(
-        private readonly \PDO $pdo,
-        private readonly InfrastructureAlertingService $alerts
-    ) {}
+    private \PDO $pdo;
+    private InfrastructureAlertingService $alerts;
+
+    public function __construct(\PDO $pdo, InfrastructureAlertingService $alerts) {
+        $this->pdo = $pdo;
+        $this->alerts = $alerts;
+    }
+
 
     public function checkExpiring(int $daysThreshold = 14): int
     {

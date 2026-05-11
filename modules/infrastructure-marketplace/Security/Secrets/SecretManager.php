@@ -5,12 +5,15 @@ namespace Ratib\InfrastructureMarketplace\Security\Secrets;
 
 final class SecretManager
 {
+    private array $providers;
+
     /**
      * @param list<SecretProviderInterface> $providers
      */
-    public function __construct(
-        private readonly array $providers
-    ) {}
+    public function __construct(array $providers) {
+        $this->providers = $providers;
+    }
+
 
     public static function withEnvProvider(): self
     {

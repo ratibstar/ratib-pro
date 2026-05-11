@@ -5,9 +5,12 @@ namespace Ratib\InfrastructureMarketplace\Audit\Deployment;
 
 final class DeploymentAuditReporter
 {
-    public function __construct(
-        private readonly \PDO $pdo
-    ) {}
+    private \PDO $pdo;
+
+    public function __construct(\PDO $pdo) {
+        $this->pdo = $pdo;
+    }
+
 
     /**
      * @param array<string, mixed> $prelaunchReport

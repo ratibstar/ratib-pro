@@ -5,9 +5,12 @@ namespace Ratib\InfrastructureMarketplace\Providers\Activation;
 
 final class ScopedProviderResolver
 {
-    public function __construct(
-        private readonly ProviderActivationRegistry $registry
-    ) {}
+    private ProviderActivationRegistry $registry;
+
+    public function __construct(ProviderActivationRegistry $registry) {
+        $this->registry = $registry;
+    }
+
 
     /**
      * @return array<string, mixed>|null

@@ -11,8 +11,8 @@ use Ratib\InfrastructureMarketplace\Security\Rollout\ProviderRolloutPolicy;
 
 final class LetsEncryptSslAdapter implements SslProviderInterface
 {
-    private readonly HttpClientInterface $http;
-    private readonly ProviderRolloutPolicy $rollout;
+    private HttpClientInterface $http;
+    private ProviderRolloutPolicy $rollout;
 
     public function __construct(
         ?HttpClientInterface $http = null,

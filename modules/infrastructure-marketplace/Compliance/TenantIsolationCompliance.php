@@ -8,9 +8,12 @@ use Ratib\InfrastructureMarketplace\Domain\TenantContext;
 
 final class TenantIsolationCompliance
 {
-    public function __construct(
-        private readonly InfrastructureAuditLogger $audit
-    ) {}
+    private InfrastructureAuditLogger $audit;
+
+    public function __construct(InfrastructureAuditLogger $audit) {
+        $this->audit = $audit;
+    }
+
 
     public function assertTenantOperation(TenantContext $tenant, string $operation): void
     {

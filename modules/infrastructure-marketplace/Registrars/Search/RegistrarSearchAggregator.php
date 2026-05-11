@@ -8,9 +8,12 @@ use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegis
 
 final class RegistrarSearchAggregator
 {
-    public function __construct(
-        private readonly ?ProviderActivationRegistry $activations = null
-    ) {}
+    private ?ProviderActivationRegistry $activations;
+
+    public function __construct(?ProviderActivationRegistry $activations = null) {
+        $this->activations = $activations;
+    }
+
 
     /**
      * @param list<string> $tlds

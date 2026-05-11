@@ -10,11 +10,15 @@ namespace Ratib\InfrastructureMarketplace\Adapters;
  */
 abstract class AbstractJsonConfigurableAdapter
 {
+    protected array $options;
+
     /**
      * @param OptionsMap $options
      */
-    public function __construct(protected readonly array $options = [])
-    {}
+    public function __construct(array $options = []) {
+        $this->options = $options;
+    }
+
 
     /**
      * @return OptionsMap

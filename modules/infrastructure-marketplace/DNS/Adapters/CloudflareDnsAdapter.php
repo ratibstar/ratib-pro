@@ -13,9 +13,9 @@ use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
 final class CloudflareDnsAdapter implements DnsProviderInterface
 {
-    private readonly HttpClientInterface $http;
-    private readonly SecretManager $secrets;
-    private readonly ProviderRolloutPolicy $rollout;
+    private HttpClientInterface $http;
+    private SecretManager $secrets;
+    private ProviderRolloutPolicy $rollout;
 
     public function __construct(
         ?HttpClientInterface $http = null,

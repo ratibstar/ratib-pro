@@ -5,12 +5,18 @@ namespace Ratib\InfrastructureMarketplace\Hosting\DTOs;
 
 final class HostingUsageSnapshot
 {
-    public function __construct(
-        private readonly string $account,
-        private readonly float $bandwidthMb,
-        private readonly float $quotaMb,
-        private readonly float $diskUsedMb
-    ) {}
+    private string $account;
+    private float $bandwidthMb;
+    private float $quotaMb;
+    private float $diskUsedMb;
+
+    public function __construct(string $account, float $bandwidthMb, float $quotaMb, float $diskUsedMb) {
+        $this->account = $account;
+        $this->bandwidthMb = $bandwidthMb;
+        $this->quotaMb = $quotaMb;
+        $this->diskUsedMb = $diskUsedMb;
+    }
+
 
     /**
      * @return array<string, mixed>

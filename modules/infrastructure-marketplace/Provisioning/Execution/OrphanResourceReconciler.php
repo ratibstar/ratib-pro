@@ -7,10 +7,14 @@ use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
 
 final class OrphanResourceReconciler
 {
-    public function __construct(
-        private readonly \PDO $pdo,
-        private readonly InfrastructureAuditLogger $audit
-    ) {}
+    private \PDO $pdo;
+    private InfrastructureAuditLogger $audit;
+
+    public function __construct(\PDO $pdo, InfrastructureAuditLogger $audit) {
+        $this->pdo = $pdo;
+        $this->audit = $audit;
+    }
+
 
     public function snapshot(): array
     {

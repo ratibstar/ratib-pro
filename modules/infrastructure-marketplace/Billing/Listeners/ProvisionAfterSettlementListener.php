@@ -15,10 +15,14 @@ use Ratib\InfrastructureMarketplace\Services\ProvisioningOrchestrator;
  */
 final class ProvisionAfterSettlementListener implements InfrastructureBillingSettlementHookInterface
 {
-    public function __construct(
-        private readonly ProvisioningOrchestrator $orchestrator,
-        private readonly InfrastructureEventEmitter $events
-    ) {}
+    private ProvisioningOrchestrator $orchestrator;
+    private InfrastructureEventEmitter $events;
+
+    public function __construct(ProvisioningOrchestrator $orchestrator, InfrastructureEventEmitter $events) {
+        $this->orchestrator = $orchestrator;
+        $this->events = $events;
+    }
+
 
     public function onInfrastructurePurchaseSettled(TenantContext $tenant, array $lineItem): void
     {

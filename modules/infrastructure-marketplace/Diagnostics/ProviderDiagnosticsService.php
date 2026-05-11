@@ -9,7 +9,7 @@ use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
 final class ProviderDiagnosticsService
 {
-    private readonly CurlHttpClient $http;
+    private CurlHttpClient $http;
 
     public function __construct()
     {

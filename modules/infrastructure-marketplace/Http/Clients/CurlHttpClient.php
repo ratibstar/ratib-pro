@@ -8,9 +8,12 @@ use Ratib\InfrastructureMarketplace\Http\Contracts\HttpResponse;
 
 final class CurlHttpClient implements HttpClientInterface
 {
-    public function __construct(
-        private readonly int $timeoutSeconds = 20
-    ) {}
+    private int $timeoutSeconds;
+
+    public function __construct(int $timeoutSeconds = 20) {
+        $this->timeoutSeconds = $timeoutSeconds;
+    }
+
 
     public function get(string $url, array $headers = [], array $query = []): HttpResponse
     {

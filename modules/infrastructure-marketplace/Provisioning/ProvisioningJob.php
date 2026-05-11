@@ -10,16 +10,22 @@ use Ratib\InfrastructureMarketplace\Domain\TenantContext;
  */
 final class ProvisioningJob
 {
+    private TenantContext $tenant;
+    private array $steps;
+    private array $payloadByStep;
+    private ?string $correlationId;
+
     /**
      * @param list<string> $steps Ordered logical steps, e.g. ['registrar','dns','ssl','hosting']
      * @param array<string, ProvisioningPayload> $payloadByStep
      */
-    public function __construct(
-        private readonly TenantContext $tenant,
-        private readonly array $steps,
-        private readonly array $payloadByStep,
-        private readonly ?string $correlationId = null
-    ) {}
+    public function __construct(TenantContext $tenant, array $steps, array $payloadByStep, ?string $correlationId = null) {
+        $this->tenant = $tenant;
+        $this->steps = $steps;
+        $this->payloadByStep = $payloadByStep;
+        $this->correlationId = $correlationId;
+    }
+
 
     public function tenant(): TenantContext
     {

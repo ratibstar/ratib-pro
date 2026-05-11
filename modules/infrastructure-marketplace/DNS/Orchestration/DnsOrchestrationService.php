@@ -8,9 +8,12 @@ use Ratib\InfrastructureMarketplace\Domain\TenantContext;
 
 final class DnsOrchestrationService
 {
-    public function __construct(
-        private readonly DnsProviderInterface $provider
-    ) {}
+    private DnsProviderInterface $provider;
+
+    public function __construct(DnsProviderInterface $provider) {
+        $this->provider = $provider;
+    }
+
 
     /**
      * @param list<array{name:string,type:string,target:string,ttl?:int}> $records

@@ -7,10 +7,14 @@ use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
 
 final class TimeoutEscalationService
 {
-    public function __construct(
-        private readonly \PDO $pdo,
-        private readonly InfrastructureMetrics $metrics
-    ) {}
+    private \PDO $pdo;
+    private InfrastructureMetrics $metrics;
+
+    public function __construct(\PDO $pdo, InfrastructureMetrics $metrics) {
+        $this->pdo = $pdo;
+        $this->metrics = $metrics;
+    }
+
 
     public function escalateStuckRunning(int $minutes): int
     {

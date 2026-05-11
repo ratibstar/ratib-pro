@@ -9,11 +9,16 @@ use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepo
 
 final class ProvisioningStateMachine
 {
-    public function __construct(
-        private readonly ProvisioningJobRepository $jobs,
-        private readonly StateTransitionValidator $validator,
-        private readonly InfrastructureAuditLogger $audit
-    ) {}
+    private ProvisioningJobRepository $jobs;
+    private StateTransitionValidator $validator;
+    private InfrastructureAuditLogger $audit;
+
+    public function __construct(ProvisioningJobRepository $jobs, StateTransitionValidator $validator, InfrastructureAuditLogger $audit) {
+        $this->jobs = $jobs;
+        $this->validator = $validator;
+        $this->audit = $audit;
+    }
+
 
     /**
      * @param array<string, mixed> $meta

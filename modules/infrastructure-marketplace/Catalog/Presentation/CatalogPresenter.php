@@ -8,9 +8,12 @@ use Ratib\InfrastructureMarketplace\Domain\TenantContext;
 
 final class CatalogPresenter
 {
-    public function __construct(
-        private readonly PricingEngine $pricing
-    ) {}
+    private PricingEngine $pricing;
+
+    public function __construct(PricingEngine $pricing) {
+        $this->pricing = $pricing;
+    }
+
 
     /**
      * @param list<array<string, mixed>> $rows

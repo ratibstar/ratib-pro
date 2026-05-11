@@ -5,9 +5,12 @@ namespace Ratib\InfrastructureMarketplace\Provisioning\Execution;
 
 final class OperationalSafetyGuard
 {
-    public function __construct(
-        private readonly \PDO $pdo
-    ) {}
+    private \PDO $pdo;
+
+    public function __construct(\PDO $pdo) {
+        $this->pdo = $pdo;
+    }
+
 
     public function assertNoQueueStorm(int $maxQueued): void
     {

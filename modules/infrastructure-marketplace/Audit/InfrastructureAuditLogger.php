@@ -7,10 +7,14 @@ use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 
 final class InfrastructureAuditLogger
 {
-    public function __construct(
-        private readonly \PDO $pdo,
-        private readonly InfrastructureEventEmitter $events
-    ) {}
+    private \PDO $pdo;
+    private InfrastructureEventEmitter $events;
+
+    public function __construct(\PDO $pdo, InfrastructureEventEmitter $events) {
+        $this->pdo = $pdo;
+        $this->events = $events;
+    }
+
 
     /**
      * @param array<string, mixed> $payload

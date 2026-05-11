@@ -11,9 +11,12 @@ use Ratib\InfrastructureMarketplace\Domain\TenantContext;
  */
 final class CheckoutBridge
 {
-    public function __construct(
-        private readonly BillingHookRegistry $billingHooks
-    ) {}
+    private BillingHookRegistry $billingHooks;
+
+    public function __construct(BillingHookRegistry $billingHooks) {
+        $this->billingHooks = $billingHooks;
+    }
+
 
     /**
      * @param array<string, mixed> $lineItem

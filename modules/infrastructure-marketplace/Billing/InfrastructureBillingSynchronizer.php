@@ -5,10 +5,14 @@ namespace Ratib\InfrastructureMarketplace\Billing;
 
 final class InfrastructureBillingSynchronizer
 {
-    public function __construct(
-        private readonly \PDO $pdo,
-        private readonly InfrastructureBillingMetadataBridge $metadataBridge
-    ) {}
+    private \PDO $pdo;
+    private InfrastructureBillingMetadataBridge $metadataBridge;
+
+    public function __construct(\PDO $pdo, InfrastructureBillingMetadataBridge $metadataBridge) {
+        $this->pdo = $pdo;
+        $this->metadataBridge = $metadataBridge;
+    }
+
 
     /**
      * @return array<string, mixed>

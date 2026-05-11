@@ -15,8 +15,8 @@ use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
 final class CpanelWhmAdapter implements HostingProvisioningInterface
 {
-    private readonly HttpClientInterface $http;
-    private readonly SecretManager $secrets;
+    private HttpClientInterface $http;
+    private SecretManager $secrets;
 
     public function __construct(
         ?HttpClientInterface $http = null,

@@ -11,10 +11,14 @@ use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningJob;
 
 final class DatabaseQueueDispatcher implements QueueDispatcherInterface
 {
-    public function __construct(
-        private readonly ProvisioningJobRepository $jobs,
-        private readonly ProvisioningJobLogRepository $logs
-    ) {}
+    private ProvisioningJobRepository $jobs;
+    private ProvisioningJobLogRepository $logs;
+
+    public function __construct(ProvisioningJobRepository $jobs, ProvisioningJobLogRepository $logs) {
+        $this->jobs = $jobs;
+        $this->logs = $logs;
+    }
+
 
     public function enqueue(ProvisioningJob $job): string
     {

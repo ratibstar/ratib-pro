@@ -9,11 +9,16 @@ namespace Ratib\InfrastructureMarketplace\Domain;
  */
 final class TenantContext
 {
-    public function __construct(
-        private readonly ?int $tenantId,
-        private readonly ?int $agencyId,
-        private readonly ?string $whiteLabelBrandKey = null
-    ) {}
+    private ?int $tenantId;
+    private ?int $agencyId;
+    private ?string $whiteLabelBrandKey;
+
+    public function __construct(?int $tenantId, ?int $agencyId, ?string $whiteLabelBrandKey = null) {
+        $this->tenantId = $tenantId;
+        $this->agencyId = $agencyId;
+        $this->whiteLabelBrandKey = $whiteLabelBrandKey;
+    }
+
 
     public function tenantId(): ?int
     {

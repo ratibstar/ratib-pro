@@ -7,9 +7,12 @@ use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 
 final class InfrastructureAlertingService
 {
-    public function __construct(
-        private readonly InfrastructureEventEmitter $events
-    ) {}
+    private InfrastructureEventEmitter $events;
+
+    public function __construct(InfrastructureEventEmitter $events) {
+        $this->events = $events;
+    }
+
 
     /**
      * @param array<string, mixed> $meta

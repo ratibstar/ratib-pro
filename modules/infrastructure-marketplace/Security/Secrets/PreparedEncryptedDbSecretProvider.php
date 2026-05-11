@@ -8,9 +8,12 @@ namespace Ratib\InfrastructureMarketplace\Security\Secrets;
  */
 final class PreparedEncryptedDbSecretProvider implements SecretProviderInterface
 {
-    public function __construct(
-        private readonly \PDO $pdo
-    ) {}
+    private \PDO $pdo;
+
+    public function __construct(\PDO $pdo) {
+        $this->pdo = $pdo;
+    }
+
 
     public function get(string $scope, string $key): ?string
     {

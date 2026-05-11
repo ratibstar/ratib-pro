@@ -9,11 +9,16 @@ use Ratib\InfrastructureMarketplace\Registrars\Search\RegistrarSearchAggregator;
 
 final class DomainSearchService
 {
-    public function __construct(
-        private readonly DomainSearchCache $cache,
-        private readonly RegistrarSearchAggregator $aggregator,
-        private readonly InfrastructureMetrics $metrics
-    ) {}
+    private DomainSearchCache $cache;
+    private RegistrarSearchAggregator $aggregator;
+    private InfrastructureMetrics $metrics;
+
+    public function __construct(DomainSearchCache $cache, RegistrarSearchAggregator $aggregator, InfrastructureMetrics $metrics) {
+        $this->cache = $cache;
+        $this->aggregator = $aggregator;
+        $this->metrics = $metrics;
+    }
+
 
     /**
      * @param list<string> $tlds

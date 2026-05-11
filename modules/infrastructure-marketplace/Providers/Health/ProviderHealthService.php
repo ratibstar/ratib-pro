@@ -8,10 +8,14 @@ use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegis
 
 final class ProviderHealthService
 {
-    public function __construct(
-        private readonly ProviderActivationRegistry $activations,
-        private readonly InfrastructureMetrics $metrics
-    ) {}
+    private ProviderActivationRegistry $activations;
+    private InfrastructureMetrics $metrics;
+
+    public function __construct(ProviderActivationRegistry $activations, InfrastructureMetrics $metrics) {
+        $this->activations = $activations;
+        $this->metrics = $metrics;
+    }
+
 
     /**
      * @return list<array<string, mixed>>

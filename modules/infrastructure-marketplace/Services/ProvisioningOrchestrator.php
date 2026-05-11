@@ -16,11 +16,16 @@ use Ratib\InfrastructureMarketplace\Provisioning\SyncQueueDispatcher;
 
 final class ProvisioningOrchestrator implements ProvisioningOrchestratorInterface
 {
-    public function __construct(
-        private readonly QueueDispatcherInterface $queue,
-        private readonly InfrastructureEventEmitter $events,
-        private readonly ?InfrastructureMetrics $metrics = null
-    ) {}
+    private QueueDispatcherInterface $queue;
+    private InfrastructureEventEmitter $events;
+    private ?InfrastructureMetrics $metrics;
+
+    public function __construct(QueueDispatcherInterface $queue, InfrastructureEventEmitter $events, ?InfrastructureMetrics $metrics = null) {
+        $this->queue = $queue;
+        $this->events = $events;
+        $this->metrics = $metrics;
+    }
+
 
     public static function createDefault(): self
     {

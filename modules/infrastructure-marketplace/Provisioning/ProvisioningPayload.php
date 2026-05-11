@@ -10,13 +10,17 @@ namespace Ratib\InfrastructureMarketplace\Provisioning;
  */
 final class ProvisioningPayload
 {
+    private string $operation;
+    private array $attributes;
+
     /**
      * @param PayloadMap $attributes
      */
-    public function __construct(
-        private readonly string $operation,
-        private readonly array $attributes = []
-    ) {}
+    public function __construct(string $operation, array $attributes = []) {
+        $this->operation = $operation;
+        $this->attributes = $attributes;
+    }
+
 
     public function operation(): string
     {

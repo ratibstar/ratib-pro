@@ -5,16 +5,23 @@ namespace Ratib\InfrastructureMarketplace\Hosting\DTOs;
 
 final class HostingOperationResult
 {
+    private bool $ok;
+    private string $operation;
+    private ?string $reference;
+    private array $data;
+    private ?string $error;
+
     /**
      * @param array<string, mixed> $data
      */
-    public function __construct(
-        private readonly bool $ok,
-        private readonly string $operation,
-        private readonly ?string $reference,
-        private readonly array $data = [],
-        private readonly ?string $error = null
-    ) {}
+    public function __construct(bool $ok, string $operation, ?string $reference, array $data = [], ?string $error = null) {
+        $this->ok = $ok;
+        $this->operation = $operation;
+        $this->reference = $reference;
+        $this->data = $data;
+        $this->error = $error;
+    }
+
 
     /**
      * @return array<string, mixed>

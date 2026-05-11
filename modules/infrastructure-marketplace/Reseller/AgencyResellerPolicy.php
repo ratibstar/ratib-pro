@@ -8,12 +8,15 @@ use Ratib\InfrastructureMarketplace\Domain\TenantContext;
 
 final class AgencyResellerPolicy implements ResellerCapabilityInterface
 {
+    private array $tenantRules;
+
     /**
      * @param array<string, mixed> $tenantRules
      */
-    public function __construct(
-        private readonly array $tenantRules = []
-    ) {}
+    public function __construct(array $tenantRules = []) {
+        $this->tenantRules = $tenantRules;
+    }
+
 
     public function resellerChainForTenant(TenantContext $tenant): array
     {

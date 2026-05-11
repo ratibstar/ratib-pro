@@ -11,10 +11,14 @@ use Ratib\InfrastructureMarketplace\Services\ProvisioningOrchestrator;
 
 final class InfrastructureServiceLifecycleManager
 {
-    public function __construct(
-        private readonly ProvisioningOrchestrator $orchestrator,
-        private readonly InfrastructureAuditLogger $audit
-    ) {}
+    private ProvisioningOrchestrator $orchestrator;
+    private InfrastructureAuditLogger $audit;
+
+    public function __construct(ProvisioningOrchestrator $orchestrator, InfrastructureAuditLogger $audit) {
+        $this->orchestrator = $orchestrator;
+        $this->audit = $audit;
+    }
+
 
     /**
      * @param array<string, mixed> $service

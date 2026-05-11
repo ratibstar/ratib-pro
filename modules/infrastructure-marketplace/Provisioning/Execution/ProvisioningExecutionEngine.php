@@ -23,23 +23,32 @@ use Ratib\InfrastructureMarketplace\Services\ProviderRegistry;
 
 final class ProvisioningExecutionEngine
 {
-    private readonly ProvisioningStateMachine $stateMachine;
+    private ProvisioningStateMachine $stateMachine;
+    private ProvisioningJobRepository $jobs;
+    private ProvisioningJobLogRepository $logs;
+    private InfrastructureEventEmitter $events;
+    private InfrastructureMetrics $metrics;
+    private InfrastructureAuditLogger $audit;
+    private TenantIsolationCompliance $compliance;
+    private ProviderRegistry $providers;
 
-    public function __construct(
-        private readonly ProvisioningJobRepository $jobs,
-        private readonly ProvisioningJobLogRepository $logs,
-        private readonly InfrastructureEventEmitter $events,
-        private readonly InfrastructureMetrics $metrics,
-        private readonly InfrastructureAuditLogger $audit,
-        private readonly TenantIsolationCompliance $compliance,
-        private readonly ProviderRegistry $providers
-    ) {
+
+    public function __construct(ProvisioningJobRepository $jobs, ProvisioningJobLogRepository $logs, InfrastructureEventEmitter $events, InfrastructureMetrics $metrics, InfrastructureAuditLogger $audit, TenantIsolationCompliance $compliance, ProviderRegistry $providers) {
+        $this->jobs = $jobs;
+        $this->logs = $logs;
+        $this->events = $events;
+        $this->metrics = $metrics;
+        $this->audit = $audit;
+        $this->compliance = $compliance;
+        $this->providers = $providers;
+
         $this->stateMachine = new ProvisioningStateMachine(
             $this->jobs,
             new StateTransitionValidator(),
             $this->audit
         );
     }
+
 
     /**
      * @param array<string, mixed> $row

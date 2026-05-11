@@ -16,13 +16,20 @@ use Ratib\InfrastructureMarketplace\Services\ProvisioningOrchestrator;
 
 final class InfrastructureOrderService
 {
-    public function __construct(
-        private readonly \PDO $pdo,
-        private readonly ProvisioningOrchestrator $orchestrator,
-        private readonly ProviderRegistry $providers,
-        private readonly InfrastructureEventEmitter $events,
-        private readonly InfrastructureAuditLogger $audit
-    ) {}
+    private \PDO $pdo;
+    private ProvisioningOrchestrator $orchestrator;
+    private ProviderRegistry $providers;
+    private InfrastructureEventEmitter $events;
+    private InfrastructureAuditLogger $audit;
+
+    public function __construct(\PDO $pdo, ProvisioningOrchestrator $orchestrator, ProviderRegistry $providers, InfrastructureEventEmitter $events, InfrastructureAuditLogger $audit) {
+        $this->pdo = $pdo;
+        $this->orchestrator = $orchestrator;
+        $this->providers = $providers;
+        $this->events = $events;
+        $this->audit = $audit;
+    }
+
 
     /**
      * @param array<string, mixed> $input

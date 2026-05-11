@@ -7,9 +7,12 @@ use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegis
 
 final class CapabilityDiscoveryService
 {
-    public function __construct(
-        private readonly ProviderActivationRegistry $activations
-    ) {}
+    private ProviderActivationRegistry $activations;
+
+    public function __construct(ProviderActivationRegistry $activations) {
+        $this->activations = $activations;
+    }
+
 
     /**
      * @return list<array<string, mixed>>

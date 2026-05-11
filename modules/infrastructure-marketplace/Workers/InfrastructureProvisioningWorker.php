@@ -19,10 +19,13 @@ use Ratib\InfrastructureMarketplace\Services\ProviderRegistry;
 final class InfrastructureProvisioningWorker
 {
     private bool $shouldStop = false;
+    private string $workerName;
 
-    public function __construct(
-        private readonly string $workerName = 'infra-worker-1'
-    ) {}
+
+    public function __construct(string $workerName = 'infra-worker-1') {
+        $this->workerName = $workerName;
+    }
+
 
     public static function main(): void
     {

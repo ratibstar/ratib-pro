@@ -8,9 +8,12 @@ use Ratib\InfrastructureMarketplace\Reseller\AgencyResellerPolicy;
 
 final class PricingEngine
 {
-    public function __construct(
-        private readonly AgencyResellerPolicy $resellerPolicy
-    ) {}
+    private AgencyResellerPolicy $resellerPolicy;
+
+    public function __construct(AgencyResellerPolicy $resellerPolicy) {
+        $this->resellerPolicy = $resellerPolicy;
+    }
+
 
     /**
      * @param array<string, mixed> $sku

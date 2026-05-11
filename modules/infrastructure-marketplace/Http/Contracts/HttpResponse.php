@@ -5,16 +5,22 @@ namespace Ratib\InfrastructureMarketplace\Http\Contracts;
 
 final class HttpResponse
 {
+    private int $statusCode;
+    private array $headers;
+    private string $body;
+    private ?array $json;
+
     /**
      * @param array<string, string> $headers
      * @param array<string, mixed>|null $json
      */
-    public function __construct(
-        private readonly int $statusCode,
-        private readonly array $headers,
-        private readonly string $body,
-        private readonly ?array $json = null
-    ) {}
+    public function __construct(int $statusCode, array $headers, string $body, ?array $json = null) {
+        $this->statusCode = $statusCode;
+        $this->headers = $headers;
+        $this->body = $body;
+        $this->json = $json;
+    }
+
 
     public function statusCode(): int
     {

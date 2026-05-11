@@ -14,12 +14,18 @@ use Ratib\InfrastructureMarketplace\Domain\Contracts\SslProviderInterface;
  */
 final class ProviderRegistry
 {
-    public function __construct(
-        private readonly ?HostingProviderInterface $hosting = null,
-        private readonly ?RegistrarProviderInterface $registrar = null,
-        private readonly ?DnsProviderInterface $dns = null,
-        private readonly ?SslProviderInterface $ssl = null
-    ) {}
+    private ?HostingProviderInterface $hosting;
+    private ?RegistrarProviderInterface $registrar;
+    private ?DnsProviderInterface $dns;
+    private ?SslProviderInterface $ssl;
+
+    public function __construct(?HostingProviderInterface $hosting = null, ?RegistrarProviderInterface $registrar = null, ?DnsProviderInterface $dns = null, ?SslProviderInterface $ssl = null) {
+        $this->hosting = $hosting;
+        $this->registrar = $registrar;
+        $this->dns = $dns;
+        $this->ssl = $ssl;
+    }
+
 
     public static function fromEnvironment(): self
     {

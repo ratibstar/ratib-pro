@@ -7,9 +7,12 @@ use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
 
 final class AdminActionHistory
 {
-    public function __construct(
-        private readonly InfrastructureAuditLogger $audit
-    ) {}
+    private InfrastructureAuditLogger $audit;
+
+    public function __construct(InfrastructureAuditLogger $audit) {
+        $this->audit = $audit;
+    }
+
 
     /**
      * @param array<string, mixed> $details

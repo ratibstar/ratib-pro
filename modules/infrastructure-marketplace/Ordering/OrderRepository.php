@@ -5,9 +5,12 @@ namespace Ratib\InfrastructureMarketplace\Ordering;
 
 final class OrderRepository
 {
-    public function __construct(
-        private readonly \PDO $pdo
-    ) {}
+    private \PDO $pdo;
+
+    public function __construct(\PDO $pdo) {
+        $this->pdo = $pdo;
+    }
+
 
     /**
      * @param array<string, mixed> $payload
