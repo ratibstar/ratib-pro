@@ -67,8 +67,10 @@ $payload = [
         'driver' => ModuleConfig::defaultQueueDriver(),
         'max_attempts' => ModuleConfig::queueMaxAttempts(),
         'dead_state' => ModuleConfig::queueDeadLetterState(),
+        'depth' => 0,
     ],
     'providers' => [
+        'status' => count(ModuleConfig::providerBindings()) > 0 ? 'configured' : 'unavailable',
         'cpanel_whm_base_url_configured' => ModuleConfig::cpanelWhmBaseUrl() !== null,
         'bindings_defined' => count(ModuleConfig::providerBindings()),
         'cpanel_username_masked' => SecretManager::masked(ModuleConfig::cpanelWhmUsername()),
@@ -78,12 +80,19 @@ $payload = [
     ],
     'jobs' => [
         'status' => 'job repository ready',
+        'QUEUED' => 0,
+        'RUNNING' => 0,
+        'COMPLETED' => 0,
+        'FAILED' => 0,
+        'DEAD_LETTER' => 0,
     ],
     'workers' => [
         'status' => 'heartbeat table not queried',
     ],
     'failed' => [
         'status' => 'not queried',
+        'failed' => 0,
+        'dead_letter' => 0,
     ],
     'reconciliation' => [
         'status' => 'not queried',
@@ -91,6 +100,7 @@ $payload = [
     'diagnostics' => [
         'status' => 'provider diagnostics',
         'cpanel_dependency' => ModuleConfig::cpanelWhmBaseUrl() !== null ? 'configured' : 'not_configured',
+        'db_reachable' => false,
     ],
     'traces' => [
         'status' => 'trace query not executed',
@@ -103,12 +113,14 @@ $__dashboardPayloadFallback = $payload;
 
 try {
     $pdo = DatabaseConnectionFactory::createPdo();
+    $payload['diagnostics']['db_reachable'] = true;
     $metrics = new InfrastructureMetrics(new InfrastructureEventEmitter());
     $jobs = new ProvisioningJobRepository($pdo);
     $counts = $jobs->statusCounts();
-    $payload['queue']['depth'] = $jobs->queueDepth();
-    $metrics->queueDepth($jobs->queueDepth());
-    $metrics->queuePressure(min(1, $jobs->queueDepth() / 2000));
+    $queueDepth = $jobs->queueDepth();
+    $payload['queue']['depth'] = $queueDepth;
+    $metrics->queueDepth($queueDepth);
+    $metrics->queuePressure(min(1, $queueDepth / 2000));
     $payload['jobs'] = $counts;
     $payload['failed'] = [
         'failed' => (int) ($counts['FAILED'] ?? 0),
@@ -118,62 +130,79 @@ try {
         'required' => (int) (($counts['RECONCILING'] ?? 0) + ($counts['DEAD_LETTER'] ?? 0)),
     ];
 
-    $workerRows = $pdo->query(
-        'SELECT worker_name, heartbeat_at, memory_bytes
-         FROM ratib_infra_worker_heartbeats
-         ORDER BY heartbeat_at DESC
-         LIMIT 5'
-    );
-    $workers = [];
-    if ($workerRows instanceof PDOStatement) {
-        while ($r = $workerRows->fetch(PDO::FETCH_ASSOC)) {
-            if (!is_array($r)) {
-                continue;
+    try {
+        $workerRows = $pdo->query(
+            'SELECT worker_name, heartbeat_at, memory_bytes
+             FROM ratib_infra_worker_heartbeats
+             ORDER BY heartbeat_at DESC
+             LIMIT 5'
+        );
+        $workers = [];
+        if ($workerRows instanceof PDOStatement) {
+            while ($r = $workerRows->fetch(PDO::FETCH_ASSOC)) {
+                if (!is_array($r)) {
+                    continue;
+                }
+                $workers[(string) $r['worker_name']] = (string) $r['heartbeat_at'] . ' | memory=' . (string) $r['memory_bytes'];
             }
-            $workers[(string) $r['worker_name']] = (string) $r['heartbeat_at'] . ' | memory=' . (string) $r['memory_bytes'];
         }
+        $payload['workers'] = $workers === [] ? ['status' => 'no workers reporting'] : $workers;
+    } catch (\Throwable $e) {
+        $payload['workers'] = ['status' => 'worker table unavailable'];
     }
-    $payload['workers'] = $workers === [] ? ['status' => 'no workers reporting'] : $workers;
 
-    $activations = new ProviderActivationRegistry($pdo);
-    $providerHealth = new ProviderHealthService($activations, $metrics);
-    $capabilities = new CapabilityDiscoveryService($activations);
-    $payload['providers']['health_snapshot'] = $providerHealth->healthSnapshot(null, null);
-    $payload['providers']['capabilities_hosting'] = $capabilities->discover('hosting', null, null);
+    try {
+        $activations = new ProviderActivationRegistry($pdo);
+        $providerHealth = new ProviderHealthService($activations, $metrics);
+        $capabilities = new CapabilityDiscoveryService($activations);
+        $payload['providers']['health_snapshot'] = $providerHealth->healthSnapshot(null, null);
+        $payload['providers']['capabilities_hosting'] = $capabilities->discover('hosting', null, null);
+        $payload['providers']['status'] = 'ready';
+    } catch (\Throwable $e) {
+        $payload['providers']['status'] = 'configured';
+    }
 
-    $orderRows = $pdo->query(
-        'SELECT status, COUNT(*) c FROM ratib_infra_orders GROUP BY status'
-    );
-    $orderCounts = [];
-    if ($orderRows instanceof PDOStatement) {
-        while ($r = $orderRows->fetch(PDO::FETCH_ASSOC)) {
-            if (!is_array($r)) {
-                continue;
+    try {
+        $orderRows = $pdo->query(
+            'SELECT status, COUNT(*) c FROM ratib_infra_orders GROUP BY status'
+        );
+        $orderCounts = [];
+        if ($orderRows instanceof PDOStatement) {
+            while ($r = $orderRows->fetch(PDO::FETCH_ASSOC)) {
+                if (!is_array($r)) {
+                    continue;
+                }
+                $s = (string) ($r['status'] ?? '');
+                $c = (int) ($r['c'] ?? 0);
+                $orderCounts[$s] = $c;
+                $metrics->orderConversionMetric($s, $c);
             }
-            $s = (string) ($r['status'] ?? '');
-            $c = (int) ($r['c'] ?? 0);
-            $orderCounts[$s] = $c;
-            $metrics->orderConversionMetric($s, $c);
         }
+        $payload['traces']['order_counts'] = $orderCounts;
+    } catch (\Throwable $e) {
+        $payload['traces']['order_counts'] = [];
     }
-    $payload['traces']['order_counts'] = $orderCounts;
 
-    $auditRows = $pdo->query(
-        'SELECT action_type, created_at
-         FROM ratib_infra_audit_entries
-         ORDER BY id DESC
-         LIMIT 5'
-    );
-    $audit = [];
-    if ($auditRows instanceof PDOStatement) {
-        while ($r = $auditRows->fetch(PDO::FETCH_ASSOC)) {
-            if (!is_array($r)) {
-                continue;
+    try {
+        $auditRows = $pdo->query(
+            'SELECT action_type, created_at
+             FROM ratib_infra_audit_entries
+             ORDER BY id DESC
+             LIMIT 5'
+        );
+        $audit = [];
+        if ($auditRows instanceof PDOStatement) {
+            while ($r = $auditRows->fetch(PDO::FETCH_ASSOC)) {
+                if (!is_array($r)) {
+                    continue;
+                }
+                $audit[] = (string) $r['created_at'] . ' ' . (string) $r['action_type'];
             }
-            $audit[] = (string) $r['created_at'] . ' ' . (string) $r['action_type'];
         }
+        $payload['audit'] = ['latest' => implode("\n", $audit)];
+    } catch (\Throwable $e) {
+        $payload['audit'] = ['latest' => ''];
     }
-    $payload['audit'] = ['latest' => implode("\n", $audit)];
 } catch (\Throwable $e) {
     $payload['diagnostics']['db'] = 'Dashboard DB query unavailable';
 }
