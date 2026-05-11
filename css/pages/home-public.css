@@ -971,8 +971,9 @@ body.ratib-saas-home {
 
 @media (max-width: 1099px) {
   .ratib-nav-shell__inner {
-  flex-wrap: wrap;
-}
+    flex-wrap: wrap;
+  }
+
   .ratib-nav__toggle {
     margin-left: auto;
   }

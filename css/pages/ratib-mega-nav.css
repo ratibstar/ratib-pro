@@ -439,3 +439,8 @@
     color: #5b21b6;
   }
 }
+
+/* End of file: keep shell mega row single-line (must beat @media (min-width: 1100px) .ratib-mega-nav__flat-desc { display: block }). */
+.ratib-nav-shell .ratib-mega-nav__flat-desc {
+  display: none !important;
+}

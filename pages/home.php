@@ -265,10 +265,10 @@ require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo htmlspecialchars($ratibHomePublicCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/ratib-mega-nav.css?v=<?php echo htmlspecialchars($ratibMegaNavCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <style id="ratib-nav-css-fallback">
-      /* Layout-only rescue — scoped to platform pills only (not mega-nav triggers/cards) */
+      /* Layout-only rescue — no fixed icon sizes here (!important would override home-public / ratib-mega-nav). */
       #ratibNavMenu .ratib-nav__platform-links .ratib-nav__link{display:inline-flex!important;align-items:center!important;gap:.5rem!important}
-      #ratibNavMenu .ratib-nav__platform-links .ratib-nav__icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;width:2.5rem!important;height:2.5rem!important}
-      #ratibNavMenu .ratib-nav__platform-links .ratib-nav__glyph{width:1.35rem!important;height:1.35rem!important;display:block!important}
+      #ratibNavMenu .ratib-nav__platform-links .ratib-nav__icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important}
+      #ratibNavMenu .ratib-nav__platform-links .ratib-nav__glyph{display:block!important}
       .ratib-nav__partner-login{display:inline-flex!important;align-items:center!important;gap:.45rem!important}
       .ratib-nav__partner-icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;width:2.2rem!important;height:2.2rem!important}
     </style>

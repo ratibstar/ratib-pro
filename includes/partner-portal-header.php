@@ -35,10 +35,10 @@ $ppBodyClass = $ppUseHomeChrome ? 'partner-portal-body ratib-saas-home' : 'partn
     ?>
     <?php if (!empty($ratibPartnerPortalNavFallbackCss)): ?>
     <style id="ratib-nav-css-fallback">
-      /* Layout-only rescue if main CSS is stale; matches pages/home.php */
-      #ratibNavMenu .ratib-nav__link{display:inline-flex!important;align-items:center!important;gap:.5rem!important}
-      #ratibNavMenu .ratib-nav__icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;width:2.5rem!important;height:2.5rem!important}
-      #ratibNavMenu .ratib-nav__glyph{width:1.35rem!important;height:1.35rem!important;display:block!important}
+      /* Layout-only rescue — platform pills only; no fixed icon sizes (!important blocked compact nav CSS). */
+      #ratibNavMenu .ratib-nav__platform-links .ratib-nav__link{display:inline-flex!important;align-items:center!important;gap:.5rem!important}
+      #ratibNavMenu .ratib-nav__platform-links .ratib-nav__icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important}
+      #ratibNavMenu .ratib-nav__platform-links .ratib-nav__glyph{display:block!important}
       .ratib-nav__partner-login{display:inline-flex!important;align-items:center!important;gap:.45rem!important}
       .ratib-nav__partner-icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;width:2.2rem!important;height:2.2rem!important}
     </style>
