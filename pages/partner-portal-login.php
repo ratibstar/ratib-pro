@@ -31,12 +31,14 @@ $pageCss = [
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
     $baseUrl . '/css/chat-widget.css',
     $baseUrl . '/css/pages/home-public.css?v=' . $ratibHomePublicCssQuery,
+    $baseUrl . '/css/pages/ratib-mega-nav.css?v=' . $ratibMegaNavCssQuery,
     asset('css/partnerships.css') . '?v=' . $v,
     asset('css/partnerships-agency-detail.css') . '?v=' . $v,
     asset('css/partner-portal.css') . '?v=' . $v,
 ];
 $pageJs = [
     asset('js/pages/ratib-home-nav-chrome.js') . '?v=' . $ratibHomePublicCssQuery,
+    $baseUrl . '/js/pages/ratib-mega-nav.js?v=' . $ratibMegaNavJsQuery,
     asset('js/partnerships/partner-portal-login.js') . '?v=' . $v,
 ];
 include __DIR__ . '/../includes/partner-portal-header.php';

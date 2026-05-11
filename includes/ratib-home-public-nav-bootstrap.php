@@ -146,3 +146,13 @@ $ratibHomeCssPath = __DIR__ . '/../css/pages/home-public.css';
 clearstatcache(true, $ratibHomeCssPath);
 $ratibHomeCssTs = (int) (@filemtime($ratibHomeCssPath) ?: time());
 $ratibHomePublicCssQuery = $ratibHomeCssTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
+
+$ratibMegaNavCssPath = __DIR__ . '/../css/pages/ratib-mega-nav.css';
+clearstatcache(true, $ratibMegaNavCssPath);
+$ratibMegaNavCssTs = (int) (@filemtime($ratibMegaNavCssPath) ?: time());
+$ratibMegaNavCssQuery = $ratibMegaNavCssTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
+
+$ratibMegaNavJsPath = __DIR__ . '/../js/pages/ratib-mega-nav.js';
+clearstatcache(true, $ratibMegaNavJsPath);
+$ratibMegaNavJsTs = (int) (@filemtime($ratibMegaNavJsPath) ?: time());
+$ratibMegaNavJsQuery = $ratibMegaNavJsTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;

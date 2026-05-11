@@ -494,42 +494,48 @@ body.ratib-saas-home {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .ratib-nav-shell .ratib-nav__menu .ratib-nav__icon {
+  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__icon {
     animation: ratibSemanticPulse 4.2s ease-in-out infinite;
   }
 
-  .ratib-nav__menu .ratib-nav__link:nth-child(1) .ratib-nav__icon {
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(1) .ratib-nav__icon {
     animation-delay: 0s;
   }
-  .ratib-nav__menu .ratib-nav__link:nth-child(2) .ratib-nav__icon {
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(2) .ratib-nav__icon {
     animation-delay: 0.15s;
   }
-  .ratib-nav__menu .ratib-nav__link:nth-child(3) .ratib-nav__icon {
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(3) .ratib-nav__icon {
     animation-delay: 0.3s;
   }
-  .ratib-nav__menu .ratib-nav__link:nth-child(4) .ratib-nav__icon {
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(4) .ratib-nav__icon {
     animation-delay: 0.45s;
   }
-  .ratib-nav__menu .ratib-nav__link:nth-child(5) .ratib-nav__icon {
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(5) .ratib-nav__icon {
     animation-delay: 0.6s;
   }
-  .ratib-nav__menu .ratib-nav__link:nth-child(6) .ratib-nav__icon {
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(6) .ratib-nav__icon {
     animation-delay: 0.75s;
   }
-  .ratib-nav__menu .ratib-nav__link:nth-child(7) .ratib-nav__icon {
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(7) .ratib-nav__icon {
     animation-delay: 0.9s;
   }
-  .ratib-nav__menu .ratib-nav__link:nth-child(8) .ratib-nav__icon {
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(8) .ratib-nav__icon {
     animation-delay: 1.05s;
   }
-  .ratib-nav__menu .ratib-nav__link:nth-child(9) .ratib-nav__icon {
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(9) .ratib-nav__icon {
     animation-delay: 1.2s;
   }
-  .ratib-nav__menu .ratib-nav__link:nth-child(10) .ratib-nav__icon {
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(10) .ratib-nav__icon {
     animation-delay: 1.35s;
   }
-  .ratib-nav__menu .ratib-nav__link:nth-child(11) .ratib-nav__icon {
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(11) .ratib-nav__icon {
     animation-delay: 1.5s;
+  }
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(12) .ratib-nav__icon {
+    animation-delay: 1.65s;
+  }
+  .ratib-nav__platform-links .ratib-nav__link:nth-child(13) .ratib-nav__icon {
+    animation-delay: 1.8s;
   }
 
   .ratib-nav__partner-icon {
@@ -540,7 +546,7 @@ body.ratib-saas-home {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ratib-nav-shell .ratib-nav__menu .ratib-nav__icon,
+  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__icon,
   .ratib-nav__partner-icon {
     animation: none;
   }
