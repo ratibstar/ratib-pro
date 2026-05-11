@@ -63,3 +63,20 @@
 .infra-status-badge--failed { background: #4a1119; color: #ffc2cc; }
 .infra-status-badge--dead_letter { background: #4f2f00; color: #ffd7a6; }
 
+.infra-client-services-block {
+  border: 1px solid #1b2d4f;
+  border-radius: 10px;
+  background: #0d1629;
+  padding: 10px 12px;
+}
+
+.infra-client-services-block h4 {
+  margin: 0 0 8px;
+  color: #bdd0ff;
+  font-size: 1rem;
+}
+
+.infra-client-services-block p {
+  margin: 0 0 6px;
+}
+

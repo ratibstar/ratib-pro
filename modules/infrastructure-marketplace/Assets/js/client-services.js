@@ -29,12 +29,12 @@
   }
 
   function renderCards(title, rows) {
-    var html = '<div class="infra-market-grid">';
-    html += '<article class="infra-market-card"><h3>' + esc(title) + '</h3>';
+    var html = '<div class="infra-client-services-block">';
+    html += '<h4>' + esc(title) + '</h4>';
     rows.forEach(function (r) {
       html += row(r[0], r[1]);
     });
-    html += '</article></div>';
+    html += '</div>';
     root.innerHTML = html;
   }
 
