@@ -18,17 +18,21 @@ final class ProviderActivationRegistry
                 FROM ratib_infra_provider_activations
                 WHERE provider_type = :provider_type
                   AND is_enabled = 1
-                  AND (tenant_id IS NULL OR tenant_id = :tenant_id)
-                  AND (agency_id IS NULL OR agency_id = :agency_id)
+                  AND (tenant_id IS NULL OR tenant_id <=> :tenant_id)
+                  AND (agency_id IS NULL OR agency_id <=> :agency_id)
                 ORDER BY priority_weight DESC, id ASC';
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
-            'provider_type' => strtolower($providerType),
-            'tenant_id' => $tenantId,
-            'agency_id' => $agencyId,
-        ]);
-        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        return is_array($rows) ? $rows : [];
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                'provider_type' => strtolower($providerType),
+                'tenant_id' => $tenantId,
+                'agency_id' => $agencyId,
+            ]);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            return is_array($rows) ? $rows : [];
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     public function setEnabled(int $activationId, bool $enabled, string $adminActor): void

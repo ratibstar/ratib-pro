@@ -8,7 +8,14 @@
 
   function formatHealthSummary(health, data) {
     if (data && data.ok === false && data.message) {
-      return 'snapshot unavailable\n\n' + String(data.message);
+      var extra = '';
+      if (data.error_class || data.error_detail) {
+        extra =
+          '\n\n' +
+          (data.error_class ? String(data.error_class) : '') +
+          (data.error_detail ? '\n' + String(data.error_detail) : '');
+      }
+      return 'snapshot unavailable\n\n' + String(data.message) + extra;
     }
     if (!Array.isArray(health) || health.length === 0) {
       return 'No health rows returned.';
@@ -61,7 +68,9 @@
       if (noticeEl) {
         if (data && data.ok === false && data.message) {
           noticeEl.hidden = false;
-          noticeEl.textContent = data.message;
+          noticeEl.textContent =
+            data.message +
+            (data.error_detail ? '\n\n' + String(data.error_class || '') + '\n' + String(data.error_detail) : '');
         } else if (data && (data.degraded || data.message)) {
           noticeEl.hidden = false;
           noticeEl.textContent = data.message || 'Response is degraded; see panels below.';

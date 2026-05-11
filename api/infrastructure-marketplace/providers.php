@@ -27,9 +27,9 @@ use Ratib\InfrastructureMarketplace\Providers\Capabilities\CapabilityDiscoverySe
 use Ratib\InfrastructureMarketplace\Providers\Health\ProviderHealthService;
 use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
-ControlSecurityGuard::enforce('providers', ControlSecurityGuard::TIER_CONTROL_VIEW);
-
 try {
+    ControlSecurityGuard::enforce('providers', ControlSecurityGuard::TIER_CONTROL_VIEW);
+
     $pdo = DatabaseConnectionFactory::createPdo();
     if (!SchemaHelpers::tableExists($pdo, 'ratib_infra_provider_activations')) {
         http_response_code(200);
@@ -61,13 +61,24 @@ try {
     $alerts = new InfrastructureAlertingService($events);
     $health = new ProviderHealthService($activation, $metrics);
     $discovery = new CapabilityDiscoveryService($activation);
-    $snapshot = $health->healthSnapshot($tenantId, $agencyId);
-    $capabilities = [
-        'hosting' => $discovery->discover('hosting', $tenantId, $agencyId),
-        'registrar' => $discovery->discover('registrar', $tenantId, $agencyId),
-        'dns' => $discovery->discover('dns', $tenantId, $agencyId),
-        'ssl' => $discovery->discover('ssl', $tenantId, $agencyId),
-    ];
+    try {
+        $snapshot = $health->healthSnapshot($tenantId, $agencyId);
+    } catch (\Throwable $e) {
+        $snapshot = [
+            ['provider_type' => 'hosting', 'status' => 'unavailable', 'active_count' => 0, 'error' => 'health_snapshot_failed'],
+            ['provider_type' => 'registrar', 'status' => 'unavailable', 'active_count' => 0, 'error' => 'health_snapshot_failed'],
+            ['provider_type' => 'dns', 'status' => 'unavailable', 'active_count' => 0, 'error' => 'health_snapshot_failed'],
+            ['provider_type' => 'ssl', 'status' => 'unavailable', 'active_count' => 0, 'error' => 'health_snapshot_failed'],
+        ];
+    }
+    $capabilities = ['hosting' => [], 'registrar' => [], 'dns' => [], 'ssl' => []];
+    foreach (['hosting', 'registrar', 'dns', 'ssl'] as $role) {
+        try {
+            $capabilities[$role] = $discovery->discover($role, $tenantId, $agencyId);
+        } catch (\Throwable $e) {
+            $capabilities[$role] = [];
+        }
+    }
     $payload = [
         'ok' => true,
         'health' => $snapshot,
@@ -94,12 +105,18 @@ try {
         // ignore
     }
 } catch (\Throwable $e) {
+    $hint = $e->getMessage();
+    if (strlen($hint) > 220) {
+        $hint = substr($hint, 0, 220) . '…';
+    }
     http_response_code(200);
     echo json_encode([
         'ok' => false,
         'health' => [],
         'capabilities' => (object) [],
-        'message' => 'Provider snapshot unavailable. Check infra DB connection, ratib_infra_provider_activations, and server error log.',
+        'message' => 'Provider snapshot unavailable. Check infra DB connection and that ratib_infra_provider_activations exists on the same database PHP uses.',
+        'error_class' => \get_class($e),
+        'error_detail' => $hint,
     ], JSON_UNESCAPED_SLASHES);
 }
 

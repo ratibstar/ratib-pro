@@ -20,8 +20,17 @@ final class SchemaHelpers
                  LIMIT 1'
             );
             $stmt->execute([$table]);
+            if ((bool) $stmt->fetchColumn()) {
+                return true;
+            }
+        } catch (\Throwable $e) {
+            // Some hosts restrict information_schema; fall through to SHOW TABLES.
+        }
 
-            return (bool) $stmt->fetchColumn();
+        try {
+            $q = $pdo->query('SHOW TABLES LIKE ' . $pdo->quote($table));
+
+            return $q instanceof \PDOStatement && $q->fetchColumn() !== false;
         } catch (\Throwable $e) {
             return false;
         }
