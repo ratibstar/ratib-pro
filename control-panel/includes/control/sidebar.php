@@ -7,6 +7,7 @@ $logoUrl = (file_exists(__DIR__ . '/../../assets/logo.png')) ? asset('assets/log
 $base = getBaseUrl();
 $fullBaseUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . $base;
 $controlCenterUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/admin/control-center.php';
+$siteRootUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/');
 ?>
 <aside class="control-sidebar" id="control-sidebar">
     <div class="sidebar-header">
@@ -207,6 +208,9 @@ $controlCenterUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/admin/co
             <li><a href="<?php echo htmlspecialchars($controlCenterUrl . '#system-flags', ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings,control_dashboard"><i class="fas fa-diagram-project"></i><span>Rollout Control (Admin)</span></a></li>
             <li><a href="<?php echo htmlspecialchars($fullBaseUrl . '/pages/control/panel-settings.php?control=1'); ?>" id="nav-control-panel-settings" class="sidebar-item <?php echo in_array(basename($_SERVER['PHP_SELF']), ['panel-settings.php', 'admins.php', 'control-panel-settings.php', 'panel-users.php', 'control-panel-users.php']) ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-sliders-h"></i><span>Control Panel Settings</span></a></li>
             <li><a href="<?php echo htmlspecialchars($controlCenterUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-tools"></i><span>Admin Control Center</span></a></li>
+            <li><a href="<?php echo htmlspecialchars($siteRootUrl . '/modules/infrastructure-marketplace/Views/admin/control.php', ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-sliders-h"></i><span>Infrastructure Control</span></a></li>
+            <li><a href="<?php echo htmlspecialchars($siteRootUrl . '/modules/infrastructure-marketplace/Views/admin/dashboard.php', ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-chart-line"></i><span>Infrastructure Dashboard</span></a></li>
+            <li><a href="<?php echo htmlspecialchars($siteRootUrl . '/modules/infrastructure-marketplace/Views/admin/providers.php', ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-plug"></i><span>Infrastructure Providers</span></a></li>
             <li class="sidebar-section"><span class="section-label">Account</span></li>
             <li><a href="<?php echo pageUrl('logout.php'); ?>" class="sidebar-item sidebar-item-logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a></li>
         </ul>
