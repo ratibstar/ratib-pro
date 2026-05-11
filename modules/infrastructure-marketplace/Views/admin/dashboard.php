@@ -64,6 +64,22 @@ require_once dirname(__DIR__, 2) . '/bootstrap.php';
             <h2>Audit Timeline</h2>
             <div class="infra-kv" id="infra-audit">Loading...</div>
         </article>
+        <article class="infra-card" data-card="launch-readiness">
+            <h2>Launch Readiness</h2>
+            <div class="infra-kv" id="infra-launch-readiness">Loading...</div>
+        </article>
+        <article class="infra-card" data-card="deployment">
+            <h2>Deployment Verification</h2>
+            <div class="infra-kv" id="infra-deployment">Loading...</div>
+        </article>
+        <article class="infra-card" data-card="warnings">
+            <h2>Configuration Warnings</h2>
+            <div class="infra-kv" id="infra-warnings">Loading...</div>
+        </article>
+        <article class="infra-card" data-card="drills">
+            <h2>Recovery Drill Status</h2>
+            <div class="infra-kv" id="infra-drills">Loading...</div>
+        </article>
     </section>
 </main>
 <script src="/modules/infrastructure-marketplace/Assets/js/infrastructure-marketplace.js"></script>

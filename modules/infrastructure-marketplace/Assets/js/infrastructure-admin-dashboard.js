@@ -44,6 +44,10 @@
       setText('infra-diagnostics', message);
       setText('infra-traces', message);
       setText('infra-audit', message);
+      setText('infra-launch-readiness', message);
+      setText('infra-deployment', message);
+      setText('infra-warnings', message);
+      setText('infra-drills', message);
     });
 
   fetch('/api/infrastructure-marketplace/ops-queue.php', { credentials: 'same-origin' })
@@ -59,6 +63,24 @@
       if (Array.isArray(data.recent)) {
         setText('infra-traces', 'Recent jobs: ' + data.recent.length + '\n' + formatObject(data.recent[0] || {}));
       }
+    })
+    .catch(function () {});
+
+  fetch('/api/infrastructure-marketplace/prelaunch-health.php', { credentials: 'same-origin' })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data || !data.report) return;
+      var report = data.report;
+      setText('infra-launch-readiness', formatObject({
+        status: report.status,
+        score: report.score,
+        pass: (report.matrix || {}).PASS || 0,
+        warn: (report.matrix || {}).WARN || 0,
+        fail: (report.matrix || {}).FAIL || 0
+      }));
+      setText('infra-deployment', formatObject(((report.sections || {}).deployment || {}).checks || {}));
+      setText('infra-warnings', (report.recommendations || []).join('\n') || 'No warnings.');
+      setText('infra-drills', 'Use /api/infrastructure-marketplace/recovery-drill.php in DRY-RUN mode.');
     })
     .catch(function () {});
 })();

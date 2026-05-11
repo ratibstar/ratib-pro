@@ -90,6 +90,18 @@ final class ModuleRegistry
             ],
             [
                 'method' => 'GET',
+                'pattern' => '/api/infrastructure-marketplace/prelaunch-health.php',
+                'handler' => 'module endpoint file: api/infrastructure-marketplace/prelaunch-health.php',
+                'auth' => 'optional',
+            ],
+            [
+                'method' => 'POST',
+                'pattern' => '/api/infrastructure-marketplace/recovery-drill.php',
+                'handler' => 'module endpoint file: api/infrastructure-marketplace/recovery-drill.php',
+                'auth' => 'optional',
+            ],
+            [
+                'method' => 'GET',
                 'pattern' => '/api/infrastructure-marketplace/domain-search.php',
                 'handler' => 'module endpoint file: api/infrastructure-marketplace/domain-search.php',
                 'auth' => 'optional',
