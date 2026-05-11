@@ -49,8 +49,9 @@ final class DatabaseConnectionFactory
     }
 
     /**
-     * Legacy PDO dbname: infra tables usually live on the main Ratib Pro DB, not the control-panel DB.
-     * Override with RATIB_INFRA_DB_NAME or RATIB_INFRA_DB_DSN when needed.
+     * Legacy PDO dbname: ratib_infra_* are stored on the control panel database (CONTROL_PANEL_DB_NAME,
+     * default outratib_control_panel_db) — same as other control-scoped data. Override with RATIB_INFRA_DB_NAME
+     * or RATIB_INFRA_DB_DSN when you need a different schema (e.g. workers on a dedicated host).
      */
     private static function legacyInfraDatabaseName(): string
     {
@@ -58,15 +59,18 @@ final class DatabaseConnectionFactory
         if (is_string($fromEnv) && trim($fromEnv) !== '') {
             return trim($fromEnv);
         }
-        if (defined('IS_CONTROL_PANEL') && IS_CONTROL_PANEL
-            && defined('RATIB_PRO_DB_NAME') && (string) RATIB_PRO_DB_NAME !== '') {
-            return (string) RATIB_PRO_DB_NAME;
+        if (defined('CONTROL_PANEL_DB_NAME') && (string) CONTROL_PANEL_DB_NAME !== '') {
+            return (string) CONTROL_PANEL_DB_NAME;
+        }
+        $cpEnv = getenv('CONTROL_PANEL_DB_NAME');
+        if (is_string($cpEnv) && trim($cpEnv) !== '') {
+            return trim($cpEnv);
         }
         if (defined('DB_NAME') && (string) DB_NAME !== '') {
             return (string) DB_NAME;
         }
 
-        throw new \RuntimeException('Infrastructure DB name is not configured (DB_NAME / RATIB_PRO_DB_NAME / RATIB_INFRA_DB_NAME).');
+        throw new \RuntimeException('Infrastructure DB name is not configured (CONTROL_PANEL_DB_NAME / RATIB_INFRA_DB_NAME / DB_NAME).');
     }
 
     /**
