@@ -4,19 +4,19 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
 
 use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
 use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
-if (session_status() !== PHP_SESSION_ACTIVE) {
+$ratibInfraControlPanelConfig = dirname(__DIR__, 4) . '/control-panel/includes/config.php';
+if (is_file($ratibInfraControlPanelConfig)) {
+    require_once $ratibInfraControlPanelConfig;
+} elseif (session_status() !== PHP_SESSION_ACTIVE) {
+    session_name('ratib_control');
     @session_start();
 }
-if (empty($_SESSION['infra_control_csrf_token']) || !is_string($_SESSION['infra_control_csrf_token'])) {
-    try {
-        $_SESSION['infra_control_csrf_token'] = bin2hex(random_bytes(32));
-    } catch (\Throwable $e) {
-        $_SESSION['infra_control_csrf_token'] = sha1((string) microtime(true) . (string) mt_rand());
-    }
-}
-$infraControlCsrfToken = (string) $_SESSION['infra_control_csrf_token'];
+
+ControlSecurityGuard::ensureInfraCsrfSessionToken();
+$infraControlCsrfToken = (string) ($_SESSION['infra_control_csrf_token'] ?? '');
 
 $bindings = ModuleConfig::providerBindings();
 $allowlist = ModuleConfig::rolloutTenantAllowlist();
@@ -26,6 +26,9 @@ $allowlist = ModuleConfig::rolloutTenantAllowlist();
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <?php if ($infraControlCsrfToken !== ''): ?>
+    <meta name="infra-control-csrf" content="<?php echo htmlspecialchars($infraControlCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php endif; ?>
     <title>Infrastructure Control Center</title>
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-marketplace.css">
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-marketplace-exposure.css">

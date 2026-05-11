@@ -1,12 +1,24 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
+
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+
+$ratibInfraControlPanelConfig = dirname(__DIR__, 4) . '/control-panel/includes/config.php';
+if (is_file($ratibInfraControlPanelConfig)) {
+    require_once $ratibInfraControlPanelConfig;
+}
+ControlSecurityGuard::ensureInfraCsrfSessionToken();
+$ratibInfraAdminCsrf = (string) ($_SESSION['infra_control_csrf_token'] ?? '');
 ?>
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <?php if ($ratibInfraAdminCsrf !== ''): ?>
+    <meta name="infra-control-csrf" content="<?php echo htmlspecialchars($ratibInfraAdminCsrf, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php endif; ?>
     <title>Infrastructure Provider Management</title>
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-marketplace.css">
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-marketplace-exposure.css">
