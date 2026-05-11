@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
 use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
 use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
@@ -25,6 +26,18 @@ ControlSecurityGuard::enforce('ops-queue', ControlSecurityGuard::TIER_CONTROL_VI
 
 try {
     $pdo = DatabaseConnectionFactory::createPdo();
+    if (!SchemaHelpers::tableExists($pdo, 'ratib_infra_provisioning_jobs')) {
+        http_response_code(200);
+        echo json_encode([
+            'ok' => true,
+            'depth' => 0,
+            'status_counts' => new \stdClass(),
+            'recent' => [],
+            'degraded' => true,
+            'message' => 'Table ratib_infra_provisioning_jobs is missing. Run modules/infrastructure-marketplace/Migrations/002_operational_layer.sql (and later) on the infrastructure database.',
+        ], JSON_UNESCAPED_SLASHES);
+        exit;
+    }
     $repo = new ProvisioningJobRepository($pdo);
     echo json_encode([
         'ok' => true,

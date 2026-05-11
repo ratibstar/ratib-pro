@@ -34,7 +34,9 @@ try {
         'report' => [
             'status' => 'FAIL',
             'matrix' => ['PASS' => 0, 'WARN' => 0, 'FAIL' => 1],
-            'recommendations' => ['Fix DB/environment bootstrap before launch checks.'],
+            'recommendations' => [
+                'Fix DB connection (RATIB_INFRA_DB_DSN or RATIB_INFRA_DB_* / legacy DB_*), credentials (RATIB_INFRA_DB_USER if needed), and apply infra migrations 002+ on the target database.',
+            ],
         ],
     ], JSON_UNESCAPED_SLASHES);
 }

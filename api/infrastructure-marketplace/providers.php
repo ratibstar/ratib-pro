@@ -19,6 +19,7 @@ require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstra
 
 use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
 use Ratib\InfrastructureMarketplace\Observability\InfrastructureAlertingService;
 use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
 use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
@@ -30,6 +31,22 @@ ControlSecurityGuard::enforce('providers', ControlSecurityGuard::TIER_CONTROL_VI
 
 try {
     $pdo = DatabaseConnectionFactory::createPdo();
+    if (!SchemaHelpers::tableExists($pdo, 'ratib_infra_provider_activations')) {
+        http_response_code(200);
+        echo json_encode([
+            'ok' => true,
+            'health' => [],
+            'capabilities' => [
+                'hosting' => [],
+                'registrar' => [],
+                'dns' => [],
+                'ssl' => [],
+            ],
+            'degraded' => true,
+            'message' => 'Table ratib_infra_provider_activations is missing. Run modules/infrastructure-marketplace/Migrations/005_provider_activation_marketplace.sql on the infrastructure database.',
+        ], JSON_UNESCAPED_SLASHES);
+        exit;
+    }
     $tenantId = isset($_GET['tenant_id']) ? (int) $_GET['tenant_id'] : null;
     $agencyId = isset($_GET['agency_id']) ? (int) $_GET['agency_id'] : null;
     $activation = new ProviderActivationRegistry($pdo);

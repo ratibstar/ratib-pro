@@ -27,7 +27,7 @@ $__dashboardPayloadFallback = [
     'diagnostics' => ['status' => 'runtime_fallback'],
 ];
 
-register_shutdown_function(static function () use (&$__dashboardPayloadFallback): void {
+register_shutdown_function(static function () use (&$__dashboardPayloadFallback, $emitJson): void {
     $e = error_get_last();
     if ($e === null) {
         return;
@@ -134,7 +134,7 @@ try {
     $queueDepth = $jobs->queueDepth();
     $payload['queue']['depth'] = $queueDepth;
     $metrics->queueDepth($queueDepth);
-    $metrics->queuePressure(min(1, $queueDepth / 2000));
+    $metrics->queuePressure((float) min(1, $queueDepth / 2000));
     $payload['jobs'] = $counts;
     $payload['failed'] = [
         'failed' => (int) ($counts['FAILED'] ?? 0),

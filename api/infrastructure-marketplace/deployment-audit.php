@@ -19,12 +19,23 @@ require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstra
 
 use Ratib\InfrastructureMarketplace\Audit\Deployment\DeploymentAuditReporter;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
 use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 ControlSecurityGuard::enforce('deployment-audit', ControlSecurityGuard::TIER_CONTROL_VIEW);
 
 try {
     $pdo = DatabaseConnectionFactory::createPdo();
+    if (!SchemaHelpers::tableExists($pdo, 'ratib_infra_deployment_audits')) {
+        http_response_code(200);
+        echo json_encode([
+            'ok' => true,
+            'rows' => [],
+            'degraded' => true,
+            'message' => 'Table ratib_infra_deployment_audits is missing. Run modules/infrastructure-marketplace/Migrations/006_release_safety.sql on the infrastructure database.',
+        ], JSON_UNESCAPED_SLASHES);
+        exit;
+    }
     $rows = (new DeploymentAuditReporter($pdo))->latest(30);
     echo json_encode(['ok' => true, 'rows' => $rows], JSON_UNESCAPED_SLASHES);
 } catch (\Throwable $e) {
