@@ -8,6 +8,17 @@ header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+/**
+ * @param array<string, mixed> $payload
+ */
+$emitJson = static function (array $payload): void {
+    $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES);
+    if (!is_string($encoded)) {
+        $encoded = '{"ok":false,"message":"json_encoding_failed"}';
+    }
+    echo $encoded;
+};
+
 $__dashboardPayloadFallback = [
     'health' => ['module_enabled' => false, 'queue_driver' => 'unknown'],
     'queue' => ['driver' => 'unknown'],
@@ -29,11 +40,11 @@ register_shutdown_function(static function () use (&$__dashboardPayloadFallback)
         http_response_code(200);
         header('Content-Type: application/json; charset=UTF-8');
     }
-    echo json_encode(array_merge($__dashboardPayloadFallback, [
+    $emitJson(array_merge($__dashboardPayloadFallback, [
         'diagnostics' => array_merge((array)($__dashboardPayloadFallback['diagnostics'] ?? []), [
             'fatal_recovered' => true,
         ]),
-    ]), JSON_UNESCAPED_SLASHES);
+    ]));
 });
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -42,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);
-    echo json_encode(['ok' => false, 'message' => 'Method not allowed'], JSON_UNESCAPED_SLASHES);
+    $emitJson(['ok' => false, 'message' => 'Method not allowed']);
     exit;
 }
 
@@ -215,5 +226,5 @@ try {
     $payload['diagnostics']['eventbus'] = 'eventbus_unavailable';
 }
 
-echo json_encode($payload, JSON_UNESCAPED_SLASHES);
+$emitJson($payload);
 

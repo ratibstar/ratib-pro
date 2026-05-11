@@ -6,6 +6,18 @@ require_once dirname(__DIR__, 2) . '/bootstrap.php';
 use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
 use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    @session_start();
+}
+if (empty($_SESSION['infra_control_csrf_token']) || !is_string($_SESSION['infra_control_csrf_token'])) {
+    try {
+        $_SESSION['infra_control_csrf_token'] = bin2hex(random_bytes(32));
+    } catch (\Throwable $e) {
+        $_SESSION['infra_control_csrf_token'] = sha1((string) microtime(true) . (string) mt_rand());
+    }
+}
+$infraControlCsrfToken = (string) $_SESSION['infra_control_csrf_token'];
+
 $bindings = ModuleConfig::providerBindings();
 $allowlist = ModuleConfig::rolloutTenantAllowlist();
 ?>
@@ -30,6 +42,8 @@ $allowlist = ModuleConfig::rolloutTenantAllowlist();
             <h3>Apply Runtime Controls</h3>
             <p>Updates are saved in module file: <code>/modules/infrastructure-marketplace/Config/runtime-overrides.json</code></p>
             <form method="post" action="/api/infrastructure-marketplace/control-update.php" target="_blank" rel="noopener">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($infraControlCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="source" value="ui">
                 <p><label><input type="checkbox" name="enabled" value="1" <?php echo ModuleConfig::isModuleEnabled() ? 'checked' : ''; ?>> Module enabled</label></p>
                 <p><label><input type="checkbox" name="dry_run" value="1" <?php echo ModuleConfig::dryRunMode() ? 'checked' : ''; ?>> Dry-run mode</label></p>
                 <p><label><input type="checkbox" name="execution_kill_switch" value="1" <?php echo ModuleConfig::executionKillSwitch() ? 'checked' : ''; ?>> Execution kill-switch</label></p>
