@@ -26,6 +26,9 @@ use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
 use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
 use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
 use Ratib\InfrastructureMarketplace\Registrars\Search\RegistrarSearchAggregator;
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+
+ControlSecurityGuard::enforce('domain-search', ControlSecurityGuard::TIER_PUBLIC_READ);
 
 try {
     $keyword = trim((string) ($_GET['q'] ?? ''));

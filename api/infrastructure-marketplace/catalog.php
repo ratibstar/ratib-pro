@@ -20,6 +20,9 @@ require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstra
 use Ratib\InfrastructureMarketplace\Catalog\API\CatalogController;
 use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+
+ControlSecurityGuard::enforce('catalog', ControlSecurityGuard::TIER_PUBLIC_READ);
 
 try {
     $pdo = DatabaseConnectionFactory::createPdo();

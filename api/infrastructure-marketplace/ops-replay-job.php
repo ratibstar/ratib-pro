@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -22,12 +22,17 @@ use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
 use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
 use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 try {
     $payload = json_decode((string) (file_get_contents('php://input') ?: '{}'), true);
     if (!is_array($payload)) {
         throw new RuntimeException('Invalid payload');
     }
+    ControlSecurityGuard::enforce('ops-replay-job', ControlSecurityGuard::TIER_CONTROL_WRITE, [
+        'json_body' => $payload,
+        'require_csrf' => true,
+    ]);
     $publicId = (string) ($payload['public_id'] ?? '');
     if ($publicId === '') {
         throw new RuntimeException('public_id required');

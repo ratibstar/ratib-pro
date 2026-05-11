@@ -16,14 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
-require_once dirname(__DIR__, 2) . '/control-panel/includes/control-permissions.php';
 
 use Ratib\InfrastructureMarketplace\Audit\RuntimeConfigAuditLogger;
 use Ratib\InfrastructureMarketplace\Config\RuntimeOverrideStore;
-
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    @session_start();
-}
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 /**
  * @param int $code
@@ -35,26 +31,7 @@ $respond = static function (int $code, array $payload): void {
     exit;
 };
 
-$username = strtolower(trim((string) ($_SESSION['control_username'] ?? '')));
-$isLoggedIn = !empty($_SESSION['control_logged_in']);
-$isAdmin = $username === 'admin';
-$hasSystemAccess = function_exists('hasControlPermission') && (
-    hasControlPermission(CONTROL_PERM_SYSTEM_SETTINGS)
-    || hasControlPermission('edit_control_system_settings')
-    || hasControlPermission('view_control_system_settings')
-);
-
-if (!$isLoggedIn || (!$isAdmin && !$hasSystemAccess)) {
-    $respond(403, ['ok' => false, 'message' => 'Unauthorized runtime config update request']);
-}
-
-$sessionCsrf = (string) ($_SESSION['infra_control_csrf_token'] ?? '');
-if ($sessionCsrf === '') {
-    $respond(419, ['ok' => false, 'message' => 'Missing CSRF session token']);
-}
-
 $body = $_POST;
-$raw = '';
 if ($body === []) {
     $raw = (string) file_get_contents('php://input');
     $decoded = is_string($raw) && trim($raw) !== '' ? json_decode($raw, true) : null;
@@ -63,12 +40,10 @@ if ($body === []) {
     }
 }
 
-$bodyCsrf = trim((string) ($body['csrf_token'] ?? ''));
-$headerCsrf = trim((string) ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''));
-$csrfCandidate = $bodyCsrf !== '' ? $bodyCsrf : $headerCsrf;
-if ($csrfCandidate === '' || !hash_equals($sessionCsrf, $csrfCandidate)) {
-    $respond(419, ['ok' => false, 'message' => 'Invalid CSRF token']);
-}
+ControlSecurityGuard::enforce('control-update', ControlSecurityGuard::TIER_CONTROL_SYSTEM, [
+    'json_body' => $body,
+    'require_csrf' => true,
+]);
 
 $allowedInputKeys = [
     'csrf_token',

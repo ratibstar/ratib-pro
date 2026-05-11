@@ -113,6 +113,12 @@ final class ModuleRegistry
                 'auth' => 'optional',
             ],
             [
+                'method' => 'GET',
+                'pattern' => '/api/infrastructure-marketplace/control-security-context.php',
+                'handler' => 'module endpoint file: api/infrastructure-marketplace/control-security-context.php',
+                'auth' => 'optional',
+            ],
+            [
                 'method' => 'POST',
                 'pattern' => '/api/infrastructure-marketplace/control-update.php',
                 'handler' => 'module endpoint file: api/infrastructure-marketplace/control-update.php',

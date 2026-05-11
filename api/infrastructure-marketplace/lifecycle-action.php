@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -22,6 +22,7 @@ use Ratib\InfrastructureMarketplace\Domain\TenantContext;
 use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
 use Ratib\InfrastructureMarketplace\Lifecycle\InfrastructureServiceLifecycleManager;
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
 use Ratib\InfrastructureMarketplace\Services\ProvisioningOrchestrator;
 
 try {
@@ -30,6 +31,10 @@ try {
     if (!is_array($input)) {
         throw new RuntimeException('Invalid JSON');
     }
+    ControlSecurityGuard::enforce('lifecycle-action', ControlSecurityGuard::TIER_CONTROL_WRITE, [
+        'json_body' => $input,
+        'require_csrf' => true,
+    ]);
     $pdo = DatabaseConnectionFactory::createPdo();
     $events = new InfrastructureEventEmitter();
     $manager = new InfrastructureServiceLifecycleManager(

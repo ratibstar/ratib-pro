@@ -82,6 +82,8 @@ final class RuntimeOverrideStore
                 }
             }
 
+            ModuleConfig::clearRuntimeOverridesCache();
+
             return ['old' => $old, 'new' => $new];
         } finally {
             @flock($lockFp, LOCK_UN);

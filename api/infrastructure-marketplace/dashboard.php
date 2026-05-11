@@ -67,7 +67,10 @@ use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegis
 use Ratib\InfrastructureMarketplace\Providers\Capabilities\CapabilityDiscoveryService;
 use Ratib\InfrastructureMarketplace\Providers\Health\ProviderHealthService;
 use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
 use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
+
+ControlSecurityGuard::enforce('dashboard', ControlSecurityGuard::TIER_PUBLIC_READ);
 
 $payload = [
     'health' => [

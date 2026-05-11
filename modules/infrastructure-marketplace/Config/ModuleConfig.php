@@ -12,6 +12,14 @@ final class ModuleConfig
     private static ?array $runtimeOverridesCache = null;
 
     /**
+     * Clears in-process cache of runtime-overrides.json so the next read reflects disk (e.g. after atomic writes).
+     */
+    public static function clearRuntimeOverridesCache(): void
+    {
+        self::$runtimeOverridesCache = null;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private static function runtimeOverrides(): array

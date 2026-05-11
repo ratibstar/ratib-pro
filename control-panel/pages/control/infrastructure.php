@@ -14,6 +14,14 @@ if (empty($_SESSION['control_logged_in'])) {
 require_once __DIR__ . '/../../includes/control-permissions.php';
 requireControlPermission(CONTROL_PERM_SYSTEM_SETTINGS, 'view_control_system_settings');
 
+if (empty($_SESSION['infra_control_csrf_token']) || !is_string($_SESSION['infra_control_csrf_token'])) {
+    try {
+        $_SESSION['infra_control_csrf_token'] = bin2hex(random_bytes(32));
+    } catch (Throwable $e) {
+        $_SESSION['infra_control_csrf_token'] = sha1((string) microtime(true) . (string) mt_rand());
+    }
+}
+
 $siteRootUrl = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
 if ($siteRootUrl === '') {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';

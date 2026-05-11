@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -24,6 +24,9 @@ use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
 use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
 use Ratib\InfrastructureMarketplace\Providers\Capabilities\CapabilityDiscoveryService;
 use Ratib\InfrastructureMarketplace\Providers\Health\ProviderHealthService;
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+
+ControlSecurityGuard::enforce('providers', ControlSecurityGuard::TIER_CONTROL_VIEW);
 
 try {
     $pdo = DatabaseConnectionFactory::createPdo();

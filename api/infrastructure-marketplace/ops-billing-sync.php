@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -20,6 +20,9 @@ require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstra
 use Ratib\InfrastructureMarketplace\Billing\InfrastructureBillingMetadataBridge;
 use Ratib\InfrastructureMarketplace\Billing\InfrastructureBillingSynchronizer;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+
+ControlSecurityGuard::enforce('ops-billing-sync', ControlSecurityGuard::TIER_CONTROL_VIEW);
 
 try {
     $publicId = (string) ($_GET['order_public_id'] ?? '');

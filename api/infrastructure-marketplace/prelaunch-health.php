@@ -19,6 +19,9 @@ require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstra
 
 use Ratib\InfrastructureMarketplace\Health\PrelaunchHealthService;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+
+ControlSecurityGuard::enforce('prelaunch-health', ControlSecurityGuard::TIER_PUBLIC_READ);
 
 try {
     $pdo = DatabaseConnectionFactory::createPdo();

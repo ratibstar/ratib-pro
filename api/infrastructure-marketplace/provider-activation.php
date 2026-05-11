@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -22,6 +22,7 @@ use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
 use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
 use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 try {
     $raw = file_get_contents('php://input');
@@ -29,6 +30,10 @@ try {
     if (!is_array($input)) {
         throw new RuntimeException('Invalid payload');
     }
+    ControlSecurityGuard::enforce('provider-activation', ControlSecurityGuard::TIER_CONTROL_SYSTEM, [
+        'json_body' => $input,
+        'require_csrf' => true,
+    ]);
     $pdo = DatabaseConnectionFactory::createPdo();
     $actor = (string) ($input['actor'] ?? 'admin');
     $registry = new ProviderActivationRegistry($pdo);

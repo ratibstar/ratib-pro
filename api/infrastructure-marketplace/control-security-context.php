@@ -17,18 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstrap.php';
 
-use Ratib\InfrastructureMarketplace\Audit\Deployment\DeploymentAuditReporter;
-use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
 use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
-ControlSecurityGuard::enforce('deployment-audit', ControlSecurityGuard::TIER_CONTROL_VIEW);
+ControlSecurityGuard::enforce('control-security-context', ControlSecurityGuard::TIER_CONTROL_VIEW);
 
-try {
-    $pdo = DatabaseConnectionFactory::createPdo();
-    $rows = (new DeploymentAuditReporter($pdo))->latest(30);
-    echo json_encode(['ok' => true, 'rows' => $rows], JSON_UNESCAPED_SLASHES);
-} catch (\Throwable $e) {
-    http_response_code(500);
-    echo json_encode(['ok' => false, 'message' => 'Deployment audit unavailable'], JSON_UNESCAPED_SLASHES);
-}
-
+echo json_encode([
+    'ok' => true,
+    'csrf_token' => (string) ($_SESSION['infra_control_csrf_token'] ?? ''),
+], JSON_UNESCAPED_SLASHES);

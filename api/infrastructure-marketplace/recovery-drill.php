@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -20,14 +20,19 @@ require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstra
 use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
 use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
+use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
 
 try {
-    if (!ModuleConfig::dryRunMode()) {
-        throw new RuntimeException('Recovery drills require dry-run mode.');
-    }
     $body = json_decode((string) (file_get_contents('php://input') ?: '{}'), true);
     if (!is_array($body)) {
         throw new RuntimeException('Invalid payload');
+    }
+    ControlSecurityGuard::enforce('recovery-drill', ControlSecurityGuard::TIER_CONTROL_WRITE, [
+        'json_body' => $body,
+        'require_csrf' => true,
+    ]);
+    if (!ModuleConfig::dryRunMode()) {
+        throw new RuntimeException('Recovery drills require dry-run mode.');
     }
     $scenario = (string) ($body['scenario'] ?? '');
     $pdo = DatabaseConnectionFactory::createPdo();
