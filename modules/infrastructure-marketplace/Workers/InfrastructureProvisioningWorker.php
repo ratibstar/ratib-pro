@@ -8,6 +8,7 @@ use Ratib\InfrastructureMarketplace\Compliance\TenantIsolationCompliance;
 use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
 use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use Ratib\InfrastructureMarketplace\Observability\InfrastructureAlertingService;
 use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
 use Ratib\InfrastructureMarketplace\Provisioning\Execution\ProvisioningExecutionEngine;
 use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
@@ -27,15 +28,20 @@ final class InfrastructureProvisioningWorker
     {
         require_once __DIR__ . '/bootstrap.php';
         $name = getenv('RATIB_INFRA_WORKER_NAME');
-        $worker = new self(is_string($name) && $name !== '' ? $name : 'infra-worker-1');
+        $default = 'infra-worker-' . substr(sha1((string) gethostname() . ':' . (string) getmypid()), 0, 8);
+        $worker = new self(is_string($name) && $name !== '' ? $name : $default);
         $worker->run();
     }
 
     public function run(): void
     {
+        if (ModuleConfig::executionKillSwitch()) {
+            return;
+        }
         $pdo = DatabaseConnectionFactory::createPdo();
         $events = new InfrastructureEventEmitter();
         $metrics = new InfrastructureMetrics($events);
+        $alerts = new InfrastructureAlertingService($events);
         $jobs = new ProvisioningJobRepository($pdo);
         $logs = new ProvisioningJobLogRepository($pdo);
         $queue = new DatabaseQueueDispatcher($jobs, $logs);
@@ -47,11 +53,23 @@ final class InfrastructureProvisioningWorker
         $this->registerSignalHandlers($events);
         $sleepMicros = 500000;
         $lockTtl = ModuleConfig::workerLockTtlSeconds();
+        $processedJobs = 0;
+        $maxLoopJobs = ModuleConfig::workerMaxLoopJobs();
 
         while (!$this->shouldStop) {
             $loopStart = microtime(true);
+            if (ModuleConfig::executionKillSwitch()) {
+                $events->structuredLog('warn', 'Execution kill switch triggered; worker stopping.', ['worker' => $this->workerName]);
+                break;
+            }
             $recovered = $jobs->recoverExpiredLocks($lockTtl);
-            $metrics->queueDepth($jobs->queueDepth());
+            $depth = $jobs->queueDepth();
+            $metrics->queueDepth($depth);
+            $metrics->queuePressure(min(1, $depth / max(1, ModuleConfig::queuePressureThreshold())));
+            if ($depth > ModuleConfig::queuePressureThreshold()) {
+                $events->structuredLog('warn', 'Queue saturation alert', ['depth' => $depth, 'worker' => $this->workerName]);
+                $alerts->queueSaturation($depth, ModuleConfig::queuePressureThreshold());
+            }
             if ($recovered > 0) {
                 $events->structuredLog('warn', 'Recovered expired worker locks', ['count' => $recovered, 'worker' => $this->workerName]);
             }
@@ -75,13 +93,19 @@ final class InfrastructureProvisioningWorker
                 $queue->fail($jobId, $attempts, $maxAttempts, 'worker_runtime_failure');
                 $metrics->incrementFailureCounter('worker_job', 'runtime_exception');
                 $events->structuredLog('error', 'Worker execution failure', ['job_id' => $jobId, 'worker' => $this->workerName]);
+                $alerts->workerFailure($this->workerName, 'job_exception');
             }
+            $processedJobs++;
 
             $elapsedMs = (microtime(true) - $loopStart) * 1000;
             $metrics->markLatencyMs('worker_loop', $elapsedMs, (string) ($row['public_id'] ?? ''));
 
             if (memory_get_usage(true) > (int) (getenv('RATIB_INFRA_WORKER_MEMORY_MAX') ?: 268435456)) {
                 $events->structuredLog('warn', 'Worker stopping due to memory threshold', ['worker' => $this->workerName]);
+                $this->shouldStop = true;
+            }
+            if ($processedJobs >= $maxLoopJobs) {
+                $events->structuredLog('info', 'Worker recycling after max loop jobs', ['worker' => $this->workerName, 'processed_jobs' => $processedJobs]);
                 $this->shouldStop = true;
             }
         }

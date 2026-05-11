@@ -19,6 +19,7 @@ require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstra
 
 use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use Ratib\InfrastructureMarketplace\Observability\InfrastructureAlertingService;
 use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
 use Ratib\InfrastructureMarketplace\Providers\Activation\ProviderActivationRegistry;
 use Ratib\InfrastructureMarketplace\Providers\Capabilities\CapabilityDiscoveryService;
@@ -29,12 +30,20 @@ try {
     $tenantId = isset($_GET['tenant_id']) ? (int) $_GET['tenant_id'] : null;
     $agencyId = isset($_GET['agency_id']) ? (int) $_GET['agency_id'] : null;
     $activation = new ProviderActivationRegistry($pdo);
-    $metrics = new InfrastructureMetrics(new InfrastructureEventEmitter());
+    $events = new InfrastructureEventEmitter();
+    $metrics = new InfrastructureMetrics($events);
+    $alerts = new InfrastructureAlertingService($events);
     $health = new ProviderHealthService($activation, $metrics);
     $discovery = new CapabilityDiscoveryService($activation);
+    $snapshot = $health->healthSnapshot($tenantId, $agencyId);
+    foreach ($snapshot as $row) {
+        if (is_array($row) && ($row['status'] ?? '') === 'unavailable') {
+            $alerts->providerOutage((string) ($row['provider_type'] ?? 'unknown'));
+        }
+    }
     echo json_encode([
         'ok' => true,
-        'health' => $health->healthSnapshot($tenantId, $agencyId),
+        'health' => $snapshot,
         'capabilities' => [
             'hosting' => $discovery->discover('hosting', $tenantId, $agencyId),
             'registrar' => $discovery->discover('registrar', $tenantId, $agencyId),

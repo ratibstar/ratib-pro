@@ -93,7 +93,9 @@ final class ProvisioningJobRepository
             return;
         }
 
-        $delay = min(300, max(5, $attempts * 10));
+        $base = min(1800, max(5, (int) pow(2, min(10, $attempts)) * 5));
+        $jitter = random_int(0, max(1, (int) floor($base * 0.2)));
+        $delay = $base + $jitter;
         $stmt = $this->pdo->prepare(
             'UPDATE ratib_infra_provisioning_jobs
              SET status = :status, attempts = :attempts, locked_at = NULL, last_error = :last_error,
@@ -182,6 +184,52 @@ final class ProvisioningJobRepository
             'ttl' => $lockTtlSeconds,
         ]);
         return $stmt->rowCount();
+    }
+
+    public function requeueDeadLetter(string $publicId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE ratib_infra_provisioning_jobs
+             SET status = :queued, attempts = 0, locked_at = NULL, available_at = NOW(), reconcile_required = 0, updated_at = NOW()
+             WHERE public_id = :public_id AND status = :dead'
+        );
+        $stmt->execute([
+            'queued' => ProvisioningState::QUEUED,
+            'dead' => ProvisioningState::DEAD_LETTER,
+            'public_id' => $publicId,
+        ]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function replayFromAnyState(string $publicId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE ratib_infra_provisioning_jobs
+             SET status = :queued, attempts = 0, locked_at = NULL, available_at = NOW(), reconcile_required = 0, updated_at = NOW()
+             WHERE public_id = :public_id'
+        );
+        $stmt->execute([
+            'queued' => ProvisioningState::QUEUED,
+            'public_id' => $publicId,
+        ]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function recentJobs(int $limit = 50): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, public_id, tenant_id, agency_id, status, attempts, max_attempts, reconcile_required, updated_at
+             FROM ratib_infra_provisioning_jobs
+             ORDER BY id DESC
+             LIMIT :lim'
+        );
+        $stmt->bindValue(':lim', max(1, $limit), \PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return is_array($rows) ? $rows : [];
     }
 
     private function encodePayloads(ProvisioningJob $job): string

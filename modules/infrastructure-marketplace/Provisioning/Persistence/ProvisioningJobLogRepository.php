@@ -24,5 +24,25 @@ final class ProvisioningJobLogRepository
             'context_json' => json_encode($context, JSON_UNESCAPED_SLASHES),
         ]);
     }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function byJobPublicId(string $publicId, int $limit = 100): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT l.level, l.message, l.context_json, l.created_at
+             FROM ratib_infra_job_logs l
+             INNER JOIN ratib_infra_provisioning_jobs j ON j.id = l.job_id
+             WHERE j.public_id = :public_id
+             ORDER BY l.id DESC
+             LIMIT :lim'
+        );
+        $stmt->bindValue(':public_id', $publicId);
+        $stmt->bindValue(':lim', max(1, $limit), \PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        return is_array($rows) ? $rows : [];
+    }
 }
 

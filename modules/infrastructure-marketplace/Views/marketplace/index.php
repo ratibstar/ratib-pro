@@ -18,6 +18,10 @@ require_once dirname(__DIR__, 2) . '/bootstrap.php';
         <h1>Infrastructure Marketplace</h1>
         <p>Hosting, domains, SSL, DNS, and future VPS catalog in tenant-safe mode.</p>
     </header>
+    <section class="infra-market-card">
+        <h3>Provisioning Status</h3>
+        <p id="infra-market-notice">No recent provisioning events.</p>
+    </section>
     <section id="infra-market-catalog" class="infra-market-grid">
         <article class="infra-market-card"><p>Loading catalog...</p></article>
     </section>

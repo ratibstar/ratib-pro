@@ -2,6 +2,7 @@
   'use strict';
 
   var root = document.getElementById('infra-market-catalog');
+  var notice = document.getElementById('infra-market-notice');
   if (!root) return;
 
   fetch('/api/infrastructure-marketplace/catalog.php', { credentials: 'same-origin' })
@@ -47,8 +48,16 @@
       credentials: 'same-origin',
       body: JSON.stringify(body)
     }).then(function (r) { return r.json(); })
-      .then(function () { alert('Provisioning request queued.'); })
-      .catch(function () { alert('Failed to queue provisioning request.'); });
+      .then(function (res) {
+        if (notice) {
+          notice.textContent = res && res.ok
+            ? 'Provisioning request queued successfully.'
+            : 'Unable to queue provisioning request.';
+        }
+      })
+      .catch(function () {
+        if (notice) notice.textContent = 'Failed to queue provisioning request.';
+      });
   });
 })();
 

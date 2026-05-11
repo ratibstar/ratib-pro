@@ -60,6 +60,36 @@ final class ModuleRegistry
             ],
             [
                 'method' => 'GET',
+                'pattern' => '/api/infrastructure-marketplace/ops-queue.php',
+                'handler' => 'module endpoint file: api/infrastructure-marketplace/ops-queue.php',
+                'auth' => 'optional',
+            ],
+            [
+                'method' => 'POST',
+                'pattern' => '/api/infrastructure-marketplace/ops-retry-job.php',
+                'handler' => 'module endpoint file: api/infrastructure-marketplace/ops-retry-job.php',
+                'auth' => 'optional',
+            ],
+            [
+                'method' => 'GET',
+                'pattern' => '/api/infrastructure-marketplace/ops-job-trace.php',
+                'handler' => 'module endpoint file: api/infrastructure-marketplace/ops-job-trace.php',
+                'auth' => 'optional',
+            ],
+            [
+                'method' => 'POST',
+                'pattern' => '/api/infrastructure-marketplace/ops-replay-job.php',
+                'handler' => 'module endpoint file: api/infrastructure-marketplace/ops-replay-job.php',
+                'auth' => 'optional',
+            ],
+            [
+                'method' => 'GET',
+                'pattern' => '/api/infrastructure-marketplace/ops-billing-sync.php',
+                'handler' => 'module endpoint file: api/infrastructure-marketplace/ops-billing-sync.php',
+                'auth' => 'optional',
+            ],
+            [
+                'method' => 'GET',
                 'pattern' => '/api/infrastructure-marketplace/domain-search.php',
                 'handler' => 'module endpoint file: api/infrastructure-marketplace/domain-search.php',
                 'auth' => 'optional',

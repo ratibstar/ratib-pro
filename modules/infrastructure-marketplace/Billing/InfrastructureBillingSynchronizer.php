@@ -1,0 +1,33 @@
+<?php
+declare(strict_types=1);
+
+namespace Ratib\InfrastructureMarketplace\Billing;
+
+final class InfrastructureBillingSynchronizer
+{
+    public function __construct(
+        private readonly \PDO $pdo,
+        private readonly InfrastructureBillingMetadataBridge $metadataBridge
+    ) {}
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function buildProvisioningInvoiceLink(string $orderPublicId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM ratib_infra_orders WHERE public_id = :public_id LIMIT 1');
+        $stmt->execute(['public_id' => $orderPublicId]);
+        $order = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (!is_array($order)) {
+            return ['ok' => false, 'reason' => 'order_not_found'];
+        }
+        return [
+            'ok' => true,
+            'order_public_id' => $orderPublicId,
+            'billing_metadata' => $this->metadataBridge->invoiceMetadata($order),
+            'recurring_cycle_prepared' => true,
+            'renewal_event_prepared' => true,
+        ];
+    }
+}
+

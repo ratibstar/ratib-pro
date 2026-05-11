@@ -45,5 +45,21 @@
       setText('infra-traces', message);
       setText('infra-audit', message);
     });
+
+  fetch('/api/infrastructure-marketplace/ops-queue.php', { credentials: 'same-origin' })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (!data || !data.ok) return;
+      setText('infra-queue', formatObject({
+        depth: data.depth,
+        queued: (data.status_counts || {}).QUEUED || 0,
+        running: (data.status_counts || {}).RUNNING || 0,
+        retrying: (data.status_counts || {}).RETRYING || 0
+      }));
+      if (Array.isArray(data.recent)) {
+        setText('infra-traces', 'Recent jobs: ' + data.recent.length + '\n' + formatObject(data.recent[0] || {}));
+      }
+    })
+    .catch(function () {});
 })();
 

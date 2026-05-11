@@ -5,6 +5,7 @@ namespace Ratib\InfrastructureMarketplace\Provisioning\Execution;
 
 use Ratib\InfrastructureMarketplace\Audit\InfrastructureAuditLogger;
 use Ratib\InfrastructureMarketplace\Compliance\TenantIsolationCompliance;
+use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
 use Ratib\InfrastructureMarketplace\Domain\TenantContext;
 use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
@@ -116,6 +117,9 @@ final class ProvisioningExecutionEngine
      */
     private function executeStep(string $step, TenantContext $tenant, array $payload): void
     {
+        if (ModuleConfig::dryRunMode() || ModuleConfig::executionKillSwitch()) {
+            return;
+        }
         $step = strtolower($step);
         if ($step === 'hosting' && $this->providers->hosting() !== null) {
             $username = (string) ($payload['attributes']['username'] ?? '');

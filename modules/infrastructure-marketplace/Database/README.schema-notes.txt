@@ -22,4 +22,8 @@ Phase 4 additions:
 - ratib_infra_domain_search_cache for async domain-search caching abstraction.
 - ratib_infra_services for exposed infrastructure service lifecycle tracking.
 
+Phase 5 operational hardening:
+- ratib_infra_domain_search_rate enforces per-scope query safety for live availability checks.
+- Existing tables are reused for dead-letter retry tooling, provisioning trace viewing, and billing linkage snapshots.
+
 Indexes always include tenant_id where applicable for isolation. Foreign keys to core tenant/agency tables only when those tables exist in the same database (split-DB deployments would use UUID references).

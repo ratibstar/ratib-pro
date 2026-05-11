@@ -39,6 +39,10 @@ final class InfrastructureOrderService
         if ($sku === '' || $idempotencyKey === '') {
             throw new \InvalidArgumentException('sku and idempotency_key are required');
         }
+        $allowlist = ModuleConfig::rolloutTenantAllowlist();
+        if ($allowlist !== [] && $tenant->tenantId() !== null && !in_array($tenant->tenantId(), $allowlist, true)) {
+            throw new \RuntimeException('Tenant rollout guard is active');
+        }
 
         $orders = new OrderRepository($this->pdo);
         $existing = $orders->findByIdempotency($idempotencyKey);

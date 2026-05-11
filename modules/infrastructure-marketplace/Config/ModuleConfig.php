@@ -86,4 +86,45 @@ final class ModuleConfig
         $n = is_string($v) ? (int) $v : 2000;
         return $n > 100 ? $n : 2000;
     }
+
+    public static function executionKillSwitch(): bool
+    {
+        $v = getenv('RATIB_INFRA_EXECUTION_KILL_SWITCH');
+        return is_string($v) && in_array(strtolower(trim($v)), ['1', 'true', 'on', 'yes'], true);
+    }
+
+    public static function dryRunMode(): bool
+    {
+        $v = getenv('RATIB_INFRA_DRY_RUN');
+        return is_string($v) && in_array(strtolower(trim($v)), ['1', 'true', 'on', 'yes'], true);
+    }
+
+    public static function providerLiveEnabled(string $providerKey): bool
+    {
+        $v = getenv('RATIB_INFRA_PROVIDER_' . strtoupper(trim($providerKey)) . '_LIVE');
+        return is_string($v) && in_array(strtolower(trim($v)), ['1', 'true', 'on', 'yes'], true);
+    }
+
+    public static function providerSandboxEnabled(string $providerKey): bool
+    {
+        $v = getenv('RATIB_INFRA_PROVIDER_' . strtoupper(trim($providerKey)) . '_SANDBOX');
+        return !is_string($v) || !in_array(strtolower(trim($v)), ['0', 'false', 'off', 'no'], true);
+    }
+
+    public static function rolloutTenantAllowlist(): array
+    {
+        $v = getenv('RATIB_INFRA_TENANT_ALLOWLIST');
+        if (!is_string($v) || trim($v) === '') {
+            return [];
+        }
+        $parts = array_map(static fn(string $x): int => (int) trim($x), explode(',', $v));
+        return array_values(array_filter($parts, static fn(int $x): bool => $x > 0));
+    }
+
+    public static function workerMaxLoopJobs(): int
+    {
+        $v = getenv('RATIB_INFRA_WORKER_MAX_LOOP_JOBS');
+        $n = is_string($v) ? (int) $v : 1000;
+        return $n > 0 ? $n : 1000;
+    }
 }

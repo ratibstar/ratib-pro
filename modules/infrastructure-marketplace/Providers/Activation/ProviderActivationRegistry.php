@@ -77,5 +77,19 @@ final class ProviderActivationRegistry
             'updated_by' => substr($adminActor, 0, 120),
         ]);
     }
+
+    public function emergencyDisableByType(string $providerType, string $adminActor): int
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE ratib_infra_provider_activations
+             SET is_enabled = 0, updated_at = NOW(), updated_by = :updated_by
+             WHERE provider_type = :provider_type'
+        );
+        $stmt->execute([
+            'updated_by' => substr($adminActor, 0, 120),
+            'provider_type' => strtolower($providerType),
+        ]);
+        return $stmt->rowCount();
+    }
 }
 

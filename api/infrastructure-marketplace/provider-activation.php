@@ -32,6 +32,20 @@ try {
     $pdo = DatabaseConnectionFactory::createPdo();
     $actor = (string) ($input['actor'] ?? 'admin');
     $registry = new ProviderActivationRegistry($pdo);
+    $action = (string) ($input['action'] ?? 'upsert');
+    if ($action === 'emergency_disable') {
+        $count = $registry->emergencyDisableByType(
+            (string) ($input['provider_type'] ?? 'hosting'),
+            $actor
+        );
+        (new AdminActionHistory(new InfrastructureAuditLogger($pdo, new InfrastructureEventEmitter())))
+            ->record($actor, 'provider_emergency_disable', [
+                'provider_type' => (string) ($input['provider_type'] ?? 'hosting'),
+                'affected_rows' => $count,
+            ]);
+        echo json_encode(['ok' => true, 'affected_rows' => $count], JSON_UNESCAPED_SLASHES);
+        exit;
+    }
     $registry->upsertActivation(
         (string) ($input['provider_type'] ?? 'hosting'),
         (string) ($input['provider_code'] ?? ''),
