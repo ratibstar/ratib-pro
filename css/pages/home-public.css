@@ -342,6 +342,14 @@ body.ratib-saas-home {
   padding-block: 0.95rem;
 }
 
+@media (min-width: 1100px) {
+  .ratib-nav-shell__inner {
+    min-height: 0;
+    padding-block: 0.45rem;
+    gap: 0.65rem;
+  }
+}
+
 .ratib-nav__brand {
   display: inline-flex;
   align-items: center;
@@ -414,10 +422,10 @@ body.ratib-saas-home {
     justify-content: center;
     align-content: center;
     flex-wrap: wrap;
-    row-gap: 0.45rem;
-    column-gap: 0.4rem;
+    row-gap: 0.3rem;
+    column-gap: 0.35rem;
     overflow: visible;
-    padding-bottom: 0.15rem;
+    padding-bottom: 0;
   }
 }
 
@@ -482,7 +490,39 @@ body.ratib-saas-home {
   white-space: nowrap;
 }
 
-/* Nav semantic map (meaning → color): Platform foundation · video media · agency org · Features product · Solutions fit · Pricing commerce · Agencies network · Tracking telemetry · Visibility ops · API dev · Contact outreach · Partner trust */
+@media (min-width: 1100px) {
+  .ratib-nav-shell .ratib-nav__platform-links {
+    row-gap: 0.28rem;
+    column-gap: 0.28rem;
+  }
+
+  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__link {
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.36rem 0.48rem 0.36rem 0.4rem;
+    gap: 0.4rem;
+    border-radius: 11px;
+  }
+
+  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__icon {
+    width: 2.05rem;
+    height: 2.05rem;
+    border-radius: 11px;
+    font-size: 1.05rem;
+  }
+
+  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__glyph {
+    width: 1.16rem;
+    height: 1.16rem;
+  }
+
+  .ratib-nav-shell .ratib-nav__platform-links .ratib-nav__link--product-tour .ratib-nav__glyph {
+    width: 1.22rem;
+    height: 1.22rem;
+  }
+}
+
+/* Nav semantic map (meaning → color): Platform · video media · agency · Features · Solutions · Programs (#programs) · Agencies · Tracking · Visibility · API · Contact · Partner */
 @keyframes ratibSemanticPulse {
   0%,
   100% {
@@ -658,7 +698,7 @@ body.ratib-saas-home {
   box-shadow: 0 0 24px rgba(249, 115, 22, 0.2);
 }
 
-/* Pricing — CMS label often "Pricing"; section #programs */
+/* Programs (#programs) — icon tile; label from CMS (default "Programs") */
 .ratib-nav__link:is([href="#programs"], [href$="#programs"]) .ratib-nav__icon {
   --ratib-pulse: rgba(245, 158, 11, 0.55);
   color: #fffbeb;
@@ -825,34 +865,31 @@ body.ratib-saas-home {
   box-shadow: 0 0 26px rgba(251, 113, 133, 0.22);
 }
 
-/* video/pic — media (fuchsia), distinct from Features indigo */
+/* video/pic — same pill geometry as other platform links; emphasis stays on the icon tile */
 .ratib-nav__link--product-tour .ratib-nav__icon {
   --ratib-pulse: rgba(217, 70, 239, 0.55);
-  width: 2.65rem;
-  height: 2.65rem;
   color: #fdf4ff;
   background: linear-gradient(145deg, rgba(192, 38, 211, 0.55), rgba(91, 33, 182, 0.62));
   border-color: rgba(232, 121, 249, 0.58);
-  box-shadow: 0 8px 28px rgba(192, 38, 211, 0.38);
+  box-shadow: 0 6px 22px rgba(192, 38, 211, 0.32);
 }
 
 .ratib-nav__link--product-tour {
-  color: #fdf4ff;
-  border: 1px solid rgba(217, 70, 239, 0.45);
-  background: linear-gradient(135deg, rgba(147, 51, 234, 0.38), rgba(76, 29, 149, 0.28));
-  box-shadow: 0 0 28px rgba(168, 85, 247, 0.28);
+  color: rgba(226, 232, 240, 0.92);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 .ratib-nav__link--product-tour:hover {
-  color: #ffffff;
-  border-color: rgba(232, 121, 249, 0.65);
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.48), rgba(91, 33, 182, 0.35));
-  box-shadow: 0 0 36px rgba(217, 70, 239, 0.35);
-  transform: translateY(-1px);
+  color: #fdf4ff;
+  border-color: rgba(217, 70, 239, 0.45);
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.22), rgba(76, 29, 149, 0.12));
+  box-shadow: 0 0 22px rgba(168, 85, 247, 0.2);
 }
 
 .ratib-nav__link--product-tour:hover .ratib-nav__icon {
-  box-shadow: 0 10px 34px rgba(217, 70, 239, 0.48);
+  box-shadow: 0 8px 26px rgba(217, 70, 239, 0.42);
 }
 
 .ratib-nav__cta {
