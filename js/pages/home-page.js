@@ -805,6 +805,50 @@
     }
 })();
 
+/** If server HTML is stale/cached and omits infra tabs, inject them into the top nav. */
+(function ratibHomeEnsureInfraNavTabs() {
+    function mkLink(href, glyphId, label, attrName) {
+        var a = document.createElement('a');
+        a.href = href;
+        a.className = 'ratib-nav__link';
+        a.setAttribute(attrName, '1');
+        a.innerHTML =
+            '<span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="' + glyphId + '"/></svg></span>' +
+            '<span class="ratib-nav__label">' + label + '</span>';
+        return a;
+    }
+    function run() {
+        var nav = document.getElementById('ratibNavMenu');
+        if (!nav) {
+            return;
+        }
+        var hasMarketplace = nav.querySelector('[data-ratib-infra-marketplace-tab], a[href*="/modules/infrastructure-marketplace/Views/marketplace/index.php"]');
+        var hasInfraStatus = nav.querySelector('[data-ratib-infra-status-tab], a[href*="/modules/infrastructure-marketplace/Views/client/services.php"]');
+        var contact = nav.querySelector('a[href="#contact"], a[href$="#contact"]');
+        if (!contact || !contact.parentNode) {
+            return;
+        }
+        if (!hasMarketplace) {
+            var marketplace = mkLink('/modules/infrastructure-marketplace/Views/marketplace/index.php', '#ratib-ng-platform', 'Marketplace', 'data-ratib-infra-marketplace-tab');
+            contact.parentNode.insertBefore(marketplace, contact.nextSibling);
+        }
+        if (!hasInfraStatus) {
+            var marker = nav.querySelector('[data-ratib-infra-marketplace-tab]') || contact.nextSibling;
+            var infraStatus = mkLink('/modules/infrastructure-marketplace/Views/client/services.php', '#ratib-ng-tracking', 'Infra Status', 'data-ratib-infra-status-tab');
+            if (marker && marker.parentNode) {
+                marker.parentNode.insertBefore(infraStatus, marker.nextSibling);
+            } else {
+                nav.appendChild(infraStatus);
+            }
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', run);
+    } else {
+        run();
+    }
+})();
+
 /** Phase 2: subtle scroll reveal — adds classes only; no DOM/markup changes. */
 (function ratibHomeScrollReveal() {
     if (!window.IntersectionObserver) {
