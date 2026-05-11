@@ -1,0 +1,15 @@
+.infra-embed-wrap {
+  margin-top: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(8, 12, 28, 0.9);
+}
+
+.infra-embed-frame {
+  display: block;
+  width: 100%;
+  min-height: calc(100vh - 210px);
+  border: 0;
+  background: #070b14;
+}

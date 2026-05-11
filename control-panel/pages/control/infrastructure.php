@@ -1,0 +1,97 @@
+<?php
+/**
+ * Control panel wrapper for infrastructure module screens.
+ */
+if (!defined('IS_CONTROL_PANEL')) {
+    define('IS_CONTROL_PANEL', true);
+}
+require_once __DIR__ . '/../../includes/config.php';
+
+if (empty($_SESSION['control_logged_in'])) {
+    header('Location: ' . pageUrl('login.php'));
+    exit;
+}
+require_once __DIR__ . '/../../includes/control-permissions.php';
+requireControlPermission(CONTROL_PERM_SYSTEM_SETTINGS, 'view_control_system_settings');
+
+$siteRootUrl = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
+if ($siteRootUrl === '') {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+    $siteRootUrl = $host !== '' ? ($scheme . '://' . $host) : '';
+}
+
+$view = strtolower(trim((string) ($_GET['view'] ?? 'control')));
+$allowed = [
+    'control' => [
+        'title' => 'Infrastructure Control',
+        'url' => $siteRootUrl . '/modules/infrastructure-marketplace/Views/admin/control.php',
+    ],
+    'dashboard' => [
+        'title' => 'Infrastructure Dashboard',
+        'url' => $siteRootUrl . '/modules/infrastructure-marketplace/Views/admin/dashboard.php',
+    ],
+    'providers' => [
+        'title' => 'Infrastructure Providers',
+        'url' => $siteRootUrl . '/modules/infrastructure-marketplace/Views/admin/providers.php',
+    ],
+];
+if (!isset($allowed[$view])) {
+    $view = 'control';
+}
+
+$pageTitle = $allowed[$view]['title'];
+$embedUrl = $allowed[$view]['url'] . '?embed=1&_rt=' . time();
+$controlDashboardUrl = pageUrl('control/dashboard.php');
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="<?php echo asset('css/control/system.css'); ?>?v=<?php echo time(); ?>">
+    <link rel="stylesheet" href="<?php echo asset('css/control/infrastructure-embed.css'); ?>?v=<?php echo time(); ?>">
+</head>
+<body class="control-system-body">
+    <header class="control-header">
+        <div class="header-left">
+            <h1><i class="fas fa-cog"></i> Control Panel</h1>
+            <span class="header-subtitle header-subtitle-ratib">RATIB — Recruitment Automation &amp; Tracking Intelligence Base</span>
+        </div>
+        <div class="header-right">
+            <span class="user-info"><?php echo htmlspecialchars((string) ($_SESSION['control_username'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
+            <a href="<?php echo pageUrl('logout.php'); ?>?control=1" class="btn-logout">Logout</a>
+        </div>
+    </header>
+
+    <div class="control-layout">
+        <?php include __DIR__ . '/../../includes/control/sidebar.php'; ?>
+
+        <main class="control-content">
+            <div class="content-header">
+                <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h2><i class="fas fa-server me-2"></i><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></h2>
+                <a href="<?php echo htmlspecialchars($controlDashboardUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-outline-light ms-2">Back to Dashboard</a>
+            </div>
+
+            <section class="infra-embed-wrap">
+                <iframe
+                    class="infra-embed-frame"
+                    src="<?php echo htmlspecialchars($embedUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                    title="<?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?>"
+                    loading="lazy"
+                    referrerpolicy="same-origin"
+                ></iframe>
+            </section>
+        </main>
+    </div>
+
+    <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
+    <script src="<?php echo asset('js/control/system.js'); ?>?v=<?php echo time(); ?>"></script>
+</body>
+</html>
