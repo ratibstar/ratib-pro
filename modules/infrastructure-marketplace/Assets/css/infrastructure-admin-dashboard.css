@@ -1,0 +1,51 @@
+/* Module-scoped admin dashboard styles, dark-theme friendly. */
+.ratib-infra-admin-page {
+  background: #070b16;
+  color: #dbe4ff;
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+}
+
+.infra-admin-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.infra-admin-header h1 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+}
+
+.infra-admin-header p {
+  margin: 0;
+  color: #aebde8;
+}
+
+.infra-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.infra-card {
+  border: 1px solid #1d2c4a;
+  border-radius: 12px;
+  padding: 14px;
+  background: #0d1527;
+}
+
+.infra-card h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: #b8cbff;
+}
+
+.infra-kv {
+  font-size: 0.93rem;
+  line-height: 1.45;
+  white-space: pre-line;
+  color: #f1f5ff;
+}
+

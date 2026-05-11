@@ -15,9 +15,11 @@ final class HealthController
         return [
             'ok' => true,
             'module' => 'infrastructure-marketplace',
-            'layer' => 'foundation',
+            'layer' => 'operational-foundation',
             'enabled' => ModuleConfig::isModuleEnabled(),
             'queue_driver' => ModuleConfig::defaultQueueDriver(),
+            'queue_max_attempts' => ModuleConfig::queueMaxAttempts(),
+            'cpanel_configured' => ModuleConfig::cpanelWhmBaseUrl() !== null && ModuleConfig::cpanelWhmUsername() !== null,
         ];
     }
 }

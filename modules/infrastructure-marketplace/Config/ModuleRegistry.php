@@ -22,6 +22,18 @@ final class ModuleRegistry
                 'handler' => 'Ratib\\InfrastructureMarketplace\\Controllers\\HealthController::handle',
                 'auth' => 'optional',
             ],
+            [
+                'method' => 'GET',
+                'pattern' => '/api/infrastructure-marketplace/dashboard.php',
+                'handler' => 'module endpoint file: api/infrastructure-marketplace/dashboard.php',
+                'auth' => 'optional',
+            ],
+            [
+                'method' => 'GET',
+                'pattern' => '/modules/infrastructure-marketplace/Views/admin/dashboard.php',
+                'handler' => 'module view file',
+                'auth' => 'optional',
+            ],
         ];
     }
 
@@ -35,8 +47,13 @@ final class ModuleRegistry
         return [
             [
                 'label' => 'Infrastructure marketplace',
-                'href' => '/api/infrastructure-marketplace/health',
+                'href' => '/api/infrastructure-marketplace/health.php',
                 'permission_hint' => 'control_system_settings or custom infra permission (define when activating)',
+            ],
+            [
+                'label' => 'Infrastructure dashboard',
+                'href' => '/modules/infrastructure-marketplace/Views/admin/dashboard.php',
+                'permission_hint' => 'control_system_settings',
             ],
         ];
     }

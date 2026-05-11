@@ -35,4 +35,35 @@ final class ModuleConfig
 
         return is_array($decoded) ? $decoded : [];
     }
+
+    public static function queueMaxAttempts(): int
+    {
+        $v = getenv('RATIB_INFRA_QUEUE_MAX_ATTEMPTS');
+        $n = is_string($v) ? (int) $v : 5;
+        return $n > 0 ? $n : 5;
+    }
+
+    public static function queueDeadLetterState(): string
+    {
+        $v = getenv('RATIB_INFRA_QUEUE_DEAD_STATE');
+        return is_string($v) && trim($v) !== '' ? trim($v) : 'dead_letter';
+    }
+
+    public static function cpanelWhmBaseUrl(): ?string
+    {
+        $v = getenv('RATIB_INFRA_CPANEL_BASE_URL');
+        return is_string($v) && trim($v) !== '' ? rtrim(trim($v), '/') : null;
+    }
+
+    public static function cpanelWhmUsername(): ?string
+    {
+        $v = getenv('RATIB_INFRA_CPANEL_USERNAME');
+        return is_string($v) && trim($v) !== '' ? trim($v) : null;
+    }
+
+    public static function cpanelWhmToken(): ?string
+    {
+        $v = getenv('RATIB_INFRA_CPANEL_API_TOKEN');
+        return is_string($v) && trim($v) !== '' ? trim($v) : null;
+    }
 }

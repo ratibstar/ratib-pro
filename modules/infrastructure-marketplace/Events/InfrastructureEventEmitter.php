@@ -31,6 +31,25 @@ final class InfrastructureEventEmitter
     /**
      * @param array<string, mixed> $metadata
      */
+    public function metric(string $name, array $metadata): void
+    {
+        $this->emit('CONTROL_INFRA_METRIC', 'info', 'Infrastructure metric recorded: ' . $name, [
+            'metric' => $name,
+            'data' => $metadata,
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
+    public function structuredLog(string $level, string $message, array $metadata = []): void
+    {
+        $this->emit('CONTROL_INFRA_LOG', $level, $message, $metadata);
+    }
+
+    /**
+     * @param array<string, mixed> $metadata
+     */
     private function emit(string $type, string $level, string $message, array $metadata): void
     {
         $path = dirname(__DIR__, 3) . '/admin/core/EventBus.php';
