@@ -3,7 +3,9 @@
  * No dependencies. Works with includes/ratib-mega-nav-render.php markup.
  */
 (function ratibMegaNavInit() {
-    var root = document.querySelector('[data-ratib-mega-nav="1"]');
+    var root =
+        document.getElementById('ratibMegaNavRoot') ||
+        document.querySelector('.ratib-mega-nav[data-ratib-mega-nav="1"]');
     if (!root) {
         return;
     }

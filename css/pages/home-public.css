@@ -750,6 +750,37 @@ body.ratib-saas-home {
   box-shadow: 0 0 26px rgba(251, 113, 133, 0.22);
 }
 
+/* Infrastructure marketplace entry points (absolute URLs in chrome) */
+.ratib-nav__link:is([href*="marketplace/index.php"]) .ratib-nav__icon {
+  --ratib-pulse: rgba(167, 139, 250, 0.55);
+  color: #f5f3ff;
+  background: linear-gradient(145deg, rgba(139, 92, 246, 0.55), rgba(67, 56, 202, 0.65));
+  border-color: rgba(196, 181, 253, 0.55);
+  box-shadow: 0 6px 22px rgba(139, 92, 246, 0.28);
+}
+
+.ratib-nav__link:is([href*="marketplace/index.php"]):hover {
+  color: #f5f3ff;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(67, 56, 202, 0.12));
+  border-color: rgba(196, 181, 253, 0.45);
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.22);
+}
+
+.ratib-nav__link:is([href*="client/services.php"]) .ratib-nav__icon {
+  --ratib-pulse: rgba(56, 189, 248, 0.52);
+  color: #f0f9ff;
+  background: linear-gradient(145deg, rgba(14, 165, 233, 0.52), rgba(12, 74, 110, 0.68));
+  border-color: rgba(125, 211, 252, 0.55);
+  box-shadow: 0 6px 22px rgba(14, 165, 233, 0.26);
+}
+
+.ratib-nav__link:is([href*="client/services.php"]):hover {
+  color: #f0f9ff;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(12, 74, 110, 0.12));
+  border-color: rgba(125, 211, 252, 0.45);
+  box-shadow: 0 0 26px rgba(14, 165, 233, 0.2);
+}
+
 /* Demo / hero video band (#video) — same semantic family as video/pic */
 .ratib-nav__link:is([href="#video"], [href$="#video"]) .ratib-nav__label {
   color: #fae8ff;
