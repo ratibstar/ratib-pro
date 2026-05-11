@@ -62,38 +62,44 @@ try {
     $health = new ProviderHealthService($activation, $metrics);
     $discovery = new CapabilityDiscoveryService($activation);
     $snapshot = $health->healthSnapshot($tenantId, $agencyId);
-    foreach ($snapshot as $row) {
-        if (is_array($row) && ($row['status'] ?? '') === 'unavailable') {
-            try {
-                $alerts->providerOutage((string) ($row['provider_type'] ?? 'unknown'));
-            } catch (\Throwable $e) {
-                // Snapshot must succeed even if event bus / alerting is unavailable.
-            }
-        }
-    }
+    $capabilities = [
+        'hosting' => $discovery->discover('hosting', $tenantId, $agencyId),
+        'registrar' => $discovery->discover('registrar', $tenantId, $agencyId),
+        'dns' => $discovery->discover('dns', $tenantId, $agencyId),
+        'ssl' => $discovery->discover('ssl', $tenantId, $agencyId),
+    ];
     $payload = [
         'ok' => true,
         'health' => $snapshot,
-        'capabilities' => [
-            'hosting' => $discovery->discover('hosting', $tenantId, $agencyId),
-            'registrar' => $discovery->discover('registrar', $tenantId, $agencyId),
-            'dns' => $discovery->discover('dns', $tenantId, $agencyId),
-            'ssl' => $discovery->discover('ssl', $tenantId, $agencyId),
-        ],
+        'capabilities' => $capabilities,
     ];
-    $json = json_encode($payload, JSON_UNESCAPED_SLASHES);
+    $jsonFlags = JSON_UNESCAPED_SLASHES;
+    if (\defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
+        $jsonFlags |= \JSON_INVALID_UTF8_SUBSTITUTE;
+    }
+    $json = json_encode($payload, $jsonFlags);
     if (!\is_string($json)) {
         throw new \RuntimeException('providers_json_encode_failed');
     }
     echo $json;
+
+    // Non-blocking: alerting must not fail the snapshot response (emitEvent / control DB).
+    try {
+        foreach ($snapshot as $row) {
+            if (\is_array($row) && ($row['status'] ?? '') === 'unavailable') {
+                $alerts->providerOutage((string) ($row['provider_type'] ?? 'unknown'));
+            }
+        }
+    } catch (\Throwable $e) {
+        // ignore
+    }
 } catch (\Throwable $e) {
     http_response_code(200);
     echo json_encode([
         'ok' => false,
-        'message' => 'Provider snapshot unavailable',
         'health' => [],
         'capabilities' => (object) [],
-        'error_hint' => 'Check ratib_infra_provider_activations rows (provider_class must be loadable), PHP error log, and that infra PDO and event bus can run in this request.',
+        'message' => 'Provider snapshot unavailable. Check infra DB connection, ratib_infra_provider_activations, and server error log.',
     ], JSON_UNESCAPED_SLASHES);
 }
 

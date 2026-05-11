@@ -52,18 +52,18 @@ final class InfrastructureEventEmitter
      */
     private function emit(string $type, string $level, string $message, array $metadata): void
     {
+        $path = dirname(__DIR__, 3) . '/admin/core/EventBus.php';
+        if (!is_file($path)) {
+            return;
+        }
+        require_once $path;
+        if (!function_exists('emitEvent')) {
+            return;
+        }
         try {
-            $path = dirname(__DIR__, 3) . '/admin/core/EventBus.php';
-            if (!is_file($path)) {
-                return;
-            }
-            require_once $path;
-            if (!function_exists('emitEvent')) {
-                return;
-            }
             emitEvent($type, $level, $message, $metadata);
         } catch (\Throwable $e) {
-            error_log('InfrastructureEventEmitter: ' . $e->getMessage());
+            // Never break control/API callers when the admin event bus is misconfigured.
         }
     }
 }

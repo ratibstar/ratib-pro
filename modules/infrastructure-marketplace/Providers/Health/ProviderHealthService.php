@@ -23,11 +23,7 @@ final class ProviderHealthService
         foreach ($types as $type) {
             $active = $this->activations->activeForScope($type, $tenantId, $agencyId);
             $status = count($active) > 0 ? 'available' : 'unavailable';
-            try {
-                $this->metrics->externalDependencyStatus('provider:' . $type, $status);
-            } catch (\Throwable $e) {
-                // Health snapshot must not fail if metrics/event wiring throws.
-            }
+            $this->metrics->externalDependencyStatus('provider:' . $type, $status);
             $snapshot[] = [
                 'provider_type' => $type,
                 'status' => $status,

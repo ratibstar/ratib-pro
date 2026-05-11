@@ -21,7 +21,6 @@ final class CapabilityDiscoveryService
         foreach ($enabled as $row) {
             $class = (string) ($row['provider_class'] ?? '');
             $capability = [];
-            $capError = null;
             if ($class !== '' && class_exists($class)) {
                 try {
                     $instance = new $class();
@@ -29,19 +28,15 @@ final class CapabilityDiscoveryService
                         $capability = (array) $instance->getCapabilityMatrix();
                     }
                 } catch (\Throwable $e) {
-                    $capError = 'capability_probe_failed';
+                    $capability = ['_error' => 'instantiation_or_matrix_failed'];
                 }
             }
-            $entry = [
+            $out[] = [
                 'provider_code' => (string) ($row['provider_code'] ?? ''),
                 'provider_class' => $class,
                 'priority_weight' => (int) ($row['priority_weight'] ?? 0),
                 'capabilities' => $capability,
             ];
-            if ($capError !== null) {
-                $entry['capability_error'] = $capError;
-            }
-            $out[] = $entry;
         }
         return $out;
     }

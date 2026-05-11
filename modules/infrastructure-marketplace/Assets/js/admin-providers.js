@@ -6,7 +6,10 @@
   var noticeEl = document.getElementById('infra-provider-notice');
   if (!healthEl || !capEl) return;
 
-  function formatHealthSummary(health) {
+  function formatHealthSummary(health, data) {
+    if (data && data.ok === false && data.message) {
+      return 'snapshot unavailable\n\n' + String(data.message);
+    }
     if (!Array.isArray(health) || health.length === 0) {
       return 'No health rows returned.';
     }
@@ -58,8 +61,7 @@
       if (noticeEl) {
         if (data && data.ok === false && data.message) {
           noticeEl.hidden = false;
-          noticeEl.textContent =
-            data.message + (data.error_hint ? '\n\n' + data.error_hint : '');
+          noticeEl.textContent = data.message;
         } else if (data && (data.degraded || data.message)) {
           noticeEl.hidden = false;
           noticeEl.textContent = data.message || 'Response is degraded; see panels below.';
@@ -72,7 +74,7 @@
         }
       }
 
-      healthEl.textContent = formatHealthSummary(data.health || []);
+      healthEl.textContent = formatHealthSummary(data.health || [], data);
       capEl.textContent = formatCapabilities(data.capabilities || {});
     })
     .catch(function () {
