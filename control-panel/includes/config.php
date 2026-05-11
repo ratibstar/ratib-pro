@@ -217,8 +217,14 @@ if ($useOwnProgram && isset($GLOBALS['control_conn'])) {
         $isLogin = (strpos($req . ' ' . $script, 'login.php') !== false);
         // Allow control UI paths without literal "control/" (hyphenated legacy filenames under /pages/).
         // Otherwise embedded pages like pages/control-support-chats.php redirect → iframe breakout sends whole app to Select Country.
+        // Infrastructure module admin/embed URLs and APIs must not redirect (iframe + ControlSecurityGuard include this file).
         $isSelect = (strpos($req, 'select-') !== false) || (strpos($req, 'control/') !== false) || (strpos($req, 'dashboard') !== false) || (strpos($req, '/api/') !== false)
-            || (stripos($req, 'support-chats') !== false);
+            || (stripos($req, 'support-chats') !== false)
+            || (stripos($req, 'infrastructure-marketplace') !== false)
+            || (stripos($req, 'control/infrastructure') !== false)
+            || (strpos($script, '/api/') !== false)
+            || (stripos($script, 'infrastructure-marketplace') !== false)
+            || (stripos($script, 'control/infrastructure.php') !== false);
         $isLogout = (strpos($req, 'logout.php') !== false);
         $isSystemSettings = (strpos($req, 'system-settings') !== false) || (strpos($req, 'control-panel-settings.php') !== false) || (strpos($req, 'panel-settings.php') !== false) || (strpos($req, 'panel-users.php') !== false) || (strpos($req, 'control-panel-users.php') !== false);
         if (!$isLogin && !$isSelect && !$isLogout && !$isSystemSettings) {

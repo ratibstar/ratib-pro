@@ -83,7 +83,11 @@ final class ControlSecurityGuard
 
     private static function bootstrapControlPanel(): void
     {
-        $config = dirname(__DIR__, 2) . '/../control-panel/includes/config.php';
+        if (defined('CONTROL_CONFIG_LOADED') && function_exists('hasControlPermission')) {
+            return;
+        }
+        // Security → repo root: .../modules/infrastructure-marketplace/Security → 3 levels up.
+        $config = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'control-panel' . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'config.php';
         if (is_file($config)) {
             require_once $config;
         }

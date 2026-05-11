@@ -51,6 +51,13 @@ if (!isset($allowed[$view])) {
 $pageTitle = $allowed[$view]['title'];
 $embedUrl = $allowed[$view]['url'] . '?embed=1&_rt=' . time();
 $controlDashboardUrl = pageUrl('control/dashboard.php');
+$fullBase = rtrim(
+    (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
+        . '://'
+        . ($_SERVER['HTTP_HOST'] ?? '')
+        . preg_replace('#/pages/[^?]*.*$#', '', (string) ($_SERVER['REQUEST_URI'] ?? '')),
+    '/'
+);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -64,6 +71,7 @@ $controlDashboardUrl = pageUrl('control/dashboard.php');
     <link rel="stylesheet" href="<?php echo asset('css/control/infrastructure-embed.css'); ?>?v=<?php echo time(); ?>">
 </head>
 <body class="control-system-body">
+    <div id="app-config" data-base-url="<?php echo htmlspecialchars($fullBase, ENT_QUOTES, 'UTF-8'); ?>" data-api-base="<?php echo htmlspecialchars($fullBase . '/api', ENT_QUOTES, 'UTF-8'); ?>" data-control-api-path="<?php echo htmlspecialchars($fullBase . '/api/control', ENT_QUOTES, 'UTF-8'); ?>" data-control="1" class="hidden"></div>
     <header class="control-header">
         <div class="header-left">
             <h1><i class="fas fa-cog"></i> Control Panel</h1>
@@ -99,6 +107,7 @@ $controlDashboardUrl = pageUrl('control/dashboard.php');
         </main>
     </div>
 
+    <script src="<?php echo asset('js/control/app-config-init.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/system.js'); ?>?v=<?php echo time(); ?>"></script>
 </body>
