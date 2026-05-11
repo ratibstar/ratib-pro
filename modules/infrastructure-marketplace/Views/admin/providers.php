@@ -26,6 +26,7 @@ $ratibInfraAdminCsrf = (string) ($_SESSION['infra_control_csrf_token'] ?? '');
 <body class="ratib-infra-marketplace-scope ratib-infra-marketplace-view">
 <main class="infra-market-wrap">
     <h1>Provider Management</h1>
+    <p id="infra-provider-notice" class="infra-provider-notice" hidden></p>
     <section class="infra-market-grid">
         <article class="infra-market-card">
             <h3>Provider Health</h3>

@@ -80,3 +80,17 @@
   margin: 0 0 6px;
 }
 
+.infra-provider-notice {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #3d4f7a;
+  background: #121f3a;
+  color: #e8f0ff;
+  line-height: 1.45;
+}
+
+.infra-provider-notice[hidden] {
+  display: none !important;
+}
+

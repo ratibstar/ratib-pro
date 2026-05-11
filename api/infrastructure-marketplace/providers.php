@@ -33,9 +33,15 @@ try {
     $pdo = DatabaseConnectionFactory::createPdo();
     if (!SchemaHelpers::tableExists($pdo, 'ratib_infra_provider_activations')) {
         http_response_code(200);
+        $degradedHealth = [
+            ['provider_type' => 'hosting', 'status' => 'unavailable', 'active_count' => 0],
+            ['provider_type' => 'registrar', 'status' => 'unavailable', 'active_count' => 0],
+            ['provider_type' => 'dns', 'status' => 'unavailable', 'active_count' => 0],
+            ['provider_type' => 'ssl', 'status' => 'unavailable', 'active_count' => 0],
+        ];
         echo json_encode([
             'ok' => true,
-            'health' => [],
+            'health' => $degradedHealth,
             'capabilities' => [
                 'hosting' => [],
                 'registrar' => [],
