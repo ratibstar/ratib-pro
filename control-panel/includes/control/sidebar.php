@@ -24,6 +24,7 @@ $siteRootUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/');
     <nav class="sidebar-nav">
         <ul class="sidebar-menu">
             <li><a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'dashboard.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/control-hub.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'control-hub.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-layer-group"></i><span>Control hub</span></a></li>
             <li class="sidebar-section"><span class="section-label">Core Management</span></li>
             <?php
             $selectCountryPerms = 'control_select_country';
