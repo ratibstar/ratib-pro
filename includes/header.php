@@ -175,6 +175,10 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
                 <i class="nav-icon fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
+            <a href="<?php echo htmlspecialchars(ratib_nav_url('client/dashboard.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_dashboard">
+                <i class="nav-icon fas fa-chart-pie"></i>
+                <span>Client Hub</span>
+            </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('agent.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_agents">
                 <i class="nav-icon fas fa-users"></i>
                 <span>Agent</span>

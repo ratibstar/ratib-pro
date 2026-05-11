@@ -1,0 +1,658 @@
+/**
+ * Client Platform shell — enterprise dark UI aligned with Ratib gradients.
+ */
+
+:root {
+    --rcp-bg0: #06060f;
+    --rcp-bg1: #0f1224;
+    --rcp-panel: rgba(22, 24, 44, 0.78);
+    --rcp-panel2: rgba(32, 36, 64, 0.55);
+    --rcp-edge: rgba(255, 255, 255, 0.08);
+    --rcp-text: rgba(245, 245, 255, 0.96);
+    --rcp-muted: rgba(196, 200, 220, 0.72);
+    --rcp-accent: #8b7cf6;
+    --rcp-accent2: #22d3ee;
+    --rcp-danger: #f87171;
+    --rcp-warn: #fbbf24;
+    --rcp-ok: #34d399;
+    --rcp-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+    --rcp-radius: 14px;
+    --rcp-font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body.ratib-client-dashboard {
+    font-family: var(--rcp-font);
+}
+
+body.ratib-client-dashboard .ratib-cp-shell {
+    display: flex;
+    width: 100%;
+    min-height: calc(100vh - 24px);
+    position: relative;
+    color: var(--rcp-text);
+    background: radial-gradient(1200px 600px at 10% -10%, rgba(102, 126, 234, 0.18), transparent 55%),
+        radial-gradient(900px 500px at 90% 0%, rgba(34, 211, 238, 0.12), transparent 50%),
+        linear-gradient(165deg, var(--rcp-bg0), var(--rcp-bg1));
+}
+
+.ratib-cp-skip {
+    position: absolute;
+    left: -9999px;
+    top: 8px;
+    z-index: 10000;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: #fff;
+    color: #111;
+    font-weight: 600;
+}
+.ratib-cp-skip:focus {
+    left: 12px;
+    outline: 3px solid var(--rcp-accent2);
+}
+
+.ratib-cp-shell__backdrop {
+    display: none;
+}
+body.ratib-client-dashboard.is-ratib-cp-mobile-open .ratib-cp-shell__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 1040;
+}
+
+.ratib-cp-sidebar {
+    width: 268px;
+    flex: 0 0 268px;
+    border-right: 1px solid var(--rcp-edge);
+    background: linear-gradient(180deg, rgba(18, 20, 36, 0.95), rgba(12, 14, 28, 0.85));
+    backdrop-filter: blur(14px);
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    z-index: 1050;
+    transition: transform 0.28s ease;
+}
+
+.ratib-cp-sidebar__brand {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 22px 18px 16px;
+    border-bottom: 1px solid var(--rcp-edge);
+}
+
+.ratib-cp-sidebar__logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #fff;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.35);
+}
+
+.ratib-cp-sidebar__title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.ratib-cp-sidebar__subtitle {
+    font-size: 12px;
+    color: var(--rcp-muted);
+}
+
+.ratib-cp-sidebar__nav {
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    overflow: auto;
+}
+
+.ratib-cp-navlink {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: var(--rcp-muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+}
+.ratib-cp-navlink i {
+    width: 20px;
+    text-align: center;
+    opacity: 0.9;
+}
+.ratib-cp-navlink:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--rcp-text);
+}
+.ratib-cp-navlink:focus-visible {
+    outline: 2px solid var(--rcp-accent2);
+    outline-offset: 2px;
+}
+.ratib-cp-navlink.is-active {
+    background: linear-gradient(90deg, rgba(102, 126, 234, 0.22), rgba(34, 211, 238, 0.08));
+    color: #fff;
+    border: 1px solid rgba(139, 124, 246, 0.35);
+    box-shadow: var(--rcp-shadow);
+}
+
+.ratib-cp-navlink--ghost {
+    opacity: 0.85;
+}
+
+.ratib-cp-sidebar__footer {
+    padding: 12px 10px 18px;
+    border-top: 1px solid var(--rcp-edge);
+}
+
+.ratib-cp-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.ratib-cp-topbar {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 18px 22px 10px;
+    border-bottom: 1px solid var(--rcp-edge);
+    background: rgba(10, 12, 24, 0.35);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.ratib-cp-iconbtn {
+    display: none;
+    margin-top: 4px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--rcp-edge);
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+}
+.ratib-cp-iconbtn:focus-visible {
+    outline: 2px solid var(--rcp-accent2);
+}
+
+.ratib-cp-topbar__title {
+    flex: 1;
+    min-width: 0;
+}
+
+.ratib-cp-page-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+.ratib-cp-page-sub {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--rcp-muted);
+}
+
+.ratib-cp-topbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.ratib-cp-pillbtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--rcp-edge);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--rcp-text);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s ease;
+}
+.ratib-cp-pillbtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+.ratib-cp-pillbtn:focus-visible {
+    outline: 2px solid var(--rcp-accent2);
+}
+
+.ratib-cp-userchip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--rcp-edge);
+    background: rgba(255, 255, 255, 0.03);
+    max-width: 200px;
+}
+.ratib-cp-userchip__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--rcp-ok);
+    box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.15);
+}
+.ratib-cp-userchip__name {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ratib-cp-ghost-link {
+    color: var(--rcp-muted);
+    padding: 8px;
+    border-radius: 8px;
+}
+.ratib-cp-ghost-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+}
+.ratib-cp-ghost-link:focus-visible {
+    outline: 2px solid var(--rcp-accent2);
+}
+
+.ratib-cp-body {
+    flex: 1;
+    padding: 18px 22px 32px;
+    outline: none;
+}
+
+.ratib-cp-board {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.ratib-cp-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+}
+
+.ratib-cp-card {
+    border-radius: var(--rcp-radius);
+    border: 1px solid var(--rcp-edge);
+    background: var(--rcp-panel);
+    box-shadow: var(--rcp-shadow);
+    backdrop-filter: blur(16px);
+    padding: 16px 18px;
+    min-height: 96px;
+    position: relative;
+    overflow: hidden;
+}
+
+.ratib-cp-card::after {
+    content: "";
+    position: absolute;
+    inset: auto -30% -60% auto;
+    width: 220px;
+    height: 220px;
+    background: radial-gradient(circle at center, rgba(139, 124, 246, 0.16), transparent 65%);
+    pointer-events: none;
+}
+
+.ratib-cp-card h2 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--rcp-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.ratib-cp-card .rcp-value {
+    font-size: 28px;
+    font-weight: 800;
+}
+.ratib-cp-card .rcp-note {
+    font-size: 12px;
+    color: var(--rcp-muted);
+    margin-top: 6px;
+}
+
+.ratib-cp-split {
+    display: grid;
+    grid-template-columns: 1.35fr 0.95fr;
+    gap: 16px;
+}
+@media (max-width: 1100px) {
+    .ratib-cp-split {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ratib-cp-feed {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 320px;
+    overflow: auto;
+}
+.ratib-cp-feed li {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 13px;
+}
+
+.ratib-cp-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 8px;
+}
+.ratib-cp-quick button {
+    border-radius: 10px;
+    border: 1px solid rgba(139, 124, 246, 0.35);
+    background: rgba(139, 124, 246, 0.12);
+    color: #fff;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.ratib-cp-quick button:focus-visible {
+    outline: 2px solid var(--rcp-accent2);
+}
+.ratib-cp-quick button.secondary {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--rcp-edge);
+    color: var(--rcp-text);
+}
+
+.rcp-muted-span {
+    color: var(--rcp-muted);
+    font-size: 12px;
+}
+.rcp-code {
+    font-size: 12px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--rcp-edge);
+}
+
+.ratib-cp-skeleton {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    height: 18px;
+}
+.ratib-cp-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+    animation: rcp-shimmer 1.2s infinite;
+}
+@keyframes rcp-shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.ratib-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+.ratib-status--neutral {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--rcp-muted);
+}
+.ratib-status--pending {
+    background: rgba(251, 191, 36, 0.12);
+    color: var(--rcp-warn);
+}
+.ratib-status--processing {
+    background: rgba(34, 211, 238, 0.12);
+    color: var(--rcp-accent2);
+}
+.ratib-status--active {
+    background: rgba(52, 211, 153, 0.12);
+    color: var(--rcp-ok);
+}
+.ratib-status--suspended {
+    background: rgba(251, 191, 36, 0.12);
+    color: var(--rcp-warn);
+}
+.ratib-status--failed,
+.ratib-status--cancelled {
+    background: rgba(248, 113, 113, 0.12);
+    color: var(--rcp-danger);
+}
+
+.ratib-cp-table-wrap {
+    border-radius: var(--rcp-radius);
+    border: 1px solid var(--rcp-edge);
+    overflow: hidden;
+    background: var(--rcp-panel);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--rcp-shadow);
+}
+
+.ratib-cp-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px;
+    align-items: center;
+    border-bottom: 1px solid var(--rcp-edge);
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.ratib-cp-toolbar input[type="search"],
+.ratib-cp-toolbar select {
+    border-radius: 10px;
+    border: 1px solid var(--rcp-edge);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--rcp-text);
+    padding: 8px 10px;
+    font-size: 13px;
+    min-height: 38px;
+}
+.ratib-cp-toolbar button {
+    border-radius: 10px;
+    padding: 8px 12px;
+    border: 1px solid rgba(139, 124, 246, 0.35);
+    background: rgba(139, 124, 246, 0.15);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+}
+.ratib-cp-toolbar button.secondary {
+    background: rgba(255, 255, 255, 0.06);
+}
+.ratib-cp-toolbar label {
+    font-size: 13px;
+    color: var(--rcp-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ratib-cp-table-scroll {
+    overflow-x: auto;
+}
+
+table.ratib-cp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+table.ratib-cp-table th,
+table.ratib-cp-table td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+table.ratib-cp-table th {
+    color: var(--rcp-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 11px;
+    background: rgba(0, 0, 0, 0.15);
+}
+table.ratib-cp-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.ratib-cp-actions {
+    position: relative;
+}
+.ratib-cp-actions > summary {
+    list-style: none;
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 6px 10px;
+    border: 1px solid var(--rcp-edge);
+    font-weight: 600;
+}
+.ratib-cp-actions > summary::-webkit-details-marker {
+    display: none;
+}
+.ratib-cp-actions[open] > summary {
+    background: rgba(255, 255, 255, 0.06);
+}
+.ratib-cp-actions__menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 6px);
+    min-width: 180px;
+    border-radius: 12px;
+    border: 1px solid var(--rcp-edge);
+    background: rgba(14, 16, 30, 0.98);
+    box-shadow: var(--rcp-shadow);
+    padding: 6px;
+    z-index: 30;
+}
+.ratib-cp-actions__menu button {
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    border: 0;
+    background: transparent;
+    color: var(--rcp-text);
+    font-size: 13px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.ratib-cp-actions__menu button:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.ratib-cp-pagination {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 10px 12px;
+    border-top: 1px solid var(--rcp-edge);
+    background: rgba(0, 0, 0, 0.12);
+}
+.ratib-cp-pagination button {
+    border-radius: 8px;
+    border: 1px solid var(--rcp-edge);
+    background: rgba(255, 255, 255, 0.04);
+    color: #fff;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+.ratib-cp-alert {
+    border-radius: 12px;
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    background: rgba(248, 113, 113, 0.1);
+    padding: 12px 14px;
+    font-size: 13px;
+}
+
+.ratib-cp-timeline {
+    border-left: 2px solid rgba(139, 124, 246, 0.35);
+    padding-left: 14px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.ratib-cp-timeline article {
+    position: relative;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 13px;
+}
+.ratib-cp-timeline article::before {
+    content: "";
+    position: absolute;
+    left: -22px;
+    top: 14px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--rcp-accent);
+    box-shadow: 0 0 0 3px rgba(139, 124, 246, 0.25);
+}
+
+.ratib-cp-empty {
+    text-align: center;
+    padding: 28px 16px;
+    color: var(--rcp-muted);
+    font-size: 14px;
+}
+
+@media (max-width: 1024px) {
+    .ratib-cp-iconbtn {
+        display: inline-flex;
+    }
+    .ratib-cp-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(-102%);
+    }
+    body.ratib-client-dashboard.is-ratib-cp-mobile-open .ratib-cp-sidebar {
+        transform: translateX(0);
+    }
+}
