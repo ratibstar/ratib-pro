@@ -34,8 +34,6 @@ $platformPills = [
     ['label' => (string) ($ratibHome['home.nav.operational'] ?? ''), 'href' => $ratibNavPrefix . '#operational'],
     ['label' => (string) ($ratibHome['home.nav.api'] ?? ''), 'href' => $ratibNavPrefix . '#api'],
     ['label' => (string) ($ratibHome['home.nav.contact'] ?? ''), 'href' => $ratibNavPrefix . '#contact'],
-    ['label' => trim((string) ($ratibHome['home.nav.find_domain'] ?? '')) ?: 'Find a domain', 'href' => rtrim($baseUrl, '/') . '/modules/infrastructure-marketplace/Views/marketplace/index.php?focus=domains#infra-domain-search'],
-    ['label' => 'Infra Status', 'href' => rtrim($baseUrl, '/') . '/modules/infrastructure-marketplace/Views/client/services.php'],
 ];
 ?>
 <!DOCTYPE html>

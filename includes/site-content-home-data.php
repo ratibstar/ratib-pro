@@ -57,9 +57,6 @@ if (!function_exists('ratib_site_content_defaults_home')) {
             $d['home.nav.' . $slug] = $label;
         }
 
-        /* Pill next to Contact — domain hub (same URL as mega “Search for Domain Names” cards). Not “Marketplace” to avoid overlap with Domains mega-menu story. */
-        $d['home.nav.find_domain'] = 'Find a domain';
-
         $d['home.nav.cta_partner'] = 'Partner Login';
 
         $d['home.hero.eyebrow'] = 'Recruitment Automation & Tracking Intelligence Base';
@@ -396,7 +393,6 @@ if (!function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
             'home.nav.operational',
             'home.nav.api',
             'home.nav.contact',
-            'home.nav.find_domain',
         ];
         foreach ($navKeys as $k) {
             if (!array_key_exists($k, $flat) && isset($def[$k])) {
@@ -595,7 +591,6 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                     ['key' => 'home.nav.operational', 'label' => 'Visibility', 'type' => 'text'],
                     ['key' => 'home.nav.api', 'label' => 'API', 'type' => 'text'],
                     ['key' => 'home.nav.contact', 'label' => 'Contact', 'type' => 'text'],
-                    ['key' => 'home.nav.find_domain', 'label' => 'Find a domain (pill → domain hub)', 'type' => 'text'],
                     ['key' => 'home.nav.cta_partner', 'label' => 'CTA · Partner Login', 'type' => 'text'],
                 ],
             ],
