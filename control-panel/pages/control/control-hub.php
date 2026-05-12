@@ -195,19 +195,13 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
         <a href="<?php echo htmlspecialchars($panelSettingsHref, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-cog"></i> Panel settings</a>
     </div>
     <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings">
-        <h3><i class="fas fa-network-wired"></i> Infrastructure — control</h3>
-        <p>Marketplace / infra module control surface.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=control', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-sliders"></i> Infra control</a>
-    </div>
-    <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings">
-        <h3><i class="fas fa-chart-line"></i> Infrastructure — dashboard</h3>
-        <p>Module dashboard (embedded).</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=dashboard', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-chart-area"></i> Infra dashboard</a>
-    </div>
-    <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings">
-        <h3><i class="fas fa-plug"></i> Infrastructure — providers</h3>
-        <p>Provider integrations.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=providers', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-plug"></i> Providers</a>
+        <h3><i class="fas fa-network-wired"></i> Infrastructure</h3>
+        <p>Runtime controls, operations dashboard, and provider integrations — same page, switch with the tabs.</p>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=control', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary"><i class="fas fa-sliders-h"></i> Control</a>
+            <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=dashboard', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/infrastructure.php') . '&view=providers', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light"><i class="fas fa-plug"></i> Providers</a>
+        </div>
     </div>
 </div>
 
