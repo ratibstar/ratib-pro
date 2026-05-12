@@ -45,7 +45,7 @@ ControlSecurityGuard::enforce('control-update', ControlSecurityGuard::TIER_CONTR
     'require_csrf' => true,
 ]);
 
-$allowedInputKeys = [
+$knownKeys = [
     'csrf_token',
     'source',
     'enabled',
@@ -57,12 +57,25 @@ $allowedInputKeys = [
     'worker_max_loop_jobs',
     'default_currency',
     'tenant_allowlist',
+    'runtime_controls_submit',
+    'nc_api_user',
+    'nc_api_key',
+    'nc_username',
+    'nc_client_ip',
+    'pf_namecheap_live',
+    'pf_namecheap_sandbox',
+    'pf_cloudflare_dns_live',
+    'pf_cloudflare_dns_sandbox',
+    'pf_letsencrypt_ssl_live',
+    'pf_letsencrypt_ssl_sandbox',
 ];
 
 foreach (array_keys($body) as $k) {
-    if (!in_array((string) $k, $allowedInputKeys, true)) {
-        $respond(422, ['ok' => false, 'message' => 'Unknown config input key: ' . (string) $k]);
+    $ks = (string) $k;
+    if (in_array($ks, $knownKeys, true)) {
+        continue;
     }
+    $respond(422, ['ok' => false, 'message' => 'Unknown config input key: ' . $ks]);
 }
 
 $sourceRaw = strtolower(trim((string) ($body['source'] ?? '')));
@@ -72,10 +85,10 @@ $toBool = static function ($v): bool {
     if (is_bool($v)) {
         return $v;
     }
-    if (!is_string($v)) {
+    if (!is_string($v) && !is_int($v) && !is_float($v)) {
         return false;
     }
-    return in_array(strtolower(trim($v)), ['1', 'true', 'on', 'yes'], true);
+    return in_array(strtolower(trim((string) $v)), ['1', 'true', 'on', 'yes'], true);
 };
 
 $toInt = static function ($v, int $default): int {
@@ -86,47 +99,215 @@ $toInt = static function ($v, int $default): int {
     return $n > 0 ? $n : $default;
 };
 
-$allowRaw = isset($body['tenant_allowlist']) ? (string) $body['tenant_allowlist'] : '';
-$allow = [];
-if (trim($allowRaw) !== '') {
-    $parts = explode(',', $allowRaw);
-    foreach ($parts as $p) {
-        $id = (int) trim($p);
-        if ($id > 0) {
-            $allow[] = $id;
+$defaultModuleEnabled = static function (): bool {
+    $v = getenv('RATIB_INFRA_MARKETPLACE_ENABLED');
+    if ($v === false || $v === '') {
+        return false;
+    }
+    return !in_array(strtolower((string) $v), ['0', 'false', 'off', 'no'], true);
+};
+
+$fullControlForm = !empty($body['runtime_controls_submit']);
+
+/**
+ * @param array<string, mixed> $patch
+ * @param array<string, mixed> $existing
+ */
+$applyProviderFlag = static function (string $bodyKey, string $provider, string $mode, array $body, array $patch, array $existing): array {
+    if (!array_key_exists($bodyKey, $body)) {
+        return $patch;
+    }
+    $raw = trim((string) $body[$bodyKey]);
+    if ($raw === '' || strtolower($raw) === 'inherit') {
+        $flags = $patch['provider_flags'] ?? ($existing['provider_flags'] ?? []);
+        if (!is_array($flags)) {
+            $flags = [];
         }
+        $p = $flags[$provider] ?? [];
+        if (!is_array($p)) {
+            $p = [];
+        }
+        unset($p[$mode]);
+        if ($p === []) {
+            unset($flags[$provider]);
+        } else {
+            $flags[$provider] = $p;
+        }
+        $patch['provider_flags'] = $flags;
+
+        return $patch;
+    }
+    if ($raw === '0' || strtolower($raw) === 'false' || strtolower($raw) === 'no') {
+        $boolVal = false;
+    } else {
+        $boolVal = $raw === '1' || strtolower($raw) === 'true' || strtolower($raw) === 'yes';
+    }
+    $flags = $patch['provider_flags'] ?? ($existing['provider_flags'] ?? []);
+    if (!is_array($flags)) {
+        $flags = [];
+    }
+    $p = $flags[$provider] ?? [];
+    if (!is_array($p)) {
+        $p = [];
+    }
+    $p[$mode] = $boolVal;
+    $flags[$provider] = $p;
+    $patch['provider_flags'] = $flags;
+
+    return $patch;
+};
+
+$existing = RuntimeOverrideStore::read();
+
+/** @var array<string, mixed> $patch */
+$patch = [];
+
+if ($fullControlForm || array_key_exists('enabled', $body)) {
+    if ($fullControlForm) {
+        $patch['enabled'] = array_key_exists('enabled', $body) ? $toBool($body['enabled']) : ($existing['enabled'] ?? $defaultModuleEnabled());
+    } else {
+        $patch['enabled'] = $toBool($body['enabled']);
     }
 }
 
-$queueDriverRaw = isset($body['queue_driver']) ? strtolower(trim((string) $body['queue_driver'])) : 'sync';
-$queueDriver = in_array($queueDriverRaw, ['sync', 'database', 'redis'], true) ? $queueDriverRaw : 'sync';
+if ($fullControlForm || array_key_exists('dry_run', $body)) {
+    $patch['dry_run'] = $fullControlForm
+        ? (array_key_exists('dry_run', $body) ? $toBool($body['dry_run']) : (bool) ($existing['dry_run'] ?? false))
+        : $toBool($body['dry_run']);
+}
 
-$currencyRaw = isset($body['default_currency']) ? strtoupper(trim((string) $body['default_currency'])) : 'USD';
-$currency = preg_match('/^[A-Z]{3}$/', $currencyRaw) === 1 ? $currencyRaw : 'USD';
+if ($fullControlForm || array_key_exists('execution_kill_switch', $body)) {
+    $patch['execution_kill_switch'] = $fullControlForm
+        ? (array_key_exists('execution_kill_switch', $body) ? $toBool($body['execution_kill_switch']) : (bool) ($existing['execution_kill_switch'] ?? false))
+        : $toBool($body['execution_kill_switch']);
+}
 
-$overridesNext = [
-    'enabled' => array_key_exists('enabled', $body) ? $toBool($body['enabled']) : false,
-    'dry_run' => array_key_exists('dry_run', $body) ? $toBool($body['dry_run']) : false,
-    'execution_kill_switch' => array_key_exists('execution_kill_switch', $body) ? $toBool($body['execution_kill_switch']) : false,
-    'queue_driver' => $queueDriver,
-    'queue_max_attempts' => $toInt($body['queue_max_attempts'] ?? 5, 5),
-    'queue_pressure_threshold' => max(100, $toInt($body['queue_pressure_threshold'] ?? 2000, 2000)),
-    'worker_max_loop_jobs' => $toInt($body['worker_max_loop_jobs'] ?? 1000, 1000),
-    'default_currency' => $currency,
-    'tenant_allowlist' => $allow,
-];
+if ($fullControlForm || array_key_exists('queue_driver', $body)) {
+    $queueDriverRaw = isset($body['queue_driver']) ? strtolower(trim((string) $body['queue_driver'])) : '';
+    if ($queueDriverRaw === '' && $fullControlForm) {
+        $prev = $existing['queue_driver'] ?? null;
+        $queueDriverRaw = is_string($prev) && $prev !== '' ? strtolower(trim($prev)) : 'sync';
+    }
+    $qd = in_array($queueDriverRaw, ['sync', 'database', 'redis'], true) ? $queueDriverRaw : 'sync';
+    $patch['queue_driver'] = $qd;
+}
+
+if ($fullControlForm || array_key_exists('queue_max_attempts', $body)) {
+    $patch['queue_max_attempts'] = $fullControlForm && !array_key_exists('queue_max_attempts', $body)
+        ? (int) ($existing['queue_max_attempts'] ?? 5)
+        : $toInt($body['queue_max_attempts'] ?? 5, 5);
+}
+
+if ($fullControlForm || array_key_exists('queue_pressure_threshold', $body)) {
+    $patch['queue_pressure_threshold'] = $fullControlForm && !array_key_exists('queue_pressure_threshold', $body)
+        ? max(100, (int) ($existing['queue_pressure_threshold'] ?? 2000))
+        : max(100, $toInt($body['queue_pressure_threshold'] ?? 2000, 2000));
+}
+
+if ($fullControlForm || array_key_exists('worker_max_loop_jobs', $body)) {
+    $patch['worker_max_loop_jobs'] = $fullControlForm && !array_key_exists('worker_max_loop_jobs', $body)
+        ? (int) ($existing['worker_max_loop_jobs'] ?? 1000)
+        : $toInt($body['worker_max_loop_jobs'] ?? 1000, 1000);
+}
+
+if ($fullControlForm || array_key_exists('default_currency', $body)) {
+    $currencyRaw = isset($body['default_currency']) ? strtoupper(trim((string) $body['default_currency'])) : '';
+    if ($currencyRaw === '' && $fullControlForm) {
+        $currencyRaw = strtoupper(trim((string) ($existing['default_currency'] ?? 'USD')));
+    }
+    if ($currencyRaw === '') {
+        $currencyRaw = 'USD';
+    }
+    $currency = preg_match('/^[A-Z]{3}$/', $currencyRaw) === 1 ? $currencyRaw : 'USD';
+    $patch['default_currency'] = $currency;
+}
+
+if ($fullControlForm || array_key_exists('tenant_allowlist', $body)) {
+    if ($fullControlForm && !array_key_exists('tenant_allowlist', $body)) {
+        $patch['tenant_allowlist'] = is_array($existing['tenant_allowlist'] ?? null) ? $existing['tenant_allowlist'] : [];
+    } else {
+        $allowRaw = isset($body['tenant_allowlist']) ? (string) $body['tenant_allowlist'] : '';
+        $allow = [];
+        if (trim($allowRaw) !== '') {
+            $parts = explode(',', $allowRaw);
+            foreach ($parts as $p) {
+                $id = (int) trim($p);
+                if ($id > 0) {
+                    $allow[] = $id;
+                }
+            }
+        }
+        $patch['tenant_allowlist'] = $allow;
+    }
+}
+
+$patch = $applyProviderFlag('pf_namecheap_live', 'namecheap', 'live', $body, $patch, $existing);
+$patch = $applyProviderFlag('pf_namecheap_sandbox', 'namecheap', 'sandbox', $body, $patch, $existing);
+$patch = $applyProviderFlag('pf_cloudflare_dns_live', 'cloudflare_dns', 'live', $body, $patch, $existing);
+$patch = $applyProviderFlag('pf_cloudflare_dns_sandbox', 'cloudflare_dns', 'sandbox', $body, $patch, $existing);
+$patch = $applyProviderFlag('pf_letsencrypt_ssl_live', 'letsencrypt_ssl', 'live', $body, $patch, $existing);
+$patch = $applyProviderFlag('pf_letsencrypt_ssl_sandbox', 'letsencrypt_ssl', 'sandbox', $body, $patch, $existing);
+
+if (array_key_exists('nc_api_user', $body) || array_key_exists('nc_api_key', $body)
+    || array_key_exists('nc_username', $body) || array_key_exists('nc_client_ip', $body)) {
+    $rs = is_array($existing['registrar_secrets'] ?? null) ? $existing['registrar_secrets'] : [];
+    $nc = is_array($rs['namecheap'] ?? null) ? $rs['namecheap'] : [];
+    if (array_key_exists('nc_api_user', $body)) {
+        $v = trim((string) $body['nc_api_user']);
+        if ($v === '') {
+            unset($nc['api_user']);
+        } else {
+            $nc['api_user'] = $v;
+        }
+    }
+    if (array_key_exists('nc_username', $body)) {
+        $v = trim((string) $body['nc_username']);
+        if ($v === '') {
+            unset($nc['username']);
+        } else {
+            $nc['username'] = $v;
+        }
+    }
+    if (array_key_exists('nc_client_ip', $body)) {
+        $v = trim((string) $body['nc_client_ip']);
+        if ($v === '') {
+            unset($nc['client_ip']);
+        } else {
+            $nc['client_ip'] = $v;
+        }
+    }
+    if (array_key_exists('nc_api_key', $body)) {
+        $v = trim((string) $body['nc_api_key']);
+        if ($v !== '') {
+            $nc['api_key'] = $v;
+        }
+    }
+    if ($nc === []) {
+        unset($rs['namecheap']);
+    } else {
+        $rs['namecheap'] = $nc;
+    }
+    if ($rs === []) {
+        $patch['registrar_secrets'] = [];
+    } else {
+        $patch['registrar_secrets'] = $rs;
+    }
+}
+
+if ($patch === []) {
+    $respond(422, ['ok' => false, 'message' => 'No recognized settings to update']);
+}
 
 $oldOverrides = [];
 $newOverrides = [];
 try {
     $updated = RuntimeOverrideStore::updateAtomic(
         /**
-         * @param array<string, mixed> $existing
+         * @param array<string, mixed> $ex
          * @return array<string, mixed>
          */
-        static function (array $existing) use ($overridesNext): array {
-            // Allow future fields in file to remain intact; only replace controlled keys.
-            return array_merge($existing, $overridesNext);
+        static function (array $ex) use ($patch): array {
+            return array_merge($ex, $patch);
         }
     );
     $oldOverrides = $updated['old'];
@@ -137,12 +318,19 @@ try {
 
 /** @var array<string, array{old:mixed,new:mixed}> $changes */
 $changes = [];
-foreach (array_keys($overridesNext) as $k) {
+foreach (array_keys($patch) as $k) {
     $old = $oldOverrides[$k] ?? null;
     $new = $newOverrides[$k] ?? null;
     if (json_encode($old, JSON_UNESCAPED_SLASHES) !== json_encode($new, JSON_UNESCAPED_SLASHES)) {
         $changes[$k] = ['old' => $old, 'new' => $new];
     }
+}
+
+if (isset($changes['registrar_secrets'])) {
+    $changes['registrar_secrets'] = [
+        'old' => '[secrets redacted]',
+        'new' => '[secrets redacted]',
+    ];
 }
 
 $audit = new RuntimeConfigAuditLogger();
@@ -159,10 +347,15 @@ $audit->append([
     'changes' => $changes,
 ]);
 
+$sanitizedOut = $newOverrides;
+if (isset($sanitizedOut['registrar_secrets'])) {
+    $sanitizedOut['registrar_secrets'] = '[set via Control Panel — omitted from response]';
+}
+
 echo json_encode([
     'ok' => true,
     'message' => 'Infrastructure control settings updated',
     'file' => '/modules/infrastructure-marketplace/Config/runtime-overrides.json',
-    'overrides' => $newOverrides,
-    'changed_keys' => array_keys($changes),
+    'overrides' => $sanitizedOut,
+    'changed_keys' => array_keys($patch),
 ], JSON_UNESCAPED_SLASHES);

@@ -207,16 +207,67 @@ final class ModuleConfig
         return is_string($v) && in_array(strtolower(trim($v)), ['1', 'true', 'on', 'yes'], true);
     }
 
+    /**
+     * Execution flags per adapter key (e.g. namecheap, cloudflare_dns). Optional overrides in runtime-overrides.json → provider_flags.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function providerFlagRow(string $providerKey): ?array
+    {
+        $pf = self::runtimeOverride('provider_flags');
+        $pk = strtolower(trim($providerKey));
+        if (!is_array($pf) || !isset($pf[$pk]) || !is_array($pf[$pk])) {
+            return null;
+        }
+
+        return $pf[$pk];
+    }
+
     public static function providerLiveEnabled(string $providerKey): bool
     {
-        $v = getenv('RATIB_INFRA_PROVIDER_' . strtoupper(trim($providerKey)) . '_LIVE');
+        $pk = strtolower(trim($providerKey));
+        $row = self::providerFlagRow($pk);
+        if (is_array($row) && array_key_exists('live', $row)) {
+            return self::boolFromMixed($row['live'], false);
+        }
+        $v = getenv('RATIB_INFRA_PROVIDER_' . strtoupper($pk) . '_LIVE');
+
         return is_string($v) && in_array(strtolower(trim($v)), ['1', 'true', 'on', 'yes'], true);
     }
 
     public static function providerSandboxEnabled(string $providerKey): bool
     {
-        $v = getenv('RATIB_INFRA_PROVIDER_' . strtoupper(trim($providerKey)) . '_SANDBOX');
+        $pk = strtolower(trim($providerKey));
+        $row = self::providerFlagRow($pk);
+        if (is_array($row) && array_key_exists('sandbox', $row)) {
+            return self::boolFromMixed($row['sandbox'], true);
+        }
+        $v = getenv('RATIB_INFRA_PROVIDER_' . strtoupper($pk) . '_SANDBOX');
+
         return !is_string($v) || !in_array(strtolower(trim($v)), ['0', 'false', 'off', 'no'], true);
+    }
+
+    /**
+     * Namecheap credentials stored via Control Panel (runtime-overrides.json → registrar_secrets.namecheap only).
+     *
+     * @param 'api_user'|'api_key'|'username'|'client_ip' $key
+     */
+    public static function namecheapSecretFromRuntime(string $key): ?string
+    {
+        $allowed = ['api_user', 'api_key', 'username', 'client_ip'];
+        if (!in_array($key, $allowed, true)) {
+            return null;
+        }
+        $rs = self::runtimeOverride('registrar_secrets');
+        if (!is_array($rs) || !isset($rs['namecheap']) || !is_array($rs['namecheap'])) {
+            return null;
+        }
+        $nc = $rs['namecheap'];
+        if (!isset($nc[$key]) || !is_string($nc[$key]) || trim($nc[$key]) === '') {
+            return null;
+        }
+
+        return trim($nc[$key]);
     }
 
     public static function rolloutTenantAllowlist(): array

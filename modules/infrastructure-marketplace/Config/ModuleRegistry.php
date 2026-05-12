@@ -53,6 +53,12 @@ final class ModuleRegistry
                 'auth' => 'optional',
             ],
             [
+                'method' => 'GET',
+                'pattern' => '/api/infrastructure-marketplace/provider-activation.php',
+                'handler' => 'module endpoint file: api/infrastructure-marketplace/provider-activation.php',
+                'auth' => 'optional',
+            ],
+            [
                 'method' => 'POST',
                 'pattern' => '/api/infrastructure-marketplace/provider-activation.php',
                 'handler' => 'module endpoint file: api/infrastructure-marketplace/provider-activation.php',

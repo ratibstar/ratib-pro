@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
 
 use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
+use Ratib\InfrastructureMarketplace\Config\RuntimeOverrideStore;
 use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
 use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
@@ -20,6 +21,16 @@ $infraControlCsrfToken = (string) ($_SESSION['infra_control_csrf_token'] ?? '');
 
 $bindings = ModuleConfig::providerBindings();
 $allowlist = ModuleConfig::rolloutTenantAllowlist();
+
+$ratibRt = RuntimeOverrideStore::read();
+$ratibPf = is_array($ratibRt['provider_flags'] ?? null) ? $ratibRt['provider_flags'] : [];
+$ratibPfSel = static function (array $pf, string $provider, string $mode): string {
+    if (!isset($pf[$provider][$mode])) {
+        return '';
+    }
+    return !empty($pf[$provider][$mode]) ? '1' : '0';
+};
+$ratibNcRt = is_array($ratibRt['registrar_secrets']['namecheap'] ?? null) ? $ratibRt['registrar_secrets']['namecheap'] : [];
 ?>
 <!doctype html>
 <html lang="en">
@@ -44,9 +55,10 @@ $allowlist = ModuleConfig::rolloutTenantAllowlist();
         <article class="infra-market-card">
             <h3>Apply Runtime Controls</h3>
             <p>Updates are saved in module file: <code>/modules/infrastructure-marketplace/Config/runtime-overrides.json</code></p>
-            <form method="post" action="/api/infrastructure-marketplace/control-update.php" target="_blank" rel="noopener">
+            <form id="infra-runtime-controls-form" method="post" action="/api/infrastructure-marketplace/control-update.php">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($infraControlCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="source" value="ui">
+                <input type="hidden" name="runtime_controls_submit" value="1">
                 <p><label><input type="checkbox" name="enabled" value="1" <?php echo ModuleConfig::isModuleEnabled() ? 'checked' : ''; ?>> Module enabled</label></p>
                 <p><label><input type="checkbox" name="dry_run" value="1" <?php echo ModuleConfig::dryRunMode() ? 'checked' : ''; ?>> Dry-run mode</label></p>
                 <p><label><input type="checkbox" name="execution_kill_switch" value="1" <?php echo ModuleConfig::executionKillSwitch() ? 'checked' : ''; ?>> Execution kill-switch</label></p>
@@ -65,7 +77,40 @@ $allowlist = ModuleConfig::rolloutTenantAllowlist();
                 <p><label>Worker max loop jobs <input type="number" min="1" step="1" name="worker_max_loop_jobs" value="<?php echo ModuleConfig::workerMaxLoopJobs(); ?>"></label></p>
                 <p><label>Default currency <input type="text" maxlength="3" name="default_currency" value="<?php echo htmlspecialchars(ModuleConfig::defaultMarketplaceCurrency(), ENT_QUOTES, 'UTF-8'); ?>"></label></p>
                 <p><label>Tenant allowlist (comma-separated IDs) <input type="text" name="tenant_allowlist" value="<?php echo htmlspecialchars(implode(',', $allowlist), ENT_QUOTES, 'UTF-8'); ?>"></label></p>
-                <p><button class="infra-btn" type="submit">Save Runtime Controls</button></p>
+
+                <h4 class="infra-market-card__subhead">Provider execution flags</h4>
+                <p class="infra-domain-lead">Overrides <code>RATIB_INFRA_PROVIDER_*</code> env for each adapter. <strong>Inherit</strong> removes the panel override so environment variables apply.</p>
+                <?php
+                $pfProviders = [
+                    'namecheap' => 'Namecheap (registrar API)',
+                    'cloudflare_dns' => 'Cloudflare DNS',
+                    'letsencrypt_ssl' => "Let's Encrypt (SSL)",
+                ];
+                foreach ($pfProviders as $pkey => $plabel) {
+                    $sl = $ratibPfSel($ratibPf, $pkey, 'live');
+                    $ss = $ratibPfSel($ratibPf, $pkey, 'sandbox');
+                    ?>
+                <p><strong><?php echo htmlspecialchars($plabel, ENT_QUOTES, 'UTF-8'); ?></strong><br>
+                    <label>Live <select name="pf_<?php echo htmlspecialchars($pkey, ENT_QUOTES, 'UTF-8'); ?>_live">
+                        <option value="" <?php echo $sl === '' ? 'selected' : ''; ?>>Inherit (env)</option>
+                        <option value="1" <?php echo $sl === '1' ? 'selected' : ''; ?>>On</option>
+                        <option value="0" <?php echo $sl === '0' ? 'selected' : ''; ?>>Off</option>
+                    </select></label>
+                    <label style="margin-left:1rem;">Sandbox <select name="pf_<?php echo htmlspecialchars($pkey, ENT_QUOTES, 'UTF-8'); ?>_sandbox">
+                        <option value="" <?php echo $ss === '' ? 'selected' : ''; ?>>Inherit (env)</option>
+                        <option value="1" <?php echo $ss === '1' ? 'selected' : ''; ?>>On</option>
+                        <option value="0" <?php echo $ss === '0' ? 'selected' : ''; ?>>Off</option>
+                    </select></label></p>
+                <?php } ?>
+
+                <h4 class="infra-market-card__subhead">Namecheap API (stored in runtime file)</h4>
+                <p class="infra-domain-lead">Panel values override env / secret manager for domain checks. Whitelist this server’s IP in Namecheap; set Client IP to the same address.</p>
+                <p><label>API user <input type="text" name="nc_api_user" value="<?php echo htmlspecialchars((string) ($ratibNcRt['api_user'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off" size="40"></label></p>
+                <p><label>API key <input type="password" name="nc_api_key" value="" placeholder="Leave blank to keep existing" autocomplete="new-password" size="40"></label></p>
+                <p><label>Username <input type="text" name="nc_username" value="<?php echo htmlspecialchars((string) ($ratibNcRt['username'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off" size="40"></label></p>
+                <p><label>Client IP <input type="text" name="nc_client_ip" value="<?php echo htmlspecialchars((string) ($ratibNcRt['client_ip'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off" size="24"></label></p>
+
+                <p><button class="infra-btn infra-btn--primary" type="submit">Save Runtime Controls</button></p>
             </form>
         </article>
 
@@ -93,15 +138,11 @@ $allowlist = ModuleConfig::rolloutTenantAllowlist();
         </article>
 
         <article class="infra-market-card">
-            <h3>Provider Toggle Snapshot</h3>
-            <p><strong>hosting sandbox:</strong> <?php echo ModuleConfig::providerSandboxEnabled('hosting') ? 'on' : 'off'; ?></p>
-            <p><strong>hosting live:</strong> <?php echo ModuleConfig::providerLiveEnabled('hosting') ? 'on' : 'off'; ?></p>
-            <p><strong>dns sandbox:</strong> <?php echo ModuleConfig::providerSandboxEnabled('dns') ? 'on' : 'off'; ?></p>
-            <p><strong>dns live:</strong> <?php echo ModuleConfig::providerLiveEnabled('dns') ? 'on' : 'off'; ?></p>
-            <p><strong>registrar sandbox:</strong> <?php echo ModuleConfig::providerSandboxEnabled('registrar') ? 'on' : 'off'; ?></p>
-            <p><strong>registrar live:</strong> <?php echo ModuleConfig::providerLiveEnabled('registrar') ? 'on' : 'off'; ?></p>
-            <p><strong>ssl sandbox:</strong> <?php echo ModuleConfig::providerSandboxEnabled('ssl') ? 'on' : 'off'; ?></p>
-            <p><strong>ssl live:</strong> <?php echo ModuleConfig::providerLiveEnabled('ssl') ? 'on' : 'off'; ?></p>
+            <h3>Provider execution (effective)</h3>
+            <p><strong>Namecheap · live:</strong> <?php echo ModuleConfig::providerLiveEnabled('namecheap') ? 'on' : 'off'; ?> · <strong>sandbox:</strong> <?php echo ModuleConfig::providerSandboxEnabled('namecheap') ? 'on' : 'off'; ?></p>
+            <p><strong>Cloudflare DNS · live:</strong> <?php echo ModuleConfig::providerLiveEnabled('cloudflare_dns') ? 'on' : 'off'; ?> · <strong>sandbox:</strong> <?php echo ModuleConfig::providerSandboxEnabled('cloudflare_dns') ? 'on' : 'off'; ?></p>
+            <p><strong>Let’s Encrypt · live:</strong> <?php echo ModuleConfig::providerLiveEnabled('letsencrypt_ssl') ? 'on' : 'off'; ?> · <strong>sandbox:</strong> <?php echo ModuleConfig::providerSandboxEnabled('letsencrypt_ssl') ? 'on' : 'off'; ?></p>
+            <p><strong>Namecheap API (panel file):</strong> <?php echo ModuleConfig::namecheapSecretFromRuntime('api_user') ? 'API user set' : 'not in panel file'; ?> · <?php echo ModuleConfig::namecheapSecretFromRuntime('client_ip') ? 'client IP set' : 'not in panel file'; ?></p>
         </article>
 
         <article class="infra-market-card">
@@ -117,5 +158,32 @@ $allowlist = ModuleConfig::rolloutTenantAllowlist();
         </article>
     </section>
 </main>
+<script>
+(function () {
+  var form = document.getElementById('infra-runtime-controls-form');
+  if (!form) return;
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var fd = new FormData(form);
+    fetch(form.action, { method: 'POST', body: fd, credentials: 'same-origin' })
+      .then(function (r) {
+        return r.json().then(function (j) {
+          return { ok: r.ok, json: j };
+        });
+      })
+      .then(function (x) {
+        var j = x.json || {};
+        if (j.ok) {
+          alert('Saved. Reload this page to refresh read-only summaries.');
+        } else {
+          alert(j.message || 'Save failed');
+        }
+      })
+      .catch(function () {
+        alert('Network error');
+      });
+  });
+})();
+</script>
 </body>
 </html>

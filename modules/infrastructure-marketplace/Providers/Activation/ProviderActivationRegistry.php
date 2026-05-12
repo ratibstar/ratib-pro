@@ -98,5 +98,35 @@ final class ProviderActivationRegistry
         ]);
         return $stmt->rowCount();
     }
+
+    /**
+     * All activation rows (admin UI).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listAll(): array
+    {
+        try {
+            $stmt = $this->pdo->query(
+                'SELECT * FROM ratib_infra_provider_activations ORDER BY provider_type ASC, priority_weight DESC, id ASC'
+            );
+            $rows = $stmt ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
+
+            return is_array($rows) ? $rows : [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    public function deleteById(int $id): bool
+    {
+        try {
+            $stmt = $this->pdo->prepare('DELETE FROM ratib_infra_provider_activations WHERE id = :id');
+
+            return $stmt !== false && $stmt->execute(['id' => $id]);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
 }
 

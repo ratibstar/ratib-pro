@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Ratib\InfrastructureMarketplace\Registrars\Adapters;
 
+use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
 use Ratib\InfrastructureMarketplace\Domain\Contracts\RegistrarProviderInterface;
 use Ratib\InfrastructureMarketplace\Domain\TenantContext;
 use Ratib\InfrastructureMarketplace\Http\Clients\CurlHttpClient;
@@ -59,10 +60,13 @@ final class NamecheapRegistrarAdapter implements RegistrarProviderInterface
             return ['provider' => 'namecheap', 'fqdn' => $fqdn, 'status' => 'disabled_by_rollout'];
         }
 
-        $apiUser = $this->secrets->getSecret('RATIB_INFRA_NAMECHEAP', 'API_USER') ?? getenv('RATIB_INFRA_NAMECHEAP_API_USER');
-        $apiKey = $this->secrets->getSecret('RATIB_INFRA_NAMECHEAP', 'API_KEY') ?? getenv('RATIB_INFRA_NAMECHEAP_API_KEY');
-        $user = $this->secrets->getSecret('RATIB_INFRA_NAMECHEAP', 'USERNAME') ?? getenv('RATIB_INFRA_NAMECHEAP_USERNAME');
-        $clientIp = getenv('RATIB_INFRA_NAMECHEAP_CLIENT_IP');
+        $apiUser = ModuleConfig::namecheapSecretFromRuntime('api_user')
+            ?: ($this->secrets->getSecret('RATIB_INFRA_NAMECHEAP', 'API_USER') ?? getenv('RATIB_INFRA_NAMECHEAP_API_USER'));
+        $apiKey = ModuleConfig::namecheapSecretFromRuntime('api_key')
+            ?: ($this->secrets->getSecret('RATIB_INFRA_NAMECHEAP', 'API_KEY') ?? getenv('RATIB_INFRA_NAMECHEAP_API_KEY'));
+        $user = ModuleConfig::namecheapSecretFromRuntime('username')
+            ?: ($this->secrets->getSecret('RATIB_INFRA_NAMECHEAP', 'USERNAME') ?? getenv('RATIB_INFRA_NAMECHEAP_USERNAME'));
+        $clientIp = ModuleConfig::namecheapSecretFromRuntime('client_ip') ?: getenv('RATIB_INFRA_NAMECHEAP_CLIENT_IP');
         if (!is_string($apiUser) || !is_string($apiKey) || !is_string($user) || !is_string($clientIp) || $apiUser === '' || $apiKey === '' || $user === '' || $clientIp === '') {
             return ['provider' => 'namecheap', 'fqdn' => $fqdn, 'status' => 'missing_credentials'];
         }

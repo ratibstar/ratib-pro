@@ -82,10 +82,13 @@ final class ProviderDiagnosticsService
      */
     private function namecheapCheck(SecretManager $secret): array
     {
-        $apiUser = $secret->getSecret('RATIB_INFRA_NAMECHEAP', 'API_USER') ?? getenv('RATIB_INFRA_NAMECHEAP_API_USER');
-        $apiKey = $secret->getSecret('RATIB_INFRA_NAMECHEAP', 'API_KEY') ?? getenv('RATIB_INFRA_NAMECHEAP_API_KEY');
-        $user = $secret->getSecret('RATIB_INFRA_NAMECHEAP', 'USERNAME') ?? getenv('RATIB_INFRA_NAMECHEAP_USERNAME');
-        $clientIp = getenv('RATIB_INFRA_NAMECHEAP_CLIENT_IP');
+        $apiUser = ModuleConfig::namecheapSecretFromRuntime('api_user')
+            ?: ($secret->getSecret('RATIB_INFRA_NAMECHEAP', 'API_USER') ?? getenv('RATIB_INFRA_NAMECHEAP_API_USER'));
+        $apiKey = ModuleConfig::namecheapSecretFromRuntime('api_key')
+            ?: ($secret->getSecret('RATIB_INFRA_NAMECHEAP', 'API_KEY') ?? getenv('RATIB_INFRA_NAMECHEAP_API_KEY'));
+        $user = ModuleConfig::namecheapSecretFromRuntime('username')
+            ?: ($secret->getSecret('RATIB_INFRA_NAMECHEAP', 'USERNAME') ?? getenv('RATIB_INFRA_NAMECHEAP_USERNAME'));
+        $clientIp = ModuleConfig::namecheapSecretFromRuntime('client_ip') ?: getenv('RATIB_INFRA_NAMECHEAP_CLIENT_IP');
         $ready = is_string($apiUser) && $apiUser !== '' && is_string($apiKey) && $apiKey !== '' && is_string($user) && $user !== '' && is_string($clientIp) && $clientIp !== '';
         if (!$ready) {
             return ['name' => 'namecheap_reachability', 'status' => 'WARN', 'message' => 'credentials_missing'];
