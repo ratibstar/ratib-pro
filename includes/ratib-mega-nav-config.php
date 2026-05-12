@@ -20,9 +20,9 @@ function ratib_mega_nav_config(): array
                 [
                     'heading' => 'Find a domain',
                     'items' => [
-                        ['icon' => 'fa-magnifying-glass', 'title' => 'Search for Domain Names', 'desc' => 'Availability search + catalog on the marketplace.', 'href_key' => 'marketplace_domains'],
+                        ['icon' => 'fa-magnifying-glass', 'title' => 'Search for Domain Names', 'desc' => 'Availability search + catalog in this page flow.', 'href_key' => 'marketplace_domains'],
                         ['icon' => 'fa-right-left', 'title' => 'Transfer Domain Names', 'desc' => 'Contact solutions to move domains to RATIB.', 'href_key' => 'contact'],
-                        ['icon' => 'fa-layer-group', 'title' => 'Domain Extensions', 'desc' => 'Explore TLD options from the marketplace.', 'href_key' => 'marketplace_domains'],
+                        ['icon' => 'fa-layer-group', 'title' => 'Domain Extensions', 'desc' => 'Explore TLD options in this page flow.', 'href_key' => 'marketplace_domains'],
                     ],
                 ],
                 [
