@@ -805,6 +805,99 @@
     }
 })();
 
+/** Normalize stale cached nav HTML to the compact IA (Domains/Sites/Grow + 6 platform pills). */
+(function ratibHomeNormalizeLegacyNav() {
+    function textOf(el) {
+        return ((el && el.textContent) || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    }
+    function run() {
+        var nav = document.getElementById('ratibNavMenu');
+        if (!nav) {
+            return;
+        }
+
+        // Top mega row normalization for stale cached markup.
+        nav.querySelectorAll('.ratib-mega-nav__trigger-label, .ratib-mega-nav__flat-label').forEach(function (labelEl) {
+            var t = textOf(labelEl);
+            if (t === 'websites') {
+                labelEl.textContent = 'Sites';
+            } else if (t === 'plans & register') {
+                labelEl.textContent = 'Pricing';
+            } else if (t === 'marketing') {
+                labelEl.textContent = 'Grow';
+            }
+        });
+        nav.querySelectorAll('.ratib-mega-nav__li').forEach(function (li) {
+            var labelEl = li.querySelector('.ratib-mega-nav__trigger-label, .ratib-mega-nav__flat-label');
+            var t = textOf(labelEl);
+            if (t === 'email' || t === 'hosting' || t === 'ai builder') {
+                li.remove();
+            }
+        });
+
+        // Platform pills normalization: keep only Platform/Tour/Product/Pricing/Partners/Contact.
+        var pillWrap = nav.querySelector('.ratib-nav__platform-links');
+        if (!pillWrap) {
+            return;
+        }
+        var linkByKey = new Map();
+        pillWrap.querySelectorAll('a.ratib-nav__link').forEach(function (a) {
+            var href = a.getAttribute('href') || '';
+            var key = '';
+            if (/#platform$/.test(href)) {
+                key = 'platform';
+            } else if (a.classList.contains('ratib-nav__link--product-tour') || /#video$|#program-previews$/.test(href)) {
+                key = 'tour';
+            } else if (/#features$/.test(href)) {
+                key = 'product';
+            } else if (/#programs$/.test(href)) {
+                key = 'pricing';
+            } else if (/#agencies$/.test(href)) {
+                key = 'partners';
+            } else if (/#contact$/.test(href)) {
+                key = 'contact';
+            } else if (/\/modules\/infrastructure-marketplace\/Views\/marketplace\/index\.php/i.test(href)) {
+                key = 'legacy-remove';
+            } else if (/\/modules\/infrastructure-marketplace\/Views\/client\/services\.php/i.test(href)) {
+                key = 'legacy-remove';
+            } else {
+                key = 'legacy-remove';
+            }
+
+            if (key === 'legacy-remove') {
+                a.remove();
+                return;
+            }
+            if (!linkByKey.has(key)) {
+                linkByKey.set(key, a);
+            } else {
+                a.remove();
+            }
+        });
+
+        var desiredOrder = ['platform', 'tour', 'product', 'pricing', 'partners', 'contact'];
+        desiredOrder.forEach(function (key) {
+            var node = linkByKey.get(key);
+            if (!node) {
+                return;
+            }
+            var label = node.querySelector('.ratib-nav__label');
+            if (label) {
+                if (key === 'tour') label.textContent = 'Tour';
+                if (key === 'product') label.textContent = 'Product';
+                if (key === 'pricing') label.textContent = 'Pricing';
+                if (key === 'partners') label.textContent = 'Partners';
+            }
+            pillWrap.appendChild(node);
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', run);
+    } else {
+        run();
+    }
+})();
+
 /** Phase 2: subtle scroll reveal — adds classes only; no DOM/markup changes. */
 (function ratibHomeScrollReveal() {
     if (!window.IntersectionObserver) {

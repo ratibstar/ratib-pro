@@ -21,7 +21,7 @@ if (!isset($baseUrl) || !is_string($baseUrl) || $baseUrl === '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260211-navshape';
+    : '20260512-navcompact';
 /** Proof token: ties asset URLs to pages/home.php deploy */
 $ratibHomePhpPath = __DIR__ . '/../pages/home.php';
 clearstatcache(true, $ratibHomePhpPath);
