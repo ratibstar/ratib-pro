@@ -68,7 +68,7 @@ function ratib_mega_nav_config(): array
             'type' => 'link',
             'label' => 'Email',
             'href_key' => 'contact',
-            'desc' => 'Professional mailboxes and routing',
+            'desc' => 'Professional mailboxes and routing — same contact section as below.',
         ],
         [
             'type' => 'mega',
@@ -132,15 +132,9 @@ function ratib_mega_nav_config(): array
         ],
         [
             'type' => 'link',
-            'label' => 'Pricing',
+            'label' => 'Plans & register',
             'href_key' => 'register',
-            'desc' => 'Plans and transparent billing',
-        ],
-        [
-            'type' => 'link',
-            'label' => 'Contact Us',
-            'href_key' => 'contact',
-            'desc' => 'Talk to solutions engineering',
+            'desc' => 'Plans, billing, and registration — distinct from the Programs strip below.',
         ],
         [
             'type' => 'link',
