@@ -821,16 +821,23 @@
             var t = textOf(labelEl);
             if (t === 'websites') {
                 labelEl.textContent = 'Sites';
-            } else if (t === 'plans & register') {
-                labelEl.textContent = 'Pricing';
             } else if (t === 'marketing') {
                 labelEl.textContent = 'Grow';
             }
         });
         nav.querySelectorAll('.ratib-mega-nav__li').forEach(function (li) {
             var labelEl = li.querySelector('.ratib-mega-nav__trigger-label, .ratib-mega-nav__flat-label');
+            var flat = li.querySelector('a.ratib-mega-nav__flat');
             var t = textOf(labelEl);
-            if (t === 'email' || t === 'hosting' || t === 'ai builder') {
+            var href = flat ? (flat.getAttribute('href') || '') : '';
+            if (
+                t === 'email' ||
+                t === 'hosting' ||
+                t === 'ai builder' ||
+                t === 'pricing' ||
+                t === 'plans & register' ||
+                /#register\b/i.test(href)
+            ) {
                 li.remove();
             }
         });

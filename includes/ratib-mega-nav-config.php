@@ -95,6 +95,7 @@ function ratib_mega_nav_config(): array
                         ['icon' => 'fa-bullseye', 'title' => 'Landing Pages', 'desc' => 'High-conversion campaign destinations.', 'href_key' => 'solutions'],
                         ['icon' => 'fa-chart-line', 'title' => 'Campaigns & growth', 'desc' => 'Attribution and demand programs.', 'href_key' => 'solutions'],
                         ['icon' => 'fa-users', 'title' => 'Partner programs', 'desc' => 'Agency and host-market ecosystems.', 'href_key' => 'agencies'],
+                        ['icon' => 'fa-file-contract', 'title' => 'Plans & signup', 'desc' => 'Compare tiers and registration — same destination as the Pricing pill.', 'href_key' => 'register'],
                     ],
                 ],
                 [
@@ -130,12 +131,6 @@ function ratib_mega_nav_config(): array
                     ],
                 ],
             ],
-        ],
-        [
-            'type' => 'link',
-            'label' => 'Pricing',
-            'href_key' => 'register',
-            'desc' => 'Plans, billing, and registration',
         ],
         [
             'type' => 'link',
