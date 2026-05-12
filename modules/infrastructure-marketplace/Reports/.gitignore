@@ -1,3 +1,7 @@
-# Generated locally by `php Reports/ArchitectureAuditReport.php` — optional to commit for CI snapshots
+# Generated locally — optional to commit for CI snapshots
 architecture-audit-report.json
 architecture-audit-report.html
+commerce-foundation-compatibility.json
+commerce-foundation-compatibility.html
+commerce-foundation-readiness.json
+commerce-foundation-readiness.html

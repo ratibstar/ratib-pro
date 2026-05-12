@@ -41,10 +41,26 @@ final class MigrationVerifier
             }
         }
 
+        $optionalPhase2 = [
+            'ratib_infra_products',
+            'ratib_infra_plans',
+            'ratib_infra_plan_features',
+            'ratib_infra_pricing',
+            'ratib_tenant_resources',
+        ];
+        $missingOptional = [];
+        foreach ($optionalPhase2 as $table) {
+            if (!SchemaHelpers::tableExists($this->pdo, $table)) {
+                $missingOptional[] = $table;
+            }
+        }
+
         return [
             'required_tables' => $requiredTables,
             'missing_tables' => $missing,
             'status' => $missing === [] ? 'PASS' : 'FAIL',
+            'optional_phase2_commerce_tables' => $optionalPhase2,
+            'optional_phase2_missing' => $missingOptional,
         ];
     }
 }

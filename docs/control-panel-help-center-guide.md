@@ -150,7 +150,7 @@ If a menu row is **hidden**, your account does not have the required permission;
 - `docs/CONTROL_PANEL_COMPLETE_USER_GUIDE_AR_EN.md` — **EN/AR** control panel user guide (includes **§4.10** Infrastructure summary).
 - `docs/infrastructure-tabs-operator-checklist.md` — **checklist** format for Infrastructure tabs.
 - `docs/infrastructure-marketplace-production-readiness-review.md` — production readiness notes for the marketplace module.
-- `modules/infrastructure-marketplace/Migrations/` — SQL migrations for infra tables.
+- `modules/infrastructure-marketplace/Migrations/Phase2/` — **commerce foundation** (`ratib_infra_products`, `ratib_infra_plans`, `ratib_infra_plan_features`, `ratib_infra_pricing`, `ratib_tenant_resources`); see `README.txt` for run order.
 - `modules/infrastructure-marketplace/Reports/ArchitectureAuditReport.php` — run `php .../ArchitectureAuditReport.php` to regenerate subsystem audit (JSON + HTML under `Reports/`).
 
 ---
