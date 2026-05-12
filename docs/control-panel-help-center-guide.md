@@ -151,6 +151,7 @@ If a menu row is **hidden**, your account does not have the required permission;
 - `docs/infrastructure-tabs-operator-checklist.md` — **checklist** format for Infrastructure tabs.
 - `docs/infrastructure-marketplace-production-readiness-review.md` — production readiness notes for the marketplace module.
 - `modules/infrastructure-marketplace/Migrations/` — SQL migrations for infra tables.
+- `modules/infrastructure-marketplace/Reports/ArchitectureAuditReport.php` — run `php .../ArchitectureAuditReport.php` to regenerate subsystem audit (JSON + HTML under `Reports/`).
 
 ---
 
