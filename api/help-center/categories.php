@@ -44,6 +44,7 @@ class CategoriesAPI {
             $this->seedDefaultCategoriesIfEmpty();
             $this->ensureBengaliTranslations();
             $this->ensurePartnerAgenciesCategory();
+            $this->ensureInfrastructureControlCategory();
             $sql = "SELECT 
                         c.id,
                         c.parent_id,
@@ -321,6 +322,75 @@ class CategoriesAPI {
         } catch (Throwable $e) {
             error_log('ensurePartnerAgenciesCategory: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Ensure Infrastructure (Control Panel) category exists for built-in tutorials (id 14 when possible).
+     */
+    private function ensureInfrastructureControlCategory(): void
+    {
+        try {
+            if (!$this->conn) {
+                return;
+            }
+            $slug = 'control-panel-infrastructure';
+            $chk = $this->conn->prepare('SELECT id FROM tutorial_categories WHERE slug = ? LIMIT 1');
+            $chk->execute([$slug]);
+            $existingId = (int) $chk->fetchColumn();
+            if ($existingId > 0) {
+                $this->upsertInfrastructureCategoryTranslations($existingId);
+                return;
+            }
+            try {
+                $ins = $this->conn->prepare(
+                    "INSERT INTO tutorial_categories (id, parent_id, slug, icon, display_order, status)
+                     VALUES (14, NULL, ?, 'fa-server', 14, 'active')"
+                );
+                $ins->execute([$slug]);
+                $this->upsertInfrastructureCategoryTranslations(14);
+            } catch (Throwable $e) {
+                $ins2 = $this->conn->prepare(
+                    "INSERT INTO tutorial_categories (parent_id, slug, icon, display_order, status)
+                     VALUES (NULL, ?, 'fa-server', 14, 'active')"
+                );
+                $ins2->execute([$slug]);
+                $cidStmt = $this->conn->prepare('SELECT id FROM tutorial_categories WHERE slug = ? LIMIT 1');
+                $cidStmt->execute([$slug]);
+                $newId = (int) $cidStmt->fetchColumn();
+                if ($newId > 0) {
+                    $this->upsertInfrastructureCategoryTranslations($newId);
+                }
+            }
+        } catch (Throwable $e) {
+            error_log('ensureInfrastructureControlCategory: ' . $e->getMessage());
+        }
+    }
+
+    private function upsertInfrastructureCategoryTranslations(int $categoryId): void
+    {
+        if ($categoryId <= 0 || !$this->conn) {
+            return;
+        }
+        $stmt = $this->conn->prepare(
+            "INSERT INTO tutorial_category_translations (category_id, language_code, name, description)
+             VALUES (?, 'en', ?, ?)
+             ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description)"
+        );
+        $stmt->execute([
+            $categoryId,
+            'Infrastructure (Control Panel)',
+            'Runtime flags, operations dashboard, and provider activations for the infrastructure module (tabs: Control, Dashboard, Providers).',
+        ]);
+        $stmtBn = $this->conn->prepare(
+            "INSERT INTO tutorial_category_translations (category_id, language_code, name, description)
+             VALUES (?, 'bn', ?, ?)
+             ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description)"
+        );
+        $stmtBn->execute([
+            $categoryId,
+            'Infrastructure (কন্ট্রোল প্যানেল)',
+            'ইনফ্রাস্ট্রাকচার মডিউলের রানটাইম ফ্ল্যাগ, অপারেশন ড্যাশবোর্ড এবং প্রোভাইডার অ্যাক্টিভেশন।',
+        ]);
     }
 
     private function upsertPartnerAgencyCategoryTranslations(int $categoryId): void

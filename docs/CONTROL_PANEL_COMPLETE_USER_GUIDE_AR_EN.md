@@ -1,6 +1,6 @@
 # Ratib Control Panel - Complete User Guide (AR/EN)
 
-> Version: 1.0  
+> Version: 1.2  
 > Audience: Control Panel Operators, Country Admins, Super Admin
 
 ---
@@ -295,6 +295,54 @@ Permission model basics:
 
 ---
 
+## 4.10 Infrastructure Module Tabs | وحدة البنية التحتية (التبويبات)
+
+### EN
+**Where:** Sidebar → **Infrastructure** (single entry). On the page, use the tabs **Control**, **Dashboard**, and **Providers** (the URL uses `view=control`, `view=dashboard`, or `view=providers`).
+
+| Tab | When to use it |
+|-----|----------------|
+| **Control** | Change runtime settings: module on/off, dry-run, queues, tenant allowlist, provider execution overrides, Namecheap fields stored in the runtime file; save changes; use diagnostic shortcuts (often new tab). |
+| **Dashboard** | Monitor live operations: health, queues, workers, jobs, readiness/warnings. **Start here** when something fails to provision or the module misbehaves. |
+| **Providers** | Read provider health/capability JSON and manage database activations (`ratib_infra_provider_activations`) for registrar/DNS/SSL adapter classes. |
+
+**Typical flows:** rollout or policy change → **Control**, then confirm on **Dashboard**. Incident → **Dashboard** first; if adapters look inactive, open **Providers**; change **Control** only when configuration must be updated.
+
+**Access:** same system-settings / infrastructure permission as before the menu was merged into one item.
+
+Longer checklist: `docs/infrastructure-tabs-operator-checklist.md` (also shown in-app under **Appendix A** on **Help center**).
+
+**In-app guide:** open **Help center** from the control panel sidebar (same permission as **Control hub**).
+
+### AR
+**المكان:** من الشريط الجانبي → **Infrastructure** (عنصر واحد). داخل الصفحة استخدم التبويبات **Control** و**Dashboard** و**Providers** (يظهر في الرابط `view=` بالقيم المناسبة).
+
+| التبويب | متى تستخدمه |
+|---------|-------------|
+| **Control** | تغيير إعدادات التشغيل: تشغيل/إيقاف الوحدة، الوضع التجريبي، الطوابير، قائمة المستأجرين، تجاوزات تشغيل المزودين، حقول Namecheap في ملف التشغيل؛ الحفظ؛ روابط التشخيص (غالبًا في تبويب جديد). |
+| **Dashboard** | مراقبة التشغيل الفعلي: الصحة، الطوابير، العمال، المهام، الجاهزية/التحذيرات. **ابدأ هنا** عند فشل التوفير أو سلوك غير طبيعي للوحدة. |
+| **Providers** | قراءة JSON الصحة والقدرات وإدارة تفعيلات قاعدة البيانات للمزودين (Registrar/DNS/SSL). |
+
+**مسارات شائعة:** طرح أو تغيير سياسة → **Control** ثم التحقق من **Dashboard**. حادث → **Dashboard** أولًا؛ إن بدا المزود غير مفعّل افتح **Providers**؛ عدّل **Control** فقط عند الحاجة لتغيير الإعدادات.
+
+**الصلاحية:** نفس صلاحية إعدادات النظام/البنية التحتية كما قبل دمج القائمة في عنصر واحد.
+
+قائمة أطول: `docs/infrastructure-tabs-operator-checklist.md` (تظهر أيضًا داخل اللوحة تحت **Appendix A** في **Help center**).
+
+---
+
+## 4.11 Help center | مركز المساعدة
+
+### EN
+- Open **Help center** from the sidebar (next to **Control hub**). Requires the same **dashboard** permission as the hub.
+- The page renders `docs/control-panel-help-center-guide.md` and appends the infrastructure checklist as **Appendix A**. Editing those Markdown files in the repo updates the in-panel text after deploy.
+
+### AR
+- افتح **Help center** من الشريط الجانبي (بجانب **Control hub**). يحتاج نفس صلاحية **لوحة المعلومات** المستخدمة للـ hub.
+- الصفحة تعرض ملف `docs/control-panel-help-center-guide.md` وتلحق قائمة البنية التحتية كملحق **Appendix A**. تعديل ملفات Markdown في المستودع يحدّث ما يظهر في اللوحة بعد النشر.
+
+---
+
 ## 5) Typical Daily Workflow | سيناريو عمل يومي مقترح
 
 ### EN
@@ -377,6 +425,8 @@ Problem: Empty lists after scope updates.
 - Tracking: `/control-panel/pages/control/tracking-map.php`
 - Accounting: `/control-panel/pages/control/accounting.php`
 - Admins: `/control-panel/pages/control/admins.php`
+- Infrastructure (tabs via `view=`): `/control-panel/pages/control/infrastructure.php` — e.g. `?control=1&view=control`, `view=dashboard`, `view=providers`
+- Help center (in-app guide): `/control-panel/pages/control/help-center.php?control=1`
 
 ### AR
 - تسجيل الدخول: `/control-panel/pages/login.php`
@@ -388,6 +438,8 @@ Problem: Empty lists after scope updates.
 - التتبع: `/control-panel/pages/control/tracking-map.php`
 - المحاسبة: `/control-panel/pages/control/accounting.php`
 - مسؤولو اللوحة: `/control-panel/pages/control/admins.php`
+- البنية التحتية (التبويبات عبر `view=`): `/control-panel/pages/control/infrastructure.php` — مثلًا `?control=1&view=control` أو `view=dashboard` أو `view=providers`
+- مركز المساعدة (دليل داخل اللوحة): `/control-panel/pages/control/help-center.php?control=1`
 
 ---
 

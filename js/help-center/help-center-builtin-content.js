@@ -2189,5 +2189,52 @@ window.HELP_CENTER_BUILTIN = {
             views_count: 0,
             updated_at: '2026-04-15'
         }
+    ],
+    14: [
+        {
+            id: 'builtin-14-0',
+            title: 'Control Panel: Infrastructure — Control, Dashboard & Providers (full guide)',
+            overview: 'Where to open it, what each tab does, safe rollout practices, incident flow, provider activations, URLs, and permissions. Mirrors docs/infrastructure-control-panel-guide.md.',
+            content:
+            '<h2>1. What this is</h2>' +
+            '<p>The <strong>Infrastructure</strong> area configures and monitors the <strong>infrastructure-marketplace</strong> module: runtime flags, effective configuration, provider execution, database activations, and diagnostic APIs. It is separate from the main program dashboard (workers/agents).</p>' +
+            '<h2>2. How to open it</h2>' +
+            '<ol><li>Log in to the <strong>control panel</strong>.</li>' +
+            '<li>In the sidebar, click <strong>Infrastructure</strong> (one menu item).</li>' +
+            '<li>Use the three tabs at the top: <strong>Control</strong>, <strong>Dashboard</strong>, <strong>Providers</strong>. The page loads an embedded module screen for the active tab.</li></ol>' +
+            '<p><strong>Deep links</strong> (share with another admin): <code>.../control/infrastructure.php?control=1&amp;view=control</code> — replace <code>view=</code> with <code>dashboard</code> or <code>providers</code>.</p>' +
+            '<h2>3. Tab: Control</h2>' +
+            '<p><strong>Purpose:</strong> Set <em>intended</em> behavior — module enabled, dry-run, execution kill-switch, queue driver and limits, default currency, <strong>tenant allowlist</strong> (comma-separated; empty often means all tenants), optional <strong>provider execution</strong> overrides (Live/Sandbox per provider; <strong>Inherit</strong> removes the panel override so environment variables apply), and <strong>Namecheap</strong> fields stored in the runtime overrides file (API key blank keeps existing).</p>' +
+            '<p><strong>Read first:</strong> The read-only summary cards show <em>effective</em> values after merging overrides, env, and secrets — read them before saving changes.</p>' +
+            '<table class="help-table"><thead><tr><th>Section</th><th>Use it to…</th></tr></thead><tbody>' +
+            '<tr><td>Module &amp; queue</td><td>Turn the module on/off, dry-run, kill-switch, queue driver, retries, pressure threshold, worker loop size.</td></tr>' +
+            '<tr><td>Provider execution (overrides)</td><td>Force live/sandbox API usage per provider from the panel, or Inherit from server env.</td></tr>' +
+            '<tr><td>Namecheap (runtime file)</td><td>Store API user/key/username/client IP for checks that read the panel runtime file.</td></tr>' +
+            '<tr><td>Operator shortcuts</td><td>Open JSON/HTML diagnostics (often a new tab): health, dashboard API, queue ops, deployment audit, etc.</td></tr>' +
+            '</tbody></table>' +
+            '<p><strong>Safe practices:</strong> Use dry-run and a narrow tenant allowlist when testing. Treat kill-switch as an emergency stop. After <strong>Save</strong>, reload the page if prompted so summaries refresh.</p>' +
+            '<h2>4. Tab: Dashboard</h2>' +
+            '<p><strong>Purpose:</strong> Operational visibility — health, queues, workers, jobs, catalog, diagnostics, readiness warnings. Open this tab first when users report provisioning failures or stuck work. If panels stay on <strong>Loading…</strong>, verify your control session, same-origin API access, and network/proxy.</p>' +
+            '<h2>5. Tab: Providers</h2>' +
+            '<p><strong>Purpose:</strong> Provider <strong>health</strong> and <strong>capability</strong> JSON (read-only snapshots) plus <strong>database activations</strong> for table <code>ratib_infra_provider_activations</code> (which adapter classes are enabled). If everything is unavailable or capabilities are empty, check migrations, activation rows, and module enablement. The upsert form must use a real PHP <strong>provider_class</strong> name. Reload after save to refresh the panels.</p>' +
+            '<h2>6. Which tab first?</h2>' +
+            '<table class="help-table"><thead><tr><th>Situation</th><th>Start here</th></tr></thead><tbody>' +
+            '<tr><td>Rollout / policy / allowlist change</td><td><strong>Control</strong> → then <strong>Dashboard</strong> to verify.</td></tr>' +
+            '<tr><td>Incident: nothing provisions</td><td><strong>Dashboard</strong> → <strong>Providers</strong> if adapters look inactive → <strong>Control</strong> only if config must change.</td></tr>' +
+            '<tr><td>New registrar/adapter wiring</td><td><strong>Providers</strong> → <strong>Dashboard</strong> → <strong>Control</strong> for execution flags if needed.</td></tr>' +
+            '</tbody></table>' +
+            '<h2>7. Permissions</h2>' +
+            '<p>If <strong>Infrastructure</strong> is missing from the sidebar, your account lacks the required control-panel permission — ask a super admin.</p>' +
+            '<h2>8. Long-form documentation</h2>' +
+            '<p>Repository copy (for printing or onboarding): <code>docs/infrastructure-control-panel-guide.md</code> — checklist: <code>docs/infrastructure-tabs-operator-checklist.md</code> — bilingual summary: <code>docs/CONTROL_PANEL_COMPLETE_USER_GUIDE_AR_EN.md</code> §4.10.</p>' +
+            '<h2>Expert tips</h2>' +
+            '<ul><li>Share deep links with <code>view=</code> so colleagues land on the same tab.</li>' +
+            '<li>Change one layer at a time (Control vs activations) so you can roll back mentally.</li>' +
+            '<li>Keep production changes aligned with <code>docs/infrastructure-marketplace-production-readiness-review.md</code> when applicable.</li></ul>',
+            estimated_time: 40,
+            difficulty_level: 'intermediate',
+            views_count: 0,
+            updated_at: '2026-05-12'
+        }
     ]
 };

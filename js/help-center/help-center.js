@@ -77,7 +77,8 @@ const HELP_CENTER_BUILTIN = window.HELP_CENTER_BUILTIN || {
     10: [{ id: 'builtin-10-0', title: 'Troubleshooting', overview: 'Common issues and fixes.', content: '<p>Refresh and clear cache. Check permissions for missing menus. Read error messages for failed saves.</p>', estimated_time: 5, difficulty_level: 'beginner', views_count: 0 }],
     11: [{ id: 'builtin-11-0', title: 'Best Practices', overview: 'Consistency and security.', content: '<p>Use consistent naming. Review data on a schedule. Do not share passwords.</p>', estimated_time: 5, difficulty_level: 'beginner', views_count: 0 }],
     12: [{ id: 'builtin-12-0', title: 'Compliance & Legal', overview: 'Records and compliance.', content: '<p>Keep accurate records. Do not delete audit-relevant data. Report concerns through the correct channel.</p>', estimated_time: 5, difficulty_level: 'beginner', views_count: 0 }],
-    13: [{ id: 'builtin-13-0', title: '🌍 Partner Agencies', overview: 'Partner offices and deployment table.', content: '<p>Open <strong>Partner Agencies</strong> from the menu. Use <strong>View</strong> on a row to see workers sent and update deployment status.</p>', estimated_time: 5, difficulty_level: 'beginner', views_count: 0 }]
+    13: [{ id: 'builtin-13-0', title: '🌍 Partner Agencies', overview: 'Partner offices and deployment table.', content: '<p>Open <strong>Partner Agencies</strong> from the menu. Use <strong>View</strong> on a row to see workers sent and update deployment status.</p>', estimated_time: 5, difficulty_level: 'beginner', views_count: 0 }],
+    14: [{ id: 'builtin-14-0', title: 'Control Panel: Infrastructure — Control, Dashboard & Providers', overview: 'Full guide when offline builtin pack loads.', content: '<p>Open <strong>Help &amp; Learning Center</strong> → category <strong>Infrastructure (Control Panel)</strong> after reload, or read <code>docs/infrastructure-control-panel-guide.md</code>.</p>', estimated_time: 40, difficulty_level: 'intermediate', views_count: 0 }]
 };
 // Chat widget and other scripts read only window — keep in sync (fallback above if builtin file failed).
 window.HELP_CENTER_BUILTIN = HELP_CENTER_BUILTIN;
@@ -101,6 +102,9 @@ function helpCenterBuiltinTutorialsForCategory(categoryId) {
     const cat = helpCenterFindCategory(HelpCenterState.categories, categoryId);
     if (cat && String(cat.slug || '') === 'partner-agencies' && HELP_CENTER_BUILTIN[13]) {
         return HELP_CENTER_BUILTIN[13];
+    }
+    if (cat && String(cat.slug || '') === 'control-panel-infrastructure' && HELP_CENTER_BUILTIN[14]) {
+        return HELP_CENTER_BUILTIN[14];
     }
     return HELP_CENTER_BUILTIN[categoryId];
 }

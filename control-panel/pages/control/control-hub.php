@@ -74,6 +74,11 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
         <p>KPIs, quick actions, and recent activity.</p>
         <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/dashboard.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-arrow-right"></i> Open dashboard</a>
     </div>
+    <div class="control-settings-card" data-permission="control_dashboard">
+        <h3><i class="fas fa-book"></i> Help center</h3>
+        <p>In-panel guide: navigation, permissions, Infrastructure tabs, troubleshooting. Synced from <code>docs/</code> Markdown.</p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-info"><i class="fas fa-circle-question"></i> Open help center</a>
+    </div>
 </div>
 
 <div class="control-settings-intro mb-2"><strong>Core management</strong></div>
