@@ -159,3 +159,28 @@ $ratibMegaNavJsPath = __DIR__ . '/../js/pages/ratib-mega-nav.js';
 clearstatcache(true, $ratibMegaNavJsPath);
 $ratibMegaNavJsTs = (int) (@filemtime($ratibMegaNavJsPath) ?: time());
 $ratibMegaNavJsQuery = $ratibMegaNavJsTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
+
+/*
+ * Bust browser/CDN caches when nav chrome changes even if RATIB_HOME_UI_REV is unchanged (common on FTP deploy).
+ * Short hash from mtimes of nav markup, sync inline script, mega config, home-page.js.
+ */
+$ratibChromeNavPathsForBundle = [
+    __DIR__ . '/ratib-home-public-nav-sync.php',
+    __DIR__ . '/ratib-mega-nav-config.php',
+    __DIR__ . '/ratib-home-public-chrome-top.php',
+    __DIR__ . '/../js/pages/home-page.js',
+];
+$ratibChromeBundleKey = '';
+foreach ($ratibChromeNavPathsForBundle as $ratibChromeNavPath) {
+    if (!is_readable($ratibChromeNavPath)) {
+        continue;
+    }
+    clearstatcache(true, $ratibChromeNavPath);
+    $ratibChromeBundleKey .= $ratibChromeNavPath . '=' . (string) (int) (@filemtime($ratibChromeNavPath) ?: 0) . '|';
+}
+$ratibChromeBundleHash = $ratibChromeBundleKey !== ''
+    ? substr(hash('sha256', $ratibChromeBundleKey), 0, 12)
+    : '0';
+$ratibHomePublicCssQuery .= '-c' . $ratibChromeBundleHash;
+$ratibMegaNavCssQuery .= '-c' . $ratibChromeBundleHash;
+$ratibMegaNavJsQuery .= '-c' . $ratibChromeBundleHash;
