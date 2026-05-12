@@ -25,14 +25,9 @@ $megaItems = ratib_mega_nav_config();
 $platformPills = [
     ['label' => (string) ($ratibHome['home.nav.platform'] ?? 'Platform'), 'href' => $ratibNavPrefix . '#platform'],
     ['label' => (string) $ratibNavProductTourLabel, 'href' => $ratibNavPrefix . $ratibNavProductTourHref],
-    ['label' => (string) ($ratibHome['home.nav.how_it_works'] ?? ''), 'href' => $ratibNavPrefix . '#how-it-works'],
-    ['label' => (string) ($ratibHome['home.nav.features'] ?? ''), 'href' => $ratibNavPrefix . '#features'],
-    ['label' => (string) ($ratibHome['home.nav.solutions'] ?? ''), 'href' => $ratibNavPrefix . '#solutions'],
-    ['label' => (string) ($ratibHome['home.nav.programs'] ?? ''), 'href' => $ratibNavPrefix . '#programs'],
-    ['label' => (string) ($ratibHome['home.nav.agencies'] ?? ''), 'href' => $ratibNavPrefix . '#agencies'],
-    ['label' => (string) ($ratibHome['home.nav.tracking'] ?? ''), 'href' => $ratibNavPrefix . '#tracking'],
-    ['label' => (string) ($ratibHome['home.nav.operational'] ?? ''), 'href' => $ratibNavPrefix . '#operational'],
-    ['label' => (string) ($ratibHome['home.nav.api'] ?? ''), 'href' => $ratibNavPrefix . '#api'],
+    ['label' => trim((string) ($ratibHome['home.nav.product'] ?? '')) ?: (string) ($ratibHome['home.nav.features'] ?? 'Product'), 'href' => $ratibNavPrefix . '#features'],
+    ['label' => trim((string) ($ratibHome['home.nav.pricing'] ?? '')) ?: (string) ($ratibHome['home.nav.programs'] ?? 'Pricing'), 'href' => $ratibNavPrefix . '#programs'],
+    ['label' => trim((string) ($ratibHome['home.nav.partners'] ?? '')) ?: (string) ($ratibHome['home.nav.agencies'] ?? 'Partners'), 'href' => $ratibNavPrefix . '#agencies'],
     ['label' => (string) ($ratibHome['home.nav.contact'] ?? ''), 'href' => $ratibNavPrefix . '#contact'],
 ];
 ?>

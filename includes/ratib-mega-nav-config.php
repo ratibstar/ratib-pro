@@ -3,6 +3,9 @@
  * Mega navigation structure for public home chrome (RATIB SaaS header).
  * URLs use $baseUrl and $navPrefix (home hash prefix) — resolved at render time.
  *
+ * Top row is intentionally short: related product lines are merged (e.g. Sites = web + hosting + mail;
+ * Grow = marketing + AI that used to be separate links).
+ *
  * @return list<array<string,mixed>>
  */
 function ratib_mega_nav_config(): array
@@ -42,9 +45,9 @@ function ratib_mega_nav_config(): array
         ],
         [
             'type' => 'mega',
-            'id' => 'websites',
-            'label' => 'Websites',
-            'panel_id' => 'ratib-mega-panel-websites',
+            'id' => 'sites',
+            'label' => 'Sites',
+            'panel_id' => 'ratib-mega-panel-sites',
             'columns' => [
                 [
                     'heading' => 'Build',
@@ -55,29 +58,7 @@ function ratib_mega_nav_config(): array
                     ],
                 ],
                 [
-                    'heading' => 'Grow',
-                    'items' => [
-                        ['icon' => 'fa-bullseye', 'title' => 'Landing Pages', 'desc' => 'High-conversion campaign destinations.', 'href_key' => 'solutions'],
-                        ['icon' => 'fa-store', 'title' => 'Online Store', 'desc' => 'Catalog, checkout, and fulfillment hooks.', 'href_key' => 'programs'],
-                        ['icon' => 'fa-wordpress', 'title' => 'CMS Hosting', 'desc' => 'Managed performance for WordPress and headless.', 'href_key' => 'operational'],
-                    ],
-                ],
-            ],
-        ],
-        [
-            'type' => 'link',
-            'label' => 'Email',
-            'href_key' => 'contact',
-            'desc' => 'Professional mailboxes and routing — same contact section as below.',
-        ],
-        [
-            'type' => 'mega',
-            'id' => 'hosting',
-            'label' => 'Hosting',
-            'panel_id' => 'ratib-mega-panel-hosting',
-            'columns' => [
-                [
-                    'heading' => 'Hosting products',
+                    'heading' => 'Host',
                     'items' => [
                         ['icon' => 'fa-cloud', 'title' => 'Shared Hosting', 'desc' => 'Cost-effective sites on resilient clusters.', 'href_key' => 'platform'],
                         ['icon' => 'fa-server', 'title' => 'VPS Hosting', 'desc' => 'Isolated compute with root access.', 'href_key' => 'operational'],
@@ -85,20 +66,46 @@ function ratib_mega_nav_config(): array
                     ],
                 ],
                 [
-                    'heading' => 'Power & scale',
+                    'heading' => 'Dedicated & mail',
                     'items' => [
                         ['icon' => 'fa-microchip', 'title' => 'Dedicated Servers', 'desc' => 'Single-tenant hardware for compliance.', 'href_key' => 'operational'],
                         ['icon' => 'fa-wordpress', 'title' => 'WordPress Hosting', 'desc' => 'Optimized stack and staging workflows.', 'href_key' => 'features'],
+                        ['icon' => 'fa-envelope', 'title' => 'Professional Email', 'desc' => 'Mailboxes and routing — same contact section.', 'href_key' => 'contact'],
+                    ],
+                ],
+                [
+                    'heading' => 'Scale & partners',
+                    'items' => [
                         ['icon' => 'fa-handshake', 'title' => 'Reseller Hosting', 'desc' => 'White-label for agencies and partners.', 'href_key' => 'agencies'],
+                        ['icon' => 'fa-store', 'title' => 'Online Store', 'desc' => 'Catalog, checkout, and fulfillment hooks.', 'href_key' => 'programs'],
+                        ['icon' => 'fa-diagram-project', 'title' => 'CMS Hosting', 'desc' => 'Managed performance for WordPress and headless.', 'href_key' => 'operational'],
                     ],
                 ],
             ],
         ],
         [
-            'type' => 'link',
-            'label' => 'Marketing',
-            'href_key' => 'solutions',
-            'desc' => 'Campaigns, attribution, and growth',
+            'type' => 'mega',
+            'id' => 'grow',
+            'label' => 'Grow',
+            'panel_id' => 'ratib-mega-panel-grow',
+            'columns' => [
+                [
+                    'heading' => 'Marketing',
+                    'items' => [
+                        ['icon' => 'fa-bullseye', 'title' => 'Landing Pages', 'desc' => 'High-conversion campaign destinations.', 'href_key' => 'solutions'],
+                        ['icon' => 'fa-chart-line', 'title' => 'Campaigns & growth', 'desc' => 'Attribution and demand programs.', 'href_key' => 'solutions'],
+                        ['icon' => 'fa-users', 'title' => 'Partner programs', 'desc' => 'Agency and host-market ecosystems.', 'href_key' => 'agencies'],
+                    ],
+                ],
+                [
+                    'heading' => 'AI & automation',
+                    'items' => [
+                        ['icon' => 'fa-wand-magic-sparkles', 'title' => 'AI Builder', 'desc' => 'Prompt-to-page and workflow copilots.', 'href_key' => 'features'],
+                        ['icon' => 'fa-comments', 'title' => 'Assistants & chat', 'desc' => 'Embedded help and routing.', 'href_key' => 'features'],
+                        ['icon' => 'fa-code', 'title' => 'APIs & integrations', 'desc' => 'Extend flows with webhooks and REST.', 'href_key' => 'api'],
+                    ],
+                ],
+            ],
         ],
         [
             'type' => 'mega',
@@ -126,15 +133,9 @@ function ratib_mega_nav_config(): array
         ],
         [
             'type' => 'link',
-            'label' => 'AI Builder',
-            'href_key' => 'features',
-            'desc' => 'Prompt-to-page and workflow copilots',
-        ],
-        [
-            'type' => 'link',
-            'label' => 'Plans & register',
+            'label' => 'Pricing',
             'href_key' => 'register',
-            'desc' => 'Plans, billing, and registration — distinct from the Programs strip below.',
+            'desc' => 'Plans, billing, and registration',
         ],
         [
             'type' => 'link',

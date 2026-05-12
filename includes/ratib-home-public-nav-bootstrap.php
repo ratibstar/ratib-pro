@@ -137,9 +137,12 @@ if ($ratibShowHomeVideoBand) {
 } elseif (!empty($ratibProgSlotsOut)) {
     $ratibNavProductTourHref = '#program-previews';
 }
-$ratibNavProductTourLabel = trim((string) ($ratibHome['home.nav.product_tour'] ?? ''));
+$ratibNavProductTourLabel = trim((string) ($ratibHome['home.nav.tour'] ?? ''));
 if ($ratibNavProductTourLabel === '') {
-    $ratibNavProductTourLabel = 'video/pic';
+    $ratibNavProductTourLabel = trim((string) ($ratibHome['home.nav.product_tour'] ?? ''));
+}
+if ($ratibNavProductTourLabel === '') {
+    $ratibNavProductTourLabel = 'Tour';
 }
 
 $ratibHomeCssPath = __DIR__ . '/../css/pages/home-public.css';

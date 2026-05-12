@@ -29,18 +29,13 @@ if (!function_exists('ratib_site_content_defaults_home')) {
      */
     function ratib_site_content_defaults_home(): array
     {
-        /* Same order as header nav on pages/home.php (Platform · agency · video/pic · Features · … · Contact). */
+        /* Header platform strip (mega menu holds Domains / Sites / Grow / …). Short labels; legacy keys kept below for CMS rows still in DB. */
         $nav = [
             'platform' => 'Platform',
-            'how_it_works' => 'How it works',
-            'product_tour' => 'video/pic',
-            'features' => 'Features',
-            'solutions' => 'Solutions',
-            'programs' => 'Programs',
-            'agencies' => 'Agencies',
-            'tracking' => 'Tracking',
-            'operational' => 'Visibility',
-            'api' => 'API',
+            'tour' => 'Tour',
+            'product' => 'Product',
+            'pricing' => 'Pricing',
+            'partners' => 'Partners',
             'contact' => 'Contact',
         ];
         $d = [];
@@ -56,6 +51,17 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         foreach ($nav as $slug => $label) {
             $d['home.nav.' . $slug] = $label;
         }
+
+        /* Legacy keys still merged into defaults so older CMS rows and footer fallbacks resolve. */
+        $d['home.nav.product_tour'] = $d['home.nav.tour'];
+        $d['home.nav.features'] = $d['home.nav.product'];
+        $d['home.nav.programs'] = $d['home.nav.pricing'];
+        $d['home.nav.agencies'] = $d['home.nav.partners'];
+        $d['home.nav.how_it_works'] = 'How it works';
+        $d['home.nav.solutions'] = 'Solutions';
+        $d['home.nav.tracking'] = 'Tracking';
+        $d['home.nav.operational'] = 'Visibility';
+        $d['home.nav.api'] = 'API';
 
         $d['home.nav.cta_partner'] = 'Partner Login';
 
@@ -365,13 +371,7 @@ if (!function_exists('ratib_site_content_home_flat_overlay_live_db')) {
 
 if (!function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
     /**
-     * After ratib_site_content_home_flat(): ensure header nav keys exist and video/pic nav has a label.
-     *
-     * - Missing keys (e.g. home.nav.product_tour absent from an old on-disk JSON snapshot) are filled from
-     *   ratib_site_content_defaults_home() so the new tab can render.
-     * - home.nav.product_tour: if the value is empty, use the default — avoids a blank tab when the key was never saved (label: video/pic).
-     * - Other non-empty values are left as-is: a DB row for home.nav.how_it_works = "How it works" still wins until
-     *   you change it in Public site content to "agency" (or clear that row so defaults apply).
+     * After ratib_site_content_home_flat(): ensure compact header nav keys exist (mega menu + short platform strip).
      *
      * @param array<string, string> $flat
      */
@@ -383,21 +383,29 @@ if (!function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
         $def = ratib_site_content_defaults_home();
         $navKeys = [
             'home.nav.platform',
-            'home.nav.how_it_works',
+            'home.nav.tour',
+            'home.nav.product',
+            'home.nav.pricing',
+            'home.nav.partners',
+            'home.nav.contact',
             'home.nav.product_tour',
             'home.nav.features',
-            'home.nav.solutions',
             'home.nav.programs',
             'home.nav.agencies',
+            'home.nav.how_it_works',
+            'home.nav.solutions',
             'home.nav.tracking',
             'home.nav.operational',
             'home.nav.api',
-            'home.nav.contact',
         ];
         foreach ($navKeys as $k) {
             if (!array_key_exists($k, $flat) && isset($def[$k])) {
                 $flat[$k] = $def[$k];
             }
+        }
+        $tour = 'home.nav.tour';
+        if (trim((string) ($flat[$tour] ?? '')) === '' && isset($def[$tour])) {
+            $flat[$tour] = $def[$tour];
         }
         $pt = 'home.nav.product_tour';
         if (trim((string) ($flat[$pt] ?? '')) === '' && isset($def[$pt])) {
@@ -580,17 +588,12 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                 'id' => 'nav',
                 'title' => 'Header navigation labels',
                 'fields' => [
-                    ['key' => 'home.nav.platform', 'label' => 'Platform', 'type' => 'text'],
-                    ['key' => 'home.nav.how_it_works', 'label' => 'How it works (#how-it-works)', 'type' => 'text'],
-                    ['key' => 'home.nav.product_tour', 'label' => 'Nav · video/pic', 'type' => 'text'],
-                    ['key' => 'home.nav.features', 'label' => 'Features', 'type' => 'text'],
-                    ['key' => 'home.nav.solutions', 'label' => 'Solutions', 'type' => 'text'],
-                    ['key' => 'home.nav.programs', 'label' => 'Programs (#programs)', 'type' => 'text'],
-                    ['key' => 'home.nav.agencies', 'label' => 'Agencies', 'type' => 'text'],
-                    ['key' => 'home.nav.tracking', 'label' => 'Tracking', 'type' => 'text'],
-                    ['key' => 'home.nav.operational', 'label' => 'Visibility', 'type' => 'text'],
-                    ['key' => 'home.nav.api', 'label' => 'API', 'type' => 'text'],
-                    ['key' => 'home.nav.contact', 'label' => 'Contact', 'type' => 'text'],
+                    ['key' => 'home.nav.platform', 'label' => 'Platform (#platform)', 'type' => 'text'],
+                    ['key' => 'home.nav.tour', 'label' => 'Tour (walkthrough target)', 'type' => 'text'],
+                    ['key' => 'home.nav.product', 'label' => 'Product — Features + Solutions (#features)', 'type' => 'text'],
+                    ['key' => 'home.nav.pricing', 'label' => 'Pricing (#programs)', 'type' => 'text'],
+                    ['key' => 'home.nav.partners', 'label' => 'Partners (#agencies)', 'type' => 'text'],
+                    ['key' => 'home.nav.contact', 'label' => 'Contact (#contact)', 'type' => 'text'],
                     ['key' => 'home.nav.cta_partner', 'label' => 'CTA · Partner Login', 'type' => 'text'],
                 ],
             ],

@@ -15,6 +15,9 @@ $ratibFp = $ratibFooterPrefix;
 
 $ratibFooterPricingLabel = trim((string) ($ratibHome['home.footer.link.platform.pricing'] ?? ''));
 if ($ratibFooterPricingLabel === '') {
+    $ratibFooterPricingLabel = trim((string) ($ratibHome['home.nav.pricing'] ?? ''));
+}
+if ($ratibFooterPricingLabel === '') {
     $ratibFooterPricingLabel = (string) ($ratibHome['home.nav.programs'] ?? '');
 }
 
@@ -37,22 +40,19 @@ $ratibGlyph = function (string $symbolId): string {
                         <a href="<?php echo htmlspecialchars($ratibFp . '#platform', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-platform'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.overview'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
-                        <a href="<?php echo htmlspecialchars($ratibFp . '#how-it-works', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-agency'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.how_it_works'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                        <a href="<?php echo htmlspecialchars($ratibFp . $ratibNavProductTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-video'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibNavProductTourLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
-                        <a href="<?php echo htmlspecialchars($ratibFp . '#features', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-features'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.features'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-                    </li>
-                    <li>
-                        <a href="<?php echo htmlspecialchars($ratibFp . '#tracking', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-tracking'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.tracking'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-                    </li>
-                    <li>
-                        <a href="<?php echo htmlspecialchars($ratibFp . '#operational', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-operational'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.ops_visibility'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#features', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-features'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.nav.product'] ?? '')) ?: (string) ($ratibHome['home.nav.features'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
                         <a href="<?php echo htmlspecialchars($ratibFp . '#programs', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-programs'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibFooterPricingLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
-                        <a href="<?php echo htmlspecialchars($ratibFp . '#api', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-api'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.apis'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#agencies', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-agencies'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.nav.partners'] ?? '')) ?: (string) ($ratibHome['home.nav.agencies'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#contact', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-contact'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.contact'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                 </ul>
             </div>
@@ -63,7 +63,7 @@ $ratibGlyph = function (string $symbolId): string {
                         <a href="<?php echo htmlspecialchars($ratibFp . '#solutions', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-solutions'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.solutions'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
-                        <a href="<?php echo htmlspecialchars($ratibFp . '#agencies', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-agencies'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.agencies'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#how-it-works', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-agency'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.how_it_works'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
                         <a href="<?php echo htmlspecialchars($ratibFp . '#operational', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-operational'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.operational'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>

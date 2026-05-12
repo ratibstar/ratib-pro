@@ -69,6 +69,7 @@ if (function_exists('ratib_site_content_home_flat')) {
     }
     $resolvedPlatform = isset($flat['home.nav.platform']) ? (string) $flat['home.nav.platform'] : null;
     $resolvedNavHow = isset($flat['home.nav.how_it_works']) ? (string) $flat['home.nav.how_it_works'] : null;
+    $resolvedNavTourPrimary = isset($flat['home.nav.tour']) ? (string) $flat['home.nav.tour'] : null;
     $resolvedNavTour = isset($flat['home.nav.product_tour']) ? (string) $flat['home.nav.product_tour'] : null;
     $resolvedPhonePreview = isset($flat['home.topbar.phone_display']) ? (string) $flat['home.topbar.phone_display'] : null;
     foreach ($registerSampleKeys as $rk) {
@@ -97,7 +98,9 @@ $payload = [
     'resolved_home_nav_platform' => $resolvedPlatform,
     /** DB row wins until you save a new value in Public site content (default is now "agency"). */
     'resolved_home_nav_how_it_works' => $resolvedNavHow,
-    /** Filled from defaults if missing/empty so the video/pic nav tab can render. */
+    /** Primary strip label for walkthrough (merged former video/pic + how-it-works pill). */
+    'resolved_home_nav_tour' => $resolvedNavTourPrimary,
+    /** Legacy alias of tour label — filled from defaults when missing. */
     'resolved_home_nav_product_tour' => $resolvedNavTour,
     'resolved_home_topbar_phone_display' => $resolvedPhonePreview,
     /** Same values pages/home.php registration block uses — compare with phpMyAdmin rows for these keys. */
