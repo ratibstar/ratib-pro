@@ -807,7 +807,8 @@
 
 /** If server HTML is stale/cached and omits infra tabs, inject them into the top nav. */
 (function ratibHomeEnsureInfraNavTabs() {
-    var MARKETPLACE_HREF = '/modules/infrastructure-marketplace/Views/marketplace/index.php';
+    var MARKETPLACE_HREF =
+        '/modules/infrastructure-marketplace/Views/marketplace/index.php?focus=domains#infra-domain-search';
     var STATUS_HREF = '/modules/infrastructure-marketplace/Views/client/services.php';
 
     function mkLink(href, glyphId, label, attrName) {
@@ -902,7 +903,7 @@
             return;
         }
         if (!hasMarketplace) {
-            var marketplace = mkLink(MARKETPLACE_HREF, '#ratib-ng-platform', 'Marketplace', 'data-ratib-infra-marketplace-tab');
+            var marketplace = mkLink(MARKETPLACE_HREF, '#ratib-ng-platform', 'Find a domain', 'data-ratib-infra-marketplace-tab');
             contact.parentNode.insertBefore(marketplace, contact.nextSibling);
             hasMarketplace = marketplace;
         }
@@ -930,7 +931,7 @@
                 });
             }
         }
-        bindInfraNavBehavior(hasMarketplace, 'Infrastructure Marketplace', MARKETPLACE_HREF, 'marketplace');
+        bindInfraNavBehavior(hasMarketplace, 'Find a domain', MARKETPLACE_HREF, 'marketplace');
         bindInfraNavBehavior(hasInfraStatus, 'Infrastructure Status', STATUS_HREF, 'status');
     }
     if (document.readyState === 'loading') {

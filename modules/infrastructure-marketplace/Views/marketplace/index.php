@@ -14,7 +14,15 @@ clearstatcache(true, $domainsJsPath);
 $marketplaceJsV = (int) (@filemtime($marketplaceJsPath) ?: time());
 $domainsJsV = (int) (@filemtime($domainsJsPath) ?: time());
 $focusDomains = isset($_GET['focus']) && strtolower((string) $_GET['focus']) === 'domains';
-$pageTitle = $focusDomains ? 'Domains — Infrastructure Marketplace' : 'Infrastructure Marketplace';
+/* Public-facing: avoid "Infrastructure Marketplace" in title — same page as header "Find a domain". */
+$pageTitle = $focusDomains
+    ? 'Find a domain — RATIB'
+    : 'Domains & services — RATIB';
+$h1Text = $focusDomains ? 'Find a domain' : 'Domains & services';
+$headerLead = $focusDomains
+    ? 'Search domain availability, then use the catalog below for infrastructure offers when enabled.'
+    : 'Domain search, provisioning catalog, and status — one place for RATIB infrastructure services.';
+$domainSectionH2 = $focusDomains ? 'Availability search' : 'Domains';
 ?>
 <!doctype html>
 <html lang="en">
@@ -28,12 +36,12 @@ $pageTitle = $focusDomains ? 'Domains — Infrastructure Marketplace' : 'Infrast
 <body class="ratib-infra-marketplace-scope ratib-infra-marketplace-view">
 <main class="infra-market-wrap">
     <header>
-        <h1>Infrastructure Marketplace</h1>
-        <p>Hosting, domains, SSL, DNS, and provisioning — tenant-safe catalog and domain availability search.</p>
+        <h1><?php echo htmlspecialchars($h1Text, ENT_QUOTES, 'UTF-8'); ?></h1>
+        <p><?php echo htmlspecialchars($headerLead, ENT_QUOTES, 'UTF-8'); ?></p>
     </header>
 
     <section id="infra-domain-search" class="infra-market-card infra-domain-hub" aria-labelledby="infra-domain-heading">
-        <h2 id="infra-domain-heading">Domains</h2>
+        <h2 id="infra-domain-heading"><?php echo htmlspecialchars($domainSectionH2, ENT_QUOTES, 'UTF-8'); ?></h2>
         <p class="infra-domain-lead">Search availability across registrar providers activated in Control Panel. Successful checkout flows still require catalog SKUs, payments, and fulfillment wiring.</p>
         <form id="infra-domain-search-form" class="infra-domain-search-form" autocomplete="off">
             <label class="visually-hidden" for="infra-domain-q">Domain keyword</label>
