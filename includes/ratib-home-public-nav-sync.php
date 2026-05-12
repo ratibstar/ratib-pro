@@ -9,7 +9,7 @@ function ratib_home_nav_emit_sync_guard_style(): void
 {
     /* In <head> before body paint: beats external CSS + stops flash of cached/extra links. */
     echo '<style id="ratib-nav-sync-guard">';
-    echo '#ratibNavMenu:not([data-ratib-nav-sync="1"]){visibility:hidden!important;opacity:0!important;pointer-events:none!important;}';
+    echo '#ratibNavMenu:not([data-ratib-nav-sync="1"]){visibility:hidden!important;opacity:0!important;pointer-events:none!important;}#ratibNavMenu[data-ratib-nav-sync="1"]{visibility:visible!important;opacity:1!important;pointer-events:auto!important;}';
     echo '</style>';
 }
 
@@ -70,6 +70,9 @@ function run(){
   });
   }catch(e){}
   nav.setAttribute('data-ratib-nav-sync','1');
+  nav.style.visibility='visible';
+  nav.style.opacity='1';
+  nav.style.pointerEvents='auto';
 }
 run();
 })();

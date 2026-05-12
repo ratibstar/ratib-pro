@@ -914,6 +914,9 @@
             pillWrap.appendChild(node);
         });
         nav.setAttribute('data-ratib-nav-sync', '1');
+        nav.style.visibility = 'visible';
+        nav.style.opacity = '1';
+        nav.style.pointerEvents = 'auto';
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', run);
