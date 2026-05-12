@@ -101,18 +101,20 @@
 }
 
 .ratib-mega-nav__li {
-  position: relative;
+  position: static;
   display: flex;
   align-items: center;
 }
 
+/* Panel is absolutely positioned inside .ratib-mega-nav (wide row), not each narrow li,
+   so left:50% + translateX(-50%) centers in the viewport band — avoids clipping the first column. */
 .ratib-mega-nav__li--mega {
   position: static;
 }
 
 @media (min-width: 1100px) {
-  .ratib-mega-nav__li--mega {
-    position: relative;
+  .ratib-mega-nav__li--mega.is-open {
+    z-index: 61;
   }
 }
 
