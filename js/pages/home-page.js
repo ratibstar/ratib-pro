@@ -805,7 +805,7 @@
     }
 })();
 
-/** Normalize stale cached nav HTML to the compact IA (Domains/Sites/Grow + 6 platform pills). */
+/** Normalize stale cached nav HTML to the compact IA (Domains/Sites/Grow + 7 platform pills). */
 (function ratibHomeNormalizeLegacyNav() {
     function textOf(el) {
         return ((el && el.textContent) || '').replace(/\s+/g, ' ').trim().toLowerCase();
@@ -852,7 +852,7 @@
             }
         });
 
-        // Platform pills normalization: keep only Platform/Tour/Product/Pricing/Partners/Contact.
+        // Platform pills normalization: keep only Platform/Domains/Tour/Product/Pricing/Partners/Contact.
         var pillWrap = nav.querySelector('.ratib-nav__platform-links');
         if (!pillWrap) {
             nav.setAttribute('data-ratib-nav-sync', '1');
@@ -865,6 +865,8 @@
             var key = '';
             if (hp === '#platform' && !a.classList.contains('ratib-nav__link--product-tour')) {
                 key = 'platform';
+            } else if (hp === '#domains') {
+                key = 'domains';
             } else if (
                 a.classList.contains('ratib-nav__link--product-tour') ||
                 hp === '#video' ||
@@ -898,7 +900,7 @@
             }
         });
 
-        var desiredOrder = ['platform', 'tour', 'product', 'pricing', 'partners', 'contact'];
+        var desiredOrder = ['platform', 'domains', 'tour', 'product', 'pricing', 'partners', 'contact'];
         desiredOrder.forEach(function (key) {
             var node = linkByKey.get(key);
             if (!node) {
@@ -907,6 +909,7 @@
             var label = node.querySelector('.ratib-nav__label');
             if (label) {
                 if (key === 'tour') label.textContent = 'Tour';
+                if (key === 'domains') label.textContent = 'Domains';
                 if (key === 'product') label.textContent = 'Product';
                 if (key === 'pricing') label.textContent = 'Pricing';
                 if (key === 'partners') label.textContent = 'Partners';

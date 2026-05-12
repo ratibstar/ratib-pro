@@ -32,6 +32,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         /* Header platform strip (mega menu holds Domains / Sites / Grow / …). Short labels; legacy keys kept below for CMS rows still in DB. */
         $nav = [
             'platform' => 'Platform',
+            'domains' => 'Domains',
             'tour' => 'Tour',
             'product' => 'Product',
             'pricing' => 'Pricing',
@@ -383,6 +384,7 @@ if (!function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
         $def = ratib_site_content_defaults_home();
         $navKeys = [
             'home.nav.platform',
+            'home.nav.domains',
             'home.nav.tour',
             'home.nav.product',
             'home.nav.pricing',
@@ -589,6 +591,7 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                 'title' => 'Header navigation labels',
                 'fields' => [
                     ['key' => 'home.nav.platform', 'label' => 'Platform (#platform)', 'type' => 'text'],
+                    ['key' => 'home.nav.domains', 'label' => 'Domains — domain search (#domains)', 'type' => 'text'],
                     ['key' => 'home.nav.tour', 'label' => 'Tour (walkthrough target)', 'type' => 'text'],
                     ['key' => 'home.nav.product', 'label' => 'Product — Features + Solutions (#features)', 'type' => 'text'],
                     ['key' => 'home.nav.pricing', 'label' => 'Pricing (#programs)', 'type' => 'text'],

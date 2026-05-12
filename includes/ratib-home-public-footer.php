@@ -40,6 +40,9 @@ $ratibGlyph = function (string $symbolId): string {
                         <a href="<?php echo htmlspecialchars($ratibFp . '#platform', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-platform'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.platform.overview'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#domains', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-domains'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.domains'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
                         <a href="<?php echo htmlspecialchars($ratibFp . $ratibNavProductTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-video'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibNavProductTourLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>

@@ -24,6 +24,7 @@ $megaItems = ratib_mega_nav_config();
 
 $platformPills = [
     ['label' => (string) ($ratibHome['home.nav.platform'] ?? 'Platform'), 'href' => $ratibNavPrefix . '#platform'],
+    ['label' => (string) ($ratibHome['home.nav.domains'] ?? 'Domains'), 'href' => $ratibNavPrefix . '#domains'],
     ['label' => (string) $ratibNavProductTourLabel, 'href' => $ratibNavPrefix . $ratibNavProductTourHref],
     ['label' => trim((string) ($ratibHome['home.nav.product'] ?? '')) ?: (string) ($ratibHome['home.nav.features'] ?? 'Product'), 'href' => $ratibNavPrefix . '#features'],
     ['label' => trim((string) ($ratibHome['home.nav.pricing'] ?? '')) ?: (string) ($ratibHome['home.nav.programs'] ?? 'Pricing'), 'href' => $ratibNavPrefix . '#programs'],
