@@ -11,6 +11,10 @@ if (is_file($ratibInfraControlPanelConfig)) {
 }
 ControlSecurityGuard::ensureInfraCsrfSessionToken();
 $ratibInfraAdminCsrf = (string) ($_SESSION['infra_control_csrf_token'] ?? '');
+$ratibInfraEmbed = isset($_GET['embed']) && (string) $_GET['embed'] === '1';
+$ratibAdminControlCss = '/modules/infrastructure-marketplace/Assets/css/infrastructure-admin-control.css';
+$ratibAdminControlCssPath = dirname(__DIR__, 2) . '/Assets/css/infrastructure-admin-control.css';
+$ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($ratibAdminControlCssPath) : '1';
 ?>
 <!doctype html>
 <html lang="en">
@@ -23,12 +27,19 @@ $ratibInfraAdminCsrf = (string) ($_SESSION['infra_control_csrf_token'] ?? '');
     <title>Infrastructure Marketplace Dashboard</title>
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-marketplace.css">
     <link rel="stylesheet" href="/modules/infrastructure-marketplace/Assets/css/infrastructure-admin-dashboard.css">
+    <?php if ($ratibInfraEmbed): ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($ratibAdminControlCss, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo htmlspecialchars($ratibAdminControlV, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php endif; ?>
 </head>
-<body class="ratib-infra-marketplace-scope ratib-infra-admin-page">
+<body class="ratib-infra-marketplace-scope ratib-infra-admin-page<?php echo $ratibInfraEmbed ? ' ratib-infra-embed' : ''; ?>">
 <main class="infra-admin-wrap">
     <header class="infra-admin-header">
-        <h1>Infrastructure Marketplace</h1>
+        <h1><?php echo $ratibInfraEmbed ? 'Infrastructure operations' : 'Infrastructure Marketplace'; ?></h1>
+        <?php if ($ratibInfraEmbed): ?>
+        <p>Queue, providers, catalog, workers, and readiness — embedded view.</p>
+        <?php else: ?>
         <p>Operational status, provisioning queue, provider readiness, and catalog visibility.</p>
+        <?php endif; ?>
     </header>
 
     <section class="infra-grid">
