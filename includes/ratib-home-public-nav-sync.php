@@ -7,9 +7,9 @@ declare(strict_types=1);
  */
 function ratib_home_nav_emit_sync_guard_style(): void
 {
+    /* In <head> before body paint: beats external CSS + stops flash of cached/extra links. */
     echo '<style id="ratib-nav-sync-guard">';
-    echo '#ratibNavMenu:not([data-ratib-nav-sync="1"]) .ratib-mega-nav,';
-    echo '#ratibNavMenu:not([data-ratib-nav-sync="1"]) .ratib-nav__platform-links{visibility:hidden;}';
+    echo '#ratibNavMenu:not([data-ratib-nav-sync="1"]){visibility:hidden!important;opacity:0!important;pointer-events:none!important;}';
     echo '</style>';
 }
 

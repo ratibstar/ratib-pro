@@ -23,7 +23,9 @@ $ratibNavPrefix = isset($ratibHomeNavHrefPrefix) ? (string) $ratibHomeNavHrefPre
 $ratibPartnerNavIsCurrent = !empty($ratibHomeHeaderPartnerIsCurrent);
 
 require_once __DIR__ . '/ratib-mega-nav-render.php';
-require_once __DIR__ . '/ratib-home-public-nav-sync.php';
+if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
+    require_once __DIR__ . '/ratib-home-public-nav-sync.php';
+}
 ?>
     <div class="ratib-saas-bg" aria-hidden="true">
         <div class="ratib-saas-bg__gradient"></div>
@@ -54,8 +56,7 @@ require_once __DIR__ . '/ratib-home-public-nav-sync.php';
     </div>
 
     <header class="ratib-nav-shell" id="ratib-main-header">
-        <?php ratib_home_nav_emit_sync_guard_style(); ?>
-        <noscript><style>#ratibNavMenu .ratib-mega-nav,#ratibNavMenu .ratib-nav__platform-links{visibility:visible!important}</style></noscript>
+        <noscript><style>#ratibNavMenu{visibility:visible!important;opacity:1!important;pointer-events:auto!important}</style></noscript>
         <div class="ratib-container ratib-nav-shell__inner">
             <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-nav__brand">
                 <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="RATIB" width="120" height="36">

@@ -35,6 +35,7 @@ $platformPills = [
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
+    <?php ratib_home_nav_emit_sync_guard_style(); ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
     <title><?php echo $h($pageTitle); ?></title>

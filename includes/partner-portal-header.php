@@ -19,6 +19,9 @@ $ppBodyClass = $ppUseHomeChrome ? 'partner-portal-body ratib-saas-home' : 'partn
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($ppTitle, ENT_QUOTES, 'UTF-8'); ?> | <?php echo htmlspecialchars(defined('APP_NAME') ? APP_NAME : 'Ratib', ENT_QUOTES, 'UTF-8'); ?></title>
     <?php if ($ppUseHomeChrome && isset($ratibHomeUiRev)): ?>
+    <?php if (function_exists('ratib_home_nav_emit_sync_guard_style')) {
+        ratib_home_nav_emit_sync_guard_style();
+    } ?>
     <meta name="ratib-home-ui-rev" content="<?php echo htmlspecialchars((string) $ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

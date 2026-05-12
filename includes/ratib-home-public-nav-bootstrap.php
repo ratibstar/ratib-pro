@@ -184,3 +184,5 @@ $ratibChromeBundleHash = $ratibChromeBundleKey !== ''
 $ratibHomePublicCssQuery .= '-c' . $ratibChromeBundleHash;
 $ratibMegaNavCssQuery .= '-c' . $ratibChromeBundleHash;
 $ratibMegaNavJsQuery .= '-c' . $ratibChromeBundleHash;
+
+require_once __DIR__ . '/ratib-home-public-nav-sync.php';
