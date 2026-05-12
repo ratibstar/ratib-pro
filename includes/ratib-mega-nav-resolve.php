@@ -15,11 +15,11 @@ function ratib_mega_nav_resolve_href(string $hrefKey, string $baseUrl, string $n
         case 'marketplace':
             return $baseUrl . '/modules/infrastructure-marketplace/Views/marketplace/index.php';
         case 'marketplace_domains':
-            return $navPrefix !== '' ? $navPrefix . '#platform' : $home . '#platform';
+            return $navPrefix !== '' ? $navPrefix . '#domains' : $home . '#domains';
         case 'infra_status':
             return $baseUrl . '/modules/infrastructure-marketplace/Views/client/services.php';
         case 'domain_search':
-            return $navPrefix !== '' ? $navPrefix . '#platform' : $home . '#platform';
+            return $navPrefix !== '' ? $navPrefix . '#domains' : $home . '#domains';
         case 'contact':
             return $navPrefix !== '' ? $navPrefix . '#contact' : $home . '#contact';
         case 'solutions':

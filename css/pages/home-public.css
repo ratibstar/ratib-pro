@@ -7,6 +7,19 @@
   scroll-margin-top: 170px;
 }
 
+.ratib-home-domains-embed {
+  margin-top: 4px;
+}
+
+.ratib-home-domains-embed__frame {
+  display: block;
+  width: 100%;
+  min-height: min(720px, 85vh);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--r-radius, 14px);
+  background: rgba(0, 0, 0, 0.25);
+}
+
 :root {
   /* Moderated palette: same hue families, lower saturation / calmer contrast site-wide */
   --r-bg-deep: #070b14;

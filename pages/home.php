@@ -164,6 +164,7 @@ if ($countryCodeRaw !== '' && isset($countryNameByCode[$countryCodeRaw])) {
 $path = $_SERVER['REQUEST_URI'] ?? '';
 $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
+$ratibDomainsIframeSrc = $baseUrl . '/modules/infrastructure-marketplace/Views/marketplace/index.php?focus=domains&embed=1#infra-domain-search';
 
 // EN: Shared paths for gallery images and legacy hero video fallback (assets/*.mp4 when CMS has no clips).
 $assetsDir = __DIR__ . '/../assets';
@@ -559,6 +560,25 @@ require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
                         ?>
                     <article class="ratib-trust-card"><div class="ratib-trust-card__icon"><i class="fas <?php echo htmlspecialchars($ic, ENT_QUOTES, 'UTF-8'); ?>"></i></div><h3><?php echo htmlspecialchars($ratibHome['home.trust.' . $ti . '.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3><p><?php echo htmlspecialchars($ratibHome['home.trust.' . $ti . '.body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p></article>
                     <?php } ?>
+                </div>
+            </div>
+        </section>
+
+        <section class="ratib-section ratib-domains-embed" id="domains">
+            <div class="ratib-container">
+                <header class="ratib-section__head">
+                    <p class="ratib-eyebrow">Domains</p>
+                    <h2 class="ratib-section__title">Find a domain</h2>
+                    <p class="ratib-section__sub">Search availability and browse catalog offers when providers are active.</p>
+                </header>
+                <div class="ratib-home-domains-embed">
+                    <iframe
+                        class="ratib-home-domains-embed__frame"
+                        title="Domain availability search and marketplace catalog"
+                        src="<?php echo htmlspecialchars($ratibDomainsIframeSrc, ENT_QUOTES, 'UTF-8'); ?>"
+                        loading="lazy"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                    ></iframe>
                 </div>
             </div>
         </section>

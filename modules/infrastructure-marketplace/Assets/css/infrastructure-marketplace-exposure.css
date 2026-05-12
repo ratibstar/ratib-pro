@@ -11,6 +11,10 @@
   padding: 20px 14px 30px;
 }
 
+.ratib-infra-marketplace-view.ratib-infra-marketplace-embed .infra-market-wrap {
+  padding-top: 8px;
+}
+
 .infra-market-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

@@ -14,6 +14,7 @@ clearstatcache(true, $domainsJsPath);
 $marketplaceJsV = (int) (@filemtime($marketplaceJsPath) ?: time());
 $domainsJsV = (int) (@filemtime($domainsJsPath) ?: time());
 $focusDomains = isset($_GET['focus']) && strtolower((string) $_GET['focus']) === 'domains';
+$embedMode = isset($_GET['embed']) && (string) $_GET['embed'] === '1';
 /* Public-facing: avoid "Infrastructure Marketplace" in title — same page as header "Find a domain". */
 $pageTitle = $focusDomains
     ? 'Find a domain — RATIB'
@@ -33,12 +34,14 @@ $domainSectionH2 = $focusDomains ? 'Availability search' : 'Domains';
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseModule, ENT_QUOTES, 'UTF-8'); ?>/Assets/css/infrastructure-marketplace.css">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseModule, ENT_QUOTES, 'UTF-8'); ?>/Assets/css/infrastructure-marketplace-exposure.css">
 </head>
-<body class="ratib-infra-marketplace-scope ratib-infra-marketplace-view">
+<body class="ratib-infra-marketplace-scope ratib-infra-marketplace-view<?php echo $embedMode ? ' ratib-infra-marketplace-embed' : ''; ?>">
 <main class="infra-market-wrap">
+    <?php if (!$embedMode): ?>
     <header>
         <h1><?php echo htmlspecialchars($h1Text, ENT_QUOTES, 'UTF-8'); ?></h1>
         <p><?php echo htmlspecialchars($headerLead, ENT_QUOTES, 'UTF-8'); ?></p>
     </header>
+    <?php endif; ?>
 
     <section id="infra-domain-search" class="infra-market-card infra-domain-hub" aria-labelledby="infra-domain-heading">
         <h2 id="infra-domain-heading"><?php echo htmlspecialchars($domainSectionH2, ENT_QUOTES, 'UTF-8'); ?></h2>
