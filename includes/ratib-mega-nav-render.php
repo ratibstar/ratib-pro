@@ -18,10 +18,13 @@ function ratib_mega_nav_render(string $baseUrl, string $navPrefix): void
         switch ($key) {
             case 'marketplace':
                 return rtrim($baseUrl, '/') . '/modules/infrastructure-marketplace/Views/marketplace/index.php';
+            /** Domains product hub: marketplace page with search + catalog (deep-link). */
+            case 'marketplace_domains':
+                return rtrim($baseUrl, '/') . '/modules/infrastructure-marketplace/Views/marketplace/index.php?focus=domains#infra-domain-search';
             case 'infra_status':
                 return rtrim($baseUrl, '/') . '/modules/infrastructure-marketplace/Views/client/services.php';
             case 'domain_search':
-                return rtrim($baseUrl, '/') . '/api/infrastructure-marketplace/domain-search.php?q=';
+                return rtrim($baseUrl, '/') . '/modules/infrastructure-marketplace/Views/marketplace/index.php?focus=domains#infra-domain-search';
             case 'contact':
                 return $navPrefix !== '' ? $navPrefix . '#contact' : $home . '#contact';
             case 'solutions':

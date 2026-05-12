@@ -17,9 +17,9 @@ function ratib_mega_nav_config(): array
                 [
                     'heading' => 'Find a domain',
                     'items' => [
-                        ['icon' => 'fa-magnifying-glass', 'title' => 'Search for Domain Names', 'desc' => 'Find and register the right name for your brand.', 'href_key' => 'marketplace'],
-                        ['icon' => 'fa-right-left', 'title' => 'Transfer Domain Names', 'desc' => 'Move domains to RATIB with minimal downtime.', 'href_key' => 'contact'],
-                        ['icon' => 'fa-layer-group', 'title' => 'Domain Extensions', 'desc' => 'Explore TLD options and bundles.', 'href_key' => 'solutions'],
+                        ['icon' => 'fa-magnifying-glass', 'title' => 'Search for Domain Names', 'desc' => 'Availability search + catalog on the marketplace.', 'href_key' => 'marketplace_domains'],
+                        ['icon' => 'fa-right-left', 'title' => 'Transfer Domain Names', 'desc' => 'Contact solutions to move domains to RATIB.', 'href_key' => 'contact'],
+                        ['icon' => 'fa-layer-group', 'title' => 'Domain Extensions', 'desc' => 'Explore TLD options from the marketplace.', 'href_key' => 'marketplace_domains'],
                     ],
                 ],
                 [
@@ -27,15 +27,15 @@ function ratib_mega_nav_config(): array
                     'items' => [
                         ['icon' => 'fa-gavel', 'title' => 'Domain Auctions', 'desc' => 'Acquire premium names from the aftermarket.', 'href_key' => 'programs'],
                         ['icon' => 'fa-chart-line', 'title' => 'Appraise Domain Value', 'desc' => 'Estimate resale and portfolio value.', 'href_key' => 'features'],
-                        ['icon' => 'fa-gem', 'title' => 'Premium Domains', 'desc' => 'Curated high-value inventory.', 'href_key' => 'marketplace'],
+                        ['icon' => 'fa-gem', 'title' => 'Premium Domains', 'desc' => 'Curated inventory via marketplace catalog.', 'href_key' => 'marketplace_domains'],
                     ],
                 ],
                 [
                     'heading' => 'Domain tools',
                     'items' => [
-                        ['icon' => 'fa-id-card', 'title' => 'WHOIS Lookup', 'desc' => 'Public registration and ownership data.', 'href_key' => 'domain_search'],
+                        ['icon' => 'fa-id-card', 'title' => 'Check availability', 'desc' => 'Live registrar-backed lookup (providers must be active).', 'href_key' => 'domain_search'],
                         ['icon' => 'fa-wand-magic-sparkles', 'title' => 'Domain Generator', 'desc' => 'AI-assisted naming ideas.', 'href_key' => 'features'],
-                        ['icon' => 'fa-table-list', 'title' => 'Bulk Search', 'desc' => 'Check many names in one pass.', 'href_key' => 'domain_search'],
+                        ['icon' => 'fa-table-list', 'title' => 'Multi-TLD check', 'desc' => 'Search keyword; results include com / net / org.', 'href_key' => 'domain_search'],
                     ],
                 ],
             ],
