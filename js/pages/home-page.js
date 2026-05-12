@@ -810,9 +810,19 @@
     function textOf(el) {
         return ((el && el.textContent) || '').replace(/\s+/g, ' ').trim().toLowerCase();
     }
+    function hashPart(href) {
+        if (!href) {
+            return '';
+        }
+        var i = href.indexOf('#');
+        if (i === -1) {
+            return '';
+        }
+        return href.slice(i).split('?')[0];
+    }
     function run() {
         var nav = document.getElementById('ratibNavMenu');
-        if (!nav) {
+        if (!nav || nav.getAttribute('data-ratib-nav-sync') === '1') {
             return;
         }
 
@@ -829,14 +839,14 @@
             var labelEl = li.querySelector('.ratib-mega-nav__trigger-label, .ratib-mega-nav__flat-label');
             var flat = li.querySelector('a.ratib-mega-nav__flat');
             var t = textOf(labelEl);
-            var href = flat ? (flat.getAttribute('href') || '') : '';
+            var fh = flat ? flat.getAttribute('href') || '' : '';
             if (
                 t === 'email' ||
                 t === 'hosting' ||
                 t === 'ai builder' ||
                 t === 'pricing' ||
                 t === 'plans & register' ||
-                /#register\b/i.test(href)
+                /#register\b/i.test(hashPart(fh))
             ) {
                 li.remove();
             }
@@ -845,23 +855,29 @@
         // Platform pills normalization: keep only Platform/Tour/Product/Pricing/Partners/Contact.
         var pillWrap = nav.querySelector('.ratib-nav__platform-links');
         if (!pillWrap) {
+            nav.setAttribute('data-ratib-nav-sync', '1');
             return;
         }
         var linkByKey = new Map();
         pillWrap.querySelectorAll('a.ratib-nav__link').forEach(function (a) {
             var href = a.getAttribute('href') || '';
+            var hp = hashPart(href);
             var key = '';
-            if (/#platform$/.test(href)) {
+            if (hp === '#platform' && !a.classList.contains('ratib-nav__link--product-tour')) {
                 key = 'platform';
-            } else if (a.classList.contains('ratib-nav__link--product-tour') || /#video$|#program-previews$/.test(href)) {
+            } else if (
+                a.classList.contains('ratib-nav__link--product-tour') ||
+                hp === '#video' ||
+                hp === '#program-previews'
+            ) {
                 key = 'tour';
-            } else if (/#features$/.test(href)) {
+            } else if (hp === '#features') {
                 key = 'product';
-            } else if (/#programs$/.test(href)) {
+            } else if (hp === '#programs') {
                 key = 'pricing';
-            } else if (/#agencies$/.test(href)) {
+            } else if (hp === '#agencies') {
                 key = 'partners';
-            } else if (/#contact$/.test(href)) {
+            } else if (hp === '#contact') {
                 key = 'contact';
             } else if (/\/modules\/infrastructure-marketplace\/Views\/marketplace\/index\.php/i.test(href)) {
                 key = 'legacy-remove';
@@ -897,6 +913,7 @@
             }
             pillWrap.appendChild(node);
         });
+        nav.setAttribute('data-ratib-nav-sync', '1');
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', run);

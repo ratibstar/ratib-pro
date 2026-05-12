@@ -23,6 +23,7 @@ $ratibNavPrefix = isset($ratibHomeNavHrefPrefix) ? (string) $ratibHomeNavHrefPre
 $ratibPartnerNavIsCurrent = !empty($ratibHomeHeaderPartnerIsCurrent);
 
 require_once __DIR__ . '/ratib-mega-nav-render.php';
+require_once __DIR__ . '/ratib-home-public-nav-sync.php';
 ?>
     <div class="ratib-saas-bg" aria-hidden="true">
         <div class="ratib-saas-bg__gradient"></div>
@@ -53,6 +54,8 @@ require_once __DIR__ . '/ratib-mega-nav-render.php';
     </div>
 
     <header class="ratib-nav-shell" id="ratib-main-header">
+        <?php ratib_home_nav_emit_sync_guard_style(); ?>
+        <noscript><style>#ratibNavMenu .ratib-mega-nav,#ratibNavMenu .ratib-nav__platform-links{visibility:visible!important}</style></noscript>
         <div class="ratib-container ratib-nav-shell__inner">
             <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-nav__brand">
                 <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="RATIB" width="120" height="36">
@@ -73,6 +76,7 @@ require_once __DIR__ . '/ratib-mega-nav-render.php';
                 <a href="<?php echo htmlspecialchars($ratibNavPrefix . '#contact', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-contact"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.contact'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                 </div>
             </nav>
+            <?php ratib_home_nav_emit_sync_script(); ?>
             <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="0" height="0" class="ratib-nav-glyph-sprite" style="position:absolute;width:0;height:0;overflow:hidden">
                 <symbol id="ratib-ng-platform" viewBox="0 0 24 24"><path fill="currentColor" d="M3 3h7v7H3V3zm11 0h7v7h-7V3zM3 14h7v7H3v-7zm11 0h7v7h-7v-7z"/></symbol>
                 <symbol id="ratib-ng-video" viewBox="0 0 24 24"><path fill="currentColor" d="M5 8h9v8H5a2 2 0 01-2-2v-4a2 2 0 012-2zm11 2l6 4v4l-6 4V10z"/></symbol>
