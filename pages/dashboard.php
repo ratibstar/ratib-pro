@@ -8,6 +8,15 @@ require_once '../includes/permissions.php';
 require_once '../api/core/ensure-global-partnerships-schema.php';
 require_once '../api/partnerships/PartnerAgencyController.php';
 require_once '../api/partnerships/DeploymentController.php';
+if (isset($_GET['control']) && (string) $_GET['control'] === '1') {
+    $controlQuery = ['control' => '1'];
+    if (!empty($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id'])) {
+        $controlQuery['agency_id'] = (string) $_GET['agency_id'];
+    }
+    $target = rtrim((string) getBaseUrl(), '/') . '/control-panel/pages/control/dashboard.php?' . http_build_query($controlQuery);
+    header('Location: ' . $target, true, 302);
+    exit;
+}
 // Check if user is logged in (must be a real `users` row: positive user_id)
 if (!isset($_SESSION['user_id']) || (int) $_SESSION['user_id'] < 1
     || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {

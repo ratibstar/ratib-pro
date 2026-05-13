@@ -5,6 +5,16 @@
  */
 require_once '../includes/config.php';
 
+if (isset($_GET['control']) && (string) $_GET['control'] === '1') {
+    $clientQuery = ['section' => 'profile'];
+    if (!empty($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id'])) {
+        $clientQuery['agency_id'] = (string) $_GET['agency_id'];
+    }
+    $target = pageUrl('client/settings.php') . '?' . http_build_query($clientQuery);
+    header('Location: ' . $target, true, 302);
+    exit;
+}
+
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header('Location: ' . pageUrl('login.php'));
