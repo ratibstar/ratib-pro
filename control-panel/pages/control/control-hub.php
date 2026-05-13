@@ -35,6 +35,18 @@ $clientHubServicesUrl = rtrim($siteRootUrl, '/') . '/pages/client/services.php' 
 $clientHubDomainsUrl = rtrim($siteRootUrl, '/') . '/pages/client/domains.php' . $clientHubQ;
 $clientHubOrdersUrl = rtrim($siteRootUrl, '/') . '/pages/client/orders.php' . $clientHubQ;
 $clientHubBillingUrl = rtrim($siteRootUrl, '/') . '/pages/client/billing.php' . $clientHubQ;
+$legacyModuleKey = trim((string) ($_GET['legacy_module'] ?? ''));
+$legacyModuleMap = [
+    'agent' => 'Agents',
+    'subagent' => 'SubAgents',
+    'workers' => 'Workers',
+    'partner_agencies' => 'Partner Agencies',
+    'cases' => 'Cases',
+    'reports' => 'Reports',
+    'contact' => 'Contact',
+    'notifications' => 'Notifications',
+];
+$legacyModuleLabel = $legacyModuleMap[$legacyModuleKey] ?? '';
 
 $canViewCountryUsers = (strtolower(trim((string) ($_SESSION['control_username'] ?? ''))) === 'admin')
     || hasControlPermission(CONTROL_PERM_COUNTRY_USERS)
@@ -73,6 +85,13 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
     <strong><i class="fas fa-layer-group me-2"></i>Control hub</strong>
     — Quick links to operations, public site copy, infrastructure, and deep admin tools. Sidebar entries use the same permission gates; items you are not allowed to use stay hidden.
 </p>
+
+<?php if ($legacyModuleLabel !== ''): ?>
+<div class="alert alert-info mb-3" role="status">
+    <i class="fas fa-compass me-2"></i>
+    The legacy <strong><?php echo htmlspecialchars($legacyModuleLabel, ENT_QUOTES, 'UTF-8'); ?></strong> route now resolves into the main control panel ownership flow. Use the in-panel destinations below instead of the old shell.
+</div>
+<?php endif; ?>
 
 <div class="control-settings-intro mb-2"><strong>Overview</strong></div>
 <div class="control-settings-grid mb-4">

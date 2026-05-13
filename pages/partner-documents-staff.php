@@ -5,6 +5,16 @@
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/permissions.php';
 
+if (isset($_GET['control']) && (string) $_GET['control'] === '1') {
+    $controlQuery = ['control' => '1', 'legacy_module' => 'partner_agencies'];
+    if (!empty($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id'])) {
+        $controlQuery['agency_id'] = (string) $_GET['agency_id'];
+    }
+    $target = rtrim((string) getBaseUrl(), '/') . '/control-panel/pages/control/control-hub.php?' . http_build_query($controlQuery);
+    header('Location: ' . $target, true, 302);
+    exit;
+}
+
 if (!function_exists('ratib_program_session_is_valid_user') || !ratib_program_session_is_valid_user()) {
     header('Location: ' . pageUrl('login.php'));
     exit;
