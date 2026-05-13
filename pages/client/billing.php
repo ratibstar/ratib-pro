@@ -3,6 +3,7 @@ require_once __DIR__ . '/_auth.inc.php';
 $RCP_SECTION = 'billing';
 $RCP_HEADING = 'Billing &amp; invoices';
 $RCP_SUBHEADING = 'Invoices, transactions, wallets, reminders.';
+$billingSupportUrl = htmlspecialchars(ratib_nav_url('client/support.php', 'topic=billing'), ENT_QUOTES, 'UTF-8');
 require __DIR__ . '/_common-start.inc.php';
 ?>
             <div class="ratib-cp-split">
@@ -17,7 +18,7 @@ require __DIR__ . '/_common-start.inc.php';
                     </ul>
                     <div class="ratib-cp-quick mt-3">
                         <button type="button" onclick="RatibClientActions.retryPayment('INV-DEMO')">Retry payment</button>
-                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_nav_url('accounting.php'), ENT_QUOTES, 'UTF-8'); ?>">Accounting workspace</a>
+                        <a class="ratib-cp-pillbtn" href="<?php echo $billingSupportUrl; ?>">Billing support</a>
                     </div>
                 </section>
                 <section class="ratib-cp-card">

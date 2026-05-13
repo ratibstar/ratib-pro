@@ -3,13 +3,22 @@ require_once __DIR__ . '/_auth.inc.php';
 $RCP_SECTION = 'support';
 $RCP_HEADING = 'Support center';
 $RCP_SUBHEADING = 'Tickets, priorities, SLA, service-linked escalations.';
+$supportControlMode = (!empty($_GET['control']) && (string) $_GET['control'] === '1') || !empty($_SESSION['control_logged_in']);
+$supportQuery = ['control' => '1'];
+$supportAgencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+if ($supportAgencyId > 0) {
+    $supportQuery['agency_id'] = (string) $supportAgencyId;
+}
+$supportKnowledgeBaseUrl = $supportControlMode
+    ? (rtrim((string) getBaseUrl(), '/') . '/control-panel/pages/control/help-center.php?' . http_build_query($supportQuery))
+    : ratib_nav_url('help-center.php');
 require __DIR__ . '/_common-start.inc.php';
 ?>
             <div class="ratib-cp-split">
                 <section class="ratib-cp-card">
                     <div class="d-flex gap-3 flex-wrap mb-3">
                         <button type="button" class="ratib-cp-pillbtn" onclick="RatibClientActions.openTicket();">Compose ticket</button>
-                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_nav_url('help-center.php'), ENT_QUOTES, 'UTF-8'); ?>">Knowledge base</a>
+                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars($supportKnowledgeBaseUrl, ENT_QUOTES, 'UTF-8'); ?>">Knowledge base</a>
                     </div>
                     <h2>Lifecycle</h2>
                     <div class="ratib-cp-table-scroll">
