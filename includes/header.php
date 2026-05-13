@@ -175,10 +175,6 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
                 <i class="nav-icon fas fa-home"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('client/dashboard.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_dashboard">
-                <i class="nav-icon fas fa-chart-pie"></i>
-                <span>Client Hub</span>
-            </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('agent.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_agents">
                 <i class="nav-icon fas fa-users"></i>
                 <span>Agent</span>
@@ -219,13 +215,6 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
                 <i class="nav-icon fas fa-bell"></i>
                 <span>Notifications</span>
                 <span class="notification-badge badge bg-danger ms-1 d-none" id="headerNotificationBadge">0</span>
-            </a>
-            <?php
-            $servicesCatalogUrl = htmlspecialchars(ratib_nav_url('client/domains.php', 'catalog=1'), ENT_QUOTES, 'UTF-8');
-            ?>
-            <a href="<?php echo $servicesCatalogUrl; ?>" class="nav-item nav-link nav-register-pro">
-                <i class="nav-icon fas fa-store"></i>
-                <span>Plans &amp; Services</span>
             </a>
             <?php if (function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user() && isset($_SESSION['role_id']) && (int)$_SESSION['role_id'] === 1): ?>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="manage_settings">
