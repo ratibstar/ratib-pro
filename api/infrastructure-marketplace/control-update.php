@@ -56,6 +56,9 @@ $knownKeys = [
     'queue_pressure_threshold',
     'worker_max_loop_jobs',
     'default_currency',
+    'cpanel_base_url',
+    'cpanel_username',
+    'cpanel_api_token',
     'tenant_allowlist',
     'runtime_controls_submit',
     'nc_api_user',
@@ -222,6 +225,29 @@ if ($fullControlForm || array_key_exists('default_currency', $body)) {
     $patch['default_currency'] = $currency;
 }
 
+if ($fullControlForm || array_key_exists('cpanel_base_url', $body)) {
+    if ($fullControlForm && !array_key_exists('cpanel_base_url', $body)) {
+        $patch['cpanel_base_url'] = (string) ($existing['cpanel_base_url'] ?? '');
+    } else {
+        $patch['cpanel_base_url'] = trim((string) ($body['cpanel_base_url'] ?? ''));
+    }
+}
+
+if ($fullControlForm || array_key_exists('cpanel_username', $body)) {
+    if ($fullControlForm && !array_key_exists('cpanel_username', $body)) {
+        $patch['cpanel_username'] = (string) ($existing['cpanel_username'] ?? '');
+    } else {
+        $patch['cpanel_username'] = trim((string) ($body['cpanel_username'] ?? ''));
+    }
+}
+
+if (array_key_exists('cpanel_api_token', $body)) {
+    $v = trim((string) $body['cpanel_api_token']);
+    if ($v !== '') {
+        $patch['cpanel_api_token'] = $v;
+    }
+}
+
 if ($fullControlForm || array_key_exists('tenant_allowlist', $body)) {
     if ($fullControlForm && !array_key_exists('tenant_allowlist', $body)) {
         $patch['tenant_allowlist'] = is_array($existing['tenant_allowlist'] ?? null) ? $existing['tenant_allowlist'] : [];
@@ -332,6 +358,12 @@ if (isset($changes['registrar_secrets'])) {
         'new' => '[secrets redacted]',
     ];
 }
+if (isset($changes['cpanel_api_token'])) {
+    $changes['cpanel_api_token'] = [
+        'old' => '[secret redacted]',
+        'new' => '[secret redacted]',
+    ];
+}
 
 $audit = new RuntimeConfigAuditLogger();
 $audit->append([
@@ -350,6 +382,9 @@ $audit->append([
 $sanitizedOut = $newOverrides;
 if (isset($sanitizedOut['registrar_secrets'])) {
     $sanitizedOut['registrar_secrets'] = '[set via Control Panel — omitted from response]';
+}
+if (isset($sanitizedOut['cpanel_api_token'])) {
+    $sanitizedOut['cpanel_api_token'] = '[set via Control Panel — omitted from response]';
 }
 
 echo json_encode([

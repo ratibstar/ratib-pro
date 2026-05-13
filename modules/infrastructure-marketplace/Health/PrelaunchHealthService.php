@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Ratib\InfrastructureMarketplace\Health;
 
+use Ratib\InfrastructureMarketplace\Config\RuntimeOverrideStore;
 use Ratib\InfrastructureMarketplace\Diagnostics\ProviderDiagnosticsService;
 use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
 use Ratib\InfrastructureMarketplace\Verification\EnvironmentVerifier;
@@ -59,20 +60,34 @@ final class PrelaunchHealthService
             dirname(__DIR__) . '/Views/admin/dashboard.php',
             dirname(__DIR__) . '/Assets/js/infrastructure-admin-dashboard.js',
             dirname(__DIR__) . '/Assets/css/infrastructure-admin-dashboard.css',
-            dirname(__DIR__) . '/Migrations/005_provider_activation_marketplace.sql',
         ];
+        $migrationAsset = dirname(__DIR__) . '/Migrations/005_provider_activation_marketplace.sql';
         $missing = [];
         foreach ($requiredFiles as $f) {
             if (!is_file($f)) {
                 $missing[] = $f;
             }
         }
+        $migrationCompatible = is_file($migrationAsset)
+            || ($this->tableExists('ratib_infra_provider_activations')
+                && $this->tableExists('ratib_infra_orders')
+                && $this->tableExists('ratib_infra_services'));
+        $runtimeOverridePath = RuntimeOverrideStore::path();
+        $runtimeOverrideDir = dirname($runtimeOverridePath);
+        $runtimeWritable = (is_file($runtimeOverridePath) && is_writable($runtimeOverridePath))
+            || (!is_file($runtimeOverridePath) && is_dir($runtimeOverrideDir) && is_writable($runtimeOverrideDir));
         $checks = [
             ['name' => 'required_assets_present', 'status' => $missing === [] ? 'PASS' : 'FAIL', 'missing_count' => count($missing)],
+            ['name' => 'provider_activation_migration_compatible', 'status' => $migrationCompatible ? 'PASS' : 'FAIL'],
             ['name' => 'module_readable', 'status' => is_readable(dirname(__DIR__)) ? 'PASS' : 'FAIL'],
-            ['name' => 'module_writable', 'status' => is_writable(dirname(__DIR__)) ? 'PASS' : 'WARN'],
+            ['name' => 'module_writable', 'status' => $runtimeWritable ? 'PASS' : 'WARN'],
         ];
-        return ['checks' => $checks, 'missing_files' => $missing];
+        return [
+            'checks' => $checks,
+            'missing_files' => $missing,
+            'migration_asset_path' => $migrationAsset,
+            'runtime_override_path' => $runtimeOverridePath,
+        ];
     }
 
     /**

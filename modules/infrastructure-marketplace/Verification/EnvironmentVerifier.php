@@ -15,18 +15,27 @@ final class EnvironmentVerifier
     {
         $secret = SecretManager::withEnvProvider();
         $checks = [];
+        $moduleEnabled = ModuleConfig::isModuleEnabled();
+        $dryRun = ModuleConfig::dryRunMode();
+        $queueDriver = ModuleConfig::defaultQueueDriver();
+        $queueReady = in_array($queueDriver, ['database', 'redis'], true)
+            || (!$moduleEnabled && $queueDriver === 'sync')
+            || ($dryRun && $queueDriver === 'sync');
+        $allowlistReady = ModuleConfig::rolloutTenantAllowlist() !== [] || !$moduleEnabled || $dryRun;
+        $hasNamecheap = $this->hasNamecheapCredentials($secret);
+        $hasCloudflare = $secret->getSecret('RATIB_INFRA_CLOUDFLARE', 'API_TOKEN') !== null
+            || (is_string(getenv('RATIB_INFRA_CLOUDFLARE_API_TOKEN')) && trim((string) getenv('RATIB_INFRA_CLOUDFLARE_API_TOKEN')) !== '');
+        $hasCpanel = ModuleConfig::cpanelWhmUsername() !== null && ModuleConfig::cpanelWhmToken() !== null;
 
-        $checks[] = $this->check('module_enabled', ModuleConfig::isModuleEnabled(), 'Module is disabled.');
-        $checks[] = $this->check('queue_driver_database', ModuleConfig::defaultQueueDriver() === 'database', 'Queue driver is not database.');
+        $checks[] = $this->check('module_enabled', $moduleEnabled, 'Module is disabled.');
+        $checks[] = $this->check('queue_driver_database', $queueReady, 'Queue driver is not database/redis, and sync is only acceptable while disabled or dry-run.');
         $checks[] = $this->check('kill_switch_off', !ModuleConfig::executionKillSwitch(), 'Execution kill-switch is ON.');
-        $checks[] = $this->check('dry_run_status', true, ModuleConfig::dryRunMode() ? 'Dry-run mode enabled (safe prelaunch).' : 'Dry-run mode disabled.');
+        $checks[] = $this->check('dry_run_status', true, $dryRun ? 'Dry-run mode enabled (safe prelaunch).' : 'Dry-run mode disabled.');
         $checks[] = $this->check('cpanel_base_url', ModuleConfig::cpanelWhmBaseUrl() !== null, 'cPanel base URL missing.');
         $checks[] = $this->check(
             'secrets_present',
-            $secret->getSecret('RATIB_INFRA_CLOUDFLARE', 'API_TOKEN') !== null
-                || $secret->getSecret('RATIB_INFRA_NAMECHEAP', 'API_KEY') !== null
-                || ModuleConfig::cpanelWhmToken() !== null,
-            'Provider secrets missing from environment scope.'
+            $hasCloudflare || $hasNamecheap || $hasCpanel,
+            'Provider secrets missing from environment/runtime scope.'
         );
 
         $checks[] = $this->check(
@@ -36,8 +45,8 @@ final class EnvironmentVerifier
         );
         $checks[] = $this->check(
             'tenant_allowlist_configured',
-            ModuleConfig::rolloutTenantAllowlist() !== [],
-            'Tenant rollout allowlist is empty.'
+            $allowlistReady,
+            'Tenant rollout allowlist is empty while execution is enabled.'
         );
 
         return [
@@ -73,6 +82,22 @@ final class EnvironmentVerifier
             $out[$status]++;
         }
         return $out;
+    }
+
+    private function hasNamecheapCredentials(SecretManager $secret): bool
+    {
+        $apiUser = ModuleConfig::namecheapSecretFromRuntime('api_user')
+            ?: ($secret->getSecret('RATIB_INFRA_NAMECHEAP', 'API_USER') ?? getenv('RATIB_INFRA_NAMECHEAP_API_USER'));
+        $apiKey = ModuleConfig::namecheapSecretFromRuntime('api_key')
+            ?: ($secret->getSecret('RATIB_INFRA_NAMECHEAP', 'API_KEY') ?? getenv('RATIB_INFRA_NAMECHEAP_API_KEY'));
+        $username = ModuleConfig::namecheapSecretFromRuntime('username')
+            ?: ($secret->getSecret('RATIB_INFRA_NAMECHEAP', 'USERNAME') ?? getenv('RATIB_INFRA_NAMECHEAP_USERNAME'));
+        $clientIp = ModuleConfig::namecheapSecretFromRuntime('client_ip') ?: getenv('RATIB_INFRA_NAMECHEAP_CLIENT_IP');
+
+        return is_string($apiUser) && trim($apiUser) !== ''
+            && is_string($apiKey) && trim($apiKey) !== ''
+            && is_string($username) && trim($username) !== ''
+            && is_string($clientIp) && trim($clientIp) !== '';
     }
 }
 

@@ -34,12 +34,14 @@ try {
         throw new RuntimeException('Invalid JSON');
     }
     $pdo = DatabaseConnectionFactory::createPdo();
+    $tenantId = isset($input['tenant_id']) ? (int) $input['tenant_id'] : null;
+    $agencyId = isset($input['agency_id']) ? (int) $input['agency_id'] : null;
     $events = new InfrastructureEventEmitter();
     $orchestrator = ProvisioningOrchestrator::createFromPdo($pdo);
     $service = new InfrastructureOrderService(
         $pdo,
         $orchestrator,
-        ProviderRegistry::fromEnvironment(),
+        ProviderRegistry::fromEnvironmentOrActivationTable($pdo, $tenantId, $agencyId),
         $events,
         new InfrastructureAuditLogger($pdo, $events)
     );

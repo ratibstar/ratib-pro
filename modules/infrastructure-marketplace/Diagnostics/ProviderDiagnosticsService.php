@@ -42,13 +42,17 @@ final class ProviderDiagnosticsService
         if ($base === null) {
             return ['name' => 'cpanel_connectivity', 'status' => 'WARN', 'message' => 'base_url_missing'];
         }
+        $credentialsReady = ModuleConfig::cpanelWhmUsername() !== null && ModuleConfig::cpanelWhmToken() !== null;
+        if (!$credentialsReady) {
+            return ['name' => 'cpanel_connectivity', 'status' => 'WARN', 'message' => 'credentials_missing'];
+        }
         try {
             $resp = $this->http->get($base . '/json-api/version', ['Accept' => 'application/json'], ['api.version' => 1]);
             return [
                 'name' => 'cpanel_connectivity',
                 'status' => $resp->statusCode() < 500 ? 'PASS' : 'WARN',
                 'http_status' => $resp->statusCode(),
-                'token_configured' => ModuleConfig::cpanelWhmToken() !== null,
+                'token_configured' => true,
             ];
         } catch (\Throwable $e) {
             return ['name' => 'cpanel_connectivity', 'status' => 'WARN', 'message' => 'unreachable'];

@@ -50,7 +50,7 @@ final class InfrastructureProvisioningWorker
         $queue = new DatabaseQueueDispatcher($jobs, $logs);
         $audit = new InfrastructureAuditLogger($pdo, $events);
         $compliance = new TenantIsolationCompliance($audit);
-        $providers = ProviderRegistry::fromEnvironment();
+        $providers = ProviderRegistry::fromEnvironmentOrActivationTable($pdo);
         $engine = new ProvisioningExecutionEngine($jobs, $logs, $events, $metrics, $audit, $compliance, $providers);
 
         $this->registerSignalHandlers($events);

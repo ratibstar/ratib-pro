@@ -98,6 +98,18 @@ $ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($
                             <label for="default_currency">Default currency</label>
                             <input id="default_currency" type="text" maxlength="3" name="default_currency" value="<?php echo htmlspecialchars(ModuleConfig::defaultMarketplaceCurrency(), ENT_QUOTES, 'UTF-8'); ?>">
                         </div>
+                        <div class="infra-field">
+                            <label for="cpanel_base_url">cPanel WHM base URL</label>
+                            <input id="cpanel_base_url" type="url" name="cpanel_base_url" value="<?php echo htmlspecialchars((string) (ModuleConfig::cpanelWhmBaseUrl() ?? ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="https://whm.example.com:2087">
+                        </div>
+                        <div class="infra-field">
+                            <label for="cpanel_username">cPanel WHM username</label>
+                            <input id="cpanel_username" type="text" name="cpanel_username" value="<?php echo htmlspecialchars((string) (ModuleConfig::cpanelWhmUsername() ?? ''), ENT_QUOTES, 'UTF-8'); ?>" autocomplete="off">
+                        </div>
+                        <div class="infra-field">
+                            <label for="cpanel_api_token">cPanel WHM API token</label>
+                            <input id="cpanel_api_token" type="password" name="cpanel_api_token" value="" placeholder="Leave blank to keep existing" autocomplete="new-password">
+                        </div>
                         <div class="infra-field" style="grid-column: 1 / -1;">
                             <label for="tenant_allowlist">Tenant allowlist (comma-separated IDs)</label>
                             <input id="tenant_allowlist" type="text" name="tenant_allowlist" value="<?php echo htmlspecialchars(implode(',', $allowlist), ENT_QUOTES, 'UTF-8'); ?>" placeholder="empty = all tenants">
