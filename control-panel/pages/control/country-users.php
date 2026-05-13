@@ -30,7 +30,7 @@ require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('Country Users', ['css/control/country-users.css'], []);
 ?>
 <div class="control-settings-intro country-users-intro">
-    <strong>Country Users (Ratib Pro only)</strong> — Table: <code>users</code> in each country's database. Ratib Pro login users only. <strong>Not</strong> control panel admins. For control panel admins, use <a href="<?php echo pageUrl('control/panel-users.php'); ?>?control=1">Control Panel Users</a>.
+    <strong>Country Users (Main platform)</strong> — Table: <code>users</code> in each country's database. Main platform login users only. <strong>Not</strong> control panel admins. For control panel admins, use <a href="<?php echo pageUrl('control/panel-users.php'); ?>?control=1">Control Panel Users</a>.
 </div>
 
 <div class="status-cards">
@@ -44,7 +44,7 @@ startControlLayout('Country Users', ['css/control/country-users.css'], []);
     <div id="countryCardsGrid" class="country-cards-grid"></div>
     <div id="countryUsersHelper" class="empty-state">
         <i class="fas fa-globe-americas fa-2x mb-2 country-users-helper-icon"></i>
-        <p class="mb-0">Click any country card to view and manage its Ratib Pro users.</p>
+        <p class="mb-0">Click any country card to view and manage its platform users.</p>
     </div>
 </div>
 
@@ -53,7 +53,7 @@ startControlLayout('Country Users', ['css/control/country-users.css'], []);
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content country-users-modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="usersTableModalTitle"><i class="fas fa-users me-2"></i><span id="selectedCountryName">Ratib Pro Users</span></h5>
+                <h5 class="modal-title" id="usersTableModalTitle"><i class="fas fa-users me-2"></i><span id="selectedCountryName">Platform Users</span></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">

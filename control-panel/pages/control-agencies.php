@@ -143,7 +143,7 @@ $renewalDate = function($created) {
                 $registerProUrl .= '&country_name=' . rawurlencode($registerCountryName);
             }
             ?>
-            <a href="<?php echo htmlspecialchars($registerProUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm"><i class="fas fa-external-link-alt me-1"></i> Register Pro</a>
+            <a href="<?php echo htmlspecialchars($registerProUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm"><i class="fas fa-external-link-alt me-1"></i> Client Registration</a>
             <a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Back to Dashboard</a>
             <a href="<?php echo pageUrl('select-country.php'); ?>"><i class="fas fa-globe me-1"></i> Countries</a>
             <a href="<?php echo pageUrl('control/countries.php'); ?>"><i class="fas fa-list me-1"></i> Manage Countries</a>
@@ -151,8 +151,8 @@ $renewalDate = function($created) {
             <a href="<?php echo pageUrl('control/registration-requests.php'); ?>"><i class="fas fa-user-plus me-1"></i> Registration Requests</a>
             <a href="<?php echo pageUrl('control/support-chats.php'); ?>"><i class="fas fa-comments me-1"></i> Support Chats</a>
             <a href="<?php echo pageUrl('control/accounting.php'); ?>" class="btn btn-outline-warning btn-sm"><i class="fas fa-calculator me-1"></i> Accounting</a>
-            <a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener noreferrer"><i class="fas fa-briefcase me-1"></i> Recruitment Program</a>
-            <a href="<?php echo (defined('RATIB_PRO_URL') ? RATIB_PRO_URL : pageUrl('control/dashboard.php')) . (defined('RATIB_PRO_URL') ? '?control=1&own=1' : ''); ?>" class="btn btn-outline-success btn-sm" target="_blank" rel="noopener noreferrer"><i class="fas fa-user me-1"></i> My own Program</a>
+            <a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener noreferrer"><i class="fas fa-briefcase me-1"></i> Control Dashboard</a>
+            <a href="<?php echo rtrim((defined('SITE_URL') ? SITE_URL : ''), '/') . '/pages/client/dashboard.php?control=1'; ?>" class="btn btn-outline-success btn-sm" target="_blank" rel="noopener noreferrer"><i class="fas fa-user me-1"></i> Client Hub</a>
         </div>
         <div>
             <span class="text-muted me-3"><?php echo htmlspecialchars($_SESSION['control_username'] ?? ''); ?></span>
@@ -235,7 +235,7 @@ echo htmlspecialchars($cname ?: '-');
                                 <?php
                                     $cidOpen = isset($r['country_id']) ? (int)$r['country_id'] : 0;
                                     $cslug = isset($countrySlugMap[$cidOpen]) ? trim($countrySlugMap[$cidOpen]) : '';
-                                    $ratibBase = rtrim(defined('RATIB_PRO_URL') ? RATIB_PRO_URL : (defined('SITE_URL') ? SITE_URL : ''), '/');
+                                    $ratibBase = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
                                     if ($ratibBase === '' && isset($_SERVER['HTTP_HOST'])) {
                                         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
                                         $ratibBase = $scheme . '://' . $_SERVER['HTTP_HOST'];

@@ -4,7 +4,7 @@
  * AR: يدير سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/pages/control/panel-settings.php`.
  */
 /**
- * Control Panel Settings Hub - Admins, countries, agencies, Ratib Pro link.
+ * Control Panel Settings Hub - admins, countries, agencies, and main-platform links.
  * Distinct filename from admins.php to avoid server routing confusion.
  */
 if (!defined('IS_CONTROL_PANEL')) {
@@ -29,17 +29,22 @@ startControlLayout('Control Panel Settings', ['css/system-settings.css'], []);
 ?>
 <?php
 $agencyName = $_SESSION['control_agency_name'] ?? 'your agency';
-$ratibUrl = defined('RATIB_PRO_URL') ? RATIB_PRO_URL : null;
+$platformRootUrl = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
+if ($platformRootUrl === '' && isset($_SERVER['HTTP_HOST'])) {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $platformRootUrl = $scheme . '://' . $_SERVER['HTTP_HOST'];
+}
+$platformProgramUrl = $platformRootUrl !== '' ? ($platformRootUrl . '/pages/dashboard.php') : null;
 ?>
 <div class="control-settings-intro control-settings-ratib-program">
-    <strong><i class="fas fa-cog me-2"></i>Ratib Program Settings</strong>
-    <p class="mb-2">Manage users, visa types, and other program settings for <strong><?php echo htmlspecialchars($agencyName); ?></strong>. These live in Ratib Pro — open it with an agency selected.</p>
-    <?php if ($ratibUrl): ?>
-    <a href="<?php echo htmlspecialchars($ratibUrl); ?>?control=1&agency_id=<?php echo (int)($_SESSION['control_agency_id'] ?? 0); ?>" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
-        <i class="fas fa-external-link-alt me-1"></i>Open Ratib Pro
+    <strong><i class="fas fa-cog me-2"></i>Main Platform Program Settings</strong>
+    <p class="mb-2">Manage users, visa types, and operational settings for <strong><?php echo htmlspecialchars($agencyName); ?></strong> in the main platform workspace.</p>
+    <?php if ($platformProgramUrl): ?>
+    <a href="<?php echo htmlspecialchars($platformProgramUrl); ?>?control=1&agency_id=<?php echo (int)($_SESSION['control_agency_id'] ?? 0); ?>" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
+        <i class="fas fa-external-link-alt me-1"></i>Open Main Platform
     </a>
     <?php else: ?>
-    <p class="text-muted small mb-0">Set <code>RATIB_PRO_URL</code> in <code>config/env.php</code> to enable the link.</p>
+    <p class="text-muted small mb-0">Set <code>SITE_URL</code> in <code>config/env.php</code> to enable the link.</p>
     <?php endif; ?>
 </div>
 
@@ -82,7 +87,7 @@ $ratibUrl = defined('RATIB_PRO_URL') ? RATIB_PRO_URL : null;
 
     <div class="control-settings-card" data-permission="control_agencies,view_control_agencies">
         <h3><i class="fas fa-building"></i> Agencies</h3>
-        <p>Manage agencies (Ratib Program instances). Each agency has its own database and site URL.</p>
+        <p>Manage agencies (program instances). Each agency has its own database and site URL.</p>
         <a href="<?php echo pageUrl('control/agencies.php'); ?>?control=1" class="btn btn-primary">
             <i class="fas fa-building"></i> Manage Agencies
         </a>
@@ -99,7 +104,7 @@ $ratibUrl = defined('RATIB_PRO_URL') ? RATIB_PRO_URL : null;
     <?php if (function_exists('control_panel_page_with_control') && control_panel_page_with_control('control/site-content.php')) { ?>
     <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings">
         <h3><i class="fas fa-globe"></i> Public site content</h3>
-        <p>Edit hero copy and optional image paths on the public Ratib Program homepage.</p>
+        <p>Edit hero copy and optional image paths on the public homepage.</p>
         <a href="<?php echo pageUrl('control/site-content.php'); ?>?control=1" class="btn btn-primary">
             <i class="fas fa-pen-to-square"></i> Edit homepage copy
         </a>
@@ -108,7 +113,7 @@ $ratibUrl = defined('RATIB_PRO_URL') ? RATIB_PRO_URL : null;
 </div>
 
 <p class="control-settings-footer-note">
-    <i class="fas fa-info-circle"></i> To manage <strong>Ratib Program</strong> settings (Visa Types, Office Manager, etc.), use the <strong>Open Ratib Pro</strong> button above or open an agency from the dashboard, then use <strong>System Settings</strong> in the program navigation.
+    <i class="fas fa-info-circle"></i> To manage agency runtime settings (Visa Types, Office Manager, etc.), use the <strong>Open Main Platform</strong> button above or open an agency from the dashboard, then use <strong>System Settings</strong> in program navigation.
 </p>
 
 <?php endControlLayout(); ?>

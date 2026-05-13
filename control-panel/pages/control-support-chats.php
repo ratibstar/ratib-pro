@@ -73,15 +73,15 @@ $countryId = isset($_GET['country_id']) ? (int) $_GET['country_id'] : 0;
     <?php if (empty($_GET['embedded'])): ?>
     <div class="control-header">
         <div class="control-nav">
-            <a href="<?php echo htmlspecialchars($registerProUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm"><i class="fas fa-external-link-alt me-1"></i> Register Pro</a>
+            <a href="<?php echo htmlspecialchars($registerProUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm"><i class="fas fa-external-link-alt me-1"></i> Client Registration</a>
 <a href="<?php echo pageUrl('control/dashboard.php'); ?>"><i class="fas fa-arrow-left me-1"></i> Back to Dashboard</a>
             <a href="<?php echo pageUrl('select-country.php'); ?>"><i class="fas fa-globe me-1"></i> Countries</a>
             <a href="<?php echo pageUrl('control/agencies.php'); ?>"><i class="fas fa-building me-1"></i> Manage Agencies</a>
             <a href="<?php echo pageUrl('control/registration-requests.php'); ?>"><i class="fas fa-user-plus me-1"></i> Registration Requests</a>
             <a href="<?php echo pageUrl('control/support-chats.php'); ?>" class="support-chats"><i class="fas fa-comments me-1"></i> Support Chats <span class="chat-badge d-none" id="chatBadge">0</span></a>
             <a href="<?php echo pageUrl('control/accounting.php'); ?>" class="btn btn-outline-warning btn-sm"><i class="fas fa-calculator me-1"></i> Accounting</a>
-            <a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener noreferrer"><i class="fas fa-briefcase me-1"></i> Recruitment Program</a>
-            <a href="<?php echo (defined('RATIB_PRO_URL') ? RATIB_PRO_URL . '?control=1&own=1' : pageUrl('control/dashboard.php')); ?>" class="btn btn-outline-success btn-sm" target="_blank" rel="noopener noreferrer"><i class="fas fa-user me-1"></i> My own Program</a>
+            <a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener noreferrer"><i class="fas fa-briefcase me-1"></i> Control Dashboard</a>
+            <a href="<?php echo rtrim((defined('SITE_URL') ? SITE_URL : ''), '/') . '/pages/client/dashboard.php?control=1'; ?>" class="btn btn-outline-success btn-sm" target="_blank" rel="noopener noreferrer"><i class="fas fa-user me-1"></i> Client Hub</a>
             </div>
         <div>
             <span class="text-muted me-3"><?php echo htmlspecialchars($_SESSION['control_username'] ?? ''); ?></span>
@@ -93,7 +93,7 @@ $countryId = isset($_GET['country_id']) ? (int) $_GET['country_id'] : 0;
     <div class="content">
         <div class="chat-list-card">
             <h2 class="mb-3"><i class="fas fa-comments me-2"></i>Support Chats</h2>
-            <p class="text-muted small mb-3">Chats from <strong>all countries and agencies</strong> appear here only after a visitor starts <strong>live support</strong> (e.g. &quot;Talk to support&quot;) in Ratib Pro. For each country+agency there is <strong>one open board</strong>: new escalations append to the same thread instead of opening duplicate rows. Close a thread when you are done so a fresh board can start. Regular AI-only widget Q&amp;A stays in the widget. Filter by country below.</p>
+            <p class="text-muted small mb-3">Chats from <strong>all countries and agencies</strong> appear here only after a visitor starts <strong>live support</strong> in the main platform. For each country+agency there is <strong>one open board</strong>: new escalations append to the same thread instead of opening duplicate rows. Close a thread when you are done so a fresh board can start. Regular AI-only widget Q&amp;A stays in the widget. Filter by country below.</p>
 
             <?php if (!$tableExists): ?>
             <p class="text-warning">Run the migration: <code>config/control_support_chats.sql</code></p>

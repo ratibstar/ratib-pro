@@ -4,7 +4,7 @@
  * AR: يدير سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/pages/control/system-settings.php`.
  */
 /**
- * Control Panel - Ratib Program System Settings (when agency selected)
+ * Control Panel - Main Platform System Settings (when agency selected)
  * Shows the agency's system settings (users, visa types, etc.) within control panel layout.
  * When no agency selected, redirects to Control Panel Settings.
  */
@@ -42,7 +42,7 @@ $cssVer = time();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ratib Program - System Settings</title>
+    <title>Main Platform - System Settings</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -55,7 +55,7 @@ $cssVer = time();
 <body class="control-system-body">
     <header class="control-header">
         <div class="header-left">
-            <h1><i class="fas fa-cog"></i> Ratib Program - System Settings</h1>
+            <h1><i class="fas fa-cog"></i> Main Platform - System Settings</h1>
             <span class="header-subtitle"><?php echo htmlspecialchars($_SESSION['control_agency_name'] ?? 'My Program'); ?></span>
         </div>
         <div class="header-right">

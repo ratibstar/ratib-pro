@@ -4,7 +4,7 @@
  * AR: يدير سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/pages/dashboard-accounting.php`.
  */
 /**
- * Stub: Accounting dashboard is in Ratib Pro. Open Ratib Pro with agency selected for full accounting.
+ * Stub: Accounting dashboard lives in the main platform app.
  */
 require_once __DIR__ . '/../includes/config.php';
 if (empty($_SESSION['control_logged_in'])) {
@@ -12,7 +12,12 @@ if (empty($_SESSION['control_logged_in'])) {
     exit;
 }
 $agencyName = $_SESSION['control_agency_name'] ?? 'your agency';
-$ratibUrl = defined('RATIB_PRO_URL') ? RATIB_PRO_URL : null;
+$platformRoot = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
+if ($platformRoot === '' && isset($_SERVER['HTTP_HOST'])) {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $platformRoot = $scheme . '://' . $_SERVER['HTTP_HOST'];
+}
+$platformUrl = $platformRoot !== '' ? ($platformRoot . '/pages/accounting.php') : null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,11 +31,11 @@ $ratibUrl = defined('RATIB_PRO_URL') ? RATIB_PRO_URL : null;
 <body class="bg-dark text-light p-4">
     <div class="container">
         <h5><i class="fas fa-calculator me-2"></i>Accounting</h5>
-        <p class="text-muted">Full accounting is available in Ratib Pro. Select your agency there to manage chart of accounts, journal entries, and reports.</p>
-        <?php if ($ratibUrl): ?>
-        <a href="<?php echo htmlspecialchars($ratibUrl); ?>?control=1&agency_id=<?php echo (int)($_SESSION['control_agency_id'] ?? 0); ?>" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Open Ratib Pro – Accounting <i class="fas fa-external-link-alt ms-1"></i></a>
+        <p class="text-muted">Full accounting is available in the main platform app. Select your agency there to manage chart of accounts, journal entries, and reports.</p>
+        <?php if ($platformUrl): ?>
+        <a href="<?php echo htmlspecialchars($platformUrl); ?>?control=1&agency_id=<?php echo (int)($_SESSION['control_agency_id'] ?? 0); ?>" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Open Main Platform – Accounting <i class="fas fa-external-link-alt ms-1"></i></a>
         <?php else: ?>
-        <p class="small text-muted">Set <code>RATIB_PRO_URL</code> in config/env.php to enable the link.</p>
+        <p class="small text-muted">Set <code>SITE_URL</code> in config/env.php to enable the link.</p>
         <?php endif; ?>
     </div>
 </body>

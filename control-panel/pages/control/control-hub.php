@@ -28,6 +28,13 @@ if ($siteRootUrl === '') {
 }
 $controlCenterUrl = rtrim($siteRootUrl, '/') . '/admin/control-center.php';
 $registrationPageUrl = rtrim($siteRootUrl, '/') . '/pages/home.php?open=register&plan=gold&years=1';
+$clientHubAgencyId = (int) ($_SESSION['control_agency_id'] ?? 0);
+$clientHubQ = $clientHubAgencyId > 0 ? ('?control=1&agency_id=' . $clientHubAgencyId) : '?control=1';
+$clientHubDashboardUrl = rtrim($siteRootUrl, '/') . '/pages/client/dashboard.php' . $clientHubQ;
+$clientHubServicesUrl = rtrim($siteRootUrl, '/') . '/pages/client/services.php' . $clientHubQ;
+$clientHubDomainsUrl = rtrim($siteRootUrl, '/') . '/pages/client/domains.php' . $clientHubQ;
+$clientHubOrdersUrl = rtrim($siteRootUrl, '/') . '/pages/client/orders.php' . $clientHubQ;
+$clientHubBillingUrl = rtrim($siteRootUrl, '/') . '/pages/client/billing.php' . $clientHubQ;
 
 $canViewCountryUsers = (strtolower(trim((string) ($_SESSION['control_username'] ?? ''))) === 'admin')
     || hasControlPermission(CONTROL_PERM_COUNTRY_USERS)
@@ -78,6 +85,33 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
         <h3><i class="fas fa-book"></i> Help center</h3>
         <p>In-panel guide: navigation, permissions, Infrastructure tabs, troubleshooting. Synced from <code>docs/</code> Markdown.</p>
         <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-info"><i class="fas fa-circle-question"></i> Open help center</a>
+    </div>
+</div>
+
+<div class="control-settings-intro mb-2"><strong>Client platform ownership</strong></div>
+<div class="control-settings-grid mb-4">
+    <div class="control-settings-card" data-permission="control_dashboard">
+        <h3><i class="fas fa-chart-pie"></i> Client Hub</h3>
+        <p>Canonical customer dashboard and service lifecycle entry point.</p>
+        <a href="<?php echo htmlspecialchars($clientHubDashboardUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-primary"><i class="fas fa-arrow-up-right-from-square"></i> Open Client Hub</a>
+    </div>
+    <div class="control-settings-card" data-permission="control_dashboard">
+        <h3><i class="fas fa-server"></i> Services</h3>
+        <p>Customer services and provisioning visibility in the main platform.</p>
+        <a href="<?php echo htmlspecialchars($clientHubServicesUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary"><i class="fas fa-arrow-up-right-from-square"></i> Open Services</a>
+    </div>
+    <div class="control-settings-card" data-permission="control_dashboard">
+        <h3><i class="fas fa-globe"></i> Domains</h3>
+        <p>Canonical domains/catalog surface for customer journeys.</p>
+        <a href="<?php echo htmlspecialchars($clientHubDomainsUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary"><i class="fas fa-arrow-up-right-from-square"></i> Open Domains</a>
+    </div>
+    <div class="control-settings-card" data-permission="control_dashboard">
+        <h3><i class="fas fa-bag-shopping"></i> Orders &amp; billing</h3>
+        <p>Open customer order and billing centers from the main app shell.</p>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="<?php echo htmlspecialchars($clientHubOrdersUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-light"><i class="fas fa-receipt"></i> Orders</a>
+            <a href="<?php echo htmlspecialchars($clientHubBillingUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-light"><i class="fas fa-file-invoice-dollar"></i> Billing</a>
+        </div>
     </div>
 </div>
 
