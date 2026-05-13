@@ -39,6 +39,18 @@ final class ProductRepository
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    public function findById(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM ratib_infra_products WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
      * @param array<string, mixed> $row columns matching table (excluding id if autoincrement)
      */
     public function insert(array $row): int

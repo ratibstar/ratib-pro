@@ -35,6 +35,20 @@ final class PlanRepository
     }
 
     /**
+     * First matching plan by code (may be ambiguous if duplicated across products).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findFirstByPlanCode(string $planCode): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM ratib_infra_plans WHERE plan_code = :c ORDER BY id ASC LIMIT 1');
+        $stmt->execute(['c' => $planCode]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
      * @param array<string, mixed> $row
      */
     public function insert(array $row): int

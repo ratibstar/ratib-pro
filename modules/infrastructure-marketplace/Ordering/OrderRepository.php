@@ -35,6 +35,18 @@ final class OrderRepository
         return is_array($row) ? $row : null;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findByPublicId(string $publicId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM ratib_infra_orders WHERE public_id = :public_id LIMIT 1');
+        $stmt->execute(['public_id' => $publicId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
     public function markQueued(int $id, string $jobPublicId): void
     {
         $stmt = $this->pdo->prepare(
@@ -45,6 +57,18 @@ final class OrderRepository
         $stmt->execute([
             'status' => 'QUEUED',
             'job_public_id' => $jobPublicId,
+            'id' => $id,
+        ]);
+    }
+
+    /**
+     * Additive status updates for commerce execution paths (caller supplies allowed values).
+     */
+    public function updateStatus(int $id, string $status): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE ratib_infra_orders SET status = :status, updated_at = NOW() WHERE id = :id');
+        $stmt->execute([
+            'status' => strtoupper(trim($status)),
             'id' => $id,
         ]);
     }

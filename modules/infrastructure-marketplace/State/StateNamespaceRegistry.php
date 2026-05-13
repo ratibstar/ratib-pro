@@ -15,6 +15,8 @@ final class StateNamespaceRegistry
     public const NS_COMMERCE = 'commerce_state';
     public const NS_PROVISIONING_PHASE = 'provisioning_phase';
     public const NS_OWNERSHIP = 'ownership_state';
+    /** Provider health / remote state — not queue, commerce, ownership, or DB job row. */
+    public const NS_PROVIDER_STATE = 'provider_state';
 
     /** @var list<string> */
     private const COMMERCE_STATES = [
@@ -32,6 +34,9 @@ final class StateNamespaceRegistry
     private const PROVISIONING_PHASES = [
         'VALIDATING', 'DNS_SETUP', 'SSL_PENDING', 'WAITING_PROVIDER',
     ];
+
+    /** Advisory literals for adapter health / remote API state (extend as needed). */
+    private const PROVIDER_STATES = ['HEALTHY', 'DEGRADED', 'UNKNOWN', 'OFFLINE', 'RATE_LIMITED', 'AUTH_ERROR'];
 
     /**
      * @return list<string>
@@ -85,6 +90,29 @@ final class StateNamespaceRegistry
     /**
      * @return list<string>
      */
+    /**
+     * @return list<string>
+     */
+    public static function validateProviderState(string $state): array
+    {
+        $s = strtoupper(trim($state));
+        $warnings = [];
+        if (!in_array($s, self::PROVIDER_STATES, true)) {
+            $warnings[] = 'Unknown provider_state: ' . $state;
+        }
+        if (in_array($s, ProvisioningState::all(), true)) {
+            $warnings[] = 'provider_state must not reuse queue_state literal ' . $s;
+        }
+        if (in_array($s, self::COMMERCE_STATES, true)) {
+            $warnings[] = 'provider_state must not reuse commerce_state literal ' . $s;
+        }
+        if (in_array($s, self::OWNERSHIP_STATES, true)) {
+            $warnings[] = 'provider_state must not reuse ownership_state literal ' . $s;
+        }
+
+        return $warnings;
+    }
+
     public static function validateProvisioningPhase(string $state): array
     {
         $s = strtoupper(trim($state));
@@ -107,6 +135,9 @@ final class StateNamespaceRegistry
         $s = strtoupper(trim($state));
         if (in_array($s, ProvisioningState::all(), true)) {
             return self::NS_QUEUE;
+        }
+        if (in_array($s, self::PROVIDER_STATES, true)) {
+            return self::NS_PROVIDER_STATE;
         }
         if (in_array($s, self::COMMERCE_STATES, true)) {
             return self::NS_COMMERCE;
