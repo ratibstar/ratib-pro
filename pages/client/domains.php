@@ -1,11 +1,45 @@
 <?php
 require_once __DIR__ . '/_auth.inc.php';
 $RCP_SECTION = 'domains';
-$RCP_HEADING = 'Domains management';
-$RCP_SUBHEADING = 'Registry sync, expiry radar, transfers, DNS, WHOIS.';
+$RCP_HEADING = 'Domains';
+$RCP_SUBHEADING = 'Search, compare, and manage domains inside the unified Client Hub experience.';
 require __DIR__ . '/_common-start.inc.php';
+$catalogMode = isset($_GET['catalog']) && (string) $_GET['catalog'] === '1';
+$legacyMarketplaceQuery = [
+    'focus' => 'domains',
+    'embed' => '1',
+    'compatibility' => '1',
+];
+$legacyMarketplaceAgencyId = (int) ($_SESSION['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+if (function_exists('ratib_control_pro_bridge') && ratib_control_pro_bridge() && $legacyMarketplaceAgencyId > 0) {
+    $legacyMarketplaceQuery['control'] = '1';
+    $legacyMarketplaceQuery['agency_id'] = (string) $legacyMarketplaceAgencyId;
+}
+$legacyMarketplaceSrc = htmlspecialchars(
+    rtrim((string) getBaseUrl(), '/') . '/modules/infrastructure-marketplace/Views/marketplace/index.php?' . http_build_query($legacyMarketplaceQuery),
+    ENT_QUOTES,
+    'UTF-8'
+);
 ?>
             <div class="ratib-cp-board">
+                <section id="client-domain-catalog" class="ratib-cp-card mb-4">
+                    <div class="d-flex flex-wrap justify-content-between gap-3 align-items-start">
+                        <div>
+                            <h2><?php echo $catalogMode ? 'Domain search & service catalog' : 'Domain search'; ?></h2>
+                            <p class="rcp-note mb-0">The infrastructure marketplace module is rendered here as an internal capability so the client journey stays inside Client Hub.</p>
+                        </div>
+                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_nav_url('client/services.php'), ENT_QUOTES, 'UTF-8'); ?>">Open services</a>
+                    </div>
+                    <div class="mt-3" style="border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;background:rgba(5,10,24,.45);">
+                        <iframe
+                            src="<?php echo $legacyMarketplaceSrc; ?>"
+                            title="Domains and catalog"
+                            loading="lazy"
+                            referrerpolicy="same-origin"
+                            style="width:100%;min-height:640px;border:0;display:block;background:transparent;"
+                        ></iframe>
+                    </div>
+                </section>
                 <div class="ratib-cp-table-wrap mb-4" role="region" aria-label="Domain list placeholder">
                     <div class="ratib-cp-toolbar">
                         <span class="rcp-muted-span">Read-only scaffolding — bind to registrar tables when available.</span>

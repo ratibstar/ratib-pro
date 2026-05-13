@@ -1,8 +1,8 @@
 <?php
 require_once __DIR__ . '/_auth.inc.php';
 $RCP_SECTION = 'home';
-$RCP_HEADING = 'Enterprise dashboard';
-$RCP_SUBHEADING = 'Hosting, domains, billing, security, marketplace — unified cockpit.';
+$RCP_HEADING = 'Client Hub';
+$RCP_SUBHEADING = 'Services, domains, orders, billing, and provisioning visibility in one unified platform shell.';
 $RCP_EXTRA_JS = [ratib_client_dashboard_asset_url('js/client-dashboard-home.js')];
 require __DIR__ . '/_common-start.inc.php';
 ?>
@@ -60,6 +60,17 @@ require __DIR__ . '/_common-start.inc.php';
                         </section>
                     </div>
                 </div>
+
+                <section class="ratib-cp-card" aria-labelledby="rcp-hub-h">
+                    <h2 id="rcp-hub-h">Hub navigation</h2>
+                    <p class="rcp-note">Client Hub is now the primary customer container for services, domains, orders, and billing.</p>
+                    <div class="ratib-cp-quick" role="group" aria-label="Client Hub sections">
+                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_nav_url('client/services.php'), ENT_QUOTES, 'UTF-8'); ?>">Services</a>
+                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_nav_url('client/domains.php', 'catalog=1'), ENT_QUOTES, 'UTF-8'); ?>">Domains</a>
+                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_nav_url('client/orders.php'), ENT_QUOTES, 'UTF-8'); ?>">Orders</a>
+                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_nav_url('client/billing.php'), ENT_QUOTES, 'UTF-8'); ?>">Billing</a>
+                    </div>
+                </section>
 
                 <section class="ratib-cp-card" aria-labelledby="rcp-quick-h">
                     <h2 id="rcp-quick-h">Quick actions</h2>

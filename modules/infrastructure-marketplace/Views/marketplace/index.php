@@ -5,6 +5,8 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
 
+require_once dirname(__DIR__, 4) . '/includes/config.php';
+require_once dirname(__DIR__, 4) . '/modules/client-dashboard/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/bootstrap.php';
 $baseModule = '/modules/infrastructure-marketplace';
 $marketplaceJsPath = dirname(__DIR__, 2) . '/Assets/js/marketplace-catalog.js';
@@ -15,6 +17,19 @@ $marketplaceJsV = (int) (@filemtime($marketplaceJsPath) ?: time());
 $domainsJsV = (int) (@filemtime($domainsJsPath) ?: time());
 $focusDomains = isset($_GET['focus']) && strtolower((string) $_GET['focus']) === 'domains';
 $embedMode = isset($_GET['embed']) && (string) $_GET['embed'] === '1';
+$compatMode = isset($_GET['compatibility']) && (string) $_GET['compatibility'] === '1';
+$controlMode = isset($_GET['control']) && (string) $_GET['control'] === '1';
+if (!$embedMode && !$compatMode && !$controlMode && ratib_client_dashboard_can_access()) {
+    $canonicalQuery = $_GET;
+    unset($canonicalQuery['embed'], $canonicalQuery['compatibility']);
+    $canonicalQuery['catalog'] = '1';
+    $canonicalQuery['source'] = 'legacy_marketplace';
+    if ($focusDomains) {
+        $canonicalQuery['focus'] = 'domains';
+    }
+    header('Location: ' . ratib_nav_url('client/domains.php', http_build_query($canonicalQuery)), true, 302);
+    exit;
+}
 /* Public-facing: avoid "Infrastructure Marketplace" in title — same page as header "Find a domain". */
 $pageTitle = $focusDomains
     ? 'Find a domain — RATIB'

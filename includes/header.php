@@ -221,19 +221,11 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
                 <span class="notification-badge badge bg-danger ms-1 d-none" id="headerNotificationBadge">0</span>
             </a>
             <?php
-            $registerProRoot = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : rtrim((string) getBaseUrl(), '/');
-            $registerProBase = $registerProRoot . '/pages/home.php?open=register&plan=gold&years=1';
-            $registerProCountryCode = strtoupper(trim((string) ($_SESSION['country_code'] ?? (defined('COUNTRY_CODE') ? COUNTRY_CODE : ''))));
-            $registerProCountryName = trim((string) ($_SESSION['country_name'] ?? (defined('COUNTRY_NAME') ? COUNTRY_NAME : '')));
-            if ($registerProCountryCode !== '') {
-                $registerProBase .= '&country_code=' . rawurlencode($registerProCountryCode);
-            } elseif ($registerProCountryName !== '') {
-                $registerProBase .= '&country_name=' . rawurlencode($registerProCountryName);
-            }
+            $servicesCatalogUrl = htmlspecialchars(ratib_nav_url('client/domains.php', 'catalog=1'), ENT_QUOTES, 'UTF-8');
             ?>
-            <a href="<?php echo htmlspecialchars($registerProBase, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="nav-item nav-link nav-register-pro">
-                <i class="nav-icon fas fa-external-link-alt"></i>
-                <span>Register Pro</span>
+            <a href="<?php echo $servicesCatalogUrl; ?>" class="nav-item nav-link nav-register-pro">
+                <i class="nav-icon fas fa-store"></i>
+                <span>Plans &amp; Services</span>
             </a>
             <?php if (function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user() && isset($_SESSION['role_id']) && (int)$_SESSION['role_id'] === 1): ?>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="manage_settings">

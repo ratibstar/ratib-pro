@@ -91,21 +91,7 @@ if (!function_exists('ratib_client_dashboard_api_require_access')) {
 if (!function_exists('ratib_client_dashboard_marketplace_href')) {
     function ratib_client_dashboard_marketplace_href(): string
     {
-        $mk = rtrim((string) getBaseUrl(), '/') . '/modules/infrastructure-marketplace/Views/marketplace/index.php';
-        $aid = (int) ($_SESSION['agency_id'] ?? 0);
-        if ($aid <= 0) {
-            $aid = (int) ($_SESSION['control_agency_id'] ?? 0);
-        }
-        if ($aid > 0 && function_exists('ratib_control_pro_bridge') && ratib_control_pro_bridge()) {
-            return $mk . '?control=1&agency_id=' . $aid;
-        }
-        if ($aid > 0 && function_exists('ratib_nav_url')) {
-            $probe = ratib_nav_url('home.php');
-            if (strpos($probe, 'control=1') !== false) {
-                return $mk . '?control=1&agency_id=' . $aid;
-            }
-        }
-        return $mk;
+        return ratib_nav_url('client/domains.php', 'catalog=1');
     }
 }
 
@@ -139,12 +125,6 @@ if (!function_exists('ratib_client_dashboard_nav_sections')) {
                 'href' => $u('services.php'),
             ],
             [
-                'key' => 'subs',
-                'label' => 'Subscriptions',
-                'icon' => 'fa-rectangle-list',
-                'href' => $u('subscriptions.php'),
-            ],
-            [
                 'key' => 'domains',
                 'label' => 'Domains',
                 'icon' => 'fa-globe',
@@ -175,16 +155,10 @@ if (!function_exists('ratib_client_dashboard_nav_sections')) {
                 'href' => $u('notifications-center.php'),
             ],
             [
-                'key' => 'marketplace',
-                'label' => 'Marketplace',
-                'icon' => 'fa-store',
-                'href' => htmlspecialchars(ratib_client_dashboard_marketplace_href(), ENT_QUOTES, 'UTF-8'),
-            ],
-            [
-                'key' => 'infrastructure',
-                'label' => 'Infrastructure',
-                'icon' => 'fa-chart-network',
-                'href' => $u('infrastructure.php'),
+                'key' => 'subs',
+                'label' => 'Plans',
+                'icon' => 'fa-rectangle-list',
+                'href' => $u('subscriptions.php'),
             ],
             [
                 'key' => 'settings',

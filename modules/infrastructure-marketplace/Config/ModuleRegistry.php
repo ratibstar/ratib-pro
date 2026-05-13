@@ -192,13 +192,13 @@ final class ModuleRegistry
                 'permission_hint' => 'control_system_settings',
             ],
             [
-                'label' => 'Infrastructure marketplace',
-                'href' => '/modules/infrastructure-marketplace/Views/marketplace/index.php',
+                'label' => 'Client Hub domains',
+                'href' => '/pages/client/domains.php?catalog=1',
                 'permission_hint' => 'control_system_settings or agency user when published',
             ],
             [
-                'label' => 'Infrastructure client services',
-                'href' => '/modules/infrastructure-marketplace/Views/client/services.php',
+                'label' => 'Client Hub services',
+                'href' => '/pages/client/services.php',
                 'permission_hint' => 'tenant scoped authenticated user',
             ],
         ];
