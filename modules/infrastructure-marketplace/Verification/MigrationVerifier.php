@@ -55,12 +55,35 @@ final class MigrationVerifier
             }
         }
 
+        $providerSchemaColumns = [
+            'provider_type',
+            'provider_code',
+            'provider_class',
+            'tenant_id',
+            'agency_id',
+            'priority_weight',
+            'is_enabled',
+            'updated_by',
+        ];
+        $providerSchemaMissing = [];
+        if (SchemaHelpers::tableExists($this->pdo, 'ratib_infra_provider_activations')) {
+            foreach ($providerSchemaColumns as $column) {
+                if (!SchemaHelpers::columnExists($this->pdo, 'ratib_infra_provider_activations', $column)) {
+                    $providerSchemaMissing[] = $column;
+                }
+            }
+        }
+
+        $status = ($missing === [] && $providerSchemaMissing === []) ? 'PASS' : 'FAIL';
+
         return [
             'required_tables' => $requiredTables,
             'missing_tables' => $missing,
-            'status' => $missing === [] ? 'PASS' : 'FAIL',
+            'status' => $status,
             'optional_phase2_commerce_tables' => $optionalPhase2,
             'optional_phase2_missing' => $missingOptional,
+            'provider_activation_schema_required_columns' => $providerSchemaColumns,
+            'provider_activation_schema_missing' => $providerSchemaMissing,
         ];
     }
 }

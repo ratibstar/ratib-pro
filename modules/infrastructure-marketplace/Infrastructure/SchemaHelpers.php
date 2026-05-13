@@ -35,4 +35,29 @@ final class SchemaHelpers
             return false;
         }
     }
+
+    public static function columnExists(\PDO $pdo, string $table, string $column): bool
+    {
+        if ($table === '' || $column === '' || !preg_match('/^[A-Za-z0-9_]+$/', $table) || !preg_match('/^[A-Za-z0-9_]+$/', $column)) {
+            return false;
+        }
+        try {
+            $stmt = $pdo->prepare(
+                'SELECT 1 FROM information_schema.columns
+                 WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?
+                 LIMIT 1'
+            );
+            $stmt->execute([$table, $column]);
+
+            return (bool) $stmt->fetchColumn();
+        } catch (\Throwable) {
+            try {
+                $stmt = $pdo->query('SHOW COLUMNS FROM `' . $table . '` LIKE ' . $pdo->quote($column));
+
+                return $stmt instanceof \PDOStatement && $stmt->fetchColumn() !== false;
+            } catch (\Throwable) {
+                return false;
+            }
+        }
+    }
 }

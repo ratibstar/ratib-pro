@@ -27,16 +27,25 @@ final class PrelaunchHealthService
         $env = (new EnvironmentVerifier())->verify();
         $mig = (new MigrationVerifier($this->pdo))->verify();
         $queue = (new QueueWorkerVerifier($this->pdo))->verify();
-        $providers = (new ProviderDiagnosticsService())->verify();
+        $providers = (new ProviderDiagnosticsService($this->pdo))->verify();
         $deploy = $this->deploymentVerification();
         $security = $this->securityVerification();
         $observability = $this->observabilityVerification();
 
-        $matrix = $this->matrix([$env['checks'], $queue['checks'], $providers['checks'], $deploy['checks'], $security['checks'], $observability['checks']], $mig);
+        $sections = [
+            'environment' => $env['checks'],
+            'queue_worker' => $queue['checks'],
+            'providers' => $providers['checks'],
+            'deployment' => $deploy['checks'],
+            'security' => $security['checks'],
+            'observability' => $observability['checks'],
+        ];
+        $matrix = $this->matrix($sections, $mig);
         return [
             'status' => $matrix['overall'],
             'score' => $matrix['score'],
             'matrix' => $matrix['counts'],
+            'section_statuses' => $matrix['section_statuses'],
             'sections' => [
                 'environment' => $env,
                 'migrations' => $mig,
@@ -126,26 +135,42 @@ final class PrelaunchHealthService
     }
 
     /**
-     * @param list<list<array<string, mixed>>> $sections
+     * @param array<string, list<array<string, mixed>>> $sections
      * @return array<string, mixed>
      */
     private function matrix(array $sections, array $migration): array
     {
         $counts = ['PASS' => 0, 'WARN' => 0, 'FAIL' => 0];
-        foreach ($sections as $section) {
+        $sectionStatuses = [];
+        $weighted = 0.0;
+        $total = 0;
+        foreach ($sections as $sectionName => $section) {
+            $sectionCounts = ['PASS' => 0, 'WARN' => 0, 'FAIL' => 0];
             foreach ($section as $check) {
                 $status = (string) ($check['status'] ?? 'WARN');
                 if (!isset($counts[$status])) {
                     continue;
                 }
                 $counts[$status]++;
+                $sectionCounts[$status]++;
+                $weighted += $this->statusWeight($status);
+                $total++;
             }
+            $sectionStatuses[$sectionName] = $sectionCounts['FAIL'] > 0 ? 'FAIL' : ($sectionCounts['WARN'] > 0 ? 'WARN' : 'PASS');
         }
         $counts[$migration['status'] ?? 'WARN']++;
-        $total = max(1, $counts['PASS'] + $counts['WARN'] + $counts['FAIL']);
-        $score = (int) round(($counts['PASS'] / $total) * 100);
-        $overall = $counts['FAIL'] > 0 ? 'FAIL' : ($counts['WARN'] > 0 ? 'WARN' : 'PASS');
-        return ['counts' => $counts, 'score' => $score, 'overall' => $overall];
+        $migrationStatus = (string) ($migration['status'] ?? 'WARN');
+        $weighted += $this->statusWeight($migrationStatus);
+        $total++;
+        $sectionStatuses['migrations'] = $migrationStatus;
+        $score = (int) round((max(0.0, $weighted) / max(1, $total)) * 100);
+        $overall = $counts['FAIL'] > 0 ? 'FAIL' : ($score >= 90 ? 'PASS' : ($counts['WARN'] > 0 ? 'WARN' : 'PASS'));
+        return [
+            'counts' => $counts,
+            'score' => $score,
+            'overall' => $overall,
+            'section_statuses' => $sectionStatuses,
+        ];
     }
 
     /**
@@ -170,6 +195,15 @@ final class PrelaunchHealthService
             $out[] = 'System is launch-ready for staged tenant rollout.';
         }
         return $out;
+    }
+
+    private function statusWeight(string $status): float
+    {
+        return match ($status) {
+            'PASS' => 1.0,
+            'WARN' => 0.75,
+            default => 0.0,
+        };
     }
 }
 

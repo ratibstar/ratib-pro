@@ -9,16 +9,13 @@ use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
 use Ratib\InfrastructureMarketplace\Domain\TenantContext;
 use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
+use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
 use Ratib\InfrastructureMarketplace\Provisioning\Lifecycle\ProvisioningState;
 use Ratib\InfrastructureMarketplace\Provisioning\Lifecycle\StateTransitionValidator;
 use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
 use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
 use Ratib\InfrastructureMarketplace\Provisioning\StateMachine\ProvisioningStateMachine;
 use Ratib\InfrastructureMarketplace\DNS\Orchestration\DnsOrchestrationService;
-use Ratib\InfrastructureMarketplace\Registrars\Lifecycle\DomainLifecycleManager;
-use Ratib\InfrastructureMarketplace\SSL\Lifecycle\CertificateLifecycleManager;
-use Ratib\InfrastructureMarketplace\SSL\Validation\DnsValidationPreparation;
-use Ratib\InfrastructureMarketplace\SSL\Validation\HttpValidationPreparation;
 use Ratib\InfrastructureMarketplace\Services\ProviderRegistry;
 
 final class ProvisioningExecutionEngine
@@ -130,40 +127,94 @@ final class ProvisioningExecutionEngine
             return;
         }
         $step = strtolower($step);
-        if ($step === 'hosting' && $this->providers->hosting() !== null) {
-            $username = (string) ($payload['attributes']['username'] ?? '');
-            if ($username !== '') {
-                $this->providers->hosting()?->usageMetrics($tenant, $username);
+        $normalizedPayload = $this->asProvisioningPayload($payload);
+        if ($step === 'hosting') {
+            $provider = $this->providers->hosting();
+            if ($provider === null) {
+                throw new \RuntimeException('hosting_provider_unavailable');
             }
+            $result = $provider->createAccount($tenant, $normalizedPayload);
+            $this->assertExecutionResult('hosting', $result);
             return;
         }
-        if ($step === 'dns' && $this->providers->dns() !== null) {
+        if ($step === 'dns') {
+            $provider = $this->providers->dns();
+            if ($provider === null) {
+                throw new \RuntimeException('dns_provider_unavailable');
+            }
             $dns = new DnsOrchestrationService($this->providers->dns());
             $zone = (string) ($payload['attributes']['zone_fqdn'] ?? '');
-            if ($zone !== '') {
-                $dns->verifyZone($zone);
-                $dns->propagationCheck($zone);
+            $records = isset($payload['attributes']['records']) && is_array($payload['attributes']['records'])
+                ? $payload['attributes']['records']
+                : [];
+            if ($zone === '') {
+                throw new \RuntimeException('dns_zone_missing');
             }
+            $result = $dns->applyIdempotentRecords($tenant, $zone, $records);
+            $this->assertExecutionResult('dns', $result);
             return;
         }
         if ($step === 'ssl') {
-            $cert = new CertificateLifecycleManager(
-                new DnsValidationPreparation(),
-                new HttpValidationPreparation()
-            );
-            $fqdn = (string) ($payload['attributes']['fqdn'] ?? '');
-            if ($fqdn !== '') {
-                $cert->prepareValidation($fqdn, 'token-placeholder');
+            $provider = $this->providers->ssl();
+            if ($provider === null) {
+                throw new \RuntimeException('ssl_provider_unavailable');
             }
+            $fqdn = (string) ($payload['attributes']['fqdn'] ?? '');
+            if ($fqdn === '') {
+                throw new \RuntimeException('ssl_fqdn_missing');
+            }
+            $result = $provider->provisionCertificate($tenant, $fqdn, is_array($payload['attributes'] ?? null) ? $payload['attributes'] : []);
+            $this->assertExecutionResult('ssl', $result);
             return;
         }
         if ($step === 'registrar') {
-            $domains = new DomainLifecycleManager();
-            $fqdn = (string) ($payload['attributes']['fqdn'] ?? '');
-            if ($fqdn !== '') {
-                $domains->registrationPlan($fqdn, 1);
+            $provider = $this->providers->registrar();
+            if ($provider === null) {
+                throw new \RuntimeException('registrar_provider_unavailable');
             }
+            $result = $provider->registerDomain($tenant, $normalizedPayload);
+            $this->assertExecutionResult('registrar', $result);
             return;
+        }
+        throw new \RuntimeException('unsupported_provisioning_step:' . $step);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function asProvisioningPayload(array $payload): ProvisioningPayload
+    {
+        $operation = isset($payload['operation']) ? (string) $payload['operation'] : 'execute';
+        $attributes = isset($payload['attributes']) && is_array($payload['attributes']) ? $payload['attributes'] : [];
+
+        return new ProvisioningPayload($operation, $attributes);
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     */
+    private function assertExecutionResult(string $step, array $result): void
+    {
+        if (array_key_exists('ok', $result) && $result['ok'] === false) {
+            throw new \RuntimeException($step . '_provider_error:' . (string) ($result['error'] ?? 'unknown'));
+        }
+
+        $state = strtolower(trim((string) ($result['state'] ?? '')));
+        if ($state !== '' && in_array($state, [
+            'disabled_by_rollout',
+            'missing_credentials',
+            'provider_unavailable',
+            'acme_unreachable',
+            'zone_not_found',
+            'purchase_not_enabled',
+            'renew_not_enabled',
+            'conflict_detected',
+        ], true)) {
+            throw new \RuntimeException($step . '_state:' . $state);
+        }
+
+        if (!empty($result['retryable']) && $state !== 'propagated') {
+            throw new \RuntimeException($step . '_retryable_state:' . ($state !== '' ? $state : 'unknown'));
         }
     }
 }

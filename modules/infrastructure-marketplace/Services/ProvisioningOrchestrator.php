@@ -7,6 +7,7 @@ use Ratib\InfrastructureMarketplace\Config\ModuleConfig;
 use Ratib\InfrastructureMarketplace\Domain\Contracts\ProvisioningOrchestratorInterface;
 use Ratib\InfrastructureMarketplace\Domain\Contracts\QueueDispatcherInterface;
 use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
+use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
 use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
 use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningJob;
 use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
@@ -39,12 +40,41 @@ final class ProvisioningOrchestrator implements ProvisioningOrchestratorInterfac
     {
         $events = new InfrastructureEventEmitter();
         $metrics = new InfrastructureMetrics($events);
+        $driver = ModuleConfig::defaultQueueDriver();
+        $canUseDatabaseQueue = self::databaseQueueSchemaReady($pdo);
 
-        if (ModuleConfig::defaultQueueDriver() === 'database') {
+        if ($driver === 'database' && $canUseDatabaseQueue) {
             $queue = new DatabaseQueueDispatcher(
                 new ProvisioningJobRepository($pdo),
                 new ProvisioningJobLogRepository($pdo)
             );
+            return new self($queue, $events, $metrics);
+        }
+
+        if ($driver === 'database' && !$canUseDatabaseQueue) {
+            $events->structuredLog('warn', 'Database queue requested but queue schema is incomplete; falling back to sync dispatcher.');
+        }
+
+        if ($driver === 'redis') {
+            if ($canUseDatabaseQueue) {
+                $events->structuredLog('warn', 'Redis queue requested but no redis dispatcher is implemented; using database queue fallback.');
+                $queue = new DatabaseQueueDispatcher(
+                    new ProvisioningJobRepository($pdo),
+                    new ProvisioningJobLogRepository($pdo)
+                );
+
+                return new self($queue, $events, $metrics);
+            }
+            $events->structuredLog('warn', 'Redis queue requested but unavailable; falling back to sync dispatcher.');
+        }
+
+        if ($driver === 'sync' && ModuleConfig::isModuleEnabled() && !ModuleConfig::dryRunMode() && $canUseDatabaseQueue) {
+            $events->structuredLog('info', 'Live execution with sync queue detected; auto-promoting to database queue for recovery safety.');
+            $queue = new DatabaseQueueDispatcher(
+                new ProvisioningJobRepository($pdo),
+                new ProvisioningJobLogRepository($pdo)
+            );
+
             return new self($queue, $events, $metrics);
         }
 
@@ -73,5 +103,15 @@ final class ProvisioningOrchestrator implements ProvisioningOrchestratorInterfac
         $this->metrics?->reconciliationReport($jobId, 'requested');
 
         return ['job_id' => $jobId, 'state' => 'foundation_noop'];
+    }
+
+    private static function databaseQueueSchemaReady(\PDO $pdo): bool
+    {
+        try {
+            return SchemaHelpers::tableExists($pdo, 'ratib_infra_provisioning_jobs')
+                && SchemaHelpers::tableExists($pdo, 'ratib_infra_job_logs');
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }
