@@ -8,7 +8,7 @@ This document is the **canonical operator guide** for the Ratib control panel. I
 
 - **Who:** control panel operators, country admins, and super admins who manage countries, agencies, registrations, support, tracking, accounting, and (where permitted) infrastructure and system settings.
 - **What:** how to navigate the panel safely, what each major area does, and how to use **Infrastructure** (Control · Dashboard · Providers).
-- **Related files:** bilingual overview in `docs/CONTROL_PANEL_COMPLETE_USER_GUIDE_AR_EN.md`; infrastructure checklist in `docs/infrastructure-tabs-operator-checklist.md`.
+- **Related files:** bilingual overview in `docs/CONTROL_PANEL_COMPLETE_USER_GUIDE_AR_EN.md`; infrastructure checklist in `docs/infrastructure-tabs-operator-checklist.md`; route ownership map in `docs/CLIENT_HUB_CONTROL_PANEL_ROUTE_OWNERSHIP.md`.
 
 ---
 

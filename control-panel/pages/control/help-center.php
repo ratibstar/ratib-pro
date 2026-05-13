@@ -1,6 +1,7 @@
 <?php
 /**
- * Control panel Help center — renders docs from repository Markdown (operator guide + infra appendix).
+ * Control panel Help center — renders docs from repository Markdown
+ * (operator guide + infra appendix + route ownership appendix).
  */
 declare(strict_types=1);
 
@@ -21,6 +22,7 @@ require_once __DIR__ . '/../../includes/control/help-markdown.php';
 $repoRoot = dirname(__DIR__, 3);
 $guidePath = $repoRoot . DIRECTORY_SEPARATOR . 'docs' . DIRECTORY_SEPARATOR . 'control-panel-help-center-guide.md';
 $infraPath = $repoRoot . DIRECTORY_SEPARATOR . 'docs' . DIRECTORY_SEPARATOR . 'infrastructure-tabs-operator-checklist.md';
+$ownershipPath = $repoRoot . DIRECTORY_SEPARATOR . 'docs' . DIRECTORY_SEPARATOR . 'CLIENT_HUB_CONTROL_PANEL_ROUTE_OWNERSHIP.md';
 
 $merged = '';
 if (is_readable($guidePath)) {
@@ -35,6 +37,13 @@ if (is_readable($infraPath)) {
     $infraBody = preg_replace('/^#\s[^\n]+\n+/', '', $infraRaw, 1) ?? $infraRaw;
     $merged .= "\n\n---\n\n## Appendix A — Infrastructure tabs operator checklist\n\n";
     $merged .= trim($infraBody) . "\n";
+}
+
+if (is_readable($ownershipPath)) {
+    $ownershipRaw = (string) file_get_contents($ownershipPath);
+    $ownershipBody = preg_replace('/^#\s[^\n]+\n+/', '', $ownershipRaw, 1) ?? $ownershipRaw;
+    $merged .= "\n\n---\n\n## Appendix B — Client Hub / Control Panel route ownership\n\n";
+    $merged .= trim($ownershipBody) . "\n";
 }
 
 [$html, $_ids] = cp_help_render_markdown($merged);
@@ -61,7 +70,10 @@ startControlLayout('Help center', ['css/control/help-center.css'], []);
     <p class="help-center-intro">
         <strong><i class="fas fa-circle-question me-2"></i>Help center</strong>
         — Operator guide for the control panel and the <strong>Infrastructure</strong> tabs (Control, Dashboard, Providers).
-        Source: <code>docs/control-panel-help-center-guide.md</code> (plus infrastructure checklist appendix). Update those files in Git to change what appears here.
+        Source: <code>docs/control-panel-help-center-guide.md</code> plus appendices from
+        <code>docs/infrastructure-tabs-operator-checklist.md</code> and
+        <code>docs/CLIENT_HUB_CONTROL_PANEL_ROUTE_OWNERSHIP.md</code>.
+        Update those files in Git to change what appears here.
     </p>
     <?php echo $tocHtml; ?>
     <article class="help-doc">
