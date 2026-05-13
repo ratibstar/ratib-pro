@@ -112,7 +112,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <span class="partner-portal-dash-card__icon" aria-hidden="true">📊</span>
                 <span class="partner-portal-dash-card__value" id="ppDashAccounting">GL</span>
                 <span class="partner-portal-dash-card__label">Account statement</span>
-                <span class="partner-portal-dash-card__hint" id="ppDashAccountingHint">Same Ratib Pro ledger your office uses</span>
+                <span class="partner-portal-dash-card__hint" id="ppDashAccountingHint">Same ledger your office uses in Accounting</span>
                 <span class="partner-portal-dash-card__cta">Open statement →</span>
             </a>
             <div class="partner-portal-dash-card glass-card partner-portal-dash-card--static">
@@ -127,7 +127,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
         <div id="ppDashLedgerPreview" class="partner-portal-dash-ledger-preview glass-card" aria-labelledby="ppDashLedgerPreviewTitle">
             <div class="partner-portal-dash-ledger-preview-head">
                 <h3 id="ppDashLedgerPreviewTitle" class="partner-portal-dash-ledger-preview-title">
-                    <span aria-hidden="true">📊</span> Account statement (Ratib Pro)
+                    <span aria-hidden="true">📊</span> Account statement (platform ledger)
                 </h3>
                 <a class="muted-btn partner-portal-dash-ledger-preview-link" href="<?php echo $ppAccountingPage; ?>">Full statement →</a>
             </div>
@@ -145,7 +145,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
                 <button type="button" class="neon-btn partner-portal-card-btn partner-portal-card-btn--primary" id="ppBtnEditDocs" title="Edit contact details">Edit</button>
             </div>
         </div>
-        <p class="agency-detail-note">Your office uploads files in Ratib Pro. Use the table page to search, sort, download, or open files.</p>
+        <p class="agency-detail-note">Your office uploads files in the main platform. Use the table page to search, sort, download, or open files.</p>
         <div class="partner-portal-docs-teaser">
             <p id="ppCvTeaserLine" class="partner-portal-docs-teaser-line">Loading document count…</p>
             <a class="neon-btn partner-portal-docs-teaser-cta" href="<?php echo htmlspecialchars(pageUrl('partner-portal-documents.php'), ENT_QUOTES, 'UTF-8'); ?>">Open documents table</a>

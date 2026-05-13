@@ -514,7 +514,7 @@ if ($isSuspended) { echo 'badge-suspended'; } elseif ($isActive) { echo 'badge-a
                             }
                             $openTitle = $openViaRemoteSiteUrl
                                 ? 'Open agency program (custom site URL)'
-                                : (($cslug !== '' && $ratibBase !== '') ? ('Open Ratib Pro (' . $cslug . ')') : 'Open Ratib Pro');
+                                : (($cslug !== '' && $ratibBase !== '') ? ('Open platform (' . $cslug . ')') : 'Open platform');
                         ?><?php if ($openUrl !== ''): ?>
                         <a href="<?php echo htmlspecialchars($openUrl); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success" title="<?php echo htmlspecialchars($openTitle, ENT_QUOTES, 'UTF-8'); ?>" data-permission="control_agencies,open_control_agency">Open</a>
                         <?php else: ?>

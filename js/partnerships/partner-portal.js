@@ -84,7 +84,7 @@
             ppOvDestroyLedgerChartInstanceOnly();
             if (emptyEl) {
                 emptyEl.textContent =
-                    'No posted debit or credit by month in this range yet. Your office adds activity in Ratib Pro → Accounting → Journal entries.';
+                    'No posted debit or credit by month in this range yet. Your office adds activity in Accounting → Journal entries.';
                 emptyEl.hidden = false;
             }
             canvas.hidden = true;
@@ -286,7 +286,7 @@
             kpis.hidden = true;
             kpis.innerHTML = '';
             if (valEl) valEl.textContent = '—';
-            if (hintEl) hintEl.textContent = 'Same Ratib Pro ledger your office uses';
+            if (hintEl) hintEl.textContent = 'Same ledger your office uses in Accounting';
             return;
         }
         if (json.success === false) {
@@ -295,7 +295,7 @@
             kpis.hidden = true;
             kpis.innerHTML = '';
             if (valEl) valEl.textContent = '—';
-            if (hintEl) hintEl.textContent = 'Same Ratib Pro ledger your office uses';
+            if (hintEl) hintEl.textContent = 'Same ledger your office uses in Accounting';
             return;
         }
 

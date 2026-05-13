@@ -56,7 +56,7 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
 
     <section class="agency-detail-card glass-card partner-portal-cvs-block">
         <h2 class="agency-detail-card-title"><span class="agency-detail-card-icon" aria-hidden="true">📎</span> Documents &amp; CVs</h2>
-        <p class="agency-detail-note">Your office uploads files in Ratib Pro. Partners download only — same list as on their portal.</p>
+        <p class="agency-detail-note">Your office uploads files in the main platform. Partners download only — same list as on their portal.</p>
         <ul id="pacvCvList" class="partner-portal-cv-list"></ul>
         <p id="pacvCvEmpty" class="agency-detail-empty" hidden>No documents uploaded yet.</p>
     </section>

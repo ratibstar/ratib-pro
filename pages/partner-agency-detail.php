@@ -171,7 +171,7 @@ $listHref = htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 
             </table>
         </div>
         <p id="agencyAccountingTableFootnote" class="agency-detail-note agency-accounting-table-foot glass-card is-hidden" hidden>
-            The first row is <strong>opening balance</strong> at the start of the dates you picked. Extra lines only appear after journal entries are posted to this chart account in <strong>Accounting</strong> (same as Ratib Pro ledger).
+            The first row is <strong>opening balance</strong> at the start of the dates you picked. Extra lines only appear after journal entries are posted to this chart account in <strong>Accounting</strong> (same ledger as your office).
         </p>
         <div id="agencyAccountingHint" class="agency-detail-note agency-accounting-hint glass-card is-hidden" hidden></div>
         <div id="agencyAccountingError" class="agency-detail-error glass-card is-hidden" hidden></div>

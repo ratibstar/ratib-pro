@@ -99,7 +99,7 @@
                                 return '<button type="button" class="country-card" data-agency-id="' + c.agency_id + '" data-name="' + safeName + '">' +
                                     '<div class="country-card-title"><i class="fas fa-globe-asia"></i><span>' + nameText + '</span></div>' +
                                     '<div class="country-card-meta"><span class="country-card-count">' + usersLabel + '</span>' +
-                                    '<span class="country-card-badge">Ratib Pro</span></div>' +
+                                    '<span class="country-card-badge">Main app</span></div>' +
                                     '</button>';
                             }).join('');
                             countryCardsGrid.querySelectorAll('.country-card').forEach(function(card) {

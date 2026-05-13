@@ -280,7 +280,7 @@ if ($urlAgencyIdPre > 0 && $formHiddenAgencyId > 0) {
     $agencySelectOptions = [];
 }
 
-// One line under "Login": "Ratib Pro — {name} — sign in..." for path URLs, /pages/login.php + cookies, tenant, etc.
+// One line under "Login": branded intro from APP_NAME for path URLs, /pages/login.php + cookies, tenant, etc.
 $loginSubtitleName = null;
 if ($singleCountryFromPath && $loginCountryName) {
     $loginSubtitleName = trim($loginCountryName);
@@ -318,7 +318,7 @@ if ($loginSubtitleName === null && $formHiddenCountryId > 0 && !empty($loginAgen
     }
 }
 
-// Ratib Pro login
+// Main platform login
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     try {
     $verifyUserPassword = function(mysqli $dbConn, array $userRow, string $plainPassword): bool {
@@ -914,7 +914,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     error_log('Login denied: user country_id does not match agency country_id=' . (int)$agencyCountryId);
                 }
                 if (empty($error) && !$ratibLoginUserAllowedForProgramAgency($user)) {
-                    $error = 'Access denied. This account is not valid for this agency. Open Ratib Pro from Manage Agencies for the correct agency.';
+                    $error = 'Access denied. This account is not valid for this agency. Open the agency workspace from Manage Agencies for the correct agency.';
                     error_log('Login denied: user agency_id does not match agency context agency_id=' . (int)($agencyId ?? 0));
                 }
 
@@ -1301,7 +1301,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $loginSubtitleName ? htmlspecialchars($loginSubtitleName) . ' - ' : ''; ?>Login - Ratib Pro</title>
+    <?php $loginBrandName = defined('APP_NAME') && (string) APP_NAME !== '' ? (string) APP_NAME : 'RATIB'; ?>
+    <title><?php echo $loginSubtitleName ? htmlspecialchars($loginSubtitleName) . ' - ' : ''; ?>Login - <?php echo htmlspecialchars($loginBrandName, ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236b21a8'/%3E%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
     
     <!-- Bootstrap CSS -->
@@ -1340,8 +1341,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
             <h2>Login</h2>
             <?php
             $loginIntroLine = $loginSubtitleName
-                ? 'Ratib Pro — ' . htmlspecialchars($loginSubtitleName) . ' — sign in with your username and password.'
-                : 'Ratib Pro — sign in with your username and password.';
+                ? htmlspecialchars($loginBrandName, ENT_QUOTES, 'UTF-8') . ' — ' . htmlspecialchars($loginSubtitleName) . ' — sign in with your username and password.'
+                : htmlspecialchars($loginBrandName, ENT_QUOTES, 'UTF-8') . ' — sign in with your username and password.';
             ?>
             <p class="text-muted small mb-2"><?php echo $loginIntroLine; ?></p>
             <?php if ($error): ?>

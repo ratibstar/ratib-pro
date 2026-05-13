@@ -1,6 +1,6 @@
 <?php
 /**
- * Partner portal — account statement linked to Ratib Pro chart of accounts (read-only, English).
+ * Partner portal — account statement linked to the agency chart of accounts (read-only, English).
  */
 require_once __DIR__ . '/../includes/config.php';
 
@@ -32,7 +32,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
         <div class="partner-portal-docs-page-intro">
             <a class="muted-btn partner-portal-docs-back" href="<?php echo $ppPortalHome; ?>">← Back to partner portal</a>
             <div class="partner-portal-docs-page-intro-text">
-                <p class="partner-portal-kicker">Partner portal · Ratib Pro accounting</p>
+                <p class="partner-portal-kicker">Partner portal · Accounting</p>
                 <h1 class="partner-portal-title partner-portal-docs-page-h1">Account statement</h1>
                 <p id="ppAcctSub" class="partner-portal-docs-subline">Loading…</p>
             </div>

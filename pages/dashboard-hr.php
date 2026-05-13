@@ -4,7 +4,7 @@
  * AR: يدير عرض صفحات المستخدم وتدفق الخادم الخاص بالصفحة في `pages/dashboard-hr.php`.
  */
 /**
- * HR Management Dashboard - Ratib Pro
+ * HR Management Dashboard - main platform
  */
 require_once __DIR__ . '/../includes/config.php';
 

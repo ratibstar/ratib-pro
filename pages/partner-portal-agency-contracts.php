@@ -106,11 +106,11 @@ include __DIR__ . '/../includes/partner-portal-header.php';
         <section class="agency-detail-card glass-card partner-portal-ledger-in-overview" aria-labelledby="ppOvAcctHeading">
             <div class="agency-detail-card-head partner-portal-ledger-in-overview-head">
                 <h2 id="ppOvAcctHeading" class="agency-detail-card-title">
-                    <span class="agency-detail-card-icon" aria-hidden="true">📊</span> Account statement (Ratib Pro)
+                    <span class="agency-detail-card-icon" aria-hidden="true">📊</span> Account statement (platform ledger)
                 </h2>
                 <a class="muted-btn partner-portal-ledger-full-link" href="<?php echo $ppAccountingPage; ?>">Full screen →</a>
             </div>
-            <p class="agency-detail-note">Posted journal lines on the chart account your office linked to this partnership. Read-only; same data your office sees in accounting. <strong>Draft</strong> payment vouchers and other draft entries do not appear here until your office posts or finalizes them in Ratib Pro Accounting.</p>
+            <p class="agency-detail-note">Posted journal lines on the chart account your office linked to this partnership. Read-only; same data your office sees in accounting. <strong>Draft</strong> payment vouchers and other draft entries do not appear here until your office posts or finalizes them in <strong>Accounting</strong>.</p>
             <p id="ppOvAcctSummary" class="agency-detail-note partner-portal-ledger-summary">Loading…</p>
             <div class="agency-accounting-filters glass-card partner-portal-ledger-filters" id="ppOvAcctFilters" hidden>
                 <label class="agency-accounting-date-label">From <input type="date" id="ppOvAcctStart" class="agency-accounting-date-input" autocomplete="off"></label>

@@ -1,5 +1,5 @@
 /**
- * Partner portal — read-only account statement (same Ratib Pro GL as staff).
+ * Partner portal — read-only account statement (same ledger as staff Accounting).
  */
 (function () {
     /** @type {{ destroy?: () => void } | null} */
@@ -250,7 +250,7 @@
             if (sum) {
                 sum.textContent =
                     code && aname
-                        ? `Linked to chart account ${code} — ${aname}. Same ledger as Ratib Pro accounting.`
+                        ? `Linked to chart account ${code} — ${aname}. Same ledger as office accounting.`
                         : 'Linked to your office chart of accounts.';
             }
             if (sub) {
