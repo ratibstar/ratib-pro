@@ -32,5 +32,13 @@ $pageJs = array_merge([
     ratib_client_dashboard_asset_url('js/client-dashboard-actions.js'),
 ], $RCP_EXTRA_JS);
 
+if (function_exists('ratib_client_dashboard_is_control_wrapper_active') && ratib_client_dashboard_is_control_wrapper_active()) {
+    require_once dirname(__DIR__, 2) . '/control-panel/includes/control/layout-wrapper.php';
+    startControlLayout($pageTitle, $pageCss);
+    echo '<div class="ratib-client-dashboard-surface">';
+    require dirname(__DIR__, 2) . '/modules/client-dashboard/Layout/shell-start.inc.php';
+    return;
+}
+
 require_once dirname(__DIR__, 2) . '/includes/header.php';
 require dirname(__DIR__, 2) . '/modules/client-dashboard/Layout/shell-start.inc.php';

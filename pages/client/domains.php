@@ -28,7 +28,7 @@ $legacyMarketplaceSrc = htmlspecialchars(
                             <h2><?php echo $catalogMode ? 'Domain search & service catalog' : 'Domain search'; ?></h2>
                             <p class="rcp-note mb-0">The infrastructure marketplace module is rendered here as an internal capability so the client journey stays inside Client Hub.</p>
                         </div>
-                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_nav_url('client/services.php'), ENT_QUOTES, 'UTF-8'); ?>">Open services</a>
+                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_client_dashboard_context_url('services.php'), ENT_QUOTES, 'UTF-8'); ?>">Open services</a>
                     </div>
                     <div class="mt-3" style="border:1px solid rgba(255,255,255,.08);border-radius:18px;overflow:hidden;background:rgba(5,10,24,.45);">
                         <iframe

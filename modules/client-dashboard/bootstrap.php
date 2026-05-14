@@ -27,6 +27,48 @@ if (!function_exists('ratib_client_dashboard_page_url')) {
     }
 }
 
+if (!function_exists('ratib_client_dashboard_is_control_wrapper_active')) {
+    function ratib_client_dashboard_is_control_wrapper_active(): bool
+    {
+        return defined('RATIB_CLIENT_CONTROL_WRAPPER_ACTIVE') && RATIB_CLIENT_CONTROL_WRAPPER_ACTIVE;
+    }
+}
+
+if (!function_exists('ratib_client_dashboard_context_url')) {
+    function ratib_client_dashboard_context_url(string $page, string $extraQuery = ''): string
+    {
+        $page = ltrim($page, '/');
+        if (!ratib_client_dashboard_is_control_wrapper_active()) {
+            return ratib_nav_url('client/' . $page, $extraQuery);
+        }
+
+        $map = [
+            'dashboard.php' => 'dashboard',
+            'orders.php' => 'orders',
+            'services.php' => 'services',
+            'domains.php' => 'domains',
+            'billing.php' => 'billing',
+            'security.php' => 'security',
+            'support.php' => 'support',
+            'notifications-center.php' => 'notifications',
+            'subscriptions.php' => 'subscriptions',
+            'settings.php' => 'settings',
+        ];
+        $section = $map[$page] ?? 'dashboard';
+
+        $controlNavFile = dirname(__DIR__, 2) . '/control-panel/includes/control/client-platform-nav.php';
+        if (is_file($controlNavFile) && !function_exists('control_client_platform_wrapper_url')) {
+            require_once $controlNavFile;
+        }
+
+        if (function_exists('control_client_platform_wrapper_url')) {
+            return control_client_platform_wrapper_url($section, $extraQuery);
+        }
+
+        return ratib_nav_url('client/' . $page, $extraQuery);
+    }
+}
+
 if (!function_exists('ratib_client_dashboard_can_access')) {
     function ratib_client_dashboard_can_access(): bool
     {
@@ -91,7 +133,7 @@ if (!function_exists('ratib_client_dashboard_api_require_access')) {
 if (!function_exists('ratib_client_dashboard_marketplace_href')) {
     function ratib_client_dashboard_marketplace_href(): string
     {
-        return ratib_nav_url('client/domains.php', 'catalog=1');
+        return ratib_client_dashboard_context_url('domains.php', 'catalog=1');
     }
 }
 
@@ -102,7 +144,7 @@ if (!function_exists('ratib_client_dashboard_nav_sections')) {
     function ratib_client_dashboard_nav_sections(): array
     {
         $u = static function (string $p): string {
-            return htmlspecialchars(ratib_nav_url('client/' . $p), ENT_QUOTES, 'UTF-8');
+            return htmlspecialchars(ratib_client_dashboard_context_url($p), ENT_QUOTES, 'UTF-8');
         };
 
         return [

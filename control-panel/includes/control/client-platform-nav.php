@@ -26,39 +26,74 @@ if (!function_exists('control_client_platform_public_root')) {
 }
 
 if (!function_exists('control_client_platform_links')) {
+    function control_client_platform_wrapper_url(string $section, string $extraQuery = ''): string
+    {
+        $section = strtolower(trim($section));
+        $map = [
+            'hub' => 'dashboard',
+            'dashboard' => 'dashboard',
+            'services' => 'services',
+            'domains' => 'domains',
+            'orders' => 'orders',
+            'billing' => 'billing',
+            'security' => 'security',
+            'support' => 'support',
+            'notifications' => 'notifications',
+            'subscriptions' => 'subscriptions',
+            'settings' => 'settings',
+        ];
+        $resolvedSection = $map[$section] ?? 'dashboard';
+
+        $baseUrl = function_exists('control_panel_page_with_control')
+            ? control_panel_page_with_control('control/client-platform.php')
+            : (pageUrl('control/client-platform.php') . '?control=1');
+
+        $query = ['section' => $resolvedSection];
+        $agencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+        if ($agencyId > 0) {
+            $query['agency_id'] = (string) $agencyId;
+        }
+
+        $extraQuery = ltrim(trim($extraQuery), '?&');
+        if ($extraQuery !== '') {
+            $extra = [];
+            parse_str($extraQuery, $extra);
+            foreach ($extra as $key => $value) {
+                if ($value === null || $value === '') {
+                    continue;
+                }
+                $query[(string) $key] = $value;
+            }
+        }
+
+        return $baseUrl . '&' . http_build_query($query);
+    }
+
     /**
      * @return array<string,array{label:string,href:string}>
      */
     function control_client_platform_links(): array
     {
-        $root = control_client_platform_public_root();
-        $agencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
-        $query = ['control' => '1'];
-        if ($agencyId > 0) {
-            $query['agency_id'] = (string) $agencyId;
-        }
-        $qs = http_build_query($query);
-
         return [
             'hub' => [
                 'label' => 'Client Hub',
-                'href' => $root . '/pages/client/dashboard.php?' . $qs,
+                'href' => control_client_platform_wrapper_url('dashboard'),
             ],
             'services' => [
                 'label' => 'Services',
-                'href' => $root . '/pages/client/services.php?' . $qs,
+                'href' => control_client_platform_wrapper_url('services'),
             ],
             'domains' => [
                 'label' => 'Domains',
-                'href' => $root . '/pages/client/domains.php?' . $qs,
+                'href' => control_client_platform_wrapper_url('domains', 'catalog=1'),
             ],
             'orders' => [
                 'label' => 'Orders',
-                'href' => $root . '/pages/client/orders.php?' . $qs,
+                'href' => control_client_platform_wrapper_url('orders'),
             ],
             'billing' => [
                 'label' => 'Billing',
-                'href' => $root . '/pages/client/billing.php?' . $qs,
+                'href' => control_client_platform_wrapper_url('billing'),
             ],
         ];
     }

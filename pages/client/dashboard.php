@@ -46,7 +46,7 @@ require __DIR__ . '/_common-start.inc.php';
                         <h2 id="rcp-recent-orders-h">Recent orders</h2>
                         <div id="rcp-recent-orders" class="pt-2"></div>
                         <p class="rcp-note mt-3">
-                            <a href="<?php echo htmlspecialchars(ratib_nav_url('client/orders.php'), ENT_QUOTES, 'UTF-8'); ?>">Open orders center →</a>
+                            <a href="<?php echo htmlspecialchars(ratib_client_dashboard_context_url('orders.php'), ENT_QUOTES, 'UTF-8'); ?>">Open orders center →</a>
                         </p>
                     </section>
                     <div class="d-flex flex-column gap-3">
@@ -65,10 +65,10 @@ require __DIR__ . '/_common-start.inc.php';
                     <h2 id="rcp-hub-h">Hub navigation</h2>
                     <p class="rcp-note">Client Hub is now the primary customer container for services, domains, orders, and billing.</p>
                     <div class="ratib-cp-quick" role="group" aria-label="Client Hub sections">
-                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_nav_url('client/services.php'), ENT_QUOTES, 'UTF-8'); ?>">Services</a>
-                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_nav_url('client/domains.php', 'catalog=1'), ENT_QUOTES, 'UTF-8'); ?>">Domains</a>
-                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_nav_url('client/orders.php'), ENT_QUOTES, 'UTF-8'); ?>">Orders</a>
-                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_nav_url('client/billing.php'), ENT_QUOTES, 'UTF-8'); ?>">Billing</a>
+                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_client_dashboard_context_url('services.php'), ENT_QUOTES, 'UTF-8'); ?>">Services</a>
+                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_client_dashboard_context_url('domains.php', 'catalog=1'), ENT_QUOTES, 'UTF-8'); ?>">Domains</a>
+                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_client_dashboard_context_url('orders.php'), ENT_QUOTES, 'UTF-8'); ?>">Orders</a>
+                        <a class="ratib-cp-pillbtn" href="<?php echo htmlspecialchars(ratib_client_dashboard_context_url('billing.php'), ENT_QUOTES, 'UTF-8'); ?>">Billing</a>
                     </div>
                 </section>
 

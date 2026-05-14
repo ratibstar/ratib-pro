@@ -41,8 +41,15 @@ $ratibCpNav = ratib_client_dashboard_nav_sections();
 $ratibCpMainUrl = htmlspecialchars(ratib_nav_url('dashboard.php'), ENT_QUOTES, 'UTF-8');
 $ratibCpLogoutUrl = htmlspecialchars(ratib_logout_url(), ENT_QUOTES, 'UTF-8');
 $ratibCpSkipId = 'ratib-cp-main';
+$ratibCpIsControlWrapper = function_exists('ratib_client_dashboard_is_control_wrapper_active')
+    && ratib_client_dashboard_is_control_wrapper_active();
 
 ?>
+<?php if ($ratibCpIsControlWrapper): ?>
+<div class="ratib-cp-shell ratib-cp-shell--embedded" data-ratib-client-shell>
+    <div class="ratib-cp-main" id="<?php echo htmlspecialchars($ratibCpSkipId, ENT_QUOTES, 'UTF-8'); ?>" tabindex="-1">
+        <main class="ratib-cp-body">
+<?php return; endif; ?>
 <div class="ratib-cp-shell" data-ratib-client-shell>
     <a class="ratib-cp-skip" href="#<?php echo htmlspecialchars($ratibCpSkipId, ENT_QUOTES, 'UTF-8'); ?>">Skip to main content</a>
     <div class="ratib-cp-shell__backdrop" data-ratib-cp-backdrop aria-hidden="true"></div>

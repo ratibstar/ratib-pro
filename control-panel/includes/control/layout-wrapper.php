@@ -44,7 +44,7 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
     <link rel="stylesheet" href="<?php echo htmlspecialchars($ratibPublic . '/css/global-ai-action.css?v=' . time(), ENT_QUOTES, 'UTF-8'); ?>">
     <?php foreach ($additionalCSS as $css):
         $css = (string)$css;
-        $cssAbs = (bool)preg_match('#^https?://#i', $css);
+        $cssAbs = (bool)preg_match('#^(https?://|/)#i', $css);
         $cssHref = $cssAbs ? $css : asset($css);
         $cssVer = $cssAbs ? '' : ('?v=' . time());
         ?>
@@ -108,7 +108,7 @@ function endControlLayout($additionalJS = []) {
     <script src="<?php echo htmlspecialchars(rtrim((string) (function_exists('control_ratib_pro_public_base_url') ? control_ratib_pro_public_base_url() : preg_replace('#/control-panel$#', '', $fullBase)), '/') . '/js/utils/global-ai-action.js?v=' . time(), ENT_QUOTES, 'UTF-8'); ?>"></script>
     <?php foreach ((array)$additionalJS as $js):
         $js = (string)$js;
-        $jsAbs = (bool)preg_match('#^https?://#i', $js);
+        $jsAbs = (bool)preg_match('#^(https?://|/)#i', $js);
         $jsSrc = $jsAbs ? $js : asset($js);
         $jsVer = $jsAbs ? '' : ('?v=' . time());
         ?>

@@ -18,7 +18,7 @@ $legacyServicesSrc = htmlspecialchars(
     ENT_QUOTES,
     'UTF-8'
 );
-$catalogHref = htmlspecialchars(ratib_nav_url('client/domains.php', 'catalog=1'), ENT_QUOTES, 'UTF-8');
+$catalogHref = htmlspecialchars(ratib_client_dashboard_context_url('domains.php', 'catalog=1'), ENT_QUOTES, 'UTF-8');
 ?>
             <div class="ratib-cp-board">
                 <section id="client-service-lifecycle" class="ratib-cp-card mb-4">

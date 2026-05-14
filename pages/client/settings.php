@@ -9,7 +9,7 @@ if ($clientSettingsAgencyId > 0) {
     $clientSettingsQuery['agency_id'] = (string) $clientSettingsAgencyId;
 }
 $controlPanelBase = rtrim((string) getBaseUrl(), '/') . '/control-panel/pages/control';
-$clientProfileUrl = htmlspecialchars(ratib_nav_url('client/settings.php', 'section=profile'), ENT_QUOTES, 'UTF-8');
+$clientProfileUrl = htmlspecialchars(ratib_client_dashboard_context_url('settings.php', 'section=profile'), ENT_QUOTES, 'UTF-8');
 $panelSettingsUrl = htmlspecialchars($controlPanelBase . '/panel-settings.php?' . http_build_query($clientSettingsQuery), ENT_QUOTES, 'UTF-8');
 $systemSettingsUrl = htmlspecialchars($controlPanelBase . '/system-settings.php?' . http_build_query($clientSettingsQuery), ENT_QUOTES, 'UTF-8');
 require __DIR__ . '/_common-start.inc.php';
