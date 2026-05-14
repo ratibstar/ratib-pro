@@ -17,8 +17,9 @@ if (empty($_SESSION['control_logged_in'])) {
 require_once __DIR__ . '/../../includes/control-permissions.php';
 requireControlPermission(CONTROL_PERM_DASHBOARD);
 
-$section = strtolower(trim((string) ($_GET['section'] ?? 'dashboard')));
+$section = strtolower(trim((string) ($_GET['section'] ?? 'hub')));
 $pageMap = [
+    'hub' => 'dashboard.php',
     'dashboard' => 'dashboard.php',
     'services' => 'services.php',
     'domains' => 'domains.php',
@@ -32,7 +33,7 @@ $pageMap = [
 ];
 
 if (!isset($pageMap[$section])) {
-    $section = 'dashboard';
+    $section = 'hub';
 }
 
 $_GET['control'] = '1';

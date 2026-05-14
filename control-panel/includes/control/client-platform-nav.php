@@ -30,8 +30,8 @@ if (!function_exists('control_client_platform_links')) {
     {
         $section = strtolower(trim($section));
         $map = [
-            'hub' => 'dashboard',
-            'dashboard' => 'dashboard',
+            'hub' => 'hub',
+            'dashboard' => 'hub',
             'services' => 'services',
             'domains' => 'domains',
             'orders' => 'orders',
@@ -42,7 +42,7 @@ if (!function_exists('control_client_platform_links')) {
             'subscriptions' => 'subscriptions',
             'settings' => 'settings',
         ];
-        $resolvedSection = $map[$section] ?? 'dashboard';
+        $resolvedSection = $map[$section] ?? 'hub';
 
         $baseUrl = function_exists('control_panel_page_with_control')
             ? control_panel_page_with_control('control/client-platform.php')
@@ -77,7 +77,7 @@ if (!function_exists('control_client_platform_links')) {
         return [
             'hub' => [
                 'label' => 'Client Hub',
-                'href' => control_client_platform_wrapper_url('dashboard'),
+                'href' => control_client_platform_wrapper_url('hub'),
             ],
             'services' => [
                 'label' => 'Services',

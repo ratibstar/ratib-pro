@@ -43,7 +43,7 @@ if (!function_exists('ratib_client_dashboard_context_url')) {
         }
 
         $map = [
-            'dashboard.php' => 'dashboard',
+            'dashboard.php' => 'hub',
             'orders.php' => 'orders',
             'services.php' => 'services',
             'domains.php' => 'domains',
@@ -54,7 +54,7 @@ if (!function_exists('ratib_client_dashboard_context_url')) {
             'subscriptions.php' => 'subscriptions',
             'settings.php' => 'settings',
         ];
-        $section = $map[$page] ?? 'dashboard';
+        $section = $map[$page] ?? 'hub';
 
         $controlNavFile = dirname(__DIR__, 2) . '/control-panel/includes/control/client-platform-nav.php';
         if (is_file($controlNavFile) && !function_exists('control_client_platform_wrapper_url')) {
