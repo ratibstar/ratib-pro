@@ -45,6 +45,19 @@ if (!defined('RATIB_CLIENT_CONTROL_WRAPPER_ACTIVE')) {
     define('RATIB_CLIENT_CONTROL_WRAPPER_ACTIVE', true);
 }
 
+// Load the main app bootstrap helpers and establish the normal tenant user session
+// before the wrapped client page runs its auth gate.
+require_once dirname(__DIR__, 3) . '/includes/config.php';
+
+$effectiveAgencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
+$effectiveCountryId = (int) ($_SESSION['control_country_id'] ?? 0);
+$tenantConn = $GLOBALS['conn'] ?? null;
+if ($effectiveAgencyId > 0
+    && $tenantConn instanceof mysqli
+    && function_exists('ratib_control_panel_try_program_sso')) {
+    ratib_control_panel_try_program_sso($tenantConn, $effectiveAgencyId, $effectiveCountryId);
+}
+
 $targetFile = dirname(__DIR__, 3) . '/pages/client/' . $pageMap[$section];
 if (!is_file($targetFile)) {
     http_response_code(404);
