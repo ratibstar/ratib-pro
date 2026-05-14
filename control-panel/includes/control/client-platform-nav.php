@@ -30,25 +30,25 @@ if (!function_exists('control_client_platform_links')) {
     {
         $section = strtolower(trim($section));
         $map = [
-            'hub' => 'hub',
-            'dashboard' => 'hub',
-            'services' => 'services',
-            'domains' => 'domains',
-            'orders' => 'orders',
-            'billing' => 'billing',
-            'security' => 'security',
-            'support' => 'support',
-            'notifications' => 'notifications',
-            'subscriptions' => 'subscriptions',
-            'settings' => 'settings',
+            'hub' => 'control/client-hub.php',
+            'dashboard' => 'control/client-hub.php',
+            'services' => 'control/client-services.php',
+            'domains' => 'control/client-domains.php',
+            'orders' => 'control/client-orders.php',
+            'billing' => 'control/client-billing.php',
+            'security' => 'control/client-security.php',
+            'support' => 'control/client-support.php',
+            'notifications' => 'control/client-notifications.php',
+            'subscriptions' => 'control/client-subscriptions.php',
+            'settings' => 'control/client-settings.php',
         ];
-        $resolvedSection = $map[$section] ?? 'hub';
+        $targetPath = $map[$section] ?? 'control/client-hub.php';
 
         $baseUrl = function_exists('control_panel_page_with_control')
-            ? control_panel_page_with_control('control/client-platform.php')
-            : (pageUrl('control/client-platform.php') . '?control=1');
+            ? control_panel_page_with_control($targetPath)
+            : (pageUrl($targetPath) . '?control=1');
 
-        $query = ['section' => $resolvedSection];
+        $query = [];
         $agencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
         if ($agencyId > 0) {
             $query['agency_id'] = (string) $agencyId;
@@ -64,6 +64,10 @@ if (!function_exists('control_client_platform_links')) {
                 }
                 $query[(string) $key] = $value;
             }
+        }
+
+        if ($query === []) {
+            return $baseUrl;
         }
 
         return $baseUrl . '&' . http_build_query($query);
