@@ -34,6 +34,25 @@ if (!function_exists('ratib_client_dashboard_is_control_wrapper_active')) {
     }
 }
 
+if (!function_exists('ratib_client_dashboard_has_control_context')) {
+    function ratib_client_dashboard_has_control_context(): bool
+    {
+        if (empty($_SESSION['control_logged_in'])) {
+            return false;
+        }
+
+        $agencyId = 0;
+        if (isset($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id'])) {
+            $agencyId = (int) $_GET['agency_id'];
+        }
+        if ($agencyId <= 0) {
+            $agencyId = (int) ($_SESSION['control_agency_id'] ?? 0);
+        }
+
+        return $agencyId > 0;
+    }
+}
+
 if (!function_exists('ratib_client_dashboard_context_url')) {
     function ratib_client_dashboard_context_url(string $page, string $extraQuery = ''): string
     {
@@ -72,6 +91,9 @@ if (!function_exists('ratib_client_dashboard_context_url')) {
 if (!function_exists('ratib_client_dashboard_can_access')) {
     function ratib_client_dashboard_can_access(): bool
     {
+        if (ratib_client_dashboard_has_control_context()) {
+            return true;
+        }
         if (!function_exists('ratib_program_session_is_valid_user') || !ratib_program_session_is_valid_user()) {
             return false;
         }
