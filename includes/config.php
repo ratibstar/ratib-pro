@@ -297,8 +297,10 @@ if (!empty($_SERVER['HTTP_HOST']) && !$isApiRequest) {
     }
 }
 
-// Production Mode Flag
-define('PRODUCTION_MODE', true);
+// Production Mode Flag (may already be set by control-panel/includes/config.php when embedding client routes)
+if (!defined('PRODUCTION_MODE')) {
+    define('PRODUCTION_MODE', true);
+}
 if (!defined('DEBUG_MODE')) {
     $debugEnv = getenv('DEBUG_MODE');
     if ($debugEnv === false || $debugEnv === '') {
@@ -1479,4 +1481,6 @@ if (isset($GLOBALS['conn']) && $GLOBALS['conn'] !== null) {
 }
 
 // Multi-Tenant: set true when ready. Disabled to restore site.
-define('MULTI_TENANT_ENABLED', false);
+if (!defined('MULTI_TENANT_ENABLED')) {
+    define('MULTI_TENANT_ENABLED', false);
+}

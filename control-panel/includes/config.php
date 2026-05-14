@@ -74,8 +74,12 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', __DIR__ . '/../logs/php-errors.log');
-define('PRODUCTION_MODE', true);
-define('DEBUG_MODE', false);
+if (!defined('PRODUCTION_MODE')) {
+    define('PRODUCTION_MODE', true);
+}
+if (!defined('DEBUG_MODE')) {
+    define('DEBUG_MODE', false);
+}
 
 // Control panel: connect to control DB
 $controlDb = defined('CONTROL_PANEL_DB_NAME') ? CONTROL_PANEL_DB_NAME : DB_NAME;
