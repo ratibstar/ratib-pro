@@ -11,7 +11,6 @@
 if (!defined('IS_CONTROL_PANEL')) define('IS_CONTROL_PANEL', true);
 define('SYSTEM_SETTINGS_DIRECT_INCLUDE', true);
 require_once __DIR__ . '/../../includes/config.php';
-require_once __DIR__ . '/../../includes/control/client-platform-nav.php';
 
 if (empty($_SESSION['control_logged_in'])) {
     header('Location: ' . pageUrl('login.php'));
@@ -60,7 +59,6 @@ $cssVer = time();
             <span class="header-subtitle"><?php echo htmlspecialchars($_SESSION['control_agency_name'] ?? 'My Program'); ?></span>
         </div>
         <div class="header-right">
-            <?php echo control_render_client_platform_tabs(); ?>
             <a href="<?php echo pageUrl('control/panel-settings.php'); ?>" class="btn btn-secondary me-2"><i class="fas fa-arrow-left"></i> Control Panel Settings</a>
             <span class="user-info"><?php echo htmlspecialchars($_SESSION['control_username'] ?? ''); ?></span>
             <a href="<?php echo pageUrl('logout.php'); ?>" class="btn-logout">Logout</a>

@@ -3,10 +3,12 @@
  * EN: Handles control-panel module behavior and admin-country operations in `control-panel/includes/control/sidebar.php`.
  * AR: يدير سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/includes/control/sidebar.php`.
  */
+require_once __DIR__ . '/client-platform-nav.php';
 $logoUrl = (file_exists(__DIR__ . '/../../assets/logo.png')) ? asset('assets/logo.png') : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect width='44' height='44' rx='10' fill='%236b21a8'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.35em' fill='white' font-size='18' font-weight='bold'%3ER%3C/text%3E%3C/svg%3E";
 $base = getBaseUrl();
 $fullBaseUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . $base;
 $controlCenterUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/admin/control-center.php';
+$clientPlatformLinks = control_client_platform_links();
 ?>
 <aside class="control-sidebar" id="control-sidebar">
     <div class="sidebar-header">
@@ -25,6 +27,20 @@ $controlCenterUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/admin/co
             <li><a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'dashboard.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/control-hub.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'control-hub.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-layer-group"></i><span>Control hub</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'help-center.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-book"></i><span>Help center</span></a></li>
+            <li class="sidebar-collapsible" data-sidebar-group="client-platform">
+                <button type="button" class="sidebar-item sidebar-item-toggle" data-sidebar-toggle="client-platform" aria-expanded="false" data-permission="control_dashboard">
+                    <i class="fas fa-table-cells-large"></i>
+                    <span>Client Platform</span>
+                    <span class="sidebar-toggle-icon" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                </button>
+                <ul class="sidebar-submenu" data-sidebar-panel="client-platform" hidden>
+                    <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['hub']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem" data-permission="control_dashboard">Client Hub</a></li>
+                    <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['services']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem" data-permission="control_dashboard">Services</a></li>
+                    <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['domains']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem" data-permission="control_dashboard">Domains</a></li>
+                    <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['orders']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem" data-permission="control_dashboard">Orders</a></li>
+                    <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['billing']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem" data-permission="control_dashboard">Billing</a></li>
+                </ul>
+            </li>
             <li class="sidebar-section"><span class="section-label">Core Management</span></li>
             <?php
             $selectCountryPerms = 'control_select_country';

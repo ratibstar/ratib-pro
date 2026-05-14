@@ -64,6 +64,7 @@
         }
         
         // Sidebar links use native href - no JS override to avoid navigation issues
+        initSidebarCollapsibles();
         syncSidebarActiveState();
         
         // Load recent registration requests if on dashboard
@@ -120,6 +121,24 @@
             links.forEach(l => l.classList.remove('active'));
             bestMatch.link.classList.add('active');
         }
+    }
+
+    function initSidebarCollapsibles() {
+        const toggles = Array.from(document.querySelectorAll('[data-sidebar-toggle]'));
+        if (toggles.length === 0) return;
+
+        toggles.forEach(toggle => {
+            const key = toggle.getAttribute('data-sidebar-toggle');
+            const panel = key ? document.querySelector('[data-sidebar-panel="' + key + '"]') : null;
+            const wrapper = toggle.closest('.sidebar-collapsible');
+            if (!panel || !wrapper) return;
+
+            toggle.addEventListener('click', function () {
+                const isOpen = wrapper.classList.toggle('is-open');
+                toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                panel.hidden = !isOpen;
+            });
+        });
     }
 
     function normalizePath(path) {

@@ -9,7 +9,6 @@
  *        startControlLayout($pageTitle, $additionalCSS, $additionalJS);
  */
 require_once __DIR__ . '/../../../app/UI/GlobalAIButton.php';
-require_once __DIR__ . '/client-platform-nav.php';
 
 function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $additionalJS = []) {
     global $apiBase, $ctrl;
@@ -70,7 +69,6 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
             <div class="content-header">
                 <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
                 <?php if (isset($pageTitle) && $pageTitle): ?><h2><?php echo htmlspecialchars($pageTitle); ?></h2><?php endif; ?>
-                <?php echo control_render_client_platform_tabs(); ?>
                 <a href="<?php echo htmlspecialchars($coreAiUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn-coreai" target="_blank" rel="noopener noreferrer" title="Open CoreAI">
                     <i class="fas fa-robot"></i>
                     <span>CoreAI</span>

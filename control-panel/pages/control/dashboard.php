@@ -22,7 +22,6 @@ if (!$isControl || empty($_SESSION['control_logged_in'])) {
 
 require_once __DIR__ . '/../../includes/control-permissions.php';
 requireControlPermission(CONTROL_PERM_DASHBOARD);
-require_once __DIR__ . '/../../includes/control/client-platform-nav.php';
 require_once __DIR__ . '/../../../includes/tenant-rollout-flags.php';
 
 $ctrl = $GLOBALS['control_conn'] ?? null;
@@ -250,7 +249,6 @@ if (!empty($_SESSION['control_popup_error'])) {
             <span class="header-subtitle header-subtitle-ratib">RATIB — Recruitment Automation &amp; Tracking Intelligence Base</span>
         </div>
         <div class="header-right">
-            <?php echo control_render_client_platform_tabs(); ?>
             <div class="header-alerts" id="headerAlerts" data-permission="control_support_chats,view_control_support">
                 <button type="button" class="header-alert-btn" id="supportAlertsBtn" aria-label="Support alerts" title="Support alerts">
                     <i class="fas fa-bell"></i>
