@@ -7,6 +7,7 @@
  * Control Panel: Manage Agencies - full table with pagination, bulk, edit/view/delete
  */
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/control/client-platform-nav.php';
 
 $isControl = defined('IS_CONTROL_PANEL') && IS_CONTROL_PANEL;
 if (!$isControl || empty($_SESSION['control_logged_in'])) {
@@ -152,7 +153,7 @@ $renewalDate = function($created) {
             <a href="<?php echo pageUrl('control/support-chats.php'); ?>"><i class="fas fa-comments me-1"></i> Support Chats</a>
             <a href="<?php echo pageUrl('control/accounting.php'); ?>" class="btn btn-outline-warning btn-sm"><i class="fas fa-calculator me-1"></i> Accounting</a>
             <a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="btn btn-outline-primary btn-sm" target="_blank" rel="noopener noreferrer"><i class="fas fa-briefcase me-1"></i> Control Dashboard</a>
-            <a href="<?php echo rtrim((defined('SITE_URL') ? SITE_URL : ''), '/') . '/pages/client/dashboard.php?control=1'; ?>" class="btn btn-outline-success btn-sm" target="_blank" rel="noopener noreferrer"><i class="fas fa-user me-1"></i> Client Hub</a>
+            <a href="<?php echo htmlspecialchars(control_client_platform_links()['hub']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-success btn-sm"><i class="fas fa-user me-1"></i> Client Hub</a>
         </div>
         <div>
             <span class="text-muted me-3"><?php echo htmlspecialchars($_SESSION['control_username'] ?? ''); ?></span>

@@ -22,6 +22,7 @@ if (!$isControl || empty($_SESSION['control_logged_in'])) {
 
 require_once __DIR__ . '/../../includes/control-permissions.php';
 requireControlPermission(CONTROL_PERM_DASHBOARD);
+require_once __DIR__ . '/../../includes/control/client-platform-nav.php';
 require_once __DIR__ . '/../../../includes/tenant-rollout-flags.php';
 
 $ctrl = $GLOBALS['control_conn'] ?? null;
@@ -232,9 +233,7 @@ if (!empty($_SESSION['control_popup_error'])) {
     <?php endif; ?>
     <?php $fullBase = rtrim((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . preg_replace('#/pages/[^?]*.*$#', '', $_SERVER['REQUEST_URI'] ?? ''), '/'); ?>
     <?php $ratibBase = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/'); if ($ratibBase === '' && isset($_SERVER['HTTP_HOST'])) { $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http'; $ratibBase = $scheme . '://' . $_SERVER['HTTP_HOST']; } ?>
-    <?php $clientHubAgencyId = (int) ($_SESSION['control_agency_id'] ?? 0); $clientHubQ = $clientHubAgencyId > 0 ? ('control=1&agency_id=' . $clientHubAgencyId) : 'control=1'; ?>
-    <?php $clientHubDashboardUrl = rtrim($ratibBase !== '' ? $ratibBase : $fullBase, '/') . '/pages/client/dashboard.php?' . $clientHubQ; ?>
-    <?php $clientHubServicesUrl = rtrim($ratibBase !== '' ? $ratibBase : $fullBase, '/') . '/pages/client/services.php?' . $clientHubQ; ?>
+    <?php $clientPlatformLinks = control_client_platform_links(); ?>
     <!-- EN: Server-to-client bootstrap for control dashboard scripts (API endpoints + base URLs). -->
     <!-- AR: تمرير إعدادات الخادم إلى سكربتات لوحة التحكم (مسارات API وروابط الأساس). -->
 <div id="control-config" data-api-base="<?php echo htmlspecialchars($apiBase); ?>" data-agencies-url-base="<?php echo htmlspecialchars($agenciesUrlWithControl); ?>" data-country-users-url-base="<?php echo htmlspecialchars($countryUsersUrlWithControl); ?>" data-ratib-base="<?php echo htmlspecialchars($ratibBase); ?>" data-tenant-self-test-url="<?php echo htmlspecialchars(rtrim($fullBase, '/') . '/api/diagnostics/tenant-isolation-self-test.php'); ?>" data-tenant-all-self-test-interval-ms="300000"></div>
@@ -428,11 +427,11 @@ if (!empty($_SESSION['control_popup_error'])) {
                         <i class="fas fa-location-crosshairs"></i>
                         <span>Open Tracker View</span>
                     </a>
-                    <a href="<?php echo htmlspecialchars($clientHubDashboardUrl, ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card" target="_blank" rel="noopener noreferrer">
+                    <a href="<?php echo htmlspecialchars($clientPlatformLinks['hub']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card">
                         <i class="fas fa-chart-pie"></i>
                         <span>Open Client Hub</span>
                     </a>
-                    <a href="<?php echo htmlspecialchars($clientHubServicesUrl, ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card" target="_blank" rel="noopener noreferrer">
+                    <a href="<?php echo htmlspecialchars($clientPlatformLinks['services']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="quick-action-card">
                         <i class="fas fa-server"></i>
                         <span>Open Services</span>
                     </a>
