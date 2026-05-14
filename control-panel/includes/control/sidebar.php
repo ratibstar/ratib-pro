@@ -7,19 +7,6 @@ $logoUrl = (file_exists(__DIR__ . '/../../assets/logo.png')) ? asset('assets/log
 $base = getBaseUrl();
 $fullBaseUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . $base;
 $controlCenterUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/admin/control-center.php';
-$siteRootUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/');
-$publicRootUrl = $siteRootUrl;
-if ($publicRootUrl === '' && isset($_SERVER['HTTP_HOST'])) {
-    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $publicRootUrl = $scheme . '://' . $_SERVER['HTTP_HOST'];
-}
-$clientHubAgencyId = (int) ($_SESSION['control_agency_id'] ?? 0);
-$clientHubQ = $clientHubAgencyId > 0 ? ('?control=1&agency_id=' . $clientHubAgencyId) : '?control=1';
-$clientHubDashboardUrl = rtrim($publicRootUrl, '/') . '/pages/client/dashboard.php' . $clientHubQ;
-$clientHubServicesUrl = rtrim($publicRootUrl, '/') . '/pages/client/services.php' . $clientHubQ;
-$clientHubDomainsUrl = rtrim($publicRootUrl, '/') . '/pages/client/domains.php' . $clientHubQ;
-$clientHubOrdersUrl = rtrim($publicRootUrl, '/') . '/pages/client/orders.php' . $clientHubQ;
-$clientHubBillingUrl = rtrim($publicRootUrl, '/') . '/pages/client/billing.php' . $clientHubQ;
 ?>
 <aside class="control-sidebar" id="control-sidebar">
     <div class="sidebar-header">
@@ -38,12 +25,6 @@ $clientHubBillingUrl = rtrim($publicRootUrl, '/') . '/pages/client/billing.php' 
             <li><a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'dashboard.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/control-hub.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'control-hub.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-layer-group"></i><span>Control hub</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'help-center.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-book"></i><span>Help center</span></a></li>
-            <li class="sidebar-section"><span class="section-label">Client Platform</span></li>
-            <li><a href="<?php echo htmlspecialchars($clientHubDashboardUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_dashboard"><i class="fas fa-chart-pie"></i><span>Client Hub</span></a></li>
-            <li><a href="<?php echo htmlspecialchars($clientHubServicesUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_dashboard"><i class="fas fa-server"></i><span>Services</span></a></li>
-            <li><a href="<?php echo htmlspecialchars($clientHubDomainsUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_dashboard"><i class="fas fa-globe"></i><span>Domains</span></a></li>
-            <li><a href="<?php echo htmlspecialchars($clientHubOrdersUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_dashboard"><i class="fas fa-bag-shopping"></i><span>Orders</span></a></li>
-            <li><a href="<?php echo htmlspecialchars($clientHubBillingUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_dashboard"><i class="fas fa-file-invoice-dollar"></i><span>Billing</span></a></li>
             <li class="sidebar-section"><span class="section-label">Core Management</span></li>
             <?php
             $selectCountryPerms = 'control_select_country';

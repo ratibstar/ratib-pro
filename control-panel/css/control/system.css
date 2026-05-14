@@ -518,6 +518,52 @@ body.control-layout-no-header .control-content {
     flex: 1;
 }
 
+.client-platform-tabs {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+}
+
+.client-platform-tabs__label,
+.client-platform-tabs__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 40px;
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 0.88rem;
+    line-height: 1;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.client-platform-tabs__label {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.35) 100%);
+    border: 1px solid rgba(132, 146, 255, 0.45);
+    color: #e8ecff;
+    font-weight: 700;
+}
+
+.client-platform-tabs__link {
+    background: var(--control-glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--control-glass-border);
+    color: var(--control-text);
+    font-weight: 600;
+}
+
+.client-platform-tabs__link:hover {
+    color: #ffffff;
+    border-color: var(--control-accent);
+    background: rgba(102, 126, 234, 0.22);
+    box-shadow: 0 8px 18px rgba(102, 126, 234, 0.18);
+    transform: translateY(-1px);
+}
+
 .sidebar-toggle {
     display: none;
     background: var(--control-glass);
@@ -957,6 +1003,11 @@ body.control-layout-no-header .control-content {
     .header-right {
         width: 100%;
         justify-content: space-between;
+    }
+
+    .client-platform-tabs {
+        width: 100%;
+        justify-content: flex-start;
     }
 
     .control-content {
