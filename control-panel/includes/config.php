@@ -176,8 +176,9 @@ if (!empty($_SESSION['control_logged_in']) && isset($_GET['agency_id']) && ctype
                             $cStmt->close();
                         }
                     }
-                    header('Location: ' . pageUrl('control/dashboard.php'));
-                    exit;
+                    // Keep the user on the page they requested after switching agency.
+                    // Redirecting everything to dashboard breaks control-owned wrapper routes
+                    // such as Client Platform sections that intentionally carry `agency_id`.
                 }
             }
         }
