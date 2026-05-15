@@ -1563,11 +1563,17 @@ class IndividualReports {
                 body: formData
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            const raw = await response.text();
+            let result;
+            try {
+                result = JSON.parse(raw);
+            } catch (e) {
+                throw new Error(raw ? raw.slice(0, 300) : `Invalid server response (HTTP ${response.status})`);
             }
 
-            const result = await response.json();
+            if (!response.ok) {
+                throw new Error(result.message || `HTTP ${response.status}`);
+            }
             
             if (result.success) {
                 this.closeModal('documentUploadModal');

@@ -18,7 +18,9 @@ ini_set('log_errors', '1'); // But still log them
 ob_start();
 
 header('Content-Type: application/json');
+if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
     session_start();
+}
 
 // Use the same config as reports.php (mysqli)
 try {
@@ -65,19 +67,30 @@ class IndividualReportsAPI {
         return is_string($id) ? trim($id) : (string) $id;
     }
 
-    /** Web-root-relative paths in DB (e.g. /uploads/documents/x) → absolute disk path */
+    /**
+     * Resolve stored file_path to an absolute filesystem path.
+     * Supports: /uploads/... (under project root), absolute disk paths, legacy relative.
+     */
     private function documentPathToFilesystem($stored) {
         $stored = trim((string) $stored);
         if ($stored === '') {
             return '';
         }
-        if (is_file($stored)) {
+        $root = dirname(__DIR__, 2);
+        // Web-style path under project (e.g. /uploads/documents/file.png)
+        if ($stored[0] === '/' && strncmp($stored, '/uploads/', strlen('/uploads/')) === 0) {
+            return $root . str_replace('/', DIRECTORY_SEPARATOR, $stored);
+        }
+        // Absolute path (Linux /home/... or stored realpath from ratib_uploads_base_dir)
+        if ($stored[0] === '/' && is_file($stored)) {
             return $stored;
         }
         if (preg_match('#^[a-zA-Z]:[/\\\\]#', $stored)) {
             return $stored;
         }
-        $root = dirname(__DIR__, 2);
+        if (is_file($stored)) {
+            return $stored;
+        }
         $rel = ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $stored), DIRECTORY_SEPARATOR);
         return $root . DIRECTORY_SEPARATOR . $rel;
     }
@@ -92,17 +105,19 @@ class IndividualReportsAPI {
             entity_id VARCHAR(64) NOT NULL,
             title VARCHAR(512) NOT NULL,
             type VARCHAR(128) NOT NULL,
-            file_path VARCHAR(1024) NOT NULL,
+            file_path VARCHAR(2048) NOT NULL,
             file_size INT UNSIGNED NOT NULL DEFAULT 0,
             description TEXT NULL,
             created_at DATETIME NOT NULL,
             PRIMARY KEY (id),
             KEY idx_entity_documents_entity (entity_type, entity_id)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci';
         $ok = (bool) $this->conn->query($sql);
         if (!$ok) {
             error_log('entity_documents CREATE TABLE: ' . $this->conn->error);
         }
+        // Widen path column on older installs (absolute paths from ratib_uploads_base_dir may exceed 1024).
+        @$this->conn->query('ALTER TABLE entity_documents MODIFY COLUMN file_path VARCHAR(2048) NOT NULL');
         return $ok;
     }
 
@@ -148,7 +163,7 @@ class IndividualReportsAPI {
                 default:
                     echo ApiResponse::error('Invalid action', 400);
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             error_log('Individual Reports API - handleRequest error: ' . $e->getMessage());
             error_log('Stack trace: ' . $e->getTraceAsString());
             if (class_exists('ApiResponse')) {
@@ -757,11 +772,17 @@ class IndividualReportsAPI {
 
         $this->ensureEntityDocumentsTable();
 
-        $projectRoot = dirname(__DIR__, 2);
-        $uploadSubdir = 'uploads' . DIRECTORY_SEPARATOR . 'documents';
-        $absDir = $projectRoot . DIRECTORY_SEPARATOR . $uploadSubdir;
-        if (!is_dir($absDir) && !@mkdir($absDir, 0755, true)) {
-            echo ApiResponse::error('Upload directory could not be created', 500);
+        try {
+            require_once __DIR__ . '/../../includes/ratib_uploads_base.php';
+            $base = ratib_uploads_base_dir();
+            $absDir = $base . DIRECTORY_SEPARATOR . 'entity_documents';
+            ratib_uploads_ensure_dir($absDir);
+        } catch (Throwable $e) {
+            error_log('Individual Reports uploadDocument (dir): ' . $e->getMessage());
+            echo ApiResponse::error(
+                'Upload storage is not available on this server. ' . $e->getMessage(),
+                500
+            );
             return;
         }
 
@@ -778,13 +799,14 @@ class IndividualReportsAPI {
             return;
         }
 
-        $webPath = '/' . str_replace(DIRECTORY_SEPARATOR, '/', $uploadSubdir) . '/' . $fileName;
+        $real = realpath($absPath);
+        $pathForDb = $real !== false ? $real : $absPath;
 
         $entityType = $this->conn->real_escape_string($entityType);
         $entityId = $this->conn->real_escape_string($entityId);
         $title = $this->conn->real_escape_string($origName);
         $documentType = $this->conn->real_escape_string($documentType);
-        $escapedPath = $this->conn->real_escape_string($webPath);
+        $escapedPath = $this->conn->real_escape_string($pathForDb);
         $fileSize = (int) $_FILES['document_file']['size'];
         $description = $this->conn->real_escape_string($description);
 
@@ -1659,7 +1681,7 @@ try {
     }
     $api = new IndividualReportsAPI();
     $api->handleRequest();
-} catch (Exception $e) {
+} catch (Throwable $e) {
     error_log('Individual Reports API - Main execution error: ' . $e->getMessage());
     error_log('Stack trace: ' . $e->getTraceAsString());
     http_response_code(500);
@@ -1671,5 +1693,4 @@ try {
         'trace' => $e->getTraceAsString()
     ]);
 }
-?>
 
