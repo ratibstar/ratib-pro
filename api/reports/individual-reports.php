@@ -57,6 +57,14 @@ class IndividualReportsAPI {
         }
     }
 
+    /**
+     * Document actions use document_id in the frontend; legacy callers may send id.
+     */
+    private function getRequestDocumentId() {
+        $id = $_GET['document_id'] ?? ($_GET['id'] ?? '');
+        return is_string($id) ? trim($id) : (string) $id;
+    }
+
     public function handleRequest() {
         $method = $_SERVER['REQUEST_METHOD'];
         $action = $_GET['action'] ?? '';
@@ -611,21 +619,54 @@ class IndividualReportsAPI {
         }
     }
 
+    private function formatDocumentFileSize($bytes) {
+        $bytes = (int) $bytes;
+        if ($bytes <= 0) {
+            return '0 B';
+        }
+        $kb = 1024;
+        if ($bytes < $kb) {
+            return $bytes . ' B';
+        }
+        if ($bytes < $kb * $kb) {
+            return round($bytes / $kb, 1) . ' KB';
+        }
+        if ($bytes < $kb * $kb * $kb) {
+            return round($bytes / ($kb * $kb), 1) . ' MB';
+        }
+        return round($bytes / ($kb * $kb * $kb), 1) . ' GB';
+    }
+
     private function getEntityDocuments($type, $id) {
         try {
-            // Mock documents for now
-            return [
-                [
-                    'id' => 1,
-                    'title' => 'Entity Document',
-                    'type' => 'pdf',
-                    'file_path' => '/documents/entity_' . $id . '.pdf',
-                    'file_size' => '2.5 MB',
-                    'created_at' => date('Y-m-d H:i:s')
-                ]
-            ];
+            if (!$this->conn) {
+                return [];
+            }
+            $typeEsc = $this->conn->real_escape_string((string) $type);
+            $idEsc = $this->conn->real_escape_string((string) $id);
+            $query = "SELECT id, title, type, file_path, file_size, created_at 
+                      FROM entity_documents 
+                      WHERE entity_type = '$typeEsc' AND entity_id = '$idEsc' 
+                      ORDER BY created_at DESC";
+            $result = $this->conn->query($query);
+            if (!$result) {
+                error_log('Error listing entity_documents: ' . $this->conn->error);
+                return [];
+            }
+            $documents = [];
+            while ($row = $result->fetch_assoc()) {
+                $documents[] = [
+                    'id' => (int) ($row['id'] ?? 0),
+                    'title' => $row['title'] ?? 'Document',
+                    'type' => $row['type'] ?? 'file',
+                    'date' => $row['created_at'] ?? '',
+                    'size' => $this->formatDocumentFileSize($row['file_size'] ?? 0),
+                    'icon' => 'fas fa-file',
+                ];
+            }
+            return $documents;
         } catch (Exception $e) {
-            error_log("Error getting entity documents: " . $e->getMessage());
+            error_log('Error getting entity documents: ' . $e->getMessage());
             return [];
         }
     }
@@ -702,9 +743,9 @@ class IndividualReportsAPI {
     }
 
     private function viewDocument() {
-        $documentId = $_GET['id'] ?? '';
+        $documentId = $this->getRequestDocumentId();
         
-        if (empty($documentId)) {
+        if ($documentId === '' || $documentId === '0') {
             echo ApiResponse::error('Document ID is required', 400);
             return;
         }
@@ -727,6 +768,9 @@ class IndividualReportsAPI {
                 return;
             }
             
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
             // Redirect to document
             header('Location: ' . $document['file_path']);
             exit;
@@ -738,9 +782,9 @@ class IndividualReportsAPI {
     }
 
     private function downloadDocument() {
-        $documentId = $_GET['id'] ?? '';
+        $documentId = $this->getRequestDocumentId();
         
-        if (empty($documentId)) {
+        if ($documentId === '' || $documentId === '0') {
             echo ApiResponse::error('Document ID is required', 400);
             return;
         }
@@ -763,9 +807,13 @@ class IndividualReportsAPI {
                 return;
             }
             
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
             // Force download
-            header('Content-Type: application/octet-stream');
-            header('Content-Disposition: attachment; filename="' . $document['title'] . '"');
+            $safeName = basename(str_replace(["\r", "\n", '"'], '', $document['title'] ?: 'document'));
+            header('Content-Type: application/octet-stream', true);
+            header('Content-Disposition: attachment; filename="' . $safeName . '"');
             readfile($document['file_path']);
             exit;
         } catch (Exception $e) {
@@ -781,9 +829,9 @@ class IndividualReportsAPI {
             return;
         }
 
-        $documentId = $_GET['id'] ?? '';
+        $documentId = $this->getRequestDocumentId();
         
-        if (empty($documentId)) {
+        if ($documentId === '' || $documentId === '0') {
             echo ApiResponse::error('Document ID is required', 400);
             return;
         }
