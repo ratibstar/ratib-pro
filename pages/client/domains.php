@@ -16,7 +16,7 @@ if (function_exists('ratib_control_pro_bridge') && ratib_control_pro_bridge() &&
     $legacyMarketplaceQuery['agency_id'] = (string) $legacyMarketplaceAgencyId;
 }
 $legacyMarketplaceSrc = htmlspecialchars(
-    rtrim((string) getBaseUrl(), '/') . '/modules/infrastructure-marketplace/Views/marketplace/index.php?' . http_build_query($legacyMarketplaceQuery),
+    ratib_client_dashboard_public_site_base_url() . '/modules/infrastructure-marketplace/Views/marketplace/index.php?' . http_build_query($legacyMarketplaceQuery),
     ENT_QUOTES,
     'UTF-8'
 );

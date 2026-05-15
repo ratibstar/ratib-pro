@@ -8,18 +8,6 @@ if (!defined('RATIB_CLIENT_DASHBOARD_ROOT')) {
     define('RATIB_CLIENT_DASHBOARD_ROOT', __DIR__);
 }
 
-if (!function_exists('ratib_client_dashboard_asset_url')) {
-    function ratib_client_dashboard_asset_url(string $relativeWithinAssets): string
-    {
-        $relativeWithinAssets = ltrim($relativeWithinAssets, '/');
-        $disk = RATIB_CLIENT_DASHBOARD_ROOT . '/Assets/' . $relativeWithinAssets;
-        $mtime = @filemtime($disk);
-        $v = ($mtime !== false) ? $mtime : time();
-        $base = asset('modules/client-dashboard/Assets/' . $relativeWithinAssets);
-        return $base . '?v=' . (int) $v;
-    }
-}
-
 if (!function_exists('ratib_client_dashboard_page_url')) {
     function ratib_client_dashboard_page_url(string $page): string
     {
@@ -31,6 +19,46 @@ if (!function_exists('ratib_client_dashboard_is_control_wrapper_active')) {
     function ratib_client_dashboard_is_control_wrapper_active(): bool
     {
         return defined('RATIB_CLIENT_CONTROL_WRAPPER_ACTIVE') && RATIB_CLIENT_CONTROL_WRAPPER_ACTIVE;
+    }
+}
+
+if (!function_exists('ratib_client_dashboard_public_site_base_url')) {
+    /**
+     * Prefix for URLs to site-root `/modules/...` and other assets.
+     *
+     * When Client Hub renders inside `/control-panel/...`, BASE_URL/`getBaseUrl()` often point at the
+     * control subpath — those requests 404 because static/module files remain at the public app root.
+     */
+    function ratib_client_dashboard_public_site_base_url(): string
+    {
+        if (!ratib_client_dashboard_is_control_wrapper_active()) {
+            return rtrim((string) getBaseUrl(), '/');
+        }
+
+        if (function_exists('control_ratib_pro_public_base_url')) {
+            $pub = rtrim((string) control_ratib_pro_public_base_url(), '/');
+            if ($pub !== '') {
+                return $pub;
+            }
+        }
+
+        if (defined('SITE_URL') && SITE_URL !== '') {
+            return rtrim((string) SITE_URL, '/');
+        }
+
+        return rtrim((string) getBaseUrl(), '/');
+    }
+}
+
+if (!function_exists('ratib_client_dashboard_asset_url')) {
+    function ratib_client_dashboard_asset_url(string $relativeWithinAssets): string
+    {
+        $relativeWithinAssets = ltrim($relativeWithinAssets, '/');
+        $disk = RATIB_CLIENT_DASHBOARD_ROOT . '/Assets/' . $relativeWithinAssets;
+        $mtime = @filemtime($disk);
+        $v = ($mtime !== false) ? $mtime : time();
+        $root = ratib_client_dashboard_public_site_base_url();
+        return $root . '/modules/client-dashboard/Assets/' . $relativeWithinAssets . '?v=' . (int) $v;
     }
 }
 

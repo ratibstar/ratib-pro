@@ -14,7 +14,7 @@ if (function_exists('ratib_control_pro_bridge') && ratib_control_pro_bridge() &&
     $legacyServicesQuery['agency_id'] = (string) $legacyServicesAgencyId;
 }
 $legacyServicesSrc = htmlspecialchars(
-    rtrim((string) getBaseUrl(), '/') . '/modules/infrastructure-marketplace/Views/client/services.php?' . http_build_query($legacyServicesQuery),
+    ratib_client_dashboard_public_site_base_url() . '/modules/infrastructure-marketplace/Views/client/services.php?' . http_build_query($legacyServicesQuery),
     ENT_QUOTES,
     'UTF-8'
 );
