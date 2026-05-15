@@ -18,6 +18,17 @@ function getBaseUrl() {
     return (window.APP_CONFIG && window.APP_CONFIG.baseUrl) || (window.BASE_PATH || '');
 }
 
+/** Escape text for safe insertion into HTML (this page does not load reports.js). */
+function escapeHtml(value) {
+    if (value == null || value === '') return '';
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 class IndividualReports {
     constructor() {
         this.currentEntity = null;
@@ -881,9 +892,6 @@ class IndividualReports {
             return timeStr;
         }
     }
-    
-    // escapeHtml() is now a global function defined in reports.js
-    // Using global escapeHtml() instead of class method to avoid duplication
     
     showEmptyState(tab, message) {
         const tabContent = document.getElementById(tab);
