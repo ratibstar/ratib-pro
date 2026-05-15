@@ -18,17 +18,6 @@ function getBaseUrl() {
     return (window.APP_CONFIG && window.APP_CONFIG.baseUrl) || (window.BASE_PATH || '');
 }
 
-/** Escape text for safe insertion into HTML (this page does not load reports.js). */
-function escapeHtml(value) {
-    if (value == null || value === '') return '';
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
 class IndividualReports {
     constructor() {
         this.currentEntity = null;
@@ -51,6 +40,16 @@ class IndividualReports {
         this.hideReportContent();
         // Skip checkConnection - test-connection.php may not exist
         // this.checkConnection();
+    }
+
+    escapeHtml(value) {
+        if (value == null || value === '') return '';
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     initializeDatePickers() {
@@ -810,8 +809,8 @@ class IndividualReports {
                             <i class="${activity.icon || 'fas fa-circle'}"></i>
                         </div>
                         <div class="timeline-content">
-                            <div class="timeline-title">${escapeHtml(activity.title || 'Activity')}</div>
-                            <div class="timeline-description">${escapeHtml(activity.description || '')}</div>
+                            <div class="timeline-title">${this.escapeHtml(activity.title || 'Activity')}</div>
+                            <div class="timeline-description">${this.escapeHtml(activity.description || '')}</div>
                             <div class="timeline-time">
                                 <i class="fas fa-clock"></i> ${this.formatTime(activity.time || '')}
                             </div>
@@ -1121,7 +1120,7 @@ class IndividualReports {
             const amount = transaction.amount ? (typeof transaction.amount === 'string' ? transaction.amount : '$' + Number.parseFloat(transaction.amount).toFixed(2)) : '$0.00';
             const type = (transaction.type || 'N/A').toUpperCase();
             const status = (transaction.status || 'completed').toLowerCase();
-            const description = escapeHtml(transaction.description || 'No description');
+            const description = this.escapeHtml(transaction.description || 'No description');
             const amountClass = amount.includes('-') ? 'negative' : 'positive';
             
             return `
@@ -1202,17 +1201,17 @@ class IndividualReports {
                     </div>
                     <div class="activity-content">
                         <div class="activity-header">
-                            <div class="activity-title">${escapeHtml(activity.title || 'Activity')}</div>
+                            <div class="activity-title">${this.escapeHtml(activity.title || 'Activity')}</div>
                             <div class="activity-time">
                                 <i class="fas fa-clock"></i> ${this.formatTime(activity.time || '')}
                             </div>
                         </div>
-                        <div class="activity-description">${escapeHtml(activity.description || '')}</div>
+                        <div class="activity-description">${this.escapeHtml(activity.description || '')}</div>
                         <div class="activity-meta">
                             <span class="activity-tag">
                                 <i class="fas fa-tag"></i> ${activity.type || 'general'}
                             </span>
-                            ${activity.user ? `<span class="activity-user"><i class="fas fa-user"></i> ${escapeHtml(activity.user)}</span>` : ''}
+                            ${activity.user ? `<span class="activity-user"><i class="fas fa-user"></i> ${this.escapeHtml(activity.user)}</span>` : ''}
                         </div>
                     </div>
                 </div>
@@ -1270,7 +1269,7 @@ class IndividualReports {
                         <i class="${icon}"></i>
                     </div>
                     <div class="document-info">
-                        <div class="document-title">${escapeHtml(doc.title || 'Untitled Document')}</div>
+                        <div class="document-title">${this.escapeHtml(doc.title || 'Untitled Document')}</div>
                         <div class="document-meta">
                             <span><i class="fas fa-tag"></i> ${doc.type || 'Document'}</span>
                             <span><i class="fas fa-calendar"></i> ${this.formatTime(doc.date || '')}</span>

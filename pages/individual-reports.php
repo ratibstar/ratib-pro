@@ -5,6 +5,8 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 $pageTitle = "Individual Reports";
+$individualReportsJsPath = __DIR__ . '/../js/individual-reports.js';
+$individualReportsJsV = is_file($individualReportsJsPath) ? filemtime($individualReportsJsPath) : time();
 $pageCss = [
     asset('css/reports.css') . '?v=' . time(),
     asset('css/individual-reports.css') . '?v=' . time(),
@@ -17,7 +19,7 @@ $pageJs = [
     "https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js",
     "https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js",
     "https://cdn.jsdelivr.net/npm/chart.js",
-    asset('js/individual-reports.js')
+    asset('js/individual-reports.js') . '?v=' . (int) $individualReportsJsV
 ];
 
 require_once(__DIR__ . '/../includes/header.php');
