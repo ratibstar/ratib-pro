@@ -6,15 +6,7 @@
 require_once "../includes/config.php";
 require_once "../includes/permissions.php";
 
-if (isset($_GET['control']) && (string) $_GET['control'] === '1') {
-    $controlQuery = ['control' => '1', 'legacy_module' => 'contact'];
-    if (!empty($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id'])) {
-        $controlQuery['agency_id'] = (string) $_GET['agency_id'];
-    }
-    $target = rtrim((string) getBaseUrl(), '/') . '/control-panel/pages/control/control-hub.php?' . http_build_query($controlQuery);
-    header('Location: ' . $target, true, 302);
-    exit;
-}
+// Stay on Ratib Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel control-hub.
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {

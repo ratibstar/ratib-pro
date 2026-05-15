@@ -3,15 +3,7 @@ require_once __DIR__ . '/_auth.inc.php';
 $RCP_SECTION = 'notifications';
 $RCP_HEADING = 'Notifications center';
 $RCP_SUBHEADING = 'Operational, billing, and security digests — parallel to core notifications module.';
-$notificationsControlMode = (!empty($_GET['control']) && (string) $_GET['control'] === '1') || !empty($_SESSION['control_logged_in']);
-$notificationsQuery = ['control' => '1'];
-$notificationsAgencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
-if ($notificationsAgencyId > 0) {
-    $notificationsQuery['agency_id'] = (string) $notificationsAgencyId;
-}
-$notificationsLegacyUrl = $notificationsControlMode
-    ? (rtrim((string) getBaseUrl(), '/') . '/control-panel/pages/control/control-hub.php?' . http_build_query($notificationsQuery + ['legacy_module' => 'notifications']))
-    : ratib_nav_url('notifications.php');
+$notificationsLegacyUrl = ratib_nav_url('notifications.php');
 require __DIR__ . '/_common-start.inc.php';
 ?>
             <div class="ratib-cp-board">
