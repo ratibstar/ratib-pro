@@ -65,6 +65,47 @@ class IndividualReportsAPI {
         return is_string($id) ? trim($id) : (string) $id;
     }
 
+    /** Web-root-relative paths in DB (e.g. /uploads/documents/x) → absolute disk path */
+    private function documentPathToFilesystem($stored) {
+        $stored = trim((string) $stored);
+        if ($stored === '') {
+            return '';
+        }
+        if (is_file($stored)) {
+            return $stored;
+        }
+        if (preg_match('#^[a-zA-Z]:[/\\\\]#', $stored)) {
+            return $stored;
+        }
+        $root = dirname(__DIR__, 2);
+        $rel = ltrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $stored), DIRECTORY_SEPARATOR);
+        return $root . DIRECTORY_SEPARATOR . $rel;
+    }
+
+    private function ensureEntityDocumentsTable() {
+        if (!$this->conn) {
+            return false;
+        }
+        $sql = 'CREATE TABLE IF NOT EXISTS entity_documents (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            entity_type VARCHAR(64) NOT NULL,
+            entity_id VARCHAR(64) NOT NULL,
+            title VARCHAR(512) NOT NULL,
+            type VARCHAR(128) NOT NULL,
+            file_path VARCHAR(1024) NOT NULL,
+            file_size INT UNSIGNED NOT NULL DEFAULT 0,
+            description TEXT NULL,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY (id),
+            KEY idx_entity_documents_entity (entity_type, entity_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
+        $ok = (bool) $this->conn->query($sql);
+        if (!$ok) {
+            error_log('entity_documents CREATE TABLE: ' . $this->conn->error);
+        }
+        return $ok;
+    }
+
     public function handleRequest() {
         $method = $_SERVER['REQUEST_METHOD'];
         $action = $_GET['action'] ?? '';
@@ -703,42 +744,61 @@ class IndividualReportsAPI {
             return;
         }
 
-        // Handle file upload
         if (!isset($_FILES['document_file']) || $_FILES['document_file']['error'] !== UPLOAD_ERR_OK) {
-            echo ApiResponse::error('File upload failed', 400);
+            $err = $_FILES['document_file']['error'] ?? 'none';
+            echo ApiResponse::error('File upload failed (code ' . $err . ')', 400);
             return;
         }
 
-        // config.php is already included at the top of the file
-        $baseUrl = defined('BASE_URL') ? BASE_URL : '';
-        $uploadDir = $baseUrl . '/uploads/documents/';
-        $fileName = time() . '_' . $_FILES['document_file']['name'];
-        $filePath = $uploadDir . $fileName;
-
-        if (!move_uploaded_file($_FILES['document_file']['tmp_name'], $filePath)) {
-            echo ApiResponse::error('Failed to save file', 500);
+        if (!$this->conn) {
+            echo ApiResponse::error('Database connection not available', 500);
             return;
         }
 
-        // Save to database
+        $this->ensureEntityDocumentsTable();
+
+        $projectRoot = dirname(__DIR__, 2);
+        $uploadSubdir = 'uploads' . DIRECTORY_SEPARATOR . 'documents';
+        $absDir = $projectRoot . DIRECTORY_SEPARATOR . $uploadSubdir;
+        if (!is_dir($absDir) && !@mkdir($absDir, 0755, true)) {
+            echo ApiResponse::error('Upload directory could not be created', 500);
+            return;
+        }
+
+        $origName = (string) ($_FILES['document_file']['name'] ?? 'upload');
+        $safeBase = preg_replace('/[^a-zA-Z0-9._-]+/', '_', basename($origName));
+        if ($safeBase === '' || $safeBase === '_') {
+            $safeBase = 'file.dat';
+        }
+        $fileName = time() . '_' . $safeBase;
+        $absPath = $absDir . DIRECTORY_SEPARATOR . $fileName;
+
+        if (!@move_uploaded_file($_FILES['document_file']['tmp_name'], $absPath)) {
+            echo ApiResponse::error('Failed to save file on server', 500);
+            return;
+        }
+
+        $webPath = '/' . str_replace(DIRECTORY_SEPARATOR, '/', $uploadSubdir) . '/' . $fileName;
+
         $entityType = $this->conn->real_escape_string($entityType);
         $entityId = $this->conn->real_escape_string($entityId);
-        $title = $this->conn->real_escape_string($_FILES['document_file']['name']);
+        $title = $this->conn->real_escape_string($origName);
         $documentType = $this->conn->real_escape_string($documentType);
-        $filePath = $this->conn->real_escape_string($filePath);
-        $fileSize = (int)$_FILES['document_file']['size'];
+        $escapedPath = $this->conn->real_escape_string($webPath);
+        $fileSize = (int) $_FILES['document_file']['size'];
         $description = $this->conn->real_escape_string($description);
-        
+
         $query = "INSERT INTO entity_documents (entity_type, entity_id, title, type, file_path, file_size, description, created_at) 
-                  VALUES ('$entityType', '$entityId', '$title', '$documentType', '$filePath', $fileSize, '$description', NOW())";
-        
+                  VALUES ('$entityType', '$entityId', '$title', '$documentType', '$escapedPath', $fileSize, '$description', NOW())";
+
         $result = $this->conn->query($query);
 
         if ($result) {
             echo ApiResponse::success(['message' => 'Document uploaded successfully']);
         } else {
-            error_log("Error uploading document: " . $this->conn->error);
-            echo ApiResponse::error('Failed to save document record', 500);
+            @unlink($absPath);
+            error_log('Error uploading document (INSERT): ' . $this->conn->error);
+            echo ApiResponse::error('Failed to save document record: ' . $this->conn->error, 500);
         }
     }
 
@@ -767,12 +827,28 @@ class IndividualReportsAPI {
                 echo ApiResponse::error('Document not found', 404);
                 return;
             }
-            
+
+            $disk = $this->documentPathToFilesystem($document['file_path']);
+            if ($disk === '' || !is_file($disk)) {
+                echo ApiResponse::error('File not found on server', 404);
+                return;
+            }
+
             while (ob_get_level() > 0) {
                 ob_end_clean();
             }
-            // Redirect to document
-            header('Location: ' . $document['file_path']);
+            $mime = 'application/octet-stream';
+            if (function_exists('mime_content_type')) {
+                $detected = @mime_content_type($disk);
+                if (is_string($detected) && $detected !== '') {
+                    $mime = $detected;
+                }
+            }
+            $inlineName = basename(str_replace(["\r", "\n", '"'], '', $document['title'] ?: basename($disk)));
+            header('Content-Type: ' . $mime, true);
+            header('Content-Disposition: inline; filename="' . $inlineName . '"');
+            header('X-Content-Type-Options: nosniff');
+            readfile($disk);
             exit;
         } catch (Exception $e) {
             error_log("Error viewing document: " . $e->getMessage());
@@ -806,6 +882,12 @@ class IndividualReportsAPI {
                 echo ApiResponse::error('Document not found', 404);
                 return;
             }
+
+            $disk = $this->documentPathToFilesystem($document['file_path']);
+            if ($disk === '' || !is_file($disk)) {
+                echo ApiResponse::error('File not found on server', 404);
+                return;
+            }
             
             while (ob_get_level() > 0) {
                 ob_end_clean();
@@ -814,7 +896,7 @@ class IndividualReportsAPI {
             $safeName = basename(str_replace(["\r", "\n", '"'], '', $document['title'] ?: 'document'));
             header('Content-Type: application/octet-stream', true);
             header('Content-Disposition: attachment; filename="' . $safeName . '"');
-            readfile($document['file_path']);
+            readfile($disk);
             exit;
         } catch (Exception $e) {
             error_log("Error downloading document: " . $e->getMessage());
@@ -861,9 +943,9 @@ class IndividualReportsAPI {
             $deleteResult = $this->conn->query($deleteQuery);
         
             if ($deleteResult) {
-                // Delete physical file
-                if (file_exists($document['file_path'])) {
-                    unlink($document['file_path']);
+                $disk = $this->documentPathToFilesystem($document['file_path']);
+                if ($disk !== '' && file_exists($disk)) {
+                    @unlink($disk);
                 }
                 echo ApiResponse::success(['message' => 'Document deleted successfully']);
             } else {
@@ -880,24 +962,122 @@ class IndividualReportsAPI {
     private function generateDocument() {
         $entityType = $_GET['entity_type'] ?? '';
         $entityId = $_GET['entity_id'] ?? '';
-        $format = $_GET['format'] ?? 'pdf';
+        $format = strtolower((string) ($_GET['format'] ?? 'pdf'));
+        $startDate = $_GET['start_date'] ?? '';
+        $endDate = $_GET['end_date'] ?? '';
 
         if (empty($entityType) || empty($entityId)) {
             echo ApiResponse::error('Entity type and ID are required', 400);
             return;
         }
 
-        // Generate document based on entity type
-        $documentPath = $this->generateEntityDocument($entityType, $entityId, $format);
-        
-        if ($documentPath) {
-            header('Content-Type: application/pdf');
-            header('Content-Disposition: attachment; filename="' . basename($documentPath) . '"');
-            readfile($documentPath);
-            exit;
-        } else {
-            echo ApiResponse::error('Failed to generate document', 500);
+        if (!$this->conn) {
+            echo ApiResponse::error('Database connection not available', 500);
+            return;
         }
+
+        if ($format === 'csv') {
+            $this->exportCSVReport($entityType, $entityId);
+            return;
+        }
+
+        $entity = $this->getEntityDetails($entityType, $entityId);
+        $overview = $this->getEntityOverview($entityType, $entityId, $startDate, $endDate);
+        $activities = $this->getEntityActivities($entityType, $entityId, $startDate, $endDate);
+        $documents = $this->getEntityDocuments($entityType, $entityId);
+
+        $h = static function ($s) {
+            return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
+        };
+
+        $entityName = $h($entity['name'] ?? 'Entity');
+        $status = $h($entity['status'] ?? '');
+        $typeEsc = $h($entityType);
+        $idEsc = $h($entityId);
+        $rangeLabel = '';
+        if ($startDate !== '' && $endDate !== '') {
+            $rangeLabel = $h($startDate) . ' — ' . $h($endDate);
+        } elseif ($startDate !== '') {
+            $rangeLabel = 'From ' . $h($startDate);
+        } elseif ($endDate !== '') {
+            $rangeLabel = 'To ' . $h($endDate);
+        }
+
+        $metricsHtml = '';
+        if (!empty($overview['metrics']) && is_array($overview['metrics'])) {
+            $metricsHtml .= '<table class="rpt"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
+            foreach ($overview['metrics'] as $m) {
+                $lbl = $h($m['label'] ?? '');
+                $val = $h($m['value'] ?? '');
+                $metricsHtml .= "<tr><td>{$lbl}</td><td>{$val}</td></tr>";
+            }
+            $metricsHtml .= '</tbody></table>';
+        } else {
+            $metricsHtml = '<p class="muted">No overview metrics for this selection.</p>';
+        }
+
+        $actHtml = '';
+        if (!empty($activities) && is_array($activities)) {
+            $actHtml .= '<table class="rpt"><thead><tr><th>Title</th><th>Description</th><th>Time</th></tr></thead><tbody>';
+            foreach ($activities as $a) {
+                $t = $h($a['title'] ?? '');
+                $d = $h($a['description'] ?? '');
+                $tm = $h($a['time'] ?? '');
+                $actHtml .= "<tr><td>{$t}</td><td>{$d}</td><td>{$tm}</td></tr>";
+            }
+            $actHtml .= '</tbody></table>';
+        } else {
+            $actHtml = '<p class="muted">No activities listed.</p>';
+        }
+
+        $docHtml = '';
+        if (!empty($documents) && is_array($documents)) {
+            $docHtml .= '<table class="rpt"><thead><tr><th>Title</th><th>Type</th><th>Date</th><th>Size</th></tr></thead><tbody>';
+            foreach ($documents as $d) {
+                $docHtml .= '<tr><td>' . $h($d['title'] ?? '') . '</td><td>' . $h($d['type'] ?? '') . '</td><td>'
+                    . $h($d['date'] ?? '') . '</td><td>' . $h($d['size'] ?? '') . '</td></tr>';
+            }
+            $docHtml .= '</tbody></table>';
+        } else {
+            $docHtml = '<p class="muted">No documents on file.</p>';
+        }
+
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        header('Content-Type: text/html; charset=utf-8', true);
+        header('Content-Disposition: inline; filename="individual-report.html"', true);
+
+        echo '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+        echo '<title>Individual Report — ' . $entityName . '</title>';
+        echo '<style>
+            body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:24px;color:#111;line-height:1.45}
+            h1{font-size:1.35rem;margin:0 0 8px}
+            .sub{color:#444;margin:0 0 20px;font-size:0.95rem}
+            .note{background:#f3f4f6;border:1px solid #e5e7eb;padding:12px 14px;border-radius:8px;margin:20px 0;font-size:0.9rem}
+            h2{font-size:1.05rem;margin:28px 0 10px;border-bottom:1px solid #ddd;padding-bottom:6px}
+            table.rpt{width:100%;border-collapse:collapse;font-size:0.9rem}
+            table.rpt th,table.rpt td{border:1px solid #ddd;padding:8px 10px;text-align:left;vertical-align:top}
+            table.rpt th{background:#f9fafb}
+            .muted{color:#6b7280}
+            @media print{ .no-print{display:none} body{margin:12mm} }
+        </style></head><body>';
+        echo '<h1>Individual report</h1>';
+        echo '<p class="sub"><strong>' . $entityName . '</strong> · Type: ' . $typeEsc . ' · ID: ' . $idEsc;
+        if ($status !== '') {
+            echo ' · Status: ' . $status;
+        }
+        echo '</p>';
+        if ($rangeLabel !== '') {
+            echo '<p class="sub">Date range: ' . $rangeLabel . '</p>';
+        }
+        echo '<p class="note no-print"><strong>Save as PDF:</strong> use your browser\'s <em>Print</em> dialog and choose <strong>Save as PDF</strong> (or Microsoft Print to PDF).</p>';
+        echo '<h2>Overview</h2>' . $metricsHtml;
+        echo '<h2>Activities</h2>' . $actHtml;
+        echo '<h2>Documents</h2>' . $docHtml;
+        echo '<p class="muted no-print" style="margin-top:32px;font-size:0.85rem">Generated ' . $h(date('Y-m-d H:i:s')) . '</p>';
+        echo '</body></html>';
+        exit;
     }
 
     private function exportReport() {

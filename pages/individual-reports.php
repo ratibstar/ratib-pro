@@ -248,4 +248,42 @@ require_once(__DIR__ . '/../includes/header.php');
     </div>
 </div>
 
+<!-- Upload modal (must exist for Upload Document button) -->
+<div id="documentUploadModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="documentUploadModalTitle" aria-hidden="true">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="documentUploadModalTitle">Upload Document</h3>
+            <button type="button" class="modal-close" data-action="close-modal" data-modal="documentUploadModal" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="documentUploadForm" enctype="multipart/form-data" method="post">
+                <div class="form-group">
+                    <label for="document_file">File</label>
+                    <input type="file" id="document_file" name="document_file" required>
+                </div>
+                <div class="form-group">
+                    <label for="document_type">Document type</label>
+                    <select id="document_type" name="document_type" required>
+                        <option value="">Select type…</option>
+                        <option value="Contract">Contract</option>
+                        <option value="ID">ID / Passport</option>
+                        <option value="Medical">Medical</option>
+                        <option value="Visa">Visa</option>
+                        <option value="Report">Report</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="document_description">Description <span style="color:#888;font-weight:400">(optional)</span></label>
+                    <textarea id="document_description" name="description" rows="3" placeholder="Notes about this file"></textarea>
+                </div>
+                <div class="document-upload-form-actions">
+                    <button type="button" class="btn-secondary" data-action="close-modal" data-modal="documentUploadModal">Cancel</button>
+                    <button type="submit" class="btn-primary">Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <?php require_once(__DIR__ . '/../includes/footer.php'); ?>

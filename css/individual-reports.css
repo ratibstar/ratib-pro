@@ -2294,6 +2294,19 @@
     display: flex !important;
 }
 
+/* Upload modal above full-page individual reports shell (z-index up to ~10003) */
+#documentUploadModal.modal {
+    z-index: 10050;
+}
+
+.document-upload-form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
 /* Modal open state */
 body.modal-open {
     overflow: hidden !important;

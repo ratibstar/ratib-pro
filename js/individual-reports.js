@@ -1596,6 +1596,14 @@ class IndividualReports {
             entity_id: this.currentEntity,
             format: 'pdf'
         });
+        const dateFromInput = document.getElementById('dateFrom');
+        const dateToInput = document.getElementById('dateTo');
+        if (dateFromInput && dateFromInput.value) {
+            params.append('start_date', dateFromInput.value);
+        }
+        if (dateToInput && dateToInput.value) {
+            params.append('end_date', dateToInput.value);
+        }
         
         window.open(`${getApiBase()}/reports/individual-reports.php?action=generate_document&${params}`, '_blank');
     }
@@ -1606,6 +1614,7 @@ class IndividualReports {
             const modal = document.getElementById(modalId);
             if (modal) {
                 modal.classList.remove('show');
+                modal.setAttribute('aria-hidden', 'true');
                 // Restore body scroll
                 document.body.classList.remove('modal-open');
             }
@@ -1664,6 +1673,7 @@ class IndividualReports {
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
             // Prevent body scroll when modal is open
             document.body.classList.add('modal-open');
         }
