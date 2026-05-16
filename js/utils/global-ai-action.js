@@ -349,17 +349,32 @@
                     let workflowError = '';
 
                     if (hasWorkerId) {
-                        const trackingUrl = `${urls.controlApiPath}/worker-tracking-onboarding.php`;
-                        const trackingResponse = await fetch(trackingUrl, {
-                            method: 'POST',
-                            credentials: 'same-origin',
-                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        const trackingPayload = await parseJsonResponse(trackingResponse);
+                        const trackingCandidates = [
+                            `${urls.apiBase}/workers/worker-tracking-onboarding.php`,
+                            `${urls.controlApiPath}/worker-tracking-onboarding.php`
+                        ];
+                        let trackingUrl = trackingCandidates[0];
+                        let trackingResponse = null;
+                        let trackingPayload = { parsed: null };
+                        for (const candidateUrl of trackingCandidates) {
+                            trackingUrl = candidateUrl;
+                            trackingResponse = await fetch(trackingUrl, {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            trackingPayload = await parseJsonResponse(trackingResponse);
+                            if (trackingResponse.ok && trackingPayload.parsed && trackingPayload.parsed.success) {
+                                break;
+                            }
+                            if (trackingResponse.status !== 401 && trackingResponse.status !== 403) {
+                                break;
+                            }
+                        }
                         trackingResult = trackingPayload.parsed || {};
-                        if (!trackingResponse.ok || !trackingResult.success) {
-                            trackingError = trackingResult.message || `${trackingResponse.status} ${trackingResponse.statusText}` || 'Tracking onboarding failed.';
+                        if (!trackingResponse || !trackingResponse.ok || !trackingResult.success) {
+                            trackingError = trackingResult.message || `${trackingResponse?.status || 0} ${trackingResponse?.statusText || ''}` || 'Tracking onboarding failed.';
                         } else if (trackingResult.data && trackingResult.data.workflow_id) {
                             workflowResult = {
                                 success: true,

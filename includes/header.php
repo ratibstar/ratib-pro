@@ -120,20 +120,34 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
                     var cfg = document.getElementById('app-config');
                     var apiBase = (cfg && cfg.getAttribute('data-api-base')) || '';
                     var controlPath = (cfg && cfg.getAttribute('data-control-api-path')) || (apiBase ? apiBase.replace(/\/api\/?$/, '') + '/api/control' : '/api/control');
+                    var trackingUrls = [
+                        apiBase ? (apiBase.replace(/\/$/, '') + '/workers/worker-tracking-onboarding.php') : '/api/workers/worker-tracking-onboarding.php',
+                        controlPath + '/worker-tracking-onboarding.php'
+                    ];
                     var payload = payloadOverride;
                     if (!payload && typeof window.GlobalAIAction.buildPayload === 'function') {
                         payload = window.GlobalAIAction.buildPayload();
                     }
                     var workerId = payload && Number(payload.worker_id);
                     if (workerId > 0) {
-                        var tr = await fetch(controlPath + '/worker-tracking-onboarding.php', {
-                            method: 'POST',
-                            credentials: 'same-origin',
-                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        var tj = await tr.json().catch(function () { return {}; });
-                        if (tr.ok && tj && tj.success) {
+                        var tr = null;
+                        var tj = {};
+                        for (var ti = 0; ti < trackingUrls.length; ti++) {
+                            tr = await fetch(trackingUrls[ti], {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            tj = await tr.json().catch(function () { return {}; });
+                            if (tr.ok && tj && tj.success) {
+                                break;
+                            }
+                            if (tr.status !== 401 && tr.status !== 403) {
+                                break;
+                            }
+                        }
+                        if (tr && tr.ok && tj && tj.success) {
                             return {
                                 success: true,
                                 tracking: tj,

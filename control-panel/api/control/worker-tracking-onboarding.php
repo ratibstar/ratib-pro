@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../includes/config.php';
+if (!defined('RATIB_TRACKING_PROGRAM_AUTH') || !RATIB_TRACKING_PROGRAM_AUTH) {
+    require_once __DIR__ . '/../../includes/config.php';
+}
 require_once __DIR__ . '/../../includes/control-permissions.php';
 require_once dirname(__DIR__, 3) . '/api/core/Database.php';
 require_once dirname(__DIR__, 3) . '/api/core/ensure-worker-tracking-schema.php';
@@ -343,15 +345,18 @@ function onboard_resolve_tenant_and_worker_by_text(PDO $controlPdo, string $text
     return null;
 }
 
-if (empty($_SESSION['control_logged_in'])) {
-    onboard_json(['success' => false, 'message' => 'Unauthorized'], 401);
-}
-if (!hasControlPermission(CONTROL_PERM_GOVERNMENT)
-    && !hasControlPermission('manage_control_government')
-    && !hasControlPermission('gov_admin')
-    && !hasControlPermission(CONTROL_PERM_ADMINS)
-) {
-    onboard_json(['success' => false, 'message' => 'Access denied'], 403);
+$programAuth = defined('RATIB_TRACKING_PROGRAM_AUTH') && RATIB_TRACKING_PROGRAM_AUTH;
+if (!$programAuth) {
+    if (empty($_SESSION['control_logged_in'])) {
+        onboard_json(['success' => false, 'message' => 'Unauthorized'], 401);
+    }
+    if (!hasControlPermission(CONTROL_PERM_GOVERNMENT)
+        && !hasControlPermission('manage_control_government')
+        && !hasControlPermission('gov_admin')
+        && !hasControlPermission(CONTROL_PERM_ADMINS)
+    ) {
+        onboard_json(['success' => false, 'message' => 'Access denied'], 403);
+    }
 }
 
 try {
