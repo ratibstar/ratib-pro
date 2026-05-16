@@ -1508,7 +1508,7 @@
     setInterval(tickPctJitter, 56000 + rnd(0, 11000));
 })();
 
-/** Ensure About RATIB nav pill exists even when older chrome HTML omits it (post-deploy JS-only). */
+/** About RATIB nav inject — bundle about-enterprise-20260516-v9 */
 (function ratibAboutNavInject() {
     function homeBaseFromNav() {
         var ref =

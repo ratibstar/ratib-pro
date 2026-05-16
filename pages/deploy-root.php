@@ -4,6 +4,7 @@ declare(strict_types=1);
 /**
  * Public deploy probe — confirms which docroot serves out.ratib.sa and whether About files landed.
  * URL: https://out.ratib.sa/pages/deploy-root.php
+ * Bundle: about-enterprise-20260516-v9
  */
 header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');

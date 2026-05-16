@@ -112,7 +112,7 @@ jobs:
       - name: Verify production has About files
         run: |
           EXPECTED="$(cat public/ratib-build.txt 2>/dev/null || echo '')"
-          echo "Expected git_marker: $EXPECTED"
+          echo "Expected git_marker: $EXPECTED (bundle about-enterprise-20260516-v9)"
 
           probe() {
             curl -fsSL --connect-timeout 15 --max-time 45 "$1" 2>/dev/null || true

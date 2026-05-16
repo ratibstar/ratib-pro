@@ -6,7 +6,7 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 
-// Deploy probe (works on existing home.php URL): /pages/home.php?ratib_deploy_probe=1
+// Deploy probe: /pages/home.php?ratib_deploy_probe=1 (bundle about-enterprise-20260516-v9)
 if (isset($_GET['ratib_deploy_probe']) && (string) $_GET['ratib_deploy_probe'] === '1') {
     header('Content-Type: text/plain; charset=utf-8');
     header('Cache-Control: no-store, no-cache, must-revalidate');

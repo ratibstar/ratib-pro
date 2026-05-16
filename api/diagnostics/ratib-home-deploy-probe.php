@@ -86,6 +86,7 @@ function ratibProbeOneFile(string $key, string $absPath): array
 
 $out = [
     'ok' => true,
+    'bundle' => 'about-enterprise-20260516-v9',
     'php_version' => PHP_VERSION,
     'document_root_guess' => $_SERVER['DOCUMENT_ROOT'] ?? null,
     'script_filename' => $_SERVER['SCRIPT_FILENAME'] ?? null,
@@ -105,6 +106,8 @@ $out['invalidate_opcache_results'] = [];
 if ($inv) {
     $scripts = [
         $paths['home_php'],
+        $paths['about_php'],
+        $paths['chrome_top'],
         $root . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'site-content.php',
         $root . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'site-content-home-data.php',
         $root . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'config.php',

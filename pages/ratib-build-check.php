@@ -10,6 +10,7 @@ $homePath = $root . '/pages/home.php';
 $homeHead = is_file($homePath) ? (string) file_get_contents($homePath, false, null, 0, 8000) : '';
 
 $checks = [
+    'bundle' => 'about-enterprise-20260516-v9',
     'git_marker' => is_file($root . '/public/ratib-build.txt') ? trim((string) file_get_contents($root . '/public/ratib-build.txt')) : 'missing',
     'about_php' => is_file($aboutPath) ? 'yes' : 'no',
     'home_open_about' => str_contains($homeHead, "'about'") ? 'yes' : 'no',

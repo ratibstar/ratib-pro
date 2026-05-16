@@ -12,7 +12,7 @@ mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
 
 log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$LOG"; }
 
-log "start marker=${MARKER} pwd=${ROOT} user=$(whoami 2>/dev/null || echo unknown)"
+log "start bundle=about-enterprise-20260516-v9 marker=${MARKER} pwd=${ROOT} user=$(whoami 2>/dev/null || echo unknown)"
 
 TARGETS=()
 
