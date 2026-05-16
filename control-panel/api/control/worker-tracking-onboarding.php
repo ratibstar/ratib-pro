@@ -485,16 +485,36 @@ try {
         'request_id' => getRequestId(),
     ]);
 
+    $workflowId = null;
+    $recordWorkflow = !empty($payload['record_workflow']) || !empty($payload['worker']);
+    if ($recordWorkflow) {
+        $legacyFile = dirname(__DIR__, 3) . '/includes/worker_onboarding_workflow_legacy.php';
+        if (is_file($legacyFile)) {
+            require_once $legacyFile;
+            $agencyPdo = ratib_global_ai_agency_pdo_for_tenant($controlPdo, $tenantId);
+            if ($agencyPdo instanceof PDO) {
+                $workflowId = ratib_global_ai_record_workflow($agencyPdo, $workerId, $payload);
+            }
+        }
+    }
+
+    $responseData = [
+        'api_url' => $apiUrl,
+        'worker_id' => $workerId,
+        'tenant_id' => $tenantId,
+        'device_id' => $deviceId,
+        'api_token' => $token,
+        'onboarding_url' => $onboardingUrl,
+    ];
+    if ($workflowId !== null && $workflowId > 0) {
+        $responseData['workflow_id'] = (string) $workflowId;
+        $responseData['workflow_recorded'] = true;
+        $responseData['workflow_bootstrap'] = 'tracking_fallback';
+    }
+
     onboard_json([
         'success' => true,
-        'data' => [
-            'api_url' => $apiUrl,
-            'worker_id' => $workerId,
-            'tenant_id' => $tenantId,
-            'device_id' => $deviceId,
-            'api_token' => $token,
-            'onboarding_url' => $onboardingUrl,
-        ],
+        'data' => $responseData,
     ]);
 } catch (Throwable $e) {
     onboard_json(['success' => false, 'message' => $e->getMessage()], 500);

@@ -52,6 +52,14 @@ final class WorkerPlatformBootstrap
             require_once $root . '/app/Core/ErrorTracker.php';
         }
 
+        $apiSession = $root . '/api/core/ratib_api_session.inc.php';
+        if (is_file($apiSession)) {
+            require_once $apiSession;
+            if (function_exists('ratib_api_pick_session_name')) {
+                ratib_api_pick_session_name();
+            }
+        }
+
         $legacyConfig = $root . '/includes/config.php';
         if (is_file($legacyConfig)) {
             require_once $legacyConfig;

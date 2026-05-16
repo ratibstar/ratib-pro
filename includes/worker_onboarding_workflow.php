@@ -45,6 +45,44 @@ function ratib_worker_platform_register_autoloader(string $projectRoot): void
 }
 
 /**
+ * Resolve user for workflow: Ratib Pro session or control-panel gov session (same as ai-lookup).
+ *
+ * @return array<string, mixed>
+ */
+function ratib_workflow_resolve_user(AccessMiddleware $access): array
+{
+    try {
+        return $access->resolveCurrentUser();
+    } catch (Throwable $e) {
+        $controlPermissions = dirname(__DIR__) . '/control-panel/includes/control-permissions.php';
+        if (is_file($controlPermissions)) {
+            require_once $controlPermissions;
+        }
+        if (!empty($_SESSION['control_logged_in'])
+            && function_exists('hasControlPermission')
+            && (
+                hasControlPermission(CONTROL_PERM_GOVERNMENT)
+                || hasControlPermission('manage_control_government')
+                || hasControlPermission('gov_admin')
+                || hasControlPermission(CONTROL_PERM_ADMINS)
+            )) {
+            $userId = (int) ($_SESSION['user_id'] ?? $_SESSION['control_user_id'] ?? 0);
+            if ($userId <= 0) {
+                $userId = 1;
+            }
+            return [
+                'id' => $userId,
+                'role_id' => (int) ($_SESSION['role_id'] ?? 1),
+                'country_id' => (int) ($_SESSION['country_id'] ?? $_SESSION['control_country_id'] ?? 0),
+                'allowed_country_ids' => null,
+                'control_session' => true,
+            ];
+        }
+        throw $e;
+    }
+}
+
+/**
  * Global AI worker onboarding workflow (session auth, tenant DB).
  */
 function ratib_run_worker_onboarding_workflow(string $entryDir): void
@@ -55,6 +93,14 @@ function ratib_run_worker_onboarding_workflow(string $entryDir): void
         http_response_code(405);
         echo json_encode(['success' => false, 'message' => 'Method not allowed']);
         return;
+    }
+
+    $apiSession = dirname(__DIR__) . '/api/core/ratib_api_session.inc.php';
+    if (is_file($apiSession)) {
+        require_once $apiSession;
+        if (function_exists('ratib_api_pick_session_name')) {
+            ratib_api_pick_session_name();
+        }
     }
 
     try {
@@ -82,14 +128,16 @@ function ratib_run_worker_onboarding_workflow(string $entryDir): void
         $access = $container->get(AccessMiddleware::class);
         /** @var SecurityMiddleware $security */
         $security = $container->get(SecurityMiddleware::class);
-        $user = $access->resolveCurrentUser();
-        $security->enforce($user, 'workflow.worker_onboarding', $rawBody);
-        $access->handle(
-            $user,
-            'workflow.worker_onboarding',
-            $payload,
-            static fn (array $safePayload): array => $safePayload
-        );
+        $user = ratib_workflow_resolve_user($access);
+        if (empty($user['control_session'])) {
+            $security->enforce($user, 'workflow.worker_onboarding', $rawBody);
+            $access->handle(
+                $user,
+                'workflow.worker_onboarding',
+                $payload,
+                static fn (array $safePayload): array => $safePayload
+            );
+        }
 
         $workerPayload = is_array($payload['worker'] ?? null) ? $payload['worker'] : [];
         $name = trim((string) ($workerPayload['name'] ?? $workerPayload['worker_name'] ?? $workerPayload['full_name'] ?? ''));
@@ -129,6 +177,7 @@ function ratib_run_worker_onboarding_workflow(string $entryDir): void
                     'worker_id' => $workerId,
                     'existing_worker' => true,
                     'handler' => 'includes/worker_onboarding_workflow.php',
+                    'bootstrap' => 'app',
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
                 return;
@@ -143,6 +192,7 @@ function ratib_run_worker_onboarding_workflow(string $entryDir): void
             'workflow_id' => (string) ($result['workflow_id'] ?? ''),
             'worker_id' => isset($result['worker_id']) ? (int) $result['worker_id'] : null,
             'handler' => 'includes/worker_onboarding_workflow.php',
+            'bootstrap' => 'app',
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     } catch (Throwable $exception) {
         $status = (int) $exception->getCode();

@@ -17,8 +17,15 @@ return [
     },
     'Workflow onboarding endpoint exists' => static function (): void {
         $root = dirname(__DIR__, 2);
-        $path = $root . '/public/workflows/worker-onboarding/index.php';
-        t_assert_true(is_file($path), 'Workflow onboarding endpoint missing.');
+        $paths = [
+            $root . '/api/workers/worker-onboarding.php',
+            $root . '/api/workflows/worker-onboarding.php',
+            $root . '/public/workflows/worker-onboarding/index.php',
+            $root . '/includes/worker_onboarding_workflow.php',
+        ];
+        foreach ($paths as $path) {
+            t_assert_true(is_file($path), 'Workflow onboarding endpoint missing: ' . $path);
+        }
     },
     'Worker platform includes system health route matcher' => static function (): void {
         $root = dirname(__DIR__, 2);

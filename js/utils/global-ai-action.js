@@ -141,6 +141,7 @@
         return {
             worker_id: workerId,
             worker: worker,
+            record_workflow: true,
             tracking: {
                 latitude: 24.7136,
                 longitude: 46.6753,
@@ -330,8 +331,9 @@
                 const urls = getRuntimeUrls(button);
                 const payload = payloadOverride || buildPayloadFromModal(fields);
                 const hasWorkerId = Number.isFinite(Number(payload.worker_id)) && Number(payload.worker_id) > 0;
-                // Prefer api/ path (same deploy as workers/ai-lookup); fallback to public/ URL for older bookmarks.
+                // Try api/workers first (same deploy bundle as ai-lookup), then workflows/, then public/.
                 const workflowUrls = [
+                    `${urls.apiBase}/workers/worker-onboarding.php`,
                     `${urls.apiBase}/workflows/worker-onboarding.php`,
                     `${urls.publicBase}/public/workflows/worker-onboarding/index.php`
                 ];
@@ -349,6 +351,7 @@
                         const trackingUrl = `${urls.controlApiPath}/worker-tracking-onboarding.php`;
                         const trackingResponse = await fetch(trackingUrl, {
                             method: 'POST',
+                            credentials: 'same-origin',
                             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                             body: JSON.stringify(payload)
                         });
@@ -356,23 +359,34 @@
                         trackingResult = trackingPayload.parsed || {};
                         if (!trackingResponse.ok || !trackingResult.success) {
                             trackingError = trackingResult.message || `${trackingResponse.status} ${trackingResponse.statusText}` || 'Tracking onboarding failed.';
+                        } else if (trackingResult.data && trackingResult.data.workflow_id) {
+                            workflowResult = {
+                                success: true,
+                                workflow_id: String(trackingResult.data.workflow_id),
+                                worker_id: trackingResult.data.worker_id || payload.worker_id,
+                                bootstrap: trackingResult.data.workflow_bootstrap || 'tracking_fallback'
+                            };
                         }
                     }
 
-                    for (const workflowUrl of workflowUrls) {
-                        const workflowResponse = await fetch(workflowUrl, {
-                            method: 'POST',
-                            credentials: 'same-origin',
-                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        const workflowPayload = await parseJsonResponse(workflowResponse);
-                        workflowResult = workflowPayload.parsed || {};
-                        if (workflowResponse.ok && workflowResult.success) {
-                            workflowError = '';
-                            break;
+                    if (!workflowResult || !workflowResult.success) {
+                        for (const workflowUrl of workflowUrls) {
+                            const workflowResponse = await fetch(workflowUrl, {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            const workflowPayload = await parseJsonResponse(workflowResponse);
+                            workflowResult = workflowPayload.parsed || {};
+                            if (workflowResponse.ok && workflowResult.success) {
+                                workflowError = '';
+                                break;
+                            }
+                            workflowError = workflowResult.message || `${workflowResponse.status} ${workflowResponse.statusText}` || 'Workflow onboarding failed.';
                         }
-                        workflowError = workflowResult.message || `${workflowResponse.status} ${workflowResponse.statusText}` || 'Workflow onboarding failed.';
+                    } else {
+                        workflowError = '';
                     }
 
                     if (workflowError) {
