@@ -33,20 +33,36 @@ jobs:
             exit 1
           fi
 
-      # Single step: webhook success exits before UAPI. cPanel VersionControl/* UAPI often returns HTTP 500
-      # on some hosts even when deploy already happened via webhook — splitting steps + `if:` was still flaky.
+      # Webhook: treat any 2xx as success (no curl -f — some hooks return 204/201). Follow redirects (-L).
+      # UAPI: cPanel VersionControl often returns HTTP 500 on otherwise healthy hosts — do not fail the whole workflow.
       - name: Deploy to cPanel (webhook, else UAPI)
+        id: cpanel_deploy
+        continue-on-error: true
         run: |
           HOOK_URL="$(printf '%s' "${{ secrets.CPANEL_DEPLOY_HOOK_URL }}" | tr -d '\r\n' | xargs)"
           if [ -n "$HOOK_URL" ]; then
             echo "Trying cPanel deploy webhook..."
-            if curl -fsSL --retry 3 --retry-delay 2 "$HOOK_URL" >/dev/null; then
-              echo "Webhook deploy succeeded. Skipping VersionControl UAPI (avoids duplicate / flaky API calls)."
-              exit 0
+            TMP="$(mktemp)"
+            set +e
+            HTTP_CODE="$(curl -sS -L --connect-timeout 20 --max-time 180 \
+              --retry 3 --retry-delay 3 \
+              -o "$TMP" -w '%{http_code}' "$HOOK_URL")"
+            CURL_EXIT=$?
+            if [ "$CURL_EXIT" -ne 0 ] || [ -z "$HTTP_CODE" ]; then
+              HTTP_CODE="000"
             fi
-            echo "Webhook failed or returned an error; falling back to cPanel VersionControl UAPI."
+            echo "Webhook HTTP status: ${HTTP_CODE:-000}"
+            if [ -s "$TMP" ]; then echo "Webhook body (first 2k):"; head -c 2000 "$TMP" | cat -v; echo; fi
+            rm -f "$TMP"
+            case "$HTTP_CODE" in
+              2??)
+                echo "Webhook returned 2xx — skipping VersionControl UAPI."
+                exit 0
+                ;;
+            esac
+            echo "Webhook did not return 2xx (or curl failed); falling back to VersionControl UAPI."
           else
-            echo "CPANEL_DEPLOY_HOOK_URL not set; using cPanel VersionControl UAPI only."
+            echo "CPANEL_DEPLOY_HOOK_URL not set; using VersionControl UAPI only."
           fi
 
           CPANEL_BASE_URL="https://${{ secrets.CPANEL_HOST }}:2083"
