@@ -28,6 +28,38 @@
         return String(value || '').replace(/\D+/g, '');
     }
 
+    function resolveWorkerNameFromRecord(worker) {
+        if (!worker || typeof worker !== 'object') {
+            return '';
+        }
+        const raw = String(
+            worker.worker_name
+            || worker.full_name
+            || worker.name
+            || worker.fullname
+            || worker.english_name
+            || worker.worker_full_name
+            || ''
+        ).trim();
+        if (raw) {
+            return raw;
+        }
+        const fid = String(worker.formatted_id || '').trim();
+        if (fid) {
+            return fid;
+        }
+        const wid = Number(worker.id || 0);
+        return wid > 0 ? `Worker ${wid}` : '';
+    }
+
+    function resolvePassportDigitsFromRecord(worker, fieldDigits) {
+        const fromFields = onlyDigits(fieldDigits || '');
+        if (fromFields) {
+            return fromFields;
+        }
+        return onlyDigits(String(worker.passport_number || worker.passport || ''));
+    }
+
     function escapeHtml(value) {
         return String(value ?? '')
             .replace(/&/g, '&amp;')
@@ -93,11 +125,17 @@
         }
 
         const workerId = Number(state.selectedWorker.id);
+        const w = state.selectedWorker;
+        const passportDigits = resolvePassportDigitsFromRecord(w, passport);
+        if (!passportDigits) {
+            throw new Error('Passport number is required for the AI workflow. Enter it in the modal or fix the worker record.');
+        }
         const worker = {
             worker_id: workerId,
-            name: state.selectedWorker.worker_name || '',
-            passport_number: passport || state.selectedWorker.passport_number || '',
-            identity_number: identity || state.selectedWorker.identity_number || ''
+            id: workerId,
+            name: resolveWorkerNameFromRecord(w),
+            passport_number: passportDigits,
+            identity_number: identity || onlyDigits(String(w.identity_number || ''))
         };
 
         return {

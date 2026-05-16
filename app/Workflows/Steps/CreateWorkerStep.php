@@ -14,7 +14,7 @@ final class CreateWorkerStep implements WorkflowStepInterface
 
     public function execute(array $context): array
     {
-        $worker = $this->workerService->createWorker($context['worker']);
+        $worker = $this->workerService->createOrReuseWorker($context['worker']);
         $context['worker'] = $worker;
         return $context;
     }

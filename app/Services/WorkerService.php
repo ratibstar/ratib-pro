@@ -18,6 +18,25 @@ final class WorkerService
     ) {
     }
 
+    /**
+     * When `worker_id` / `id` points at an existing row (e.g. Global AI after lookup), reuse it instead of INSERT.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    public function createOrReuseWorker(array $payload): array
+    {
+        $existingId = (int) ($payload['worker_id'] ?? $payload['id'] ?? 0);
+        if ($existingId > 0) {
+            $existing = $this->workerRepository->findById($existingId);
+            if ($existing !== null) {
+                return $existing;
+            }
+        }
+
+        return $this->createWorker($payload);
+    }
+
     /** @param array<string, mixed> $payload */
     public function createWorker(array $payload): array
     {
