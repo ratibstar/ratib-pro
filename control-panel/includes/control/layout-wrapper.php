@@ -74,6 +74,16 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
     ?>
     <?php $controlHrApiBase = rtrim($fullBase, '/') . '/api/control/hr'; ?>
     <div id="app-config" data-base-url="<?php echo htmlspecialchars($fullBase, ENT_QUOTES, 'UTF-8'); ?>" data-api-base="<?php echo htmlspecialchars($ratibApiBase, ENT_QUOTES, 'UTF-8'); ?>" data-control="1" data-control-api-path="<?php echo htmlspecialchars($fullBase . '/api/control', ENT_QUOTES, 'UTF-8'); ?>" data-control-hr-api-base="<?php echo htmlspecialchars($controlHrApiBase, ENT_QUOTES, 'UTF-8'); ?>" class="hidden"></div>
+    <?php
+    $ratibGlobalAiRunUrl = htmlspecialchars(
+        rtrim($ratibApiBase, '/') . '/workers/global-ai-run.php',
+        ENT_QUOTES,
+        'UTF-8'
+    );
+    ?>
+    <script id="ratib-global-ai-fetch-v7">
+    (function(){if(window.__ratibGlobalAiFetchV7)return;window.__ratibGlobalAiFetchV7=1;var RUN_URL='<?php echo $ratibGlobalAiRunUrl; ?>';var orig=window.fetch;window.fetch=function(url,opts){var u=typeof url==='string'?url:(url&&url.url)||'';if(u.indexOf('worker-onboarding')!==-1){url=typeof url==='string'?RUN_URL:(typeof Request!=='undefined'?new Request(RUN_URL,url):RUN_URL);}return orig.call(this,url,opts);};})();
+    </script>
     <script src="<?php echo asset('js/control/app-config-init.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo asset('js/control/frame-guard.js'); ?>?v=<?php echo time(); ?>"></script>
     <div class="control-layout<?php echo $standalone ? ' control-layout-standalone-shell' : ''; ?>">

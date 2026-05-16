@@ -31,10 +31,11 @@ if (!function_exists('ratib_site_content_defaults_home')) {
     {
         /* Header platform strip (mega menu holds Domains / Sites / Grow / …). Short labels; legacy keys kept below for CMS rows still in DB. */
         $nav = [
+            'about' => 'About RATIB',
             'platform' => 'Platform',
             'domains' => 'Domains',
             'tour' => 'Tour',
-            'product' => 'Product',
+            'product' => 'Capabilities',
             'pricing' => 'Pricing',
             'partners' => 'Partners',
             'contact' => 'Contact',
@@ -61,7 +62,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.nav.how_it_works'] = 'How it works';
         $d['home.nav.solutions'] = 'Solutions';
         $d['home.nav.tracking'] = 'Tracking';
-        $d['home.nav.operational'] = 'Visibility';
+        $d['home.nav.operational'] = 'Telemetry';
         $d['home.nav.api'] = 'API';
 
         $d['home.nav.cta_partner'] = 'Partner Login';
@@ -298,9 +299,9 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.final_cta.title'] = 'Put production-grade recruitment infrastructure online';
         $d['home.final_cta.sub'] = 'Event orchestration, workforce telemetry, and ledger-backed billing on one deployed plane—built for agencies already running at scale.';
         $d['home.final_cta.btn_primary'] = 'Start agency infrastructure';
-        $d['home.final_cta.btn_secondary'] = 'Book platform demo';
+        $d['home.final_cta.btn_secondary'] = 'Enterprise company profile';
 
-        $d['home.footer.brand'] = 'Enterprise recruitment operating system — multi-agency workforce intelligence, automation, and real-time tracking.';
+        $d['home.footer.brand'] = 'Workforce program infrastructure — orchestration, telemetry, compliance, and finance-grade operations for multi-country recruitment programs.';
         $d['home.footer.col.platform'] = 'Platform';
         $d['home.footer.col.company'] = 'Company';
         $d['home.footer.col.support'] = 'Support';
@@ -316,8 +317,9 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.footer.copyright_suffix'] = 'RATIB — Ratib Software Foundation for Information Technology';
         $d['home.footer.location'] = 'Riyadh, Saudi Arabia';
 
-        $d['home.footer.link.platform.overview'] = 'Overview';
-        $d['home.footer.link.platform.ops_visibility'] = 'Operational visibility';
+        $d['home.footer.link.platform.overview'] = 'Platform overview';
+        $d['home.footer.link.platform.ops_visibility'] = 'Workforce telemetry';
+        $d['home.footer.link.company.about'] = 'Company profile';
         $d['home.footer.link.platform.pricing'] = 'Pricing';
         $d['home.footer.link.platform.apis'] = 'APIs';
         $d['home.footer.link.solutions'] = 'Solutions';
@@ -383,6 +385,7 @@ if (!function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
         }
         $def = ratib_site_content_defaults_home();
         $navKeys = [
+            'home.nav.about',
             'home.nav.platform',
             'home.nav.domains',
             'home.nav.tour',

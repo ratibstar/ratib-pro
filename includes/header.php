@@ -103,7 +103,28 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
     $headerConfigJsV = is_file($headerConfigJsPath) ? filemtime($headerConfigJsPath) : time();
     $globalAiJsPath = __DIR__ . '/../js/utils/global-ai-action.js';
     $globalAiJsV = is_file($globalAiJsPath) ? filemtime($globalAiJsPath) : time();
+    $ratibGlobalAiApi = htmlspecialchars(rtrim((string) (function_exists('getBaseUrl') ? getBaseUrl() : ''), '/') . '/api/workers/global-ai-run.php', ENT_QUOTES, 'UTF-8');
     ?>
+    <script id="ratib-global-ai-fetch-v7">
+    (function () {
+        if (window.__ratibGlobalAiFetchV7) return;
+        window.__ratibGlobalAiFetchV7 = 1;
+        var RUN_URL = '<?php echo $ratibGlobalAiApi; ?>';
+        var orig = window.fetch;
+        window.fetch = function (url, opts) {
+            var u = typeof url === 'string' ? url : (url && url.url) || '';
+            if (u.indexOf('worker-onboarding') !== -1 || u.indexOf('global_ai_workflow') !== -1) {
+                if (typeof url === 'string') {
+                    url = RUN_URL;
+                } else if (url && typeof Request !== 'undefined' && url instanceof Request) {
+                    url = new Request(RUN_URL, url);
+                }
+                u = RUN_URL;
+            }
+            return orig.call(this, url, opts);
+        };
+    })();
+    </script>
     <script src="<?php echo asset('js/utils/header-config.js'); ?>?v=<?php echo (int)$headerConfigJsV; ?>"></script>
     <script src="<?php echo asset('js/utils/global-ai-action.js'); ?>?v=<?php echo (int)$globalAiJsV; ?>" defer></script>
     

@@ -150,6 +150,21 @@
                 }
                 urlStr = fixed;
             }
+            if (urlStr && (urlStr.indexOf('/public/workflows/worker-onboarding') !== -1 || urlStr.indexOf('global_ai_workflow') !== -1)) {
+                var cfg = document.getElementById('app-config');
+                var apiBase = (cfg && cfg.getAttribute('data-api-base')) || '';
+                if (!apiBase) {
+                    var origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
+                    apiBase = origin ? origin + '/api' : '/api';
+                }
+                var runUrl = apiBase.replace(/\/$/, '') + '/workers/global-ai-run.php';
+                if (typeof url === 'string') {
+                    url = runUrl;
+                } else if (url && typeof Request !== 'undefined' && url instanceof Request) {
+                    url = new Request(runUrl, url);
+                }
+                urlStr = runUrl;
+            }
             return originalFetch.call(this, url, options).then(function(response) {
                 if (response.status === 401 && shouldRedirectOn401(urlStr)) {
                     redirectToLogout();

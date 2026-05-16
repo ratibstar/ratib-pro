@@ -7,61 +7,11 @@ declare(strict_types=1);
 
 header('Content-Type: application/json; charset=UTF-8');
 
-// Global AI: one-shot tracking + workflow (POST ?action=global_ai_run) — same file as worker search.
+// Global AI workflow (POST ?action=global_ai_run|global_ai_workflow|worker_onboarding).
 if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST') {
     $action = trim((string) ($_GET['action'] ?? $_POST['action'] ?? ''));
-    if ($action === 'global_ai_run') {
-        require_once __DIR__ . '/../core/api-permission-helper.php';
-        require_once __DIR__ . '/../../control-panel/includes/control-permissions.php';
-        try {
-            try {
-                enforceApiPermission('workers', 'get');
-            } catch (Throwable $authError) {
-                $hasControlAccess = !empty($_SESSION['control_logged_in'])
-                    && (
-                        hasControlPermission(CONTROL_PERM_GOVERNMENT)
-                        || hasControlPermission('manage_control_government')
-                        || hasControlPermission('gov_admin')
-                        || hasControlPermission(CONTROL_PERM_ADMINS)
-                    );
-                if (!$hasControlAccess) {
-                    throw $authError;
-                }
-            }
-            $payload = json_decode((string) file_get_contents('php://input'), true) ?? [];
-            if (!is_array($payload)) {
-                $payload = [];
-            }
-            $runFile = dirname(__DIR__, 2) . '/includes/global_ai_run.php';
-            if (!is_file($runFile)) {
-                throw new RuntimeException('includes/global_ai_run.php missing on server', 503);
-            }
-            require_once $runFile;
-            echo json_encode(ratib_global_ai_run($payload), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        } catch (Throwable $e) {
-            $code = (int) $e->getCode();
-            if (!in_array($code, [401, 403, 404], true)) {
-                $code = 422;
-            }
-            http_response_code($code);
-            echo json_encode([
-                'success' => false,
-                'message' => $e->getMessage(),
-                'handler' => 'ai-lookup.global_ai_run',
-                'build' => 'global-ai-run-20260516-v5',
-            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        }
-        exit;
-    }
-    if ($action === 'global_ai_workflow' || $action === 'worker_onboarding') {
-        $standalone = dirname(__DIR__, 2) . '/includes/worker_onboarding_standalone.php';
-        if (is_file($standalone)) {
-            require_once $standalone;
-            ratib_worker_onboarding_standalone_run();
-            exit;
-        }
-        http_response_code(503);
-        echo json_encode(['success' => false, 'message' => 'worker_onboarding_standalone.php missing on server']);
+    if (in_array($action, ['global_ai_run', 'global_ai_workflow', 'worker_onboarding'], true)) {
+        require dirname(__DIR__) . '/global-ai-run.php';
         exit;
     }
 }

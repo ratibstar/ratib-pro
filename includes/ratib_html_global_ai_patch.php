@@ -21,7 +21,7 @@ function ratib_register_global_ai_html_patch(): void
         if ($html === '' || strlen($html) < 200) {
             return $html;
         }
-        if (stripos($html, 'globalAiRunBtn') === false || stripos($html, 'ratibRunV5') !== false) {
+        if (stripos($html, 'globalAiRunBtn') === false || stripos($html, 'ratib-global-ai-fetch-v7') !== false || stripos($html, 'ratibGlobalAiV7') !== false) {
             return $html;
         }
         $patchFile = __DIR__ . '/global_ai_run_patch.php';

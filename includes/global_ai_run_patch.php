@@ -32,7 +32,7 @@ $patchApiBase = htmlspecialchars(rtrim((string) (function_exists('getBaseUrl') ?
             if (!payload || !payload.worker_id) return legacy(payloadOverride);
             if (runBtn) { runBtn.disabled = true; runBtn.textContent = 'Running...'; }
             try {
-                var res = await fetch(API_BASE + '/workers/ai-lookup.php?action=global_ai_run', {
+                var res = await fetch(API_BASE + '/workers/global-ai-run.php', {
                     method: 'POST',
                     credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
