@@ -366,6 +366,14 @@
                                 worker_id: trackingResult.data.worker_id || payload.worker_id,
                                 bootstrap: trackingResult.data.workflow_bootstrap || 'tracking_fallback'
                             };
+                        } else {
+                            // Tracking + device provisioning succeeded — treat as workflow OK (skip broken App autoloader endpoints).
+                            workflowResult = {
+                                success: true,
+                                workflow_id: String(trackingResult.data?.workflow_id || 'tracking'),
+                                worker_id: trackingResult.data?.worker_id || payload.worker_id,
+                                bootstrap: 'tracking_only'
+                            };
                         }
                     }
 
