@@ -12,6 +12,7 @@ if (session_status() !== PHP_SESSION_ACTIVE) {
 }
 
 $projectRoot = dirname(__DIR__);
+require_once $projectRoot . '/app/Core/Autoloader.php';
 Autoloader::register($projectRoot . DIRECTORY_SEPARATOR . 'app');
 require_once $projectRoot . '/app/Core/helpers.php';
 require_once $projectRoot . '/app/Core/ErrorTracker.php';

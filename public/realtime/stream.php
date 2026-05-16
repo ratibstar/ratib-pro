@@ -19,6 +19,7 @@ if (!$isAuthed) {
 }
 
 $projectRoot = dirname(__DIR__, 2);
+require_once $projectRoot . '/app/Core/Autoloader.php';
 Autoloader::register($projectRoot . DIRECTORY_SEPARATOR . 'app');
 
 $config = require $projectRoot . '/config/worker_tracking.php';

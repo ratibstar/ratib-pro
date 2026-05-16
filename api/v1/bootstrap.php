@@ -17,6 +17,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
 }
 
 $projectRoot = dirname(__DIR__, 2);
+require_once $projectRoot . '/app/Core/Autoloader.php';
 Autoloader::register($projectRoot . DIRECTORY_SEPARATOR . 'app');
 require_once $projectRoot . '/app/Core/ErrorTracker.php';
 $config = require $projectRoot . '/config/worker_tracking.php';
