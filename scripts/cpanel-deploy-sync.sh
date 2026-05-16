@@ -12,7 +12,12 @@ mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
 
 log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$LOG"; }
 
-log "start bundle=about-enterprise-20260516-v9 marker=${MARKER} pwd=${ROOT} user=$(whoami 2>/dev/null || echo unknown)"
+log "start bundle=about-enterprise-20260516-v10 marker=${MARKER} pwd=${ROOT} user=$(whoami 2>/dev/null || echo unknown)"
+
+# cPanel Version Control may expose the clone path during deploy.
+if [ -n "${CPANEL_REPO_ROOT:-}" ]; then
+  log "env CPANEL_REPO_ROOT=${CPANEL_REPO_ROOT}"
+fi
 
 TARGETS=()
 
@@ -51,8 +56,14 @@ if [ -f "$LIST" ]; then
   done < "$LIST"
 fi
 
-# 3) Common cPanel paths
+# 3) Documented production paths (see DEPLOY_AUTOMATION_SETUP.md, run-readiness.php)
 for t in \
+  "/home/outratib/public_html" \
+  "/home/outratib/repositories/ratib-pro" \
+  "/home/outratib/domains/out.ratib.sa/public_html" \
+  "/home/outratib/out.ratib.sa/public_html" \
+  "/home/outratib/out.ratib.sa" \
+  "${CPANEL_REPO_ROOT:-}" \
   "${HOME}/public_html" \
   "${HOME}/out.ratib.sa" \
   "${HOME}/out.ratib.sa/public_html" \

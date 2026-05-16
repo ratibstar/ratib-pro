@@ -1,6 +1,6 @@
-# One absolute path per line — cPanel document root for https://out.ratib.sa
-# Find it: cPanel → Domains → out.ratib.sa → Document Root
-# REQUIRED for About page deploy when auto-detect misses your path.
-# Example (uncomment and edit):
-# /home/outratib/out.ratib.sa/public_html
-# Bundle: about-enterprise-20260516-v9
+# Live web roots for https://out.ratib.sa (from project deploy docs + cPanel layout)
+/home/outratib/public_html
+/home/outratib/repositories/ratib-pro
+/home/outratib/domains/out.ratib.sa/public_html
+/home/outratib/out.ratib.sa/public_html
+/home/outratib/out.ratib.sa
