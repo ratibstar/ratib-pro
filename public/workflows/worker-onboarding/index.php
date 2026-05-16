@@ -7,6 +7,8 @@ use App\Core\WorkerPlatformBootstrap;
 use App\Core\ErrorTracker;
 use App\Middleware\AccessMiddleware;
 use App\Middleware\SecurityMiddleware;
+use App\Repositories\WorkerRepository;
+use App\Repositories\WorkflowRepository;
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -21,6 +23,8 @@ try {
     require_once $projectRoot . '/app/Core/ensure_worker_platform_schema.php';
 
     $config = require $projectRoot . '/config/worker_tracking.php';
+    $config['db'] = WorkerPlatformBootstrap::ratibDatabaseConfig();
+
     ErrorTracker::register(static fn () => \App\Core\Database::connect($config['db']));
     $container = Application::boot($config);
 
@@ -47,10 +51,47 @@ try {
     );
 
     $workerPayload = is_array($payload['worker'] ?? null) ? $payload['worker'] : [];
-    $name = trim((string) ($workerPayload['name'] ?? ''));
+    $name = trim((string) ($workerPayload['name'] ?? $workerPayload['worker_name'] ?? $workerPayload['full_name'] ?? ''));
     $passport = trim((string) ($workerPayload['passport_number'] ?? ''));
+    $workerId = (int) ($payload['worker_id'] ?? $workerPayload['worker_id'] ?? $workerPayload['id'] ?? 0);
+
     if ($name === '' || $passport === '') {
         throw new \InvalidArgumentException('worker.name and worker.passport_number are required.');
+    }
+
+    $workerPayload['name'] = $name;
+    $workerPayload['passport_number'] = $passport;
+    if ($workerId > 0) {
+        $workerPayload['worker_id'] = $workerId;
+        $workerPayload['id'] = $workerId;
+    }
+    $payload['worker'] = $workerPayload;
+
+    // Global AI: worker already exists in Ratib + tracking provisioned via control API — record workflow only.
+    if ($workerId > 0) {
+        $workerRepo = new WorkerRepository($pdo);
+        $existing = $workerRepo->findById($workerId);
+        if ($existing !== null) {
+            /** @var WorkflowRepository $workflowRepository */
+            $workflowRepository = $container->get(WorkflowRepository::class);
+            $context = $payload;
+            $context['worker'] = $existing;
+            $context['worker_id'] = $workerId;
+            $context['onboarding_source'] = 'global_ai_existing_worker';
+
+            $workflowId = $workflowRepository->start('WorkerOnboardingWorkflow', $context);
+            $context['workflow_id'] = $workflowId;
+            $workflowRepository->complete($workflowId, $context);
+
+            echo json_encode([
+                'success' => true,
+                'workflow_id' => (string) $workflowId,
+                'worker_id' => $workerId,
+                'existing_worker' => true,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+            return;
+        }
     }
 
     /** @var WorkflowController $controller */

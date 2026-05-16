@@ -57,7 +57,8 @@ final class WorkerService
             throw new InvalidArgumentException('Worker creation failed.');
         }
 
-        $this->events->event(new WorkerCreated($workerId, (string) $worker['name']));
+        $displayName = (string) ($worker['name'] ?? $worker['worker_name'] ?? $worker['full_name'] ?? '');
+        $this->events->event(new WorkerCreated($workerId, $displayName));
         return $worker;
     }
 }
