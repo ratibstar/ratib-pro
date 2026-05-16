@@ -7,6 +7,22 @@ declare(strict_types=1);
 
 header('Content-Type: application/json; charset=UTF-8');
 
+// Global AI workflow via existing ai-lookup route (survives partial deploys): POST ?action=global_ai_workflow
+if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST') {
+    $action = trim((string) ($_GET['action'] ?? $_POST['action'] ?? ''));
+    if ($action === 'global_ai_workflow' || $action === 'worker_onboarding') {
+        $standalone = dirname(__DIR__, 2) . '/includes/worker_onboarding_standalone.php';
+        if (is_file($standalone)) {
+            require_once $standalone;
+            ratib_worker_onboarding_standalone_run();
+            exit;
+        }
+        http_response_code(503);
+        echo json_encode(['success' => false, 'message' => 'worker_onboarding_standalone.php missing on server']);
+        exit;
+    }
+}
+
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/ApiResponse.php';
 require_once __DIR__ . '/../core/api-permission-helper.php';

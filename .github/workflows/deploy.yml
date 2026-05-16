@@ -14,6 +14,9 @@ jobs:
   trigger-cpanel-deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout (for deploy marker verification)
+        uses: actions/checkout@v4
+
       - name: Validate cPanel API secrets
         run: |
           if [ -z "${{ secrets.CPANEL_HOST }}" ]; then
@@ -56,11 +59,12 @@ jobs:
             rm -f "$TMP"
             case "$HTTP_CODE" in
               2??)
-                echo "Webhook returned 2xx — skipping VersionControl UAPI."
-                exit 0
+                echo "Webhook returned 2xx — will still run VersionControl sync + .cpanel.yml deploy (webhook alone does not rsync to out.ratib.sa)."
+                ;;
+              *)
+                echo "Webhook did not return 2xx (or curl failed); using VersionControl UAPI."
                 ;;
             esac
-            echo "Webhook did not return 2xx (or curl failed); falling back to VersionControl UAPI."
           else
             echo "CPANEL_DEPLOY_HOOK_URL not set; using VersionControl UAPI only."
           fi
@@ -133,5 +137,16 @@ jobs:
             echo "cPanel deploy queued successfully."
           fi
           echo "Track progress in cPanel using log: $LOG_PATH"
+
+          echo "Verifying live site build marker..."
+          LIVE_MARKER="$(curl -fsSL --connect-timeout 15 --max-time 30 "https://out.ratib.sa/public/ratib-build.php" 2>/dev/null || true)"
+          echo "Live ratib-build.php: ${LIVE_MARKER:-<failed or empty>}"
+          EXPECTED="$(cat public/ratib-build.txt 2>/dev/null || echo '')"
+          echo "Git expected marker: $EXPECTED"
+          if [ -n "$EXPECTED" ] && [ "$LIVE_MARKER" = "$EXPECTED" ]; then
+            echo "Deploy verification OK — production matches git marker."
+          else
+            echo "::warning::Deploy verification FAILED — production still serves old files. In cPanel: Git Version Control → Deploy HEAD Commit manually."
+          fi
           exit 0
 

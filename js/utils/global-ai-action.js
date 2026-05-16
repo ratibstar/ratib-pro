@@ -333,6 +333,7 @@
                 const hasWorkerId = Number.isFinite(Number(payload.worker_id)) && Number(payload.worker_id) > 0;
                 // Try api/workers first (same deploy bundle as ai-lookup), then workflows/, then public/.
                 const workflowUrls = [
+                    `${urls.apiBase}/workers/ai-lookup.php?action=global_ai_workflow`,
                     `${urls.apiBase}/workers/worker-onboarding.php`,
                     `${urls.apiBase}/workflows/worker-onboarding.php`,
                     `${urls.publicBase}/public/workflows/worker-onboarding/index.php`

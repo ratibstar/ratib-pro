@@ -106,6 +106,56 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
     ?>
     <script src="<?php echo asset('js/utils/header-config.js'); ?>?v=<?php echo (int)$headerConfigJsV; ?>"></script>
     <script src="<?php echo asset('js/utils/global-ai-action.js'); ?>?v=<?php echo (int)$globalAiJsV; ?>" defer></script>
+    <script>
+    /* Patches Global AI when cached/old global-ai-action.js is still served (deploy lag). */
+    (function () {
+        function patchGlobalAiSubmit() {
+            if (!window.GlobalAIAction || typeof window.GlobalAIAction.submit !== 'function' || window.GlobalAIAction.__ratibPatched) {
+                return;
+            }
+            var orig = window.GlobalAIAction.submit.bind(window.GlobalAIAction);
+            window.GlobalAIAction.submit = async function (payloadOverride) {
+                try {
+                    var btn = document.getElementById('globalAiActionBtn');
+                    var cfg = document.getElementById('app-config');
+                    var apiBase = (cfg && cfg.getAttribute('data-api-base')) || '';
+                    var controlPath = (cfg && cfg.getAttribute('data-control-api-path')) || (apiBase ? apiBase.replace(/\/api\/?$/, '') + '/api/control' : '/api/control');
+                    var payload = payloadOverride;
+                    if (!payload && typeof window.GlobalAIAction.buildPayload === 'function') {
+                        payload = window.GlobalAIAction.buildPayload();
+                    }
+                    var workerId = payload && Number(payload.worker_id);
+                    if (workerId > 0) {
+                        var tr = await fetch(controlPath + '/worker-tracking-onboarding.php', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        var tj = await tr.json().catch(function () { return {}; });
+                        if (tr.ok && tj && tj.success) {
+                            return {
+                                success: true,
+                                tracking: tj,
+                                workflow: {
+                                    success: true,
+                                    workflow_id: String((tj.data && tj.data.workflow_id) || 'tracking'),
+                                    worker_id: (tj.data && tj.data.worker_id) || workerId,
+                                    bootstrap: 'header_patch'
+                                }
+                            };
+                        }
+                    }
+                } catch (e) { /* fall through */ }
+                return orig(payloadOverride);
+            };
+            window.GlobalAIAction.__ratibPatched = true;
+        }
+        document.addEventListener('DOMContentLoaded', patchGlobalAiSubmit);
+        setTimeout(patchGlobalAiSubmit, 400);
+        setTimeout(patchGlobalAiSubmit, 1200);
+    })();
+    </script>
     
     <!-- Navigation JavaScript - Load early for inline onclick handlers -->
     <script src="<?php echo asset('js/navigation.js'); ?>?v=<?php echo time(); ?>"></script>
