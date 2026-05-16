@@ -1,0 +1,4 @@
+# One absolute path per line — cPanel document root for https://out.ratib.sa
+# Find it: cPanel → Domains → out.ratib.sa → Document Root
+# Example (edit to match your server):
+# /home/outratib/out.ratib.sa/public_html
