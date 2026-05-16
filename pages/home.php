@@ -6,6 +6,13 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 
+// Company profile (About RATIB) — works at /pages/home.php?open=about when about.php is deployed.
+$ratibOpenParam = isset($_GET['open']) ? trim((string) $_GET['open']) : '';
+if ($ratibOpenParam === 'about') {
+    require __DIR__ . '/about.php';
+    exit;
+}
+
 // Prevent stale HTML caching (browser + reverse proxies + some CDNs).
 if (!headers_sent()) {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private');
@@ -972,7 +979,7 @@ require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
                 <p class="ratib-final-cta__sub"><?php echo htmlspecialchars($ratibHome['home.final_cta.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 <div class="ratib-final-cta__actions">
                     <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                    <a href="<?php echo htmlspecialchars($baseUrl . '/pages/about.php#contact-cta', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                    <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php?open=about#contact-cta', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 </div>
             </div>
         </section>

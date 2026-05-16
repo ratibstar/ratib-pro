@@ -60,6 +60,24 @@ if ($path === '/' || $path === '') {
     exit;
 }
 
+$projectRoot = dirname(__DIR__);
+
+// /about or /pages/about.php — serve company profile when the file exists on disk.
+if (preg_match('#^/about/?$#i', $path)) {
+    $aboutPage = $projectRoot . '/pages/about.php';
+    if (is_file($aboutPage)) {
+        require $aboutPage;
+        exit;
+    }
+}
+if (preg_match('#^/pages/([a-z0-9][a-z0-9_-]*\.php)$#i', $path, $pageMatch)) {
+    $candidate = $projectRoot . '/pages/' . $pageMatch[1];
+    if (is_file($candidate)) {
+        require $candidate;
+        exit;
+    }
+}
+
 http_response_code(404);
 header('Content-Type: text/plain; charset=UTF-8');
 echo 'Not found';

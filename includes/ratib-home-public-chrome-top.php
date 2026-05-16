@@ -70,7 +70,8 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 <?php ratib_mega_nav_render($baseUrl, $ratibNavPrefix); ?>
                 <div class="ratib-nav__platform-links" role="group" aria-label="Platform">
                 <?php
-                $ratibAboutNavHref = $baseUrl . '/pages/about.php';
+                // home.php?open=about — reliable on hosts where /pages/about.php is not deployed yet.
+                $ratibAboutNavHref = $baseUrl . '/pages/home.php?open=about';
                 $ratibAboutNavLabel = trim((string) ($ratibHome['home.nav.about'] ?? ''));
                 if ($ratibAboutNavLabel === '') {
                     $ratibAboutNavLabel = 'About RATIB';

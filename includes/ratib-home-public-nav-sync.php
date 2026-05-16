@@ -56,7 +56,7 @@ function run(){
     else if(hp==='#programs')key='pricing';
     else if(hp==='#agencies')key='partners';
     else if(hp==='#contact')key='contact';
-    else if(/about\.php/i.test(href)||a.classList.contains('ratib-nav__link--about'))key='about';
+    else if(/about\.php/i.test(href)||/[?&]open=about\b/i.test(href)||a.classList.contains('ratib-nav__link--about'))key='about';
     else key='legacy-remove';
     if(key==='legacy-remove'){a.remove();return;}
     if(linkByKey[key]){a.remove();return;}
