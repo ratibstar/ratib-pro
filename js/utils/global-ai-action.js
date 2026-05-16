@@ -51,6 +51,23 @@
         };
     }
 
+    /**
+     * Absolute URL prefix for control-panel pages (tracking map, onboarding).
+     * When the AI button lives inside the control panel, data-base-url already ends with /control-panel — do not append it again.
+     */
+    function resolveControlPanelRoot(buttonBase, publicBase) {
+        const btn = String(buttonBase || '').replace(/\/+$/, '');
+        if (/\/control-panel$/i.test(btn)) {
+            return btn;
+        }
+        const pub = String(publicBase || '').replace(/\/+$/, '');
+        if (/\/control-panel$/i.test(pub)) {
+            return pub;
+        }
+        const root = pub || (typeof window !== 'undefined' && window.location ? window.location.origin : '');
+        return `${root}/control-panel`.replace(/([^:]\/)\/+/g, '$1');
+    }
+
     async function parseJsonResponse(response) {
         const text = await response.text();
         let parsed = null;
@@ -95,7 +112,7 @@
         };
     }
 
-    function renderLookupResult(container, result, baseUrl) {
+    function renderLookupResult(container, result, urls) {
         if (!container) return;
         if (!result || !result.worker) {
             container.innerHTML = '';
@@ -110,11 +127,13 @@
         const ordersCount = Number(result.orders_count || 0);
         const cases = Array.isArray(result.cases) ? result.cases : [];
         const orders = Array.isArray(result.orders) ? result.orders : [];
+        const siteRoot = String(urls?.publicBase || '').replace(/\/+$/, '')
+            || (typeof window !== 'undefined' && window.location ? window.location.origin : '');
         const caseLinks = cases.slice(0, 3).map((item) => {
             const caseId = Number(item.id || 0);
             const label = escapeHtml(item.case_number || `Case #${caseId}`);
             if (caseId > 0) {
-                return `<a href="${baseUrl}/pages/cases/cases-table.php?view=${caseId}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+                return `<a href="${siteRoot}/pages/cases/cases-table.php?view=${caseId}" target="_blank" rel="noopener noreferrer">${label}</a>`;
             }
             return `<span>${label}</span>`;
         }).join(' | ');
@@ -123,15 +142,11 @@
             return orderId > 0 ? `#${orderId}` : '-';
         }).join(' | ');
 
-        const workerViewId = Number(worker.id || 0);
-        const workerDetailsUrl = `${baseUrl}/pages/Worker.php?view=${encodeURIComponent(String(workerId))}`;
-        const casesUrl = `${baseUrl}/pages/cases/cases-table.php`;
-        const trackingMapUrl = workerViewId > 0
-            ? `${baseUrl}/pages/Worker.php?view=${encodeURIComponent(String(workerViewId))}&focus=tracking_map`
-            : workerDetailsUrl;
-        const onboardingUrl = workerViewId > 0
-            ? `${baseUrl}/pages/Worker.php?view=${encodeURIComponent(String(workerViewId))}&focus=mobile_onboarding`
-            : workerDetailsUrl;
+        const workerDetailsUrl = `${siteRoot}/pages/Worker.php?view=${encodeURIComponent(String(workerId))}`;
+        const casesUrl = `${siteRoot}/pages/cases/cases-table.php`;
+        const cpRoot = resolveControlPanelRoot(urls?.buttonBase, urls?.publicBase);
+        const trackingMapUrl = `${cpRoot}/pages/control/tracking-map.php?control=1`;
+        const onboardingUrl = `${cpRoot}/pages/control/tracking-onboarding.php?control=1`;
 
         container.innerHTML = [
             '<div class="global-ai-result-card">',
@@ -209,7 +224,7 @@
         const api = {
             open: function (prefill) {
                 state.selectedWorker = null;
-                renderLookupResult(lookupResult, null, '');
+                renderLookupResult(lookupResult, null, null);
                 renderExecutionResult(executionResult, null);
                 if (runBtn) runBtn.disabled = true;
                 if (prefill && typeof prefill === 'object') {
@@ -255,14 +270,14 @@
                         throw new Error(`Worker lookup failed: ${hint}`);
                     }
                     state.selectedWorker = result.data.worker;
-                    renderLookupResult(lookupResult, result.data, urls.publicBase);
+                    renderLookupResult(lookupResult, result.data, urls);
                     renderExecutionResult(executionResult, null);
                     if (runBtn) runBtn.disabled = false;
                     notify('Worker found. You can run AI workflow now.', 'success');
                     return result.data;
                 } catch (error) {
                     state.selectedWorker = null;
-                    renderLookupResult(lookupResult, null, urls.publicBase);
+                    renderLookupResult(lookupResult, null, urls);
                     if (runBtn) runBtn.disabled = true;
                     notify(error.message || 'Worker search failed.', 'warning');
                     return null;
