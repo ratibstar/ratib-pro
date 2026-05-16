@@ -14,11 +14,18 @@ final class SendNotificationStep implements WorkflowStepInterface
 
     public function execute(array $context): array
     {
-        $this->notificationService->sendWorkerNotification(
-            (int) $context['worker']['id'],
-            'Worker onboarding workflow completed.',
-            (string) ($context['notify_to'] ?? 'operations@gov.local')
-        );
+        $workerId = (int) ($context['worker']['id'] ?? $context['worker_id'] ?? 0);
+        if ($workerId > 0) {
+            try {
+                $this->notificationService->sendWorkerNotification(
+                    $workerId,
+                    'Worker onboarding workflow completed.',
+                    (string) ($context['notify_to'] ?? 'operations@gov.local')
+                );
+            } catch (\Throwable $e) {
+                error_log('SendNotificationStep: ' . $e->getMessage());
+            }
+        }
         return $context;
     }
 }

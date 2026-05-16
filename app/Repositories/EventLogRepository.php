@@ -11,7 +11,7 @@ final class EventLogRepository extends BaseModel
     public function create(string $eventName, array $payload): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO events_log (event_name, payload, created_at) VALUES (:event_name, :payload, NOW())'
+            'INSERT INTO worker_platform_events_log (event_name, payload, created_at) VALUES (:event_name, :payload, NOW())'
         );
         $stmt->execute([
             ':event_name' => $eventName,
@@ -32,7 +32,7 @@ final class EventLogRepository extends BaseModel
             return [];
         }
         $sql = "SELECT id, event_name, payload, created_at
-                FROM events_log
+                FROM worker_platform_events_log
                 WHERE JSON_EXTRACT(payload, '$.workflow_id') = :workflow_id
                    OR payload LIKE :like_workflow
                 ORDER BY id ASC";

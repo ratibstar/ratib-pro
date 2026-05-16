@@ -157,7 +157,7 @@
             return;
         }
         const worker = result.worker;
-        const workerName = escapeHtml(worker.worker_name || worker.full_name || 'Unknown');
+        const workerName = escapeHtml(resolveWorkerNameFromRecord(worker) || 'Unknown');
         const workerId = escapeHtml(worker.id || '-');
         const identity = escapeHtml(worker.identity_number || '-');
         const passport = escapeHtml(worker.passport_number || '-');

@@ -10,7 +10,7 @@ final class NotificationRepository extends BaseModel implements NotificationRepo
 {
     public function create(array $data): int
     {
-        $sql = 'INSERT INTO notifications (worker_id, channel, recipient, message, status, created_at)
+        $sql = 'INSERT INTO worker_platform_notifications (worker_id, channel, recipient, message, status, created_at)
                 VALUES (:worker_id, :channel, :recipient, :message, :status, NOW())';
         $stmt = $this->db->prepare($sql);
         $stmt->execute([

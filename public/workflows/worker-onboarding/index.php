@@ -3,15 +3,12 @@ declare(strict_types=1);
 
 use App\Controllers\Http\WorkflowController;
 use App\Core\Application;
-use App\Core\Autoloader;
+use App\Core\WorkerPlatformBootstrap;
 use App\Core\ErrorTracker;
 use App\Middleware\AccessMiddleware;
 use App\Middleware\SecurityMiddleware;
 
 header('Content-Type: application/json; charset=utf-8');
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     http_response_code(405);
@@ -20,14 +17,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 }
 
 try {
-    $projectRoot = dirname(__DIR__, 3);
-    require_once $projectRoot . '/app/Core/Autoloader.php';
-    Autoloader::register($projectRoot . DIRECTORY_SEPARATOR . 'app');
-    require_once $projectRoot . '/app/Core/ErrorTracker.php';
+    $projectRoot = WorkerPlatformBootstrap::init(__DIR__);
+    require_once $projectRoot . '/app/Core/ensure_worker_platform_schema.php';
 
     $config = require $projectRoot . '/config/worker_tracking.php';
     ErrorTracker::register(static fn () => \App\Core\Database::connect($config['db']));
     $container = Application::boot($config);
+
+    $pdo = $container->get(\PDO::class);
+    ensure_worker_platform_schema($pdo);
+
     $rawBody = (string) file_get_contents('php://input');
     $payload = json_decode($rawBody, true) ?? [];
     if (!is_array($payload)) {
@@ -62,16 +61,13 @@ try {
         'workflow_id' => (string) ($result['workflow_id'] ?? ''),
         'worker_id' => isset($result['worker_id']) ? (int) $result['worker_id'] : null,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-} catch (Throwable $exception) {
+} catch (\Throwable $exception) {
     $status = (int) $exception->getCode();
     if (!in_array($status, [401, 403, 429], true)) {
         $status = 422;
     }
     $prev = $exception->getPrevious();
-    if ($prev instanceof \PDOException) {
-        $status = 503;
-    }
-    if ($exception instanceof \PDOException) {
+    if ($prev instanceof \PDOException || $exception instanceof \PDOException) {
         $status = 503;
     }
     http_response_code($status);
