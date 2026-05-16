@@ -33,28 +33,21 @@ jobs:
             exit 1
           fi
 
-      - name: Trigger cPanel Deploy Hook (fast path)
-        id: hook
+      # Single step: webhook success exits before UAPI. cPanel VersionControl/* UAPI often returns HTTP 500
+      # on some hosts even when deploy already happened via webhook — splitting steps + `if:` was still flaky.
+      - name: Deploy to cPanel (webhook, else UAPI)
         run: |
           HOOK_URL="$(printf '%s' "${{ secrets.CPANEL_DEPLOY_HOOK_URL }}" | tr -d '\r\n' | xargs)"
-          if [ -z "$HOOK_URL" ]; then
-            echo "hook_ran=false" >> "$GITHUB_OUTPUT"
-            echo "CPANEL_DEPLOY_HOOK_URL not set, falling back to UAPI deployment path."
-            exit 0
+          if [ -n "$HOOK_URL" ]; then
+            echo "Trying cPanel deploy webhook..."
+            if curl -fsSL --retry 3 --retry-delay 2 "$HOOK_URL" >/dev/null; then
+              echo "Webhook deploy succeeded. Skipping VersionControl UAPI (avoids duplicate / flaky API calls)."
+              exit 0
+            fi
+            echo "Webhook failed or returned an error; falling back to cPanel VersionControl UAPI."
+          else
+            echo "CPANEL_DEPLOY_HOOK_URL not set; using cPanel VersionControl UAPI only."
           fi
-
-          echo "Triggering cPanel deploy hook..."
-          curl -fsSL --retry 3 --retry-delay 2 "$HOOK_URL" >/dev/null
-          echo "hook_ran=true" >> "$GITHUB_OUTPUT"
-          echo "Deploy hook triggered successfully."
-
-      # When the deploy hook runs, the server already pulls/deploys. cPanel UAPI VersionControl/* often
-      # returns HTTP 500 on some hosts (quota, Git UI bug, path quirks) even though the hook succeeded —
-      # that used to fail the whole workflow. Skip UAPI if the hook completed successfully.
-      - name: Trigger cPanel Git deployment API
-        if: steps.hook.outputs.hook_ran != 'true'
-        run: |
-          echo "No successful deploy hook in this run; syncing via cPanel UAPI (VersionControl)."
 
           CPANEL_BASE_URL="https://${{ secrets.CPANEL_HOST }}:2083"
           AUTH_HEADER="Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}"
