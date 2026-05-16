@@ -881,6 +881,8 @@
                 key = 'partners';
             } else if (hp === '#contact') {
                 key = 'contact';
+            } else if (/about\.php/i.test(href) || a.classList.contains('ratib-nav__link--about')) {
+                key = 'about';
             } else if (/\/modules\/infrastructure-marketplace\/Views\/marketplace\/index\.php/i.test(href)) {
                 key = 'legacy-remove';
             } else if (/\/modules\/infrastructure-marketplace\/Views\/client\/services\.php/i.test(href)) {
@@ -900,7 +902,7 @@
             }
         });
 
-        var desiredOrder = ['platform', 'domains', 'tour', 'product', 'pricing', 'partners', 'contact'];
+        var desiredOrder = ['about', 'platform', 'domains', 'tour', 'product', 'pricing', 'partners', 'contact'];
         desiredOrder.forEach(function (key) {
             var node = linkByKey.get(key);
             if (!node) {
@@ -908,6 +910,9 @@
             }
             var label = node.querySelector('.ratib-nav__label');
             if (label) {
+                if (key === 'about' && !label.textContent.trim()) {
+                    label.textContent = 'About RATIB';
+                }
                 if (key === 'tour') label.textContent = 'Tour';
                 if (key === 'domains') label.textContent = 'Domains';
                 if (key === 'product') label.textContent = 'Product';

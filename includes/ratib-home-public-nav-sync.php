@@ -56,17 +56,18 @@ function run(){
     else if(hp==='#programs')key='pricing';
     else if(hp==='#agencies')key='partners';
     else if(hp==='#contact')key='contact';
+    else if(/about\.php/i.test(href)||a.classList.contains('ratib-nav__link--about'))key='about';
     else key='legacy-remove';
     if(key==='legacy-remove'){a.remove();return;}
     if(linkByKey[key]){a.remove();return;}
     linkByKey[key]=a;
   });
-  var order=['platform','domains','tour','product','pricing','partners','contact'];
+  var order=['about','platform','domains','tour','product','pricing','partners','contact'];
   order.forEach(function(k){
     var node=linkByKey[k];
     if(!node)return;
     var lab=node.querySelector('.ratib-nav__label');
-    if(lab){if(k==='tour')lab.textContent='Tour';if(k==='domains')lab.textContent='Domains';if(k==='product')lab.textContent='Product';if(k==='pricing')lab.textContent='Pricing';if(k==='partners')lab.textContent='Partners';}
+    if(lab){if(k==='about'&&!lab.textContent.trim())lab.textContent='About RATIB';if(k==='tour')lab.textContent='Tour';if(k==='domains')lab.textContent='Domains';if(k==='product')lab.textContent='Product';if(k==='pricing')lab.textContent='Pricing';if(k==='partners')lab.textContent='Partners';}
     pillWrap.appendChild(node);
   });
   }catch(e){}

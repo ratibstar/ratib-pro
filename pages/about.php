@@ -99,6 +99,12 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
 
 <?php include __DIR__ . '/../includes/ratib-home-public-footer.php'; ?>
 
+<?php
+$ratibHomeJsPathAbout = __DIR__ . '/../js/pages/home-page.js';
+clearstatcache(true, $ratibHomeJsPathAbout);
+$ratibHomeJsQAbout = (int) (@filemtime($ratibHomeJsPathAbout) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+?>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/home-page.js?v=<?php echo htmlspecialchars($ratibHomeJsQAbout, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-mega-nav.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/about-enterprise.js?v=<?php echo htmlspecialchars($ratibAboutJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>

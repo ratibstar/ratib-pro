@@ -9,6 +9,9 @@ RewriteRule ^ - [L]
 RewriteCond %{REQUEST_URI} ^/Designed(?:/|$) [NC]
 RewriteRule ^.*$ public/index.php [L,QSA]
 
+# Public company profile (enterprise About RATIB)
+RewriteRule ^about/?$ /pages/about.php [L,QSA]
+
 # Country-specific login: /bangladesh/login, /kenya/login, etc. → /pages/login.php?country_slug=X
 RewriteRule ^([a-z0-9_-]+)/login/?$ /pages/login.php?country_slug=$1 [L,QSA]
 
@@ -62,8 +65,11 @@ RewriteRule ^(.*)$ public/index.php [QSA,L]
 
     # Bypass cache for home page + its JS/CSS + program preview SVGs (paths may include subdir installs).
     SetEnvIf Request_URI "/pages/home\.php" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/about\.php" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/js/pages/home-page\.js" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/js/pages/about-enterprise\.js" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/css/pages/home-public\.css" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/css/pages/about-enterprise\.css" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/assets/images/program-preview" RATIB_NOCACHE=1
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0, private" env=RATIB_NOCACHE
     Header set Pragma "no-cache" env=RATIB_NOCACHE
