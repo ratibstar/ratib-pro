@@ -106,6 +106,7 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
     ?>
     <script src="<?php echo asset('js/utils/header-config.js'); ?>?v=<?php echo (int)$headerConfigJsV; ?>"></script>
     <script src="<?php echo asset('js/utils/global-ai-action.js'); ?>?v=<?php echo (int)$globalAiJsV; ?>" defer></script>
+    <?php include __DIR__ . '/global_ai_run_patch.php'; ?>
     <script>
     /* Patches Global AI when cached/old global-ai-action.js is still served (deploy lag). */
     (function () {

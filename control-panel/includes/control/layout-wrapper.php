@@ -125,6 +125,12 @@ function endControlLayout($additionalJS = []) {
     <?php if (!$standaloneEnd): ?>
     <script src="<?php echo asset('js/control/header-support-alerts.js'); ?>?v=<?php echo time(); ?>"></script>
     <script src="<?php echo htmlspecialchars(rtrim((string) (function_exists('control_ratib_pro_public_base_url') ? control_ratib_pro_public_base_url() : preg_replace('#/control-panel$#', '', $fullBase)), '/') . '/js/utils/global-ai-action.js?v=' . time(), ENT_QUOTES, 'UTF-8'); ?>"></script>
+    <?php
+    $globalAiRunPatch = dirname(__DIR__, 3) . '/includes/global_ai_run_patch.php';
+    if (is_file($globalAiRunPatch)) {
+        include $globalAiRunPatch;
+    }
+    ?>
     <?php endif; ?>
     <?php foreach ((array)$additionalJS as $js):
         $js = (string)$js;
