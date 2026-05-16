@@ -240,3 +240,8 @@ if ($useOwnProgram && isset($GLOBALS['control_conn'])) {
 }
 
 define('CONTROL_CONFIG_LOADED', true);
+
+$ratibHtmlPatch = dirname(__DIR__, 2) . '/includes/ratib_html_global_ai_patch.php';
+if (is_file($ratibHtmlPatch)) {
+    require_once $ratibHtmlPatch;
+}

@@ -1484,3 +1484,5 @@ if (isset($GLOBALS['conn']) && $GLOBALS['conn'] !== null) {
 if (!defined('MULTI_TENANT_ENABLED')) {
     define('MULTI_TENANT_ENABLED', false);
 }
+
+require_once __DIR__ . '/ratib_html_global_ai_patch.php';

@@ -2,16 +2,15 @@
 declare(strict_types=1);
 
 /**
- * Global AI workflow — ONE self-contained file (no App\Core\Autoloader).
- * Upload this file to the server path your site already uses for this URL.
- * Build: standalone-single-file-20260516-v4
+ * UPLOAD THIS FILE to: public/workflows/worker-onboarding/index.php
+ * Self-contained Global AI workflow — NO App\Core\Autoloader (build: upload-v6).
  */
 header('Content-Type: application/json; charset=utf-8');
-header('X-Ratib-Workflow-Build: standalone-single-file-20260516-v4');
+header('X-Ratib-Workflow-Build: upload-v6');
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed', 'build' => 'standalone-single-file-20260516-v4']);
+    echo json_encode(['success' => false, 'message' => 'Method not allowed', 'build' => 'upload-v6']);
     exit;
 }
 
@@ -30,7 +29,7 @@ try {
         $dir = $parent;
     }
     if ($root === null) {
-        throw new RuntimeException('Could not locate includes/config.php from ' . __DIR__);
+        throw new RuntimeException('Could not find includes/config.php');
     }
 
     $apiSession = $root . '/api/core/ratib_api_session.inc.php';
@@ -40,21 +39,20 @@ try {
             ratib_api_pick_session_name();
         }
     }
-
     require_once $root . '/includes/config.php';
-    $controlPerms = $root . '/control-panel/includes/control-permissions.php';
-    if (is_file($controlPerms)) {
-        require_once $controlPerms;
-    }
-    require_once $root . '/api/core/Database.php';
 
-    $authed = isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true
-        && (int) ($_SESSION['user_id'] ?? 0) > 0;
-    if (!$authed && !empty($_SESSION['control_logged_in']) && function_exists('hasControlPermission')) {
-        $authed = hasControlPermission(CONTROL_PERM_GOVERNMENT)
-            || hasControlPermission('manage_control_government')
-            || hasControlPermission('gov_admin')
-            || hasControlPermission(CONTROL_PERM_ADMINS);
+    $authed = !empty($_SESSION['logged_in']) && (int) ($_SESSION['user_id'] ?? 0) > 0;
+    if (!$authed) {
+        $cp = $root . '/control-panel/includes/control-permissions.php';
+        if (is_file($cp)) {
+            require_once $cp;
+        }
+        if (!empty($_SESSION['control_logged_in']) && function_exists('hasControlPermission')) {
+            $authed = hasControlPermission(CONTROL_PERM_GOVERNMENT)
+                || hasControlPermission('manage_control_government')
+                || hasControlPermission('gov_admin')
+                || hasControlPermission(CONTROL_PERM_ADMINS);
+        }
     }
     if (!$authed) {
         throw new RuntimeException('Authentication required', 401);
@@ -64,96 +62,146 @@ try {
     if (!is_array($payload)) {
         $payload = [];
     }
-
-    $workerPayload = is_array($payload['worker'] ?? null) ? $payload['worker'] : [];
-    $name = trim((string) ($workerPayload['name'] ?? $workerPayload['worker_name'] ?? $workerPayload['full_name'] ?? ''));
-    $passport = trim((string) ($workerPayload['passport_number'] ?? ''));
-    $workerId = (int) ($payload['worker_id'] ?? $workerPayload['worker_id'] ?? $workerPayload['id'] ?? 0);
-
-    if ($name === '' || $passport === '') {
-        throw new InvalidArgumentException('worker.name and worker.passport_number are required.');
-    }
-    if ($workerId <= 0) {
-        throw new InvalidArgumentException('worker_id is required.');
+    $worker = is_array($payload['worker'] ?? null) ? $payload['worker'] : [];
+    $name = trim((string) ($worker['name'] ?? $worker['worker_name'] ?? $worker['full_name'] ?? ''));
+    $passport = trim((string) ($worker['passport_number'] ?? ''));
+    $workerId = (int) ($payload['worker_id'] ?? $worker['worker_id'] ?? $worker['id'] ?? 0);
+    if ($name === '' || $passport === '' || $workerId <= 0) {
+        throw new InvalidArgumentException('worker_id, worker.name and worker.passport_number are required.');
     }
 
-    $pdo = Database::getInstance()->getConnection();
-    $chk = $pdo->prepare("SELECT id FROM workers WHERE id = :id AND COALESCE(status, '') <> 'deleted' LIMIT 1");
+    $agencyDb = $GLOBALS['agency_db'] ?? null;
+    if (is_array($agencyDb) && !empty($agencyDb['db'])) {
+        $host = (string) ($agencyDb['host'] ?? 'localhost');
+        $port = (int) ($agencyDb['port'] ?? 3306);
+        $dbname = (string) $agencyDb['db'];
+        $user = (string) ($agencyDb['user'] ?? (defined('DB_USER') ? DB_USER : ''));
+        $pass = (string) ($agencyDb['pass'] ?? (defined('DB_PASS') ? DB_PASS : ''));
+    } else {
+        $host = defined('DB_HOST') ? (string) DB_HOST : 'localhost';
+        $port = defined('DB_PORT') ? (int) DB_PORT : 3306;
+        $dbname = defined('DB_NAME') ? (string) DB_NAME : '';
+        $user = defined('DB_USER') ? (string) DB_USER : '';
+        $pass = defined('DB_PASS') ? (string) DB_PASS : '';
+    }
+    $agencyPdo = new PDO(
+        sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port > 0 ? $port : 3306, $dbname),
+        $user,
+        $pass,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
+    );
+
+    $chk = $agencyPdo->prepare("SELECT id FROM workers WHERE id = :id AND COALESCE(status,'') <> 'deleted' LIMIT 1");
     $chk->execute([':id' => $workerId]);
-    if (!$chk->fetch(PDO::FETCH_ASSOC)) {
-        throw new RuntimeException('Worker not found in agency database.', 404);
+    if (!$chk->fetch()) {
+        throw new RuntimeException('Worker not found', 404);
     }
 
-    $pdo->exec(
+    $agencyPdo->exec(
         "CREATE TABLE IF NOT EXISTS workflows (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             name VARCHAR(191) NOT NULL,
             context_json LONGTEXT NULL,
-            status VARCHAR(32) NOT NULL DEFAULT 'running',
-            failed_step VARCHAR(191) NULL,
+            status VARCHAR(32) NOT NULL DEFAULT 'completed',
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY idx_workflows_status (status)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            PRIMARY KEY (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
     );
-
-    $context = [
+    $ctx = json_encode([
         'worker_id' => $workerId,
-        'onboarding_source' => 'global_ai_single_file',
-        'worker' => array_merge($workerPayload, [
-            'worker_id' => $workerId,
-            'id' => $workerId,
-            'name' => $name,
-            'passport_number' => $passport,
-        ]),
-        'tracking' => $payload['tracking'] ?? null,
-        'notify_to' => $payload['notify_to'] ?? null,
-    ];
+        'worker' => ['name' => $name, 'passport_number' => $passport],
+        'onboarding_source' => 'upload_v6_index',
+    ], JSON_UNESCAPED_UNICODE);
+    $ins = $agencyPdo->prepare('INSERT INTO workflows (name, context_json, status, created_at, updated_at) VALUES (:n,:c,:s,NOW(),NOW())');
+    $ins->execute([':n' => 'WorkerOnboardingWorkflow', ':c' => $ctx, ':s' => 'completed']);
+    $workflowId = (int) $agencyPdo->lastInsertId();
 
-    $ins = $pdo->prepare(
-        'INSERT INTO workflows (name, context_json, status, created_at, updated_at)
-         VALUES (:name, :context_json, :status, NOW(), NOW())'
-    );
-    $ins->execute([
-        ':name' => 'WorkerOnboardingWorkflow',
-        ':context_json' => json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        ':status' => 'completed',
-    ]);
-    $workflowId = (int) $pdo->lastInsertId();
-    if ($workflowId <= 0) {
-        throw new RuntimeException('Could not record workflow.', 503);
+    $tenantId = 0;
+    $deviceId = '';
+    $cpDb = defined('CONTROL_PANEL_DB_NAME') ? (string) CONTROL_PANEL_DB_NAME : '';
+    if ($cpDb !== '') {
+        $controlPdo = new PDO(
+            sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port > 0 ? $port : 3306, $cpDb),
+            $user,
+            $pass,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+        );
+        $agencyId = (int) ($_SESSION['agency_id'] ?? $_SESSION['control_agency_id'] ?? 0);
+        if ($agencyId > 0) {
+            $st = $controlPdo->prepare('SELECT tenant_id FROM control_agencies WHERE id = ? LIMIT 1');
+            $st->execute([$agencyId]);
+            $tenantId = (int) ($st->fetchColumn() ?: 0);
+        }
+        if ($tenantId <= 0) {
+            $st = $controlPdo->query(
+                "SELECT tenant_id, db_name FROM control_agencies WHERE is_active=1 AND tenant_id>0 AND db_name<>'' LIMIT 300"
+            );
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                try {
+                    $ap = new PDO(
+                        sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port, $row['db_name']),
+                        $user,
+                        $pass,
+                        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+                    );
+                    $w = $ap->prepare('SELECT id FROM workers WHERE id = ? LIMIT 1');
+                    $w->execute([$workerId]);
+                    if ($w->fetch()) {
+                        $tenantId = (int) $row['tenant_id'];
+                        break;
+                    }
+                } catch (Throwable $e) {
+                    continue;
+                }
+            }
+        }
+        if ($tenantId > 0) {
+            $controlPdo->exec(
+                "CREATE TABLE IF NOT EXISTS worker_tracking_devices (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    worker_id INT NOT NULL,
+                    tenant_id INT NOT NULL,
+                    device_id VARCHAR(64) NOT NULL,
+                    api_token VARCHAR(255) NOT NULL,
+                    is_active TINYINT(1) NOT NULL DEFAULT 1,
+                    last_seen DATETIME NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uq_device (worker_id, tenant_id, device_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+            $deviceId = 'dev-' . bin2hex(random_bytes(8));
+            $token = bin2hex(random_bytes(24));
+            $st2 = $controlPdo->prepare(
+                'INSERT INTO worker_tracking_devices (worker_id, tenant_id, device_id, api_token, is_active, last_seen, created_at, updated_at)
+                 VALUES (?,?,?,?,1,NOW(),NOW(),NOW())
+                 ON DUPLICATE KEY UPDATE api_token=VALUES(api_token), is_active=1, updated_at=NOW()'
+            );
+            $st2->execute([$workerId, $tenantId, $deviceId, $token]);
+        }
     }
-
-    $context['workflow_id'] = $workflowId;
-    $upd = $pdo->prepare(
-        'UPDATE workflows SET context_json = :context_json, status = :status, updated_at = NOW() WHERE id = :id'
-    );
-    $upd->execute([
-        ':id' => $workflowId,
-        ':context_json' => json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        ':status' => 'completed',
-    ]);
 
     echo json_encode([
         'success' => true,
         'workflow_id' => (string) $workflowId,
         'worker_id' => $workerId,
-        'existing_worker' => true,
-        'build' => 'standalone-single-file-20260516-v4',
+        'tenant_id' => $tenantId > 0 ? (string) $tenantId : '',
+        'device_id' => $deviceId,
+        'tracking_ok' => $tenantId > 0,
+        'workflow_ok' => true,
+        'build' => 'upload-v6',
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-} catch (Throwable $exception) {
-    $status = (int) $exception->getCode();
-    if (!in_array($status, [401, 403, 404, 429], true)) {
-        $status = 422;
+} catch (Throwable $e) {
+    $code = (int) $e->getCode();
+    if (!in_array($code, [401, 403, 404], true)) {
+        $code = 422;
     }
-    if ($exception instanceof PDOException) {
-        $status = 503;
-    }
-    http_response_code($status);
+    http_response_code($code);
     echo json_encode([
         'success' => false,
-        'message' => $exception->getMessage(),
-        'build' => 'standalone-single-file-20260516-v4',
+        'message' => $e->getMessage(),
+        'build' => 'upload-v6',
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
