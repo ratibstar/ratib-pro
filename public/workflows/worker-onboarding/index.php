@@ -21,7 +21,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
 
 try {
     $projectRoot = dirname(__DIR__, 3);
-    // Must load explicitly: no Composer autoload here; `use` does not include this file.
+    // Must load Autoloader before Autoloader::register() — `use` alone does not include the file.
     require_once $projectRoot . '/app/Core/Autoloader.php';
     Autoloader::register($projectRoot . DIRECTORY_SEPARATOR . 'app');
     require_once $projectRoot . '/app/Core/ErrorTracker.php';
