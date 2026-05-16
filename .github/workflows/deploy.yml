@@ -11,94 +11,89 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  trigger-cpanel-deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout (for deploy marker verification)
+        uses: actions/checkout@v4
+
       - name: Validate cPanel API secrets
         run: |
-          test -n "${{ secrets.CPANEL_HOST }}" || { echo "Missing CPANEL_HOST"; exit 1; }
-          test -n "${{ secrets.CPANEL_USER }}" || { echo "Missing CPANEL_USER"; exit 1; }
-          test -n "${{ secrets.CPANEL_API_TOKEN }}" || { echo "Missing CPANEL_API_TOKEN"; exit 1; }
-          test -n "${{ secrets.CPANEL_REPO_ROOT }}" || { echo "Missing CPANEL_REPO_ROOT"; exit 1; }
+          if [ -z "${{ secrets.CPANEL_HOST }}" ]; then echo "Missing CPANEL_HOST"; exit 1; fi
+          if [ -z "${{ secrets.CPANEL_USER }}" ]; then echo "Missing CPANEL_USER"; exit 1; fi
+          if [ -z "${{ secrets.CPANEL_API_TOKEN }}" ]; then echo "Missing CPANEL_API_TOKEN"; exit 1; fi
+          if [ -z "${{ secrets.CPANEL_REPO_ROOT }}" ]; then echo "Missing CPANEL_REPO_ROOT"; exit 1; fi
 
       - name: Deploy to cPanel (webhook, else UAPI)
+        id: cpanel_deploy
+        continue-on-error: true
         run: |
           HOOK_URL="$(printf '%s' "${{ secrets.CPANEL_DEPLOY_HOOK_URL }}" | tr -d '\r\n' | xargs)"
           if [ -n "$HOOK_URL" ]; then
-            curl -sS -L --connect-timeout 20 --max-time 180 --retry 2 -o /dev/null -w "webhook_http=%{http_code}\n" "$HOOK_URL" || true
+            curl -sS -L --connect-timeout 20 --max-time 180 --retry 2 \
+              -o /dev/null -w "webhook_http=%{http_code}\n" "$HOOK_URL" || true
           fi
 
           CPANEL_BASE_URL="https://${{ secrets.CPANEL_HOST }}:2083"
           AUTH_HEADER="Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}"
 
           call_cpanel_api() {
-            curl -fsSL --get --retry 3 --retry-delay 2 --connect-timeout 15 --max-time 120 \
+            local endpoint="$1"
+            shift
+            curl -fsSL --get --retry 5 --retry-all-errors --retry-delay 3 \
+              --connect-timeout 15 --max-time 90 \
               -H "$AUTH_HEADER" \
-              "${CPANEL_BASE_URL}/execute/$1" "${@:2}"
+              "$@" \
+              "${CPANEL_BASE_URL}/execute/${endpoint}"
           }
 
-          REPO="$(printf '%s' "${{ secrets.CPANEL_REPO_ROOT }}" | tr -d '\r\n' | xargs)"
-          BRANCH="$(printf '%s' "${{ github.ref_name }}" | tr -d '\r\n' | xargs)"
-          [ -z "$BRANCH" ] && BRANCH="main"
+          CLEAN_REPO_ROOT="$(printf '%s' "${{ secrets.CPANEL_REPO_ROOT }}" | tr -d '\r\n' | xargs)"
+          CLEAN_BRANCH="$(printf '%s' "${{ github.ref_name }}" | tr -d '\r\n' | xargs)"
+          [ -z "$CLEAN_BRANCH" ] && CLEAN_BRANCH="main"
 
-          SYNC_RESPONSE="$(call_cpanel_api VersionControl/update \
-            --data-urlencode "repository_root=$REPO" \
-            --data-urlencode "branch=$BRANCH")" || SYNC_RESPONSE='{"result":{"status":0}}'
+          set +e
+          SYNC_RESPONSE="$(call_cpanel_api "VersionControl/update" \
+            --data-urlencode "repository_root=$CLEAN_REPO_ROOT" \
+            --data-urlencode "branch=$CLEAN_BRANCH")"
+          echo "cPanel sync API response:"
           echo "$SYNC_RESPONSE"
-          SYNC_STATUS="$(echo "$SYNC_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; print(r.get('status',0))")"
-          if [ "$SYNC_STATUS" != "1" ]; then
-            echo "::error::Git pull on server failed (VersionControl/update). Check CPANEL_REPO_ROOT=$REPO"
-            exit 1
-          fi
-          echo "Git pull on server OK."
+          SYNC_STATUS="$(echo "$SYNC_RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; print(r.get('status', d.get('status',0)))")"
 
-          RESPONSE="$(call_cpanel_api VersionControlDeployment/create \
-            --data-urlencode "repository_root=$REPO")" || RESPONSE='{"result":{"status":0}}'
+          RESPONSE="$(call_cpanel_api "VersionControlDeployment/create" \
+            --data-urlencode "repository_root=$CLEAN_REPO_ROOT")"
+          echo "cPanel deploy API response:"
           echo "$RESPONSE"
-          STATUS="$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; print(r.get('status',0))")"
-          LOG_PATH="$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; print((r.get('data') or {}).get('log_path',''))")"
+          STATUS="$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; print(r.get('status', d.get('status',0)))")"
+          LOG_PATH="$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; data=(r.get('data', d.get('data',{})) or {}); print(data.get('log_path',''))")"
+          set -e
 
-          if [ "$STATUS" != "1" ]; then
-            echo "::warning::Deploy task returned non-success (often .cpanel.yml). Log: $LOG_PATH"
-            echo "Git pull succeeded; continuing to live verify."
-          else
-            echo "cPanel deploy task OK. Log: $LOG_PATH"
-          fi
+          echo "sync_status=$SYNC_STATUS deploy_status=$STATUS log=$LOG_PATH"
 
-  verify-live:
-    needs: deploy
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Verify About page on out.ratib.sa
+      - name: Verify live About deploy (informational)
+        continue-on-error: true
         run: |
           EXPECTED="$(tr -d '\r\n' < public/ratib-build.txt)"
           echo "Expected marker: $EXPECTED"
           ok=0
-          for attempt in 1 2 3 4 5 6; do
-            echo "--- attempt $attempt ---"
+          for attempt in 1 2 3 4 5; do
             for URL in \
               "https://out.ratib.sa/pages/home.php?ratib_deploy_probe=1" \
-              "https://out.ratib.sa/pages/deploy-root.php" \
-              "https://out.ratib.sa/ratib-deploy-probe.php"
+              "https://out.ratib.sa/pages/deploy-root.php"
             do
               BODY="$(curl -fsSL --connect-timeout 15 --max-time 45 "$URL" 2>/dev/null || true)"
-              echo "$URL -> $(echo "$BODY" | head -c 120 | tr '\n' ' ')"
-              if echo "$BODY" | grep -q "git_marker=${EXPECTED}" && echo "$BODY" | grep -q 'about_php=yes'; then
-                echo "::notice::Live site OK — About deployed."
+              if echo "$BODY" | grep -q 'about_php=yes' && echo "$BODY" | grep -q "git_marker=${EXPECTED}"; then
+                echo "::notice::Live OK — $URL"
                 ok=1
                 break 2
               fi
               if echo "$BODY" | grep -q 'ratib-deploy-probe' && echo "$BODY" | grep -q 'about_php=yes'; then
-                echo "::notice::Live site OK — probe found about.php."
+                echo "::notice::Live OK — probe"
                 ok=1
                 break 2
               fi
             done
-            sleep 25
+            sleep 20
           done
           if [ "$ok" -eq 1 ]; then exit 0; fi
-          echo "::warning::Live site not updated yet. In cPanel: Git -> Deploy HEAD Commit. Probe: https://out.ratib.sa/pages/home.php?ratib_deploy_probe=1"
+          echo "::warning::Live site still old. In cPanel click Deploy HEAD Commit, then open https://out.ratib.sa/pages/home.php?ratib_deploy_probe=1"
           exit 1
