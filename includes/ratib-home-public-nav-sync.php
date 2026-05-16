@@ -67,7 +67,7 @@ function run(){
     var node=linkByKey[k];
     if(!node)return;
     var lab=node.querySelector('.ratib-nav__label');
-    if(lab){if(k==='about'&&!lab.textContent.trim())lab.textContent='About RATIB';if(k==='tour')lab.textContent='Tour';if(k==='domains')lab.textContent='Domains';if(k==='product')lab.textContent='Product';if(k==='pricing')lab.textContent='Pricing';if(k==='partners')lab.textContent='Partners';}
+    if(lab){if(k==='about'&&!lab.textContent.trim())lab.textContent='Profile';if(k==='tour')lab.textContent='Tour';if(k==='domains')lab.textContent='Domains';if(k==='product')lab.textContent='Product';if(k==='pricing')lab.textContent='Pricing';if(k==='partners')lab.textContent='Partners';}
     pillWrap.appendChild(node);
   });
   }catch(e){}
@@ -75,6 +75,24 @@ function run(){
   nav.style.visibility='visible';
   nav.style.opacity='1';
   nav.style.pointerEvents='auto';
+  var shell=document.querySelector('.ratib-nav-shell__inner');
+  if(shell&&!shell.querySelector('.ratib-nav__brand-profile')){
+    var brand=shell.querySelector('a.ratib-nav__brand');
+    if(brand){
+      var home=(brand.getAttribute('href')||'').replace(/#.*$/,'')||'/pages/home.php';
+      var blk=document.createElement('div');
+      blk.className='ratib-nav__brand-block';
+      var prof=document.createElement('a');
+      prof.href=home+(home.indexOf('?')>=0?'&':'?')+'open=about';
+      prof.className='ratib-nav__brand-profile';
+      prof.textContent='Profile';
+      brand.parentNode.insertBefore(blk,brand);
+      blk.appendChild(brand);
+      var bt=brand.querySelector('.ratib-nav__brand-text');
+      if(bt)bt.textContent='Ratib Company';
+      blk.appendChild(prof);
+    }
+  }
 }
 run();
 })();
