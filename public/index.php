@@ -64,7 +64,7 @@ $projectRoot = dirname(__DIR__);
 
 // /profile or /about — company profile page.
 if (preg_match('#^/profile/?$#i', $path)) {
-    $profilePage = $projectRoot . '/pages/profile.php';
+    $profilePage = $projectRoot . '/pages/company-profile.php';
     if (is_file($profilePage)) {
         require $profilePage;
         exit;

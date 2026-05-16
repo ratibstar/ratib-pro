@@ -46,7 +46,7 @@ function ratib_mega_nav_resolve_href(string $hrefKey, string $baseUrl, string $n
             return $baseUrl . '/pages/customer-portal.php';
         case 'about':
         case 'company_profile':
-            return $baseUrl . '/pages/profile.php';
+            return $baseUrl . '/pages/company-profile.php';
         default:
             return $home;
     }

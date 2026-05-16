@@ -20,9 +20,9 @@ if (isset($_GET['ratib_deploy_probe']) && (string) $_GET['ratib_deploy_probe'] =
     echo 'document_root=' . ($_SERVER['DOCUMENT_ROOT'] ?? '') . "\n";
     echo 'probe_root=' . $probeRoot . "\n";
     echo 'git_marker=' . (is_file($buildPath) ? trim((string) file_get_contents($buildPath)) : 'missing') . "\n";
-    $profilePath = $probeRoot . '/pages/profile.php';
+    $companyProfilePath = $probeRoot . '/pages/company-profile.php';
     echo 'about_php=' . (is_file($aboutPath) ? 'yes' : 'no') . "\n";
-    echo 'profile_php=' . (is_file($profilePath) ? 'yes' : 'no') . "\n";
+    echo 'company_profile_php=' . (is_file($companyProfilePath) ? 'yes' : 'no') . "\n";
     echo 'home_open_about=' . (str_contains($homeSample, "=== 'about'") ? 'yes' : 'no') . "\n";
     echo 'chrome_about_link=' . (str_contains($chromeSample, 'ratib-nav__link--about') ? 'yes' : 'no') . "\n";
     echo 'stamp_file=' . (is_file($probeRoot . '/.ratib-deploy-stamp') ? trim((string) file_get_contents($probeRoot . '/.ratib-deploy-stamp')) : 'missing') . "\n";
@@ -32,7 +32,7 @@ if (isset($_GET['ratib_deploy_probe']) && (string) $_GET['ratib_deploy_probe'] =
 // Company profile (About RATIB) — works at /pages/home.php?open=about when about.php is deployed.
 $ratibOpenParam = isset($_GET['open']) ? trim((string) $_GET['open']) : '';
 if ($ratibOpenParam === 'about' || $ratibOpenParam === 'profile') {
-    require __DIR__ . '/profile.php';
+    require __DIR__ . '/company-profile.php';
     exit;
 }
 
@@ -1002,7 +1002,7 @@ require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
                 <p class="ratib-final-cta__sub"><?php echo htmlspecialchars($ratibHome['home.final_cta.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 <div class="ratib-final-cta__actions">
                     <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                    <a href="<?php echo htmlspecialchars($baseUrl . '/pages/profile.php#contact-cta', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                    <a href="<?php echo htmlspecialchars($baseUrl . '/pages/company-profile.php#contact-cta', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 </div>
             </div>
         </section>

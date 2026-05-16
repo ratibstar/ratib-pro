@@ -56,7 +56,7 @@ function run(){
     else if(hp==='#programs')key='pricing';
     else if(hp==='#agencies')key='partners';
     else if(hp==='#contact')key='contact';
-    else if(/profile\.php/i.test(href)||/about\.php/i.test(href)||/[?&]open=(about|profile)\b/i.test(href)||a.classList.contains('ratib-nav__link--about'))key='about';
+    else if(/company-profile\.php/i.test(href)||/about\.php/i.test(href)||/[?&]open=(about|profile)\b/i.test(href)||a.classList.contains('ratib-nav__link--about'))key='about';
     else key='legacy-remove';
     if(key==='legacy-remove'){a.remove();return;}
     if(linkByKey[key]){a.remove();return;}
@@ -83,8 +83,8 @@ function run(){
       var blk=document.createElement('div');
       blk.className='ratib-nav__brand-block';
       var prof=document.createElement('a');
-      prof.href=home.replace(/\/home\.php.*$/,'/profile.php').replace(/[#?].*$/,'');
-      if(prof.href.indexOf('profile.php')<0)prof.href=(home.replace(/[#?].*$/,'')||'/pages/home.php').replace(/home\.php$/,'profile.php');
+      prof.href=home.replace(/\/home\.php.*$/,'/company-profile.php').replace(/[#?].*$/,'');
+      if(prof.href.indexOf('company-profile.php')<0)prof.href=(home.replace(/[#?].*$/,'')||'/pages/home.php').replace(/home\.php$/,'company-profile.php');
       prof.className='ratib-nav__brand-profile';
       prof.textContent='Profile';
       brand.parentNode.insertBefore(blk,brand);
