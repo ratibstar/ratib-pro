@@ -2,4 +2,5 @@
 # about-enterprise-20260516-v10 — sync to public_html + out.ratib.sa docroots
 deployment:
   tasks:
+    - /usr/local/bin/php scripts/cpanel-deploy-sync.php
     - /bin/bash scripts/cpanel-deploy-sync.sh
