@@ -330,8 +330,9 @@
                 const urls = getRuntimeUrls(button);
                 const payload = payloadOverride || buildPayloadFromModal(fields);
                 const hasWorkerId = Number.isFinite(Number(payload.worker_id)) && Number(payload.worker_id) > 0;
-                // Only the real PHP entry is routed on typical Apache/cPanel installs; /workflows/worker-onboarding is not.
+                // Prefer api/ path (same deploy as workers/ai-lookup); fallback to public/ URL for older bookmarks.
                 const workflowUrls = [
+                    `${urls.apiBase}/workflows/worker-onboarding.php`,
                     `${urls.publicBase}/public/workflows/worker-onboarding/index.php`
                 ];
 

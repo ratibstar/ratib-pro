@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 /**
- * Legacy URL: /public/workflows/worker-onboarding/index.php
- * Delegates to shared handler (same as api/workflows/worker-onboarding.php).
+ * Primary Global AI workflow endpoint (same deploy path as api/workers/*).
+ * Resolves includes/worker_onboarding_workflow.php by walking up from this file.
  */
 (function (): void {
     $dir = realpath(__DIR__) ?: __DIR__;
