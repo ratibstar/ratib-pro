@@ -44,6 +44,9 @@ function ratib_mega_nav_resolve_href(string $hrefKey, string $baseUrl, string $n
             return $navPrefix !== '' ? $navPrefix . '#register' : $home . '#register';
         case 'customer_portal':
             return $baseUrl . '/pages/customer-portal.php';
+        case 'about':
+        case 'company_profile':
+            return $home . '?open=about';
         default:
             return $home;
     }

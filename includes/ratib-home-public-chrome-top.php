@@ -58,10 +58,25 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
     <header class="ratib-nav-shell" id="ratib-main-header">
         <noscript><style>#ratibNavMenu{visibility:visible!important;opacity:1!important;pointer-events:auto!important}</style></noscript>
         <div class="ratib-container ratib-nav-shell__inner">
-            <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-nav__brand">
-                <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="RATIB" width="120" height="36">
-                <span class="ratib-nav__brand-text">RATIB</span>
-            </a>
+            <?php
+                $ratibBrandName = trim((string) ($ratibHome['home.brand.name'] ?? ''));
+                if ($ratibBrandName === '') {
+                    $ratibBrandName = 'Ratib Company';
+                }
+                $ratibBrandProfileLabel = trim((string) ($ratibHome['home.brand.profile_tab'] ?? ''));
+                if ($ratibBrandProfileLabel === '') {
+                    $ratibBrandProfileLabel = 'Profile';
+                }
+                $ratibBrandProfileHref = $baseUrl . '/pages/home.php?open=about';
+                $ratibBrandProfileCurrent = !empty($ratibAboutPageActive);
+                ?>
+            <div class="ratib-nav__brand-block">
+                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-nav__brand">
+                    <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="<?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?>" width="120" height="36">
+                    <span class="ratib-nav__brand-text"><?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?></span>
+                </a>
+                <a href="<?php echo htmlspecialchars($ratibBrandProfileHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__brand-profile<?php echo $ratibBrandProfileCurrent ? ' is-current' : ''; ?>"<?php echo $ratibBrandProfileCurrent ? ' aria-current="page"' : ''; ?>><?php echo htmlspecialchars($ratibBrandProfileLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+            </div>
             <button type="button" class="ratib-nav__toggle" id="ratibNavToggle" aria-label="Open menu" aria-expanded="false" aria-controls="ratibNavMenu">
                 <span></span><span></span><span></span>
             </button>
@@ -74,7 +89,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 $ratibAboutNavHref = $baseUrl . '/pages/home.php?open=about';
                 $ratibAboutNavLabel = trim((string) ($ratibHome['home.nav.about'] ?? ''));
                 if ($ratibAboutNavLabel === '') {
-                    $ratibAboutNavLabel = 'About RATIB';
+                    $ratibAboutNavLabel = 'Profile';
                 }
                 $ratibAboutNavCurrent = !empty($ratibAboutPageActive);
                 ?>
@@ -117,4 +132,3 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
         </div>
     </header>
 
-    

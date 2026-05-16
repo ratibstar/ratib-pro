@@ -13,6 +13,23 @@ function ratib_mega_nav_config(): array
     return [
         [
             'type' => 'mega',
+            'id' => 'company',
+            'label' => 'Company',
+            'panel_id' => 'ratib-mega-panel-company',
+            'columns' => [
+                [
+                    'heading' => 'Ratib Company',
+                    'items' => [
+                        ['icon' => 'fa-building', 'title' => 'Company profile', 'desc' => 'About RATIB, legal entity, markets, and platform scope.', 'href_key' => 'company_profile'],
+                        ['icon' => 'fa-diagram-project', 'title' => 'Platform overview', 'desc' => 'Recruitment OS, workforce telemetry, and program operations.', 'href_key' => 'platform'],
+                        ['icon' => 'fa-handshake', 'title' => 'Partners & agencies', 'desc' => 'Sending-country agencies and host-market programs.', 'href_key' => 'agencies'],
+                        ['icon' => 'fa-envelope', 'title' => 'Contact leadership', 'desc' => 'Riyadh HQ and program inquiries.', 'href_key' => 'contact'],
+                    ],
+                ],
+            ],
+        ],
+        [
+            'type' => 'mega',
             'id' => 'domains',
             'label' => 'Domains',
             'panel_id' => 'ratib-mega-panel-domains',

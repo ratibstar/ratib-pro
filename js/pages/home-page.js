@@ -911,7 +911,7 @@
             var label = node.querySelector('.ratib-nav__label');
             if (label) {
                 if (key === 'about' && !label.textContent.trim()) {
-                    label.textContent = 'About RATIB';
+                    label.textContent = 'Profile';
                 }
                 if (key === 'tour') label.textContent = 'Tour';
                 if (key === 'domains') label.textContent = 'Domains';
@@ -1547,7 +1547,7 @@
         a.className =
             'ratib-nav__link ratib-nav__link--about ratib-nav__link--about-injected';
         a.innerHTML =
-            '<span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label">About RATIB</span>';
+            '<span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label">Profile</span>';
         wrap.insertBefore(a, wrap.firstChild);
     }
 

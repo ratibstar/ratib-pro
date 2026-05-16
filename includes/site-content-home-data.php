@@ -31,7 +31,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
     {
         /* Header platform strip (mega menu holds Domains / Sites / Grow / …). Short labels; legacy keys kept below for CMS rows still in DB. */
         $nav = [
-            'about' => 'About RATIB',
+            'about' => 'Profile',
             'platform' => 'Platform',
             'domains' => 'Domains',
             'tour' => 'Tour',
@@ -49,6 +49,8 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.topbar.nodes_count'] = '247';
         $d['home.topbar.nodes_suffix'] = 'nodes';
         $d['home.topbar.client_login'] = 'Client login';
+        $d['home.brand.name'] = 'Ratib Company';
+        $d['home.brand.profile_tab'] = 'Profile';
 
         foreach ($nav as $slug => $label) {
             $d['home.nav.' . $slug] = $label;
