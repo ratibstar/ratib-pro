@@ -67,7 +67,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 if ($ratibBrandProfileLabel === '') {
                     $ratibBrandProfileLabel = 'Profile';
                 }
-                $ratibBrandProfileHref = $baseUrl . '/pages/home.php?open=about';
+                $ratibBrandProfileHref = $baseUrl . '/pages/profile.php';
                 $ratibBrandProfileCurrent = !empty($ratibAboutPageActive);
                 ?>
             <div class="ratib-nav__brand-block">
@@ -86,7 +86,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 <div class="ratib-nav__platform-links" role="group" aria-label="Platform">
                 <?php
                 // home.php?open=about — reliable on hosts where /pages/about.php is not deployed yet.
-                $ratibAboutNavHref = $baseUrl . '/pages/home.php?open=about';
+                $ratibAboutNavHref = $baseUrl . '/pages/profile.php';
                 $ratibAboutNavLabel = trim((string) ($ratibHome['home.nav.about'] ?? ''));
                 if ($ratibAboutNavLabel === '') {
                     $ratibAboutNavLabel = 'Profile';

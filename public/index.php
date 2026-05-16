@@ -62,7 +62,14 @@ if ($path === '/' || $path === '') {
 
 $projectRoot = dirname(__DIR__);
 
-// /about or /pages/about.php — serve company profile when the file exists on disk.
+// /profile or /about — company profile page.
+if (preg_match('#^/profile/?$#i', $path)) {
+    $profilePage = $projectRoot . '/pages/profile.php';
+    if (is_file($profilePage)) {
+        require $profilePage;
+        exit;
+    }
+}
 if (preg_match('#^/about/?$#i', $path)) {
     $aboutPage = $projectRoot . '/pages/about.php';
     if (is_file($aboutPage)) {
