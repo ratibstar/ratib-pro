@@ -1,6 +1,35 @@
 <?php
 declare(strict_types=1);
 
+header('Content-Type: application/json; charset=utf-8');
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
+    return;
+}
+
+// Register App\ autoloader before any namespaced class is referenced (no composer on this endpoint).
+(function (): void {
+    $dir = realpath(__DIR__) ?: __DIR__;
+    for ($i = 0; $i < 12; $i++) {
+        $autoloader = $dir . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'Core' . DIRECTORY_SEPARATOR . 'Autoloader.php';
+        if (is_file($autoloader)) {
+            require_once $autoloader;
+            \App\Core\Autoloader::register($dir . DIRECTORY_SEPARATOR . 'app');
+            return;
+        }
+        $parent = dirname($dir);
+        if ($parent === $dir) {
+            break;
+        }
+        $dir = $parent;
+    }
+    http_response_code(503);
+    echo json_encode(['success' => false, 'message' => 'Could not locate app/Core/Autoloader.php']);
+    exit;
+})();
+
 use App\Controllers\Http\WorkflowController;
 use App\Core\Application;
 use App\Core\WorkerPlatformBootstrap;
@@ -9,14 +38,6 @@ use App\Middleware\AccessMiddleware;
 use App\Middleware\SecurityMiddleware;
 use App\Repositories\WorkerRepository;
 use App\Repositories\WorkflowRepository;
-
-header('Content-Type: application/json; charset=utf-8');
-
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
-    return;
-}
 
 try {
     $projectRoot = WorkerPlatformBootstrap::init(__DIR__);

@@ -38,8 +38,12 @@ final class WorkerPlatformBootstrap
     {
         $root = self::projectRootFrom($entryDir);
 
-        require_once $root . '/app/Core/Autoloader.php';
-        Autoloader::register($root . DIRECTORY_SEPARATOR . 'app');
+        $autoloaderFile = $root . '/app/Core/Autoloader.php';
+        if (!is_file($autoloaderFile)) {
+            throw new RuntimeException('Missing app/Core/Autoloader.php under ' . $root);
+        }
+        require_once $autoloaderFile;
+        \App\Core\Autoloader::register($root . DIRECTORY_SEPARATOR . 'app');
 
         if (is_file($root . '/app/Core/helpers.php')) {
             require_once $root . '/app/Core/helpers.php';
