@@ -37,3 +37,4 @@ echo "ratib-build-check\n";
 foreach ($checks as $k => $v) {
     echo $k . '=' . $v . "\n";
 }
+

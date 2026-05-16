@@ -167,3 +167,4 @@ jobs:
           echo "::error::Deploy verification FAILED — live site still old. deploy-root: ${LIVE_PROBE:-404/empty}; ratib-build-check: ${LIVE_MARKER:-404/empty}; home-probe: ${LIVE_HOME_PROBE:-404/empty}; expected git_marker=$EXPECTED and about_php=yes. Git pull ran but the WEB ROOT was not updated. In cPanel → Domains → out.ratib.sa note the Document Root path, then Deploy HEAD Commit (or fix .cpanel.yml targets)."
           exit 1
 
+

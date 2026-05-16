@@ -126,3 +126,4 @@ if ($inv) {
 $out['hint'] = 'If files.exists is true and checks are true but the browser still shows an old header, purge LiteSpeed/Cloudflare/host HTML cache, hard-refresh, and confirm you uploaded into this probe_root (not a duplicate folder).';
 
 echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+

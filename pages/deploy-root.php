@@ -30,3 +30,4 @@ echo 'chrome_about_link=' . (str_contains($chromeSample, 'ratib-nav__link--about
 echo 'chrome_primary_links_8=' . (str_contains($chromeSample, 'primary-links=8') ? 'yes' : 'no') . "\n";
 echo 'home_mtime=' . (is_file($homePath) ? (string) (int) filemtime($homePath) : '0') . "\n";
 echo 'about_mtime=' . (is_file($aboutPath) ? (string) (int) filemtime($aboutPath) : '0') . "\n";
+

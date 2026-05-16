@@ -26,3 +26,4 @@ echo 'stamp_file=' . (is_file($root . '/.ratib-deploy-stamp') ? trim((string) fi
 echo 'about_php=' . (is_file($aboutPath) ? 'yes bytes=' . filesize($aboutPath) : 'no') . "\n";
 echo 'home_open_about=' . (str_contains($homeSample, "=== 'about'") ? 'yes' : 'no') . "\n";
 echo 'chrome_about_link=' . (str_contains($chromeSample, 'ratib-nav__link--about') ? 'yes' : 'no') . "\n";
+
