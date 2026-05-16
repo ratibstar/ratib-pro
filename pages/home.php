@@ -6,6 +6,27 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 
+// Deploy probe (works on existing home.php URL): /pages/home.php?ratib_deploy_probe=1
+if (isset($_GET['ratib_deploy_probe']) && (string) $_GET['ratib_deploy_probe'] === '1') {
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    $probeRoot = dirname(__DIR__);
+    $aboutPath = $probeRoot . '/pages/about.php';
+    $chromePath = $probeRoot . '/includes/ratib-home-public-chrome-top.php';
+    $buildPath = $probeRoot . '/public/ratib-build.txt';
+    $homeSample = is_file(__FILE__) ? (string) file_get_contents(__FILE__, false, null, 0, 12000) : '';
+    $chromeSample = is_file($chromePath) ? (string) file_get_contents($chromePath, false, null, 0, 12000) : '';
+    echo "ratib-deploy-probe-via-home\n";
+    echo 'document_root=' . ($_SERVER['DOCUMENT_ROOT'] ?? '') . "\n";
+    echo 'probe_root=' . $probeRoot . "\n";
+    echo 'git_marker=' . (is_file($buildPath) ? trim((string) file_get_contents($buildPath)) : 'missing') . "\n";
+    echo 'about_php=' . (is_file($aboutPath) ? 'yes' : 'no') . "\n";
+    echo 'home_open_about=' . (str_contains($homeSample, "=== 'about'") ? 'yes' : 'no') . "\n";
+    echo 'chrome_about_link=' . (str_contains($chromeSample, 'ratib-nav__link--about') ? 'yes' : 'no') . "\n";
+    echo 'stamp_file=' . (is_file($probeRoot . '/.ratib-deploy-stamp') ? trim((string) file_get_contents($probeRoot . '/.ratib-deploy-stamp')) : 'missing') . "\n";
+    exit;
+}
+
 // Company profile (About RATIB) — works at /pages/home.php?open=about when about.php is deployed.
 $ratibOpenParam = isset($_GET['open']) ? trim((string) $_GET['open']) : '';
 if ($ratibOpenParam === 'about') {

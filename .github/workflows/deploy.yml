@@ -40,7 +40,6 @@ jobs:
       # UAPI: cPanel VersionControl often returns HTTP 500 on otherwise healthy hosts — do not fail the whole workflow.
       - name: Deploy to cPanel (webhook, else UAPI)
         id: cpanel_deploy
-        continue-on-error: true
         run: |
           HOOK_URL="$(printf '%s' "${{ secrets.CPANEL_DEPLOY_HOOK_URL }}" | tr -d '\r\n' | xargs)"
           if [ -n "$HOOK_URL" ]; then
@@ -158,10 +157,13 @@ jobs:
             echo "Deploy verification OK — production matches git marker and About page exists."
             exit 0
           fi
-          if echo "$LIVE_MARKER" | grep -q 'workflow_version=v4-single-file'; then
-            echo "Deploy verification OK — workflow index is v4 single-file build."
+          LIVE_HOME_PROBE="$(curl -fsSL --connect-timeout 15 --max-time 30 "https://out.ratib.sa/pages/home.php?ratib_deploy_probe=1" 2>/dev/null || true)"
+          echo "Live home.php?ratib_deploy_probe=1:"
+          echo "${LIVE_HOME_PROBE:-<failed or empty>}"
+          if echo "$LIVE_HOME_PROBE" | grep -q "git_marker=$EXPECTED" && echo "$LIVE_HOME_PROBE" | grep -q 'about_php=yes'; then
+            echo "Deploy verification OK — home probe matches git marker and about.php exists."
             exit 0
           fi
-          echo "::error::Deploy verification FAILED — live site still old. deploy-root: ${LIVE_PROBE:-404/empty}; ratib-build-check: ${LIVE_MARKER:-404/empty}; expected git_marker=$EXPECTED and about_php=yes. Git pull ran but the WEB ROOT was not updated. In cPanel → Domains → out.ratib.sa → Document Root must match a path in .cpanel.yml, then Deploy HEAD Commit."
+          echo "::error::Deploy verification FAILED — live site still old. deploy-root: ${LIVE_PROBE:-404/empty}; ratib-build-check: ${LIVE_MARKER:-404/empty}; home-probe: ${LIVE_HOME_PROBE:-404/empty}; expected git_marker=$EXPECTED and about_php=yes. Git pull ran but the WEB ROOT was not updated. In cPanel → Domains → out.ratib.sa note the Document Root path, then Deploy HEAD Commit (or fix .cpanel.yml targets)."
           exit 1
 
