@@ -19,20 +19,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     return;
 }
 
-$projectRoot = dirname(__DIR__, 3);
-Autoloader::register($projectRoot . DIRECTORY_SEPARATOR . 'app');
-require_once $projectRoot . '/app/Core/ErrorTracker.php';
-
-$config = require $projectRoot . '/config/worker_tracking.php';
-ErrorTracker::register(static fn () => \App\Core\Database::connect($config['db']));
-$container = Application::boot($config);
-$rawBody = (string) file_get_contents('php://input');
-$payload = json_decode($rawBody, true) ?? [];
-if (!is_array($payload)) {
-    $payload = [];
-}
-
 try {
+    $projectRoot = dirname(__DIR__, 3);
+    Autoloader::register($projectRoot . DIRECTORY_SEPARATOR . 'app');
+    require_once $projectRoot . '/app/Core/ErrorTracker.php';
+
+    $config = require $projectRoot . '/config/worker_tracking.php';
+    ErrorTracker::register(static fn () => \App\Core\Database::connect($config['db']));
+    $container = Application::boot($config);
+    $rawBody = (string) file_get_contents('php://input');
+    $payload = json_decode($rawBody, true) ?? [];
+    if (!is_array($payload)) {
+        $payload = [];
+    }
+
     /** @var AccessMiddleware $access */
     $access = $container->get(AccessMiddleware::class);
     /** @var SecurityMiddleware $security */
@@ -50,7 +50,7 @@ try {
     $name = trim((string) ($workerPayload['name'] ?? ''));
     $passport = trim((string) ($workerPayload['passport_number'] ?? ''));
     if ($name === '' || $passport === '') {
-        throw new InvalidArgumentException('worker.name and worker.passport_number are required.');
+        throw new \InvalidArgumentException('worker.name and worker.passport_number are required.');
     }
 
     /** @var WorkflowController $controller */
@@ -63,8 +63,15 @@ try {
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 } catch (Throwable $exception) {
     $status = (int) $exception->getCode();
-    if (!in_array($status, [401, 403], true)) {
+    if (!in_array($status, [401, 403, 429], true)) {
         $status = 422;
+    }
+    $prev = $exception->getPrevious();
+    if ($prev instanceof \PDOException) {
+        $status = 503;
+    }
+    if ($exception instanceof \PDOException) {
+        $status = 503;
     }
     http_response_code($status);
     echo json_encode([

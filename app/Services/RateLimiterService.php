@@ -71,9 +71,9 @@ final class RateLimiterService
                     updated_at = VALUES(updated_at)";
         $st = $this->db->prepare($sql);
         $st->execute([
-            ':action_key' => mb_substr(trim($action), 0, 120),
+            ':action_key' => $this->clipUtf8(trim($action), 120),
             ':scope_type' => $scopeType,
-            ':scope_value' => mb_substr(trim($scopeValue), 0, 191),
+            ':scope_value' => $this->clipUtf8(trim($scopeValue), 191),
             ':window_start' => $windowStart,
             ':updated_at' => $now,
         ]);
@@ -85,12 +85,25 @@ final class RateLimiterService
                                      AND window_start >= :window_start
                                    LIMIT 1");
         $sel->execute([
-            ':action_key' => mb_substr(trim($action), 0, 120),
+            ':action_key' => $this->clipUtf8(trim($action), 120),
             ':scope_type' => $scopeType,
-            ':scope_value' => mb_substr(trim($scopeValue), 0, 191),
+            ':scope_value' => $this->clipUtf8(trim($scopeValue), 191),
             ':window_start' => $windowStart,
         ]);
 
         return (int) ($sel->fetchColumn() ?: 0);
+    }
+
+    /** Avoid fatal errors when ext-mbstring is disabled (common on minimal PHP builds). */
+    private function clipUtf8(string $value, int $maxLen): string
+    {
+        if ($maxLen < 1) {
+            return '';
+        }
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, $maxLen, 'UTF-8');
+        }
+
+        return strlen($value) <= $maxLen ? $value : substr($value, 0, $maxLen);
     }
 }

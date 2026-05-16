@@ -26,8 +26,21 @@ final class SessionRepository
         $st->execute([
             ':session_id' => $sessionId,
             ':user_id' => $userId,
-            ':ip_address' => mb_substr(trim($ipAddress), 0, 64),
-            ':device_info' => mb_substr(trim($deviceInfo), 0, 500),
+            ':ip_address' => $this->clipUtf8(trim($ipAddress), 64),
+            ':device_info' => $this->clipUtf8(trim($deviceInfo), 500),
         ]);
+    }
+
+    /** Avoid fatal errors when ext-mbstring is disabled. */
+    private function clipUtf8(string $value, int $maxLen): string
+    {
+        if ($maxLen < 1) {
+            return '';
+        }
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, $maxLen, 'UTF-8');
+        }
+
+        return strlen($value) <= $maxLen ? $value : substr($value, 0, $maxLen);
     }
 }
