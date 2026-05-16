@@ -123,10 +123,15 @@
             return orderId > 0 ? `#${orderId}` : '-';
         }).join(' | ');
 
+        const workerViewId = Number(worker.id || 0);
         const workerDetailsUrl = `${baseUrl}/pages/Worker.php?view=${encodeURIComponent(String(workerId))}`;
         const casesUrl = `${baseUrl}/pages/cases/cases-table.php`;
-        const trackingMapUrl = `${baseUrl}/control-panel/pages/control/tracking-map.php?control=1`;
-        const onboardingUrl = `${baseUrl}/control-panel/pages/control/tracking-onboarding.php?control=1`;
+        const trackingMapUrl = workerViewId > 0
+            ? `${baseUrl}/pages/Worker.php?view=${encodeURIComponent(String(workerViewId))}&focus=tracking_map`
+            : workerDetailsUrl;
+        const onboardingUrl = workerViewId > 0
+            ? `${baseUrl}/pages/Worker.php?view=${encodeURIComponent(String(workerViewId))}&focus=mobile_onboarding`
+            : workerDetailsUrl;
 
         container.innerHTML = [
             '<div class="global-ai-result-card">',
