@@ -16,14 +16,19 @@ $canManageGov = hasControlPermission(CONTROL_PERM_GOVERNMENT)
     || hasControlPermission('manage_control_government')
     || hasControlPermission('gov_admin');
 
+$mapOnlyLayout = isset($_GET['map_only']) && (string) $_GET['map_only'] === '1';
+$standaloneLayout = $mapOnlyLayout
+    || (isset($_GET['standalone']) && (string) $_GET['standalone'] === '1');
+
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('Tracking Map', [
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'css/control/government.css',
     'css/control/tracking-map.css',
-], []);
+], [], ['standalone' => $standaloneLayout]);
 ?>
 <div id="tracking-map-page"
+     class="<?php echo $mapOnlyLayout ? 'tracking-map-page--map-only' : ''; ?>"
      data-can-manage="<?php echo $canManageGov ? '1' : '0'; ?>">
     <div class="tracking-toolbar">
         <div class="row g-2">

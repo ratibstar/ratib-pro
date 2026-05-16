@@ -19,6 +19,18 @@
         attribution: '&copy; OpenStreetMap',
     }).addTo(map);
 
+    var mapOnly = root.classList && root.classList.contains('tracking-map-page--map-only');
+    if (mapOnly) {
+        function refitMap() {
+            try {
+                map.invalidateSize(true);
+            } catch (e) {}
+        }
+        setTimeout(refitMap, 100);
+        setTimeout(refitMap, 400);
+        window.addEventListener('resize', refitMap);
+    }
+
     var markers = {};
     var latestRows = [];
     var alertsEl = document.getElementById('trackingAlertsList');

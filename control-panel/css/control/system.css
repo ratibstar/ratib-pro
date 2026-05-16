@@ -153,6 +153,20 @@
     gap: 4px;
 }
 
+/* Standalone module (no sidebar / content header / Global AI) — e.g. ?standalone=1 */
+body.control-layout-standalone .control-layout-standalone-shell {
+    gap: 0;
+}
+
+body.control-layout-standalone.control-layout-no-header .control-content.control-content-standalone-full,
+body.control-layout-standalone .control-content.control-content-standalone-full {
+    flex: 1;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 0.75rem 1rem 1.25rem;
+}
+
 /* When top header is removed, layout fills viewport */
 body.control-layout-no-header .control-layout {
     min-height: 100vh;

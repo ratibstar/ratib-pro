@@ -145,8 +145,8 @@
         const workerDetailsUrl = `${siteRoot}/pages/Worker.php?view=${encodeURIComponent(String(workerId))}`;
         const casesUrl = `${siteRoot}/pages/cases/cases-table.php`;
         const cpRoot = resolveControlPanelRoot(urls?.buttonBase, urls?.publicBase);
-        const trackingMapUrl = `${cpRoot}/pages/control/tracking-map.php?control=1`;
-        const onboardingUrl = `${cpRoot}/pages/control/tracking-onboarding.php?control=1`;
+        const trackingMapUrl = `${cpRoot}/pages/control/tracking-map.php?control=1&standalone=1&map_only=1`;
+        const onboardingUrl = `${cpRoot}/pages/control/tracking-onboarding.php?control=1&standalone=1`;
 
         container.innerHTML = [
             '<div class="global-ai-result-card">',

@@ -3,6 +3,18 @@
     color-scheme: dark;
 }
 
+/* Global AI / embed: map canvas only (no toolbar, tables, or alerts panel) */
+#tracking-map-page.tracking-map-page--map-only .tracking-toolbar,
+#tracking-map-page.tracking-map-page--map-only .tracking-grid,
+#tracking-map-page.tracking-map-page--map-only #trackingFlash {
+    display: none !important;
+}
+
+#tracking-map-page.tracking-map-page--map-only .tracking-map-canvas {
+    height: calc(100vh - 2.5rem);
+    min-height: 320px;
+}
+
 #tracking-map-page .tracking-toolbar {
     background: rgba(30, 27, 46, 0.72);
     border: 1px solid rgba(196, 181, 253, 0.22);

@@ -11,8 +11,10 @@ if (empty($_SESSION['control_logged_in'])) {
 }
 requireControlPermission(CONTROL_PERM_GOVERNMENT, 'manage_control_government', 'gov_admin', CONTROL_PERM_ADMINS);
 
+$standaloneLayout = isset($_GET['standalone']) && (string) $_GET['standalone'] === '1';
+
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
-startControlLayout('Worker Mobile Onboarding', ['css/control/government.css', 'css/control/tracking-onboarding.css'], []);
+startControlLayout('Worker Mobile Onboarding', ['css/control/government.css', 'css/control/tracking-onboarding.css'], [], ['standalone' => $standaloneLayout]);
 ?>
 <div id="tracking-onboarding-page">
     <p class="text-muted tracking-onb-lead">Generate QR credentials for worker mobile app onboarding.</p>
