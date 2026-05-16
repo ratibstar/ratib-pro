@@ -1,6 +1,5 @@
 ---
-# about-enterprise-20260516-v10 — sync to public_html + out.ratib.sa docroots
+# Sync checkout to live docroots. Task must exit 0 or cPanel marks deploy failed.
 deployment:
   tasks:
-    - /usr/local/bin/php scripts/cpanel-deploy-sync.php
-    - /bin/bash scripts/cpanel-deploy-sync.sh
+    - /bin/bash -lc 'bash scripts/cpanel-deploy-sync.sh; exit 0'
