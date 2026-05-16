@@ -38,8 +38,11 @@ if ($root === false) {
 
 $paths = [
     'home_php' => $root . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'home.php',
+    'about_php' => $root . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'about.php',
+    'chrome_top' => $root . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'ratib-home-public-chrome-top.php',
     'home_css' => $root . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'home-public.css',
     'home_js' => $root . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'pages' . DIRECTORY_SEPARATOR . 'home-page.js',
+    'build_marker' => $root . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'ratib-build.txt',
 ];
 
 /**
@@ -62,8 +65,16 @@ function ratibProbeOneFile(string $key, string $absPath): array
         $base['has_ratib_nav_glyph_sprite'] = str_contains($sample, 'ratib-nav-glyph-sprite');
         $base['has_ratib_nav_partner_login'] = str_contains($sample, 'ratib-nav__partner-login');
         $base['has_data_ratib_nav_visual'] = str_contains($sample, 'data-ratib-nav-visual');
+        $base['has_open_about_bridge'] = str_contains($sample, "'about'");
         $base['looks_like_current_nav_build'] = str_contains($sample, 'ratib-nav-glyph-sprite')
             && str_contains($sample, 'ratib-nav__partner-login');
+    } elseif ($key === 'about_php') {
+        $base['has_ratib_about_hero'] = str_contains($sample, 'ratib-about-hero');
+    } elseif ($key === 'chrome_top') {
+        $base['has_about_nav_link'] = str_contains($sample, 'ratib-nav__link--about');
+        $base['primary_links_8'] = str_contains($sample, 'primary-links=8');
+    } elseif ($key === 'build_marker') {
+        $base['marker'] = trim($sample);
     } elseif ($key === 'home_css') {
         $base['has_ratib_nav_glyph_rules'] = str_contains($sample, '.ratib-nav__glyph');
         $base['has_semantic_pulse'] = str_contains($sample, 'ratibSemanticPulse');

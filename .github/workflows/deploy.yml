@@ -139,21 +139,29 @@ jobs:
           echo "Track progress in cPanel using log: $LOG_PATH"
 
           echo "Verifying live site build marker..."
+          LIVE_PROBE="$(curl -fsSL --connect-timeout 15 --max-time 30 "https://out.ratib.sa/pages/deploy-root.php" 2>/dev/null || true)"
           LIVE_MARKER="$(curl -fsSL --connect-timeout 15 --max-time 30 "https://out.ratib.sa/pages/ratib-build-check.php" 2>/dev/null || true)"
           if [ -z "$LIVE_MARKER" ]; then
             LIVE_MARKER="$(curl -fsSL --connect-timeout 15 --max-time 30 "https://out.ratib.sa/public/ratib-build.php" 2>/dev/null || true)"
           fi
-          echo "Live ratib-build.php: ${LIVE_MARKER:-<failed or empty>}"
+          echo "Live deploy-root.php:"
+          echo "${LIVE_PROBE:-<failed or empty>}"
+          echo "Live ratib-build-check.php:"
+          echo "${LIVE_MARKER:-<failed or empty>}"
           EXPECTED="$(cat public/ratib-build.txt 2>/dev/null || echo '')"
           echo "Git expected marker: $EXPECTED"
-          if echo "$LIVE_MARKER" | grep -q "git_marker=$EXPECTED"; then
-            echo "Deploy verification OK — production matches git marker."
+          if echo "$LIVE_PROBE" | grep -q "git_marker=$EXPECTED" && echo "$LIVE_PROBE" | grep -q 'about_php=yes'; then
+            echo "Deploy verification OK — deploy-root matches git marker and about.php is on the live docroot."
+            exit 0
+          fi
+          if echo "$LIVE_MARKER" | grep -q "git_marker=$EXPECTED" && echo "$LIVE_MARKER" | grep -q 'about_php=yes'; then
+            echo "Deploy verification OK — production matches git marker and About page exists."
             exit 0
           fi
           if echo "$LIVE_MARKER" | grep -q 'workflow_version=v4-single-file'; then
             echo "Deploy verification OK — workflow index is v4 single-file build."
             exit 0
           fi
-          echo "::error::Deploy verification FAILED — live site still old. ratib-build-check output: ${LIVE_MARKER:-404/empty}; expected git_marker=$EXPECTED. Git pull ran but the WEB ROOT was not updated. In cPanel → Domains → out.ratib.sa → Document Root must match deploy target, then Deploy HEAD Commit."
+          echo "::error::Deploy verification FAILED — live site still old. deploy-root: ${LIVE_PROBE:-404/empty}; ratib-build-check: ${LIVE_MARKER:-404/empty}; expected git_marker=$EXPECTED and about_php=yes. Git pull ran but the WEB ROOT was not updated. In cPanel → Domains → out.ratib.sa → Document Root must match a path in .cpanel.yml, then Deploy HEAD Commit."
           exit 1
 

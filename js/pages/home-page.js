@@ -1508,4 +1508,61 @@
     setInterval(tickPctJitter, 56000 + rnd(0, 11000));
 })();
 
+/** Ensure About RATIB nav pill exists even when older chrome HTML omits it (post-deploy JS-only). */
+(function ratibAboutNavInject() {
+    function homeBaseFromNav() {
+        var ref =
+            document.querySelector('.ratib-nav__platform-links a[href*="home.php"]') ||
+            document.querySelector('.ratib-nav__platform-links a.ratib-nav__link');
+        if (!ref) {
+            return null;
+        }
+        var href = ref.getAttribute('href') || '';
+        var base = href.replace(/#.*$/, '');
+        if (!/\/home\.php/i.test(base)) {
+            var path = window.location.pathname || '/pages/home.php';
+            base = path.replace(/[^/]+$/, 'home.php');
+        }
+        return base;
+    }
+
+    function inject() {
+        var wrap = document.querySelector('.ratib-nav__platform-links');
+        if (!wrap) {
+            return;
+        }
+        if (
+            wrap.querySelector('.ratib-nav__link--about') ||
+            wrap.querySelector('.ratib-nav__link--about-injected')
+        ) {
+            return;
+        }
+        var home = homeBaseFromNav();
+        if (!home) {
+            return;
+        }
+        var sep = home.indexOf('?') >= 0 ? '&' : '?';
+        var a = document.createElement('a');
+        a.href = home + sep + 'open=about';
+        a.className =
+            'ratib-nav__link ratib-nav__link--about ratib-nav__link--about-injected';
+        a.innerHTML =
+            '<span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label">About RATIB</span>';
+        wrap.insertBefore(a, wrap.firstChild);
+    }
+
+    function schedule() {
+        inject();
+        setTimeout(inject, 0);
+        setTimeout(inject, 120);
+        setTimeout(inject, 700);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', schedule);
+    } else {
+        schedule();
+    }
+})();
+
 

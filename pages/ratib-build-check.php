@@ -5,8 +5,14 @@ header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 
 $root = dirname(__DIR__);
+$aboutPath = $root . '/pages/about.php';
+$homePath = $root . '/pages/home.php';
+$homeHead = is_file($homePath) ? (string) file_get_contents($homePath, false, null, 0, 8000) : '';
+
 $checks = [
     'git_marker' => is_file($root . '/public/ratib-build.txt') ? trim((string) file_get_contents($root . '/public/ratib-build.txt')) : 'missing',
+    'about_php' => is_file($aboutPath) ? 'yes' : 'no',
+    'home_open_about' => str_contains($homeHead, "'about'") ? 'yes' : 'no',
     'workflow_index' => is_file($root . '/public/workflows/worker-onboarding/index.php')
         ? (string) filemtime($root . '/public/workflows/worker-onboarding/index.php')
         : 'missing',
