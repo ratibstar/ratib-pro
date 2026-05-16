@@ -292,8 +292,8 @@
                 const urls = getRuntimeUrls(button);
                 const payload = payloadOverride || buildPayloadFromModal(fields);
                 const hasWorkerId = Number.isFinite(Number(payload.worker_id)) && Number(payload.worker_id) > 0;
+                // Only the real PHP entry is routed on typical Apache/cPanel installs; /workflows/worker-onboarding is not.
                 const workflowUrls = [
-                    `${urls.publicBase}/workflows/worker-onboarding`,
                     `${urls.publicBase}/public/workflows/worker-onboarding/index.php`
                 ];
 
@@ -323,6 +323,7 @@
                     for (const workflowUrl of workflowUrls) {
                         const workflowResponse = await fetch(workflowUrl, {
                             method: 'POST',
+                            credentials: 'same-origin',
                             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                             body: JSON.stringify(payload)
                         });

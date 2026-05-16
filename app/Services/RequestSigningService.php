@@ -20,7 +20,10 @@ final class RequestSigningService
         }
         $secret = (string) (getenv('GOV_REQUEST_SIGNING_SECRET') ?: '');
         if ($secret === '') {
-            throw new RuntimeException('Government signing secret missing', 500);
+            // Browser/session flows (e.g. Global AI from Ratib Pro) cannot send HMAC headers until the secret
+            // is configured. Treat as signing disabled instead of HTTP 500 so staff workflows still run.
+            error_log('RequestSigningService: GOV_REQUEST_SIGNING_SECRET is empty; skipping HMAC enforcement for ' . $action);
+            return;
         }
         $sig = trim((string) ($_SERVER['HTTP_X_REQUEST_SIGNATURE'] ?? ''));
         $ts = trim((string) ($_SERVER['HTTP_X_REQUEST_TIMESTAMP'] ?? ''));

@@ -37,7 +37,17 @@ final class AuthorizationService
             return false;
         }
 
-        return in_array('*', $permissions, true) || in_array($permission, $permissions, true);
+        if (in_array('*', $permissions, true) || in_array($permission, $permissions, true)) {
+            return true;
+        }
+
+        // Staff who manage workers but have no explicit workflow permission (common on older DBs).
+        if ($permission === 'workflow.worker_onboarding'
+            && (in_array('view_workers', $permissions, true) || in_array('add_worker', $permissions, true))) {
+            return true;
+        }
+
+        return false;
     }
 
     /** @param array<string, mixed> $user */
