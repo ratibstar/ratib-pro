@@ -16,6 +16,7 @@ log "start bundle=about-enterprise-20260516-v15 marker=${MARKER} pwd=${ROOT} use
 
 CRITICAL_FILES=(
   "includes/ratib-home-public-nav-sync.php"
+  "includes/ratib-php74-compat.php"
   "includes/ratib-home-public-chrome-top.php"
   "pages/home.php"
   "pages/about.php"

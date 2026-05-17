@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+require_once __DIR__ . '/../includes/ratib-php74-compat.php';
 
 /**
  * Public deploy probe — confirms which docroot serves out.ratib.sa and whether About files landed.

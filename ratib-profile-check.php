@@ -1,8 +1,9 @@
 <?php
-declare(strict_types=1);
+require_once __DIR__ . '/includes/ratib-php74-compat.php';
 
 /**
  * Upload to site document root (same folder as designed-status.php).
+ * PHP 7.4+ supported.
  * Open: https://out.ratib.sa/ratib-profile-check.php
  */
 header('Content-Type: text/plain; charset=utf-8');
@@ -43,7 +44,7 @@ foreach ($checks as $rel) {
         echo "[MISSING] {$rel}\n";
         continue;
     }
-    $sample = (string) @file_get_contents($path, false, null, 0, 12000);
+    $sample = (string) @file_get_contents($path, false, null, 0, 12000); // PHP 7.4 OK
     $flags = [];
     if (ratib_has($sample, 'primary-links=8')) {
         $flags[] = 'primary-links=8';
@@ -111,4 +112,4 @@ if (function_exists('curl_init')) {
     echo "github_blocked=allow_url_fopen off and no curl\n";
 }
 
-echo "\nNext: upload pages/ratib-copy-from-repo.php and open ?run=1&key=ratib-deploy-sync-2026\n";
+echo "\nDeploy (PHP 7.4): https://" . ($_SERVER['HTTP_HOST'] ?? 'out.ratib.sa') . "/designed-status.php?copy=1&key=ratib-deploy-sync-2026\n";

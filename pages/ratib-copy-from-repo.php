@@ -1,8 +1,9 @@
 <?php
-declare(strict_types=1);
+require_once dirname(__DIR__) . '/includes/ratib-php74-compat.php';
 
 /**
  * Copy Profile files from cPanel git checkout → public_html (no GitHub download).
+ * PHP 7.4+ supported.
  *
  * 1) Upload to /home/outratib/public_html/pages/ratib-copy-from-repo.php
  * 2) Visit: /pages/ratib-copy-from-repo.php?run=1&key=ratib-deploy-sync-2026
@@ -49,6 +50,7 @@ foreach ($repoCandidates as $c) {
 }
 
 $files = [
+    'includes/ratib-php74-compat.php',
     'public/ratib-build.txt',
     'pages/home.php',
     'pages/about.php',
