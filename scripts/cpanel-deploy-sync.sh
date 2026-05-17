@@ -12,7 +12,21 @@ mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
 
 log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$LOG"; }
 
-log "start bundle=about-enterprise-20260516-v11 marker=${MARKER} pwd=${ROOT} user=$(whoami 2>/dev/null || echo unknown)"
+log "start bundle=about-enterprise-20260516-v15 marker=${MARKER} pwd=${ROOT} user=$(whoami 2>/dev/null || echo unknown)"
+
+CRITICAL_FILES=(
+  "includes/ratib-home-public-nav-sync.php"
+  "includes/ratib-home-public-chrome-top.php"
+  "pages/home.php"
+  "pages/about.php"
+  "pages/company-profile.php"
+  "pages/deploy-root.php"
+  "public/ratib-build.txt"
+  "js/pages/ratib-mega-nav.js"
+  "js/pages/home-page.js"
+  "css/pages/home-public.css"
+  "css/pages/about-enterprise.css"
+)
 
 TARGETS=()
 
@@ -78,9 +92,18 @@ for TARGET in "${TARGETS[@]}"; do
   if command -v rsync >/dev/null 2>&1; then
     if rsync -a --delete --exclude='.git/' "${ROOT}/" "${TARGET}/"; then
       printf '%s\n' "$STAMP" > "${TARGET}/.ratib-deploy-stamp"
+      for rel in "${CRITICAL_FILES[@]}"; do
+        src="${ROOT}/${rel}"
+        [ -f "$src" ] || continue
+        mkdir -p "$(dirname "${TARGET}/${rel}")"
+        cp -f "$src" "${TARGET}/${rel}" 2>/dev/null || true
+      done
       ABOUT=no
       [ -f "${TARGET}/pages/about.php" ] && ABOUT=yes
-      log "done target=${TARGET} about=${ABOUT}"
+      PROFILE=no
+      [ -f "${TARGET}/pages/company-profile.php" ] && PROFILE=yes
+      printf '%s\n' "$STAMP" > "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
+      log "done target=${TARGET} about=${ABOUT} company_profile=${PROFILE}"
       find "${TARGET}" -type d -exec chmod 755 {} \; 2>/dev/null || true
       find "${TARGET}" -name .htaccess -type f -exec chmod 644 {} \; 2>/dev/null || true
       [ -f "${TARGET}/.htaccess" ] && chmod 644 "${TARGET}/.htaccess" || true

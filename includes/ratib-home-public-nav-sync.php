@@ -62,6 +62,26 @@ function run(){
     if(linkByKey[key]){a.remove();return;}
     linkByKey[key]=a;
   });
+  if(!linkByKey['about']){
+    var refLink=linkByKey['platform']||pillWrap.querySelector('a.ratib-nav__link');
+    var homeHref=(refLink&&refLink.getAttribute('href'))||'/pages/home.php';
+    homeHref=String(homeHref).replace(/#.*$/,'');
+    var profHref=homeHref.replace(/\/home\.php(\?.*)?$/i,'/company-profile.php');
+    if(profHref.indexOf('company-profile.php')<0){
+      profHref=(homeHref.replace(/[#?].*$/,'')||'/pages/home.php').replace(/home\.php.*$/i,'company-profile.php');
+    }
+    var prof=document.createElement('a');
+    prof.href=profHref;
+    prof.className='ratib-nav__link ratib-nav__link--about ratib-nav__link--about-injected';
+    prof.innerHTML='<span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label">Profile</span>';
+    linkByKey['about']=prof;
+  }
+  if(!document.getElementById('ratib-brand-profile-fallback-style')){
+    var st=document.createElement('style');
+    st.id='ratib-brand-profile-fallback-style';
+    st.textContent='.ratib-nav__brand-block{display:flex;flex-direction:column;align-items:flex-start;gap:.15rem;flex-shrink:0}.ratib-nav__brand-profile{display:inline-flex;align-items:center;margin-left:.15rem;padding:.2rem .55rem;border-radius:999px;font-size:.72rem;font-weight:600;text-decoration:none;color:rgba(226,232,240,.88);background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.35)}.ratib-nav__brand-profile:hover,.ratib-nav__brand-profile:focus-visible{color:#fff;background:rgba(139,92,246,.28);border-color:rgba(167,139,250,.55)}';
+    document.head.appendChild(st);
+  }
   var order=['about','platform','domains','tour','product','pricing','partners','contact'];
   order.forEach(function(k){
     var node=linkByKey[k];
