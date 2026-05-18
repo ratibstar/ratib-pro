@@ -881,7 +881,7 @@
                 key = 'partners';
             } else if (hp === '#contact') {
                 key = 'contact';
-            } else if (/company-profile\.php/i.test(href) || /about\.php/i.test(href) || /[?&]open=(about|profile)\b/i.test(href) || a.classList.contains('ratib-nav__link--about')) {
+            } else if (/\/profile\/?$/i.test(href) || /company-profile\.php/i.test(href) || /about\.php/i.test(href) || /[?&]open=(about|profile)\b/i.test(href) || a.classList.contains('ratib-nav__link--about')) {
                 key = 'about';
             } else if (/\/modules\/infrastructure-marketplace\/Views\/marketplace\/index\.php/i.test(href)) {
                 key = 'legacy-remove';
@@ -1543,7 +1543,7 @@
         }
         var sep = home.indexOf('?') >= 0 ? '&' : '?';
         var a = document.createElement('a');
-        a.href = home.replace(/\/home\.php.*$/, '/company-profile.php').replace(/[#?].*$/, '') || '/pages/company-profile.php';
+        a.href = home.replace(/\/home\.php.*$/, '/profile').replace(/[#?].*$/, '') || '/profile';
         a.className =
             'ratib-nav__link ratib-nav__link--about ratib-nav__link--about-injected';
         a.innerHTML =

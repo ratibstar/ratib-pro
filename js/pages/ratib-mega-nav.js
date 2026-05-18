@@ -91,11 +91,11 @@
             document.querySelector('a.ratib-nav__brand');
         var home = ref ? ref.getAttribute('href') || '' : '/pages/home.php';
         home = String(home).replace(/#.*$/, '');
-        var prof = home.replace(/\/home\.php(\?.*)?$/i, '/company-profile.php');
-        if (prof.indexOf('company-profile.php') < 0) {
+        var prof = home.replace(/\/home\.php(\?.*)?$/i, '/profile');
+        if (!/\/profile\/?$/i.test(prof)) {
             prof = (home.replace(/[#?].*$/, '') || '/pages/home.php').replace(
-                /home\.php.*$/i,
-                'company-profile.php'
+                /\/pages\/home\.php.*$/i,
+                '/profile'
             );
         }
         return prof;

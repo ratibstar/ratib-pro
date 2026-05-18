@@ -56,7 +56,7 @@ function run(){
     else if(hp==='#programs')key='pricing';
     else if(hp==='#agencies')key='partners';
     else if(hp==='#contact')key='contact';
-    else if(/company-profile\.php/i.test(href)||/about\.php/i.test(href)||/[?&]open=(about|profile)\b/i.test(href)||a.classList.contains('ratib-nav__link--about'))key='about';
+    else if(/\/profile\/?$/i.test(href)||/company-profile\.php/i.test(href)||/about\.php/i.test(href)||/[?&]open=(about|profile)\b/i.test(href)||a.classList.contains('ratib-nav__link--about'))key='about';
     else key='legacy-remove';
     if(key==='legacy-remove'){a.remove();return;}
     if(linkByKey[key]){a.remove();return;}
@@ -66,9 +66,9 @@ function run(){
     var refLink=linkByKey['platform']||pillWrap.querySelector('a.ratib-nav__link');
     var homeHref=(refLink&&refLink.getAttribute('href'))||'/pages/home.php';
     homeHref=String(homeHref).replace(/#.*$/,'');
-    var profHref=homeHref.replace(/\/home\.php(\?.*)?$/i,'/company-profile.php');
-    if(profHref.indexOf('company-profile.php')<0){
-      profHref=(homeHref.replace(/[#?].*$/,'')||'/pages/home.php').replace(/home\.php.*$/i,'company-profile.php');
+    var profHref=homeHref.replace(/\/home\.php(\?.*)?$/i,'/profile');
+    if(!/\/profile\/?$/i.test(profHref)){
+      profHref=(homeHref.replace(/[#?].*$/,'')||'/pages/home.php').replace(/\/pages\/home\.php.*$/i,'/profile');
     }
     var prof=document.createElement('a');
     prof.href=profHref;
@@ -103,8 +103,8 @@ function run(){
       var blk=document.createElement('div');
       blk.className='ratib-nav__brand-block';
       var prof=document.createElement('a');
-      prof.href=home.replace(/\/home\.php.*$/,'/company-profile.php').replace(/[#?].*$/,'');
-      if(prof.href.indexOf('company-profile.php')<0)prof.href=(home.replace(/[#?].*$/,'')||'/pages/home.php').replace(/home\.php$/,'company-profile.php');
+      prof.href=home.replace(/\/home\.php.*$/,'/profile').replace(/[#?].*$/,'');
+      if(!/\/profile\/?$/i.test(prof.href))prof.href=(home.replace(/[#?].*$/,'')||'/pages/home.php').replace(/\/pages\/home\.php.*$/i,'/profile');
       prof.className='ratib-nav__brand-profile';
       prof.textContent='Profile';
       brand.parentNode.insertBefore(blk,brand);

@@ -29,10 +29,14 @@ if (isset($_GET['ratib_deploy_probe']) && (string) $_GET['ratib_deploy_probe'] =
     exit;
 }
 
-// Company profile (About RATIB) — works at /pages/home.php?open=about when about.php is deployed.
+// Company profile — /profile (canonical) or legacy ?open=profile|about on home.php
 $ratibOpenParam = isset($_GET['open']) ? trim((string) $_GET['open']) : '';
 if ($ratibOpenParam === 'about' || $ratibOpenParam === 'profile') {
-    require __DIR__ . '/company-profile.php';
+    $ratibPath = $_SERVER['REQUEST_URI'] ?? '';
+    $ratibBasePath = preg_replace('#/pages/[^?]*.*$#', '', $ratibPath) ?: '';
+    $ratibScheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $ratibHost = $_SERVER['HTTP_HOST'] ?? '';
+    header('Location: ' . $ratibScheme . '://' . $ratibHost . $ratibBasePath . '/profile', true, 302);
     exit;
 }
 
