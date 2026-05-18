@@ -9,17 +9,16 @@ RewriteRule ^ - [L]
 RewriteCond %{REQUEST_URI} ^/Designed(?:/|$) [NC]
 RewriteRule ^.*$ public/index.php [L,QSA]
 
-# Legacy Profile URLs → canonical /profile (works even when home nav HTML is cached).
+# Legacy Profile URLs → /profile (THE_REQUEST = original browser URL only — avoids redirect loop with rule below).
+RewriteCond %{THE_REQUEST} \s/+pages/company-profile\.php[\s?] [NC]
 RewriteRule ^pages/company-profile\.php$ /profile [R=302,L,QSA]
-RewriteCond %{REQUEST_URI} ^/pages/home\.php$ [NC]
+RewriteCond %{THE_REQUEST} \s/+pages/home\.php[\s?] [NC]
 RewriteCond %{QUERY_STRING} (^|&)(open=profile|open=about)(&|$) [NC]
 RewriteRule ^pages/home\.php$ /profile [R=302,L]
 
-# Public company profile (enterprise About RATIB)
+# Public company profile (enterprise About RATIB) — internal rewrite only (no 302).
 RewriteRule ^profile/?$ /pages/company-profile.php [L,QSA]
 RewriteRule ^pages/profile/?$ /profile [R=302,L]
-RewriteRule ^about/?$ /profile [R=302,L]
-RewriteRule ^pages/about\.php$ /profile [R=302,L]
 
 # Country-specific login: /bangladesh/login, /kenya/login, etc. → /pages/login.php?country_slug=X
 RewriteRule ^([a-z0-9_-]+)/login/?$ /pages/login.php?country_slug=$1 [L,QSA]
