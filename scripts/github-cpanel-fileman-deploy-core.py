@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 """
-cPanel Fileman deploy — same save_file_content API as run #856/#858.
-Parallel uploads (default 4) for speed; same [N/TOTAL] % log lines.
-DO NOT replace with github-cpanel-fileman-sync-all.py (API 404).
+Sequential cPanel Fileman upload — same API as run #858.
+One Python process (faster than 24x bash+python); no parallel (cPanel rejects #859).
 """
 from __future__ import annotations
 
 import json
 import os
-import subprocess
 import sys
 import urllib.parse
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from threading import Lock
 
 CRITICAL = [
     ".htaccess",
@@ -49,8 +45,6 @@ MUST_OK = [
     "js/pages/ratib-profile-nav-guard.js",
 ]
 
-_print_lock = Lock()
-
 
 def remote_dir(remote_base: str, rel: str) -> str:
     parent = os.path.dirname(rel)
@@ -59,9 +53,7 @@ def remote_dir(remote_base: str, rel: str) -> str:
     return f"{remote_base}/{parent}"
 
 
-def upload_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
-    if not os.path.isfile(rel):
-        return rel, False, "missing"
+def upload_one(rel: str, remote_base: str) -> tuple[bool, str]:
     dir_path = remote_dir(remote_base, rel)
     name = os.path.basename(rel)
     with open(rel, "rb") as f:
@@ -91,143 +83,96 @@ def upload_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
         with urllib.request.urlopen(req, timeout=120) as r:
             body = r.read().decode("utf-8", errors="replace")
     except Exception as e:
-        return rel, False, str(e)
+        return False, str(e)
     try:
         d = json.loads(body)
     except json.JSONDecodeError:
-        return rel, False, body[:200]
+        return False, body[:200]
     rblock = d.get("result", d) or {}
     st = int(rblock.get("status", d.get("status", 0)) or 0)
     if st == 1:
-        return rel, True, ""
-    return rel, False, body[:200]
-
-
-def list_all_files() -> list[str]:
-    out = subprocess.check_output(
-        [
-            "find",
-            ".",
-            "-type",
-            "f",
-            "!",
-            "-path",
-            "./.git/*",
-            "!",
-            "-path",
-            "./.github/*",
-            "!",
-            "-path",
-            "./.cursor/*",
-            "!",
-            "-path",
-            "./node_modules/*",
-            "!",
-            "-path",
-            "./archive/*",
-            "!",
-            "-name",
-            "*.md",
-            "!",
-            "-name",
-            "*.map",
-            "!",
-            "-name",
-            "*.log",
-            "!",
-            "-name",
-            "*.zip",
-            "!",
-            "-name",
-            "*.png",
-            "!",
-            "-name",
-            "*.jpg",
-            "!",
-            "-name",
-            "*.jpeg",
-            "!",
-            "-name",
-            "*.gif",
-            "!",
-            "-name",
-            "*.webp",
-            "!",
-            "-name",
-            "*.ico",
-            "!",
-            "-name",
-            "*.pdf",
-            "!",
-            "-name",
-            "*.woff",
-            "!",
-            "-name",
-            "*.woff2",
-            "!",
-            "-name",
-            "*.ttf",
-            "!",
-            "-name",
-            "*.mp4",
-            "-size",
-            "-3M",
-        ],
-        text=True,
-    )
-    files = sorted({line[2:] for line in out.splitlines() if line.startswith("./")})
-    return files
+        return True, ""
+    return False, body[:200]
 
 
 def main() -> int:
-    os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/..")
+    root = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(os.path.join(root, ".."))
     remote_base = os.environ.get("CPANEL_REMOTE_BASE", "/home/outratib/public_html")
     mode = os.environ.get("CPANEL_DEPLOY_MODE", "critical")
-    workers = max(1, min(8, int(os.environ.get("CPANEL_UPLOAD_PARALLEL", "4"))))
+    files = list(CRITICAL)
+    if mode == "all":
+        import subprocess
 
-    files = list_all_files() if mode == "all" else list(CRITICAL)
+        out = subprocess.check_output(
+            [
+                "find",
+                ".",
+                "-type",
+                "f",
+                "!",
+                "-path",
+                "./.git/*",
+                "!",
+                "-path",
+                "./.github/*",
+                "!",
+                "-path",
+                "./.cursor/*",
+                "!",
+                "-path",
+                "./node_modules/*",
+                "!",
+                "-path",
+                "./archive/*",
+                "!",
+                "-name",
+                "*.md",
+                "!",
+                "-name",
+                "*.map",
+                "!",
+                "-name",
+                "*.log",
+                "!",
+                "-name",
+                "*.zip",
+                "-size",
+                "-3M",
+            ],
+            text=True,
+        )
+        files = sorted({line[2:] for line in out.splitlines() if line.startswith("./")})
+
     total = len(files)
-    to_upload: list[str] = []
     ok = 0
     fail = 0
-    done = 0
     succeeded: set[str] = set()
-
-    print(f"deploy mode={mode} files={total} parallel={workers} dest={remote_base}")
+    n = 0
+    print(f"deploy mode={mode} files={total} dest={remote_base}", flush=True)
 
     for rel in files:
-        if os.path.isfile(rel):
-            to_upload.append(rel)
+        n += 1
+        pct = n * 100 // total if total else 100
+        if not os.path.isfile(rel):
+            print(f"[{n}/{total}] {pct}% SKIP missing {rel}", flush=True)
             continue
-        done += 1
-        pct = done * 100 // total if total else 100
-        print(f"[{done}/{total}] {pct}% SKIP missing {rel}", flush=True)
-
-    # Smaller files first so % climbs quickly; home.php (largest) tends to finish last.
-    to_upload.sort(key=lambda p: (os.path.getsize(p), p))
-
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {
-            pool.submit(upload_one, rel, remote_base): rel for rel in to_upload
-        }
-        for fut in as_completed(futures):
-            rel, success, err = fut.result()
-            done += 1
-            pct = done * 100 // total if total else 100
-            line = f"[{done}/{total}] {pct}% upload {rel} ... {'OK' if success else 'FAIL'}"
-            with _print_lock:
-                print(line, flush=True)
-                if not success and err:
-                    print(err[:200], flush=True)
-            if success:
-                ok += 1
-                succeeded.add(rel)
-            else:
-                fail += 1
+        print(f"[{n}/{total}] {pct}% upload {rel} ... ", end="", flush=True)
+        success, err = upload_one(rel, remote_base)
+        if success:
+            print("OK", flush=True)
+            ok += 1
+            succeeded.add(rel)
+        else:
+            print("FAIL", flush=True)
+            fail += 1
+            if err:
+                print(err[:200], flush=True)
 
     print(
         f"\n========== Summary: ok={ok} fail={fail} total={total} "
-        f"({(ok * 100 // total) if total else 0}% success) =========="
+        f"({(ok * 100 // total) if total else 0}% success) ==========",
+        flush=True,
     )
     need = sum(1 for m in MUST_OK if os.path.isfile(m))
     must_hit = sum(1 for m in MUST_OK if m in succeeded)

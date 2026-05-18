@@ -1,0 +1,2 @@
+*.sh text eol=lf
+scripts/github-cpanel-fileman-deploy-core.py text eol=lf
