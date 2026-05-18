@@ -68,9 +68,9 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                     $ratibBrandProfileLabel = 'Profile';
                 }
                 $ratibProfileUrl = rtrim($baseUrl, '/') . '/profile/';
-                $ratibBrandProfileHref = $ratibProfileUrl;
+                $ratibBrandProfileHref = $ratibProfileUrl . '?_r=' . time();
                 $ratibBrandProfileCurrent = !empty($ratibAboutPageActive);
-                $ratibProfileClickJs = 'window.location.assign(' . json_encode($ratibProfileUrl, JSON_UNESCAPED_SLASHES) . ');return false;';
+                $ratibProfileClickJs = 'window.location.href=' . json_encode($ratibProfileUrl . '?_r=') . '+Date.now();return false;';
                 $ratibOnProfilePage = !empty($ratibAboutPageActive);
                 $ratibPillHref = static function (string $homeHash, string $profileHash) use ($ratibOnProfilePage, $ratibNavPrefix, $ratibProfileUrl): string {
                     if ($ratibOnProfilePage) {

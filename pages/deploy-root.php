@@ -39,4 +39,5 @@ echo 'htaccess_profile_about=' . (str_contains($htaccessSample, 'RewriteRule ^pr
 echo 'htaccess_profile_index=' . (str_contains($htaccessSample, 'profile/index.php') ? 'yes' : 'no') . "\n";
 $aboutSample = is_file($aboutPath) ? (string) file_get_contents($aboutPath, false, null, 0, 16000) : '';
 echo 'about_distinct_banner=' . (str_contains($aboutSample, 'ratib-profile-distinct-banner') ? 'yes' : 'no') . "\n";
+echo 'about_page_stamp=' . (str_contains($aboutSample, 'ratib-page-stamp') ? 'yes' : 'no') . "\n";
 

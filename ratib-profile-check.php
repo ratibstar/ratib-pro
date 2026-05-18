@@ -223,6 +223,22 @@ $chromeDisk = is_file($root . '/includes/ratib-home-public-chrome-top.php')
     : '';
 echo 'disk_chrome_v13=' . (ratib_has($chromeDisk, 'v13-onclick') ? 'yes' : 'no') . "\n";
 echo 'disk_chrome_onclick=' . (ratib_has($chromeDisk, 'data-ratib-go-profile') ? 'yes' : 'no') . "\n";
+
+$liveProfile = ratib_http_get('https://' . $host . '/profile/?_r=' . time());
+echo "\n--- Live HTML vs disk (/profile/) ---\n";
+if ($liveProfile === false) {
+    echo "live_profile=FAIL fetch\n";
+} else {
+    echo 'live_distinct_banner=' . (ratib_has($liveProfile, 'ratib-profile-distinct-banner') ? 'yes' : 'no (STALE)') . "\n";
+    echo 'live_about_title=' . (ratib_has($liveProfile, 'About <span class="ratib-about-gradient">Ratib Company</span>') ? 'yes' : 'no (STALE)') . "\n";
+    echo 'live_page_stamp=' . (ratib_has($liveProfile, 'data-ratib-page-stamp="profile"') ? 'yes' : 'no') . "\n";
+    echo 'live_home_hero_on_profile=' . (ratib_has($liveProfile, 'class="ratib-hero__title"') ? 'yes WRONG' : 'no') . "\n";
+}
+echo "\n>>> Visual checker (open in browser):\n";
+echo "https://{$host}/pages/ratib-which-page.php\n";
+echo ">>> Purge cache then open profile:\n";
+echo "https://{$host}/pages/ratib-purge-cache.php?key=ratib-deploy-sync-2026\n";
+
 if (ratib_has($chromeDisk, 'v13-onclick') && $liveHome !== false && !ratib_has($liveHome, 'ratib-profile-nav=v13-onclick')) {
     echo "CACHE_MISMATCH=yes → cPanel LiteSpeed Purge All, then:\n";
     echo "https://{$host}/pages/home.php?ratib_purge_lscache=1&key=ratib-deploy-sync-2026\n";

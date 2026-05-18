@@ -26,6 +26,9 @@ FAST_FILES = [
     "js/pages/ratib-profile-nav-guard.js",
     "js/pages/home-page.js",
     "pages/deploy-root.php",
+    "pages/ratib-which-page.php",
+    "pages/ratib-purge-cache.php",
+    "includes/ratib-page-stamp.php",
     "public/ratib-build.txt",
 ]
 

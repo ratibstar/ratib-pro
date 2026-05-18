@@ -88,6 +88,8 @@ RewriteRule ^(.*)$ public/index.php [QSA,L]
     SetEnvIf Request_URI "/profile" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/pages/company-profile\.php" RATIB_NOCACHE=1
     SetEnvIf Request_URI "ratib-chrome-bust\.php" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/ratib-which-page\.php" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/ratib-purge-cache\.php" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/js/pages/home-page\.js" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/js/pages/about-enterprise\.js" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/css/pages/home-public\.css" RATIB_NOCACHE=1

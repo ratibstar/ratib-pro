@@ -11,7 +11,8 @@
 
     function profileUrl() {
         var o = window.location.origin || '';
-        return o ? o + '/profile/' : '/profile/';
+        var base = o ? o + '/profile/' : '/profile/';
+        return base + (base.indexOf('?') >= 0 ? '&' : '?') + '_r=' + Date.now();
     }
 
     function isProfileAnchor(a) {

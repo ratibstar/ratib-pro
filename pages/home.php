@@ -1137,6 +1137,10 @@ ratib_emit_profile_nav_guard($baseUrl);
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/payment.js?v=<?php echo $ratibPaymentJsVer; ?>"></script>
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/help-center/help-center-builtin-content.js"></script>
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/chat-widget.js"></script>
+<?php
+require_once __DIR__ . '/../includes/ratib-page-stamp.php';
+ratib_emit_page_stamp('home');
+?>
 </body>
 </html>
 

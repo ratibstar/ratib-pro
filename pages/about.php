@@ -10,6 +10,9 @@ if (!headers_sent()) {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private');
     header('Pragma: no-cache');
     header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
+    header('X-LiteSpeed-Cache-Control: no-cache', false);
+    header('Surrogate-Control: no-store');
+    header('CDN-Cache-Control: no-store');
 }
 
 require_once __DIR__ . '/../includes/ratib-public-base-url.php';
@@ -77,7 +80,7 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
 </head>
-<body class="ratib-saas-home ratib-about-page" data-ratib-about="1">
+<body class="ratib-saas-home ratib-about-page" data-ratib-about="1" style="background:#12081f !important">
 
 <?php
 include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
@@ -121,5 +124,9 @@ $ratibProfileGuardQAbout = (string) (int) (@filemtime($ratibProfileGuardJsAbout)
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-mega-nav.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/about-enterprise.js?v=<?php echo htmlspecialchars($ratibAboutJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<?php
+require_once __DIR__ . '/../includes/ratib-page-stamp.php';
+ratib_emit_page_stamp('profile');
+?>
 </body>
 </html>
