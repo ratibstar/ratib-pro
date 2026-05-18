@@ -18,6 +18,9 @@ $host = $_SERVER['HTTP_HOST'] ?? '(unknown)';
 
 $ratibDeployFiles = [
     'includes/ratib-php74-compat.php',
+    'includes/ratib_html_global_ai_patch.php',
+    'control-panel/includes/config.php',
+    'control-panel/cp-ping.php',
     'public/ratib-build.txt',
     'pages/home.php',
     'pages/about.php',
