@@ -83,22 +83,31 @@
     });
 })();
 
-/** Profile tab + brand link — works when only ratib-mega-nav.js is updated on the server (bundle v15). */
+/** Profile tab + platform pill → /profile (single-file deploy: ratib-mega-nav.js). */
 (function ratibProfileNavPatch() {
+    'use strict';
+
     function profileHref() {
-        var ref =
-            document.querySelector('.ratib-nav__platform-links a[href*="home.php"]') ||
-            document.querySelector('a.ratib-nav__brand');
-        var home = ref ? ref.getAttribute('href') || '' : '/pages/home.php';
-        home = String(home).replace(/#.*$/, '');
-        var prof = home.replace(/\/home\.php(\?.*)?$/i, '/profile');
-        if (!/\/profile\/?$/i.test(prof)) {
-            prof = (home.replace(/[#?].*$/, '') || '/pages/home.php').replace(
-                /\/pages\/home\.php.*$/i,
-                '/profile'
-            );
-        }
-        return prof;
+        var o = window.location.origin || '';
+        return o ? o + '/profile' : '/profile';
+    }
+
+    function fixProfileHrefs() {
+        var PROFILE = profileHref();
+        document
+            .querySelectorAll(
+                '.ratib-nav__brand-profile, .ratib-nav__link--about, [data-ratib-profile-nav]'
+            )
+            .forEach(function (a) {
+                a.setAttribute('href', PROFILE);
+                a.setAttribute('data-ratib-profile-nav', '1');
+            });
+        document.querySelectorAll('a.ratib-mega-nav__card').forEach(function (card) {
+            var t = card.querySelector('.ratib-mega-nav__card-title');
+            if (t && /company profile/i.test(t.textContent || '')) {
+                card.setAttribute('href', PROFILE);
+            }
+        });
     }
 
     function injectPill() {
@@ -110,10 +119,12 @@
             wrap.querySelector('.ratib-nav__link--about') ||
             wrap.querySelector('.ratib-nav__link--about-injected')
         ) {
+            fixProfileHrefs();
             return;
         }
         var a = document.createElement('a');
         a.href = profileHref();
+        a.setAttribute('data-ratib-profile-nav', '1');
         a.className =
             'ratib-nav__link ratib-nav__link--about ratib-nav__link--about-injected';
         a.innerHTML =
@@ -123,7 +134,11 @@
 
     function injectBrand() {
         var shell = document.querySelector('.ratib-nav-shell__inner');
-        if (!shell || shell.querySelector('.ratib-nav__brand-profile')) {
+        if (!shell) {
+            return;
+        }
+        if (shell.querySelector('.ratib-nav__brand-profile')) {
+            fixProfileHrefs();
             return;
         }
         var brand = shell.querySelector('a.ratib-nav__brand');
@@ -134,6 +149,7 @@
         blk.className = 'ratib-nav__brand-block';
         var prof = document.createElement('a');
         prof.href = profileHref();
+        prof.setAttribute('data-ratib-profile-nav', '1');
         prof.className = 'ratib-nav__brand-profile';
         prof.textContent = 'Profile';
         brand.parentNode.insertBefore(blk, brand);
@@ -145,7 +161,51 @@
         blk.appendChild(prof);
     }
 
+    function findProfileLink(ev) {
+        var t = ev.target;
+        if (t && t.closest) {
+            var hit = t.closest(
+                '.ratib-nav__brand-profile, .ratib-nav__link--about, [data-ratib-profile-nav]'
+            );
+            if (hit) {
+                return hit;
+            }
+        }
+        var x = ev.clientX;
+        var y = ev.clientY;
+        var links = document.querySelectorAll(
+            '.ratib-nav__brand-profile, .ratib-nav__link--about, [data-ratib-profile-nav]'
+        );
+        for (var i = 0; i < links.length; i++) {
+            var el = links[i];
+            var r = el.getBoundingClientRect();
+            if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+                return el;
+            }
+        }
+        return null;
+    }
+
+    if (!window.__ratibProfileNavGuard) {
+        window.__ratibProfileNavGuard = 1;
+        var PROFILE = profileHref();
+        document.addEventListener(
+            'click',
+            function (ev) {
+                var a = findProfileLink(ev);
+                if (!a) {
+                    return;
+                }
+                ev.preventDefault();
+                ev.stopImmediatePropagation();
+                window.location.assign(PROFILE);
+            },
+            true
+        );
+    }
+
     function run() {
+        fixProfileHrefs();
         injectPill();
         injectBrand();
     }
@@ -157,20 +217,5 @@
     }
     setTimeout(run, 0);
     setTimeout(run, 200);
-})();
-
-/** Profile nav — load guard when chrome-top on server is stale (single file deploy). */
-(function ratibProfileNavGuardLoader() {
-    if (window.__ratibProfileNavGuard || document.querySelector('script[src*="ratib-profile-nav-guard"]')) {
-        return;
-    }
-    var base = '';
-    var ref = document.querySelector('script[src*="ratib-mega-nav.js"]');
-    if (ref && ref.src) {
-        base = ref.src.replace(/js\/pages\/ratib-mega-nav\.js(\?.*)?$/i, '');
-    }
-    var s = document.createElement('script');
-    s.src = (base || '') + 'js/pages/ratib-profile-nav-guard.js?v=20260518-profile-both-nav';
-    s.async = false;
-    document.head.appendChild(s);
+    setTimeout(run, 800);
 })();

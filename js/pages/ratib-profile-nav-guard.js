@@ -10,15 +10,8 @@
     window.__ratibProfileNavGuard = 1;
 
     function profileUrl() {
-        var a = document.querySelector('.ratib-nav__brand-profile, .ratib-nav__link--about');
-        if (a) {
-            var h = (a.getAttribute('href') || '').replace(/#.*$/, '');
-            if (/company-profile\.php/i.test(h) || /\/profile\/?$/i.test(h)) {
-                return h;
-            }
-        }
         var o = window.location.origin || '';
-        return o + '/profile';
+        return o ? o + '/profile' : '/profile';
     }
 
     function findProfileLink(ev) {
@@ -51,6 +44,20 @@
 
     var PROFILE = profileUrl();
 
+    function fixHrefs() {
+        document
+            .querySelectorAll(
+                '.ratib-nav__brand-profile, .ratib-nav__link--about, [data-ratib-profile-nav]'
+            )
+            .forEach(function (a) {
+                a.setAttribute('href', PROFILE);
+                a.setAttribute('data-ratib-profile-nav', '1');
+            });
+    }
+
+    fixHrefs();
+    document.addEventListener('DOMContentLoaded', fixHrefs);
+
     document.addEventListener(
         'click',
         function (ev) {
@@ -60,11 +67,6 @@
             }
             ev.preventDefault();
             ev.stopImmediatePropagation();
-            var href = (a.getAttribute('href') || '').replace(/#.*$/, '');
-            if (/company-profile\.php/i.test(href) || /\/profile\/?$/i.test(href)) {
-                window.location.assign(href);
-                return;
-            }
             window.location.assign(PROFILE);
         },
         true

@@ -64,20 +64,18 @@ function run(){
     if(linkByKey[key]){a.remove();return;}
     linkByKey[key]=a;
   });
+  var PROFILE=(window.location.origin||'')+'/profile';
   if(!linkByKey['about']){
-    var refLink=linkByKey['platform']||pillWrap.querySelector('a.ratib-nav__link');
-    var homeHref=(refLink&&refLink.getAttribute('href'))||'/pages/home.php';
-    homeHref=String(homeHref).replace(/#.*$/,'');
-    var profHref=homeHref.replace(/\/home\.php(\?.*)?$/i,'/profile');
-    if(!/\/profile\/?$/i.test(profHref)){
-      profHref=(homeHref.replace(/[#?].*$/,'')||'/pages/home.php').replace(/\/pages\/home\.php.*$/i,'/profile');
-    }
     var prof=document.createElement('a');
-    prof.href=profHref;
+    prof.href=PROFILE;
     prof.className='ratib-nav__link ratib-nav__link--about ratib-nav__link--about-injected';
     prof.setAttribute('data-ratib-profile-nav','1');
     prof.innerHTML='<span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label">Profile</span>';
     linkByKey['about']=prof;
+  }
+  if(linkByKey['about']){
+    linkByKey['about'].href=PROFILE;
+    linkByKey['about'].setAttribute('data-ratib-profile-nav','1');
   }
   if(!document.getElementById('ratib-brand-profile-fallback-style')){
     var st=document.createElement('style');
@@ -102,12 +100,10 @@ function run(){
   if(shell&&!shell.querySelector('.ratib-nav__brand-profile')){
     var brand=shell.querySelector('a.ratib-nav__brand');
     if(brand){
-      var home=(brand.getAttribute('href')||'').replace(/#.*$/,'')||'/pages/home.php';
       var blk=document.createElement('div');
       blk.className='ratib-nav__brand-block';
       var prof=document.createElement('a');
-      prof.href=home.replace(/\/home\.php.*$/,'/profile').replace(/[#?].*$/,'');
-      if(!/\/profile\/?$/i.test(prof.href))prof.href=(home.replace(/[#?].*$/,'')||'/pages/home.php').replace(/\/pages\/home\.php.*$/i,'/profile');
+      prof.href=PROFILE;
       prof.className='ratib-nav__brand-profile';
       prof.setAttribute('data-ratib-profile-nav','1');
       prof.textContent='Profile';
@@ -118,8 +114,27 @@ function run(){
       blk.appendChild(prof);
     }
   }
+  document.querySelectorAll('.ratib-nav__brand-profile,.ratib-nav__link--about,[data-ratib-profile-nav]').forEach(function(a){
+    a.href=PROFILE;a.setAttribute('data-ratib-profile-nav','1');
+  });
 }
 run();
+if(!window.__ratibProfileNavGuard){
+window.__ratibProfileNavGuard=1;
+var PROFILE=(window.location.origin||'')+'/profile';
+function findProf(ev){
+var t=ev.target;
+if(t&&t.closest){var h=t.closest('.ratib-nav__brand-profile,.ratib-nav__link--about,[data-ratib-profile-nav]');if(h)return h;}
+var x=ev.clientX,y=ev.clientY,links=document.querySelectorAll('.ratib-nav__brand-profile,.ratib-nav__link--about,[data-ratib-profile-nav]');
+for(var i=0;i<links.length;i++){var el=links[i],r=el.getBoundingClientRect();if(x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom)return el;}
+return null;
+}
+document.addEventListener('click',function(ev){
+var a=findProf(ev);if(!a)return;
+ev.preventDefault();ev.stopImmediatePropagation();
+window.location.assign(PROFILE);
+},true);
+}
 })();
 </script>
 RATIB_NAV_SYNC_JS;
