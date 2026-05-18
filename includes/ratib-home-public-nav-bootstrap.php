@@ -10,10 +10,16 @@ if (!function_exists('ratib_site_content_home_flat')) {
     require_once __DIR__ . '/site-content.php';
 }
 
+if (!function_exists('ratib_public_site_base_url')) {
+    require_once __DIR__ . '/ratib-public-base-url.php';
+}
 if (!isset($baseUrl) || !is_string($baseUrl) || $baseUrl === '') {
-    $path = $_SERVER['REQUEST_URI'] ?? '';
-    $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
-    $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
+    $baseUrl = ratib_public_site_base_url();
+} else {
+    $basePath = (string) (parse_url($baseUrl, PHP_URL_PATH) ?? '');
+    if (preg_match('#/(profile|about)/?$#', $basePath)) {
+        $baseUrl = ratib_public_site_base_url();
+    }
 }
 
 // Bump via env RATIB_HOME_UI_REV on the server after upload, or edit the fallback string when deploying marquee/lightbox/CSS.

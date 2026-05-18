@@ -12,9 +12,8 @@ if (!headers_sent()) {
     header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 }
 
-$path = $_SERVER['REQUEST_URI'] ?? '';
-$basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
-$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
+require_once __DIR__ . '/../includes/ratib-public-base-url.php';
+$baseUrl = ratib_public_site_base_url();
 
 require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
 require_once __DIR__ . '/../includes/ratib-about-profile-data.php';

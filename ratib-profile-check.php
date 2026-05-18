@@ -60,6 +60,7 @@ $deployFiles = [
     'pages/about.php',
     'pages/company-profile.php',
     'includes/ratib-profile-nav-guard.php',
+    'includes/ratib-public-base-url.php',
     'includes/ratib-home-public-chrome-top.php',
     'includes/ratib-home-public-nav-sync.php',
     'includes/ratib-home-public-nav-bootstrap.php',
@@ -155,7 +156,10 @@ $checks = [
     'pages/company-profile.php',
     'includes/ratib-home-public-chrome-top.php',
     'includes/ratib-home-public-nav-sync.php',
+    'includes/ratib-public-base-url.php',
+    'pages/about.php',
     'js/pages/ratib-mega-nav.js',
+    'includes/ratib-public-base-url.php',
     'public/ratib-build.txt',
 ];
 
