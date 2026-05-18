@@ -18,6 +18,7 @@ from threading import Lock
 FAST_FILES = [
     ".htaccess",
     "pages/about.php",
+    "pages/home.php",
     "includes/ratib-about-sections.php",
     "includes/ratib-about-profile-data.php",
     "includes/ratib-home-public-chrome-top.php",
