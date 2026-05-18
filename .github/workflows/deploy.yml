@@ -45,14 +45,15 @@ jobs:
           code() { curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 25 "$1" 2>/dev/null || echo 000; }
           sleep 3
           P="$(code "${SITE}/profile/")"
+          PI="$(code "${SITE}/profile/index.php")"
           G="$(code "${SITE}/js/pages/ratib-profile-nav-guard.js")"
-          H="$(code "${SITE}/pages/home.php")"
-          echo "profile/=$P guard.js=$G home=$H"
-          if [ "$P" = "200" ]; then
+          MARKER="$(curl -sS --connect-timeout 10 --max-time 20 "${SITE}/pages/deploy-root.php" 2>/dev/null | grep '^git_marker=' | cut -d= -f2- || true)"
+          echo "profile/=$P profile/index.php=$PI guard.js=$G git_marker=${MARKER}"
+          if [ "$P" = "200" ] && [ "$PI" = "200" ] && [ "$G" = "200" ]; then
             echo "::notice::Deploy OK"
             exit 0
           fi
-          echo "::error::/profile/ HTTP $P"
+          echo "::error::verify failed profile/=$P profile/index.php=$PI guard.js=$G"
           exit 1
 
       - name: Deploy failed
