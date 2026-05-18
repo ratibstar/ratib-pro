@@ -32,6 +32,7 @@ FAST_FILES = [
     "pages/ratib-which-page.php",
     "pages/ratib-purge-cache.php",
     "includes/ratib-page-stamp.php",
+    "includes/ratib-profile-force-same-tab.php",
     "public/ratib-build.txt",
 ]
 

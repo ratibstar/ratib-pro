@@ -65,6 +65,11 @@ if (
     header('X-LiteSpeed-Purge: *');
     header('X-LiteSpeed-Cache-Control: no-cache');
 }
+// Always bust LiteSpeed page cache for marketing home (stale HTML had profile → new tab).
+if (!headers_sent()) {
+    header('X-LiteSpeed-Cache-Control: no-cache', false);
+    header('X-LiteSpeed-Tag: ratib-home-' . date('YmdHi'), false);
+}
 
 // Prevent stale HTML caching (browser + reverse proxies + LiteSpeed).
 if (!headers_sent()) {
@@ -313,8 +318,11 @@ require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
 <head>
     <!-- ratib-cms-build: site-content=<?php echo (int) (@filemtime(__DIR__ . '/../includes/site-content.php') ?: 0); ?> home-data=<?php echo (int) (@filemtime(__DIR__ . '/../includes/site-content-home-data.php') ?: 0); ?> load=<?php echo (int) (@filemtime(__DIR__ . '/../config/env/load.php') ?: 0); ?> cms-src=<?php echo htmlspecialchars(function_exists('ratib_site_content_public_source_resolved') ? ratib_site_content_public_source_resolved() : '', ENT_QUOTES, 'UTF-8'); ?> phone-len=<?php echo (int) strlen((string) ($ratibHome['home.topbar.phone_display'] ?? '')); ?> dbfp=<?php echo htmlspecialchars($ratibDbFingerprint, ENT_QUOTES, 'UTF-8'); ?> ui-rev=<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?> -->
     <meta charset="UTF-8">
-    <?php ratib_home_nav_emit_sync_guard_style(); ?>
-    <script id="ratib-profile-same-tab-fix">(function(){var P=<?php echo json_encode(rtrim($baseUrl, '/') . '/profile/#company-profile', JSON_UNESCAPED_SLASHES); ?>;function kill(){document.querySelectorAll(".ratib-nav__brand-profile,.ratib-nav__link--about,.ratib-nav__go-profile,[data-ratib-profile-nav],[data-ratib-go-profile],.ratib-footer-link--about,a.ratib-mega-nav__card").forEach(function(a){var t=a.querySelector&&a.querySelector(".ratib-mega-nav__card-title");if(a.matches("a.ratib-mega-nav__card")&&(!t||!/company profile/i.test(t.textContent||"")))return;a.setAttribute("href",P);a.removeAttribute("target");a.removeAttribute("rel");var oc=a.getAttribute("onclick");if(oc&&/window\.open/i.test(oc))a.removeAttribute("onclick");});}function go(ev){var a=ev.target&&ev.target.closest&&ev.target.closest("a");if(!a)return;if(!a.matches(".ratib-nav__brand-profile,.ratib-nav__link--about,.ratib-nav__go-profile,[data-ratib-profile-nav],[data-ratib-go-profile],.ratib-footer-link--about")){if(!a.matches("a.ratib-mega-nav__card"))return;var t=a.querySelector(".ratib-mega-nav__card-title");if(!t||!/company profile/i.test(t.textContent||""))return;}ev.preventDefault();ev.stopImmediatePropagation();window.location.assign(P);}kill();document.addEventListener("click",go,true);document.addEventListener("mousedown",go,true);document.addEventListener("DOMContentLoaded",kill);setTimeout(kill,0);setTimeout(kill,400);})();</script>
+    <?php
+    require_once __DIR__ . '/../includes/ratib-profile-force-same-tab.php';
+    ratib_emit_profile_force_same_tab($baseUrl);
+    ratib_home_nav_emit_sync_guard_style();
+    ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="ratib-home-ui-rev" content="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
     <meta name="ratib-chrome-bundle" content="<?php echo htmlspecialchars($ratibChromeBundleHash, ENT_QUOTES, 'UTF-8'); ?>">

@@ -42,8 +42,11 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <?php ratib_home_nav_emit_sync_guard_style(); ?>
-    <script id="ratib-profile-same-tab-fix">(function(){var P=<?php echo json_encode(rtrim($baseUrl, '/') . '/profile/#company-profile', JSON_UNESCAPED_SLASHES); ?>;function kill(){document.querySelectorAll(".ratib-nav__brand-profile,.ratib-nav__link--about,.ratib-nav__go-profile,[data-ratib-profile-nav],[data-ratib-go-profile],.ratib-footer-link--about,a.ratib-mega-nav__card").forEach(function(a){var t=a.querySelector&&a.querySelector(".ratib-mega-nav__card-title");if(a.matches("a.ratib-mega-nav__card")&&(!t||!/company profile/i.test(t.textContent||"")))return;a.setAttribute("href",P);a.removeAttribute("target");a.removeAttribute("rel");var oc=a.getAttribute("onclick");if(oc&&/window\.open/i.test(oc))a.removeAttribute("onclick");});}function go(ev){var a=ev.target&&ev.target.closest&&ev.target.closest("a");if(!a)return;if(!a.matches(".ratib-nav__brand-profile,.ratib-nav__link--about,.ratib-nav__go-profile,[data-ratib-profile-nav],[data-ratib-go-profile],.ratib-footer-link--about")){if(!a.matches("a.ratib-mega-nav__card"))return;var t=a.querySelector(".ratib-mega-nav__card-title");if(!t||!/company profile/i.test(t.textContent||""))return;}ev.preventDefault();ev.stopImmediatePropagation();window.location.assign(P);}kill();document.addEventListener("click",go,true);document.addEventListener("mousedown",go,true);document.addEventListener("DOMContentLoaded",kill);setTimeout(kill,0);setTimeout(kill,400);})();</script>
+    <?php
+    require_once __DIR__ . '/../includes/ratib-profile-force-same-tab.php';
+    ratib_emit_profile_force_same_tab($baseUrl);
+    ratib_home_nav_emit_sync_guard_style();
+    ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?php echo htmlspecialchars($metaDesc, ENT_QUOTES, 'UTF-8'); ?>">
     <meta name="robots" content="index, follow">
