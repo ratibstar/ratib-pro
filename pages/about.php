@@ -79,7 +79,11 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
 </head>
 <body class="ratib-saas-home ratib-about-page" data-ratib-about="1">
 
-<?php include __DIR__ . '/../includes/ratib-home-public-chrome-top.php'; ?>
+<?php
+include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
+require_once __DIR__ . '/../includes/ratib-profile-nav-guard.php';
+ratib_emit_profile_nav_guard($baseUrl);
+?>
 
 <main class="ratib-about-main" id="main">
     <nav class="ratib-about-jump" aria-label="On this page">

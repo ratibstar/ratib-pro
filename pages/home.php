@@ -312,7 +312,11 @@ require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
 </head>
 <body class="ratib-saas-home" data-ratib-home-layout="video-hero-program-svgs" data-ratib-home-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-deploy="<?php echo htmlspecialchars($ratibHomePhpMtime . '-' . $ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
 
-<?php include __DIR__ . '/../includes/ratib-home-public-chrome-top.php'; ?>
+<?php
+include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
+require_once __DIR__ . '/../includes/ratib-profile-nav-guard.php';
+ratib_emit_profile_nav_guard($baseUrl);
+?>
 
     <main class="ratib-main">
         <!-- RATIB public home layout: product tour video directly under hero grid; program preview SVGs below. Deploy fingerprint: search HTML for id="video" on hero band + data-ratib-home-layout on body. -->
