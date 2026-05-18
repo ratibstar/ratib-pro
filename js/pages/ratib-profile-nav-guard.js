@@ -55,8 +55,25 @@
             });
     }
 
-    fixHrefs();
-    document.addEventListener('DOMContentLoaded', fixHrefs);
+    function fixMegaCards() {
+        document.querySelectorAll('a.ratib-mega-nav__card').forEach(function (card) {
+            var t = card.querySelector('.ratib-mega-nav__card-title');
+            if (t && /company profile/i.test(t.textContent || '')) {
+                card.setAttribute('href', PROFILE);
+            }
+        });
+    }
+
+    function runFix() {
+        fixHrefs();
+        fixMegaCards();
+    }
+
+    runFix();
+    document.addEventListener('DOMContentLoaded', runFix);
+    setTimeout(runFix, 0);
+    setTimeout(runFix, 250);
+    setTimeout(runFix, 1000);
 
     document.addEventListener(
         'click',

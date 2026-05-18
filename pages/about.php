@@ -103,11 +103,11 @@ ratib_emit_profile_nav_guard($baseUrl);
 <?php include __DIR__ . '/../includes/ratib-home-public-footer.php'; ?>
 
 <?php
-$ratibHomeJsPathAbout = __DIR__ . '/../js/pages/home-page.js';
-clearstatcache(true, $ratibHomeJsPathAbout);
-$ratibHomeJsQAbout = (int) (@filemtime($ratibHomeJsPathAbout) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+$ratibProfileGuardJsAbout = __DIR__ . '/../js/pages/ratib-profile-nav-guard.js';
+clearstatcache(true, $ratibProfileGuardJsAbout);
+$ratibProfileGuardQAbout = (string) (int) (@filemtime($ratibProfileGuardJsAbout) ?: time());
 ?>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/home-page.js?v=<?php echo htmlspecialchars($ratibHomeJsQAbout, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-profile-nav-guard.js?v=<?php echo htmlspecialchars($ratibProfileGuardQAbout, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-mega-nav.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/about-enterprise.js?v=<?php echo htmlspecialchars($ratibAboutJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>

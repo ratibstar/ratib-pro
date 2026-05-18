@@ -11,6 +11,7 @@ RewriteRule ^.*$ public/index.php [L,QSA]
 
 # Public company profile (enterprise About RATIB)
 RewriteRule ^profile/?$ /pages/company-profile.php [L,QSA]
+RewriteRule ^pages/profile/?$ /profile [R=302,L]
 RewriteRule ^about/?$ /pages/about.php [L,QSA]
 
 # Country-specific login: /bangladesh/login, /kenya/login, etc. → /pages/login.php?country_slug=X
