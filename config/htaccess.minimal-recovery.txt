@@ -1,0 +1,17 @@
+# Paste into public_html/.htaccess if site is down (403).
+# Rename old file to .htaccess.bak first. Permissions: 644, owner outratib.
+
+RewriteEngine On
+DirectoryIndex index.php
+
+# Let real files (css, js, images, php) load normally
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Profile shortcuts
+RewriteRule ^profile/?$ /pages/company-profile.php [L,QSA]
+RewriteRule ^about/?$ /pages/about.php [L,QSA]
+
+# Everything else → front controller
+RewriteRule ^ public/index.php [L,QSA]
