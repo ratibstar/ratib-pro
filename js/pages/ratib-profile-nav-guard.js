@@ -15,6 +15,24 @@
         return base + '?_r=' + Date.now() + '#company-profile';
     }
 
+    function onProfilePage() {
+        return document.body && document.body.classList.contains('ratib-about-page');
+    }
+
+    function openProfile() {
+        var url = profileUrl();
+        if (onProfilePage()) {
+            var el = document.getElementById('company-profile');
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                window.location.hash = 'company-profile';
+            }
+            return;
+        }
+        window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
     function isProfileAnchor(a) {
         if (!a || !a.matches) {
             return false;
@@ -75,12 +93,23 @@
                 a.setAttribute('href', PROFILE);
                 a.setAttribute('data-ratib-profile-nav', '1');
                 a.setAttribute('data-ratib-go-profile', '1');
+                if (!onProfilePage()) {
+                    a.setAttribute('target', '_blank');
+                    a.setAttribute('rel', 'noopener noreferrer');
+                } else {
+                    a.removeAttribute('target');
+                    a.removeAttribute('rel');
+                }
             });
         document.querySelectorAll('a.ratib-mega-nav__card').forEach(function (card) {
             var t = card.querySelector('.ratib-mega-nav__card-title');
             if (t && /company profile/i.test(t.textContent || '')) {
                 card.setAttribute('href', PROFILE);
                 card.setAttribute('data-ratib-go-profile', '1');
+                if (!onProfilePage()) {
+                    card.setAttribute('target', '_blank');
+                    card.setAttribute('rel', 'noopener noreferrer');
+                }
             }
         });
     }
@@ -92,7 +121,7 @@
         }
         ev.preventDefault();
         ev.stopImmediatePropagation();
-        window.location.assign(PROFILE);
+        openProfile();
     }
 
     function runFix() {

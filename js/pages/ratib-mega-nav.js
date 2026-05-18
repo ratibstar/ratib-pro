@@ -89,23 +89,35 @@
 
     function profileHref() {
         var o = window.location.origin || '';
-        return o ? o + '/profile/' : '/profile/';
+        return o ? o + '/profile/#company-profile' : '/profile/#company-profile';
+    }
+
+    function onProfilePage() {
+        return document.body && document.body.classList.contains('ratib-about-page');
     }
 
     function fixProfileHrefs() {
         var PROFILE = profileHref();
         document
             .querySelectorAll(
-                '.ratib-nav__brand-profile, .ratib-nav__link--about, [data-ratib-profile-nav]'
+                '.ratib-nav__brand-profile, .ratib-nav__link--about, [data-ratib-profile-nav], .ratib-footer-link--about'
             )
             .forEach(function (a) {
                 a.setAttribute('href', PROFILE);
                 a.setAttribute('data-ratib-profile-nav', '1');
+                if (!onProfilePage()) {
+                    a.setAttribute('target', '_blank');
+                    a.setAttribute('rel', 'noopener noreferrer');
+                }
             });
         document.querySelectorAll('a.ratib-mega-nav__card').forEach(function (card) {
             var t = card.querySelector('.ratib-mega-nav__card-title');
             if (t && /company profile/i.test(t.textContent || '')) {
                 card.setAttribute('href', PROFILE);
+                if (!onProfilePage()) {
+                    card.setAttribute('target', '_blank');
+                    card.setAttribute('rel', 'noopener noreferrer');
+                }
             }
         });
     }
