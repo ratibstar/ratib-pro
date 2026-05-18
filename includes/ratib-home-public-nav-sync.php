@@ -10,7 +10,7 @@ function ratib_home_nav_emit_sync_guard_style(): void
     if (!function_exists('ratib_public_site_base_url')) {
         require_once __DIR__ . '/ratib-public-base-url.php';
     }
-    $ratibHeadProfileUrl = rtrim(ratib_public_site_base_url(), '/') . '/profile/';
+    $ratibHeadProfileUrl = rtrim(ratib_public_site_base_url(), '/') . '/profile/#company-profile';
     $ratibHeadProfileJson = json_encode($ratibHeadProfileUrl, JSON_UNESCAPED_SLASHES);
     echo '<script id="ratib-profile-head-lock">(function(){var P=' . $ratibHeadProfileJson . ';function isProf(a){if(!a)return false;if(a.matches(".ratib-nav__brand-profile,.ratib-nav__link--about,.ratib-nav__go-profile,[data-ratib-profile-nav],[data-ratib-go-profile],.ratib-footer-link--about"))return true;if(a.matches("a.ratib-mega-nav__card")){var t=a.querySelector(".ratib-mega-nav__card-title");if(t&&/company profile/i.test(t.textContent||""))return true;}return false;}function go(ev){var a=ev.target&&ev.target.closest&&ev.target.closest("a");if(!a||!isProf(a))return;ev.preventDefault();ev.stopImmediatePropagation();window.location.assign(P);}function fix(){document.querySelectorAll(".ratib-nav__brand-profile,.ratib-nav__link--about,.ratib-nav__go-profile,.ratib-footer-link--about,[data-ratib-profile-nav]").forEach(function(a){a.setAttribute("href",P);a.setAttribute("data-ratib-go-profile","1");});document.querySelectorAll("a.ratib-mega-nav__card").forEach(function(c){var t=c.querySelector(".ratib-mega-nav__card-title");if(t&&/company profile/i.test(t.textContent||"")){c.setAttribute("href",P);c.setAttribute("data-ratib-go-profile","1");}});}fix();document.addEventListener("mousedown",go,true);document.addEventListener("click",go,true);document.addEventListener("DOMContentLoaded",fix);})();</script>';
     echo '<style id="ratib-nav-sync-guard">';
@@ -28,7 +28,7 @@ function ratib_home_nav_emit_sync_script(string $profileUrl = ''): void
         if (!function_exists('ratib_public_site_base_url')) {
             require_once __DIR__ . '/ratib-public-base-url.php';
         }
-        $profileUrl = rtrim(ratib_public_site_base_url(), '/') . '/profile/';
+        $profileUrl = rtrim(ratib_public_site_base_url(), '/') . '/profile/#company-profile';
     }
     $profileJson = json_encode($profileUrl, JSON_UNESCAPED_SLASHES);
     ?>

@@ -13,7 +13,7 @@ if (!function_exists('ratib_emit_profile_nav_guard')) {
             return;
         }
         $done = true;
-        $profileUrl = rtrim($baseUrl, '/') . '/profile/';
+        $profileUrl = rtrim($baseUrl, '/') . '/profile/#company-profile';
         ?>
 <script id="ratib-profile-nav-guard-inline">
 (function ratibProfileNavGuardInline(){

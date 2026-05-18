@@ -63,7 +63,7 @@ $ratibGlyph = function (string $symbolId): string {
                 <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.company'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
                 <ul class="ratib-footer-enterprise__link-list">
                     <li>
-                        <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/profile/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--about ratib-nav__go-profile" data-ratib-profile-nav="1" data-ratib-go-profile="1"><?php echo $ratibGlyph('ratib-ng-solutions'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.company.about'] ?? '')) ?: 'Company profile', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                        <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/profile/#company-profile', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--about ratib-nav__go-profile" data-ratib-profile-nav="1" data-ratib-go-profile="1"><?php echo $ratibGlyph('ratib-ng-solutions'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.company.about'] ?? '')) ?: 'Company profile', ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
                         <a href="<?php echo htmlspecialchars($ratibFp . '#solutions', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-solutions'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.solutions'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>

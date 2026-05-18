@@ -92,7 +92,7 @@ $ratibMarketingHomeUrl = rtrim($baseUrl, '/') . '/pages/home.php';
 <div class="ratib-profile-distinct-banner" role="status" data-ratib-profile-distinct="1">
     <div class="ratib-about-container ratib-profile-distinct-banner__inner">
         <span class="ratib-profile-distinct-banner__badge" aria-hidden="true">Company profile</span>
-        <p class="ratib-profile-distinct-banner__text">You are on the official <strong>Ratib Company</strong> about page — not the marketing homepage.</p>
+        <p class="ratib-profile-distinct-banner__text">Full <strong>Ratib Company</strong> profile — legal identity, contact, mission, and services below.</p>
         <a class="ratib-profile-distinct-banner__link" href="<?php echo htmlspecialchars($ratibMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home →</a>
     </div>
 </div>
@@ -100,7 +100,9 @@ $ratibMarketingHomeUrl = rtrim($baseUrl, '/') . '/pages/home.php';
 <main class="ratib-about-main" id="main">
     <nav class="ratib-about-jump" aria-label="On this page">
         <div class="ratib-about-container ratib-about-jump__inner">
-            <a href="#what-is-ratib">Platform</a>
+            <a href="#company-profile">Company</a>
+            <a href="#platform-overview">Platform</a>
+            <a href="#what-is-ratib">Capabilities</a>
             <a href="#architecture">Architecture</a>
             <a href="#operations">Operations</a>
             <a href="#telemetry">Telemetry</a>

@@ -67,10 +67,10 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 if ($ratibBrandProfileLabel === '') {
                     $ratibBrandProfileLabel = 'Profile';
                 }
-                $ratibProfileUrl = rtrim($baseUrl, '/') . '/profile/';
-                $ratibBrandProfileHref = $ratibProfileUrl . '?_r=' . time();
+                $ratibProfileUrl = rtrim($baseUrl, '/') . '/profile/#company-profile';
+                $ratibBrandProfileHref = $ratibProfileUrl;
                 $ratibBrandProfileCurrent = !empty($ratibAboutPageActive);
-                $ratibProfileClickJs = 'window.location.href=' . json_encode($ratibProfileUrl . '?_r=') . '+Date.now();return false;';
+                $ratibProfileClickJs = 'window.location.href=' . json_encode(rtrim($baseUrl, '/') . '/profile/?_r=') . '+Date.now()+\"#company-profile\";return false;';
                 $ratibOnProfilePage = !empty($ratibAboutPageActive);
                 $ratibPillHref = static function (string $homeHash, string $profileHash) use ($ratibOnProfilePage, $ratibNavPrefix, $ratibProfileUrl): string {
                     if ($ratibOnProfilePage) {

@@ -14,21 +14,101 @@ if (!function_exists('ratib_about_h')) {
     }
 }
 
+if (!function_exists('ratib_about_render_company_dossier')) {
+    function ratib_about_render_company_dossier(array $company, string $baseUrl): void
+    {
+        $wa = (string) ($company['whatsapp'] ?? 'https://wa.me/966599863868');
+        ?>
+        <section class="ratib-company-dossier" id="company-profile" aria-labelledby="company-profile-title">
+            <div class="ratib-about-container">
+                <header class="ratib-company-dossier__head" data-ratib-reveal>
+                    <p class="ratib-about-page-label">Full company profile</p>
+                    <h1 id="company-profile-title" class="ratib-company-dossier__title"><?php echo ratib_about_h((string) ($company['trade_name'] ?? 'Ratib Company')); ?></h1>
+                    <p class="ratib-company-dossier__legal"><?php echo ratib_about_h((string) ($company['legal_name'] ?? '')); ?></p>
+                    <p class="ratib-company-dossier__tagline"><?php echo ratib_about_h((string) ($company['tagline'] ?? '')); ?></p>
+                </header>
+
+                <div class="ratib-company-dossier__grid">
+                    <aside class="ratib-company-dossier__card ratib-company-dossier__card--identity" data-ratib-reveal>
+                        <div class="ratib-company-dossier__logo" aria-hidden="true">R</div>
+                        <h2 class="ratib-company-dossier__card-title">Company identity</h2>
+                        <dl class="ratib-company-dossier__dl">
+                            <div><dt>Founded</dt><dd><?php echo ratib_about_h((string) ($company['founded'] ?? '')); ?></dd></div>
+                            <div><dt>Headquarters</dt><dd><?php echo ratib_about_h((string) ($company['hq'] ?? '')); ?></dd></div>
+                            <div><dt>Industry</dt><dd><?php echo ratib_about_h((string) ($company['industry'] ?? '')); ?></dd></div>
+                            <div><dt><?php echo ratib_about_h((string) ($company['cr_label'] ?? 'CR')); ?></dt><dd><?php echo ratib_about_h((string) ($company['cr_value'] ?? '')); ?></dd></div>
+                            <div><dt><?php echo ratib_about_h((string) ($company['vat_label'] ?? 'VAT')); ?></dt><dd><?php echo ratib_about_h((string) ($company['vat_value'] ?? '')); ?></dd></div>
+                            <div><dt>Team size</dt><dd><?php echo ratib_about_h((string) ($company['employees_band'] ?? '')); ?></dd></div>
+                        </dl>
+                    </aside>
+
+                    <div class="ratib-company-dossier__card ratib-company-dossier__card--contact" data-ratib-reveal data-ratib-delay="60">
+                        <h2 class="ratib-company-dossier__card-title">Contact &amp; web</h2>
+                        <dl class="ratib-company-dossier__dl">
+                            <div><dt>Phone</dt><dd><a href="tel:+966599863868"><?php echo ratib_about_h((string) ($company['phone'] ?? '')); ?></a></dd></div>
+                            <div><dt>Email</dt><dd><a href="mailto:<?php echo ratib_about_h((string) ($company['email'] ?? '')); ?>"><?php echo ratib_about_h((string) ($company['email'] ?? '')); ?></a></dd></div>
+                            <div><dt>Website</dt><dd><a href="<?php echo ratib_about_h((string) ($company['website'] ?? $baseUrl)); ?>"><?php echo ratib_about_h((string) ($company['website'] ?? $baseUrl)); ?></a></dd></div>
+                            <div><dt>Address</dt><dd><?php echo ratib_about_h((string) ($company['address'] ?? '')); ?></dd></div>
+                            <div><dt>WhatsApp</dt><dd><a href="<?php echo ratib_about_h($wa); ?>" target="_blank" rel="noopener noreferrer">Live business line</a></dd></div>
+                        </dl>
+                        <div class="ratib-company-dossier__actions">
+                            <a href="<?php echo ratib_about_h($wa); ?>" target="_blank" rel="noopener noreferrer" class="ratib-about-btn ratib-about-btn--primary">Contact company</a>
+                            <a href="<?php echo ratib_about_h($baseUrl . '/pages/home.php'); ?>" class="ratib-about-btn ratib-about-btn--outline">Marketing site</a>
+                        </div>
+                    </div>
+
+                    <article class="ratib-company-dossier__card ratib-company-dossier__card--wide" data-ratib-reveal data-ratib-delay="90">
+                        <h2 class="ratib-company-dossier__card-title">About the company</h2>
+                        <p class="ratib-company-dossier__text"><?php echo ratib_about_h((string) ($company['summary'] ?? '')); ?></p>
+                        <h3 class="ratib-company-dossier__sub">Mission</h3>
+                        <p class="ratib-company-dossier__text"><?php echo ratib_about_h((string) ($company['mission'] ?? '')); ?></p>
+                        <h3 class="ratib-company-dossier__sub">Vision</h3>
+                        <p class="ratib-company-dossier__text"><?php echo ratib_about_h((string) ($company['vision'] ?? '')); ?></p>
+                        <h3 class="ratib-company-dossier__sub">Markets &amp; corridors</h3>
+                        <p class="ratib-company-dossier__text"><?php echo ratib_about_h((string) ($company['markets'] ?? '')); ?></p>
+                    </article>
+
+                    <article class="ratib-company-dossier__card ratib-company-dossier__card--wide" data-ratib-reveal data-ratib-delay="120">
+                        <h2 class="ratib-company-dossier__card-title">Services &amp; capabilities</h2>
+                        <ul class="ratib-company-dossier__services">
+                            <?php foreach ($company['services'] ?? [] as $svc) { ?>
+                            <li><?php echo ratib_about_h((string) $svc); ?></li>
+                            <?php } ?>
+                        </ul>
+                    </article>
+
+                    <div class="ratib-company-dossier__stats" data-ratib-reveal data-ratib-delay="150">
+                        <?php foreach ($company['highlights'] ?? [] as $h) { ?>
+                        <div class="ratib-company-dossier__stat">
+                            <span class="ratib-company-dossier__stat-label"><?php echo ratib_about_h((string) ($h['label'] ?? '')); ?></span>
+                            <span class="ratib-company-dossier__stat-value"><?php echo ratib_about_h((string) ($h['value'] ?? '')); ?></span>
+                        </div>
+                        <?php } ?>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <?php
+    }
+}
+
 if (!function_exists('ratib_about_render_sections')) {
     function ratib_about_render_sections(array $about, string $baseUrl): void
     {
         $shots = $about['screenshots'] ?? [];
         $homeRegister = $baseUrl . '/pages/home.php?open=register&plan=gold&years=1';
         $contactWa = 'https://wa.me/966599863868';
+        $company = $about['company'] ?? [];
+        if ($company !== []) {
+            ratib_about_render_company_dossier($company, $baseUrl);
+        }
         ?>
-        <section class="ratib-about-hero" id="top" aria-labelledby="about-hero-title">
+        <section class="ratib-about-hero" id="platform-overview" aria-labelledby="about-hero-title">
             <div class="ratib-about-container ratib-about-hero__grid">
                 <div class="ratib-about-hero__copy" data-ratib-reveal>
-                    <p class="ratib-about-page-label">Company profile · About RATIB</p>
-                    <p class="ratib-about-eyebrow">Ratib Software Foundation · Riyadh, Saudi Arabia</p>
-                    <h1 id="about-hero-title" class="ratib-about-hero__title">About <span class="ratib-about-gradient">Ratib Company</span></h1>
-                    <p class="ratib-about-hero__lead">Who we are, what the platform does, and how sending-country agencies and host-market programs run on one operations control plane.</p>
-                    <p class="ratib-about-hero__sub">Marketing homepage uses a different hero — open “Marketing home” in the banner above to compare.</p>
+                    <p class="ratib-about-eyebrow">Platform overview</p>
+                    <h2 id="about-hero-title" class="ratib-about-hero__title">RATIB <span class="ratib-about-gradient">control plane</span></h2>
+                    <p class="ratib-about-hero__lead">How sending-country agencies and host-market programs run recruitment, telemetry, compliance, and finance on one multi-tenant stack.</p>
                     <div class="ratib-about-hero__actions">
                         <a href="<?php echo ratib_about_h($contactWa); ?>" target="_blank" rel="noopener noreferrer" class="ratib-about-btn ratib-about-btn--primary ratib-about-btn--lg">Request Platform Demo</a>
                         <a href="<?php echo ratib_about_h($homeRegister); ?>" class="ratib-about-btn ratib-about-btn--outline ratib-about-btn--lg">Launch Agency Workspace</a>

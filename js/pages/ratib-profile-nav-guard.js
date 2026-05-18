@@ -12,7 +12,7 @@
     function profileUrl() {
         var o = window.location.origin || '';
         var base = o ? o + '/profile/' : '/profile/';
-        return base + (base.indexOf('?') >= 0 ? '&' : '?') + '_r=' + Date.now();
+        return base + '?_r=' + Date.now() + '#company-profile';
     }
 
     function isProfileAnchor(a) {

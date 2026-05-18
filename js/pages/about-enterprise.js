@@ -74,8 +74,19 @@
     }
   }
 
+  function initScrollToCompanyProfile() {
+    var dossier = document.getElementById('company-profile');
+    if (!dossier) return;
+    var hash = (window.location.hash || '').replace(/^#/, '');
+    if (hash === 'company-profile' || hash === 'top' || hash === '') {
+      window.setTimeout(function () {
+        dossier.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
+      }, 80);
+    }
+  }
+
   function initProfileNavHighlight() {
-    var profile = (window.location.origin || '') + '/profile/';
+    var profile = (window.location.origin || '') + '/profile/#company-profile';
     document
       .querySelectorAll(
         '.ratib-nav__brand-profile, .ratib-nav__link--about, .ratib-nav__go-profile, [data-ratib-profile-nav], .ratib-footer-link--about'
@@ -172,6 +183,7 @@
 
   function boot() {
     initProfileNavHighlight();
+    initScrollToCompanyProfile();
     initReveal();
     initArchSync();
     initMetricJitter();

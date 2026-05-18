@@ -961,7 +961,7 @@
             }
             pillWrap.appendChild(node);
         });
-        var PROFILE = (window.location.origin || '') + '/profile/';
+        var PROFILE = (window.location.origin || '') + '/profile/#company-profile';
         pillWrap
             .querySelectorAll('.ratib-nav__brand-profile, .ratib-nav__link--about, [data-ratib-profile-nav]')
             .forEach(function (a) {
@@ -1564,7 +1564,7 @@
 (function ratibAboutNavInject() {
     function profileUrl() {
         var o = window.location.origin || '';
-        return o ? o + '/profile/' : '/profile/';
+        return o ? o + '/profile/#company-profile' : '/profile/#company-profile';
     }
 
     function fixProfileNav() {

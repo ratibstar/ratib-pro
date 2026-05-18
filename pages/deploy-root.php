@@ -40,4 +40,5 @@ echo 'htaccess_profile_index=' . (str_contains($htaccessSample, 'profile/index.p
 $aboutSample = is_file($aboutPath) ? (string) file_get_contents($aboutPath, false, null, 0, 16000) : '';
 echo 'about_distinct_banner=' . (str_contains($aboutSample, 'ratib-profile-distinct-banner') ? 'yes' : 'no') . "\n";
 echo 'about_page_stamp=' . (str_contains($aboutSample, 'ratib-page-stamp') ? 'yes' : 'no') . "\n";
+echo 'about_company_dossier=' . (str_contains($aboutSample, 'id="company-profile"') ? 'yes' : 'no') . "\n";
 
