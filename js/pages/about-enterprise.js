@@ -74,16 +74,64 @@
     }
   }
 
-  function initScrollToCompanyProfile() {
-    var dossier = document.getElementById('company-profile');
-    if (!dossier) return;
-    var hash = (window.location.hash || '').replace(/^#/, '');
-    if (hash === 'company-profile' || hash === 'top' || hash === '') {
-      window.setTimeout(function () {
-        dossier.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
-      }, 80);
+  function scrollToProfileHash(hash, pushState) {
+    if (!hash || hash === '#') {
+      return false;
     }
+    var id = String(hash).replace(/^#/, '');
+    if (!id) {
+      return false;
+    }
+    var target = document.getElementById(id);
+    if (!target) {
+      return false;
+    }
+    target.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth', block: 'start' });
+    if (pushState && window.history && typeof history.pushState === 'function') {
+      history.pushState(null, '', '#' + id);
+    }
+    return true;
   }
+
+  function initScrollToCompanyProfile() {
+    var hash = (window.location.hash || '').replace(/^#/, '');
+    if (hash === '' || hash === 'top') {
+      scrollToProfileHash('#company-profile', false);
+      return;
+    }
+    window.setTimeout(function () {
+      scrollToProfileHash('#' + hash, false);
+    }, 80);
+  }
+
+  document.addEventListener('click', function (ev) {
+    var a = ev.target.closest('a[href*="#"]');
+    if (!a || a.closest('[data-ratib-profile-nav]') || a.hasAttribute('data-ratib-profile-nav')) {
+      return;
+    }
+    var href = a.getAttribute('href') || '';
+    if (!href) {
+      return;
+    }
+    if (href.charAt(0) === '#') {
+      if (scrollToProfileHash(href, true)) {
+        ev.preventDefault();
+      }
+      return;
+    }
+    try {
+      var url = new URL(href, window.location.href);
+      var here = new URL(window.location.href);
+      if (url.pathname.replace(/\/$/, '') !== here.pathname.replace(/\/$/, '') || !url.hash) {
+        return;
+      }
+      if (scrollToProfileHash(url.hash, true)) {
+        ev.preventDefault();
+      }
+    } catch (eNav) {
+      /* ignore */
+    }
+  }, false);
 
   function initProfileNavHighlight() {
     var profile = (window.location.origin || '') + '/profile/#company-profile';

@@ -82,6 +82,11 @@ FAST_FILES = [
     "control-panel/pages/control-agencies.php",
     "control-panel/includes/control/layout-wrapper.php",
     "control-panel/includes/control/client-platform-nav.php",
+    "pages/partner-portal-login.php",
+    "pages/architecture.php",
+    "pages/security-compliance.php",
+    "pages/procurement-legal.php",
+    "js/pages/about-enterprise.js",
 ]
 
 CRITICAL = [

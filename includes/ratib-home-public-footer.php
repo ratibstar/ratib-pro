@@ -38,7 +38,7 @@ $ratibGlyph = function (string $symbolId): string {
     <footer class="ratib-footer-enterprise" id="contact">
         <div class="ratib-container ratib-footer-enterprise__grid">
             <div class="ratib-footer-enterprise__brand">
-                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-footer-enterprise__logo">
+                <a href="<?php echo htmlspecialchars(function_exists('ratib_public_marketing_home_url') ? ratib_public_marketing_home_url($baseUrl) : $baseUrl . '/pages/home.php', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-footer-enterprise__logo">
                     <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="RATIB" width="112" height="32">
                 </a>
                 <p><?php echo htmlspecialchars($ratibHome['home.footer.brand'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>

@@ -95,8 +95,13 @@ if (!function_exists('ratib_about_render_company_dossier')) {
 if (!function_exists('ratib_about_render_sections')) {
     function ratib_about_render_sections(array $about, string $baseUrl): void
     {
+        if (!function_exists('ratib_public_marketing_home_register_url')) {
+            require_once __DIR__ . '/ratib-public-base-url.php';
+        }
         $shots = $about['screenshots'] ?? [];
-        $homeRegister = $baseUrl . '/pages/home.php?open=register&plan=gold&years=1';
+        $homeRegister = function_exists('ratib_public_marketing_home_register_url')
+            ? ratib_public_marketing_home_register_url($baseUrl)
+            : $baseUrl . '/pages/home.php?open=register&plan=gold&years=1';
         $contactWa = 'https://wa.me/966599863868';
         $company = $about['company'] ?? [];
         if ($company !== []) {

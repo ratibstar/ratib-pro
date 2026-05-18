@@ -29,10 +29,19 @@ if (!function_exists('ratib_mega_nav_profile_root')) {
     function ratib_mega_nav_profile_root(string $baseUrl, string $navPrefix = ''): string
     {
         if ($navPrefix !== '' && ratib_mega_nav_is_profile_context($navPrefix)) {
-            return rtrim($navPrefix, '/');
+            return rtrim($navPrefix, '/') . '/';
         }
 
-        return rtrim($baseUrl, '/') . '/profile';
+        return rtrim($baseUrl, '/') . '/profile/';
+    }
+}
+
+if (!function_exists('ratib_mega_nav_profile_hash')) {
+    function ratib_mega_nav_profile_hash(string $profileRoot, string $hash): string
+    {
+        $hash = $hash !== '' && $hash[0] === '#' ? $hash : '#' . ltrim($hash, '#');
+
+        return rtrim($profileRoot, '/') . '/' . $hash;
     }
 }
 
@@ -157,7 +166,7 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
                 'company_profile' => '#company-profile',
             ];
             if (isset($onProfile[$hrefKey])) {
-                return $profileRoot . $onProfile[$hrefKey];
+                return ratib_mega_nav_profile_hash($profileRoot, $onProfile[$hrefKey]);
             }
         }
 

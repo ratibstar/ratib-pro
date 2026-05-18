@@ -77,7 +77,7 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
         }
 
         if (ratib_mega_nav_is_profile_context($navPrefix)) {
-            $root = rtrim($navPrefix, '/');
+            $root = rtrim($navPrefix, '/') . '/';
             $map = [
                 'platform' => '#platform-overview',
                 'features' => '#what-is-ratib',
@@ -88,7 +88,10 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
                 'about' => '#company-profile',
             ];
             if (isset($map[$hrefKey])) {
-                return $root . $map[$hrefKey];
+                $hash = $map[$hrefKey];
+                $hash = $hash !== '' && $hash[0] === '#' ? $hash : '#' . ltrim($hash, '#');
+
+                return rtrim($root, '/') . '/' . $hash;
             }
         }
 
