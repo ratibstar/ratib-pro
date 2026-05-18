@@ -63,6 +63,11 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo htmlspecialchars($ratibHomePublicCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/ratib-mega-nav.css?v=<?php echo htmlspecialchars($ratibMegaNavCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo htmlspecialchars($ratibAboutCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php
+    $ratibOpCssPath = __DIR__ . '/../css/pages/operational-proof.css';
+    $ratibOpCssQuery = (int) (@filemtime($ratibOpCssPath) ?: time()) . '-' . $ratibHomeUiRev;
+    ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/operational-proof.css?v=<?php echo htmlspecialchars($ratibOpCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <script type="application/ld+json"><?php echo json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'Organization',
@@ -108,6 +113,7 @@ $ratibMarketingHomeUrl = ratib_public_marketing_home_url($baseUrl);
             <a href="#platform-overview">Platform</a>
             <a href="#what-is-ratib">Capabilities</a>
             <a href="#architecture">Architecture</a>
+            <a href="#operational-proof">Operational proof</a>
             <a href="#operations">Operations</a>
             <a href="#telemetry">Telemetry</a>
             <a href="#governance">Governance</a>

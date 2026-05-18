@@ -118,7 +118,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
 
         $d['home.ent.eyebrow'] = 'Infrastructure posture';
         $d['home.ent.title'] = 'Enterprise operations architecture';
-        $d['home.ent.sub'] = 'Shared application core with separate agency databases, policy checks, event delivery, and field-operations support—documented for procurement and technical review.';
+        $d['home.ent.sub'] = 'Platform layers, tenant separation, and field-operations support—documented for technical review.';
         $entBadges = [
             'Tenant isolation',
             'Operational governance',
@@ -155,11 +155,17 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.ent.cta.architecture'] = 'Review Architecture';
         $d['home.ent.cta.solutions'] = 'Contact Solutions Team';
         $d['home.ent.cta.security'] = 'Request Security Brief';
-        $d['home.analytics.illus'] = 'Illustrative sample metrics · not live production counters';
+        $d['home.analytics.illus'] = 'Sample operational data · not live production counters';
+
+        $d['home.op_proof.eyebrow'] = 'Operational proof';
+        $d['home.op_proof.title'] = 'How teams run programs on RATIB';
+        $d['home.op_proof.sub'] = 'Diagrams, sanitized screens, and workflow walkthroughs for operations and procurement review.';
+
+        $d['home.ops.disclaimer'] = 'Illustrative interface · sample operational data only';
 
         $d['home.how.eyebrow'] = 'Operational onboarding';
         $d['home.how.title'] = 'How agencies go live on RATIB';
-        $d['home.how.sub'] = 'From tenant provisioning to invoicing—one orchestrated spine with explicit human gates, auditable transitions, and connector-backed finance.';
+        $d['home.how.sub'] = 'Provision tenant → configure stages → run workers through deployment → reconcile finance.';
         $howSteps = [
             ['Agency onboarding', 'Tenant creation, RBAC, branded domains, sandbox → production promotion.'],
             ['Workflow configuration', 'Stage graph, owners, SLA clocks, and verification bundles per corridor.'],

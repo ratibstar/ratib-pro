@@ -4851,6 +4851,14 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
   position: relative;
 }
 
+.ratib-ops__disclaimer {
+  margin: 0.35rem 0 0;
+  font-size: 0.68rem;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .ratib-ops__layout {
   display: grid;
   grid-template-columns: 1fr;
@@ -4886,8 +4894,8 @@ html.ratib-reveal-init.ratib-reveal-ready .ratib-reveal.ratib-reveal-visible {
 }
 
 .ratib-pill--live {
-  background: rgba(52, 211, 153, 0.12);
-  color: #6ee7b7;
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
   font-size: 0.6rem;
   display: inline-flex;
   align-items: center;

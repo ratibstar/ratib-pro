@@ -109,7 +109,7 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   padding: var(--ent-section-gap) 0;
   border-top: 1px solid var(--ent-border);
   border-bottom: 1px solid var(--ent-border);
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, transparent 55%);
+  background: rgba(12, 18, 32, 0.65);
 }
 
 .ratib-ent-trust__head {

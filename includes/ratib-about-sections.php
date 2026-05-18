@@ -178,9 +178,9 @@ if (!function_exists('ratib_about_render_sections')) {
                     <div class="ratib-about-arch__viz" data-ratib-reveal aria-hidden="true">
                         <svg class="ratib-about-arch__svg" viewBox="0 0 400 520" xmlns="http://www.w3.org/2000/svg">
                             <defs>
-                                <linearGradient id="ratibArchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.9"/>
-                                    <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0.9"/>
+                                <linearGradient id="ratibArchGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="#475569" stop-opacity="0.9"/>
+                                    <stop offset="100%" stop-color="#64748b" stop-opacity="0.9"/>
                                 </linearGradient>
                             </defs>
                             <?php
@@ -190,8 +190,8 @@ if (!function_exists('ratib_about_render_sections')) {
                                 $ly = $y + $i * 68;
                                 ?>
                             <g class="ratib-about-arch__node" data-layer="<?php echo ratib_about_h((string) ($layer['id'] ?? '')); ?>">
-                                <rect x="40" y="<?php echo $ly; ?>" width="320" height="52" rx="10" fill="rgba(17,24,39,0.85)" stroke="url(#ratibArchGrad)" stroke-width="1.2" opacity="0.95"/>
-                                <circle cx="62" cy="<?php echo $ly + 26; ?>" r="4" fill="#3B82F6"><animate attributeName="opacity" values="0.4;1;0.4" dur="2.4s" repeatCount="indefinite" begin="<?php echo $i * 0.3; ?>s"/></circle>
+                                <rect x="40" y="<?php echo $ly; ?>" width="320" height="52" rx="8" fill="rgba(17,24,39,0.85)" stroke="#475569" stroke-width="1" opacity="0.95"/>
+                                <circle cx="62" cy="<?php echo $ly + 26; ?>" r="3" fill="#64748b"/>
                                 <text x="78" y="<?php echo $ly + 30; ?>" fill="#e2e8f0" font-size="13" font-family="Inter, sans-serif" font-weight="600"><?php echo ratib_about_h((string) ($layer['title'] ?? '')); ?></text>
                                 <?php if ($i < count($layers) - 1) { ?>
                                 <line x1="200" y1="<?php echo $ly + 52; ?>" x2="200" y2="<?php echo $ly + 68; ?>" stroke="rgba(59,130,246,0.45)" stroke-width="1.5" stroke-dasharray="4 3"/>
@@ -214,6 +214,11 @@ if (!function_exists('ratib_about_render_sections')) {
                 </div>
             </div>
         </section>
+
+        <?php
+        require_once __DIR__ . '/ratib-operational-proof-render.php';
+        ratib_operational_proof_render($baseUrl);
+        ?>
 
         <section class="ratib-about-section" id="operations" aria-labelledby="about-ops-title">
             <div class="ratib-about-container">
@@ -243,15 +248,15 @@ if (!function_exists('ratib_about_render_sections')) {
                 <div class="ratib-about-shot-row" data-ratib-reveal>
                     <figure class="ratib-about-shot ratib-about-shot--third">
                         <img src="<?php echo ratib_about_h((string) ($shots['workers']['src'] ?? '')); ?>" alt="<?php echo ratib_about_h((string) ($shots['workers']['alt'] ?? '')); ?>" loading="lazy" decoding="async">
-                        <figcaption>Workforce system of record</figcaption>
+                        <figcaption>Workforce records · illustrative interface</figcaption>
                     </figure>
                     <figure class="ratib-about-shot ratib-about-shot--third">
                         <img src="<?php echo ratib_about_h((string) ($shots['pipeline']['src'] ?? '')); ?>" alt="<?php echo ratib_about_h((string) ($shots['pipeline']['alt'] ?? '')); ?>" loading="lazy" decoding="async">
-                        <figcaption>Orchestration pipeline</figcaption>
+                        <figcaption>Workflow pipeline · sample screenshot</figcaption>
                     </figure>
                     <figure class="ratib-about-shot ratib-about-shot--third">
                         <img src="<?php echo ratib_about_h((string) ($shots['control']['src'] ?? '')); ?>" alt="<?php echo ratib_about_h((string) ($shots['control']['alt'] ?? '')); ?>" loading="lazy" decoding="async">
-                        <figcaption>Administration</figcaption>
+                        <figcaption>Administration · illustrative interface</figcaption>
                     </figure>
                 </div>
             </div>
@@ -276,6 +281,7 @@ if (!function_exists('ratib_about_render_sections')) {
                             <?php } ?>
                         </div>
                         <div class="ratib-about-event-stream" data-ratib-reveal aria-label="Sample telemetry events">
+                            <p class="ratib-about-metrics-illus ratib-mono">Sample operational data · illustrative event stream</p>
                             <div class="ratib-about-event ratib-about-event--ok"><span class="ratib-mono">WORKER_LOCATION_UPDATE</span> · geofence match · RUH corridor</div>
                             <div class="ratib-about-event ratib-about-event--warn"><span class="ratib-mono">WORKER_IDLE_ALERT</span> · SLA watch · 38h window</div>
                             <div class="ratib-about-event ratib-about-event--info"><span class="ratib-mono">WORKER_OFFLINE</span> · batch queued · sync pending</div>
@@ -284,7 +290,7 @@ if (!function_exists('ratib_about_render_sections')) {
                     <div class="ratib-about-split__media" data-ratib-reveal data-ratib-delay="100">
                         <figure class="ratib-about-shot ratib-about-shot--glow">
                             <img src="<?php echo ratib_about_h((string) ($shots['telemetry']['src'] ?? '')); ?>" alt="<?php echo ratib_about_h((string) ($shots['telemetry']['alt'] ?? '')); ?>" loading="lazy" decoding="async">
-                            <figcaption class="ratib-about-shot__cap ratib-mono">Geospatial operations console</figcaption>
+                            <figcaption class="ratib-about-shot__cap ratib-mono">Field operations map · illustrative interface</figcaption>
                         </figure>
                     </div>
                 </div>

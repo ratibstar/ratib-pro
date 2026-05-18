@@ -1,0 +1,244 @@
+/**
+ * Operational proof — diagrams, screenshots, workflows (calm enterprise surfaces)
+ */
+
+.ratib-op-proof {
+  padding: clamp(2.5rem, 5vw, 3.5rem) 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  background: #0c1220;
+}
+
+.ratib-op-proof__head {
+  max-width: 52rem;
+  margin-bottom: 2rem;
+}
+
+.ratib-op-proof__eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.ratib-op-proof__title {
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: #f1f5f9;
+}
+
+.ratib-op-proof__sub {
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: #94a3b8;
+}
+
+.ratib-op-proof__disclaimer {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  color: #64748b;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 4px;
+}
+
+.ratib-op-proof__block {
+  margin-bottom: 2.25rem;
+}
+
+.ratib-op-proof__block-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.ratib-op-proof__block-note {
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.ratib-op-sample {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  background: rgba(51, 65, 85, 0.55);
+  border: 1px solid rgba(100, 116, 139, 0.4);
+  border-radius: 3px;
+}
+
+.ratib-op-diagram-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 720px) {
+  .ratib-op-diagram-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1100px) {
+  .ratib-op-diagram-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.ratib-op-diagram-card {
+  margin: 0;
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.65);
+  overflow: hidden;
+}
+
+.ratib-op-diagram-card__frame {
+  background: #0f172a;
+  line-height: 0;
+}
+
+.ratib-op-diagram-card__frame img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.ratib-op-diagram-card figcaption {
+  padding: 0.65rem 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+
+.ratib-op-diagram-card figcaption strong {
+  display: block;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.ratib-op-screen-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.ratib-op-screen-card {
+  margin: 0;
+}
+
+.ratib-op-screen-card__frame {
+  position: relative;
+  border: 1px solid rgba(71, 85, 105, 0.5);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #0f172a;
+}
+
+.ratib-op-screen-card__frame .ratib-op-sample {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 2;
+}
+
+.ratib-op-screen-card__frame img {
+  width: 100%;
+  height: auto;
+  display: block;
+  opacity: 0.96;
+}
+
+.ratib-op-screen-card figcaption {
+  margin-top: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.ratib-op-workflow-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+
+@media (min-width: 900px) {
+  .ratib-op-workflow-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .ratib-op-workflow-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.ratib-op-workflow {
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(71, 85, 105, 0.45);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.ratib-op-workflow__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+
+.ratib-op-workflow__head h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.ratib-op-workflow__icon {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.ratib-op-workflow__steps {
+  margin: 0 0 0.55rem;
+  padding-left: 1.15rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+.ratib-op-workflow__steps li {
+  margin-bottom: 0.25rem;
+}
+
+.ratib-op-workflow__outcome {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.ratib-op-workflow__outcome .ratib-mono {
+  color: #94a3b8;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Home: container width when not using about-container */
+body.ratib-saas-home .ratib-op-proof__inner.ratib-about-container {
+  max-width: 72rem;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 4vw, 1.5rem);
+}
