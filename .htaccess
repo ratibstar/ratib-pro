@@ -9,9 +9,9 @@ RewriteRule ^ - [L]
 RewriteCond %{REQUEST_URI} ^/Designed(?:/|$) [NC]
 RewriteRule ^.*$ public/index.php [L,QSA]
 
-# Company profile — serve about.php directly (never chain profile → company-profile → profile).
-RewriteRule ^profile/?$ /pages/about.php [L,QSA]
-RewriteRule ^pages/profile/?$ /profile [R=302,L]
+# Company profile — physical /profile/index.php (avoids about.php ↔ /profile redirect loops).
+RewriteRule ^profile/?$ profile/index.php [L,QSA]
+RewriteRule ^pages/profile/?$ /profile/ [R=302,L]
 
 # Legacy URLs → canonical /profile (THE_REQUEST = browser URL only; avoids internal rewrite loops).
 RewriteCond %{THE_REQUEST} \s/+pages/company-profile\.php[\s?] [NC]

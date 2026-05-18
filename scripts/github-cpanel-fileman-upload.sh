@@ -13,6 +13,7 @@ AUTH="Authorization: cpanel ${CPANEL_USER}:${CPANEL_API_TOKEN}"
 
 FILES=(
   ".htaccess"
+  "profile/index.php"
   "public/ratib-build.txt"
   "public/index.php"
   "pages/company-profile.php"
