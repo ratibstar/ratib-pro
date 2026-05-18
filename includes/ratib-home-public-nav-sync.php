@@ -69,7 +69,7 @@ function pillKeyFromHref(href,a){
   var hp=hashPart(href);
   if(a.classList.contains('ratib-nav__link--about'))return 'about';
   if(a.classList.contains('ratib-nav__link--product-tour')||hp==='#video'||hp==='#program-previews'||hp==='#top')return 'tour';
-  if(a.classList.contains('ratib-nav__link--platform-section')||hp==='#what-is-ratib'||hp==='#platform')return 'platform';
+  if(a.classList.contains('ratib-nav__link--platform-section')||hp==='#platform-overview'||hp==='#what-is-ratib'||hp==='#platform')return 'platform';
   if(hp==='#corridors'||hp==='#domains')return 'domains';
   if(hp==='#platform-services'||hp==='#features')return 'product';
   if(hp==='#finance'||hp==='#programs')return 'pricing';

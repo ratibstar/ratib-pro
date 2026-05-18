@@ -1,6 +1,8 @@
 <?php
 /**
  * Resolves ratib_mega_nav_config() href_key values to absolute/relative URLs.
+ * Profile (/profile/) and marketing home use different section anchors — keep maps in sync
+ * with pages/home.php ids and includes/ratib-about-sections.php ids.
  *
  * @param string $hrefKey   Key from mega nav config (e.g. marketplace_domains, contact).
  * @param string $baseUrl   Site root URL without trailing slash.
@@ -13,80 +15,153 @@ if (!function_exists('ratib_mega_nav_is_profile_context')) {
     }
 }
 
-if (!function_exists('ratib_mega_nav_resolve_href')) {
-function ratib_mega_nav_resolve_href(string $hrefKey, string $baseUrl, string $navPrefix = ''): string
-{
-    $baseUrl = rtrim($baseUrl, '/');
-    $home = $baseUrl . '/pages/home.php';
-    $clientDomains = $baseUrl . '/pages/client/domains.php?catalog=1';
-    $clientServices = $baseUrl . '/pages/client/services.php';
-
-    if (ratib_mega_nav_is_profile_context($navPrefix)) {
-        $profileRoot = rtrim($navPrefix, '/');
-        $onProfile = [
-            'platform' => '#what-is-ratib',
-            'features' => '#platform-services',
-            'programs' => '#finance',
-            'agencies' => '#partners',
-            'contact' => '#contact-cta',
-            'solutions' => '#what-is-ratib',
-            'operational' => '#operations',
-            'api' => '#architecture',
-            'program_previews' => '#top',
-            'about' => '/',
-            'company_profile' => '/',
-        ];
-        if (isset($onProfile[$hrefKey])) {
-            $tail = $onProfile[$hrefKey];
-            if ($tail === '/' || $tail === '') {
-                return $profileRoot . '/';
-            }
-            return $profileRoot . $tail;
+if (!function_exists('ratib_mega_nav_profile_root')) {
+    function ratib_mega_nav_profile_root(string $baseUrl, string $navPrefix = ''): string
+    {
+        if ($navPrefix !== '' && ratib_mega_nav_is_profile_context($navPrefix)) {
+            return rtrim($navPrefix, '/');
         }
-    }
 
-    switch ($hrefKey) {
-        case 'marketplace':
-            return $clientDomains;
-        case 'marketplace_domains':
-            return $navPrefix !== '' ? $navPrefix . '#domains' : $home . '#domains';
-        case 'infra_status':
-            return $clientServices;
-        case 'domain_search':
-            return $navPrefix !== '' ? $navPrefix . '#domains' : $home . '#domains';
-        case 'contact':
-            return $navPrefix !== '' ? $navPrefix . '#contact' : $home . '#contact';
-        case 'solutions':
-            return $navPrefix !== '' ? $navPrefix . '#solutions' : $home . '#solutions';
-        case 'programs':
-            return $navPrefix !== '' ? $navPrefix . '#programs' : $home . '#programs';
-        case 'features':
-            return $navPrefix !== '' ? $navPrefix . '#features' : $home . '#features';
-        case 'program_previews':
-            return $navPrefix !== '' ? $navPrefix . '#program-previews' : $home . '#program-previews';
-        case 'operational':
-            return $navPrefix !== '' ? $navPrefix . '#operational' : $home . '#operational';
-        case 'api':
-            return $navPrefix !== '' ? $navPrefix . '#api' : $home . '#api';
-        case 'agencies':
-            return $navPrefix !== '' ? $navPrefix . '#agencies' : $home . '#agencies';
-        case 'platform':
-            return $navPrefix !== '' ? $navPrefix . '#platform' : $home . '#platform';
-        case 'register':
-            return $navPrefix !== '' ? $navPrefix . '#register' : $home . '#register';
-        case 'customer_portal':
-            return $baseUrl . '/pages/customer-portal.php';
-        case 'about':
-        case 'company_profile':
-            return $baseUrl . '/profile/';
-        case 'security_compliance':
-            return $baseUrl . '/security-compliance/';
-        case 'architecture':
-            return $baseUrl . '/architecture/';
-        case 'procurement_legal':
-            return $baseUrl . '/procurement-legal/';
-        default:
-            return $home;
+        return rtrim($baseUrl, '/') . '/profile';
     }
 }
+
+if (!function_exists('ratib_mega_nav_marketing_home')) {
+    function ratib_mega_nav_marketing_home(string $baseUrl): string
+    {
+        if (function_exists('ratib_public_marketing_home_url')) {
+            return ratib_public_marketing_home_url($baseUrl);
+        }
+
+        return rtrim($baseUrl, '/') . '/pages/home.php';
+    }
+}
+
+if (!function_exists('ratib_mega_nav_home_hash')) {
+    function ratib_mega_nav_home_hash(string $baseUrl, string $navPrefix, string $hash): string
+    {
+        $hash = $hash !== '' && $hash[0] === '#' ? $hash : '#' . ltrim($hash, '#');
+        if ($navPrefix !== '' && !ratib_mega_nav_is_profile_context($navPrefix)) {
+            return rtrim($navPrefix, '/') . $hash;
+        }
+
+        return ratib_mega_nav_marketing_home($baseUrl) . $hash;
+    }
+}
+
+if (!function_exists('ratib_public_nav_tour_href')) {
+    /** Product tour / video band — on profile opens marketing home at the tour anchor. */
+    function ratib_public_nav_tour_href(string $baseUrl, string $navPrefix, string $tourHash): string
+    {
+        $tourHash = $tourHash !== '' && $tourHash[0] === '#' ? $tourHash : '#' . ltrim($tourHash, '#');
+        if (ratib_mega_nav_is_profile_context($navPrefix)) {
+            return ratib_mega_nav_marketing_home($baseUrl) . $tourHash;
+        }
+        if ($navPrefix !== '') {
+            return rtrim($navPrefix, '/') . $tourHash;
+        }
+
+        return ratib_mega_nav_marketing_home($baseUrl) . $tourHash;
+    }
+}
+
+if (!function_exists('ratib_mega_nav_resolve_href')) {
+    function ratib_mega_nav_resolve_href(string $hrefKey, string $baseUrl, string $navPrefix = ''): string
+    {
+        $baseUrl = rtrim($baseUrl, '/');
+
+        switch ($hrefKey) {
+            case 'customer_portal':
+                return $baseUrl . '/pages/customer-portal.php';
+            case 'help_center':
+                return $baseUrl . '/pages/help-center.php';
+            case 'company_profile':
+            case 'about':
+                return $baseUrl . '/profile/#company-profile';
+            case 'security_compliance':
+                return $baseUrl . '/security-compliance/';
+            case 'architecture':
+                return $baseUrl . '/architecture/';
+            case 'procurement_legal':
+                return $baseUrl . '/procurement-legal/';
+            case 'marketplace':
+                return $baseUrl . '/pages/client/domains.php?catalog=1';
+            case 'infra_status':
+                return $baseUrl . '/pages/client/services.php';
+        }
+
+        if (ratib_mega_nav_is_profile_context($navPrefix)) {
+            $profileRoot = ratib_mega_nav_profile_root($baseUrl, $navPrefix);
+            $onProfile = [
+                'platform' => '#platform-overview',
+                'platform_overview' => '#platform-overview',
+                'features' => '#what-is-ratib',
+                'capabilities' => '#what-is-ratib',
+                'product' => '#what-is-ratib',
+                'programs' => '#finance',
+                'pricing' => '#finance',
+                'register' => '#finance',
+                'agencies' => '#partners',
+                'partners' => '#partners',
+                'contact' => '#contact-cta',
+                'solutions' => '#what-is-ratib',
+                'what_is_ratib' => '#what-is-ratib',
+                'operational' => '#operations',
+                'operations' => '#operations',
+                'api' => '#architecture',
+                'program_previews' => '#platform-overview',
+                'marketplace_domains' => '#corridors',
+                'domain_search' => '#corridors',
+                'domains' => '#corridors',
+                'tracking' => '#telemetry',
+                'telemetry' => '#telemetry',
+                'governance' => '#governance',
+                'trust' => '#trust',
+                'operational_proof' => '#operational-proof',
+                'how_it_works' => '#operations',
+                'company_profile' => '#company-profile',
+            ];
+            if (isset($onProfile[$hrefKey])) {
+                return $profileRoot . $onProfile[$hrefKey];
+            }
+        }
+
+        switch ($hrefKey) {
+            case 'marketplace_domains':
+            case 'domain_search':
+            case 'domains':
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#domains');
+            case 'contact':
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#contact');
+            case 'solutions':
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#solutions');
+            case 'programs':
+            case 'pricing':
+            case 'register':
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#programs');
+            case 'features':
+            case 'product':
+            case 'capabilities':
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#features');
+            case 'program_previews':
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#program-previews');
+            case 'operational':
+            case 'operations':
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#operational');
+            case 'api':
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#api');
+            case 'agencies':
+            case 'partners':
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#agencies');
+            case 'platform':
+            case 'platform_overview':
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#platform');
+            case 'tracking':
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#tracking');
+            case 'how_it_works':
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#how-it-works');
+            default:
+                return ratib_mega_nav_marketing_home($baseUrl);
+        }
+    }
 }

@@ -156,7 +156,7 @@ function ratib_mega_nav_config(): array
         [
             'type' => 'link',
             'label' => 'Help',
-            'href_key' => 'api',
+            'href_key' => 'help_center',
             'desc' => 'Docs, status, and support channels',
         ],
         [

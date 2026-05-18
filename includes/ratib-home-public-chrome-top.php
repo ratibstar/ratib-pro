@@ -23,6 +23,7 @@ $ratibNavPrefix = isset($ratibHomeNavHrefPrefix) ? (string) $ratibHomeNavHrefPre
 $ratibPartnerNavIsCurrent = !empty($ratibHomeHeaderPartnerIsCurrent);
 
 require_once __DIR__ . '/ratib-mega-nav-render.php';
+require_once __DIR__ . '/ratib-mega-nav-resolve.php';
 if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
     require_once __DIR__ . '/ratib-home-public-nav-sync.php';
 }
@@ -73,20 +74,18 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 $ratibBrandProfileHref = $ratibProfileUrl;
                 $ratibBrandProfileCurrent = $ratibOnProfilePage;
                 $ratibProfileClickJs = '';
-                $ratibPillHref = static function (string $homeHash, string $profileHash) use ($ratibOnProfilePage, $ratibNavPrefix, $baseUrl): string {
-                    if ($ratibOnProfilePage) {
-                        $hash = $profileHash !== '' && $profileHash[0] === '#'
-                            ? $profileHash
-                            : '#' . ltrim($profileHash, '#');
+                $ratibPillHref = static function (string $pillKey) use ($ratibOnProfilePage, $ratibNavPrefix, $baseUrl): string {
+                    $profilePrefix = $ratibOnProfilePage
+                        ? rtrim($baseUrl, '/') . '/profile'
+                        : $ratibNavPrefix;
 
-                        return rtrim($baseUrl, '/') . '/profile' . $hash;
-                    }
-
-                    return $ratibNavPrefix . $homeHash;
+                    return ratib_mega_nav_resolve_href($pillKey, $baseUrl, $profilePrefix);
                 };
-                $ratibTourHref = $ratibOnProfilePage
-                    ? (rtrim($baseUrl, '/') . '/profile/#top')
-                    : ($ratibNavPrefix . $ratibNavProductTourHref);
+                $ratibTourHref = ratib_public_nav_tour_href(
+                    $baseUrl,
+                    $ratibOnProfilePage ? rtrim($baseUrl, '/') . '/profile' : $ratibNavPrefix,
+                    $ratibNavProductTourHref
+                );
                 ?>
             <div class="ratib-nav__brand-block">
                 <a href="<?php echo htmlspecialchars($ratibMarketingHomeHref ?? (function_exists('ratib_public_marketing_home_url') ? ratib_public_marketing_home_url($baseUrl) : rtrim($baseUrl, '/') . '/pages/home.php'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__brand">
@@ -113,13 +112,13 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 $ratibAboutNavCurrent = !empty($ratibAboutPageActive);
                 ?>
                 <a href="<?php echo htmlspecialchars($ratibAboutNavHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--about ratib-nav__go-profile<?php echo $ratibAboutNavCurrent ? ' is-current' : ''; ?>" data-ratib-profile-nav="1" data-ratib-go-profile="1"<?php echo $ratibAboutNavCurrent ? ' aria-current="page"' : ''; ?>><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibAboutNavLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="<?php echo htmlspecialchars($ratibPillHref('#platform', '#what-is-ratib'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--platform-section"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-platform"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="<?php echo htmlspecialchars($ratibPillHref('#domains', '#corridors'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-domains"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.domains'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="<?php echo htmlspecialchars($ratibPillHref('platform'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--platform-section"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-platform"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="<?php echo htmlspecialchars($ratibPillHref('domains'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-domains"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.domains'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                 <a href="<?php echo htmlspecialchars($ratibTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--product-tour" data-ratib-product-tour-tab="1"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-video"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibNavProductTourLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="<?php echo htmlspecialchars($ratibPillHref('#features', '#platform-services'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-features"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.nav.product'] ?? '')) ?: (string) ($ratibHome['home.nav.features'] ?? 'Product'), ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="<?php echo htmlspecialchars($ratibPillHref('#programs', '#finance'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-programs"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.nav.pricing'] ?? '')) ?: (string) ($ratibHome['home.nav.programs'] ?? 'Pricing'), ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="<?php echo htmlspecialchars($ratibPillHref('#agencies', '#partners'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-agencies"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.nav.partners'] ?? '')) ?: (string) ($ratibHome['home.nav.agencies'] ?? 'Partners'), ENT_QUOTES, 'UTF-8'); ?></span></a>
-                <a href="<?php echo htmlspecialchars($ratibPillHref('#contact', '#contact-cta'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-contact"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.contact'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="<?php echo htmlspecialchars($ratibPillHref('features'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-features"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.nav.product'] ?? '')) ?: (string) ($ratibHome['home.nav.features'] ?? 'Product'), ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="<?php echo htmlspecialchars($ratibPillHref('programs'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-programs"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.nav.pricing'] ?? '')) ?: (string) ($ratibHome['home.nav.programs'] ?? 'Pricing'), ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="<?php echo htmlspecialchars($ratibPillHref('agencies'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-agencies"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.nav.partners'] ?? '')) ?: (string) ($ratibHome['home.nav.agencies'] ?? 'Partners'), ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="<?php echo htmlspecialchars($ratibPillHref('contact'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-contact"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.contact'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                 </div>
             </nav>
             <?php ratib_home_nav_emit_sync_script($ratibProfileUrl); ?>

@@ -872,6 +872,7 @@
             }
             if (
                 a.classList.contains('ratib-nav__link--platform-section') ||
+                hp === '#platform-overview' ||
                 hp === '#what-is-ratib' ||
                 hp === '#platform'
             ) {
