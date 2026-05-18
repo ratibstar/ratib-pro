@@ -2,8 +2,11 @@
 /**
  * Materialize missing public includes (legacy home.php hard require_once on trust/proof files).
  * Safe to require from ratib-home-public-nav-bootstrap.php — does not load bootstrap itself.
+ *
+ * SERVER CHECK: If this file is deployed, line 2 comment reads FILE_VERSION_RATIB_DEPLOY_ENSURE.
  */
 declare(strict_types=1);
+// FILE_VERSION_RATIB_DEPLOY_ENSURE_20260518
 
 if (!function_exists('ratib_public_materialize_include')) {
     /**

@@ -3,6 +3,8 @@
  * Shared prep for the public home chrome (top bar + sticky SVG nav): CMS flat keys, nav targets, asset bust tokens.
  * Requires $baseUrl (same computation as pages/home.php) before include when used outside home.php.
  *
+ * SERVER CHECK (bootstrap updated): Around line 194 you should see "// Keep home working..." NOT require_once deploy-ensure.
+ *
  * @see pages/home.php
  * @see includes/ratib-home-public-chrome-top.php
  */
