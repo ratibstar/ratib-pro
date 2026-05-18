@@ -58,41 +58,7 @@ sys.exit(0 if int(r.get('status', d.get('status', 0)) or 0)==1 else 1)
 " 2>/dev/null
 }
 
-ensure_remote_dir() {
-  local dir="$1"
-  [ -z "$dir" ] || [ "$dir" = "$REMOTE_BASE" ] && return 0
-  export CPANEL_HOST CPANEL_USER CPANEL_API_TOKEN CPANEL_PORT
-  python3 -c "
-import os, sys, urllib.parse, urllib.request
-dir_path = sys.argv[1]
-host = os.environ['CPANEL_HOST']
-port = os.environ.get('CPANEL_PORT', '2083')
-user = os.environ['CPANEL_USER']
-token = os.environ['CPANEL_API_TOKEN']
-url = f'https://{host}:{port}/execute/Fileman/mkdir'
-data = urllib.parse.urlencode({'path': dir_path, 'permissions': '0755'}).encode('utf-8')
-req = urllib.request.Request(url, data=data, method='POST', headers={
-    'Authorization': f'cpanel {user}:{token}',
-    'Content-Type': 'application/x-www-form-urlencoded',
-})
-try:
-    urllib.request.urlopen(req, timeout=60)
-except Exception:
-    pass
-" "$dir" >/dev/null 2>&1 || true
-}
-
-remote_parent_dir() {
-  local rel="$1"
-  if [ "$(dirname "$rel")" = "." ]; then
-    echo "${REMOTE_BASE}"
-  else
-    echo "${REMOTE_BASE}/$(dirname "$rel")"
-  fi
-}
-
 CRITICAL=(
-  "profile/index.php"
   ".htaccess"
   "public/ratib-build.txt"
   "pages/about.php"
@@ -149,8 +115,6 @@ for rel in "${FILES[@]}"; do
     continue
   fi
   pct=$((n * 100 / TOTAL))
-  parent="$(remote_parent_dir "$rel")"
-  ensure_remote_dir "$parent"
   printf '[%s/%s] %s%% upload %s ... ' "$n" "$TOTAL" "$pct" "$rel"
   RESP="$(upload_one "$rel")" || RESP='{"status":0}'
   if is_ok "$RESP"; then
@@ -168,7 +132,7 @@ echo ""
 echo "========== Summary: ok=${ok} fail=${fail} total=${TOTAL} ($(( ok * 100 / TOTAL ))% success) =========="
 # Must upload core profile stack
 need=0
-for must in "profile/index.php" ".htaccess" "public/ratib-build.txt" "pages/about.php" "js/pages/ratib-profile-nav-guard.js"; do
+for must in ".htaccess" "public/ratib-build.txt" "pages/about.php" "js/pages/ratib-profile-nav-guard.js"; do
   if [ -f "$must" ]; then
     need=$((need + 1))
   fi

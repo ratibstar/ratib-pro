@@ -9,9 +9,10 @@ RewriteRule ^ - [L]
 RewriteCond %{REQUEST_URI} ^/Designed(?:/|$) [NC]
 RewriteRule ^.*$ public/index.php [L,QSA]
 
-# Company profile — physical profile/index.php (/profile/ works; bare /profile gets trailing slash).
+# Company profile — serve about.php (no profile/ folder required on cPanel Fileman).
 RewriteRule ^profile$ /profile/ [R=301,L]
-RewriteRule ^profile/$ profile/index.php [L,QSA]
+RewriteRule ^profile/index\.php$ pages/about.php [L,QSA]
+RewriteRule ^profile/$ pages/about.php [L,QSA]
 RewriteRule ^pages/profile/?$ /profile/ [R=302,L]
 
 # Legacy URLs → canonical /profile (THE_REQUEST = browser URL only; avoids internal rewrite loops).
