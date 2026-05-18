@@ -1,6 +1,6 @@
-# Live web roots for https://out.ratib.sa (from project deploy docs + cPanel layout)
+# Live web roots for https://out.ratib.sa — sync script always targets public_html first.
 /home/outratib/public_html
-/home/outratib/repositories/ratib-pro
 /home/outratib/domains/out.ratib.sa/public_html
 /home/outratib/out.ratib.sa/public_html
-/home/outratib/out.ratib.sa
+# Git checkout (do not serve directly; rsync copies FROM repo TO public_html above)
+/home/outratib/repositories/ratib-pro

@@ -1,5 +1,5 @@
 ---
-# Sync checkout to live docroots. Task must exit 0 or cPanel marks deploy failed.
+# Git push → cPanel pulls repo → this syncs checkout to /home/outratib/public_html
 deployment:
   tasks:
-    - /bin/bash -lc 'bash scripts/cpanel-deploy-sync.sh; exit 0'
+    - /bin/bash -lc 'export RATIB_PUBLIC_HTML=/home/outratib/public_html; bash scripts/cpanel-deploy-sync.sh'

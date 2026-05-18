@@ -44,7 +44,8 @@ Create these keys:
 - `CPANEL_HOST` (example: `server.ratib.sa`)
 - `CPANEL_USER` (example: `outratib`)
 - `CPANEL_API_TOKEN` (cPanel API token from `Manage API Tokens`)
-- `CPANEL_REPO_ROOT` (example: `/home/outratib/repositories/ratib-pro`)
+- `CPANEL_REPO_ROOT` (path shown in cPanel **Git Version Control** for this repo, e.g. `/home/outratib/repositories/ratib-pro`)
+- `RATIB_DEPLOY_SYNC_KEY` (optional, recommended: same value as `ratib-deploy-sync-2026` in `ratib-profile-check.php` — syncs `public_html` if cPanel rsync misses)
 
 ## 4) How deployment works
 
@@ -56,11 +57,28 @@ git commit -m "Update website"
 git push
 ```
 
-Then verify in GitHub -> `Actions`.
+Then verify in GitHub -> `Actions` (deploy step must be green; verify step checks live Profile).
 
-## 5) Notes
+Flow:
 
-- cPanel runs deployment using project `.cpanel.yml`.
-- Workflow calls cPanel UAPI `VersionControlDeployment::create` endpoint.
-- Keep `.cpanel.yml` valid YAML and committed to `main`.
+1. GitHub Actions calls cPanel **VersionControl/update** + **VersionControlDeployment/create** (git pull + `.cpanel.yml`).
+2. `.cpanel.yml` runs `scripts/cpanel-deploy-sync.sh`, which **must** sync the git checkout to **`/home/outratib/public_html`** (live docroot for `out.ratib.sa`).
+3. If secret `RATIB_DEPLOY_SYNC_KEY` is set, Actions also calls `https://out.ratib.sa/ratib-profile-check.php?deploy=1&key=...` as a fallback.
+4. Verify step reads `ratib-profile-check.php` on the live site for `brand-profile` / `company-profile.php`.
+
+**Important:** Green Actions previously did not mean `public_html` was updated — only the git folder. The sync script now **fails** if `public_html` is not updated.
+
+## 5) cPanel one-time check
+
+In cPanel → **Git Version Control**:
+
+- Repository path = same as GitHub secret `CPANEL_REPO_ROOT`
+- Click **Update from Remote**, then **Deploy HEAD Commit**
+- Open `https://out.ratib.sa/pages/ratib-deploy-status.txt` — should show a recent timestamp after deploy
+
+Live docroot (confirmed): `/home/outratib/public_html`
+
+## 6) Notes
+
+- cPanel runs deployment using project `.cpanel.yml` (no longer forced `exit 0` on sync failure).
 - Do not store production secrets in repository files.
