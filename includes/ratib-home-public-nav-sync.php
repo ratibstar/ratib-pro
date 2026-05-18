@@ -12,7 +12,7 @@ function ratib_home_nav_emit_sync_guard_style(): void
     }
     $ratibHeadProfileUrl = rtrim(ratib_public_site_base_url(), '/') . '/profile/#company-profile';
     $ratibHeadProfileJson = json_encode($ratibHeadProfileUrl, JSON_UNESCAPED_SLASHES);
-    echo '<script id="ratib-profile-head-lock">(function(){var P=' . $ratibHeadProfileJson . ';function onProf(){return document.body&&document.body.classList.contains("ratib-about-page");}function openP(){if(onProf()){var el=document.getElementById("company-profile");if(el){el.scrollIntoView({behavior:"smooth",block:"start"});}else{window.location.hash="company-profile";}}else{window.open(P,"_blank","noopener,noreferrer");}}function isProf(a){if(!a)return false;if(a.matches(".ratib-nav__brand-profile,.ratib-nav__link--about,.ratib-nav__go-profile,[data-ratib-profile-nav],[data-ratib-go-profile],.ratib-footer-link--about"))return true;if(a.matches("a.ratib-mega-nav__card")){var t=a.querySelector(".ratib-mega-nav__card-title");if(t&&/company profile/i.test(t.textContent||""))return true;}return false;}function go(ev){var a=ev.target&&ev.target.closest&&ev.target.closest("a");if(!a||!isProf(a))return;ev.preventDefault();ev.stopImmediatePropagation();openP();}function fix(){document.querySelectorAll(".ratib-nav__brand-profile,.ratib-nav__link--about,.ratib-nav__go-profile,.ratib-footer-link--about,[data-ratib-profile-nav]").forEach(function(a){a.setAttribute("href",P);a.setAttribute("data-ratib-go-profile","1");if(!onProf()){a.setAttribute("target","_blank");a.setAttribute("rel","noopener noreferrer");}});document.querySelectorAll("a.ratib-mega-nav__card").forEach(function(c){var t=c.querySelector(".ratib-mega-nav__card-title");if(t&&/company profile/i.test(t.textContent||"")){c.setAttribute("href",P);c.setAttribute("data-ratib-go-profile","1");if(!onProf()){c.setAttribute("target","_blank");c.setAttribute("rel","noopener noreferrer");}}});}fix();document.addEventListener("mousedown",go,true);document.addEventListener("click",go,true);document.addEventListener("DOMContentLoaded",fix);})();</script>';
+    echo '<script id="ratib-profile-head-lock">(function(){var P=' . $ratibHeadProfileJson . ';function isProf(a){if(!a)return false;if(a.matches(".ratib-nav__brand-profile,.ratib-nav__link--about,.ratib-nav__go-profile,[data-ratib-profile-nav],[data-ratib-go-profile],.ratib-footer-link--about"))return true;if(a.matches("a.ratib-mega-nav__card")){var t=a.querySelector(".ratib-mega-nav__card-title");if(t&&/company profile/i.test(t.textContent||""))return true;}return false;}function go(ev){var a=ev.target&&ev.target.closest&&ev.target.closest("a");if(!a||!isProf(a))return;ev.preventDefault();ev.stopImmediatePropagation();window.location.assign(P);}function fix(){document.querySelectorAll(".ratib-nav__brand-profile,.ratib-nav__link--about,.ratib-nav__go-profile,.ratib-footer-link--about,[data-ratib-profile-nav]").forEach(function(a){a.setAttribute("href",P);a.setAttribute("data-ratib-go-profile","1");});document.querySelectorAll("a.ratib-mega-nav__card").forEach(function(c){var t=c.querySelector(".ratib-mega-nav__card-title");if(t&&/company profile/i.test(t.textContent||"")){c.setAttribute("href",P);c.setAttribute("data-ratib-go-profile","1");}});}fix();document.addEventListener("mousedown",go,true);document.addEventListener("click",go,true);document.addEventListener("DOMContentLoaded",fix);})();</script>';
     echo '<style id="ratib-nav-sync-guard">';
     echo '#ratibNavMenu:not([data-ratib-nav-sync="1"]) .ratib-nav__platform-links{visibility:hidden!important;opacity:0!important;pointer-events:none!important;}';
     echo '#ratibNavMenu[data-ratib-nav-sync="1"] .ratib-nav__platform-links{visibility:visible!important;opacity:1!important;pointer-events:auto!important;}';
@@ -35,25 +35,12 @@ function ratib_home_nav_emit_sync_script(string $profileUrl = ''): void
 <script id="ratib-nav-sync-profile">
 (function ratibNavSyncCleanInline(){
 var PROFILE=<?php echo $profileJson; ?>;
-function onProfilePage(){
-  return document.body&&document.body.classList.contains('ratib-about-page');
-}
-function openProfileTab(){
-  if(onProfilePage()){
-    var el=document.getElementById('company-profile');
-    if(el){el.scrollIntoView({behavior:'smooth',block:'start'});}
-    else{window.location.hash='company-profile';}
-    return;
-  }
-  window.open(PROFILE,'_blank','noopener,noreferrer');
-}
 function wireProfileLink(a){
   if(!a)return;
   a.setAttribute('href',PROFILE);
   a.setAttribute('data-ratib-profile-nav','1');
   a.setAttribute('data-ratib-go-profile','1');
-  if(!onProfilePage()){a.setAttribute('target','_blank');a.setAttribute('rel','noopener noreferrer');}
-  a.onclick=function(e){e.preventDefault();e.stopPropagation();openProfileTab();return false;};
+  a.onclick=function(e){e.preventDefault();e.stopPropagation();window.location.assign(PROFILE);return false;};
 }
 function wireAllProfileLinks(){
   document.querySelectorAll('.ratib-nav__brand-profile,.ratib-nav__link--about,[data-ratib-profile-nav],[data-ratib-go-profile]').forEach(wireProfileLink);
@@ -170,7 +157,7 @@ function goProfile(ev){
   if(!a)return;
   ev.preventDefault();
   ev.stopImmediatePropagation();
-  openProfileTab();
+  window.location.assign(PROFILE);
 }
 if(!window.__ratibProfileNavGuard){
   window.__ratibProfileNavGuard=1;

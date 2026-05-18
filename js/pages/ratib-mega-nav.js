@@ -92,10 +92,6 @@
         return o ? o + '/profile/#company-profile' : '/profile/#company-profile';
     }
 
-    function onProfilePage() {
-        return document.body && document.body.classList.contains('ratib-about-page');
-    }
-
     function fixProfileHrefs() {
         var PROFILE = profileHref();
         document
@@ -105,19 +101,15 @@
             .forEach(function (a) {
                 a.setAttribute('href', PROFILE);
                 a.setAttribute('data-ratib-profile-nav', '1');
-                if (!onProfilePage()) {
-                    a.setAttribute('target', '_blank');
-                    a.setAttribute('rel', 'noopener noreferrer');
-                }
+                a.removeAttribute('target');
+                a.removeAttribute('rel');
             });
         document.querySelectorAll('a.ratib-mega-nav__card').forEach(function (card) {
             var t = card.querySelector('.ratib-mega-nav__card-title');
             if (t && /company profile/i.test(t.textContent || '')) {
                 card.setAttribute('href', PROFILE);
-                if (!onProfilePage()) {
-                    card.setAttribute('target', '_blank');
-                    card.setAttribute('rel', 'noopener noreferrer');
-                }
+                card.removeAttribute('target');
+                card.removeAttribute('rel');
             }
         });
     }
