@@ -312,7 +312,10 @@ require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
 <head>
     <!-- ratib-cms-build: site-content=<?php echo (int) (@filemtime(__DIR__ . '/../includes/site-content.php') ?: 0); ?> home-data=<?php echo (int) (@filemtime(__DIR__ . '/../includes/site-content-home-data.php') ?: 0); ?> load=<?php echo (int) (@filemtime(__DIR__ . '/../config/env/load.php') ?: 0); ?> cms-src=<?php echo htmlspecialchars(function_exists('ratib_site_content_public_source_resolved') ? ratib_site_content_public_source_resolved() : '', ENT_QUOTES, 'UTF-8'); ?> phone-len=<?php echo (int) strlen((string) ($ratibHome['home.topbar.phone_display'] ?? '')); ?> dbfp=<?php echo htmlspecialchars($ratibDbFingerprint, ENT_QUOTES, 'UTF-8'); ?> ui-rev=<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?> -->
     <meta charset="UTF-8">
-    <?php ratib_home_nav_emit_sync_guard_style(); ?>
+    <?php
+    ratib_home_nav_emit_sync_guard_style();
+    ratib_emit_profile_same_tab_fix($baseUrl);
+    ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="ratib-home-ui-rev" content="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
     <meta name="ratib-chrome-bundle" content="<?php echo htmlspecialchars($ratibChromeBundleHash, ENT_QUOTES, 'UTF-8'); ?>">

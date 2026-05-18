@@ -42,7 +42,10 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
 <html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <?php ratib_home_nav_emit_sync_guard_style(); ?>
+    <?php
+    ratib_home_nav_emit_sync_guard_style();
+    ratib_emit_profile_same_tab_fix($baseUrl);
+    ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?php echo htmlspecialchars($metaDesc, ENT_QUOTES, 'UTF-8'); ?>">
     <meta name="robots" content="index, follow">
