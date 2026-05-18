@@ -241,6 +241,10 @@ if ($useOwnProgram && isset($GLOBALS['control_conn'])) {
 
 define('CONTROL_CONFIG_LOADED', true);
 
+$ratibCompat = dirname(__DIR__, 2) . '/includes/ratib-php74-compat.php';
+if (is_file($ratibCompat)) {
+    require_once $ratibCompat;
+}
 $ratibHtmlPatch = dirname(__DIR__, 2) . '/includes/ratib_html_global_ai_patch.php';
 if (is_file($ratibHtmlPatch)) {
     require_once $ratibHtmlPatch;
