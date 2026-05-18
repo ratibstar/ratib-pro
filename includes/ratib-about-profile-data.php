@@ -16,8 +16,8 @@ if (!function_exists('ratib_about_profile_config')) {
 
         return [
             'meta' => [
-                'title' => 'About RATIB — Enterprise Workforce Program Infrastructure',
-                'description' => 'RATIB is the operations control plane for cross-border workforce programs: recruitment orchestration, workforce telemetry, compliance governance, and finance-grade operations.',
+                'title' => 'About Ratib Company — Company profile',
+                'description' => 'Official Ratib Company profile: who we are, platform architecture, operations modules, and contact — separate from the public marketing homepage.',
             ],
             'screenshots' => [
                 'hero' => ['src' => $img('about-ratib-command.png'), 'alt' => 'RATIB operations control plane — live recruitment records, SLA adherence, and workforce telemetry'],

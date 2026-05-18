@@ -24,11 +24,11 @@ if (!function_exists('ratib_about_render_sections')) {
         <section class="ratib-about-hero" id="top" aria-labelledby="about-hero-title">
             <div class="ratib-about-container ratib-about-hero__grid">
                 <div class="ratib-about-hero__copy" data-ratib-reveal>
-                    <p class="ratib-about-page-label" aria-hidden="true">Company profile</p>
-                    <p class="ratib-about-eyebrow">Ratib Company · Workforce Program Infrastructure</p>
-                    <h1 id="about-hero-title" class="ratib-about-hero__title">Enterprise Workforce Program <span class="ratib-about-gradient">Infrastructure</span></h1>
-                    <p class="ratib-about-hero__lead">Recruitment orchestration, workforce telemetry, compliance governance, and finance-grade operations on one multi-tenant control plane.</p>
-                    <p class="ratib-about-hero__sub">Secondary: Recruitment Automation &amp; Workforce Intelligence</p>
+                    <p class="ratib-about-page-label">Company profile · About RATIB</p>
+                    <p class="ratib-about-eyebrow">Ratib Software Foundation · Riyadh, Saudi Arabia</p>
+                    <h1 id="about-hero-title" class="ratib-about-hero__title">About <span class="ratib-about-gradient">Ratib Company</span></h1>
+                    <p class="ratib-about-hero__lead">Who we are, what the platform does, and how sending-country agencies and host-market programs run on one operations control plane.</p>
+                    <p class="ratib-about-hero__sub">Marketing homepage uses a different hero — open “Marketing home” in the banner above to compare.</p>
                     <div class="ratib-about-hero__actions">
                         <a href="<?php echo ratib_about_h($contactWa); ?>" target="_blank" rel="noopener noreferrer" class="ratib-about-btn ratib-about-btn--primary ratib-about-btn--lg">Request Platform Demo</a>
                         <a href="<?php echo ratib_about_h($homeRegister); ?>" class="ratib-about-btn ratib-about-btn--outline ratib-about-btn--lg">Launch Agency Workspace</a>

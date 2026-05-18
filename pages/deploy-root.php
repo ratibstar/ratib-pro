@@ -37,4 +37,6 @@ $htaccessPath = $root . '/.htaccess';
 $htaccessSample = is_file($htaccessPath) ? (string) file_get_contents($htaccessPath, false, null, 0, 8000) : '';
 echo 'htaccess_profile_about=' . (str_contains($htaccessSample, 'RewriteRule ^profile/$ pages/about.php') ? 'yes' : 'no') . "\n";
 echo 'htaccess_profile_index=' . (str_contains($htaccessSample, 'profile/index.php') ? 'yes' : 'no') . "\n";
+$aboutSample = is_file($aboutPath) ? (string) file_get_contents($aboutPath, false, null, 0, 16000) : '';
+echo 'about_distinct_banner=' . (str_contains($aboutSample, 'ratib-profile-distinct-banner') ? 'yes' : 'no') . "\n";
 

@@ -27,6 +27,66 @@ body.ratib-about-page {
   scroll-margin-top: 180px;
 }
 
+.ratib-profile-distinct-banner {
+  position: relative;
+  z-index: 50;
+  margin: 0;
+  padding: 0.85rem 0;
+  background: linear-gradient(90deg, rgba(88, 28, 135, 0.55), rgba(30, 58, 138, 0.45));
+  border-bottom: 1px solid rgba(167, 139, 250, 0.35);
+  box-shadow: 0 8px 32px rgba(88, 28, 135, 0.25);
+}
+
+.ratib-profile-distinct-banner__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+}
+
+.ratib-profile-distinct-banner__badge {
+  flex-shrink: 0;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f5f3ff;
+  background: rgba(139, 92, 246, 0.45);
+  border: 1px solid rgba(196, 181, 253, 0.55);
+}
+
+.ratib-profile-distinct-banner__text {
+  flex: 1 1 14rem;
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #e9d5ff;
+}
+
+.ratib-profile-distinct-banner__text strong {
+  color: #fff;
+}
+
+.ratib-profile-distinct-banner__link {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #bfdbfe;
+  text-decoration: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(147, 197, 253, 0.45);
+  background: rgba(30, 58, 138, 0.35);
+  transition: background 0.2s, color 0.2s;
+}
+
+.ratib-profile-distinct-banner__link:hover {
+  color: #fff;
+  background: rgba(59, 130, 246, 0.45);
+}
+
 .ratib-about-main {
   position: relative;
   z-index: 1;
@@ -75,16 +135,17 @@ body.ratib-about-page {
 /* Typography */
 .ratib-about-page-label {
   display: inline-block;
-  margin: 0 0 0.5rem;
-  padding: 0.2rem 0.65rem;
+  margin: 0 0 0.65rem;
+  padding: 0.35rem 0.85rem;
   border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #e9d5ff;
-  background: rgba(139, 92, 246, 0.22);
-  border: 1px solid rgba(167, 139, 250, 0.45);
+  color: #faf5ff;
+  background: rgba(139, 92, 246, 0.38);
+  border: 1px solid rgba(196, 181, 253, 0.55);
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.35);
 }
 
 .ratib-about-eyebrow {
