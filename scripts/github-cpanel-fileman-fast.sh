@@ -1,5 +1,5 @@
 #!/bin/bash
-# Fast path: only files required for profile + deploy verify (~30-60s total).
+# Fast path: profile page + deploy verify (~2 min).
 set -uo pipefail
 
 CPANEL_HOST="${CPANEL_HOST:?}"
@@ -32,15 +32,30 @@ sys.exit(0 if int(r.get('status', d.get('status', 0)) or 0) == 1 else 1)
 " "$rel" "$dir" "$file"
 }
 
-# build marker LAST so verify sees this commit immediately after upload
 FILES=(
   ".htaccess"
   "profile/index.php"
+  "pages/about.php"
   "pages/deploy-root.php"
+  "includes/ratib-home-public-chrome-top.php"
+  "includes/ratib-home-public-nav-sync.php"
+  "includes/ratib-home-public-nav-bootstrap.php"
+  "includes/ratib-public-base-url.php"
+  "includes/ratib-home-public-footer.php"
+  "includes/ratib-about-profile-data.php"
+  "includes/ratib-about-sections.php"
+  "js/pages/ratib-profile-nav-guard.js"
+  "js/pages/ratib-mega-nav.js"
+  "js/pages/ratib-home-nav-chrome.js"
+  "js/pages/about-enterprise.js"
+  "css/pages/about-enterprise.css"
+  "css/pages/home-public.css"
+  "css/pages/ratib-mega-nav.css"
   "public/ratib-build.txt"
 )
 
 ok=0
+fail=0
 for rel in "${FILES[@]}"; do
   [ -f "$rel" ] || { echo "SKIP $rel"; continue; }
   echo -n "upload $rel ... "
@@ -49,8 +64,9 @@ for rel in "${FILES[@]}"; do
     ok=$((ok + 1))
   else
     echo FAIL
+    fail=$((fail + 1))
   fi
 done
 
-echo "fast fileman ok=${ok}/${#FILES[@]}"
-[ "$ok" -ge 3 ]
+echo "fast fileman ok=${ok} fail=${fail} total=${#FILES[@]}"
+[ "$ok" -ge 12 ]

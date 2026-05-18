@@ -26,7 +26,7 @@ jobs:
           echo "expected=${EXPECTED}" >> "$GITHUB_OUTPUT"
           echo "Deploy marker: ${EXPECTED}"
 
-      - name: Fast upload to public_html (Fileman — 4 files)
+      - name: Fast upload to public_html (Fileman — profile bundle)
         id: fileman
         env:
           CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
