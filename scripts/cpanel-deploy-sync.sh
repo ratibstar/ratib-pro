@@ -45,6 +45,23 @@ CRITICAL_FILES=(
   "css/pages/home-public.css"
   "css/pages/about-enterprise.css"
   "js/pages/about-enterprise.js"
+  "includes/ratib-enterprise-trust-home.php"
+  "includes/ratib-operational-proof-data.php"
+  "includes/ratib-operational-proof-render.php"
+  "css/pages/enterprise-trust-layer.css"
+  "css/pages/operational-proof.css"
+  "includes/ratib-security-compliance-data.php"
+  "includes/ratib-security-compliance-sections.php"
+  "includes/ratib-architecture-data.php"
+  "includes/ratib-architecture-sections.php"
+  "includes/ratib-procurement-legal-data.php"
+  "includes/ratib-procurement-legal-sections.php"
+  "pages/security-compliance.php"
+  "pages/architecture.php"
+  "pages/procurement-legal.php"
+  "css/pages/security-compliance.css"
+  "css/pages/architecture.css"
+  "css/pages/procurement-legal.css"
 )
 
 TARGETS=()

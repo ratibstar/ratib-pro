@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Public: Home / landing page — English, layout like ratib.sa reference.
  * EN: Prepares server-side values (plans/currency/assets), renders page sections, and bootstraps JS config.
@@ -333,14 +333,37 @@ if ($ratibCmsRev !== '') {
     }
 }
 require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
-require_once __DIR__ . '/../includes/ratib-enterprise-trust-home.php';
-require_once __DIR__ . '/../includes/ratib-operational-proof-render.php';
+
+$ratibEntTrustInclude = __DIR__ . '/../includes/ratib-enterprise-trust-home.php';
+if (is_file($ratibEntTrustInclude)) {
+    require_once $ratibEntTrustInclude;
+} elseif (!function_exists('ratib_enterprise_trust_render_home')) {
+    function ratib_enterprise_trust_render_home(array $ratibHome, string $baseUrl): void
+    {
+    }
+    function ratib_enterprise_trust_render_hero_strip(array $ratibHome): void
+    {
+    }
+}
+
+$ratibOpProofInclude = __DIR__ . '/../includes/ratib-operational-proof-render.php';
+$ratibOpProofAvailable = is_file($ratibOpProofInclude);
+if ($ratibOpProofAvailable) {
+    require_once $ratibOpProofInclude;
+} elseif (!function_exists('ratib_operational_proof_render')) {
+    function ratib_operational_proof_render(string $baseUrl, ?array $copy = null, array $show = []): void
+    {
+    }
+}
+
 $ratibEntCssPath = __DIR__ . '/../css/pages/enterprise-trust-layer.css';
 clearstatcache(true, $ratibEntCssPath);
 $ratibEntCssQuery = (int) (@filemtime($ratibEntCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+$ratibEntCssAvailable = is_file($ratibEntCssPath);
 $ratibOpCssPath = __DIR__ . '/../css/pages/operational-proof.css';
 clearstatcache(true, $ratibOpCssPath);
 $ratibOpCssQuery = (int) (@filemtime($ratibOpCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+$ratibOpCssAvailable = is_file($ratibOpCssPath);
 $ratibSiteRoot = rtrim($baseUrl, '/');
 ?>
 <!DOCTYPE html>
@@ -367,8 +390,12 @@ $ratibSiteRoot = rtrim($baseUrl, '/');
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/chat-widget.css">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo htmlspecialchars($ratibHomePublicCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php if ($ratibEntCssAvailable) { ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/enterprise-trust-layer.css?v=<?php echo htmlspecialchars($ratibEntCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php } ?>
+    <?php if ($ratibOpCssAvailable) { ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/operational-proof.css?v=<?php echo htmlspecialchars($ratibOpCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php } ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/ratib-mega-nav.css?v=<?php echo htmlspecialchars($ratibMegaNavCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <style id="ratib-nav-css-fallback">
       /* Layout-only rescue — no fixed icon sizes here (!important would override home-public / ratib-mega-nav). */
@@ -676,13 +703,13 @@ ratib_emit_profile_nav_guard($baseUrl);
 
         <?php ratib_enterprise_trust_render_home($ratibHome, $baseUrl); ?>
 
-        <?php
-        ratib_operational_proof_render($baseUrl, [
-            'eyebrow' => (string) ($ratibHome['home.op_proof.eyebrow'] ?? 'Operational proof'),
-            'title' => (string) ($ratibHome['home.op_proof.title'] ?? ''),
-            'sub' => (string) ($ratibHome['home.op_proof.sub'] ?? ''),
-        ]);
-        ?>
+        <?php if ($ratibOpProofAvailable) {
+            ratib_operational_proof_render($baseUrl, [
+                'eyebrow' => (string) ($ratibHome['home.op_proof.eyebrow'] ?? 'Operational proof'),
+                'title' => (string) ($ratibHome['home.op_proof.title'] ?? ''),
+                'sub' => (string) ($ratibHome['home.op_proof.sub'] ?? ''),
+            ]);
+        } ?>
 
         <section class="ratib-section ratib-domains-embed" id="domains">
             <div class="ratib-container">
