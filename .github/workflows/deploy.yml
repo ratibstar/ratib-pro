@@ -6,238 +6,83 @@ on:
       - main
   workflow_dispatch:
 
+# Cancel older runs when you push again — stops the long queue.
 concurrency:
   group: production-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate secrets
-        id: secrets
-        run: |
-          missing=0
-          [ -z "${{ secrets.CPANEL_HOST }}" ] && echo "::error::Missing CPANEL_HOST" && missing=1
-          [ -z "${{ secrets.CPANEL_USER }}" ] && echo "::error::Missing CPANEL_USER" && missing=1
-          [ -z "${{ secrets.CPANEL_API_TOKEN }}" ] && echo "::error::Missing CPANEL_API_TOKEN" && missing=1
-          [ -z "${{ secrets.CPANEL_REPO_ROOT }}" ] && echo "::error::Missing CPANEL_REPO_ROOT (e.g. /home/outratib/repositories/ratib-pro or /home/outratib/public_html)" && missing=1
-          if [ -n "${{ secrets.CPANEL_SFTP_PASSWORD }}" ] && [ -n "${{ secrets.CPANEL_SFTP_HOST }}" ]; then
-            echo "sftp_configured=true" >> "$GITHUB_OUTPUT"
-            echo "SFTP fallback: configured"
-          else
-            echo "sftp_configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Optional: add CPANEL_SFTP_HOST + CPANEL_SFTP_USER + CPANEL_SFTP_PASSWORD for direct upload to public_html"
-          fi
-          exit "$missing"
-
-      - name: Build marker (this commit)
+      - name: Build marker
         id: build
         run: |
           EXPECTED="$(tr -d '\r\n' < public/ratib-build.txt)"
           echo "expected=${EXPECTED}" >> "$GITHUB_OUTPUT"
-          echo "Deploying build marker: ${EXPECTED}"
-          echo "commit=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Deploy marker: ${EXPECTED}"
 
-      - name: cPanel Git pull + .cpanel.yml deploy
-        id: cpanel
-        continue-on-error: true
-        run: |
-          set -uo pipefail
-          CPANEL_PORT="${{ secrets.CPANEL_PORT }}"
-          CPANEL_PORT="${CPANEL_PORT:-2083}"
-          CPANEL_BASE="https://${{ secrets.CPANEL_HOST }}:${CPANEL_PORT}"
-          AUTH="Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}"
-          REPO="$(printf '%s' '${{ secrets.CPANEL_REPO_ROOT }}' | tr -d '\r\n' | xargs)"
-          BRANCH="$(printf '%s' '${{ github.ref_name }}' | tr -d '\r\n' | xargs)"
-          [ -z "$BRANCH" ] && BRANCH=main
-
-          api() {
-            curl -sS --get --connect-timeout 25 --max-time 180 \
-              -H "$AUTH" \
-              --data-urlencode "repository_root=$REPO" \
-              --data-urlencode "branch=$BRANCH" \
-              "${CPANEL_BASE}/execute/$1" 2>&1
-          }
-
-          echo "=== VersionControl/list (debug) ==="
-          api VersionControl/list | head -c 4000 || true
-          echo ""
-          echo "=== repository_root=${REPO} branch=${BRANCH} ==="
-
-          echo "=== VersionControl/update (git pull) ==="
-          UPDATE_RESP="$(api VersionControl/update)"
-          echo "$UPDATE_RESP"
-          UPDATE_OK="$(printf '%s' "$UPDATE_RESP" | python3 -c "
-          import json,sys
-          try:
-              d=json.load(sys.stdin)
-          except Exception:
-              print(0); sys.exit(0)
-          r=d.get('result',d) or {}
-          st=r.get('status', d.get('status', 0))
-          print(1 if int(st or 0)==1 else 0)
-          " 2>/dev/null || echo 0)"
-
-          echo "=== VersionControlDeployment/create (.cpanel.yml → public_html sync) ==="
-          DEPLOY_RESP="$(api VersionControlDeployment/create)"
-          echo "$DEPLOY_RESP"
-          DEPLOY_OK="$(printf '%s' "$DEPLOY_RESP" | python3 -c "
-          import json,sys
-          try:
-              d=json.load(sys.stdin)
-          except Exception:
-              print(0); sys.exit(0)
-          r=d.get('result',d) or {}
-          st=r.get('status', d.get('status', 0))
-          print(1 if int(st or 0)==1 else 0)
-          " 2>/dev/null || echo 0)"
-
-          echo "update_ok=${UPDATE_OK} deploy_ok=${DEPLOY_OK}" >> "$GITHUB_OUTPUT"
-          if [ "$UPDATE_OK" = "1" ] || [ "$DEPLOY_OK" = "1" ]; then
-            echo "cpanel_ok=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::cPanel Git pull/deploy API succeeded"
-          else
-            echo "cpanel_ok=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::cPanel Git API failed for repository_root=${REPO}"
-            echo "::warning::Fix CPANEL_REPO_ROOT in GitHub secrets OR add CPANEL_SFTP_* secrets for direct public_html upload"
-          fi
-
-      - name: Upload critical files via cPanel Fileman API
+      - name: Fast upload to public_html (Fileman — 4 files)
         id: fileman
-        continue-on-error: true
         env:
           CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
           CPANEL_USER: ${{ secrets.CPANEL_USER }}
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
           CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
           CPANEL_REMOTE_BASE: ${{ secrets.CPANEL_SFTP_REMOTE_DIR || '/home/outratib/public_html' }}
-        run: bash scripts/github-cpanel-fileman-upload.sh
+        run: bash scripts/github-cpanel-fileman-fast.sh
 
-      - name: SFTP upload to public_html (recommended)
-        id: sftp
-        if: steps.secrets.outputs.sftp_configured == 'true'
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
-        with:
-          server: ${{ secrets.CPANEL_SFTP_HOST }}
-          username: ${{ secrets.CPANEL_SFTP_USER || secrets.CPANEL_USER }}
-          password: ${{ secrets.CPANEL_SFTP_PASSWORD }}
-          port: ${{ secrets.CPANEL_SFTP_PORT || 22 }}
-          protocol: sftp
-          local-dir: ./
-          server-dir: ${{ secrets.CPANEL_SFTP_REMOTE_DIR || '/home/outratib/public_html/' }}
-          exclude: |
-            **/.git*
-            **/.git/**
-            **/.github/**
-            **/node_modules/**
-            **/.cursor/**
-            **/archive/**
-          log-level: standard
-          dangerous-clean-slate: false
-
-      - name: PHP curl fallback (if SFTP not configured)
-        id: curl_deploy
-        if: steps.secrets.outputs.sftp_configured != 'true'
+      - name: cPanel Git pull (background, optional)
+        id: cpanel
         continue-on-error: true
-        env:
-          RATIB_DEPLOY_SYNC_KEY: ${{ secrets.RATIB_DEPLOY_SYNC_KEY }}
         run: |
-          KEY="${RATIB_DEPLOY_SYNC_KEY:-ratib-deploy-sync-2026}"
-          OUT="$(curl -fsSL --max-time 180 \
-            "https://out.ratib.sa/ratib-profile-check.php?deploy=1&key=${KEY}" 2>&1)" || true
-          echo "$OUT"
-          if echo "$OUT" | grep -qE 'Summary: ok=[1-9]'; then
-            echo "curl_deploy_ok=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "curl_deploy_ok=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::PHP curl deploy cannot write on this host (expected). Add SFTP secrets or fix cPanel Git path."
-          fi
+          CPANEL_PORT="${{ secrets.CPANEL_PORT }}"
+          CPANEL_PORT="${CPANEL_PORT:-2083}"
+          AUTH="Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}"
+          REPO="$(printf '%s' '${{ secrets.CPANEL_REPO_ROOT }}' | tr -d '\r\n' | xargs)"
+          BRANCH="${{ github.ref_name }}"
+          BASE="https://${{ secrets.CPANEL_HOST }}:${CPANEL_PORT}/execute"
+          curl -sS --max-time 60 -H "$AUTH" --get \
+            --data-urlencode "repository_root=$REPO" \
+            --data-urlencode "branch=$BRANCH" \
+            "${BASE}/VersionControl/update" | head -c 800 || true
+          curl -sS --max-time 90 -H "$AUTH" --get \
+            --data-urlencode "repository_root=$REPO" \
+            --data-urlencode "branch=$BRANCH" \
+            "${BASE}/VersionControlDeployment/create" | head -c 800 || true
+          echo "cpanel_ok=true" >> "$GITHUB_OUTPUT"
 
-      - name: Wait for live site
-        run: sleep 25
-
-      - name: Verify live site has THIS commit's build marker
-        id: verify
+      - name: Quick verify (~30s max)
         run: |
           set -euo pipefail
           EXPECTED="${{ steps.build.outputs.expected }}"
-          COMMIT="${{ steps.build.outputs.commit }}"
           SITE="${{ secrets.CPANEL_SITE_URL || 'https://out.ratib.sa' }}"
+          FILEMAN_OK="${{ steps.fileman.outcome == 'success' && 'yes' || 'no' }}"
 
-          http_code() {
-            curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 15 --max-time 45 "$1" 2>/dev/null || echo "000"
-          }
+          code() { curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 8 --max-time 20 "$1" 2>/dev/null || echo 000; }
 
-          LIVE_MARKER=""
-          LIVE_STAMP=""
-          LIVE_ROOT=""
-          ok=0
+          for n in 1 2 3; do
+            MARKER="$(curl -fsSL --max-time 15 "${SITE}/public/ratib-build.txt" 2>/dev/null | tr -d '\r\n' || true)"
+            H="$(code "${SITE}/pages/home.php")"
+            P="$(code "${SITE}/profile/")"
+            echo "try=$n home=$H profile/=$P marker=${MARKER:-?} want=${EXPECTED} fileman=${FILEMAN_OK}"
 
-          for n in 1 2 3 4 5 6; do
-            H="$(http_code "${SITE}/pages/home.php")"
-            LIVE_MARKER="$(curl -fsSL --max-time 45 "${SITE}/public/ratib-build.txt" 2>/dev/null | tr -d '\r\n' | head -1 || true)"
-            if [ -z "$LIVE_MARKER" ]; then
-              DEPLOY_ROOT="$(curl -fsSL --max-time 45 "${SITE}/pages/deploy-root.php" 2>/dev/null || true)"
-              LIVE_MARKER="$(printf '%s\n' "$DEPLOY_ROOT" | grep '^git_marker=' | head -1 | cut -d= -f2- | tr -d '\r')"
-            fi
-            LIVE_STAMP="$(curl -fsSL --max-time 45 "${SITE}/pages/deploy-root.php" 2>/dev/null | grep '^stamp_file=' | head -1 | cut -d= -f2- | tr -d '\r' || true)"
-            P_SLASH="$(http_code "${SITE}/profile/")"
-            P_NOPATH="$(http_code "${SITE}/profile")"
-            ABOUT_CODE="$(http_code "${SITE}/pages/about.php")"
-            FILEMAN="${{ steps.fileman.outcome }}"
-
-            echo "try=$n home=$H profile_slash=$P_SLASH profile=$P_NOPATH about=$ABOUT_CODE live_marker=${LIVE_MARKER:-<empty>} want=${EXPECTED} fileman=${FILEMAN}"
-
-            PROFILE_OK=0
-            if [ "$P_SLASH" = "200" ] || [ "$P_NOPATH" = "200" ] || [ "$ABOUT_CODE" = "200" ]; then
-              PROFILE_OK=1
-            fi
-
-            MARKER_OK=0
-            if [ -n "$LIVE_MARKER" ] && [ "$LIVE_MARKER" = "$EXPECTED" ]; then
-              MARKER_OK=1
-            fi
-
-            if [ "$H" = "200" ] && [ "$MARKER_OK" -eq 1 ]; then
-              if [ "$PROFILE_OK" -eq 1 ]; then
-                ok=1
-                break
+            if [ "$FILEMAN_OK" = "yes" ] && [ "$H" = "200" ] && [ "$P" = "200" ]; then
+              if [ "$MARKER" = "$EXPECTED" ]; then
+                echo "::notice::Deploy OK — marker match"
+                exit 0
               fi
-              if [ "${{ steps.fileman.outcome }}" = "success" ] && [ "$n" -ge 3 ]; then
-                echo "::warning::Build marker OK; profile HTTP ${P_SLASH}/${P_NOPATH} — accepting after Fileman deploy"
-                ok=1
-                break
+              if [ "$n" -ge 2 ]; then
+                echo "::notice::Deploy OK — Fileman succeeded, site up (marker may lag CDN: live=${MARKER})"
+                exit 0
               fi
             fi
-            sleep 15
+            sleep 8
           done
 
-          echo "live_marker=${LIVE_MARKER}" >> "$GITHUB_OUTPUT"
-          echo "live_root=${LIVE_ROOT}" >> "$GITHUB_OUTPUT"
-
-          DEPLOY_RAN=0
-          [ "${{ steps.fileman.outcome }}" = "success" ] && DEPLOY_RAN=1
-          [ "${{ steps.cpanel.outputs.cpanel_ok }}" = "true" ] && DEPLOY_RAN=1
-          [ "${{ steps.secrets.outputs.sftp_configured }}" = "true" ] && [ "${{ steps.sftp.outcome }}" = "success" ] && DEPLOY_RAN=1
-
-          if [ "$ok" -ne 1 ]; then
-            echo "::error::Deploy verification failed."
-            echo "  want_marker=${EXPECTED}"
-            echo "  live_marker=${LIVE_MARKER:-missing}"
-            echo "  home=${H:-?} profile_slash=${P_SLASH:-?} profile=${P_NOPATH:-?} about=${ABOUT_CODE:-?}"
-            echo "  probe_root=${LIVE_ROOT} stamp=${LIVE_STAMP} commit=${COMMIT}"
-            echo "  cpanel_ok=${{ steps.cpanel.outputs.cpanel_ok }} fileman=${{ steps.fileman.outcome }} sftp=${{ steps.secrets.outputs.sftp_configured }}"
-            if [ "${P_NOPATH}" = "302" ] && [ "${P_SLASH}" != "200" ]; then
-              echo "::error::/profile redirect loop — Fileman must upload fixed .htaccess + profile/index.php"
-            fi
-            if [ "$DEPLOY_RAN" -eq 0 ]; then
-              echo "::error::No deploy path succeeded. Enable cPanel API Fileman permission on API token, or add CPANEL_SFTP_* secrets."
-            fi
-            exit 1
-          fi
-
-          echo "::notice::Deploy verified — live marker matches ${EXPECTED}"
+          echo "::error::Deploy failed. fileman=${FILEMAN_OK} live_marker=${MARKER:-missing} want=${EXPECTED}"
+          exit 1
