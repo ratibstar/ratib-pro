@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 cPanel Fileman deploy — same save_file_content API as run #858/#860.
-fast mode (~6 files, ~45–60s) on every push; critical/all on manual full sync only.
+fast mode: FAST_FILES baseline + any commit-changed paths under DEPLOY_ALLOW_PREFIXES.
+critical/all on manual full sync only.
 """
 from __future__ import annotations
 
@@ -14,7 +15,33 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 
-# ~1 min on push: smallest set that updates profile nav + marker (build txt LAST).
+# Paths auto-uploaded when changed in the pushed commit (see build_file_list).
+DEPLOY_ALLOW_PREFIXES = (
+    "includes/",
+    "pages/",
+    "control-panel/",
+    "js/",
+    "css/",
+    "api/",
+    "config/env/",
+    "public/",
+)
+DEPLOY_ALLOW_FILES = frozenset({
+    ".htaccess",
+    "index.php",
+    "ratib-profile-fix.php",
+})
+DEPLOY_DENY_PREFIXES = (
+    "Designed/",
+    ".git/",
+    ".github/",
+    ".cursor/",
+    "archive/",
+    "node_modules/",
+)
+FAST_DEPLOY_CHANGED_CAP = 40
+
+# ~1–2 min on push: always-sync core + build marker LAST.
 FAST_FILES = [
     ".htaccess",
     "index.php",
@@ -39,6 +66,8 @@ FAST_FILES = [
     "js/pages/ratib-profile-nav-guard.js",
     "js/pages/ratib-mega-nav.js",
     "js/pages/home-page.js",
+    "css/pages/home-public.css",
+    "css/pages/ratib-mega-nav.css",
     "pages/deploy-root.php",
     "pages/ratib-which-page.php",
     "pages/ratib-purge-cache.php",
@@ -51,6 +80,8 @@ FAST_FILES = [
     "control-panel/pages/control/control-hub.php",
     "control-panel/pages/control-support-chats.php",
     "control-panel/pages/control-agencies.php",
+    "control-panel/includes/control/layout-wrapper.php",
+    "control-panel/includes/control/client-platform-nav.php",
 ]
 
 CRITICAL = [
@@ -87,9 +118,13 @@ CRITICAL = [
     "pages/home.php",
     "control-panel/includes/control/public-marketing-urls.php",
     "control-panel/includes/control/sidebar.php",
+    "control-panel/includes/control/registration-requests-content.php",
+    "control-panel/pages/control/control-hub.php",
+    "control-panel/pages/control-support-chats.php",
+    "control-panel/pages/control-agencies.php",
 ]
 
-CRITICAL_SET = set(CRITICAL)
+CRITICAL_SET = set(CRITICAL) | set(FAST_FILES)
 
 MUST_OK = [
     ".htaccess",
@@ -102,6 +137,17 @@ MUST_OK = [
 ]
 
 _print_lock = Lock()
+
+
+def is_auto_deploy_path(path: str) -> bool:
+    if not path or path.startswith("."):
+        return False
+    for deny in DEPLOY_DENY_PREFIXES:
+        if path.startswith(deny) or f"/{deny}" in f"/{path}/":
+            return False
+    if path in DEPLOY_ALLOW_FILES:
+        return True
+    return any(path.startswith(prefix) for prefix in DEPLOY_ALLOW_PREFIXES)
 
 
 def remote_dir(remote_base: str, rel: str) -> str:
@@ -216,15 +262,30 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
     if mode == "critical":
         return list(CRITICAL), 3
 
-    # fast (default on push): core files + this commit's changed critical paths (cap 10 extras)
+    # fast (default on push): baseline FAST_FILES + any changed deployable paths in this commit
     marker = FAST_FILES[-1]
     core = [f for f in FAST_FILES if f != marker]
+    seen = set(core)
+    seen.add(marker)
     extras: list[str] = []
     for path in sorted(git_changed_paths()):
-        if path in CRITICAL_SET and path not in core and path != marker:
-            extras.append(path)
-    extras = extras[:10]
+        if path in seen:
+            continue
+        if not is_auto_deploy_path(path):
+            continue
+        if not os.path.isfile(path):
+            continue
+        extras.append(path)
+        seen.add(path)
+        if len(extras) >= FAST_DEPLOY_CHANGED_CAP:
+            break
     files = core + extras + [marker]
+    if extras:
+        print(
+            f"fast deploy: +{len(extras)} commit-changed file(s): {', '.join(extras[:8])}"
+            + (" …" if len(extras) > 8 else ""),
+            flush=True,
+        )
     return files, 2
 
 

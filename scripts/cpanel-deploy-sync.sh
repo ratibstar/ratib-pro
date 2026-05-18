@@ -18,6 +18,9 @@ log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$LOG"; 
 
 log "start marker=${MARKER} ROOT=${ROOT} PUBLIC_HTML=${PUBLIC_HTML} rsync_delete=${RATIB_RSYNC_DELETE}"
 
+# Keep in sync with scripts/github-cpanel-fileman-deploy-core.py (FAST_FILES + CRITICAL).
+# GitHub fast deploy also uploads commit-changed paths under includes/, pages/, control-panel/, js/, css/, api/, public/.
+
 CRITICAL_FILES=(
   ".htaccess"
   "ratib-profile-fix.php"
@@ -61,6 +64,9 @@ CRITICAL_FILES=(
   "includes/ratib-operational-proof-data.php"
   "js/pages/home-page.js"
   "css/pages/home-public.css"
+  "css/pages/ratib-mega-nav.css"
+  "control-panel/includes/control/layout-wrapper.php"
+  "control-panel/includes/control/client-platform-nav.php"
   "css/pages/about-enterprise.css"
   "js/pages/about-enterprise.js"
   "includes/ratib-enterprise-trust-home.php"

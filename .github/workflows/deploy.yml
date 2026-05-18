@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       full_sync:
-        description: "Full 24-file upload (~5 min). Default = fast 6-file deploy (~1 min)."
+        description: "Full upload (~5 min). Default = fast deploy (baseline + commit-changed paths, ~1–2 min)."
         required: false
         default: "false"
         type: choice
