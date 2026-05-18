@@ -16,8 +16,7 @@ RewriteRule ^pages/profile/?$ /profile [R=302,L]
 # Legacy URLs → canonical /profile (THE_REQUEST = browser URL only; avoids internal rewrite loops).
 RewriteCond %{THE_REQUEST} \s/+pages/company-profile\.php[\s?] [NC]
 RewriteRule ^pages/company-profile\.php$ /profile [R=302,L,QSA]
-RewriteCond %{THE_REQUEST} \s/+pages/about\.php[\s?] [NC]
-RewriteRule ^pages/about\.php$ /profile [R=302,L,QSA]
+# Do NOT redirect /pages/about.php → /profile (that caused a loop with profile → about.php).
 RewriteCond %{THE_REQUEST} \s/+pages/home\.php[\s?] [NC]
 RewriteCond %{QUERY_STRING} (^|&)(open=profile|open=about)(&|$) [NC]
 RewriteRule ^pages/home\.php$ /profile [R=302,L]
