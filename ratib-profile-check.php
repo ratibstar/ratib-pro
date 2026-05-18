@@ -178,7 +178,10 @@ foreach ($checks as $rel) {
 $build = $root . '/public/ratib-build.txt';
 echo "\nbuild_marker=" . (is_file($build) ? trim((string) file_get_contents($build)) : 'missing') . "\n";
 
-echo "\n>>> If site shows 403 or no CSS, fix permissions first:\n";
+echo "\n>>> Permission check (home 711, dirs 755, files 644):\n";
+echo "https://{$host}/pages/ratib-perms-check.php\n";
+echo "Auto-fix: https://{$host}/pages/ratib-perms-check.php?fix=1&key=ratib-deploy-sync-2026\n";
+echo "\n>>> Legacy fix script:\n";
 echo "https://{$host}/pages/ratib-fix-perms.php?run=1&key=ratib-deploy-sync-2026\n";
 echo "\n>>> Then deploy Profile:\n";
 echo "https://{$host}/pages/ratib-profile-deploy.php?deploy=1&key=ratib-deploy-sync-2026\n";
