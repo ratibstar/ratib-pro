@@ -11,6 +11,11 @@ if (defined('CONTROL_CONFIG_LOADED')) {
     return;
 }
 
+$ratibCompatEarly = dirname(__DIR__, 2) . '/includes/ratib-php74-compat.php';
+if (is_file($ratibCompatEarly)) {
+    require_once $ratibCompatEarly;
+}
+
 require_once __DIR__ . '/../config/env.php';
 require_once __DIR__ . '/../core/bootstrap.php';
 require_once __DIR__ . '/control/request-url.php';
@@ -241,11 +246,4 @@ if ($useOwnProgram && isset($GLOBALS['control_conn'])) {
 
 define('CONTROL_CONFIG_LOADED', true);
 
-$ratibCompat = dirname(__DIR__, 2) . '/includes/ratib-php74-compat.php';
-if (is_file($ratibCompat)) {
-    require_once $ratibCompat;
-}
-$ratibHtmlPatch = dirname(__DIR__, 2) . '/includes/ratib_html_global_ai_patch.php';
-if (is_file($ratibHtmlPatch)) {
-    require_once $ratibHtmlPatch;
-}
+// Global AI HTML patch is for public Ratib pages only (PHP 7.4 + output buffering).

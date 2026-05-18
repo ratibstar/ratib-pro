@@ -20,6 +20,8 @@ log "start marker=${MARKER} ROOT=${ROOT} PUBLIC_HTML=${PUBLIC_HTML} rsync_delete
 
 CRITICAL_FILES=(
   "includes/ratib-php74-compat.php"
+  "includes/ratib_html_global_ai_patch.php"
+  "control-panel/includes/config.php"
   "includes/ratib-home-public-nav-sync.php"
   "includes/ratib-home-public-chrome-top.php"
   "pages/home.php"

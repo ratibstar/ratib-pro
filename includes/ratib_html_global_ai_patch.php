@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+if (!function_exists('str_contains')) {
+    require_once __DIR__ . '/ratib-php74-compat.php';
+}
+
 /**
  * Inject Global AI submit patch into HTML responses (works when global-ai-action.js on server is stale).
  */
