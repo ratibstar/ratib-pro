@@ -114,7 +114,10 @@ if ($deployRun) {
             continue;
         }
         if (@file_put_contents($dest, $body) === false) {
-            echo "FAIL write {$rel}\n";
+            $w = is_writable($dest) ? 'writable' : (is_writable(dirname($dest)) ? 'dir-writable' : 'not-writable');
+            $own = function_exists('fileowner') ? (string) @fileowner($dest) : '?';
+            $mod = function_exists('fileperms') ? sprintf('%04o', @fileperms($dest) & 07777) : '?';
+            echo "FAIL write {$rel} ({$w} owner_uid={$own} mode={$mod})\n";
             $fail++;
             continue;
         }
