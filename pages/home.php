@@ -195,9 +195,8 @@ if ($countryCodeRaw !== '' && isset($countryNameByCode[$countryCodeRaw])) {
     }
 }
 
-$path = $_SERVER['REQUEST_URI'] ?? '';
-$basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
-$baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
+require_once __DIR__ . '/../includes/ratib-public-base-url.php';
+$baseUrl = ratib_public_site_base_url();
 $ratibDomainsIframeSrc = $baseUrl . '/modules/infrastructure-marketplace/Views/marketplace/index.php?focus=domains&embed=1#infra-domain-search';
 
 // EN: Shared paths for gallery images and legacy hero video fallback (assets/*.mp4 when CMS has no clips).
@@ -1074,11 +1073,7 @@ ratib_emit_profile_nav_guard($baseUrl);
     </script>
     <script type="application/json" id="ratib-home-bootstrap"><?php echo json_encode($ratibHomeBootstrap, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
     <?php
-    $ratibProfileGuardJs = __DIR__ . '/../js/pages/ratib-profile-nav-guard.js';
-    clearstatcache(true, $ratibProfileGuardJs);
-    $ratibProfileGuardQ = (string) (int) (@filemtime($ratibProfileGuardJs) ?: time());
     ?>
-    <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-profile-nav-guard.js?v=<?php echo htmlspecialchars($ratibProfileGuardQ, ENT_QUOTES, 'UTF-8'); ?>"></script>
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/home-page.js?v=<?php echo htmlspecialchars($ratibHomeJsQ, ENT_QUOTES, 'UTF-8'); ?>"></script>
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-mega-nav.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 

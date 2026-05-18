@@ -70,13 +70,14 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 $ratibProfileUrl = rtrim($baseUrl, '/') . '/profile';
                 $ratibBrandProfileHref = $ratibProfileUrl;
                 $ratibBrandProfileCurrent = !empty($ratibAboutPageActive);
+                $ratibProfileClickJs = 'window.location.assign(' . json_encode($ratibProfileUrl, JSON_UNESCAPED_SLASHES) . ');return false;';
                 ?>
             <div class="ratib-nav__brand-block">
                 <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-nav__brand">
                     <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="<?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?>" width="120" height="36">
                     <span class="ratib-nav__brand-text"><?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?></span>
                 </a>
-                <a href="<?php echo htmlspecialchars($ratibBrandProfileHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__brand-profile<?php echo $ratibBrandProfileCurrent ? ' is-current' : ''; ?>" data-ratib-profile-nav="1"<?php echo $ratibBrandProfileCurrent ? ' aria-current="page"' : ''; ?>><?php echo htmlspecialchars($ratibBrandProfileLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratibBrandProfileHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__brand-profile<?php echo $ratibBrandProfileCurrent ? ' is-current' : ''; ?>" data-ratib-profile-nav="1" data-ratib-go-profile="1" onclick="<?php echo htmlspecialchars($ratibProfileClickJs, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $ratibBrandProfileCurrent ? ' aria-current="page"' : ''; ?>><?php echo htmlspecialchars($ratibBrandProfileLabel, ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
             <button type="button" class="ratib-nav__toggle" id="ratibNavToggle" aria-label="Open menu" aria-expanded="false" aria-controls="ratibNavMenu">
                 <span></span><span></span><span></span>
@@ -94,7 +95,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 }
                 $ratibAboutNavCurrent = !empty($ratibAboutPageActive);
                 ?>
-                <a href="<?php echo htmlspecialchars($ratibAboutNavHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--about<?php echo $ratibAboutNavCurrent ? ' is-current' : ''; ?>" data-ratib-profile-nav="1"<?php echo $ratibAboutNavCurrent ? ' aria-current="page"' : ''; ?>><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibAboutNavLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="<?php echo htmlspecialchars($ratibAboutNavHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--about<?php echo $ratibAboutNavCurrent ? ' is-current' : ''; ?>" data-ratib-profile-nav="1" data-ratib-go-profile="1" onclick="<?php echo htmlspecialchars($ratibProfileClickJs, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $ratibAboutNavCurrent ? ' aria-current="page"' : ''; ?>><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibAboutNavLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
                 <a href="<?php echo htmlspecialchars($ratibNavPrefix . '#platform', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-platform"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                 <a href="<?php echo htmlspecialchars($ratibNavPrefix . '#domains', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-domains"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.domains'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                 <a href="<?php echo htmlspecialchars($ratibNavPrefix . $ratibNavProductTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--product-tour" data-ratib-product-tour-tab="1"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-video"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibNavProductTourLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
@@ -105,7 +106,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 </div>
             </nav>
             <?php
-            ratib_home_nav_emit_sync_script();
+            ratib_home_nav_emit_sync_script($ratibProfileUrl);
             if (!function_exists('ratib_emit_profile_nav_guard')) {
                 require_once __DIR__ . '/ratib-profile-nav-guard.php';
             }
