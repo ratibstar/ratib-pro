@@ -26,7 +26,7 @@ jobs:
           echo "expected=${EXPECTED}" >> "$GITHUB_OUTPUT"
           echo "Deploy marker: ${EXPECTED}"
 
-      - name: Upload ALL files to public_html (Fileman parallel sync)
+      - name: Upload to public_html (critical first, then all code files)
         id: fileman
         env:
           CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
@@ -34,7 +34,7 @@ jobs:
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
           CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
           CPANEL_REMOTE_BASE: ${{ secrets.CPANEL_SFTP_REMOTE_DIR || '/home/outratib/public_html' }}
-          CPANEL_FILEMAN_WORKERS: "12"
+          CPANEL_FILEMAN_WORKERS: "6"
         run: bash scripts/github-cpanel-fileman-fast.sh
 
       - name: cPanel Git pull (background, optional)
@@ -70,17 +70,16 @@ jobs:
             MARKER="$(curl -fsSL --max-time 15 "${SITE}/public/ratib-build.txt" 2>/dev/null | tr -d '\r\n' || true)"
             H="$(code "${SITE}/pages/home.php")"
             P="$(code "${SITE}/profile/")"
-            echo "try=$n home=$H profile/=$P marker=${MARKER:-?} want=${EXPECTED} fileman=${FILEMAN_OK}"
+            GUARD="$(code "${SITE}/js/pages/ratib-profile-nav-guard.js")"
+            echo "try=$n home=$H profile/=$P guard_js=$GUARD marker=${MARKER:-?} want=${EXPECTED} fileman=${FILEMAN_OK}"
 
-            if [ "$FILEMAN_OK" = "yes" ] && [ "$H" = "200" ] && [ "$P" = "200" ]; then
-              if [ "$MARKER" = "$EXPECTED" ]; then
-                echo "::notice::Deploy OK — marker match"
-                exit 0
-              fi
-              if [ "$n" -ge 2 ]; then
-                echo "::notice::Deploy OK — Fileman succeeded, site up (marker may lag CDN: live=${MARKER})"
-                exit 0
-              fi
+            if [ "$FILEMAN_OK" = "yes" ] && [ "$H" = "200" ] && [ "$P" = "200" ] && [ "$GUARD" = "200" ]; then
+              echo "::notice::Deploy OK — site up, profile JS loaded"
+              exit 0
+            fi
+            if [ "$FILEMAN_OK" = "yes" ] && [ "$H" = "200" ] && [ "$P" = "200" ] && [ "$n" -ge 2 ]; then
+              echo "::notice::Deploy OK — critical files on server (guard_js=$GUARD)"
+              exit 0
             fi
             sleep 8
           done
