@@ -130,8 +130,13 @@ jobs:
           fi
 
       - name: Optional GitHub→live file sync
-        if: ${{ secrets.RATIB_DEPLOY_SYNC_KEY != '' }}
         continue-on-error: true
+        env:
+          RATIB_DEPLOY_SYNC_KEY: ${{ secrets.RATIB_DEPLOY_SYNC_KEY }}
         run: |
+          if [ -z "${RATIB_DEPLOY_SYNC_KEY}" ]; then
+            echo "RATIB_DEPLOY_SYNC_KEY not set — skipping optional sync"
+            exit 0
+          fi
           curl -fsSL --max-time 180 \
-            "https://out.ratib.sa/pages/ratib-profile-deploy.php?deploy=1&key=${{ secrets.RATIB_DEPLOY_SYNC_KEY }}" || true
+            "https://out.ratib.sa/pages/ratib-profile-deploy.php?deploy=1&key=${RATIB_DEPLOY_SYNC_KEY}" || true
