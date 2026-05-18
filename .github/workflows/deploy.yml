@@ -18,61 +18,119 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate secrets
+        id: secrets
         run: |
           missing=0
           [ -z "${{ secrets.CPANEL_HOST }}" ] && echo "::error::Missing CPANEL_HOST" && missing=1
           [ -z "${{ secrets.CPANEL_USER }}" ] && echo "::error::Missing CPANEL_USER" && missing=1
           [ -z "${{ secrets.CPANEL_API_TOKEN }}" ] && echo "::error::Missing CPANEL_API_TOKEN" && missing=1
-          [ -z "${{ secrets.CPANEL_REPO_ROOT }}" ] && echo "::error::Missing CPANEL_REPO_ROOT" && missing=1
+          [ -z "${{ secrets.CPANEL_REPO_ROOT }}" ] && echo "::error::Missing CPANEL_REPO_ROOT (e.g. /home/outratib/repositories/ratib-pro or /home/outratib/public_html)" && missing=1
+          if [ -n "${{ secrets.CPANEL_SFTP_PASSWORD }}" ] && [ -n "${{ secrets.CPANEL_SFTP_HOST }}" ]; then
+            echo "sftp_configured=true" >> "$GITHUB_OUTPUT"
+            echo "SFTP fallback: configured"
+          else
+            echo "sftp_configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Optional: add CPANEL_SFTP_HOST + CPANEL_SFTP_USER + CPANEL_SFTP_PASSWORD for direct upload to public_html"
+          fi
           exit "$missing"
 
-      - name: Trigger cPanel git pull + .cpanel.yml sync
+      - name: Build marker (this commit)
+        id: build
+        run: |
+          EXPECTED="$(tr -d '\r\n' < public/ratib-build.txt)"
+          echo "expected=${EXPECTED}" >> "$GITHUB_OUTPUT"
+          echo "Deploying build marker: ${EXPECTED}"
+          echo "commit=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: cPanel Git pull + .cpanel.yml deploy
         id: cpanel
         continue-on-error: true
         run: |
-          set +e
-          CPANEL_BASE="https://${{ secrets.CPANEL_HOST }}:2083"
+          set -uo pipefail
+          CPANEL_PORT="${{ secrets.CPANEL_PORT }}"
+          CPANEL_PORT="${CPANEL_PORT:-2083}"
+          CPANEL_BASE="https://${{ secrets.CPANEL_HOST }}:${CPANEL_PORT}"
           AUTH="Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}"
           REPO="$(printf '%s' '${{ secrets.CPANEL_REPO_ROOT }}' | tr -d '\r\n' | xargs)"
           BRANCH="$(printf '%s' '${{ github.ref_name }}' | tr -d '\r\n' | xargs)"
           [ -z "$BRANCH" ] && BRANCH=main
 
           api() {
-            curl -sS --get --connect-timeout 20 --max-time 120 \
+            curl -sS --get --connect-timeout 25 --max-time 180 \
               -H "$AUTH" \
               --data-urlencode "repository_root=$REPO" \
               --data-urlencode "branch=$BRANCH" \
               "${CPANEL_BASE}/execute/$1" 2>&1
           }
 
-          echo "=== VersionControl/update ==="
-          api VersionControl/update || true
+          echo "=== VersionControl/list (debug) ==="
+          api VersionControl/list | head -c 4000 || true
+          echo ""
+          echo "=== repository_root=${REPO} branch=${BRANCH} ==="
 
-          echo "=== VersionControlDeployment/create ==="
-          RESP="$(api VersionControlDeployment/create)"
-          echo "$RESP"
-
-          STATUS="$(printf '%s' "$RESP" | python3 -c "
+          echo "=== VersionControl/update (git pull) ==="
+          UPDATE_RESP="$(api VersionControl/update)"
+          echo "$UPDATE_RESP"
+          UPDATE_OK="$(printf '%s' "$UPDATE_RESP" | python3 -c "
           import json,sys
           try:
               d=json.load(sys.stdin)
           except Exception:
-              print(0)
-              sys.exit(0)
+              print(0); sys.exit(0)
           r=d.get('result',d) or {}
-          print(1 if int(r.get('status', d.get('status',0)) or 0)==1 else 0)
+          st=r.get('status', d.get('status', 0))
+          print(1 if int(st or 0)==1 else 0)
           " 2>/dev/null || echo 0)"
 
-          if [ "$STATUS" = "1" ]; then
+          echo "=== VersionControlDeployment/create (.cpanel.yml → public_html sync) ==="
+          DEPLOY_RESP="$(api VersionControlDeployment/create)"
+          echo "$DEPLOY_RESP"
+          DEPLOY_OK="$(printf '%s' "$DEPLOY_RESP" | python3 -c "
+          import json,sys
+          try:
+              d=json.load(sys.stdin)
+          except Exception:
+              print(0); sys.exit(0)
+          r=d.get('result',d) or {}
+          st=r.get('status', d.get('status', 0))
+          print(1 if int(st or 0)==1 else 0)
+          " 2>/dev/null || echo 0)"
+
+          echo "update_ok=${UPDATE_OK} deploy_ok=${DEPLOY_OK}" >> "$GITHUB_OUTPUT"
+          if [ "$UPDATE_OK" = "1" ] || [ "$DEPLOY_OK" = "1" ]; then
             echo "cpanel_ok=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::cPanel Git pull/deploy API succeeded"
           else
-            echo "::warning::cPanel deploy API did not return success."
-            echo "Set CPANEL_REPO_ROOT=/home/outratib/public_html if git is in public_html."
             echo "cpanel_ok=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::cPanel Git API failed for repository_root=${REPO}"
+            echo "::warning::Fix CPANEL_REPO_ROOT in GitHub secrets OR add CPANEL_SFTP_* secrets for direct public_html upload"
           fi
 
-      - name: GitHub→live file sync (curl deploy)
+      - name: SFTP upload to public_html (recommended)
+        id: sftp
+        if: steps.secrets.outputs.sftp_configured == 'true'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.CPANEL_SFTP_HOST }}
+          username: ${{ secrets.CPANEL_SFTP_USER || secrets.CPANEL_USER }}
+          password: ${{ secrets.CPANEL_SFTP_PASSWORD }}
+          port: ${{ secrets.CPANEL_SFTP_PORT || 22 }}
+          protocol: sftp
+          local-dir: ./
+          server-dir: ${{ secrets.CPANEL_SFTP_REMOTE_DIR || '/home/outratib/public_html/' }}
+          exclude: |
+            **/.git*
+            **/.git/**
+            **/.github/**
+            **/node_modules/**
+            **/.cursor/**
+            **/archive/**
+          log-level: standard
+          dangerous-clean-slate: false
+
+      - name: PHP curl fallback (if SFTP not configured)
         id: curl_deploy
+        if: steps.secrets.outputs.sftp_configured != 'true'
         continue-on-error: true
         env:
           RATIB_DEPLOY_SYNC_KEY: ${{ secrets.RATIB_DEPLOY_SYNC_KEY }}
@@ -81,96 +139,65 @@ jobs:
           OUT="$(curl -fsSL --max-time 180 \
             "https://out.ratib.sa/ratib-profile-check.php?deploy=1&key=${KEY}" 2>&1)" || true
           echo "$OUT"
-          if echo "$OUT" | grep -q 'Summary: ok=0'; then
-            echo "curl_deploy_ok=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::PHP curl deploy wrote 0 files (use cPanel Git Deploy or File Manager upload)"
-          elif echo "$OUT" | grep -qE 'Summary: ok=[1-9]'; then
+          if echo "$OUT" | grep -qE 'Summary: ok=[1-9]'; then
             echo "curl_deploy_ok=true" >> "$GITHUB_OUTPUT"
           else
-            echo "curl_deploy_ok=unknown" >> "$GITHUB_OUTPUT"
+            echo "curl_deploy_ok=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::PHP curl deploy cannot write on this host (expected). Add SFTP secrets or fix cPanel Git path."
           fi
 
-      - name: Wait for files on server
-        run: sleep 20
+      - name: Wait for live site
+        run: sleep 25
 
-      - name: Verify live public site
+      - name: Verify live site has THIS commit's build marker
+        id: verify
         run: |
-          set -e
-          EXPECTED="$(tr -d '\r\n' < public/ratib-build.txt)"
-          echo "Repo build marker: $EXPECTED"
+          set -euo pipefail
+          EXPECTED="${{ steps.build.outputs.expected }}"
+          COMMIT="${{ steps.build.outputs.commit }}"
+          SITE="${{ secrets.CPANEL_SITE_URL || 'https://out.ratib.sa' }}"
 
           http_code() {
             curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 15 --max-time 45 "$1" 2>/dev/null || echo "000"
           }
 
+          LIVE_MARKER=""
+          LIVE_STAMP=""
+          LIVE_ROOT=""
           ok=0
-          WARN=0
-          for n in 1 2 3 4 5; do
-            H="$(http_code https://out.ratib.sa/pages/home.php)"
-            C="$(http_code https://out.ratib.sa/css/pages/home-public.css)"
-            A="$(http_code https://out.ratib.sa/css/pages/about-enterprise.css)"
-            P="$(http_code https://out.ratib.sa/profile)"
-            echo "try=$n home=$H css=$C about-css=$A profile=$P"
 
-            if [ "$H" = "403" ] || [ "$C" = "403" ]; then
-              echo "::error::403 on live site — public_html 755, .htaccess 644"
-              exit 1
-            fi
+          for n in 1 2 3 4 5 6; do
+            H="$(http_code "${SITE}/pages/home.php")"
+            DEPLOY_ROOT="$(curl -fsSL --max-time 45 "${SITE}/pages/deploy-root.php" 2>/dev/null || true)"
+            PROBE="$(curl -fsSL --max-time 45 "${SITE}/pages/home.php?ratib_deploy_probe=1" 2>/dev/null || true)"
+            LIVE_MARKER="$(printf '%s' "$DEPLOY_ROOT$PROBE" | sed -n 's/^git_marker=//p' | head -1 | tr -d '\r')"
+            LIVE_STAMP="$(printf '%s' "$DEPLOY_ROOT" | sed -n 's/^stamp_file=//p' | head -1 | tr -d '\r')"
+            LIVE_ROOT="$(printf '%s' "$DEPLOY_ROOT" | sed -n 's/^probe_root=//p' | head -1 | tr -d '\r')"
+            P_FOLLOW="$(curl -sS -o /dev/null -w "%{http_code}" -L --max-redirs 5 --max-time 45 "${SITE}/profile" 2>/dev/null || echo 000)"
 
-            if [ "$H" != "200" ] || [ "$C" != "200" ]; then
-              sleep 10
-              continue
-            fi
+            echo "try=$n home=$H profile_follow=$P_FOLLOW live_marker=${LIVE_MARKER:-<empty>} want=${EXPECTED}"
 
-            PROBE="$(curl -fsSL --max-time 45 'https://out.ratib.sa/pages/home.php?ratib_deploy_probe=1' 2>/dev/null || true)"
-            LIVE_MARKER="$(printf '%s' "$PROBE" | sed -n 's/^git_marker=//p' | head -1 | tr -d '\r')"
-            PROFILE_HTML="$(curl -fsSL --max-time 45 'https://out.ratib.sa/profile' 2>/dev/null || true)"
-            MEGA="$(curl -fsSL --max-time 45 https://out.ratib.sa/js/pages/ratib-mega-nav.js 2>/dev/null || true)"
-
-            # Hard requirement: public site responds
-            if [ "$P" = "200" ] || [ "$(http_code https://out.ratib.sa/pages/company-profile.php)" = "200" ]; then
+            if [ "$H" = "200" ] && [ "$P_FOLLOW" = "200" ] && [ -n "$LIVE_MARKER" ] && [ "$LIVE_MARKER" = "$EXPECTED" ]; then
               ok=1
-            fi
-
-            # Warnings (do not fail the job — cPanel often lags behind GitHub)
-            if [ -n "$EXPECTED" ] && [ "$LIVE_MARKER" != "$EXPECTED" ]; then
-              echo "::warning::Stale build marker on server: got=${LIVE_MARKER} want=${EXPECTED}"
-              WARN=1
-            fi
-            if echo "$PROFILE_HTML" | grep -q '/profile/css/'; then
-              echo "::warning::Profile page CSS paths wrong — upload pages/about.php + includes/ratib-public-base-url.php"
-              WARN=1
-            fi
-            if ! echo "$MEGA" | grep -qE 'fixProfileHrefs|ratibProfileNavGuardInline'; then
-              echo "::warning::Profile nav JS not updated — upload js/pages/ratib-mega-nav.js"
-              WARN=1
-            fi
-            if [ "$A" != "200" ]; then
-              echo "::warning::about-enterprise.css HTTP $A"
-              WARN=1
-            fi
-
-            if [ "$ok" -eq 1 ]; then
-              if [ "$WARN" -eq 0 ]; then
-                echo "::notice::Live OK — site up and deploy markers match"
-              else
-                echo "::notice::Live OK — site up (manual cPanel/File Manager sync still needed for latest code)"
-              fi
               break
             fi
-            sleep 10
+            sleep 15
           done
 
+          echo "live_marker=${LIVE_MARKER}" >> "$GITHUB_OUTPUT"
+          echo "live_root=${LIVE_ROOT}" >> "$GITHUB_OUTPUT"
+
           if [ "$ok" -ne 1 ]; then
-            echo "::error::Public site unreachable (home/css/profile not OK)."
-            echo "cPanel API ok=${{ steps.cpanel.outputs.cpanel_ok }}"
-            echo "curl_deploy ok=${{ steps.curl_deploy.outputs.curl_deploy_ok }}"
+            echo "::error::Live site does NOT have build marker '${EXPECTED}' (got '${LIVE_MARKER:-missing}')."
+            echo "::error::GitHub push did not reach public_html. Fix:"
+            echo "  1) Add GitHub secrets: CPANEL_SFTP_HOST, CPANEL_SFTP_PASSWORD, CPANEL_SFTP_REMOTE_DIR=/home/outratib/public_html/"
+            echo "  2) OR cPanel → Git Version Control → path = CPANEL_REPO_ROOT → Deploy HEAD Commit"
+            echo "  probe_root=${LIVE_ROOT} stamp=${LIVE_STAMP} commit=${COMMIT}"
+            echo "cpanel_ok=${{ steps.cpanel.outputs.cpanel_ok }} sftp_configured=${{ steps.secrets.outputs.sftp_configured }}"
+            if [ "${{ steps.cpanel.outputs.cpanel_ok }}" != "true" ] && [ "${{ steps.secrets.outputs.sftp_configured }}" != "true" ]; then
+              echo "::error::Neither cPanel Git nor SFTP deployed files — job cannot succeed until one path works."
+            fi
             exit 1
           fi
 
-          CP="$(http_code https://out.ratib.sa/control-panel/pages/login.php)"
-          if [ "$CP" = "500" ]; then
-            echo "::warning::Control panel login is HTTP 500 (not a deploy gate)"
-          else
-            echo "::notice::Control panel login HTTP ${CP}"
-          fi
+          echo "::notice::Deploy verified — live marker matches ${EXPECTED}"

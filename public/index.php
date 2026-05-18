@@ -62,15 +62,8 @@ if ($path === '/' || $path === '') {
 
 $projectRoot = dirname(__DIR__);
 
-// /profile or /about — company profile page.
-if (preg_match('#^/profile/?$#i', $path)) {
-    $profilePage = $projectRoot . '/pages/company-profile.php';
-    if (is_file($profilePage)) {
-        require $profilePage;
-        exit;
-    }
-}
-if (preg_match('#^/about/?$#i', $path)) {
+// /profile or /about — company profile (about.php; avoid company-profile.php redirect chains).
+if (preg_match('#^/(?:profile|about)/?$#i', $path)) {
     $aboutPage = $projectRoot . '/pages/about.php';
     if (is_file($aboutPage)) {
         require $aboutPage;

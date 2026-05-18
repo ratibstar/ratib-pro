@@ -41,11 +41,25 @@ In GitHub repository:
 
 Create these keys:
 
-- `CPANEL_HOST` (example: `server.ratib.sa`)
-- `CPANEL_USER` (example: `outratib`)
-- `CPANEL_API_TOKEN` (cPanel API token from `Manage API Tokens`)
-- `CPANEL_REPO_ROOT` (path shown in cPanel **Git Version Control** for this repo, e.g. `/home/outratib/repositories/ratib-pro`)
-- `RATIB_DEPLOY_SYNC_KEY` (optional, recommended: same value as `ratib-deploy-sync-2026` in `ratib-profile-check.php` — syncs `public_html` if cPanel rsync misses)
+**Required (cPanel Git API):**
+
+- `CPANEL_HOST` — hostname only, e.g. `server.ratib.sa` (not `https://`)
+- `CPANEL_USER` — e.g. `outratib`
+- `CPANEL_API_TOKEN` — cPanel → **Manage API Tokens** → create token with Version Control
+- `CPANEL_REPO_ROOT` — exact path from cPanel → **Git Version Control** → your repo, e.g. `/home/outratib/repositories/ratib-pro` **or** `/home/outratib/public_html` if git lives in docroot
+
+**Strongly recommended (direct upload to live site — fixes “green but not on site”):**
+
+- `CPANEL_SFTP_HOST` — usually same as `CPANEL_HOST` or server IP
+- `CPANEL_SFTP_USER` — usually `outratib` (defaults to `CPANEL_USER` if omitted)
+- `CPANEL_SFTP_PASSWORD` — cPanel account password or SFTP-only password
+- `CPANEL_SFTP_REMOTE_DIR` — `/home/outratib/public_html/` (trailing slash)
+
+Optional:
+
+- `CPANEL_PORT` — default `2083`
+- `CPANEL_SITE_URL` — default `https://out.ratib.sa`
+- `RATIB_DEPLOY_SYNC_KEY` — only if PHP curl deploy is enabled on server (usually fails; use SFTP instead)
 
 ## 4) How deployment works
 
@@ -66,7 +80,9 @@ Flow:
 3. If secret `RATIB_DEPLOY_SYNC_KEY` is set, Actions also calls `https://out.ratib.sa/ratib-profile-check.php?deploy=1&key=...` as a fallback.
 4. Verify step reads `ratib-profile-check.php` on the live site for `brand-profile` / `company-profile.php`.
 
-**Important:** Green Actions previously did not mean `public_html` was updated — only the git folder. The sync script now **fails** if `public_html` is not updated.
+**Important:** The workflow now **fails** unless the live site shows the same `public/ratib-build.txt` marker as GitHub. Green only means `public_html` was actually updated.
+
+If git is in `/home/outratib/repositories/ratib-pro`, `.cpanel.yml` must rsync to `/home/outratib/public_html`. If that path is wrong, add **SFTP secrets** so GitHub uploads straight to `public_html`.
 
 ## 5) cPanel one-time check
 

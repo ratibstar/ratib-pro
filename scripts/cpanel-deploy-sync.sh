@@ -112,11 +112,14 @@ sync_one_target() {
   TARGET_REAL="$(realpath "$TARGET" 2>/dev/null || echo "$TARGET")"
 
   if [ "$TARGET_REAL" = "$ROOT_REAL" ]; then
-    log "skip self (git root is docroot) ${TARGET}"
+    log "git root is docroot ${TARGET} (no rsync copy needed; git pull updates files here)"
     fix_live_permissions "$TARGET"
     printf '%s\n' "$STAMP" > "${TARGET}/.ratib-deploy-stamp" 2>/dev/null || true
     printf '%s\n' "$STAMP" > "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
     chmod 644 "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
+    if [ -d "${TARGET}/.git" ]; then
+      git -C "${TARGET}" rev-parse HEAD 2>/dev/null | head -1 | tee -a "$LOG" || true
+    fi
     return 0
   fi
 
