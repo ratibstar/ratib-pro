@@ -108,7 +108,7 @@ if (!function_exists('control_panel_registration_page_url')) {
             $url .= '&' . http_build_query($query);
         }
 
-        return $url;
+        return $url . '#register';
     }
 }
 

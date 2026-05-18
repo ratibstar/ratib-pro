@@ -1008,7 +1008,7 @@ ratib_emit_profile_nav_guard($baseUrl);
             </div>
         </section>
 
-        <section class="register-section register-section-hidden ratib-register-wrap" id="register">
+        <section class="register-section<?php echo $openRegister ? '' : ' register-section-hidden'; ?> ratib-register-wrap" id="register">
         <div class="ratib-info">
             <h2><i class="fas fa-info-circle me-2 register-info-icon"></i><?php echo htmlspecialchars($ratibHome['home.register.info.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
             <p><?php echo htmlspecialchars($ratibHome['home.register.info.intro'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>

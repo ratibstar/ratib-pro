@@ -55,6 +55,14 @@ jobs:
           echo "profile/=$P home.php(follow)=$H register=$HR guard.js=$G"
           if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ] && [ "$HR" = "200" ]; then
             if echo "$BODY" | grep -qi '<!DOCTYPE'; then
+              if echo "$BODY" | grep -q 'register-section-hidden ratib-register-wrap'; then
+                echo "::error::register section still hidden with open=register (deploy home.php?)"
+                exit 1
+              fi
+              if echo "$BODY" | grep -q 'openRegister.:true'; then
+                echo "::notice::Deploy OK (home HTML + openRegister)"
+                exit 0
+              fi
               echo "::notice::Deploy OK (home returns HTML after redirect)"
               exit 0
             fi

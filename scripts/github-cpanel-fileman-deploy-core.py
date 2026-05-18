@@ -45,6 +45,12 @@ FAST_FILES = [
     "includes/ratib-page-stamp.php",
     "includes/ratib-profile-force-same-tab.php",
     "public/ratib-build.txt",
+    "control-panel/includes/control/public-marketing-urls.php",
+    "control-panel/includes/control/sidebar.php",
+    "control-panel/includes/control/registration-requests-content.php",
+    "control-panel/pages/control/control-hub.php",
+    "control-panel/pages/control-support-chats.php",
+    "control-panel/pages/control-agencies.php",
 ]
 
 CRITICAL = [
@@ -79,6 +85,8 @@ CRITICAL = [
     "css/pages/ratib-mega-nav.css",
     "public/index.php",
     "pages/home.php",
+    "control-panel/includes/control/public-marketing-urls.php",
+    "control-panel/includes/control/sidebar.php",
 ]
 
 CRITICAL_SET = set(CRITICAL)

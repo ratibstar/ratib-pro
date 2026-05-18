@@ -108,6 +108,6 @@ if (!function_exists('ratib_public_marketing_home_register_url')) {
             }
         }
 
-        return ratib_public_marketing_home_url($baseUrl, $query);
+        return ratib_public_marketing_home_url($baseUrl, $query, '#register');
     }
 }
