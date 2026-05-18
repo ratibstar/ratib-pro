@@ -103,6 +103,7 @@ sync_one_target() {
     fix_live_permissions "$TARGET"
     printf '%s\n' "$STAMP" > "${TARGET}/.ratib-deploy-stamp" 2>/dev/null || true
     printf '%s\n' "$STAMP" > "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
+    chmod 644 "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
     return 0
   fi
 
@@ -140,7 +141,13 @@ sync_one_target() {
   fix_live_permissions "$TARGET"
 
   printf '%s\n' "$STAMP" > "${TARGET}/.ratib-deploy-stamp"
-  printf '%s\n' "$STAMP" > "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
+  if [ -f "${TARGET}/pages/ratib-deploy-status.txt" ]; then
+    printf '%s\n' "$STAMP" > "${TARGET}/pages/ratib-deploy-status.txt"
+    chmod 644 "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
+  else
+    printf '%s\n' "$STAMP" > "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
+    chmod 644 "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
+  fi
 
   local profile=no
   [ -f "${TARGET}/pages/company-profile.php" ] && profile=yes

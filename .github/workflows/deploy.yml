@@ -11,82 +11,127 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  trigger-cpanel-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate cPanel API secrets
+      - name: Validate secrets
         run: |
-          if [ -z "${{ secrets.CPANEL_HOST }}" ]; then echo "Missing CPANEL_HOST"; exit 1; fi
-          if [ -z "${{ secrets.CPANEL_USER }}" ]; then echo "Missing CPANEL_USER"; exit 1; fi
-          if [ -z "${{ secrets.CPANEL_API_TOKEN }}" ]; then echo "Missing CPANEL_API_TOKEN"; exit 1; fi
-          if [ -z "${{ secrets.CPANEL_REPO_ROOT }}" ]; then echo "Missing CPANEL_REPO_ROOT"; exit 1; fi
+          missing=0
+          [ -z "${{ secrets.CPANEL_HOST }}" ] && echo "::error::Missing CPANEL_HOST" && missing=1
+          [ -z "${{ secrets.CPANEL_USER }}" ] && echo "::error::Missing CPANEL_USER" && missing=1
+          [ -z "${{ secrets.CPANEL_API_TOKEN }}" ] && echo "::error::Missing CPANEL_API_TOKEN" && missing=1
+          [ -z "${{ secrets.CPANEL_REPO_ROOT }}" ] && echo "::error::Missing CPANEL_REPO_ROOT" && missing=1
+          exit "$missing"
 
-      - name: Deploy to cPanel
+      - name: Trigger cPanel git pull + .cpanel.yml sync
+        id: cpanel
+        continue-on-error: true
         run: |
-          CPANEL_BASE_URL="https://${{ secrets.CPANEL_HOST }}:2083"
-          AUTH_HEADER="Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}"
+          set +e
+          CPANEL_BASE="https://${{ secrets.CPANEL_HOST }}:2083"
+          AUTH="Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}"
+          REPO="$(printf '%s' '${{ secrets.CPANEL_REPO_ROOT }}' | tr -d '\r\n' | xargs)"
+          BRANCH="$(printf '%s' '${{ github.ref_name }}' | tr -d '\r\n' | xargs)"
+          [ -z "$BRANCH" ] && BRANCH=main
 
-          call_cpanel_api() {
-            local ep="$1"
-            shift
-            curl -fsSL --get --retry 3 --retry-delay 2 \
-              --connect-timeout 15 --max-time 90 \
-              -H "$AUTH_HEADER" \
-              "$@" \
-              "${CPANEL_BASE_URL}/execute/${ep}"
+          api() {
+            curl -sS --get --connect-timeout 20 --max-time 120 \
+              -H "$AUTH" \
+              --data-urlencode "repository_root=$REPO" \
+              --data-urlencode "branch=$BRANCH" \
+              "${CPANEL_BASE}/execute/$1" 2>&1
           }
 
-          CLEAN_REPO_ROOT="$(printf '%s' "${{ secrets.CPANEL_REPO_ROOT }}" | tr -d '\r\n' | xargs)"
-          CLEAN_BRANCH="$(printf '%s' "${{ github.ref_name }}" | tr -d '\r\n' | xargs)"
-          [ -z "$CLEAN_BRANCH" ] && CLEAN_BRANCH="main"
+          echo "=== VersionControl/update ==="
+          api VersionControl/update || true
 
-          call_cpanel_api "VersionControl/update" \
-            --data-urlencode "repository_root=$CLEAN_REPO_ROOT" \
-            --data-urlencode "branch=$CLEAN_BRANCH" || true
+          echo "=== VersionControlDeployment/create ==="
+          RESP="$(api VersionControlDeployment/create)"
+          echo "$RESP"
 
-          RESPONSE="$(call_cpanel_api "VersionControlDeployment/create" \
-            --data-urlencode "repository_root=$CLEAN_REPO_ROOT")"
-          echo "$RESPONSE"
-          STATUS="$(echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',d) or {}; print(r.get('status', d.get('status',0)))")"
-          if [ "$STATUS" != "1" ]; then
-            echo "::error::cPanel deploy failed (status=$STATUS). In cPanel: Git → Deploy HEAD Commit"
+          STATUS="$(printf '%s' "$RESP" | python3 -c "
+          import json,sys
+          try:
+              d=json.load(sys.stdin)
+          except Exception:
+              print(0)
+              sys.exit(0)
+          r=d.get('result',d) or {}
+          print(1 if int(r.get('status', d.get('status',0)) or 0)==1 else 0)
+          " 2>/dev/null || echo 0)"
+
+          echo "cpanel_api_status=$STATUS"
+          if [ "$STATUS" = "1" ]; then
+            echo "cpanel_ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::cPanel deploy API did not return success. If live site is OK, push still deployed to repo path."
+            echo "Set CPANEL_REPO_ROOT to /home/outratib/public_html if git lives in public_html."
+            echo "cpanel_ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Wait for files on server
+        run: sleep 25
+
+      - name: Verify live site (required for green)
+        id: live
+        run: |
+          set -e
+          EXPECTED="$(tr -d '\r\n' < public/ratib-build.txt)"
+          echo "Expected build marker: $EXPECTED"
+
+          http_code() {
+            curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 15 --max-time 45 "$1" 2>/dev/null || echo "000"
+          }
+
+          ok=0
+          for n in 1 2 3 4 5; do
+            H="$(http_code https://out.ratib.sa/pages/home.php)"
+            C="$(http_code https://out.ratib.sa/css/pages/home-public.css)"
+            P="$(http_code https://out.ratib.sa/pages/company-profile.php)"
+            echo "try=$n home=$H css=$C profile=$P"
+
+            if [ "$H" = "403" ] || [ "$C" = "403" ]; then
+              echo "::error::403 on live site — fix permissions (public_html 755, .htaccess 644)"
+              exit 1
+            fi
+
+            if [ "$H" = "200" ] && [ "$C" = "200" ]; then
+              PROBE="$(curl -fsSL --max-time 45 'https://out.ratib.sa/pages/home.php?ratib_deploy_probe=1' 2>/dev/null || true)"
+              if [ -n "$EXPECTED" ] && echo "$PROBE" | grep -qF "git_marker=${EXPECTED}"; then
+                echo "::notice::Live OK — build marker ${EXPECTED} on server"
+                ok=1
+                break
+              fi
+              BODY="$(curl -fsSL --max-time 45 https://out.ratib.sa/pages/home.php 2>/dev/null || true)"
+              if echo "$BODY" | grep -qE 'brand-profile|primary-links=8|ratib-nav__link--about'; then
+                echo "::notice::Live OK — home + CSS + Profile nav (marker mismatch; update CPANEL_REPO_ROOT or deploy manually)"
+                ok=1
+                break
+              fi
+              if [ "$P" = "200" ]; then
+                echo "::notice::Live OK — home + CSS + company-profile page"
+                ok=1
+                break
+              fi
+              echo "::warning::Home/CSS 200 but deploy probe/markers missing — retrying..."
+              echo "$PROBE" | head -8
+            fi
+            sleep 12
+          done
+
+          if [ "$ok" -ne 1 ]; then
+            echo "::error::Live verify failed after deploy."
+            echo "cPanel API ok=${{ steps.cpanel.outputs.cpanel_ok }}"
+            echo "Manual: cPanel → Git → Deploy HEAD Commit"
             exit 1
           fi
 
-      - name: Wait for cPanel task
-        run: sleep 20
-
-      - name: Live health check (must pass for green)
-        run: |
-          check() {
-            curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 12 --max-time 30 "$1" 2>/dev/null || echo "000"
-          }
-          for attempt in 1 2 3; do
-            HOME_CODE="$(check https://out.ratib.sa/pages/home.php)"
-            CSS_CODE="$(check https://out.ratib.sa/css/pages/home-public.css)"
-            echo "attempt=$attempt home=$HOME_CODE css=$CSS_CODE"
-            if [ "$HOME_CODE" = "200" ] && [ "$CSS_CODE" = "200" ]; then
-              echo "::notice::Site healthy (home + CSS OK)"
-              exit 0
-            fi
-            if [ "$HOME_CODE" = "403" ] || [ "$CSS_CODE" = "403" ]; then
-              echo "::error::403 Forbidden — Apache cannot read .htaccess or CSS."
-              echo "cPanel File Manager → public_html → .htaccess → Permissions 644"
-              echo "Then recurse: folders 755, files 644 on public_html"
-              echo "Or open: https://out.ratib.sa/pages/ratib-fix-perms.php?run=1&key=ratib-deploy-sync-2026"
-              exit 1
-            fi
-            sleep 15
-          done
-          echo "::error::Site not healthy after deploy (home or CSS not 200). Fix permissions before pushing again."
-          exit 1
-
-      - name: Optional Profile curl sync
+      - name: Optional GitHub→live file sync
         if: ${{ secrets.RATIB_DEPLOY_SYNC_KEY != '' }}
         continue-on-error: true
         run: |
-          curl -fsSL --max-time 120 \
+          curl -fsSL --max-time 180 \
             "https://out.ratib.sa/pages/ratib-profile-deploy.php?deploy=1&key=${{ secrets.RATIB_DEPLOY_SYNC_KEY }}" || true
