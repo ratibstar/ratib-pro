@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       full_sync:
-        description: "Upload all code files (shows % progress). Default = critical only (~2 min)."
+        description: "Upload all code files (shows % progress). Default = critical only (~90s)."
         required: false
         default: "false"
         type: choice
@@ -43,7 +43,7 @@ jobs:
         run: |
           SITE="${{ secrets.CPANEL_SITE_URL || 'https://out.ratib.sa' }}"
           code() { curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 25 "$1" 2>/dev/null || echo 000; }
-          sleep 3
+          sleep 2
           P="$(code "${SITE}/profile/")"
           G="$(code "${SITE}/js/pages/ratib-profile-nav-guard.js")"
           HT="$(curl -sS --connect-timeout 10 --max-time 20 "${SITE}/pages/deploy-root.php" 2>/dev/null | grep '^htaccess_profile_about=' | cut -d= -f2- || true)"
