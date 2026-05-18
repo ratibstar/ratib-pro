@@ -59,6 +59,7 @@ $deployFiles = [
     'pages/home.php',
     'pages/about.php',
     'pages/company-profile.php',
+    'includes/ratib-profile-nav-guard.php',
     'includes/ratib-home-public-chrome-top.php',
     'includes/ratib-home-public-nav-sync.php',
     'includes/ratib-home-public-nav-bootstrap.php',
