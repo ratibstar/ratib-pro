@@ -161,6 +161,7 @@ $checks = [
     'js/pages/ratib-mega-nav.js',
     'includes/ratib-public-base-url.php',
     'public/ratib-build.txt',
+    'ratib-chrome-bust.php',
 ];
 
 foreach ($checks as $rel) {
@@ -182,6 +183,15 @@ foreach ($checks as $rel) {
     }
     if (ratib_has($sample, 'ratibProfileNavPatch')) {
         $flags[] = 'mega-nav-patch';
+    }
+    if (ratib_has($sample, 'data-ratib-go-profile')) {
+        $flags[] = 'go-profile';
+    }
+    if (ratib_has($sample, 'v13-onclick')) {
+        $flags[] = 'v13-onclick';
+    }
+    if (ratib_has($sample, 'wireProfileLink')) {
+        $flags[] = 'wireProfile';
     }
     $flagStr = $flags !== [] ? ' (' . implode(', ', $flags) . ')' : ' (OLD)';
     echo '[OK] ' . $rel . ' mtime=' . date('c', (int) filemtime($path)) . ' bytes=' . filesize($path) . $flagStr . "\n";
@@ -229,3 +239,5 @@ echo "\n>>> Legacy fix script:\n";
 echo "https://{$host}/pages/ratib-fix-perms.php?run=1&key=ratib-deploy-sync-2026\n";
 echo "\n>>> Then deploy Profile:\n";
 echo "https://{$host}/pages/ratib-profile-deploy.php?deploy=1&key=ratib-deploy-sync-2026\n";
+echo "\n>>> Chrome / cache diagnostic (use this URL — not /pages/):\n";
+echo "https://{$host}/ratib-chrome-bust.php\n";
