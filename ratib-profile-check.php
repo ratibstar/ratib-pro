@@ -185,6 +185,38 @@ foreach ($checks as $rel) {
 
 $build = $root . '/public/ratib-build.txt';
 echo "\nbuild_marker=" . (is_file($build) ? trim((string) file_get_contents($build)) : 'missing') . "\n";
+echo "expected_from_github=about-enterprise-20260518-profile-nav-inline\n";
+
+echo "\n--- PHP write probe (why curl deploy FAIL write) ---\n";
+$phpUid = function_exists('posix_geteuid') ? (int) posix_geteuid() : -1;
+$phpUser = ($phpUid >= 0 && function_exists('posix_getpwuid')) ? (posix_getpwuid($phpUid)['name'] ?? (string) $phpUid) : 'unknown';
+echo 'php_effective_user=' . $phpUser . ' uid=' . $phpUid . "\n";
+$probeFiles = ['public/ratib-build.txt', 'js/pages/ratib-mega-nav.js'];
+foreach ($probeFiles as $rel) {
+    $path = $root . '/' . $rel;
+    if (!is_file($path)) {
+        echo "{$rel}: missing\n";
+        continue;
+    }
+    $ownUid = @fileowner($path);
+    $ownUser = ($ownUid !== false && function_exists('posix_getpwuid')) ? (posix_getpwuid($ownUid)['name'] ?? (string) $ownUid) : '?';
+    $mode = sprintf('%04o', @fileperms($path) & 07777);
+    $writable = is_writable($path) ? 'yes' : 'no';
+    $test = @file_put_contents($path, (string) @file_get_contents($path), LOCK_EX);
+    echo "{$rel}: owner={$ownUser} mode={$mode} is_writable={$writable} php_rewrite=" . ($test !== false ? 'ok' : 'FAIL') . "\n";
+}
+$tmp = $root . '/public/.ratib-write-test-' . bin2hex(random_bytes(4));
+$tmpOk = @file_put_contents($tmp, 'ok') !== false;
+echo 'new_file_in_public=' . ($tmpOk ? 'ok' : 'FAIL') . "\n";
+if ($tmpOk) {
+    @unlink($tmp);
+}
+if ($phpUid >= 0 && is_file($build)) {
+    $fUid = @fileowner($build);
+    if ($fUid !== false && (int) $fUid !== $phpUid) {
+        echo "hint=Files owned by another user; use cPanel File Manager or Git Deploy (not PHP curl).\n";
+    }
+}
 
 echo "\n>>> Permission check (home 711, dirs 755, files 644):\n";
 echo "https://{$host}/pages/ratib-perms-check.php\n";
