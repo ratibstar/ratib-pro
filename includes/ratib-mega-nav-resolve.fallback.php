@@ -31,6 +31,22 @@ if (!function_exists('ratib_mega_nav_marketing_home')) {
     }
 }
 
+if (!function_exists('ratib_mega_nav_register_href')) {
+    function ratib_mega_nav_register_href(string $baseUrl, string $navPrefix = ''): string
+    {
+        if (ratib_mega_nav_use_relative_home_anchors($navPrefix)) {
+            return '?open=register&plan=gold&years=1#register';
+        }
+        if (function_exists('ratib_public_marketing_home_register_url')) {
+            return ratib_public_marketing_home_register_url($baseUrl, 'gold', 1);
+        }
+        $home = ratib_mega_nav_marketing_home($baseUrl);
+        $sep = (strpos($home, '?') !== false) ? '&' : '?';
+
+        return $home . $sep . 'open=register&plan=gold&years=1#register';
+    }
+}
+
 if (!function_exists('ratib_mega_nav_pricing_href')) {
     function ratib_mega_nav_pricing_href(string $baseUrl, string $navPrefix = ''): string
     {
@@ -72,8 +88,11 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
         $baseUrl = rtrim($baseUrl, '/');
         $home = ratib_mega_nav_marketing_home($baseUrl);
 
-        if (in_array($hrefKey, ['programs', 'pricing', 'register'], true)) {
+        if (in_array($hrefKey, ['programs', 'pricing'], true)) {
             return ratib_mega_nav_pricing_href($baseUrl, $navPrefix);
+        }
+        if ($hrefKey === 'register') {
+            return ratib_mega_nav_register_href($baseUrl, $navPrefix);
         }
 
         if (ratib_mega_nav_is_profile_context($navPrefix)) {

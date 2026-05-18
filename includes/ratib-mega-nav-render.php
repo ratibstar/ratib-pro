@@ -21,8 +21,9 @@ function ratib_mega_nav_render(string $baseUrl, string $navPrefix): void
         return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
     };
 
-    $resolve = static function (string $key) use ($baseUrl, $navPrefix): string {
-        return ratib_mega_nav_resolve_href($key, $baseUrl, $navPrefix);
+    $resolvePrefix = !empty($GLOBALS['ratib_public_nav_on_marketing_home']) ? '' : $navPrefix;
+    $resolve = static function (string $key) use ($baseUrl, $resolvePrefix): string {
+        return ratib_mega_nav_resolve_href($key, $baseUrl, $resolvePrefix);
     };
 
     $items = ratib_mega_nav_config();
