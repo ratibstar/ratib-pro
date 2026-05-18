@@ -1,5 +1,5 @@
 #!/bin/bash
-# Full project sync to public_html (all files, parallel). Wrapper for Python sync-all.
+# Use proven Fileman deploy (do not use sync-all.py — it caused API 404 errors).
 set -euo pipefail
-cd "$(dirname "$0")/.."
-exec python3 scripts/github-cpanel-fileman-sync-all.py
+export CPANEL_DEPLOY_MODE="${CPANEL_DEPLOY_MODE:-critical}"
+exec bash "$(dirname "$0")/github-cpanel-fileman-deploy.sh"
