@@ -1,6 +1,5 @@
 #!/bin/bash
-# cPanel Version Control: after git pull, sync checkout → live document root(s).
-# Required live root for out.ratib.sa: /home/outratib/public_html
+# cPanel Version Control: after git pull, sync checkout → /home/outratib/public_html
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -10,12 +9,14 @@ MARKER="$(tr -d '\r\n' < public/ratib-build.txt 2>/dev/null || echo unknown)"
 STAMP="deploy-$(date -u +%Y%m%dT%H%M%SZ)-${MARKER}"
 LOG="${HOME}/.ratib-deploy-log"
 PUBLIC_HTML="${RATIB_PUBLIC_HTML:-/home/outratib/public_html}"
+# Do NOT use rsync --delete on live public_html unless explicitly enabled (can break the site).
+RATIB_RSYNC_DELETE="${RATIB_RSYNC_DELETE:-0}"
 
 mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
 
 log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$LOG"; }
 
-log "start marker=${MARKER} ROOT=${ROOT} PUBLIC_HTML=${PUBLIC_HTML} user=$(whoami 2>/dev/null || echo unknown)"
+log "start marker=${MARKER} ROOT=${ROOT} PUBLIC_HTML=${PUBLIC_HTML} rsync_delete=${RATIB_RSYNC_DELETE}"
 
 CRITICAL_FILES=(
   "includes/ratib-php74-compat.php"
@@ -70,12 +71,22 @@ fi
 
 add_target "$PUBLIC_HTML"
 add_target "/home/outratib/public_html"
-add_target "${CPANEL_REPO_ROOT:-}"
-add_target "${HOME}/public_html"
-add_target "${HOME}/domains/out.ratib.sa/public_html"
 
 ROOT_REAL="$(realpath "$ROOT" 2>/dev/null || echo "$ROOT")"
 PUBLIC_REAL="$(realpath "$PUBLIC_HTML" 2>/dev/null || echo "$PUBLIC_HTML")"
+
+fix_live_permissions() {
+  local TARGET="$1"
+  # Apache must read .htaccess (644). Wrong mode after rsync causes site-wide 403.
+  find "${TARGET}" -type d -exec chmod 755 {} \; 2>/dev/null || true
+  find "${TARGET}" -type f -name '.htaccess' -exec chmod 644 {} \; 2>/dev/null || true
+  if [ -f "${TARGET}/.htaccess" ]; then
+    chmod 644 "${TARGET}/.htaccess" 2>/dev/null || true
+  fi
+  # PHP/HTML assets: readable by web server
+  find "${TARGET}/pages" -type f -name '*.php' -exec chmod 644 {} \; 2>/dev/null || true
+  find "${TARGET}/includes" -type f -name '*.php' -exec chmod 644 {} \; 2>/dev/null || true
+}
 
 sync_one_target() {
   local TARGET="$1"
@@ -84,6 +95,7 @@ sync_one_target() {
 
   if [ "$TARGET_REAL" = "$ROOT_REAL" ]; then
     log "skip self (git root is docroot) ${TARGET}"
+    fix_live_permissions "$TARGET"
     printf '%s\n' "$STAMP" > "${TARGET}/.ratib-deploy-stamp" 2>/dev/null || true
     printf '%s\n' "$STAMP" > "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
     return 0
@@ -91,8 +103,13 @@ sync_one_target() {
 
   log "sync -> ${TARGET}"
   local ok=0
+  local RSYNC_EXTRA=()
+  if [ "$RATIB_RSYNC_DELETE" = "1" ]; then
+    RSYNC_EXTRA+=(--delete)
+  fi
+
   if command -v rsync >/dev/null 2>&1; then
-    if rsync -a --delete --exclude='.git/' "${ROOT}/" "${TARGET}/"; then
+    if rsync -a "${RSYNC_EXTRA[@]}" --exclude='.git/' "${ROOT}/" "${TARGET}/"; then
       ok=1
     else
       log "WARN rsync failed for ${TARGET}"
@@ -115,12 +132,14 @@ sync_one_target() {
     cp -f "$src" "${TARGET}/${rel}" 2>/dev/null || true
   done
 
+  fix_live_permissions "$TARGET"
+
   printf '%s\n' "$STAMP" > "${TARGET}/.ratib-deploy-stamp"
   printf '%s\n' "$STAMP" > "${TARGET}/pages/ratib-deploy-status.txt" 2>/dev/null || true
 
   local profile=no
   [ -f "${TARGET}/pages/company-profile.php" ] && profile=yes
-  log "done ${TARGET} company_profile=${profile} marker=${MARKER}"
+  log "done ${TARGET} company_profile=${profile}"
   return 0
 }
 
@@ -128,7 +147,7 @@ SYNCED=0
 PUBLIC_OK=0
 
 if [ "${#TARGETS[@]}" -eq 0 ]; then
-  log "ERROR no deploy targets — add ${PUBLIC_HTML} in cPanel or config/cpanel-deploy-targets.txt"
+  log "ERROR no deploy targets"
   exit 1
 fi
 
@@ -142,7 +161,7 @@ for TARGET in "${TARGETS[@]}"; do
   fi
 done
 
-log "finished synced=${SYNCED} public_html_ok=${PUBLIC_OK} marker=${MARKER}"
+log "finished synced=${SYNCED} public_html_ok=${PUBLIC_OK}"
 
 if [ ! -d "$PUBLIC_HTML" ]; then
   log "ERROR public_html missing: ${PUBLIC_HTML}"
@@ -150,7 +169,7 @@ if [ ! -d "$PUBLIC_HTML" ]; then
 fi
 
 if [ "$ROOT_REAL" != "$PUBLIC_REAL" ] && [ "$PUBLIC_OK" -eq 0 ]; then
-  log "ERROR git checkout (${ROOT}) did not sync to live docroot (${PUBLIC_HTML})"
+  log "ERROR did not sync to ${PUBLIC_HTML}"
   exit 1
 fi
 

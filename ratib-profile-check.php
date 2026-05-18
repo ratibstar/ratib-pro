@@ -178,5 +178,6 @@ foreach ($checks as $rel) {
 $build = $root . '/public/ratib-build.txt';
 echo "\nbuild_marker=" . (is_file($build) ? trim((string) file_get_contents($build)) : 'missing') . "\n";
 
-echo "\n>>> DEPLOY NOW (same file — upload this ratib-profile-check.php first):\n";
-echo "https://{$host}/ratib-profile-check.php?deploy=1&key=ratib-deploy-sync-2026\n";
+echo "\n>>> DEPLOY NOW:\n";
+echo "https://{$host}/pages/ratib-profile-deploy.php?deploy=1&key=ratib-deploy-sync-2026\n";
+echo "(or root) https://{$host}/ratib-profile-check.php?deploy=1&key=ratib-deploy-sync-2026\n";

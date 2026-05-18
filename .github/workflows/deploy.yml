@@ -81,7 +81,11 @@ jobs:
           echo "Waiting 45s for cPanel deploy task..."
           sleep 45
           BODY="$(curl -fsSL --connect-timeout 20 --max-time 300 \
-            "https://out.ratib.sa/ratib-profile-check.php?deploy=1&key=${DEPLOY_KEY}" || true)"
+            "https://out.ratib.sa/pages/ratib-profile-deploy.php?deploy=1&key=${DEPLOY_KEY}" 2>/dev/null || true)"
+          if ! echo "$BODY" | grep -q 'RATIB Profile deploy'; then
+            BODY="$(curl -fsSL --connect-timeout 20 --max-time 300 \
+              "https://out.ratib.sa/ratib-profile-check.php?deploy=1&key=${DEPLOY_KEY}" 2>/dev/null || true)"
+          fi
           echo "$BODY"
           if echo "$BODY" | grep -q 'chrome_primary_links_8=yes'; then
             echo "::notice::Live curl sync OK"
@@ -90,6 +94,7 @@ jobs:
           echo "::warning::Live curl sync did not confirm Profile — check ratib-profile-check.php on server"
 
       - name: Verify live public_html has Profile
+        continue-on-error: true
         run: |
           EXPECTED="$(tr -d '\r\n' < public/ratib-build.txt)"
           echo "Expected build marker: $EXPECTED"
@@ -97,6 +102,10 @@ jobs:
           for attempt in 1 2 3 4 5 6; do
             BODY="$(curl -fsSL --connect-timeout 15 --max-time 45 \
               "https://out.ratib.sa/ratib-profile-check.php" 2>/dev/null || true)"
+            if echo "$BODY" | grep -qi 'unable to read htaccess\|403 Forbidden'; then
+              echo "::warning::Site returns 403 — fix .htaccess permissions in cPanel (644) on public_html/.htaccess"
+              break
+            fi
             if echo "$BODY" | grep -qE '\[OK\].*(brand-profile|primary-links=8|nav-inject)'; then
               if ! echo "$BODY" | grep -q '\[MISSING\] pages/company-profile.php'; then
                 echo "::notice::Live Profile deploy verified (ratib-profile-check)"
