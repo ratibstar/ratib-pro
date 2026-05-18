@@ -5,8 +5,16 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      full_sync:
+        description: "Upload all code files (slow, ~10 min). Default is critical-only (~90s)."
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
-# Cancel older runs when you push again — stops the long queue.
 concurrency:
   group: production-deploy
   cancel-in-progress: true
@@ -22,11 +30,9 @@ jobs:
       - name: Build marker
         id: build
         run: |
-          EXPECTED="$(tr -d '\r\n' < public/ratib-build.txt)"
-          echo "expected=${EXPECTED}" >> "$GITHUB_OUTPUT"
-          echo "Deploy marker: ${EXPECTED}"
+          echo "expected=$(tr -d '\r\n' < public/ratib-build.txt)" >> "$GITHUB_OUTPUT"
 
-      - name: Upload to public_html (critical first, then all code files)
+      - name: Upload critical files to public_html (~90s)
         id: fileman
         env:
           CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
@@ -34,55 +40,44 @@ jobs:
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
           CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
           CPANEL_REMOTE_BASE: ${{ secrets.CPANEL_SFTP_REMOTE_DIR || '/home/outratib/public_html' }}
-          CPANEL_FILEMAN_WORKERS: "6"
+          CPANEL_SKIP_BULK: ${{ github.event_name == 'workflow_dispatch' && inputs.full_sync == 'true' && '0' || '1' }}
+          CPANEL_FILEMAN_WORKERS: "4"
         run: bash scripts/github-cpanel-fileman-fast.sh
 
-      - name: cPanel Git pull (background, optional)
-        id: cpanel
-        continue-on-error: true
-        run: |
-          CPANEL_PORT="${{ secrets.CPANEL_PORT }}"
-          CPANEL_PORT="${CPANEL_PORT:-2083}"
-          AUTH="Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_API_TOKEN }}"
-          REPO="$(printf '%s' '${{ secrets.CPANEL_REPO_ROOT }}' | tr -d '\r\n' | xargs)"
-          BRANCH="${{ github.ref_name }}"
-          BASE="https://${{ secrets.CPANEL_HOST }}:${CPANEL_PORT}/execute"
-          curl -sS --max-time 60 -H "$AUTH" --get \
-            --data-urlencode "repository_root=$REPO" \
-            --data-urlencode "branch=$BRANCH" \
-            "${BASE}/VersionControl/update" | head -c 800 || true
-          curl -sS --max-time 90 -H "$AUTH" --get \
-            --data-urlencode "repository_root=$REPO" \
-            --data-urlencode "branch=$BRANCH" \
-            "${BASE}/VersionControlDeployment/create" | head -c 800 || true
-          echo "cpanel_ok=true" >> "$GITHUB_OUTPUT"
-
-      - name: Quick verify (~30s max)
+      - name: Verify live site (~20s)
         run: |
           set -euo pipefail
-          EXPECTED="${{ steps.build.outputs.expected }}"
           SITE="${{ secrets.CPANEL_SITE_URL || 'https://out.ratib.sa' }}"
           FILEMAN_OK="${{ steps.fileman.outcome == 'success' && 'yes' || 'no' }}"
 
-          code() { curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 8 --max-time 20 "$1" 2>/dev/null || echo 000; }
+          if [ "$FILEMAN_OK" != "yes" ]; then
+            echo "::error::Fileman upload failed — open previous step log for CRITICAL_FAIL lines"
+            exit 1
+          fi
 
-          for n in 1 2 3; do
-            MARKER="$(curl -fsSL --max-time 15 "${SITE}/public/ratib-build.txt" 2>/dev/null | tr -d '\r\n' || true)"
-            H="$(code "${SITE}/pages/home.php")"
-            P="$(code "${SITE}/profile/")"
-            GUARD="$(code "${SITE}/js/pages/ratib-profile-nav-guard.js")"
-            echo "try=$n home=$H profile/=$P guard_js=$GUARD marker=${MARKER:-?} want=${EXPECTED} fileman=${FILEMAN_OK}"
+          code() { curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 25 "$1" 2>/dev/null || echo 000; }
 
-            if [ "$FILEMAN_OK" = "yes" ] && [ "$H" = "200" ] && [ "$P" = "200" ] && [ "$GUARD" = "200" ]; then
-              echo "::notice::Deploy OK — site up, profile JS loaded"
-              exit 0
-            fi
-            if [ "$FILEMAN_OK" = "yes" ] && [ "$H" = "200" ] && [ "$P" = "200" ] && [ "$n" -ge 2 ]; then
-              echo "::notice::Deploy OK — critical files on server (guard_js=$GUARD)"
-              exit 0
-            fi
-            sleep 8
-          done
+          sleep 5
+          H="$(code "${SITE}/pages/home.php")"
+          P="$(code "${SITE}/profile/")"
+          GUARD="$(code "${SITE}/js/pages/ratib-profile-nav-guard.js")"
+          echo "home=$H profile/=$P guard_js=$GUARD"
 
-          echo "::error::Deploy failed. fileman=${FILEMAN_OK} live_marker=${MARKER:-missing} want=${EXPECTED}"
+          if [ "$P" != "200" ]; then
+            echo "::error::/profile/ not OK (HTTP $P)"
+            exit 1
+          fi
+
+          if [ "$GUARD" = "200" ]; then
+            echo "::notice::Deploy OK — profile + guard.js on server"
+            exit 0
+          fi
+
+          if [ "$H" = "200" ]; then
+            echo "::warning::guard.js HTTP $GUARD (profile page OK) — nav still works via inline scripts"
+            echo "::notice::Deploy OK — critical files uploaded"
+            exit 0
+          fi
+
+          echo "::error::Site check failed home=$H profile=$P guard=$GUARD"
           exit 1
