@@ -11,20 +11,9 @@ $path = $_SERVER['REQUEST_URI'] ?? '';
 $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
 $apiBase = rtrim($baseUrl, '/') . '/api/control';
-/** Public Ratib Pro site (registration + N-Genius checkout), not /control-panel/pages/home.php */
-$scheme = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? 'https' : 'http';
-$host = (string) ($_SERVER['HTTP_HOST'] ?? '');
-$publicSiteRoot = (defined('SITE_URL') && is_string(SITE_URL) && SITE_URL !== '')
-    ? rtrim(SITE_URL, '/')
-    : ($host !== '' ? $scheme . '://' . $host . preg_replace('#/control-panel$#', '', $basePath, 1) : '');
-$registerProUrl = ($publicSiteRoot !== '' ? $publicSiteRoot : $baseUrl) . '/pages/home.php?open=register&plan=gold&years=1';
-$registerCountryCode = strtoupper(trim((string) ($_SESSION['country_code'] ?? '')));
-$registerCountryName = trim((string) ($_SESSION['country_name'] ?? ''));
-if ($registerCountryCode !== '') {
-    $registerProUrl .= '&country_code=' . rawurlencode($registerCountryCode);
-} elseif ($registerCountryName !== '') {
-    $registerProUrl .= '&country_name=' . rawurlencode($registerCountryName);
-}
+require_once __DIR__ . '/public-marketing-urls.php';
+$publicSiteRoot = control_panel_public_site_root();
+$registerProUrl = control_panel_registration_page_url($ctrl);
 
 $allowedCountryIds = getControlPanelCountryScopeIds($ctrl);
 $countries = [];
@@ -320,7 +309,7 @@ $reqRowVisualClass = function (array $r) use ($reqAgencyState, $hasRegAgencySusp
 };
 $formAction = pageUrl('control/registration-requests.php');
 $agenciesManageUrl = pageUrl('control/agencies.php');
-$regBase = ($publicSiteRoot !== '' ? $publicSiteRoot : $baseUrl) . '/pages/home.php';
+$regBase = control_panel_public_marketing_home_url($ctrl);
 
 $statusCards = [
     'total' => 0,
@@ -411,10 +400,10 @@ if ($tableExists) {
         <span class="text-muted">Registration links:</span>
         <select id="regLinkSelect" class="form-control req-ctrl-input req-width-auto">
             <option value="<?php echo htmlspecialchars($registerProUrl); ?>">Recommended — Gold, 1 year (N-Genius)</option>
-            <option value="<?php echo htmlspecialchars($regBase . '?open=register'); ?>">Open register only (defaults to Gold)</option>
-            <option value="<?php echo htmlspecialchars($regBase . '?open=register&plan=pro'); ?>">Pro (non-paid inquiry)</option>
-            <option value="<?php echo htmlspecialchars($regBase . '?open=register&plan=gold&amount=650'); ?>">Gold $650</option>
-            <option value="<?php echo htmlspecialchars($regBase . '?open=register&plan=platinum&amount=800'); ?>">Platinum $800</option>
+            <option value="<?php echo htmlspecialchars(control_panel_marketing_url_append_query($regBase, ['open' => 'register']), ENT_QUOTES, 'UTF-8'); ?>">Open register only (defaults to Gold)</option>
+            <option value="<?php echo htmlspecialchars(control_panel_marketing_url_append_query($regBase, ['open' => 'register', 'plan' => 'pro']), ENT_QUOTES, 'UTF-8'); ?>">Pro (non-paid inquiry)</option>
+            <option value="<?php echo htmlspecialchars(control_panel_marketing_url_append_query($regBase, ['open' => 'register', 'plan' => 'gold', 'amount' => 650]), ENT_QUOTES, 'UTF-8'); ?>">Gold $650</option>
+            <option value="<?php echo htmlspecialchars(control_panel_marketing_url_append_query($regBase, ['open' => 'register', 'plan' => 'platinum', 'amount' => 800]), ENT_QUOTES, 'UTF-8'); ?>">Platinum $800</option>
         </select>
         <input type="text" id="regLink" readonly value="<?php echo htmlspecialchars($registerProUrl); ?>" class="req-reg-link-input">
         <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCopyLink"><i class="fas fa-copy me-1"></i> Copy</button>

@@ -8,6 +8,7 @@ if (!defined('IS_CONTROL_PANEL')) {
 }
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/control/client-platform-nav.php';
+require_once __DIR__ . '/../../includes/control/public-marketing-urls.php';
 
 if (empty($_SESSION['control_logged_in'])) {
     header('Location: ' . pageUrl('login.php'));
@@ -28,7 +29,8 @@ if ($siteRootUrl === '') {
     $siteRootUrl = $host !== '' ? ($scheme . '://' . $host) : '';
 }
 $controlCenterUrl = rtrim($siteRootUrl, '/') . '/admin/control-center.php';
-$registrationPageUrl = rtrim($siteRootUrl, '/') . '/pages/home.php?open=register&plan=gold&years=1';
+$registrationPageUrl = control_panel_registration_page_url($ctrl);
+$publicMarketingHomeUrl = control_panel_public_marketing_home_url($ctrl, 'programs');
 $clientPlatformLinks = control_client_platform_links();
 $legacyModuleKey = trim((string) ($_GET['legacy_module'] ?? ''));
 $legacyModuleMap = [
@@ -69,8 +71,6 @@ if ($ctrl) {
 
 $fullBaseUrl = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/') . (function_exists('getBaseUrl') ? getBaseUrl() : '');
 $panelSettingsHref = rtrim($fullBaseUrl, '/') . '/pages/control/panel-settings.php?control=1';
-
-$designedAppUrl = defined('DESIGNED_APP_URL') ? trim((string) DESIGNED_APP_URL) : '';
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('Control hub', ['css/system-settings.css'], []);
@@ -168,16 +168,21 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
         <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/support-chats.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-headset"></i> Support chats</a>
     </div>
     <div class="control-settings-card">
-        <h3><i class="fas fa-file-signature"></i> Public registration page</h3>
-        <p>Open the marketing homepage registration flow (new tab).</p>
+        <h3><i class="fas fa-file-signature"></i> Client registration page</h3>
+        <p>Gold &amp; Platinum pricing and the live registration / checkout form.</p>
         <a href="<?php echo htmlspecialchars($registrationPageUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light" target="_blank" rel="noopener noreferrer"><i class="fas fa-external-link-alt"></i> Open registration</a>
     </div>
+    <div class="control-settings-card">
+        <h3><i class="fas fa-globe"></i> Public marketing site</h3>
+        <p>View the live homepage and pricing section (<code>#programs</code>).</p>
+        <a href="<?php echo htmlspecialchars($publicMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light" target="_blank" rel="noopener noreferrer"><i class="fas fa-external-link-alt"></i> View public site</a>
+    </div>
     <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings">
-        <h3><i class="fas fa-file-lines"></i> Public site content</h3>
+        <h3><i class="fas fa-file-lines"></i> Edit homepage CMS</h3>
         <p>Homepage copy, nav labels, and CMS fields for <code>home.php</code>.</p>
         <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-pen-to-square"></i> Edit site content</a>
     </div>
-    <?php if ($designedAppUrl !== ''): ?>
+    <?php if (false && isset($designedAppUrl) && $designedAppUrl !== ''): ?>
     <div class="control-settings-card" data-permission="control_designed_site,view_control_designed_site">
         <h3><i class="fas fa-palette"></i> Designed site</h3>
         <p>Separate Designed experience (if configured).</p>

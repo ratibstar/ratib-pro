@@ -8,6 +8,7 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/control/client-platform-nav.php';
+require_once __DIR__ . '/../includes/control/public-marketing-urls.php';
 
 $isControl = defined('IS_CONTROL_PANEL') && IS_CONTROL_PANEL;
 if (!$isControl || empty($_SESSION['control_logged_in'])) {
@@ -42,14 +43,7 @@ $path = $_SERVER['REQUEST_URI'] ?? '';
 $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
 $apiBase = $baseUrl . '/api/control';
-$registerProUrl = $baseUrl . '/pages/home.php?open=register&plan=gold&years=1';
-$registerCountryCode = strtoupper(trim((string) ($_SESSION['country_code'] ?? '')));
-$registerCountryName = trim((string) ($_SESSION['country_name'] ?? ''));
-if ($registerCountryCode !== '') {
-    $registerProUrl .= '&country_code=' . rawurlencode($registerCountryCode);
-} elseif ($registerCountryName !== '') {
-    $registerProUrl .= '&country_name=' . rawurlencode($registerCountryName);
-}
+$registerProUrl = control_panel_registration_page_url($ctrl);
 
 $chk = @$ctrl->query("SHOW TABLES LIKE 'control_support_chats'");
 $tableExists = ($chk && $chk->num_rows > 0);

@@ -8,6 +8,7 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/control/client-platform-nav.php';
+require_once __DIR__ . '/../includes/control/public-marketing-urls.php';
 
 $isControl = defined('IS_CONTROL_PANEL') && IS_CONTROL_PANEL;
 if (!$isControl || empty($_SESSION['control_logged_in'])) {
@@ -135,14 +136,7 @@ $renewalDate = function($created) {
     <div class="control-header">
         <div class="control-nav">
             <?php
-            $registerProUrl = rtrim((string) $baseUrl, '/') . '/pages/home.php?open=register&plan=gold&years=1';
-            $registerCountryCode = strtoupper(trim((string) ($_SESSION['country_code'] ?? '')));
-            $registerCountryName = trim((string) ($_SESSION['country_name'] ?? ''));
-            if ($registerCountryCode !== '') {
-                $registerProUrl .= '&country_code=' . rawurlencode($registerCountryCode);
-            } elseif ($registerCountryName !== '') {
-                $registerProUrl .= '&country_name=' . rawurlencode($registerCountryName);
-            }
+            $registerProUrl = control_panel_registration_page_url($ctrl ?? null);
             ?>
             <a href="<?php echo htmlspecialchars($registerProUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success btn-sm"><i class="fas fa-external-link-alt me-1"></i> Client Registration</a>
             <a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Back to Dashboard</a>

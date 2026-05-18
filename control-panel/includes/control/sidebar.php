@@ -4,6 +4,7 @@
  * AR: يدير سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/includes/control/sidebar.php`.
  */
 require_once __DIR__ . '/client-platform-nav.php';
+require_once __DIR__ . '/public-marketing-urls.php';
 $logoUrl = (file_exists(__DIR__ . '/../../assets/logo.png')) ? asset('assets/logo.png') : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect width='44' height='44' rx='10' fill='%236b21a8'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.35em' fill='white' font-size='18' font-weight='bold'%3ER%3C/text%3E%3C/svg%3E";
 $base = getBaseUrl();
 $fullBaseUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . $base;
@@ -168,33 +169,12 @@ $clientPlatformLinks = control_client_platform_links();
                 </a>
             </li>
             <?php
-            $registrationPageUrl = rtrim($publicRootUrl, '/') . '/pages/home.php?open=register&plan=gold&years=1';
-            $registrationCountryCode = strtoupper(trim((string) ($_SESSION['country_code'] ?? (defined('COUNTRY_CODE') ? COUNTRY_CODE : ''))));
-            $registrationCountryName = trim((string) ($_SESSION['country_name'] ?? (defined('COUNTRY_NAME') ? COUNTRY_NAME : '')));
-            if ($registrationCountryCode !== '') {
-                $registrationPageUrl .= '&country_code=' . rawurlencode($registrationCountryCode);
-            } elseif ($registrationCountryName !== '') {
-                $registrationPageUrl .= '&country_name=' . rawurlencode($registrationCountryName);
-            }
-            // Cache buster for public homepage copy: changes whenever CMS rows update.
-            if (isset($ctrl) && $ctrl instanceof mysqli) {
-                try {
-                    $revRes = $ctrl->query("SELECT COALESCE(UNIX_TIMESTAMP(MAX(updated_at)), 0) AS rev FROM ratib_site_content");
-                    if ($revRes && ($revRow = $revRes->fetch_assoc())) {
-                        $rev = (string) ($revRow['rev'] ?? '0');
-                        if ($rev !== '' && $rev !== '0') {
-                            $registrationPageUrl .= '&cms_rev=' . rawurlencode($rev);
-                        }
-                    }
-                } catch (Throwable $e) { /* ignore */ }
-            }
+            $ctrlDb = (isset($ctrl) && $ctrl instanceof mysqli) ? $ctrl : null;
+            $registrationPageUrl = control_panel_registration_page_url($ctrlDb);
+            $publicMarketingHomeUrl = control_panel_public_marketing_home_url($ctrlDb, 'programs');
             ?>
-            <li><a href="<?php echo htmlspecialchars($registrationPageUrl); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item"><i class="fas fa-file-signature"></i><span>Client Registration Page</span></a></li>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php')); ?>" class="sidebar-item <?php echo basename($_SERVER['PHP_SELF']) === 'site-content.php' ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings"><i class="fas fa-file-lines"></i><span>Public site content</span></a></li>
-            <?php $designedAppUrl = defined('DESIGNED_APP_URL') ? trim((string) DESIGNED_APP_URL) : ''; ?>
-            <?php if ($designedAppUrl !== ''): ?>
-            <li><a href="<?php echo htmlspecialchars($designedAppUrl); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item" data-permission="control_designed_site,view_control_designed_site"><i class="fas fa-palette"></i><span>Designed site</span></a></li>
-            <?php endif; ?>
+            <li><a href="<?php echo htmlspecialchars($registrationPageUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item" title="Gold &amp; Platinum pricing and registration form"><i class="fas fa-file-signature"></i><span>Client Registration Page</span></a></li>
+            <li><a href="<?php echo htmlspecialchars($publicMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item" title="Live marketing site — pricing section"><i class="fas fa-globe"></i><span>Public marketing site</span></a></li>
             <li class="sidebar-section"><span class="section-label">Business Modules</span></li>
             <?php
             $countryProgramPerms = 'control_government,view_control_government,gov_admin,control_admins';
