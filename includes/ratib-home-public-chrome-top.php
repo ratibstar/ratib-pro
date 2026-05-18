@@ -67,7 +67,8 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 if ($ratibBrandProfileLabel === '') {
                     $ratibBrandProfileLabel = 'Profile';
                 }
-                $ratibBrandProfileHref = $baseUrl . '/profile';
+                $ratibProfileUrl = rtrim($baseUrl, '/') . '/profile';
+                $ratibBrandProfileHref = $ratibProfileUrl;
                 $ratibBrandProfileCurrent = !empty($ratibAboutPageActive);
                 ?>
             <div class="ratib-nav__brand-block">
@@ -75,25 +76,25 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                     <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="<?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?>" width="120" height="36">
                     <span class="ratib-nav__brand-text"><?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?></span>
                 </a>
-                <a href="<?php echo htmlspecialchars($ratibBrandProfileHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__brand-profile<?php echo $ratibBrandProfileCurrent ? ' is-current' : ''; ?>"<?php echo $ratibBrandProfileCurrent ? ' aria-current="page"' : ''; ?>><?php echo htmlspecialchars($ratibBrandProfileLabel, ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratibBrandProfileHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__brand-profile<?php echo $ratibBrandProfileCurrent ? ' is-current' : ''; ?>" data-ratib-profile-nav="1"<?php echo $ratibBrandProfileCurrent ? ' aria-current="page"' : ''; ?>><?php echo htmlspecialchars($ratibBrandProfileLabel, ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
             <button type="button" class="ratib-nav__toggle" id="ratibNavToggle" aria-label="Open menu" aria-expanded="false" aria-controls="ratibNavMenu">
                 <span></span><span></span><span></span>
             </button>
             <!-- ratib-home-nav-build: chrome=<?php echo htmlspecialchars($ratibChromeBundleHash ?? '', ENT_QUOTES, 'UTF-8'); ?> ui-rev=<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?> home.php-mtime=<?php echo htmlspecialchars($ratibHomePhpMtime, ENT_QUOTES, 'UTF-8'); ?> primary-links=8 brand-profile=v12 mega-nav-root=#ratibMegaNavRoot -->
-            <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary" data-ratib-primary-nav-links="8" data-ratib-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-nav-visual="svg-glyphs-semantic-<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" style="visibility:hidden;opacity:0;pointer-events:none">
+            <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary" data-ratib-primary-nav-links="8" data-ratib-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-nav-visual="svg-glyphs-semantic-<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php ratib_mega_nav_render($baseUrl, $ratibNavPrefix); ?>
                 <div class="ratib-nav__platform-links" role="group" aria-label="Platform">
                 <?php
                 // home.php?open=about — reliable on hosts where /pages/about.php is not deployed yet.
-                $ratibAboutNavHref = $baseUrl . '/profile';
+                $ratibAboutNavHref = $ratibProfileUrl;
                 $ratibAboutNavLabel = trim((string) ($ratibHome['home.nav.about'] ?? ''));
                 if ($ratibAboutNavLabel === '') {
                     $ratibAboutNavLabel = 'Profile';
                 }
                 $ratibAboutNavCurrent = !empty($ratibAboutPageActive);
                 ?>
-                <a href="<?php echo htmlspecialchars($ratibAboutNavHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--about<?php echo $ratibAboutNavCurrent ? ' is-current' : ''; ?>"<?php echo $ratibAboutNavCurrent ? ' aria-current="page"' : ''; ?>><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibAboutNavLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
+                <a href="<?php echo htmlspecialchars($ratibAboutNavHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--about<?php echo $ratibAboutNavCurrent ? ' is-current' : ''; ?>" data-ratib-profile-nav="1"<?php echo $ratibAboutNavCurrent ? ' aria-current="page"' : ''; ?>><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibAboutNavLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
                 <a href="<?php echo htmlspecialchars($ratibNavPrefix . '#platform', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-platform"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.platform'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                 <a href="<?php echo htmlspecialchars($ratibNavPrefix . '#domains', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-domains"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.nav.domains'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                 <a href="<?php echo htmlspecialchars($ratibNavPrefix . $ratibNavProductTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-nav__link--product-tour" data-ratib-product-tour-tab="1"><span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-video"/></svg></span><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibNavProductTourLabel, ENT_QUOTES, 'UTF-8'); ?></span></a>
@@ -104,6 +105,26 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 </div>
             </nav>
             <?php ratib_home_nav_emit_sync_script(); ?>
+            <script>
+            (function ratibProfileNavGo() {
+                function profileDest(href) {
+                    if (!href) return '';
+                    if (/company-profile\.php|\/profile\/?$/i.test(href)) {
+                        return href.replace(/#.*$/, '');
+                    }
+                    return '';
+                }
+                document.addEventListener('click', function (ev) {
+                    var a = ev.target.closest('[data-ratib-profile-nav], .ratib-nav__brand-profile, .ratib-nav__link--about');
+                    if (!a || a.tagName !== 'A') return;
+                    var dest = profileDest(a.getAttribute('href') || '');
+                    if (!dest) return;
+                    ev.preventDefault();
+                    ev.stopImmediatePropagation();
+                    window.location.assign(dest);
+                }, true);
+            })();
+            </script>
             <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="0" height="0" class="ratib-nav-glyph-sprite" style="position:absolute;width:0;height:0;overflow:hidden">
                 <symbol id="ratib-ng-platform" viewBox="0 0 24 24"><path fill="currentColor" d="M3 3h7v7H3V3zm11 0h7v7h-7V3zM3 14h7v7H3v-7zm11 0h7v7h-7v-7z"/></symbol>
                 <symbol id="ratib-ng-domains" viewBox="0 0 24 24"><path fill="currentColor" d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95c-.32-1.25-.78-2.45-1.38-3.56 1.84.63 3.37 1.91 4.33 3.56zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2 0 .68.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56-1.84-.63-3.37-1.9-4.33-3.56zm2.95-8H5.08c.96-1.66 2.49-2.93 4.33-3.56C8.81 5.55 8.35 6.75 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM16.97 11.68c.08-.66.14-1.32.14-2 0-.68-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38zm-1.82 6.56c.6-1.11 1.06-2.31 1.38-3.56h2.95c-.96 1.65-2.49 2.93-4.33 3.56z"/></symbol>

@@ -24,6 +24,8 @@ CRITICAL_FILES=(
   "control-panel/includes/config.php"
   "includes/ratib-home-public-nav-sync.php"
   "includes/ratib-home-public-chrome-top.php"
+  "pages/company-profile.php"
+  "pages/about.php"
   "pages/home.php"
   "pages/about.php"
   "pages/company-profile.php"

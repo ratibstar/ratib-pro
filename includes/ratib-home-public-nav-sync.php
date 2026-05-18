@@ -9,7 +9,9 @@ function ratib_home_nav_emit_sync_guard_style(): void
 {
     /* In <head> before body paint: beats external CSS + stops flash of cached/extra links. */
     echo '<style id="ratib-nav-sync-guard">';
-    echo '#ratibNavMenu:not([data-ratib-nav-sync="1"]){visibility:hidden!important;opacity:0!important;pointer-events:none!important;}#ratibNavMenu[data-ratib-nav-sync="1"]{visibility:visible!important;opacity:1!important;pointer-events:auto!important;}';
+    echo '#ratibNavMenu:not([data-ratib-nav-sync="1"]) .ratib-nav__platform-links{visibility:hidden!important;opacity:0!important;pointer-events:none!important;}';
+    echo '#ratibNavMenu[data-ratib-nav-sync="1"] .ratib-nav__platform-links{visibility:visible!important;opacity:1!important;pointer-events:auto!important;}';
+    echo '.ratib-nav__brand-profile,.ratib-nav__link--about{position:relative;z-index:12;pointer-events:auto!important;}';
     echo '</style>';
 }
 
@@ -73,6 +75,7 @@ function run(){
     var prof=document.createElement('a');
     prof.href=profHref;
     prof.className='ratib-nav__link ratib-nav__link--about ratib-nav__link--about-injected';
+    prof.setAttribute('data-ratib-profile-nav','1');
     prof.innerHTML='<span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label">Profile</span>';
     linkByKey['about']=prof;
   }
@@ -106,6 +109,7 @@ function run(){
       prof.href=home.replace(/\/home\.php.*$/,'/profile').replace(/[#?].*$/,'');
       if(!/\/profile\/?$/i.test(prof.href))prof.href=(home.replace(/[#?].*$/,'')||'/pages/home.php').replace(/\/pages\/home\.php.*$/i,'/profile');
       prof.className='ratib-nav__brand-profile';
+      prof.setAttribute('data-ratib-profile-nav','1');
       prof.textContent='Profile';
       brand.parentNode.insertBefore(blk,brand);
       blk.appendChild(brand);
