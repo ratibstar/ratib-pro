@@ -49,9 +49,11 @@ jobs:
           P="$(code "${SITE}/profile/")"
           G="$(code "${SITE}/js/pages/ratib-profile-nav-guard.js")"
           H="$(code "${SITE}/pages/home.php")"
-          BODY="$(curl -sS -L --connect-timeout 8 --max-time 25 "${SITE}/pages/home.php" 2>/dev/null | head -c 500 || true)"
-          echo "profile/=$P home.php(follow)=$H guard.js=$G"
-          if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ]; then
+          REG="${SITE}/pages/home.php?v=about-enterprise-20260518-profile-same-tab-v6&open=register&plan=gold&years=1"
+          HR="$(code "${REG}")"
+          BODY="$(curl -sS -L --connect-timeout 8 --max-time 25 "${REG}" 2>/dev/null | head -c 500 || true)"
+          echo "profile/=$P home.php(follow)=$H register=$HR guard.js=$G"
+          if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ] && [ "$HR" = "200" ]; then
             if echo "$BODY" | grep -qi '<!DOCTYPE'; then
               echo "::notice::Deploy OK (home returns HTML after redirect)"
               exit 0

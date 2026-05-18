@@ -16,15 +16,26 @@ $ratibHomeSkipBuildBust = isset($_GET['ratib_deploy_probe'])
     );
 if (!$ratibHomeSkipBuildBust) {
     $ratibBuildMarker = ratib_public_build_marker();
-    $ratibReqBuildV = isset($_GET['v']) ? (string) $_GET['v'] : '';
-    if ($ratibBuildMarker !== '' && $ratibReqBuildV !== $ratibBuildMarker && !headers_sent()) {
-        $qs = $_GET;
-        $qs['v'] = $ratibBuildMarker;
-        $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/pages/home.php'), PHP_URL_PATH);
-        $path = is_string($path) && $path !== '' ? $path : '/pages/home.php';
-        header('Location: ' . $path . '?' . http_build_query($qs), true, 302);
-        exit;
+    $ratibReqBuildV = isset($_GET['v']) ? trim((string) $_GET['v']) : '';
+    if ($ratibBuildMarker !== '' && !headers_sent()) {
+        $needsCanonicalV = $ratibReqBuildV === ''
+            || !ratib_public_build_marker_is_valid($ratibReqBuildV)
+            || $ratibReqBuildV !== $ratibBuildMarker;
+        if ($needsCanonicalV) {
+            $qs = $_GET;
+            $qs['v'] = $ratibBuildMarker;
+            $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/pages/home.php'), PHP_URL_PATH);
+            $path = is_string($path) && $path !== '' ? $path : '/pages/home.php';
+            header('Location: ' . $path . '?' . http_build_query($qs), true, 302);
+            exit;
+        }
     }
+}
+
+if (!headers_sent()) {
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private');
+    header('Pragma: no-cache');
+    header('X-LiteSpeed-Cache-Control: no-cache', false);
 }
 
 if (function_exists('opcache_invalidate')) {

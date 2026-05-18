@@ -29,8 +29,28 @@ if (!function_exists('ratib_public_build_marker')) {
         }
         $path = dirname(__DIR__) . '/public/ratib-build.txt';
         $marker = is_file($path) ? trim((string) file_get_contents($path)) : '';
+        if ($marker === '') {
+            $marker = 'about-enterprise-20260518-profile-same-tab-v6';
+        }
 
         return $marker;
+    }
+}
+
+if (!function_exists('ratib_public_build_marker_is_valid')) {
+    /** Accept current canonical + one previous deploy marker (avoids redirect/cache churn). */
+    function ratib_public_build_marker_is_valid(string $req): bool
+    {
+        if ($req === '') {
+            return false;
+        }
+        $canonical = ratib_public_build_marker();
+        $legacy = [
+            'about-enterprise-20260518-nav-resolve-v7',
+            'about-enterprise-20260518-profile-same-tab-v6',
+        ];
+
+        return $req === $canonical || in_array($req, $legacy, true);
     }
 }
 
@@ -58,5 +78,36 @@ if (!function_exists('ratib_public_marketing_home_url')) {
         }
 
         return $url;
+    }
+}
+
+if (!function_exists('ratib_public_marketing_home_register_url')) {
+    /**
+     * Canonical marketing home + registration deep link (single public URL for Gold signup).
+     *
+     * @param array<string, string|int|float> $extra
+     */
+    function ratib_public_marketing_home_register_url(
+        string $baseUrl = '',
+        string $plan = 'gold',
+        int $years = 1,
+        array $extra = []
+    ): string {
+        $query = array_merge(
+            [
+                'open' => 'register',
+                'plan' => $plan,
+                'years' => $years,
+            ],
+            $extra
+        );
+        if (function_exists('ratib_site_content_revision_token')) {
+            $rev = ratib_site_content_revision_token();
+            if ($rev !== '') {
+                $query['cms_rev'] = $rev;
+            }
+        }
+
+        return ratib_public_marketing_home_url($baseUrl, $query);
     }
 }
