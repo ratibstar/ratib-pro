@@ -14,7 +14,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
           echo "expected=${EXPECTED}" >> "$GITHUB_OUTPUT"
           echo "Deploy marker: ${EXPECTED}"
 
-      - name: Fast upload to public_html (Fileman — profile bundle)
+      - name: Upload ALL files to public_html (Fileman parallel sync)
         id: fileman
         env:
           CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
@@ -34,6 +34,7 @@ jobs:
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
           CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
           CPANEL_REMOTE_BASE: ${{ secrets.CPANEL_SFTP_REMOTE_DIR || '/home/outratib/public_html' }}
+          CPANEL_FILEMAN_WORKERS: "12"
         run: bash scripts/github-cpanel-fileman-fast.sh
 
       - name: cPanel Git pull (background, optional)
