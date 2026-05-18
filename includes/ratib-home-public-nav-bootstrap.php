@@ -255,7 +255,25 @@ PHP;
     }
 
     ratib_public_materialize_include('ratib-enterprise-trust-home.php');
-    ratib_public_materialize_include('ratib-operational-proof-render.php', ['ratib-operational-proof-data.php']);
+    ratib_public_materialize_include('ratib-operational-proof-data.php');
+    ratib_public_materialize_include('ratib-operational-proof-render.php');
 }
+
+if (!function_exists('ratib_public_load_operational_proof_render')) {
+    function ratib_public_load_operational_proof_render(): void
+    {
+        $render = __DIR__ . '/ratib-operational-proof-render.php';
+        if (is_file($render)) {
+            require_once $render;
+            return;
+        }
+        if (!function_exists('ratib_operational_proof_render')) {
+            function ratib_operational_proof_render(string $baseUrl, ?array $copy = null, array $show = []): void
+            {
+            }
+        }
+    }
+}
+ratib_public_load_operational_proof_render();
 
 require_once __DIR__ . '/ratib-home-public-nav-sync.php';

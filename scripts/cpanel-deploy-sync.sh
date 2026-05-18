@@ -46,6 +46,8 @@ CRITICAL_FILES=(
   "js/pages/ratib-profile-nav-guard.js"
   "js/pages/ratib-mega-nav.js"
   "includes/ratib-about-sections.php"
+  "includes/ratib-operational-proof-render.php"
+  "includes/ratib-operational-proof-data.php"
   "js/pages/home-page.js"
   "css/pages/home-public.css"
   "css/pages/about-enterprise.css"

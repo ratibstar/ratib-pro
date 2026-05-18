@@ -4,7 +4,10 @@
  */
 declare(strict_types=1);
 
-require_once __DIR__ . '/ratib-operational-proof-data.php';
+$ratibOpProofDataPath = __DIR__ . '/ratib-operational-proof-data.php';
+if (is_file($ratibOpProofDataPath)) {
+    require_once $ratibOpProofDataPath;
+}
 
 if (!function_exists('ratib_op_h')) {
     function ratib_op_h(string $s): string
@@ -27,6 +30,9 @@ if (!function_exists('ratib_operational_proof_render')) {
      */
     function ratib_operational_proof_render(string $baseUrl, ?array $copy = null, array $show = []): void
     {
+        if (!function_exists('ratib_operational_proof_config')) {
+            return;
+        }
         $cfg = ratib_operational_proof_config($baseUrl);
         $sec = $cfg['section'];
         if (is_array($copy)) {

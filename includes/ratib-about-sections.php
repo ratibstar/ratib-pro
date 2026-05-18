@@ -216,8 +216,9 @@ if (!function_exists('ratib_about_render_sections')) {
         </section>
 
         <?php
-        require_once __DIR__ . '/ratib-operational-proof-render.php';
-        ratib_operational_proof_render($baseUrl);
+        if (function_exists('ratib_operational_proof_render')) {
+            ratib_operational_proof_render($baseUrl);
+        }
         ?>
 
         <section class="ratib-about-section" id="operations" aria-labelledby="about-ops-title">

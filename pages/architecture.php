@@ -22,7 +22,6 @@ $baseUrl = ratib_public_site_base_url();
 require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
 require_once __DIR__ . '/../includes/ratib-architecture-data.php';
 require_once __DIR__ . '/../includes/ratib-architecture-sections.php';
-require_once __DIR__ . '/../includes/ratib-operational-proof-render.php';
 
 $arch = ratib_architecture_config($baseUrl);
 $ratibArchPageActive = true;
