@@ -8,7 +8,14 @@
 function ratib_mega_nav_render(string $baseUrl, string $navPrefix): void
 {
     require_once __DIR__ . '/ratib-mega-nav-config.php';
-    require_once __DIR__ . '/ratib-mega-nav-resolve.php';
+    if (!function_exists('ratib_mega_nav_resolve_href')) {
+        $resolveMain = __DIR__ . '/ratib-mega-nav-resolve.php';
+        if (is_file($resolveMain)) {
+            require_once $resolveMain;
+        } else {
+            require_once __DIR__ . '/ratib-mega-nav-resolve.fallback.php';
+        }
+    }
 
     $h = static function (string $s): string {
         return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');

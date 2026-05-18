@@ -40,19 +40,25 @@ jobs:
           CPANEL_DEPLOY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.full_sync == 'true' && 'critical' || 'fast' }}
         run: bash scripts/github-cpanel-fileman-deploy.sh
 
-      - name: Verify live site (~15s)
+      - name: Verify live site (~20s)
         if: steps.fileman.outcome == 'success'
         run: |
           SITE="${{ secrets.CPANEL_SITE_URL || 'https://out.ratib.sa' }}"
           code() { curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 8 --max-time 15 "$1" 2>/dev/null || echo 000; }
           P="$(code "${SITE}/profile/")"
           G="$(code "${SITE}/js/pages/ratib-profile-nav-guard.js")"
-          echo "profile/=$P guard.js=$G"
-          if [ "$P" = "200" ] && [ "$G" = "200" ]; then
-            echo "::notice::Deploy OK"
-            exit 0
+          H="$(code "${SITE}/pages/home.php")"
+          BODY="$(curl -sS --connect-timeout 8 --max-time 20 "${SITE}/pages/home.php" 2>/dev/null | head -c 400 || true)"
+          echo "profile/=$P home.php=$H guard.js=$G"
+          if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ]; then
+            if echo "$BODY" | grep -q '<!DOCTYPE'; then
+              echo "::notice::Deploy OK (home returns HTML)"
+              exit 0
+            fi
+            echo "::error::home.php returned 200 but not HTML (likely PHP fatal JSON): ${BODY:0:120}"
+            exit 1
           fi
-          echo "::error::verify failed profile/=$P guard.js=$G"
+          echo "::error::verify failed profile/=$P home.php=$H guard.js=$G body=${BODY:0:120}"
           exit 1
 
       - name: Deploy failed

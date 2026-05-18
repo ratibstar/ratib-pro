@@ -12,7 +12,12 @@
  */
 $ratibFooterPrefix = isset($ratibHomeNavHrefPrefix) ? (string) $ratibHomeNavHrefPrefix : '';
 if (!function_exists('ratib_mega_nav_resolve_href')) {
-    require_once __DIR__ . '/ratib-mega-nav-resolve.php';
+    $resolveMain = __DIR__ . '/ratib-mega-nav-resolve.php';
+    if (is_file($resolveMain)) {
+        require_once $resolveMain;
+    } else {
+        require_once __DIR__ . '/ratib-mega-nav-resolve.fallback.php';
+    }
 }
 $ratibFooterNav = static function (string $hrefKey) use ($baseUrl, $ratibFooterPrefix): string {
     return ratib_mega_nav_resolve_href($hrefKey, $baseUrl, $ratibFooterPrefix);

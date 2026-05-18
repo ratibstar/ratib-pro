@@ -23,7 +23,14 @@ $ratibNavPrefix = isset($ratibHomeNavHrefPrefix) ? (string) $ratibHomeNavHrefPre
 $ratibPartnerNavIsCurrent = !empty($ratibHomeHeaderPartnerIsCurrent);
 
 require_once __DIR__ . '/ratib-mega-nav-render.php';
-require_once __DIR__ . '/ratib-mega-nav-resolve.php';
+if (!function_exists('ratib_mega_nav_resolve_href')) {
+    $resolveMain = __DIR__ . '/ratib-mega-nav-resolve.php';
+    if (is_file($resolveMain)) {
+        require_once $resolveMain;
+    } else {
+        require_once __DIR__ . '/ratib-mega-nav-resolve.fallback.php';
+    }
+}
 if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
     require_once __DIR__ . '/ratib-home-public-nav-sync.php';
 }
