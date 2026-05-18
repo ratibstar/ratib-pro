@@ -21,7 +21,8 @@ if (!headers_sent()) {
 
 $host = $_SERVER['HTTP_HOST'] ?? 'out.ratib.sa';
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$dest = $scheme . '://' . $host . '/profile/?_r=' . time();
+require_once __DIR__ . '/../includes/ratib-public-base-url.php';
+$dest = ratib_public_marketing_home_url($scheme . '://' . $host, ['ratib_purged' => '1']);
 
 header('Location: ' . $dest, true, 302);
 exit;

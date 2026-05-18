@@ -17,6 +17,9 @@ from threading import Lock
 # ~1 min on push: smallest set that updates profile nav + marker (build txt LAST).
 FAST_FILES = [
     ".htaccess",
+    "index.php",
+    "includes/ratib-public-base-url.php",
+    "includes/ratib_html_global_ai_patch.php",
     "pages/about.php",
     "pages/home.php",
     "includes/ratib-about-sections.php",

@@ -68,6 +68,11 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ public/index.php [QSA,L]
 
+# LiteSpeed full-page cache: bare /pages/home.php served stale Profile→new-tab HTML. Force ?v= at the edge.
+RewriteCond %{THE_REQUEST} \s/+pages/home\.php[\s?] [NC]
+RewriteCond %{QUERY_STRING} !(^|&)v=
+RewriteRule ^pages/home\.php$ /pages/home.php?v=about-enterprise-20260518-profile-same-tab-v6 [R=302,L,QSA]
+
 # LiteSpeed: do not cache marketing home/profile HTML (stale nav after deploy).
 <IfModule LiteSpeed>
     CacheDisable public /pages/home.php

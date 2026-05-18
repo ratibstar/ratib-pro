@@ -13,14 +13,6 @@ if (function_exists('ratib_program_session_is_valid_user') && ratib_program_sess
     header('Location: ' . ratib_country_dashboard_url((int)($_SESSION['agency_id'] ?? 0)));
     exit();
 }
-$ratibHomeBust = '';
-$ratibBuildFile = __DIR__ . '/public/ratib-build.txt';
-if (is_file($ratibBuildFile)) {
-    $ratibHomeBust = trim((string) file_get_contents($ratibBuildFile));
-}
-$ratibHomeUrl = pageUrl('home.php');
-if ($ratibHomeBust !== '') {
-    $ratibHomeUrl .= (str_contains($ratibHomeUrl, '?') ? '&' : '?') . 'v=' . rawurlencode($ratibHomeBust);
-}
-header('Location: ' . $ratibHomeUrl);
+require_once __DIR__ . '/includes/ratib-public-base-url.php';
+header('Location: ' . ratib_public_marketing_home_url());
 exit(); 

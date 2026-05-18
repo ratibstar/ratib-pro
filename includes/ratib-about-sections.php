@@ -53,7 +53,7 @@ if (!function_exists('ratib_about_render_company_dossier')) {
                         </dl>
                         <div class="ratib-company-dossier__actions">
                             <a href="<?php echo ratib_about_h($wa); ?>" target="_blank" rel="noopener noreferrer" class="ratib-about-btn ratib-about-btn--primary">Contact company</a>
-                            <a href="<?php echo ratib_about_h($baseUrl . '/pages/home.php'); ?>" class="ratib-about-btn ratib-about-btn--outline">Marketing site</a>
+                            <a href="<?php echo ratib_about_h(ratib_public_marketing_home_url($baseUrl)); ?>" class="ratib-about-btn ratib-about-btn--outline">Marketing site</a>
                         </div>
                     </div>
 

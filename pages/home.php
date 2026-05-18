@@ -5,6 +5,27 @@
  * AR: يجهّز قيم السيرفر (الخطط/العملة/الأصول)، ويعرض أقسام الصفحة، ثم يمرر إعدادات JavaScript.
  */
 require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/ratib-public-base-url.php';
+
+// LiteSpeed caches bare /pages/home.php with old Profile → new-tab HTML. Require ?v= build marker.
+$ratibHomeSkipBuildBust = isset($_GET['ratib_deploy_probe'])
+    || (
+        isset($_GET['ratib_purge_lscache'], $_GET['key'])
+        && (string) $_GET['ratib_purge_lscache'] === '1'
+        && hash_equals('ratib-deploy-sync-2026', (string) $_GET['key'])
+    );
+if (!$ratibHomeSkipBuildBust) {
+    $ratibBuildMarker = ratib_public_build_marker();
+    $ratibReqBuildV = isset($_GET['v']) ? (string) $_GET['v'] : '';
+    if ($ratibBuildMarker !== '' && $ratibReqBuildV !== $ratibBuildMarker && !headers_sent()) {
+        $qs = $_GET;
+        $qs['v'] = $ratibBuildMarker;
+        $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/pages/home.php'), PHP_URL_PATH);
+        $path = is_string($path) && $path !== '' ? $path : '/pages/home.php';
+        header('Location: ' . $path . '?' . http_build_query($qs), true, 302);
+        exit;
+    }
+}
 
 if (function_exists('opcache_invalidate')) {
     $ratibOpcacheBust = [

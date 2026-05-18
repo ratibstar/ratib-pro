@@ -90,7 +90,7 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
 include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
 require_once __DIR__ . '/../includes/ratib-profile-nav-guard.php';
 ratib_emit_profile_nav_guard($baseUrl);
-$ratibMarketingHomeUrl = rtrim($baseUrl, '/') . '/pages/home.php';
+$ratibMarketingHomeUrl = ratib_public_marketing_home_url($baseUrl);
 ?>
 
 <div class="ratib-profile-distinct-banner" role="status" data-ratib-profile-distinct="1">

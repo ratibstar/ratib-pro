@@ -49,7 +49,8 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 <span class="ratib-topbar__lang" role="group" aria-label="Language">
                     <span class="ratib-lang ratib-lang--active">EN</span>
                     <span class="ratib-lang-sep">·</span>
-                    <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-lang" title="Arabic experience inside partner portals">AR</a>
+                    <?php $ratibMarketingHomeHref = function_exists('ratib_public_marketing_home_url') ? ratib_public_marketing_home_url($baseUrl) : rtrim($baseUrl, '/') . '/pages/home.php'; ?>
+                <a href="<?php echo htmlspecialchars($ratibMarketingHomeHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-lang" title="Arabic experience inside partner portals">AR</a>
                 </span>
             </div>
         </div>
@@ -83,7 +84,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                     : ($ratibNavPrefix . $ratibNavProductTourHref);
                 ?>
             <div class="ratib-nav__brand-block">
-                <a href="<?php echo htmlspecialchars($baseUrl . '/pages/home.php'); ?>" class="ratib-nav__brand">
+                <a href="<?php echo htmlspecialchars($ratibMarketingHomeHref ?? (function_exists('ratib_public_marketing_home_url') ? ratib_public_marketing_home_url($baseUrl) : rtrim($baseUrl, '/') . '/pages/home.php'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__brand">
                     <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="<?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?>" width="120" height="36">
                     <span class="ratib-nav__brand-text"><?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?></span>
                 </a>
@@ -92,7 +93,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
             <button type="button" class="ratib-nav__toggle" id="ratibNavToggle" aria-label="Open menu" aria-expanded="false" aria-controls="ratibNavMenu">
                 <span></span><span></span><span></span>
             </button>
-            <!-- ratib-home-nav-build: chrome=<?php echo htmlspecialchars($ratibChromeBundleHash ?? '', ENT_QUOTES, 'UTF-8'); ?> ui-rev=<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?> home.php-mtime=<?php echo htmlspecialchars($ratibHomePhpMtime, ENT_QUOTES, 'UTF-8'); ?> primary-links=8 brand-profile=v13-onclick mega-nav-root=#ratibMegaNavRoot -->
+            <!-- ratib-home-nav-build: chrome=<?php echo htmlspecialchars($ratibChromeBundleHash ?? '', ENT_QUOTES, 'UTF-8'); ?> ui-rev=<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?> home.php-mtime=<?php echo htmlspecialchars($ratibHomePhpMtime, ENT_QUOTES, 'UTF-8'); ?> primary-links=8 brand-profile=plain-href-v6 mega-nav-root=#ratibMegaNavRoot -->
             <!-- ratib-profile-nav=plain-href-v5 -->
             <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary" data-ratib-primary-nav-links="8" data-ratib-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-nav-visual="svg-glyphs-semantic-<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php ratib_mega_nav_render($baseUrl, $ratibNavPrefix); ?>
