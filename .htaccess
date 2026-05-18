@@ -9,10 +9,17 @@ RewriteRule ^ - [L]
 RewriteCond %{REQUEST_URI} ^/Designed(?:/|$) [NC]
 RewriteRule ^.*$ public/index.php [L,QSA]
 
+# Legacy Profile URLs → canonical /profile (works even when home nav HTML is cached).
+RewriteRule ^pages/company-profile\.php$ /profile [R=302,L,QSA]
+RewriteCond %{REQUEST_URI} ^/pages/home\.php$ [NC]
+RewriteCond %{QUERY_STRING} (^|&)(open=profile|open=about)(&|$) [NC]
+RewriteRule ^pages/home\.php$ /profile [R=302,L]
+
 # Public company profile (enterprise About RATIB)
 RewriteRule ^profile/?$ /pages/company-profile.php [L,QSA]
 RewriteRule ^pages/profile/?$ /profile [R=302,L]
-RewriteRule ^about/?$ /pages/about.php [L,QSA]
+RewriteRule ^about/?$ /profile [R=302,L]
+RewriteRule ^pages/about\.php$ /profile [R=302,L]
 
 # Country-specific login: /bangladesh/login, /kenya/login, etc. → /pages/login.php?country_slug=X
 RewriteRule ^([a-z0-9_-]+)/login/?$ /pages/login.php?country_slug=$1 [L,QSA]

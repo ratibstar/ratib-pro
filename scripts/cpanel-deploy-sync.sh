@@ -19,6 +19,9 @@ log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$LOG"; 
 log "start marker=${MARKER} ROOT=${ROOT} PUBLIC_HTML=${PUBLIC_HTML} rsync_delete=${RATIB_RSYNC_DELETE}"
 
 CRITICAL_FILES=(
+  ".htaccess"
+  "ratib-profile-fix.php"
+  "pages/company-profile.php"
   "includes/ratib-php74-compat.php"
   "includes/ratib_html_global_ai_patch.php"
   "control-panel/includes/config.php"

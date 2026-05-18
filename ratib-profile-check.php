@@ -75,6 +75,7 @@ $deployFiles = [
     '.htaccess',
     'ratib-chrome-bust.php',
     'pages/ratib-chrome-bust.php',
+    'ratib-profile-fix.php',
 ];
 
 $deployRun = isset($_GET['deploy']) && (string) $_GET['deploy'] === '1';
