@@ -6,6 +6,19 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 
+if (function_exists('opcache_invalidate')) {
+    $ratibOpcacheBust = [
+        __DIR__ . '/../includes/ratib-home-public-chrome-top.php',
+        __DIR__ . '/../includes/ratib-home-public-nav-sync.php',
+        __FILE__,
+    ];
+    foreach ($ratibOpcacheBust as $ratibOpcacheFile) {
+        if (is_file($ratibOpcacheFile)) {
+            opcache_invalidate($ratibOpcacheFile, true);
+        }
+    }
+}
+
 // Deploy probe: /pages/home.php?ratib_deploy_probe=1 (bundle about-enterprise-20260516-v9)
 if (isset($_GET['ratib_deploy_probe']) && (string) $_GET['ratib_deploy_probe'] === '1') {
     header('Content-Type: text/plain; charset=utf-8');
@@ -15,8 +28,10 @@ if (isset($_GET['ratib_deploy_probe']) && (string) $_GET['ratib_deploy_probe'] =
     $chromePath = $probeRoot . '/includes/ratib-home-public-chrome-top.php';
     $buildPath = $probeRoot . '/public/ratib-build.txt';
     $homeSample = is_file(__FILE__) ? (string) file_get_contents(__FILE__, false, null, 0, 12000) : '';
-    $chromeSample = is_file($chromePath) ? (string) file_get_contents($chromePath, false, null, 0, 12000) : '';
+    $chromeSample = is_file($chromePath) ? (string) file_get_contents($chromePath, false, null, 0, 16000) : '';
     echo "ratib-deploy-probe-via-home\n";
+    echo 'chrome_onclick_disk=' . (stripos($chromeSample, 'data-ratib-go-profile') !== false ? 'yes' : 'no') . "\n";
+    echo 'chrome_v13_disk=' . (stripos($chromeSample, 'brand-profile=v13-onclick') !== false ? 'yes' : 'no') . "\n";
     echo 'document_root=' . ($_SERVER['DOCUMENT_ROOT'] ?? '') . "\n";
     echo 'probe_root=' . $probeRoot . "\n";
     echo 'git_marker=' . (is_file($buildPath) ? trim((string) file_get_contents($buildPath)) : 'missing') . "\n";
