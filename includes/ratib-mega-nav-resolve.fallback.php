@@ -11,6 +11,15 @@ if (!function_exists('ratib_mega_nav_is_profile_context')) {
     }
 }
 
+if (!function_exists('ratib_mega_nav_use_relative_home_anchors')) {
+    function ratib_mega_nav_use_relative_home_anchors(string $navPrefix): bool
+    {
+        return !empty($GLOBALS['ratib_public_nav_on_marketing_home'])
+            && $navPrefix === ''
+            && !ratib_mega_nav_is_profile_context($navPrefix);
+    }
+}
+
 if (!function_exists('ratib_mega_nav_marketing_home')) {
     function ratib_mega_nav_marketing_home(string $baseUrl): string
     {
@@ -25,6 +34,9 @@ if (!function_exists('ratib_mega_nav_marketing_home')) {
 if (!function_exists('ratib_mega_nav_pricing_href')) {
     function ratib_mega_nav_pricing_href(string $baseUrl, string $navPrefix = ''): string
     {
+        if (ratib_mega_nav_use_relative_home_anchors($navPrefix)) {
+            return '#programs';
+        }
         if (function_exists('ratib_public_marketing_home_url')) {
             return ratib_public_marketing_home_url($baseUrl, [], '#programs');
         }
@@ -40,6 +52,9 @@ if (!function_exists('ratib_public_nav_tour_href')) {
     function ratib_public_nav_tour_href(string $baseUrl, string $navPrefix, string $tourHash): string
     {
         $tourHash = $tourHash !== '' && $tourHash[0] === '#' ? $tourHash : '#' . ltrim($tourHash, '#');
+        if (ratib_mega_nav_use_relative_home_anchors($navPrefix)) {
+            return $tourHash;
+        }
         if (ratib_mega_nav_is_profile_context($navPrefix)) {
             return ratib_mega_nav_marketing_home($baseUrl) . $tourHash;
         }
@@ -91,6 +106,10 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
         if (isset($hashMap[$hrefKey])) {
             $tail = $hashMap[$hrefKey];
             if ($tail[0] === '#') {
+                if (ratib_mega_nav_use_relative_home_anchors($navPrefix)) {
+                    return $tail;
+                }
+
                 return ($navPrefix !== '' ? rtrim($navPrefix, '/') : $home) . $tail;
             }
 

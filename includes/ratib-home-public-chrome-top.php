@@ -82,15 +82,23 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 $ratibBrandProfileCurrent = $ratibOnProfilePage;
                 $ratibProfileClickJs = '';
                 $ratibPillHref = static function (string $pillKey) use ($ratibOnProfilePage, $ratibNavPrefix, $baseUrl): string {
-                    $profilePrefix = $ratibOnProfilePage
-                        ? rtrim($baseUrl, '/') . '/profile'
-                        : $ratibNavPrefix;
+                    if ($ratibOnProfilePage) {
+                        return ratib_mega_nav_resolve_href(
+                            $pillKey,
+                            $baseUrl,
+                            rtrim($baseUrl, '/') . '/profile'
+                        );
+                    }
+                    $resolvePrefix = !empty($GLOBALS['ratib_public_nav_on_marketing_home']) ? '' : $ratibNavPrefix;
 
-                    return ratib_mega_nav_resolve_href($pillKey, $baseUrl, $profilePrefix);
+                    return ratib_mega_nav_resolve_href($pillKey, $baseUrl, $resolvePrefix);
                 };
+                $ratibTourResolvePrefix = $ratibOnProfilePage
+                    ? rtrim($baseUrl, '/') . '/profile'
+                    : (!empty($GLOBALS['ratib_public_nav_on_marketing_home']) ? '' : $ratibNavPrefix);
                 $ratibTourHref = ratib_public_nav_tour_href(
                     $baseUrl,
-                    $ratibOnProfilePage ? rtrim($baseUrl, '/') . '/profile' : $ratibNavPrefix,
+                    $ratibTourResolvePrefix,
                     $ratibNavProductTourHref
                 );
                 ?>

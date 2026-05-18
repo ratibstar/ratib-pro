@@ -95,6 +95,54 @@
     window.RATIB_USD_TO_SAR = HOME.usdToSar;
     var openRegister = HOME.openRegister;
     var DISPLAY_MULTIPLIER = 2;
+
+    function ratibScrollToPageHash(hash, pushState) {
+        if (!hash || hash === '#') {
+            return false;
+        }
+        var id = String(hash).replace(/^#/, '');
+        if (!id) {
+            return false;
+        }
+        var target = document.getElementById(id);
+        if (!target) {
+            return false;
+        }
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (pushState && window.history && typeof history.pushState === 'function') {
+            history.pushState(null, '', '#' + id);
+        }
+        return true;
+    }
+
+    document.addEventListener('click', function (ev) {
+        var a = ev.target.closest('a[href*="#"]');
+        if (!a || a.closest('[data-ratib-profile-nav]') || a.hasAttribute('data-ratib-profile-nav')) {
+            return;
+        }
+        var href = a.getAttribute('href') || '';
+        if (!href) {
+            return;
+        }
+        if (href.charAt(0) === '#') {
+            if (ratibScrollToPageHash(href, true)) {
+                ev.preventDefault();
+            }
+            return;
+        }
+        try {
+            var url = new URL(href, window.location.href);
+            var here = new URL(window.location.href);
+            if (url.pathname !== here.pathname || !url.hash) {
+                return;
+            }
+            if (ratibScrollToPageHash(url.hash, true)) {
+                ev.preventDefault();
+            }
+        } catch (eNav) {
+            /* ignore malformed href */
+        }
+    }, false);
     function formatPayableAmount(value) {
         var n = Number(value);
         if (!isFinite(n) || n <= 0) {
@@ -481,13 +529,7 @@
                 rs.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         } else {
-            var pageHash = (window.location.hash || '').toLowerCase();
-            if (pageHash === '#programs' || pageHash === '#finance') {
-                var pricingEl = document.getElementById('programs');
-                if (pricingEl) {
-                    pricingEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }
+            ratibScrollToPageHash(window.location.hash, false);
         }
         planBtns.forEach(function (b) {
             b.addEventListener('click', function () {

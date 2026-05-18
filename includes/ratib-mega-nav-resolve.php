@@ -15,6 +15,16 @@ if (!function_exists('ratib_mega_nav_is_profile_context')) {
     }
 }
 
+if (!function_exists('ratib_mega_nav_use_relative_home_anchors')) {
+    /** True when rendering nav on pages/home.php (same-document section jumps). */
+    function ratib_mega_nav_use_relative_home_anchors(string $navPrefix): bool
+    {
+        return !empty($GLOBALS['ratib_public_nav_on_marketing_home'])
+            && $navPrefix === ''
+            && !ratib_mega_nav_is_profile_context($navPrefix);
+    }
+}
+
 if (!function_exists('ratib_mega_nav_profile_root')) {
     function ratib_mega_nav_profile_root(string $baseUrl, string $navPrefix = ''): string
     {
@@ -41,6 +51,9 @@ if (!function_exists('ratib_mega_nav_pricing_href')) {
     /** Gold / Platinum price cards — always marketing home #programs (not profile #finance). */
     function ratib_mega_nav_pricing_href(string $baseUrl, string $navPrefix = ''): string
     {
+        if (ratib_mega_nav_use_relative_home_anchors($navPrefix)) {
+            return '#programs';
+        }
         if (function_exists('ratib_public_marketing_home_url')) {
             return ratib_public_marketing_home_url($baseUrl, [], '#programs');
         }
@@ -56,6 +69,9 @@ if (!function_exists('ratib_mega_nav_home_hash')) {
     function ratib_mega_nav_home_hash(string $baseUrl, string $navPrefix, string $hash): string
     {
         $hash = $hash !== '' && $hash[0] === '#' ? $hash : '#' . ltrim($hash, '#');
+        if (ratib_mega_nav_use_relative_home_anchors($navPrefix)) {
+            return $hash;
+        }
         if ($navPrefix !== '' && !ratib_mega_nav_is_profile_context($navPrefix)) {
             return rtrim($navPrefix, '/') . $hash;
         }
@@ -69,6 +85,9 @@ if (!function_exists('ratib_public_nav_tour_href')) {
     function ratib_public_nav_tour_href(string $baseUrl, string $navPrefix, string $tourHash): string
     {
         $tourHash = $tourHash !== '' && $tourHash[0] === '#' ? $tourHash : '#' . ltrim($tourHash, '#');
+        if (ratib_mega_nav_use_relative_home_anchors($navPrefix)) {
+            return $tourHash;
+        }
         if (ratib_mega_nav_is_profile_context($navPrefix)) {
             return ratib_mega_nav_marketing_home($baseUrl) . $tourHash;
         }

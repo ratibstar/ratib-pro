@@ -25,7 +25,9 @@ require_once __DIR__ . '/../includes/ratib-procurement-legal-sections.php';
 
 $proc = ratib_procurement_legal_config($baseUrl);
 $ratibProcPageActive = true;
-$ratibHomeNavHrefPrefix = rtrim($baseUrl, '/') . '/pages/home.php';
+$ratibHomeNavHrefPrefix = function_exists('ratib_public_nav_marketing_home_prefix')
+    ? ratib_public_nav_marketing_home_prefix($baseUrl)
+    : rtrim($baseUrl, '/') . '/pages/home.php';
 
 $ratibAboutCssPath = __DIR__ . '/../css/pages/about-enterprise.css';
 clearstatcache(true, $ratibAboutCssPath);

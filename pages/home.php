@@ -6,6 +6,8 @@
  */
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/ratib-public-base-url.php';
+/** Platform pills on this page use in-page #anchors (no full reload). */
+$GLOBALS['ratib_public_nav_on_marketing_home'] = true;
 
 // LiteSpeed caches bare /pages/home.php with old Profile → new-tab HTML. Require ?v= build marker.
 $ratibHomeSkipBuildBust = isset($_GET['ratib_deploy_probe'])
@@ -26,7 +28,12 @@ if (!$ratibHomeSkipBuildBust) {
             $qs['v'] = $ratibBuildMarker;
             $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/pages/home.php'), PHP_URL_PATH);
             $path = is_string($path) && $path !== '' ? $path : '/pages/home.php';
-            header('Location: ' . $path . '?' . http_build_query($qs), true, 302);
+            $dest = $path . '?' . http_build_query($qs);
+            header('Content-Type: text/html; charset=utf-8');
+            header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private');
+            echo '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Redirect</title>';
+            echo '<script>location.replace(' . json_encode($dest, JSON_UNESCAPED_SLASHES) . '+location.hash);</script>';
+            echo '</head><body></body></html>';
             exit;
         }
     }

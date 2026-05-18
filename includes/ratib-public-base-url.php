@@ -81,6 +81,21 @@ if (!function_exists('ratib_public_marketing_home_url')) {
     }
 }
 
+if (!function_exists('ratib_public_nav_marketing_home_prefix')) {
+    /** Base marketing home URL with ?v= (no hash) — use as navPrefix on satellite pages. */
+    function ratib_public_nav_marketing_home_prefix(string $baseUrl = ''): string
+    {
+        if (function_exists('ratib_public_marketing_home_url')) {
+            return ratib_public_marketing_home_url($baseUrl);
+        }
+        if ($baseUrl === '') {
+            $baseUrl = ratib_public_site_base_url();
+        }
+
+        return rtrim($baseUrl, '/') . '/pages/home.php';
+    }
+}
+
 if (!function_exists('ratib_public_marketing_home_register_url')) {
     /**
      * Canonical marketing home + registration deep link (single public URL for Gold signup).

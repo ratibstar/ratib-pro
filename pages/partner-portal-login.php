@@ -18,7 +18,9 @@ $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';
 $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? '') . $basePath;
 
 require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
-$ratibHomeNavHrefPrefix = $baseUrl . '/pages/home.php';
+$ratibHomeNavHrefPrefix = function_exists('ratib_public_nav_marketing_home_prefix')
+    ? ratib_public_nav_marketing_home_prefix($baseUrl)
+    : $baseUrl . '/pages/home.php';
 $ratibHomeHeaderPartnerIsCurrent = true;
 $ratibPartnerPortalHomeChrome = true;
 $ratibPartnerPortalNavFallbackCss = true;

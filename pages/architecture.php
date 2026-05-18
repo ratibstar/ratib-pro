@@ -25,7 +25,9 @@ require_once __DIR__ . '/../includes/ratib-architecture-sections.php';
 
 $arch = ratib_architecture_config($baseUrl);
 $ratibArchPageActive = true;
-$ratibHomeNavHrefPrefix = rtrim($baseUrl, '/') . '/pages/home.php';
+$ratibHomeNavHrefPrefix = function_exists('ratib_public_nav_marketing_home_prefix')
+    ? ratib_public_nav_marketing_home_prefix($baseUrl)
+    : rtrim($baseUrl, '/') . '/pages/home.php';
 
 $ratibAboutCssPath = __DIR__ . '/../css/pages/about-enterprise.css';
 clearstatcache(true, $ratibAboutCssPath);
