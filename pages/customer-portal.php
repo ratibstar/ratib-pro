@@ -297,7 +297,7 @@ $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
                 </div>
                 <div class="help-contact-item">
                     <span class="help-icon help-icon-email"><i class="fas fa-envelope"></i></span>
-                    <a href="mailto:ratibstar@gmail.com" class="help-link-email">ratibstar@gmail.com</a>
+                    <a href="mailto:info@out.ratib.sa" class="help-link-email">info@out.ratib.sa</a>
                 </div>
             </div>
         </div>

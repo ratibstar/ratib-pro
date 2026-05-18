@@ -23,7 +23,7 @@ if (!function_exists('ratib_about_render_company_dossier')) {
             <div class="ratib-about-container">
                 <header class="ratib-company-dossier__head" data-ratib-reveal>
                     <p class="ratib-about-page-label">Full company profile</p>
-                    <h1 id="company-profile-title" class="ratib-company-dossier__title"><?php echo ratib_about_h((string) ($company['trade_name'] ?? 'Ratib Company')); ?></h1>
+                    <h1 id="company-profile-title" class="ratib-company-dossier__title"><?php echo ratib_about_h((string) ($company['trade_name'] ?? 'Ratib Software Foundation for Information Technology')); ?></h1>
                     <p class="ratib-company-dossier__legal"><?php echo ratib_about_h((string) ($company['legal_name'] ?? '')); ?></p>
                     <p class="ratib-company-dossier__tagline"><?php echo ratib_about_h((string) ($company['tagline'] ?? '')); ?></p>
                 </header>
@@ -428,7 +428,7 @@ if (!function_exists('ratib_about_render_sections')) {
                 <header class="ratib-about-head ratib-about-head--center" data-ratib-reveal>
                     <p class="ratib-about-eyebrow">Secondary · digital edge</p>
                     <h2 id="about-svc-title" class="ratib-about-title">Platform services</h2>
-                    <p class="ratib-about-sub">Domains, SSL, and provisioning for branded agency edges—adjacent to the recruitment control plane, not the lead story.</p>
+                    <p class="ratib-about-sub">Domains, SSL, and provisioning for branded agency edges—adjacent to the workforce operations control plane, not the lead story.</p>
                 </header>
                 <div class="ratib-about-feature-grid ratib-about-feature-grid--4">
                     <?php foreach ($about['platform_services'] ?? [] as $i => $f) { ?>
@@ -449,7 +449,7 @@ if (!function_exists('ratib_about_render_sections')) {
                 <div class="ratib-about-cta__actions">
                     <a href="<?php echo ratib_about_h($contactWa); ?>" target="_blank" rel="noopener noreferrer" class="ratib-about-btn ratib-about-btn--primary ratib-about-btn--xl">Request Enterprise Demo</a>
                     <a href="<?php echo ratib_about_h($homeRegister); ?>" class="ratib-about-btn ratib-about-btn--outline ratib-about-btn--xl">Deploy Agency Workspace</a>
-                    <a href="mailto:ratibstar@gmail.com" class="ratib-about-btn ratib-about-btn--ghost">Talk to Solutions Team</a>
+                    <a href="mailto:info@out.ratib.sa" class="ratib-about-btn ratib-about-btn--ghost">Talk to Solutions Team</a>
                 </div>
                 <p class="ratib-about-cta__legal ratib-mono">Ratib Software Foundation for Information Technology · Riyadh, Saudi Arabia · out.ratib.sa</p>
             </div>

@@ -15,6 +15,21 @@ RewriteRule ^profile/index\.php$ pages/about.php [L,QSA]
 RewriteRule ^profile/$ pages/about.php [L,QSA]
 RewriteRule ^pages/profile/?$ /profile/ [R=302,L]
 
+# Security & compliance trust center
+RewriteRule ^security-compliance$ /security-compliance/ [R=301,L]
+RewriteRule ^security-compliance/$ pages/security-compliance.php [L,QSA]
+RewriteRule ^pages/security-compliance/?$ /security-compliance/ [R=302,L]
+
+# Platform architecture (enterprise technical briefing)
+RewriteRule ^architecture$ /architecture/ [R=301,L]
+RewriteRule ^architecture/$ pages/architecture.php [L,QSA]
+RewriteRule ^pages/architecture/?$ /architecture/ [R=302,L]
+
+# Procurement & legal (enterprise buyers)
+RewriteRule ^procurement-legal$ /procurement-legal/ [R=301,L]
+RewriteRule ^procurement-legal/$ pages/procurement-legal.php [L,QSA]
+RewriteRule ^pages/procurement-legal/?$ /procurement-legal/ [R=302,L]
+
 # Legacy URLs → canonical /profile (THE_REQUEST = browser URL only; avoids internal rewrite loops).
 RewriteCond %{THE_REQUEST} \s/+pages/company-profile\.php[\s?] [NC]
 RewriteRule ^pages/company-profile\.php$ /profile [R=302,L,QSA]
@@ -79,6 +94,12 @@ RewriteRule ^pages/home\.php$ /pages/home.php?v=about-enterprise-20260518-profil
     CacheDisable public /profile
     CacheDisable public /pages/company-profile.php
     CacheDisable public /pages/about.php
+    CacheDisable public /security-compliance
+    CacheDisable public /pages/security-compliance.php
+    CacheDisable public /architecture
+    CacheDisable public /pages/architecture.php
+    CacheDisable public /procurement-legal
+    CacheDisable public /pages/procurement-legal.php
 </IfModule>
 
 # Security headers
@@ -90,6 +111,12 @@ RewriteRule ^pages/home\.php$ /pages/home.php?v=about-enterprise-20260518-profil
     # Bypass cache for home page + its JS/CSS + program preview SVGs (paths may include subdir installs).
     SetEnvIf Request_URI "/pages/home\.php" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/pages/about\.php" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/security-compliance" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/security-compliance\.php" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/architecture" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/architecture\.php" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/procurement-legal" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/procurement-legal\.php" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/profile" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/pages/company-profile\.php" RATIB_NOCACHE=1
     SetEnvIf Request_URI "ratib-chrome-bust\.php" RATIB_NOCACHE=1
@@ -99,6 +126,13 @@ RewriteRule ^pages/home\.php$ /pages/home.php?v=about-enterprise-20260518-profil
     SetEnvIf Request_URI "/js/pages/about-enterprise\.js" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/css/pages/home-public\.css" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/css/pages/about-enterprise\.css" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/css/pages/security-compliance\.css" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/js/pages/security-compliance\.js" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/css/pages/architecture\.css" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/js/pages/architecture\.js" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/css/pages/procurement-legal\.css" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/css/pages/enterprise-trust-layer\.css" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/js/pages/procurement-legal\.js" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/assets/images/program-preview" RATIB_NOCACHE=1
     Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0, private" env=RATIB_NOCACHE
     Header set Pragma "no-cache" env=RATIB_NOCACHE

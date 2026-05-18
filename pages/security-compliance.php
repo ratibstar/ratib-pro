@@ -1,6 +1,7 @@
 <?php
 /**
- * Public: Enterprise company profile / About RATIB.
+ * Public: Security & compliance trust center — procurement-ready infrastructure posture.
+ * Canonical URL: /security-compliance/
  */
 declare(strict_types=1);
 
@@ -19,24 +20,28 @@ require_once __DIR__ . '/../includes/ratib-public-base-url.php';
 $baseUrl = ratib_public_site_base_url();
 
 require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
-require_once __DIR__ . '/../includes/ratib-about-profile-data.php';
-require_once __DIR__ . '/../includes/ratib-about-sections.php';
+require_once __DIR__ . '/../includes/ratib-security-compliance-data.php';
+require_once __DIR__ . '/../includes/ratib-security-compliance-sections.php';
 
-$about = ratib_about_profile_config($baseUrl);
-$ratibAboutPageActive = true;
-// Keep platform pills on /profile/ anchors — not home.php#platform (that felt like "opening home").
-$ratibHomeNavHrefPrefix = rtrim($baseUrl, '/') . '/profile';
+$trust = ratib_security_compliance_config($baseUrl);
+$ratibTrustPageActive = true;
+$ratibHomeNavHrefPrefix = rtrim($baseUrl, '/') . '/pages/home.php';
 
 $ratibAboutCssPath = __DIR__ . '/../css/pages/about-enterprise.css';
 clearstatcache(true, $ratibAboutCssPath);
 $ratibAboutCssQuery = (int) (@filemtime($ratibAboutCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ . '-c' . $ratibChromeBundleHash;
 
-$ratibAboutJsPath = __DIR__ . '/../js/pages/about-enterprise.js';
-clearstatcache(true, $ratibAboutJsPath);
-$ratibAboutJsQuery = (int) (@filemtime($ratibAboutJsPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+$ratibTrustCssPath = __DIR__ . '/../css/pages/security-compliance.css';
+clearstatcache(true, $ratibTrustCssPath);
+$ratibTrustCssQuery = (int) (@filemtime($ratibTrustCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
 
-$metaTitle = (string) ($about['meta']['title'] ?? 'About RATIB');
-$metaDesc = (string) ($about['meta']['description'] ?? '');
+$ratibTrustJsPath = __DIR__ . '/../js/pages/security-compliance.js';
+clearstatcache(true, $ratibTrustJsPath);
+$ratibTrustJsQuery = (int) (@filemtime($ratibTrustJsPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+
+$metaTitle = (string) ($trust['meta']['title'] ?? 'Security & Compliance — RATIB');
+$metaDesc = (string) ($trust['meta']['description'] ?? '');
+$canonicalUrl = rtrim($baseUrl, '/') . '/security-compliance/';
 ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -53,7 +58,8 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
     <meta property="og:title" content="<?php echo htmlspecialchars($metaTitle, ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="og:description" content="<?php echo htmlspecialchars($metaDesc, ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="og:type" content="website">
-    <link rel="canonical" href="<?php echo htmlspecialchars($baseUrl . '/profile', ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:url" content="<?php echo htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="canonical" href="<?php echo htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236b21a8'/%3E%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
     <title><?php echo htmlspecialchars($metaTitle, ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -63,76 +69,71 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo htmlspecialchars($ratibHomePublicCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/ratib-mega-nav.css?v=<?php echo htmlspecialchars($ratibMegaNavCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo htmlspecialchars($ratibAboutCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/security-compliance.css?v=<?php echo htmlspecialchars($ratibTrustCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php
+    $ratibEntCssPath = __DIR__ . '/../css/pages/enterprise-trust-layer.css';
+    clearstatcache(true, $ratibEntCssPath);
+    $ratibEntCssQuery = (int) (@filemtime($ratibEntCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
+    ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/enterprise-trust-layer.css?v=<?php echo htmlspecialchars($ratibEntCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <script type="application/ld+json"><?php echo json_encode([
         '@context' => 'https://schema.org',
-        '@type' => 'Organization',
-        'name' => 'RATIB — Ratib Software Foundation for Information Technology',
-        'url' => $baseUrl . '/profile',
-        'logo' => $baseUrl . '/assets/ratib-logo.svg',
+        '@type' => 'WebPage',
+        'name' => $metaTitle,
         'description' => $metaDesc,
-        'address' => [
-            '@type' => 'PostalAddress',
-            'addressLocality' => 'Riyadh',
-            'addressCountry' => 'SA',
+        'url' => $canonicalUrl,
+        'isPartOf' => [
+            '@type' => 'WebSite',
+            'name' => 'RATIB',
+            'url' => rtrim($baseUrl, '/') . '/',
         ],
-        'contactPoint' => [
-            '@type' => 'ContactPoint',
-            'telephone' => '+966-599-863-868',
-            'contactType' => 'sales',
-            'email' => 'info@out.ratib.sa',
-            'availableLanguage' => ['English', 'Arabic'],
+        'about' => [
+            '@type' => 'Organization',
+            'name' => 'Ratib Software Foundation for Information Technology',
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
 </head>
-<body class="ratib-saas-home ratib-about-page" data-ratib-about="1" style="background:#12081f !important">
+<body class="ratib-saas-home ratib-trust-page" data-ratib-trust="1" style="background:#0a0e1a !important">
 
 <?php
 include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
-require_once __DIR__ . '/../includes/ratib-profile-nav-guard.php';
-ratib_emit_profile_nav_guard($baseUrl);
-$ratibMarketingHomeUrl = ratib_public_marketing_home_url($baseUrl);
+$ratibMarketingHomeUrl = function_exists('ratib_public_marketing_home_url')
+    ? ratib_public_marketing_home_url($baseUrl)
+    : rtrim($baseUrl, '/') . '/pages/home.php';
 ?>
 
-<div class="ratib-profile-distinct-banner" role="status" data-ratib-profile-distinct="1">
-    <div class="ratib-about-container ratib-profile-distinct-banner__inner">
-        <span class="ratib-profile-distinct-banner__badge" aria-hidden="true">Company profile</span>
-        <p class="ratib-profile-distinct-banner__text">Full <strong>Ratib Software Foundation for Information Technology</strong> profile — legal identity, contact, mission, and services below.</p>
-        <a class="ratib-profile-distinct-banner__link" href="<?php echo htmlspecialchars($ratibMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home →</a>
+<div class="ratib-trust-distinct-banner" role="status" data-ratib-trust-distinct="1">
+    <div class="ratib-about-container ratib-trust-distinct-banner__inner">
+        <span class="ratib-trust-distinct-banner__badge" aria-hidden="true">Trust center</span>
+        <p class="ratib-trust-distinct-banner__text">Security, compliance governance, and tenant isolation for <strong>RATIB</strong> enterprise workforce program infrastructure.</p>
+        <a class="ratib-trust-distinct-banner__link" href="<?php echo htmlspecialchars($ratibMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home →</a>
     </div>
 </div>
 
-<main class="ratib-about-main" id="main">
+<main class="ratib-trust-main" id="main">
     <nav class="ratib-about-jump" aria-label="On this page">
         <div class="ratib-about-container ratib-about-jump__inner">
-            <a href="#company-profile">Company</a>
-            <a href="#platform-overview">Platform</a>
-            <a href="#what-is-ratib">Capabilities</a>
-            <a href="#architecture">Architecture</a>
-            <a href="#operations">Operations</a>
-            <a href="#telemetry">Telemetry</a>
-            <a href="#governance">Governance</a>
-            <a href="#finance">Finance</a>
-            <a href="#corridors">Corridors</a>
-            <a href="#contact-cta">Contact</a>
+            <a href="#top">Overview</a>
+            <a href="#security-overview">Security</a>
+            <a href="#compliance-governance">Governance</a>
+            <a href="#data-isolation">Isolation</a>
+            <a href="#authentication">Access</a>
+            <a href="#operational-reliability">Reliability</a>
+            <a href="#infrastructure">Infrastructure</a>
+            <a href="#procurement">Procurement</a>
         </div>
     </nav>
-    <?php ratib_about_render_sections($about, $baseUrl); ?>
+    <?php ratib_security_compliance_render_sections($trust, $baseUrl); ?>
 </main>
 
 <?php include __DIR__ . '/../includes/ratib-home-public-footer.php'; ?>
 
-<?php
-$ratibProfileGuardJsAbout = __DIR__ . '/../js/pages/ratib-profile-nav-guard.js';
-clearstatcache(true, $ratibProfileGuardJsAbout);
-$ratibProfileGuardQAbout = (string) (int) (@filemtime($ratibProfileGuardJsAbout) ?: time());
-?>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-profile-nav-guard.js?v=<?php echo htmlspecialchars($ratibProfileGuardQAbout, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-mega-nav.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/about-enterprise.js?v=<?php echo htmlspecialchars($ratibAboutJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/security-compliance.js?v=<?php echo htmlspecialchars($ratibTrustJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php
 require_once __DIR__ . '/../includes/ratib-page-stamp.php';
-ratib_emit_page_stamp('profile');
+ratib_emit_page_stamp('security-compliance');
 ?>
 </body>
 </html>

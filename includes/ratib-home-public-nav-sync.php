@@ -145,7 +145,7 @@ function run(){
       brand.parentNode.insertBefore(blk,brand);
       blk.appendChild(brand);
       var bt=brand.querySelector('.ratib-nav__brand-text');
-      if(bt)bt.textContent='Ratib Company';
+      if(bt)bt.textContent='RATIB';
       blk.appendChild(prof);
     }
   }

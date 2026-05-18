@@ -79,6 +79,12 @@ function ratib_mega_nav_resolve_href(string $hrefKey, string $baseUrl, string $n
         case 'about':
         case 'company_profile':
             return $baseUrl . '/profile/';
+        case 'security_compliance':
+            return $baseUrl . '/security-compliance/';
+        case 'architecture':
+            return $baseUrl . '/architecture/';
+        case 'procurement_legal':
+            return $baseUrl . '/procurement-legal/';
         default:
             return $home;
     }

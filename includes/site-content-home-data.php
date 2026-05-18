@@ -41,7 +41,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
             'contact' => 'Contact',
         ];
         $d = [];
-        $d['home.meta.page_title'] = 'RATIB — Enterprise Recruitment OS & Workforce Intelligence Platform';
+        $d['home.meta.page_title'] = 'RATIB — Enterprise Workforce Program Infrastructure';
 
         $d['home.topbar.phone_display'] = '+966 59 986 3868';
         $d['home.topbar.wa_label'] = 'Live on WhatsApp';
@@ -49,7 +49,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.topbar.nodes_count'] = '247';
         $d['home.topbar.nodes_suffix'] = 'nodes';
         $d['home.topbar.client_login'] = 'Client login';
-        $d['home.brand.name'] = 'Ratib Company';
+        $d['home.brand.name'] = 'RATIB';
         $d['home.brand.profile_tab'] = 'Profile';
 
         foreach ($nav as $slug => $label) {
@@ -69,9 +69,9 @@ if (!function_exists('ratib_site_content_defaults_home')) {
 
         $d['home.nav.cta_partner'] = 'Partner Login';
 
-        $d['home.hero.eyebrow'] = 'Recruitment Automation & Tracking Intelligence Base';
+        $d['home.hero.eyebrow'] = 'Enterprise workforce program infrastructure';
         $d['home.hero.lead'] = 'Production control plane for sending-country agencies and host-market programs: lifecycle orchestration, workforce telemetry, compliance gates, and ledger-linked billing—same surfaces operations teams use daily, not a marketing shell.';
-        $d['home.hero.title_before'] = 'Recruitment Automation &';
+        $d['home.hero.title_before'] = 'Orchestration Platform &';
         $d['home.hero.title_gradient'] = 'Workforce Intelligence';
         $bullets = [
             'Workflow orchestration & stage sync across sending & host markets',
@@ -82,8 +82,12 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         foreach ($bullets as $i => $text) {
             $d['home.hero.bullet.' . ($i + 1)] = $text;
         }
-        $d['home.hero.cta_primary'] = 'Launch operations workspace';
-        $d['home.hero.cta_secondary'] = 'Platform walkthrough';
+        $d['home.hero.cta_primary'] = 'Request Enterprise Demo';
+        $d['home.hero.cta_secondary'] = 'Review Architecture';
+        $d['home.ent.hero_strip.1'] = 'Tenant-isolated datastores';
+        $d['home.ent.hero_strip.2'] = 'RBAC · country scope';
+        $d['home.ent.hero_strip.3'] = 'Audit-ready stage history';
+        $d['home.ent.hero_strip.4'] = 'TLS 1.3 · edge hardened';
 
         $d['home.video.eyebrow'] = 'video/pic';
         $d['home.video.title'] = 'Walk the surfaces your teams will run';
@@ -95,7 +99,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
             'Scroll with the side arrows or the scrollbar under the previews. Click any screenshot to open it — then use Previous / Next under the image to view every preview in one session.';
         $d['home.program.slots_json'] = '[]';
 
-        $d['home.platform.title'] = 'Built for regulated, high-volume recruitment operations';
+        $d['home.platform.title'] = 'Built for regulated, high-volume workforce operations';
         $d['home.platform.sub'] = 'Deployed as a control plane: tenant-isolated data paths, encrypted transit, immutable workflow history, and finance-grade events organizations can reconcile—not narrative dashboards.';
 
         $trust = [
@@ -111,6 +115,47 @@ if (!function_exists('ratib_site_content_defaults_home')) {
             $d['home.trust.' . $n . '.title'] = $row[0];
             $d['home.trust.' . $n . '.body'] = $row[1];
         }
+
+        $d['home.ent.eyebrow'] = 'Infrastructure posture';
+        $d['home.ent.title'] = 'Sovereign-grade orchestration infrastructure';
+        $d['home.ent.sub'] = 'Shared control plane with tenant-bound program data, governance gates, event fabric, and field telemetry—documented for procurement and technical review.';
+        $entBadges = [
+            'Tenant isolation',
+            'Operational governance',
+            'Replay-safe events',
+            'SLA visibility',
+            'Audit trails',
+            'Enterprise support path',
+        ];
+        foreach ($entBadges as $i => $label) {
+            $d['home.ent.badge.' . ($i + 1)] = $label;
+        }
+        $d['home.ent.layers.title'] = 'Layered control plane';
+        $d['home.ent.layers.sub'] = 'Seven layers with explicit boundaries—experience through data persistence.';
+        $d['home.ent.layers.link'] = 'Full platform architecture →';
+        $d['home.ent.flow.title'] = 'Orchestration flow';
+        $d['home.ent.flow.sub'] = 'Lifecycle commits pass policy before tenant-scoped persistence.';
+        $d['home.ent.topology.title'] = 'Deployment topology';
+        $d['home.ent.topology.note'] = 'Edge, workspaces, APIs, orchestration core, and isolated tenant databases.';
+        $d['home.ent.gov.title'] = 'Governance plane';
+        $d['home.ent.gov.1.title'] = 'RBAC';
+        $d['home.ent.gov.1.body'] = 'Branch and country-scoped operator access.';
+        $d['home.ent.gov.2.title'] = 'Policy enforcement';
+        $d['home.ent.gov.2.body'] = 'Stage rules applied before commits.';
+        $d['home.ent.gov.3.title'] = 'Audit history';
+        $d['home.ent.gov.3.body'] = 'Actor, correlation id, policy version on sensitive actions.';
+        $d['home.ent.gov.4.title'] = 'Labor oversight';
+        $d['home.ent.gov.4.body'] = 'Inspections, violations, deploy blocks where configured.';
+        $d['home.ent.gov.link'] = 'Security & compliance center →';
+        $d['home.ent.telemetry.title'] = 'Telemetry intelligence path';
+        $d['home.ent.telemetry.note'] = 'Field signals route to escalation queues—not passive tracking alone.';
+        $d['home.ent.audit.title'] = 'Audit-oriented operations';
+        $d['home.ent.audit.body'] = 'Structured logs and stage history designed for program reviews and enterprise questionnaires.';
+        $d['home.ent.cta.demo'] = 'Request Enterprise Demo';
+        $d['home.ent.cta.architecture'] = 'Review Architecture';
+        $d['home.ent.cta.solutions'] = 'Contact Solutions Team';
+        $d['home.ent.cta.security'] = 'Request Security Brief';
+        $d['home.analytics.illus'] = 'Illustrative sample metrics · not live production counters';
 
         $d['home.how.eyebrow'] = 'Operational onboarding';
         $d['home.how.title'] = 'How agencies go live on RATIB';
@@ -137,7 +182,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
             ['Recruitment lifecycle engine', 'Define stages, owners, policies once—execute across every worker file.'],
             ['Applicant system of record', 'Single longitudinal record: docs, history, readiness for deployment.'],
             ['Stage synchronization', 'Event- and time-driven transitions with explicit human-in-the-loop gates.'],
-            ['Field & GPS telemetry', 'Check-ins, corridors, and exception routing for operational visibility.'],
+            ['Field telemetry intelligence', 'Check-ins, corridors, and exception routing for operational visibility.'],
             ['Multi-domain tenancy', 'Agency-branded edges on unified orchestration and identity substrate.'],
             ['Digital contracts', 'Signatures and renewals bound to lifecycle state transitions.'],
             ['Operational finance hooks', 'Placement-to-settlement awareness for controllers and agency billing.'],
@@ -185,7 +230,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.solutions.1.demo_row.3b'] = 'nightly cohort rollup · exec dashboard · no CSV extracts';
         $d['home.solutions.2.title'] = 'Overseas workforce operations';
         $d['home.solutions.2.body'] = 'Corridor programs with sending-country compliance packs, host-market deployment rules, and milestone telemetry tied to billing milestones.';
-        $d['home.solutions.3.title'] = 'Multi-office recruitment firms';
+        $d['home.solutions.3.title'] = 'Multi-office workforce operations firms';
         $d['home.solutions.3.body'] = 'Consolidated candidate inventory with segregated finance and placement attribution—one platform, strict tenant edges between brands.';
         $d['home.solutions.4.title'] = 'Enterprise staffing coordination';
         $d['home.solutions.4.body'] = 'Buyer mandates, bulk transitions, and SLA-backed escalations when intake spikes or sponsor deadlines move.';
@@ -248,9 +293,9 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.ops.band.6.v'] = 'operational backups · replayable events';
 
         $d['home.api.eyebrow'] = 'Developers';
-        $d['home.api.title'] = 'APIs for the recruitment operating system';
+        $d['home.api.title'] = 'APIs for the workforce orchestration platform';
         $d['home.api.sub'] = 'Versioned integration endpoints for HRIS, ERP, verification vendors, and internal data lakes—authenticated, rate-aware, observable.';
-        $d['home.api.cta'] = 'Request API access';
+        $d['home.api.cta'] = 'Contact Solutions Team';
 
         $d['home.pricing.eyebrow'] = 'Pricing';
         $d['home.pricing.title'] = 'Plans that scale with your agency footprint';
@@ -278,7 +323,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.pricing.platinum.cta'] = 'Deploy Enterprise workspace';
 
         $d['home.register.info.title'] = 'What is Ratib Program?';
-        $d['home.register.info.intro'] = 'Ratib is a professional platform for recruitment agencies and companies in worker-sending countries. Manage candidates, contracts, and compliance in one place.';
+        $d['home.register.info.intro'] = 'RATIB is an enterprise workforce program infrastructure platform for agencies and organizations in worker-sending countries. Manage workforce records, contracts, and compliance governance in one place.';
         $checks = [
             '<strong>Recruitment management</strong> — Handle workers and candidates efficiently',
             '<strong>Pro plan</strong> — Your own branded agency portal',
@@ -298,17 +343,24 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.register.payment_summary.footer'] = 'Submit your request below. We will contact you about payment after review.';
         $d['home.register.submit'] = 'Submit Request';
 
-        $d['home.final_cta.title'] = 'Put production-grade recruitment infrastructure online';
-        $d['home.final_cta.sub'] = 'Event orchestration, workforce telemetry, and ledger-backed billing on one deployed plane—built for agencies already running at scale.';
-        $d['home.final_cta.btn_primary'] = 'Start agency infrastructure';
-        $d['home.final_cta.btn_secondary'] = 'Enterprise company profile';
+        $d['home.final_cta.title'] = 'Enterprise review and deployment';
+        $d['home.final_cta.sub'] = 'Request a demo, architecture walkthrough, or security brief—or contact the solutions team for procurement and corridor scoping.';
+        $d['home.final_cta.btn_primary'] = 'Request Enterprise Demo';
+        $d['home.final_cta.btn_secondary'] = 'Review Architecture';
+        $d['home.final_cta.btn_tertiary'] = 'Contact Solutions Team';
+        $d['home.final_cta.btn_quaternary'] = 'Request Security Brief';
 
         $d['home.footer.brand'] = 'Workforce program infrastructure — orchestration, telemetry, compliance, and finance-grade operations for multi-country recruitment programs.';
         $d['home.footer.col.platform'] = 'Platform';
         $d['home.footer.col.company'] = 'Company';
         $d['home.footer.col.support'] = 'Support';
+        $d['home.footer.col.enterprise'] = 'Enterprise';
         $d['home.footer.col.legal'] = 'Legal';
         $d['home.footer.col.infra'] = 'Infrastructure';
+        $d['home.footer.link.enterprise.security'] = 'Security & Compliance';
+        $d['home.footer.link.enterprise.architecture'] = 'Architecture';
+        $d['home.footer.link.enterprise.procurement'] = 'Procurement & Legal';
+        $d['home.footer.link.enterprise.ops_sla'] = 'Operations & SLA';
         $d['home.footer.infra.copy'] = 'Managed cloud, TLS, isolated tenants, and compliance-oriented audit trails.';
         $d['home.footer.newsletter.label'] = 'Updates';
         $d['home.footer.newsletter.placeholder'] = 'Work email';
@@ -330,6 +382,9 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.footer.link.support.tickets'] = 'Support tickets';
         $d['home.footer.link.support.whatsapp'] = 'WhatsApp';
         $d['home.footer.link.service_registration'] = 'Service registration';
+        $d['home.footer.link.legal.security_compliance'] = 'Security & compliance';
+        $d['home.footer.link.legal.architecture'] = 'Platform architecture';
+        $d['home.footer.link.legal.procurement'] = 'Procurement & legal';
 
         $d['home.chat.title'] = 'Ratib Assistant';
         $d['home.chat.subtitle'] = 'Help guides & live support';
@@ -906,6 +961,9 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                     ['key' => 'home.footer.link.support.tickets', 'label' => 'Link · Support tickets', 'type' => 'text'],
                     ['key' => 'home.footer.link.support.whatsapp', 'label' => 'Link · WhatsApp', 'type' => 'text'],
                     ['key' => 'home.footer.link.service_registration', 'label' => 'Link · Service registration', 'type' => 'text'],
+                    ['key' => 'home.footer.link.legal.security_compliance', 'label' => 'Link · Security & compliance', 'type' => 'text'],
+                    ['key' => 'home.footer.link.legal.architecture', 'label' => 'Link · Platform architecture', 'type' => 'text'],
+                    ['key' => 'home.footer.link.legal.procurement', 'label' => 'Link · Procurement & legal', 'type' => 'text'],
                 ],
             ],
             [

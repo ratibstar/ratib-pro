@@ -96,6 +96,23 @@ $ratibGlyph = function (string $symbolId): string {
                     </li>
                 </ul>
             </div>
+            <div class="ratib-footer-col ratib-footer-col--enterprise">
+                <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.enterprise'] ?? 'Enterprise', ENT_QUOTES, 'UTF-8'); ?></h4>
+                <ul class="ratib-footer-enterprise__link-list">
+                    <li>
+                        <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/security-compliance/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--security"><?php echo $ratibGlyph('ratib-ng-operational'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.enterprise.security'] ?? '')) ?: 'Security & Compliance', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/architecture/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--architecture"><?php echo $ratibGlyph('ratib-ng-platform'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.enterprise.architecture'] ?? '')) ?: 'Architecture', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/procurement-legal/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--procurement"><?php echo $ratibGlyph('ratib-ng-programs'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.enterprise.procurement'] ?? '')) ?: 'Procurement & Legal', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars($ratibFp . '#operational', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-operational'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.enterprise.ops_sla'] ?? '')) ?: 'Operations & SLA', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                </ul>
+            </div>
             <div class="ratib-footer-col">
                 <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.legal'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h4>
                 <ul class="ratib-footer-enterprise__link-list">
@@ -103,7 +120,7 @@ $ratibGlyph = function (string $symbolId): string {
                         <a href="<?php echo htmlspecialchars($ratibFp . '#register', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-programs'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.service_registration'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
-                        <a href="mailto:ratibstar@gmail.com" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--mailto"><?php echo $ratibGlyph('ratib-ng-contact'); ?><span class="ratib-nav__label">ratibstar@gmail.com</span></a>
+                        <a href="mailto:info@out.ratib.sa" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--mailto"><?php echo $ratibGlyph('ratib-ng-contact'); ?><span class="ratib-nav__label">info@out.ratib.sa</span></a>
                     </li>
                 </ul>
             </div>
@@ -112,7 +129,7 @@ $ratibGlyph = function (string $symbolId): string {
                 <p class="ratib-footer-enterprise__infra-copy"><?php echo htmlspecialchars($ratibHome['home.footer.infra.copy'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 <div class="ratib-footer-social">
                     <a href="https://wa.me/<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                    <a href="mailto:ratibstar@gmail.com" aria-label="Email"><i class="fas fa-envelope"></i></a>
+                    <a href="mailto:info@out.ratib.sa" aria-label="Email"><i class="fas fa-envelope"></i></a>
                 </div>
                 <div class="footer-subscribe ratib-footer-newsletter">
                     <label class="ratib-footer-newsletter__label" for="footerEmail"><?php echo htmlspecialchars($ratibHome['home.footer.newsletter.label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></label>

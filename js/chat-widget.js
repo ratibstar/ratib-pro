@@ -363,12 +363,12 @@
         },
         {
             keywords: ['contact us', 'company phone', 'your email', 'call you', 'whatsapp number', 'support phone', 'reach ratib'],
-            answer: "Contact us:\n• Phone: +966 59 986 3868\n• WhatsApp: Chat via the green button or 'Live via WhatsApp' in the header\n• Email: ratibsrar@gmail.com\n\nYou can also use the registration form to request a callback.",
+            answer: "Contact us:\n• Phone: +966 59 986 3868\n• WhatsApp: Chat via the green button or 'Live via WhatsApp' in the header\n• Email: info@out.ratib.sa\n\nYou can also use the registration form to request a callback.",
             category: 'contact'
         },
         {
             keywords: ['recruitment', 'recruit', 'agency program', 'ratib program', 'your program', 'about ratib'],
-            answer: "Ratib is a recruitment program for agencies in worker-sending countries. It helps you manage:\n• Candidates & documents\n• Your branded agency portal\n• E-invoice system\n• Contracts & compliance\n\nRegister above to get started or watch the 'How it works' video for an overview.",
+            answer: "RATIB is an enterprise workforce program infrastructure platform for agencies and host-market programs. It helps you manage:\n• Candidates & documents\n• Your branded agency portal\n• E-invoice system\n• Contracts & compliance\n\nRegister above to get started or watch the 'How it works' video for an overview.",
             category: 'program'
         },
         {

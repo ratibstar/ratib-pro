@@ -40,7 +40,7 @@ $profileHtml = ratib_which_fetch($base . '/profile/?_r=' . time());
 $homeHtml = ratib_which_fetch($base . '/pages/home.php?_r=' . time());
 
 $profileOk = str_contains($profileHtml, 'ratib-profile-distinct-banner')
-    && str_contains($profileHtml, 'About <span class="ratib-about-gradient">Ratib Company</span>');
+    && str_contains($profileHtml, 'RATIB <span class="ratib-about-gradient">control plane</span>');
 $homeOk = str_contains($homeHtml, 'ratib-hero__title')
     && !str_contains($homeHtml, 'ratib-profile-distinct-banner');
 ?>
@@ -75,14 +75,14 @@ $homeOk = str_contains($homeHtml, 'ratib-hero__title')
     <div class="card <?php echo $profileOk ? 'ok' : 'bad'; ?>">
         <h2>Company profile — <?php echo $profileOk ? 'LIVE OK' : 'PROBLEM'; ?></h2>
         <p>URL: <code>/profile/</code></p>
-        <p>You must see: purple top banner, headline <strong>About Ratib Company</strong>, bottom-right badge <strong>COMPANY PROFILE</strong>.</p>
+        <p>You must see: purple top banner, headline <strong>RATIB control plane</strong>, bottom-right badge <strong>COMPANY PROFILE</strong>.</p>
         <a class="btn btn-profile" href="<?php echo htmlspecialchars($base . '/profile/?_r=' . time(), ENT_QUOTES, 'UTF-8'); ?>">Open profile now</a>
     </div>
 
     <div class="card <?php echo $homeOk ? 'ok' : 'bad'; ?>">
         <h2>Marketing home — <?php echo $homeOk ? 'LIVE OK' : 'PROBLEM'; ?></h2>
         <p>URL: <code>/pages/home.php</code></p>
-        <p>You must see: headline <strong>Recruitment Automation</strong>, video section, badge <strong>MARKETING HOME</strong> (bottom-right).</p>
+        <p>You must see: headline <strong>Orchestration Platform</strong>, video section, badge <strong>MARKETING HOME</strong> (bottom-right).</p>
         <a class="btn btn-home" href="<?php echo htmlspecialchars($base . '/pages/home.php?_r=' . time(), ENT_QUOTES, 'UTF-8'); ?>">Open marketing home</a>
     </div>
 

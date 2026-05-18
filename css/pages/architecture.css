@@ -1,0 +1,561 @@
+/**
+ * RATIB — Enterprise platform architecture (pages/architecture.php)
+ * Technical briefing layout; extends about-enterprise.css.
+ */
+
+body.ratib-arch-page {
+  --r-bg-deep: #080c14;
+  --r-bg: #0f1419;
+  --arch-accent: #14b8a6;
+  --arch-accent-dim: rgba(20, 184, 166, 0.12);
+  --arch-border: rgba(148, 163, 184, 0.14);
+  --arch-mono-line: rgba(20, 184, 166, 0.35);
+}
+
+/* Banner */
+.ratib-arch-distinct-banner {
+  position: relative;
+  z-index: 50;
+  margin: 0;
+  padding: 0.8rem 0;
+  background: linear-gradient(90deg, rgba(15, 118, 110, 0.42), rgba(30, 41, 59, 0.55));
+  border-bottom: 1px solid rgba(45, 212, 191, 0.28);
+}
+
+.ratib-arch-distinct-banner__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+}
+
+.ratib-arch-distinct-banner__badge {
+  flex-shrink: 0;
+  padding: 0.22rem 0.65rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #ccfbf1;
+  background: rgba(15, 118, 110, 0.5);
+  border: 1px solid rgba(45, 212, 191, 0.4);
+  font-family: var(--about-mono);
+}
+
+.ratib-arch-distinct-banner__text {
+  flex: 1 1 14rem;
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: #99f6e4;
+}
+
+.ratib-arch-distinct-banner__text strong {
+  color: #f0fdfa;
+}
+
+.ratib-arch-distinct-banner__link {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #5eead4;
+  text-decoration: none;
+  padding: 0.3rem 0.7rem;
+  border-radius: 4px;
+  border: 1px solid var(--arch-border);
+  font-family: var(--about-mono);
+}
+
+.ratib-arch-distinct-banner__link:hover {
+  color: #fff;
+  border-color: rgba(45, 212, 191, 0.55);
+}
+
+.ratib-arch-main {
+  position: relative;
+  z-index: 1;
+}
+
+/* Hero */
+.ratib-arch-hero {
+  padding: 2rem 0 2.25rem;
+  border-bottom: 1px solid var(--arch-border);
+  background: linear-gradient(180deg, var(--arch-accent-dim) 0%, transparent 65%);
+}
+
+.ratib-arch-hero__grid {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 920px) {
+  .ratib-arch-hero__grid {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+}
+
+.ratib-arch-hero__title {
+  margin: 0 0 0.7rem;
+  font-size: clamp(1.75rem, 3.5vw, 2.45rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.14;
+  color: #f8fafc;
+}
+
+.ratib-arch-hero__lead {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.58;
+  color: var(--about-muted);
+  max-width: 40rem;
+}
+
+.ratib-arch-hero__stack {
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid var(--arch-border);
+  background: rgba(15, 23, 42, 0.65);
+}
+
+.ratib-arch-hero__stack-kicker {
+  margin: 0 0 0.6rem;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--arch-accent);
+}
+
+.ratib-arch-stack-preview {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ratib-arch-stack-preview li {
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  color: #e2e8f0;
+  background: rgba(30, 41, 59, 0.55);
+  border-left: 3px solid var(--arch-accent);
+}
+
+/* Overview */
+.ratib-arch-overview-grid {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.1rem;
+}
+
+@media (min-width: 768px) {
+  .ratib-arch-overview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.ratib-arch-overview-card {
+  padding: 1rem 1.05rem;
+}
+
+.ratib-arch-overview-card h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--arch-accent);
+}
+
+.ratib-arch-overview-card p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--about-muted);
+}
+
+/* Layer stack */
+.ratib-arch-section--layers {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, transparent 100%);
+}
+
+.ratib-arch-layer-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 1.15rem;
+  max-width: 56rem;
+}
+
+.ratib-arch-layer-card {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-left: 3px solid var(--arch-accent);
+}
+
+@media (min-width: 720px) {
+  .ratib-arch-layer-card {
+    grid-template-columns: 5.5rem 1fr;
+  }
+}
+
+.ratib-arch-layer-card__rail {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(15, 118, 110, 0.12);
+  border-bottom: 1px solid var(--arch-border);
+}
+
+@media (min-width: 720px) {
+  .ratib-arch-layer-card__rail {
+    flex-direction: column;
+    border-bottom: none;
+    border-right: 1px solid var(--arch-border);
+  }
+}
+
+.ratib-arch-layer-card__order {
+  font-size: 0.75rem;
+  color: var(--arch-accent);
+}
+
+.ratib-arch-layer-card__icon {
+  font-size: 1rem;
+  color: #5eead4;
+}
+
+.ratib-arch-layer-card__body {
+  padding: 0.9rem 1rem 1rem;
+}
+
+.ratib-arch-layer-card__body h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+  color: #f1f5f9;
+}
+
+.ratib-arch-layer-dl {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.ratib-arch-layer-dl dt {
+  margin: 0 0 0.2rem;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.ratib-arch-layer-dl dd {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.48;
+  color: var(--about-muted);
+}
+
+/* Isolation topology */
+.ratib-arch-topology {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.15rem;
+}
+
+@media (min-width: 960px) {
+  .ratib-arch-topology--isolation {
+    grid-template-columns: 0.85fr 1.15fr;
+    align-items: start;
+  }
+}
+
+.ratib-arch-topology__diagram {
+  padding: 1.15rem;
+  border-radius: 12px;
+  border: 1px solid var(--arch-border);
+  background: rgba(15, 23, 42, 0.7);
+  text-align: center;
+}
+
+.ratib-arch-topology__core {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #f0fdfa;
+  background: linear-gradient(90deg, rgba(20, 184, 166, 0.35), rgba(59, 130, 246, 0.25));
+  border: 1px solid rgba(45, 212, 191, 0.4);
+}
+
+.ratib-arch-topology__spokes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+}
+
+.ratib-arch-topology__spokes span {
+  padding: 0.5rem 0.25rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-family: var(--about-mono);
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.28);
+}
+
+.ratib-arch-topology__caption {
+  margin: 0.75rem 0 0;
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.ratib-arch-pillar-grid {
+  display: grid;
+  gap: 0.65rem;
+}
+
+@media (min-width: 640px) {
+  .ratib-arch-pillar-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.ratib-arch-pillar {
+  padding: 0.95rem 1rem;
+}
+
+.ratib-arch-pillar__icon {
+  display: inline-flex;
+  margin-bottom: 0.45rem;
+  color: var(--arch-accent);
+}
+
+.ratib-arch-pillar h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.92rem;
+  color: #f1f5f9;
+}
+
+.ratib-arch-pillar p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.48;
+  color: var(--about-muted);
+}
+
+/* Event flow */
+.ratib-arch-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.35rem 0.25rem;
+  margin: 1rem 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px dashed var(--arch-mono-line);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.ratib-arch-flow__step {
+  flex: 1 1 8rem;
+  min-width: 7rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid var(--arch-border);
+}
+
+.ratib-arch-flow__step-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--arch-accent);
+  margin-bottom: 0.25rem;
+}
+
+.ratib-arch-flow__step-detail {
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--about-muted);
+}
+
+.ratib-arch-flow__arrow {
+  align-self: center;
+  font-size: 0.9rem;
+  color: #475569;
+  padding: 0 0.15rem;
+}
+
+/* Section accents */
+.ratib-arch-section--telemetry {
+  background: linear-gradient(180deg, rgba(6, 78, 59, 0.08) 0%, transparent 100%);
+}
+
+.ratib-arch-section--finance {
+  background: linear-gradient(180deg, rgba(120, 53, 15, 0.06) 0%, transparent 100%);
+}
+
+.ratib-arch-section--governance {
+  background: linear-gradient(180deg, rgba(88, 28, 135, 0.06) 0%, transparent 100%);
+}
+
+/* Deployment topology */
+.ratib-arch-deploy-topology {
+  max-width: 42rem;
+  margin: 1.25rem auto 0;
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--arch-border);
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.ratib-arch-deploy-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.ratib-arch-deploy-row--clients {
+  gap: 0.65rem;
+}
+
+.ratib-arch-deploy-connector {
+  width: 2px;
+  height: 1rem;
+  margin: 0.35rem auto;
+  background: linear-gradient(180deg, var(--arch-accent), rgba(59, 130, 246, 0.5));
+}
+
+.ratib-arch-deploy-connector--thick {
+  height: 1.35rem;
+  width: 3px;
+}
+
+.ratib-arch-deploy-node {
+  padding: 0.55rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--arch-border);
+  background: rgba(30, 41, 59, 0.65);
+  color: #e2e8f0;
+  font-family: var(--about-mono);
+}
+
+.ratib-arch-deploy-node--core {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.85rem;
+  color: #f0fdfa;
+  border-color: rgba(45, 212, 191, 0.45);
+  background: linear-gradient(135deg, rgba(20, 184, 166, 0.25), rgba(59, 130, 246, 0.2));
+}
+
+.ratib-arch-deploy-node--edge {
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.ratib-arch-deploy-node--data {
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #a7f3d0;
+}
+
+.ratib-arch-deploy-legend {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  font-size: 0.72rem;
+}
+
+@media (min-width: 768px) {
+  .ratib-arch-deploy-legend {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.ratib-arch-deploy-legend__item {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid var(--arch-border);
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.ratib-arch-deploy-legend__item strong {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.ratib-arch-deploy-legend__item span {
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* Briefing */
+.ratib-arch-section--briefing {
+  padding-bottom: 3rem;
+}
+
+.ratib-arch-briefing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  padding: 1.25rem 1.35rem;
+  border-left: 3px solid var(--arch-accent);
+}
+
+.ratib-arch-briefing__copy h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.1rem;
+  color: #f8fafc;
+}
+
+.ratib-arch-briefing__copy p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--about-muted);
+  max-width: 36rem;
+}
+
+.ratib-arch-briefing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Reveal */
+[data-ratib-reveal] {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+[data-ratib-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ratib-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
