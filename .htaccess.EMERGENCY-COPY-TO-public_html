@@ -1,0 +1,20 @@
+# EMERGENCY: In cPanel File Manager, copy ALL of this file into public_html/.htaccess
+# (Replaces broken profile redirect loop rules.)
+
+RewriteEngine On
+
+RewriteCond %{REQUEST_URI} ^/Designed/public/ [NC]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+RewriteCond %{REQUEST_URI} ^/Designed(?:/|$) [NC]
+RewriteRule ^.*$ public/index.php [L,QSA]
+
+RewriteRule ^profile/?$ /pages/about.php [L,QSA]
+RewriteRule ^pages/profile/?$ /profile [R=302,L]
+RewriteCond %{THE_REQUEST} \s/+pages/company-profile\.php[\s?] [NC]
+RewriteRule ^pages/company-profile\.php$ /profile [R=302,L,QSA]
+RewriteCond %{THE_REQUEST} \s/+pages/about\.php[\s?] [NC]
+RewriteRule ^pages/about\.php$ /profile [R=302,L,QSA]
+RewriteCond %{THE_REQUEST} \s/+pages/home\.php[\s?] [NC]
+RewriteCond %{QUERY_STRING} (^|&)(open=profile|open=about)(&|$) [NC]
+RewriteRule ^pages/home\.php$ /profile [R=302,L]

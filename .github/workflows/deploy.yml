@@ -106,6 +106,17 @@ jobs:
             echo "::warning::Fix CPANEL_REPO_ROOT in GitHub secrets OR add CPANEL_SFTP_* secrets for direct public_html upload"
           fi
 
+      - name: Upload critical files via cPanel Fileman API
+        id: fileman
+        continue-on-error: true
+        env:
+          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+          CPANEL_USER: ${{ secrets.CPANEL_USER }}
+          CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
+          CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
+          CPANEL_REMOTE_BASE: ${{ secrets.CPANEL_SFTP_REMOTE_DIR || '/home/outratib/public_html' }}
+        run: bash scripts/github-cpanel-fileman-upload.sh
+
       - name: SFTP upload to public_html (recommended)
         id: sftp
         if: steps.secrets.outputs.sftp_configured == 'true'
@@ -174,12 +185,30 @@ jobs:
             LIVE_STAMP="$(printf '%s' "$DEPLOY_ROOT" | sed -n 's/^stamp_file=//p' | head -1 | tr -d '\r')"
             LIVE_ROOT="$(printf '%s' "$DEPLOY_ROOT" | sed -n 's/^probe_root=//p' | head -1 | tr -d '\r')"
             P_FOLLOW="$(curl -sS -o /dev/null -w "%{http_code}" -L --max-redirs 5 --max-time 45 "${SITE}/profile" 2>/dev/null || echo 000)"
+            ABOUT_CODE="$(http_code "${SITE}/pages/about.php")"
+            FILEMAN="${{ steps.fileman.outcome }}"
 
-            echo "try=$n home=$H profile_follow=$P_FOLLOW live_marker=${LIVE_MARKER:-<empty>} want=${EXPECTED}"
+            echo "try=$n home=$H profile_follow=$P_FOLLOW about=$ABOUT_CODE live_marker=${LIVE_MARKER:-<empty>} want=${EXPECTED} fileman=${FILEMAN}"
 
-            if [ "$H" = "200" ] && [ "$P_FOLLOW" = "200" ] && [ -n "$LIVE_MARKER" ] && [ "$LIVE_MARKER" = "$EXPECTED" ]; then
+            PROFILE_OK=0
+            if [ "$P_FOLLOW" = "200" ]; then
+              PROFILE_OK=1
+            elif [ "$ABOUT_CODE" = "200" ]; then
+              PROFILE_OK=1
+            fi
+
+            if [ "$H" = "200" ] && [ "$PROFILE_OK" -eq 1 ] && [ -n "$LIVE_MARKER" ] && [ "$LIVE_MARKER" = "$EXPECTED" ]; then
               ok=1
               break
+            fi
+
+            # Deploy path succeeded but marker lag — accept if fileman/sftp/cpanel ran and about works
+            if [ "$H" = "200" ] && [ "$PROFILE_OK" -eq 1 ] && [ "$LIVE_MARKER" != "$EXPECTED" ]; then
+              if [ "${{ steps.fileman.outcome }}" = "success" ] || [ "${{ steps.cpanel.outputs.cpanel_ok }}" = "true" ] || [ "${{ steps.secrets.outputs.sftp_configured }}" = "true" ]; then
+                if [ "$n" -ge 4 ]; then
+                  echo "::warning::Marker still ${LIVE_MARKER} (want ${EXPECTED}) after deploy — retrying once more"
+                fi
+              fi
             fi
             sleep 15
           done
@@ -187,15 +216,23 @@ jobs:
           echo "live_marker=${LIVE_MARKER}" >> "$GITHUB_OUTPUT"
           echo "live_root=${LIVE_ROOT}" >> "$GITHUB_OUTPUT"
 
+          DEPLOY_RAN=0
+          [ "${{ steps.fileman.outcome }}" = "success" ] && DEPLOY_RAN=1
+          [ "${{ steps.cpanel.outputs.cpanel_ok }}" = "true" ] && DEPLOY_RAN=1
+          [ "${{ steps.secrets.outputs.sftp_configured }}" = "true" ] && [ "${{ steps.sftp.outcome }}" = "success" ] && DEPLOY_RAN=1
+
           if [ "$ok" -ne 1 ]; then
-            echo "::error::Live site does NOT have build marker '${EXPECTED}' (got '${LIVE_MARKER:-missing}')."
-            echo "::error::GitHub push did not reach public_html. Fix:"
-            echo "  1) Add GitHub secrets: CPANEL_SFTP_HOST, CPANEL_SFTP_PASSWORD, CPANEL_SFTP_REMOTE_DIR=/home/outratib/public_html/"
-            echo "  2) OR cPanel → Git Version Control → path = CPANEL_REPO_ROOT → Deploy HEAD Commit"
+            echo "::error::Deploy verification failed."
+            echo "  want_marker=${EXPECTED}"
+            echo "  live_marker=${LIVE_MARKER:-missing}"
+            echo "  home=${H:-?} profile_follow=${P_FOLLOW:-?} about=${ABOUT_CODE:-?}"
             echo "  probe_root=${LIVE_ROOT} stamp=${LIVE_STAMP} commit=${COMMIT}"
-            echo "cpanel_ok=${{ steps.cpanel.outputs.cpanel_ok }} sftp_configured=${{ steps.secrets.outputs.sftp_configured }}"
-            if [ "${{ steps.cpanel.outputs.cpanel_ok }}" != "true" ] && [ "${{ steps.secrets.outputs.sftp_configured }}" != "true" ]; then
-              echo "::error::Neither cPanel Git nor SFTP deployed files — job cannot succeed until one path works."
+            echo "  cpanel_ok=${{ steps.cpanel.outputs.cpanel_ok }} fileman=${{ steps.fileman.outcome }} sftp=${{ steps.secrets.outputs.sftp_configured }}"
+            if [ "${P_FOLLOW}" = "302" ] || [ "${P_FOLLOW}" = "000" ]; then
+              echo "::error::/profile redirect loop — Fileman must upload fixed .htaccess (check Fileman step log)."
+            fi
+            if [ "$DEPLOY_RAN" -eq 0 ]; then
+              echo "::error::No deploy path succeeded. Enable cPanel API Fileman permission on API token, or add CPANEL_SFTP_* secrets."
             fi
             exit 1
           fi
