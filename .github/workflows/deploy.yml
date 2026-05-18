@@ -44,21 +44,22 @@ jobs:
         if: steps.fileman.outcome == 'success'
         run: |
           SITE="${{ secrets.CPANEL_SITE_URL || 'https://out.ratib.sa' }}"
-          code() { curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 8 --max-time 15 "$1" 2>/dev/null || echo 000; }
+          # home.php 302-redirects to ?v= build marker — must follow redirects (-L).
+          code() { curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 8 --max-time 20 "$1" 2>/dev/null || echo 000; }
           P="$(code "${SITE}/profile/")"
           G="$(code "${SITE}/js/pages/ratib-profile-nav-guard.js")"
           H="$(code "${SITE}/pages/home.php")"
-          BODY="$(curl -sS --connect-timeout 8 --max-time 20 "${SITE}/pages/home.php" 2>/dev/null | head -c 400 || true)"
-          echo "profile/=$P home.php=$H guard.js=$G"
+          BODY="$(curl -sS -L --connect-timeout 8 --max-time 25 "${SITE}/pages/home.php" 2>/dev/null | head -c 500 || true)"
+          echo "profile/=$P home.php(follow)=$H guard.js=$G"
           if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ]; then
-            if echo "$BODY" | grep -q '<!DOCTYPE'; then
-              echo "::notice::Deploy OK (home returns HTML)"
+            if echo "$BODY" | grep -qi '<!DOCTYPE'; then
+              echo "::notice::Deploy OK (home returns HTML after redirect)"
               exit 0
             fi
-            echo "::error::home.php returned 200 but not HTML (likely PHP fatal JSON): ${BODY:0:120}"
+            echo "::error::home.php returned 200 but not HTML (likely PHP fatal): ${BODY:0:160}"
             exit 1
           fi
-          echo "::error::verify failed profile/=$P home.php=$H guard.js=$G body=${BODY:0:120}"
+          echo "::error::verify failed profile/=$P home.php=$H guard.js=$G body=${BODY:0:160}"
           exit 1
 
       - name: Deploy failed
