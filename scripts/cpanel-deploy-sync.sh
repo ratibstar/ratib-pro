@@ -77,15 +77,20 @@ PUBLIC_REAL="$(realpath "$PUBLIC_HTML" 2>/dev/null || echo "$PUBLIC_HTML")"
 
 fix_live_permissions() {
   local TARGET="$1"
-  # Apache must read every .htaccess (644). Wrong mode after rsync → site-wide 403 + no CSS.
+  log "fix permissions ${TARGET}"
+  # Apache must read every .htaccess (644). Wrong mode after deploy → 403 + unstyled site.
   find "${TARGET}" -type d -exec chmod 755 {} \; 2>/dev/null || true
   find "${TARGET}" -type f -name '.htaccess' -exec chmod 644 {} \; 2>/dev/null || true
-  if [ -f "${TARGET}/.htaccess" ]; then
-    chmod 644 "${TARGET}/.htaccess" 2>/dev/null || true
-  fi
-  find "${TARGET}/pages" "${TARGET}/includes" "${TARGET}/css" "${TARGET}/js" "${TARGET}/control-panel" \
-    -type f \( -name '*.php' -o -name '*.css' -o -name '*.js' -o -name '*.svg' \) \
+  [ -f "${TARGET}/.htaccess" ] && chmod 644 "${TARGET}/.htaccess" 2>/dev/null || true
+  find "${TARGET}/css" "${TARGET}/js" "${TARGET}/pages" "${TARGET}/includes" "${TARGET}/control-panel" \
+    -type f \( -name '*.css' -o -name '*.js' -o -name '*.php' -o -name '*.svg' -o -name '*.woff2' \) \
     -exec chmod 644 {} \; 2>/dev/null || true
+  # Log result for debugging in cPanel deploy log
+  if [ -r "${TARGET}/.htaccess" ]; then
+    log "OK .htaccess readable"
+  else
+    log "WARN .htaccess NOT readable — set 644 in File Manager"
+  fi
 }
 
 sync_one_target() {
