@@ -6,6 +6,13 @@
  * @param string $baseUrl   Site root URL without trailing slash.
  * @param string $navPrefix Optional prefix for home hash links (e.g. full home.php URL for partner pages).
  */
+if (!function_exists('ratib_mega_nav_is_profile_context')) {
+    function ratib_mega_nav_is_profile_context(string $navPrefix): bool
+    {
+        return $navPrefix !== '' && preg_match('#/profile/?$#i', rtrim($navPrefix, '/')) === 1;
+    }
+}
+
 if (!function_exists('ratib_mega_nav_resolve_href')) {
 function ratib_mega_nav_resolve_href(string $hrefKey, string $baseUrl, string $navPrefix = ''): string
 {
@@ -13,6 +20,31 @@ function ratib_mega_nav_resolve_href(string $hrefKey, string $baseUrl, string $n
     $home = $baseUrl . '/pages/home.php';
     $clientDomains = $baseUrl . '/pages/client/domains.php?catalog=1';
     $clientServices = $baseUrl . '/pages/client/services.php';
+
+    if (ratib_mega_nav_is_profile_context($navPrefix)) {
+        $profileRoot = rtrim($navPrefix, '/');
+        $onProfile = [
+            'platform' => '#what-is-ratib',
+            'features' => '#platform-services',
+            'programs' => '#finance',
+            'agencies' => '#partners',
+            'contact' => '#contact-cta',
+            'solutions' => '#what-is-ratib',
+            'operational' => '#operations',
+            'api' => '#architecture',
+            'program_previews' => '#top',
+            'about' => '/',
+            'company_profile' => '/',
+        ];
+        if (isset($onProfile[$hrefKey])) {
+            $tail = $onProfile[$hrefKey];
+            if ($tail === '/' || $tail === '') {
+                return $profileRoot . '/';
+            }
+            return $profileRoot . $tail;
+        }
+    }
+
     switch ($hrefKey) {
         case 'marketplace':
             return $clientDomains;

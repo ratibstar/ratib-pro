@@ -781,6 +781,24 @@ body.ratib-about-page .ratib-nav__platform-links .ratib-nav__link:not(.ratib-nav
   opacity: 0.82;
 }
 
+body.ratib-about-page .ratib-nav__link--about.is-current,
+body.ratib-about-page .ratib-nav__brand-profile.is-current {
+  pointer-events: auto;
+}
+
+body.ratib-about-page::before {
+  content: '';
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #8b5cf6, #3b82f6, #ec4899);
+  z-index: 9999;
+  pointer-events: none;
+}
+
 body.ratib-about-page .ratib-footer-link--about {
   color: #bfdbfe;
 }
