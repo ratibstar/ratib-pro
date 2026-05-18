@@ -116,7 +116,7 @@ if (!function_exists('ratib_trust_render_isolation_section')) {
                 <div class="ratib-trust-isolation">
                     <div class="ratib-trust-isolation__diagram" data-ratib-reveal aria-hidden="true">
                         <div class="ratib-trust-isolation__tier ratib-trust-isolation__tier--control">
-                            <span class="ratib-mono">control plane</span>
+                            <span class="ratib-mono">platform core</span>
                         </div>
                         <div class="ratib-trust-isolation__connector" aria-hidden="true"></div>
                         <div class="ratib-trust-isolation__tenants">

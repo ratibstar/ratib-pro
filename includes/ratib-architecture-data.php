@@ -16,13 +16,13 @@ if (!function_exists('ratib_architecture_config')) {
         return [
             'meta' => [
                 'title' => 'Platform Architecture — RATIB',
-                'description' => 'Layered workforce program orchestration infrastructure: control plane, tenant isolation, event fabric, telemetry intelligence, finance subsystem, and deployment topology for enterprise technical review.',
+                'description' => 'Layered workforce program platform: shared core, tenant isolation, event delivery, field operations, finance module, and deployment topology for enterprise technical review.',
             ],
             'hero' => [
                 'eyebrow' => 'Platform architecture',
-                'title' => 'Multi-tenant workforce program orchestration infrastructure',
-                'lead' => 'RATIB is structured as a layered control plane that coordinates agency workspaces, partner portals, and government-aligned corridors — with isolated tenant datastores, event-driven workflows, and operational governance built into the stack.',
-                'diagram_label' => 'control plane stack',
+                'title' => 'Multi-agency workforce program platform',
+                'lead' => 'RATIB is organized in platform layers that connect agency workspaces, partner portals, and regulated corridors—with separate agency databases, event-driven workflows, and policy controls in the stack.',
+                'diagram_label' => 'platform layer stack',
                 'stack_preview' => [
                     'Experience',
                     'Orchestration',
@@ -37,7 +37,7 @@ if (!function_exists('ratib_architecture_config')) {
                 'id' => 'architecture-overview',
                 'eyebrow' => 'Architecture overview',
                 'title' => 'Orchestration infrastructure, not a single application',
-                'sub' => 'Programs, corridors, and agencies share a common orchestration core while program data remains tenant-scoped. The platform separates presentation, workflow execution, intelligence, commercial settlement, and persistence.',
+                'sub' => 'Programs, corridors, and agencies share a common workflow core while program data stays in separate agency databases. The platform separates user interfaces, workflow execution, field operations, finance, and storage.',
                 'points' => [
                     ['label' => 'Primary role', 'body' => 'Coordinate workforce lifecycle stages, documents, finance events, and field telemetry across sending and host markets.'],
                     ['label' => 'Tenancy model', 'body' => 'Shared orchestration with isolated agency datastores and policy-scoped operator access.'],
@@ -47,7 +47,7 @@ if (!function_exists('ratib_architecture_config')) {
             ],
             'layers' => [
                 'id' => 'layered-control-plane',
-                'eyebrow' => 'Layered control plane',
+                'eyebrow' => 'Platform layers',
                 'title' => 'Seven layers with explicit boundaries',
                 'sub' => 'Each layer owns a distinct responsibility set. Upper layers consume contracts from lower layers; cross-layer calls flow through orchestration and policy gates.',
                 'items' => [
@@ -109,9 +109,9 @@ if (!function_exists('ratib_architecture_config')) {
                         'order' => 1,
                         'key' => 'data',
                         'title' => 'Data Layer',
-                        'responsibilities' => 'Control-plane metadata, tenant routing, and isolated agency program datastores.',
+                        'responsibilities' => 'Platform configuration, tenant routing, and isolated agency program datastores.',
                         'operational_role' => 'Persistence, backups, and connection scoping for multi-agency operations.',
-                        'boundaries' => 'Control plane never stores full program payloads; tenant DBs never host cross-tenant orchestration config.',
+                        'boundaries' => 'Platform stores hold configuration and routing; agency databases hold program records—not cross-tenant workflow config.',
                         'icon' => 'fa-database',
                     ],
                 ],
@@ -150,14 +150,14 @@ if (!function_exists('ratib_architecture_config')) {
             ],
             'telemetry' => [
                 'id' => 'telemetry-intelligence',
-                'eyebrow' => 'Telemetry intelligence',
-                'title' => 'Field intelligence for operational programs',
-                'sub' => 'Geospatial and device signals support deployment oversight — with offline tolerance and spoof resistance.',
+                'eyebrow' => 'Field operations',
+                'title' => 'Location-assisted operations for field programs',
+                'sub' => 'Location and device signals support deployment oversight—with offline sync and basic consistency checks.',
                 'items' => [
                     ['title' => 'Geospatial telemetry', 'body' => 'Location checkpoints tied to worker and program context for corridor operations.', 'icon' => 'fa-location-dot'],
                     ['title' => 'Offline synchronization', 'body' => 'Buffered uploads reconcile when connectivity returns without losing correlation order.', 'icon' => 'fa-wifi'],
-                    ['title' => 'Anti-spoof logic', 'body' => 'Heuristics and consistency checks flag implausible jumps, device mismatches, or stale attestations.', 'icon' => 'fa-user-secret'],
-                    ['title' => 'Geofence intelligence', 'body' => 'Program-defined zones trigger holds, alerts, or escalation paths through orchestration.', 'icon' => 'fa-draw-polygon'],
+                    ['title' => 'Signal validation', 'body' => 'Consistency checks flag implausible location jumps, device mismatches, or stale updates.', 'icon' => 'fa-user-secret'],
+                    ['title' => 'Geofence rules', 'body' => 'Program-defined zones trigger holds, alerts, or escalation paths through workflows.', 'icon' => 'fa-draw-polygon'],
                     ['title' => 'Operational escalation', 'body' => 'Anomalies route to operator queues with audit attribution — not silent background logging only.', 'icon' => 'fa-triangle-exclamation'],
                 ],
             ],

@@ -60,6 +60,15 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
   animation: none;
 }
 
+.ratib-dash__illus {
+  margin: 0.25rem 0 0;
+  font-size: 0.62rem;
+  color: #64748b;
+  opacity: 0.9;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .ratib-analytics__illus {
   display: block;
   margin-top: 0.35rem;
@@ -91,7 +100,7 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
 }
 
 .ratib-ent-hero-strip__item .ratib-mono-tag {
-  color: #6ee7b7;
+  color: #94a3b8;
   font-size: 0.62rem;
 }
 
@@ -128,7 +137,7 @@ body.ratib-saas-home .ratib-analytics-card .ratib-metric__val.ratib-live-nudge {
 }
 
 .ratib-ent-indicator i {
-  color: #6ee7b7;
+  color: #94a3b8;
   font-size: 0.7rem;
 }
 

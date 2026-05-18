@@ -22,9 +22,9 @@ function ratib_mega_nav_config(): array
                     'items' => [
                         ['icon' => 'fa-building', 'title' => 'Company profile', 'desc' => 'About RATIB, legal entity, markets, and platform scope.', 'href_key' => 'company_profile'],
                         ['icon' => 'fa-shield-halved', 'title' => 'Security & compliance', 'desc' => 'Trust center for procurement, isolation, governance, and reliability.', 'href_key' => 'security_compliance'],
-                        ['icon' => 'fa-sitemap', 'title' => 'Platform architecture', 'desc' => 'Layered control plane, isolation model, and deployment topology.', 'href_key' => 'architecture'],
+                        ['icon' => 'fa-sitemap', 'title' => 'Platform architecture', 'desc' => 'Platform layers, isolation model, and deployment topology.', 'href_key' => 'architecture'],
                         ['icon' => 'fa-file-contract', 'title' => 'Procurement & legal', 'desc' => 'Company identity, engagement process, and procurement requests.', 'href_key' => 'procurement_legal'],
-                        ['icon' => 'fa-diagram-project', 'title' => 'Platform overview', 'desc' => 'Orchestration platform, workforce telemetry intelligence, and program operations control.', 'href_key' => 'platform'],
+                        ['icon' => 'fa-diagram-project', 'title' => 'Platform overview', 'desc' => 'Workflow platform, field-operations support, and agency workspace modules.', 'href_key' => 'platform'],
                         ['icon' => 'fa-handshake', 'title' => 'Partners & agencies', 'desc' => 'Sending-country agencies and host-market programs.', 'href_key' => 'agencies'],
                         ['icon' => 'fa-envelope', 'title' => 'Contact leadership', 'desc' => 'Riyadh HQ and program inquiries.', 'href_key' => 'contact'],
                     ],
@@ -139,7 +139,7 @@ function ratib_mega_nav_config(): array
                     'items' => [
                         ['icon' => 'fa-file-shield', 'title' => 'Security & compliance center', 'desc' => 'Procurement-ready posture: isolation, governance, and reliability.', 'href_key' => 'security_compliance'],
                         ['icon' => 'fa-lock', 'title' => 'SSL Certificates', 'desc' => 'Automated issuance and renewal.', 'href_key' => 'api'],
-                        ['icon' => 'fa-shield-halved', 'title' => 'DDoS Protection', 'desc' => 'Edge scrubbing and rate intelligence.', 'href_key' => 'operational'],
+                        ['icon' => 'fa-shield-halved', 'title' => 'DDoS Protection', 'desc' => 'Edge scrubbing and rate limiting.', 'href_key' => 'operational'],
                         ['icon' => 'fa-fire-flame-curved', 'title' => 'WAF', 'desc' => 'OWASP-aware rules and bot mitigation.', 'href_key' => 'tracking'],
                     ],
                 ],

@@ -107,8 +107,8 @@ if (!function_exists('ratib_about_render_sections')) {
             <div class="ratib-about-container ratib-about-hero__grid">
                 <div class="ratib-about-hero__copy" data-ratib-reveal>
                     <p class="ratib-about-eyebrow">Platform overview</p>
-                    <h2 id="about-hero-title" class="ratib-about-hero__title">RATIB <span class="ratib-about-gradient">control plane</span></h2>
-                    <p class="ratib-about-hero__lead">How sending-country agencies and host-market programs run recruitment, telemetry, compliance, and finance on one multi-tenant stack.</p>
+                    <h2 id="about-hero-title" class="ratib-about-hero__title">RATIB <span class="ratib-about-gradient">operations platform</span></h2>
+                    <p class="ratib-about-hero__lead">How sending-country agencies and host-market programs coordinate recruitment, field operations, compliance, and finance in one workspace.</p>
                     <div class="ratib-about-hero__actions">
                         <a href="<?php echo ratib_about_h($contactWa); ?>" target="_blank" rel="noopener noreferrer" class="ratib-about-btn ratib-about-btn--primary ratib-about-btn--lg">Request Platform Demo</a>
                         <a href="<?php echo ratib_about_h($homeRegister); ?>" class="ratib-about-btn ratib-about-btn--outline ratib-about-btn--lg">Launch Agency Workspace</a>
@@ -129,9 +129,10 @@ if (!function_exists('ratib_about_render_sections')) {
                         </div>
                         <?php } ?>
                     </div>
+                    <p class="ratib-about-metrics-illus ratib-mono">Illustrative sample metrics · not live production counters</p>
                     <figure class="ratib-about-shot ratib-about-shot--hero">
                         <img src="<?php echo ratib_about_h((string) ($shots['hero']['src'] ?? '')); ?>" alt="<?php echo ratib_about_h((string) ($shots['hero']['alt'] ?? '')); ?>" width="1280" height="720" loading="eager" decoding="async">
-                        <figcaption class="ratib-about-shot__cap ratib-mono">Operations control plane · production surface</figcaption>
+                        <figcaption class="ratib-about-shot__cap ratib-mono">Agency workspace · sample screenshot</figcaption>
                     </figure>
                 </div>
             </div>
@@ -170,8 +171,8 @@ if (!function_exists('ratib_about_render_sections')) {
             <div class="ratib-about-container">
                 <header class="ratib-about-head ratib-about-head--center" data-ratib-reveal>
                     <p class="ratib-about-eyebrow">Platform architecture</p>
-                    <h2 id="about-arch-title" class="ratib-about-title">Layered control plane</h2>
-                    <p class="ratib-about-sub">Seven infrastructure layers—from experience surfaces to isolated program datastores.</p>
+                    <h2 id="about-arch-title" class="ratib-about-title">Platform layers</h2>
+                    <p class="ratib-about-sub">Seven layers—from user-facing pages to separate agency databases.</p>
                 </header>
                 <div class="ratib-about-arch">
                     <div class="ratib-about-arch__viz" data-ratib-reveal aria-hidden="true">
@@ -218,8 +219,8 @@ if (!function_exists('ratib_about_render_sections')) {
             <div class="ratib-about-container">
                 <header class="ratib-about-head" data-ratib-reveal>
                     <p class="ratib-about-eyebrow">Agency workspace</p>
-                    <h2 id="about-ops-title" class="ratib-about-title">Operations control plane</h2>
-                    <p class="ratib-about-sub">Dense operational surfaces your teams run daily—agents, workforce records, finance, HR, and partner programs.</p>
+                    <h2 id="about-ops-title" class="ratib-about-title">Agency workspace</h2>
+                    <p class="ratib-about-sub">Day-to-day screens for agents, workforce records, finance, HR, and partner coordination.</p>
                 </header>
                 <div class="ratib-about-split">
                     <div class="ratib-about-split__media" data-ratib-reveal>
@@ -250,7 +251,7 @@ if (!function_exists('ratib_about_render_sections')) {
                     </figure>
                     <figure class="ratib-about-shot ratib-about-shot--third">
                         <img src="<?php echo ratib_about_h((string) ($shots['control']['src'] ?? '')); ?>" alt="<?php echo ratib_about_h((string) ($shots['control']['alt'] ?? '')); ?>" loading="lazy" decoding="async">
-                        <figcaption>Platform control plane</figcaption>
+                        <figcaption>Administration</figcaption>
                     </figure>
                 </div>
             </div>
@@ -259,9 +260,9 @@ if (!function_exists('ratib_about_render_sections')) {
         <section class="ratib-about-section ratib-about-section--telemetry" id="telemetry" aria-labelledby="about-tel-title">
             <div class="ratib-about-container">
                 <header class="ratib-about-head" data-ratib-reveal>
-                    <p class="ratib-about-eyebrow">Critical capability</p>
-                    <h2 id="about-tel-title" class="ratib-about-title">Workforce telemetry intelligence</h2>
-                    <p class="ratib-about-sub">Not GPS tracking—a geospatial operations layer with intelligence at ingest, offline resilience, and sovereign-grade audit trails.</p>
+                    <p class="ratib-about-eyebrow">Field operations</p>
+                    <h2 id="about-tel-title" class="ratib-about-title">Field operations support</h2>
+                    <p class="ratib-about-sub">Location-assisted workforce coordination with offline sync, geofence rules, and audit-friendly event history—not a standalone tracking app.</p>
                 </header>
                 <div class="ratib-about-split ratib-about-split--reverse">
                     <div class="ratib-about-split__content">
@@ -293,9 +294,9 @@ if (!function_exists('ratib_about_render_sections')) {
         <section class="ratib-about-section" id="governance" aria-labelledby="about-gov-title">
             <div class="ratib-about-container">
                 <header class="ratib-about-head ratib-about-head--center" data-ratib-reveal>
-                    <p class="ratib-about-eyebrow">Sovereign-grade</p>
+                    <p class="ratib-about-eyebrow">Policy &amp; oversight</p>
                     <h2 id="about-gov-title" class="ratib-about-title">Compliance &amp; governance</h2>
-                    <p class="ratib-about-sub">Audit-ready by design—immutable history, government oversight, and tenant isolation for regulated programs.</p>
+                    <p class="ratib-about-sub">Recorded workflow history, labor-oversight tools, and separate agency data for regulated programs.</p>
                 </header>
                 <div class="ratib-about-feature-grid ratib-about-feature-grid--3">
                     <?php foreach ($about['governance_features'] ?? [] as $i => $f) { ?>
@@ -314,7 +315,7 @@ if (!function_exists('ratib_about_render_sections')) {
                 <header class="ratib-about-head" data-ratib-reveal>
                     <p class="ratib-about-eyebrow">Controllers &amp; CFOs</p>
                     <h2 id="about-fin-title" class="ratib-about-title">Operational finance infrastructure</h2>
-                    <p class="ratib-about-sub">Finance-grade ledger subsystem—not invoicing bolted onto a CRM.</p>
+                    <p class="ratib-about-sub">Integrated ledger and invoicing—linked to workers and placements, not a bolt-on spreadsheet.</p>
                 </header>
                 <div class="ratib-about-split">
                     <div class="ratib-about-split__media" data-ratib-reveal>
@@ -428,7 +429,7 @@ if (!function_exists('ratib_about_render_sections')) {
                 <header class="ratib-about-head ratib-about-head--center" data-ratib-reveal>
                     <p class="ratib-about-eyebrow">Secondary · digital edge</p>
                     <h2 id="about-svc-title" class="ratib-about-title">Platform services</h2>
-                    <p class="ratib-about-sub">Domains, SSL, and provisioning for branded agency edges—adjacent to the workforce operations control plane, not the lead story.</p>
+                    <p class="ratib-about-sub">Domains, SSL, and hosting setup for agency-branded sites—supporting the main workforce platform, not a separate product line.</p>
                 </header>
                 <div class="ratib-about-feature-grid ratib-about-feature-grid--4">
                     <?php foreach ($about['platform_services'] ?? [] as $i => $f) { ?>

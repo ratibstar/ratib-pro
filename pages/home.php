@@ -409,18 +409,19 @@ ratib_emit_profile_nav_guard($baseUrl);
                             <div class="ratib-dash__chrome-main">
                                 <span class="ratib-dash__dot"></span><span class="ratib-dash__dot"></span><span class="ratib-dash__dot"></span>
                                 <span class="ratib-dash__title">RATIB Command</span>
-                                <span class="ratib-dash__live" title="Streaming telemetry"><span class="ratib-live-dot"></span> Live</span>
+                                <span class="ratib-dash__live" title="Sample UI — illustrative"><span class="ratib-live-dot"></span> Sample</span>
                             </div>
                             <div class="ratib-dash__chrome-sub ratib-mono-ops">
                                 <span class="ratib-env-tag">prod</span>
                                 <span class="ratib-dash__sep">·</span>
-                                <span class="ratib-dash__panel-id" title="Control plane">cp-me-01a</span>
+                                <span class="ratib-dash__panel-id" title="Sample workspace UI">ws-demo-01</span>
                                 <span class="ratib-dash__sep">·</span>
                                 <span class="ratib-dash__sync"><span class="ratib-sync-label">Edge sync</span> <span class="ratib-live-sync-age">2m</span></span>
                                 <span class="ratib-dash__sep">·</span>
                                 <span title="UTC session clock">UTC <time class="ratib-live-clock" datetime=""></time></span>
                             </div>
                         </div>
+                        <p class="ratib-dash__illus ratib-mono-ops">Sample workspace UI · illustrative metrics</p>
                         <div class="ratib-dash__body">
                             <div class="ratib-dash__sidebar">
                                 <div class="ratib-dash__nav-item ratib-dash__nav-item--active">Pipeline</div>

@@ -36,7 +36,7 @@ if (!function_exists('ratib_security_compliance_config')) {
                 'security_overview' => [
                     'id' => 'security-overview',
                     'eyebrow' => 'Security overview',
-                    'title' => 'Defense-in-depth at the edge and in the control plane',
+                    'title' => 'Layered security at the edge and platform core',
                     'sub' => 'The architecture includes layered controls for transport security, access governance, workflow integrity, and operational visibility.',
                     'items' => [
                         ['title' => 'TLS 1.3', 'body' => 'Encrypted transit to public edges and API gateways; session cookies scoped with modern transport policies.', 'icon' => 'fa-lock'],
@@ -53,8 +53,8 @@ if (!function_exists('ratib_security_compliance_config')) {
                 'compliance_governance' => [
                     'id' => 'compliance-governance',
                     'eyebrow' => 'Compliance & governance',
-                    'title' => 'Governance layer for sovereign workforce programs',
-                    'sub' => 'Supports regulated corridors with policy enforcement, immutable history, and government oversight workflows.',
+                    'title' => 'Governance for regulated workforce programs',
+                    'sub' => 'Supports regulated corridors with policy enforcement, recorded history, and labor-oversight workflows.',
                     'items' => [
                         ['title' => 'Country-scoped operations', 'body' => 'Corridor policies and operator scope align program rules to sending-market and host-market requirements.', 'icon' => 'fa-globe'],
                         ['title' => 'Workforce governance', 'body' => 'Lifecycle gates, document bundles, and deployment readiness tracked as first-class governance artifacts.', 'icon' => 'fa-users'],
@@ -68,10 +68,10 @@ if (!function_exists('ratib_security_compliance_config')) {
                 'data_isolation' => [
                     'id' => 'data-isolation',
                     'eyebrow' => 'Data isolation',
-                    'title' => 'Control plane vs program datastores',
-                    'sub' => 'Segregation model designed for multi-agency operations without duplicating orchestration stacks per tenant.',
+                    'title' => 'Platform core vs program datastores',
+                    'sub' => 'Separation model for multi-agency operations without duplicating application stacks per tenant.',
                     'layers' => [
-                        ['label' => 'Control-plane database', 'body' => 'Platform metadata: identity, orchestration configuration, tenant routing, and cross-tenant governance signals.'],
+                        ['label' => 'Platform configuration database', 'body' => 'Identity, workflow configuration, tenant routing, and shared governance settings.'],
                         ['label' => 'Isolated tenant databases', 'body' => 'Agency program datastores hold workforce records, documents, and operational state with tenant-scoped boundaries.'],
                         ['label' => 'Segregation model', 'body' => 'Shared orchestration core with strict datastore separation — operational boundaries enforced at connection and policy layers.'],
                         ['label' => 'Operational boundaries', 'body' => 'API keys, RBAC, and country scope limit cross-tenant visibility; finance and telemetry events remain attributable.'],
@@ -92,7 +92,7 @@ if (!function_exists('ratib_security_compliance_config')) {
                 'reliability' => [
                     'id' => 'operational-reliability',
                     'eyebrow' => 'Operational reliability',
-                    'title' => 'Reliability designed for mission-critical programs',
+                    'title' => 'Reliability for high-volume programs',
                     'sub' => 'Queue resilience, retry orchestration, and idempotent operations support continuity during spikes and integration failures.',
                     'items' => [
                         ['title' => 'SLA objectives', 'body' => 'Platform targets operational visibility and synthetic checks; enterprise agreements can define program-specific SLA schedules.', 'icon' => 'fa-gauge-high'],
@@ -111,7 +111,7 @@ if (!function_exists('ratib_security_compliance_config')) {
                         ['title' => 'Managed cloud', 'body' => 'Deployed on managed cloud infrastructure with operational backups and continuity planning paths.', 'icon' => 'fa-cloud'],
                         ['title' => 'Edge protection', 'body' => 'TLS termination, rate limits, and edge scrubbing patterns for public and API surfaces.', 'icon' => 'fa-shield'],
                         ['title' => 'Observability', 'body' => 'Metrics, structured logs, and event streams for executive and ops reviews.', 'icon' => 'fa-chart-line'],
-                        ['title' => 'Telemetry monitoring', 'body' => 'Workforce telemetry intelligence with anomaly routing — designed for operational visibility, not passive tracking.', 'icon' => 'fa-satellite-dish'],
+                        ['title' => 'Field operations monitoring', 'body' => 'Location checkpoints and exception routing for operational visibility—not passive tracking alone.', 'icon' => 'fa-satellite-dish'],
                         ['title' => 'Secure provisioning', 'body' => 'Agency onboarding, domain edges, and SSL lifecycle orchestration with auditable provisioning steps.', 'icon' => 'fa-lock'],
                     ],
                 ],

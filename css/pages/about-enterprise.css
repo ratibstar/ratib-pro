@@ -32,9 +32,9 @@ body.ratib-about-page {
   z-index: 50;
   margin: 0;
   padding: 0.85rem 0;
-  background: linear-gradient(90deg, rgba(88, 28, 135, 0.55), rgba(30, 58, 138, 0.45));
-  border-bottom: 1px solid rgba(167, 139, 250, 0.35);
-  box-shadow: 0 8px 32px rgba(88, 28, 135, 0.25);
+  background: rgba(30, 41, 59, 0.92);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: none;
 }
 
 .ratib-profile-distinct-banner__inner {
@@ -347,7 +347,15 @@ body.ratib-about-page {
   color: #faf5ff;
   background: rgba(139, 92, 246, 0.38);
   border: 1px solid rgba(196, 181, 253, 0.55);
-  box-shadow: 0 0 24px rgba(139, 92, 246, 0.35);
+  box-shadow: none;
+}
+
+.ratib-about-metrics-illus {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 0.65rem;
+  color: #64748b;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .ratib-about-eyebrow {
@@ -412,9 +420,7 @@ body.ratib-about-page {
 .ratib-about-hero__glow {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse 70% 50% at 20% 0%, rgba(59, 130, 246, 0.18), transparent 55%),
-    radial-gradient(ellipse 50% 40% at 90% 20%, rgba(139, 92, 246, 0.12), transparent 50%);
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(51, 65, 85, 0.35), transparent 70%);
   pointer-events: none;
 }
 

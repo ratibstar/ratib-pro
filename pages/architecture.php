@@ -110,7 +110,7 @@ $ratibSecurityUrl = rtrim($baseUrl, '/') . '/security-compliance/';
 <div class="ratib-arch-distinct-banner" role="status">
     <div class="ratib-about-container ratib-arch-distinct-banner__inner">
         <span class="ratib-arch-distinct-banner__badge" aria-hidden="true">Architecture</span>
-        <p class="ratib-arch-distinct-banner__text">Layered control plane documentation for <strong>RATIB</strong> workforce program orchestration — technical briefing, not a product landing page.</p>
+        <p class="ratib-arch-distinct-banner__text">Platform architecture documentation for <strong>RATIB</strong> workforce program operations — technical briefing, not a product landing page.</p>
         <a class="ratib-arch-distinct-banner__link" href="<?php echo htmlspecialchars($ratibSecurityUrl, ENT_QUOTES, 'UTF-8'); ?>">Security center</a>
         <a class="ratib-arch-distinct-banner__link" href="<?php echo htmlspecialchars($ratibMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home</a>
     </div>

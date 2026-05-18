@@ -173,7 +173,7 @@ if (!function_exists('ratib_proc_render_data_boundaries')) {
                     <p class="ratib-about-sub"><?php echo ratib_proc_h((string) ($section['sub'] ?? '')); ?></p>
                 </header>
                 <div class="ratib-proc-boundary-diagram" data-ratib-reveal aria-hidden="true">
-                    <div class="ratib-proc-boundary-diagram__plane">Control plane</div>
+                    <div class="ratib-proc-boundary-diagram__plane">Platform core</div>
                     <div class="ratib-proc-boundary-diagram__line"></div>
                     <div class="ratib-proc-boundary-diagram__tenants">
                         <span>Tenant datastore</span>

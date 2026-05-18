@@ -40,7 +40,7 @@ if (!function_exists('ratib_arch_render_hero')) {
                         <h1 id="arch-hero-title" class="ratib-arch-hero__title"><?php echo ratib_arch_h((string) ($hero['title'] ?? '')); ?></h1>
                         <p class="ratib-arch-hero__lead"><?php echo ratib_arch_h((string) ($hero['lead'] ?? '')); ?></p>
                     </div>
-                    <aside class="ratib-arch-hero__stack" data-ratib-reveal data-ratib-delay="60" aria-label="Control plane stack preview">
+                    <aside class="ratib-arch-hero__stack" data-ratib-reveal data-ratib-delay="60" aria-label="Platform layer stack preview">
                         <p class="ratib-arch-hero__stack-kicker ratib-mono"><?php echo ratib_arch_h((string) ($hero['diagram_label'] ?? 'stack')); ?></p>
                         <ol class="ratib-arch-stack-preview" reversed>
                             <?php foreach ($hero['stack_preview'] ?? [] as $layer) { ?>

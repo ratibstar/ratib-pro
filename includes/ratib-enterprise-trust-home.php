@@ -32,7 +32,7 @@ if (!function_exists('ratib_enterprise_trust_render_home')) {
             ['L4', 'Business modules', 'Recruitment · deployment · docs'],
             ['L3', 'Governance', 'RBAC · policy · audit'],
             ['L2', 'Commercial', 'Ledger · AR/AP · registration'],
-            ['L1', 'Data', 'Control plane · tenant DBs'],
+            ['L1', 'Data', 'Platform config · tenant DBs'],
         ];
         ?>
         <section class="ratib-section ratib-ent-trust" id="enterprise-infrastructure" aria-labelledby="ent-trust-title">
@@ -56,9 +56,9 @@ if (!function_exists('ratib_enterprise_trust_render_home')) {
 
                 <div class="ratib-ent-grid ratib-ent-grid--primary">
                     <div class="ratib-ent-panel ratib-ent-panel--layers">
-                        <h3 class="ratib-ent-panel__title ratib-mono-ops"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.layers.title'] ?? 'Layered control plane')); ?></h3>
+                        <h3 class="ratib-ent-panel__title ratib-mono-ops"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.layers.title'] ?? 'Platform layers')); ?></h3>
                         <p class="ratib-ent-panel__sub"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.layers.sub'] ?? '')); ?></p>
-                        <ol class="ratib-ent-layer-stack" aria-label="Control plane layers">
+                        <ol class="ratib-ent-layer-stack" aria-label="Platform layers">
                             <?php foreach ($layers as $layer) { ?>
                             <li class="ratib-ent-layer">
                                 <span class="ratib-ent-layer__order ratib-mono-ops"><?php echo ratib_ent_h($layer[0]); ?></span>
@@ -138,10 +138,10 @@ if (!function_exists('ratib_enterprise_trust_render_home')) {
                 </div>
 
                 <div class="ratib-ent-panel ratib-ent-panel--telemetry">
-                    <h3 class="ratib-ent-panel__title ratib-mono-ops"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.telemetry.title'] ?? 'Telemetry intelligence path')); ?></h3>
+                    <h3 class="ratib-ent-panel__title ratib-mono-ops"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.telemetry.title'] ?? 'Field operations path')); ?></h3>
                     <div class="ratib-ent-telemetry-flow" aria-label="Telemetry processing path">
                         <?php
-                        $tel = ['Field capture', 'Offline sync', 'Anti-spoof check', 'Geofence', 'Escalation queue'];
+                        $tel = ['Field capture', 'Offline sync', 'Signal check', 'Geofence', 'Escalation queue'];
                         foreach ($tel as $ti => $tlabel) {
                             if ($ti > 0) {
                                 echo '<span class="ratib-ent-telemetry-flow__sep" aria-hidden="true">→</span>';

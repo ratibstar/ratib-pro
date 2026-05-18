@@ -51,7 +51,7 @@ if (!function_exists('ratib_procurement_legal_config')) {
                 'steps' => [
                     ['title' => 'Onboarding process', 'body' => 'Commercial qualification, data-processing scope, and tenant provisioning aligned to agency structure and sending-market rules.', 'icon' => 'fa-clipboard-list'],
                     ['title' => 'Enterprise review', 'body' => 'Security questionnaire responses, organizational fit, and program volume expectations documented before production cutover.', 'icon' => 'fa-magnifying-glass'],
-                    ['title' => 'Architecture discussions', 'body' => 'Technical walkthrough of control plane layers, isolation model, and integration boundaries with your IT and integration teams.', 'icon' => 'fa-diagram-project'],
+                    ['title' => 'Architecture discussions', 'body' => 'Technical walkthrough of platform layers, isolation model, and integration boundaries with your IT and integration teams.', 'icon' => 'fa-diagram-project'],
                     ['title' => 'Operational scoping', 'body' => 'Branch structure, operator roles, corridor policies, and module enablement mapped to your operating model.', 'icon' => 'fa-sliders'],
                     ['title' => 'Corridor onboarding', 'body' => 'Country profiles, stage graphs, and partner workflows configured per sending-market and host-market requirements.', 'icon' => 'fa-route'],
                 ],
@@ -71,7 +71,7 @@ if (!function_exists('ratib_procurement_legal_config')) {
                     ],
                     [
                         'title' => 'Platform architecture',
-                        'desc' => 'Layered control plane, event fabric, telemetry, finance, and deployment topology.',
+                        'desc' => 'Platform layers, event delivery, field operations, finance, and deployment topology.',
                         'href' => $root . '/architecture/',
                         'icon' => 'fa-sitemap',
                     ],
@@ -83,7 +83,7 @@ if (!function_exists('ratib_procurement_legal_config')) {
                 'title' => 'Operational separation model',
                 'sub' => 'Shared orchestration does not imply shared program data between agencies.',
                 'points' => [
-                    ['title' => 'Control plane', 'body' => 'Platform metadata, tenant routing, identity, and orchestration configuration reside in control-plane stores.'],
+                    ['title' => 'Platform core', 'body' => 'Platform metadata, tenant routing, identity, and workflow configuration reside in shared platform stores.'],
                     ['title' => 'Tenant datastores', 'body' => 'Agency workforce records, documents, and operational state are persisted in tenant-scoped databases.'],
                     ['title' => 'Policy scope', 'body' => 'Country profiles and RBAC limit operator and API visibility across corridors and branches.'],
                     ['title' => 'Integration boundaries', 'body' => 'Webhooks and API keys are issued per tenant context; cross-tenant reads are not part of the standard model.'],
@@ -97,7 +97,7 @@ if (!function_exists('ratib_procurement_legal_config')) {
                 'items' => [
                     [
                         'title' => 'Service scope',
-                        'body' => 'RATIB provides software infrastructure for workforce program orchestration, telemetry intelligence, commercial settlement, and operational governance — not placement brokerage or immigration legal services unless separately contracted.',
+                        'body' => 'RATIB provides software for workforce program workflows, field-operations support, commercial settlement, and operational governance—not placement brokerage or immigration legal services unless separately contracted.',
                     ],
                     [
                         'title' => 'Platform role',
