@@ -56,9 +56,30 @@ function hashPart(href){
   if(i===-1)return '';
   return href.slice(i).split('?')[0];
 }
+function pillKeyFromHref(href,a){
+  var hp=hashPart(href);
+  if(a.classList.contains('ratib-nav__link--about'))return 'about';
+  if(a.classList.contains('ratib-nav__link--product-tour')||hp==='#video'||hp==='#program-previews'||hp==='#top')return 'tour';
+  if(a.classList.contains('ratib-nav__link--platform-section')||hp==='#what-is-ratib'||hp==='#platform')return 'platform';
+  if(hp==='#corridors'||hp==='#domains')return 'domains';
+  if(hp==='#platform-services'||hp==='#features')return 'product';
+  if(hp==='#finance'||hp==='#programs')return 'pricing';
+  if(hp==='#partners'||hp==='#agencies')return 'partners';
+  if(hp==='#contact-cta'||hp==='#contact')return 'contact';
+  if(/\/profile\/?([#?]|$)/i.test(href)||/company-profile\.php/i.test(href)||/about\.php/i.test(href)||/[?&]open=(about|profile)\b/i.test(href))return 'about';
+  return 'legacy-remove';
+}
 function run(){
   var nav=document.getElementById('ratibNavMenu');
   if(!nav)return;
+  wireAllProfileLinks();
+  if(document.body&&(document.body.classList.contains('ratib-about-page')||document.body.getAttribute('data-ratib-about')==='1')){
+    nav.setAttribute('data-ratib-nav-sync','1');
+    nav.style.visibility='visible';
+    nav.style.opacity='1';
+    nav.style.pointerEvents='auto';
+    return;
+  }
   try{
   nav.querySelectorAll('.ratib-mega-nav__trigger-label,.ratib-mega-nav__flat-label').forEach(function(labelEl){
     var t=normLabel(labelEl.textContent);
@@ -77,17 +98,7 @@ function run(){
   var linkByKey={};
   pillWrap.querySelectorAll('a.ratib-nav__link').forEach(function(a){
     var href=a.getAttribute('href')||'';
-    var hp=hashPart(href);
-    var key='';
-    if(hp==='#platform'&&!a.classList.contains('ratib-nav__link--product-tour'))key='platform';
-    else if(hp==='#domains')key='domains';
-    else if(a.classList.contains('ratib-nav__link--product-tour')||hp==='#video'||hp==='#program-previews')key='tour';
-    else if(hp==='#features')key='product';
-    else if(hp==='#programs')key='pricing';
-    else if(hp==='#agencies')key='partners';
-    else if(hp==='#contact')key='contact';
-    else if(/\/profile\/?$/i.test(href)||/company-profile\.php/i.test(href)||/about\.php/i.test(href)||/[?&]open=(about|profile)\b/i.test(href)||a.classList.contains('ratib-nav__link--about'))key='about';
-    else key='legacy-remove';
+    var key=pillKeyFromHref(href,a);
     if(key==='legacy-remove'){a.remove();return;}
     if(linkByKey[key]){a.remove();return;}
     linkByKey[key]=a;

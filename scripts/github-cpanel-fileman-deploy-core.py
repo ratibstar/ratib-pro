@@ -19,7 +19,9 @@ FAST_FILES = [
     ".htaccess",
     "pages/about.php",
     "includes/ratib-home-public-chrome-top.php",
+    "includes/ratib-home-public-nav-sync.php",
     "js/pages/ratib-profile-nav-guard.js",
+    "js/pages/home-page.js",
     "pages/deploy-root.php",
     "public/ratib-build.txt",
 ]
