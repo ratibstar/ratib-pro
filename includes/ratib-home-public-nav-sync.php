@@ -7,6 +7,12 @@ declare(strict_types=1);
  */
 function ratib_home_nav_emit_sync_guard_style(): void
 {
+    if (!function_exists('ratib_public_site_base_url')) {
+        require_once __DIR__ . '/ratib-public-base-url.php';
+    }
+    $ratibHeadProfileUrl = ratib_public_site_base_url() . '/profile';
+    $ratibHeadProfileJson = json_encode($ratibHeadProfileUrl, JSON_UNESCAPED_SLASHES);
+    echo '<script id="ratib-profile-head-lock">(function(){var P=' . $ratibHeadProfileJson . ';function go(ev){var a=ev.target&&ev.target.closest&&ev.target.closest(".ratib-nav__brand-profile,.ratib-nav__link--about,[data-ratib-profile-nav],[data-ratib-go-profile]");if(!a)return;ev.preventDefault();ev.stopImmediatePropagation();window.location.assign(P);}document.addEventListener("mousedown",go,true);document.addEventListener("click",go,true);})();</script>';
     echo '<style id="ratib-nav-sync-guard">';
     echo '#ratibNavMenu:not([data-ratib-nav-sync="1"]) .ratib-nav__platform-links{visibility:hidden!important;opacity:0!important;pointer-events:none!important;}';
     echo '#ratibNavMenu[data-ratib-nav-sync="1"] .ratib-nav__platform-links{visibility:visible!important;opacity:1!important;pointer-events:auto!important;}';

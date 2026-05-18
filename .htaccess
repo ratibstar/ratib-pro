@@ -59,6 +59,14 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ public/index.php [QSA,L]
 
+# LiteSpeed: do not cache marketing home/profile HTML (stale nav after deploy).
+<IfModule LiteSpeed>
+    CacheDisable public /pages/home.php
+    CacheDisable public /profile
+    CacheDisable public /pages/company-profile.php
+    CacheDisable public /pages/about.php
+</IfModule>
+
 # Security headers
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"

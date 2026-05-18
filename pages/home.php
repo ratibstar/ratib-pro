@@ -55,6 +55,17 @@ if ($ratibOpenParam === 'about' || $ratibOpenParam === 'profile') {
     exit;
 }
 
+// Optional: /pages/home.php?ratib_purge_lscache=1&key=ratib-deploy-sync-2026 — ask LiteSpeed to purge this vhost cache.
+if (
+    isset($_GET['ratib_purge_lscache'], $_GET['key'])
+    && (string) $_GET['ratib_purge_lscache'] === '1'
+    && hash_equals('ratib-deploy-sync-2026', (string) $_GET['key'])
+    && !headers_sent()
+) {
+    header('X-LiteSpeed-Purge: *');
+    header('X-LiteSpeed-Cache-Control: no-cache');
+}
+
 // Prevent stale HTML caching (browser + reverse proxies + LiteSpeed).
 if (!headers_sent()) {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private');
@@ -1026,7 +1037,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                 <p class="ratib-final-cta__sub"><?php echo htmlspecialchars($ratibHome['home.final_cta.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 <div class="ratib-final-cta__actions">
                     <a href="#register" class="ratib-btn ratib-btn--primary ratib-btn--lg js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                    <a href="<?php echo htmlspecialchars($baseUrl . '/pages/company-profile.php#contact-cta', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                    <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/profile#contact-cta', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 </div>
             </div>
         </section>

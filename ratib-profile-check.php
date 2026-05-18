@@ -72,6 +72,9 @@ $deployFiles = [
     'css/pages/home-public.css',
     'css/pages/about-enterprise.css',
     'js/pages/about-enterprise.js',
+    '.htaccess',
+    'ratib-chrome-bust.php',
+    'pages/ratib-chrome-bust.php',
 ];
 
 $deployRun = isset($_GET['deploy']) && (string) $_GET['deploy'] === '1';
@@ -199,7 +202,30 @@ foreach ($checks as $rel) {
 
 $build = $root . '/public/ratib-build.txt';
 echo "\nbuild_marker=" . (is_file($build) ? trim((string) file_get_contents($build)) : 'missing') . "\n";
-echo "expected_from_github=about-enterprise-20260518-profile-nav-inline\n";
+echo "expected_from_github=about-enterprise-20260518-profile-v13-onclick\n";
+
+$liveHome = ratib_http_get('https://' . $host . '/pages/home.php');
+echo "\n--- Live HTML vs disk (home.php) ---\n";
+if ($liveHome === false) {
+    echo "live_home=FAIL fetch\n";
+} else {
+    echo 'live_v13=' . (ratib_has($liveHome, 'ratib-profile-nav=v13-onclick') ? 'yes' : 'no') . "\n";
+    echo 'live_go_profile=' . (ratib_has($liveHome, 'data-ratib-go-profile') ? 'yes' : 'no') . "\n";
+    echo 'live_company_profile_href=' . (ratib_has($liveHome, '/pages/company-profile.php') ? 'yes (STALE CACHE)' : 'no') . "\n";
+    echo 'live_head_lock=' . (ratib_has($liveHome, 'ratib-profile-head-lock') ? 'yes' : 'no') . "\n";
+    if (preg_match('/brand-profile=v(\d+)/', $liveHome, $m)) {
+        echo 'live_brand_profile_marker=v' . $m[1] . "\n";
+    }
+}
+$chromeDisk = is_file($root . '/includes/ratib-home-public-chrome-top.php')
+    ? (string) @file_get_contents($root . '/includes/ratib-home-public-chrome-top.php', false, null, 0, 16000)
+    : '';
+echo 'disk_chrome_v13=' . (ratib_has($chromeDisk, 'v13-onclick') ? 'yes' : 'no') . "\n";
+echo 'disk_chrome_onclick=' . (ratib_has($chromeDisk, 'data-ratib-go-profile') ? 'yes' : 'no') . "\n";
+if (ratib_has($chromeDisk, 'v13-onclick') && $liveHome !== false && !ratib_has($liveHome, 'ratib-profile-nav=v13-onclick')) {
+    echo "CACHE_MISMATCH=yes → cPanel LiteSpeed Purge All, then:\n";
+    echo "https://{$host}/pages/home.php?ratib_purge_lscache=1&key=ratib-deploy-sync-2026\n";
+}
 
 echo "\n--- PHP write probe (why curl deploy FAIL write) ---\n";
 $phpUid = function_exists('posix_geteuid') ? (int) posix_geteuid() : -1;
@@ -239,5 +265,8 @@ echo "\n>>> Legacy fix script:\n";
 echo "https://{$host}/pages/ratib-fix-perms.php?run=1&key=ratib-deploy-sync-2026\n";
 echo "\n>>> Then deploy Profile:\n";
 echo "https://{$host}/pages/ratib-profile-deploy.php?deploy=1&key=ratib-deploy-sync-2026\n";
-echo "\n>>> Chrome / cache diagnostic (use this URL — not /pages/):\n";
+echo "\n>>> Chrome / cache diagnostic:\n";
 echo "https://{$host}/ratib-chrome-bust.php\n";
+echo "https://{$host}/pages/ratib-chrome-bust.php\n";
+echo "\n>>> Purge LiteSpeed cache for home (after uploading .htaccess + home.php):\n";
+echo "https://{$host}/pages/home.php?ratib_purge_lscache=1&key=ratib-deploy-sync-2026\n";
