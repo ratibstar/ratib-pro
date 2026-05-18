@@ -480,6 +480,14 @@
                 rs.style.display = 'flex';
                 rs.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+        } else {
+            var pageHash = (window.location.hash || '').toLowerCase();
+            if (pageHash === '#programs' || pageHash === '#finance') {
+                var pricingEl = document.getElementById('programs');
+                if (pricingEl) {
+                    pricingEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
         }
         planBtns.forEach(function (b) {
             b.addEventListener('click', function () {

@@ -170,11 +170,9 @@ $clientPlatformLinks = control_client_platform_links();
             </li>
             <?php
             $ctrlDb = (isset($ctrl) && $ctrl instanceof mysqli) ? $ctrl : null;
-            $registrationPageUrl = control_panel_registration_page_url($ctrlDb);
-            $publicMarketingHomeUrl = control_panel_public_marketing_home_url($ctrlDb, 'programs');
+            $clientPricingPageUrl = control_panel_pricing_page_url($ctrlDb);
             ?>
-            <li><a href="<?php echo htmlspecialchars($registrationPageUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item" title="Gold &amp; Platinum pricing and registration form"><i class="fas fa-file-signature"></i><span>Client Registration Page</span></a></li>
-            <li><a href="<?php echo htmlspecialchars($publicMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item" title="Live marketing site — pricing section"><i class="fas fa-globe"></i><span>Public marketing site</span></a></li>
+            <li><a href="<?php echo htmlspecialchars($clientPricingPageUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="sidebar-item" title="Gold &amp; Platinum pricing on the live marketing site"><i class="fas fa-tags"></i><span>Client Registration Page</span></a></li>
             <li class="sidebar-section"><span class="section-label">Business Modules</span></li>
             <?php
             $countryProgramPerms = 'control_government,view_control_government,gov_admin,control_admins';

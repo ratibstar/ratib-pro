@@ -14,7 +14,25 @@ if (!function_exists('ratib_mega_nav_is_profile_context')) {
 if (!function_exists('ratib_mega_nav_marketing_home')) {
     function ratib_mega_nav_marketing_home(string $baseUrl): string
     {
+        if (function_exists('ratib_public_marketing_home_url')) {
+            return ratib_public_marketing_home_url($baseUrl);
+        }
+
         return rtrim($baseUrl, '/') . '/pages/home.php';
+    }
+}
+
+if (!function_exists('ratib_mega_nav_pricing_href')) {
+    function ratib_mega_nav_pricing_href(string $baseUrl, string $navPrefix = ''): string
+    {
+        if (function_exists('ratib_public_marketing_home_url')) {
+            return ratib_public_marketing_home_url($baseUrl, [], '#programs');
+        }
+        if ($navPrefix !== '' && !ratib_mega_nav_is_profile_context($navPrefix)) {
+            return rtrim($navPrefix, '/') . '#programs';
+        }
+
+        return ratib_mega_nav_marketing_home($baseUrl) . '#programs';
     }
 }
 
@@ -39,12 +57,15 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
         $baseUrl = rtrim($baseUrl, '/');
         $home = ratib_mega_nav_marketing_home($baseUrl);
 
+        if (in_array($hrefKey, ['programs', 'pricing', 'register'], true)) {
+            return ratib_mega_nav_pricing_href($baseUrl, $navPrefix);
+        }
+
         if (ratib_mega_nav_is_profile_context($navPrefix)) {
             $root = rtrim($navPrefix, '/');
             $map = [
                 'platform' => '#platform-overview',
                 'features' => '#what-is-ratib',
-                'programs' => '#finance',
                 'agencies' => '#partners',
                 'contact' => '#contact-cta',
                 'domains' => '#corridors',
@@ -59,7 +80,6 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
         $hashMap = [
             'platform' => '#platform',
             'features' => '#features',
-            'programs' => '#programs',
             'agencies' => '#agencies',
             'contact' => '#contact',
             'domains' => '#domains',

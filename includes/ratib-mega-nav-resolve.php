@@ -37,6 +37,21 @@ if (!function_exists('ratib_mega_nav_marketing_home')) {
     }
 }
 
+if (!function_exists('ratib_mega_nav_pricing_href')) {
+    /** Gold / Platinum price cards — always marketing home #programs (not profile #finance). */
+    function ratib_mega_nav_pricing_href(string $baseUrl, string $navPrefix = ''): string
+    {
+        if (function_exists('ratib_public_marketing_home_url')) {
+            return ratib_public_marketing_home_url($baseUrl, [], '#programs');
+        }
+        if ($navPrefix !== '' && !ratib_mega_nav_is_profile_context($navPrefix)) {
+            return rtrim($navPrefix, '/') . '#programs';
+        }
+
+        return ratib_mega_nav_marketing_home($baseUrl) . '#programs';
+    }
+}
+
 if (!function_exists('ratib_mega_nav_home_hash')) {
     function ratib_mega_nav_home_hash(string $baseUrl, string $navPrefix, string $hash): string
     {
@@ -70,6 +85,10 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
     {
         $baseUrl = rtrim($baseUrl, '/');
 
+        if (in_array($hrefKey, ['programs', 'pricing', 'register'], true)) {
+            return ratib_mega_nav_pricing_href($baseUrl, $navPrefix);
+        }
+
         switch ($hrefKey) {
             case 'customer_portal':
                 return $baseUrl . '/pages/customer-portal.php';
@@ -98,9 +117,6 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
                 'features' => '#what-is-ratib',
                 'capabilities' => '#what-is-ratib',
                 'product' => '#what-is-ratib',
-                'programs' => '#finance',
-                'pricing' => '#finance',
-                'register' => '#finance',
                 'agencies' => '#partners',
                 'partners' => '#partners',
                 'contact' => '#contact-cta',
@@ -135,10 +151,6 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
                 return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#contact');
             case 'solutions':
                 return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#solutions');
-            case 'programs':
-            case 'pricing':
-            case 'register':
-                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#programs');
             case 'features':
             case 'product':
             case 'capabilities':

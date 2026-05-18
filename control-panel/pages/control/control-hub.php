@@ -30,7 +30,7 @@ if ($siteRootUrl === '') {
 }
 $controlCenterUrl = rtrim($siteRootUrl, '/') . '/admin/control-center.php';
 $registrationPageUrl = control_panel_registration_page_url($ctrl);
-$publicMarketingHomeUrl = control_panel_public_marketing_home_url($ctrl, 'programs');
+$clientPricingPageUrl = control_panel_pricing_page_url($ctrl);
 $clientPlatformLinks = control_client_platform_links();
 $legacyModuleKey = trim((string) ($_GET['legacy_module'] ?? ''));
 $legacyModuleMap = [
@@ -168,14 +168,10 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
         <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/support-chats.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-headset"></i> Support chats</a>
     </div>
     <div class="control-settings-card">
-        <h3><i class="fas fa-file-signature"></i> Client registration page</h3>
-        <p>Gold &amp; Platinum pricing and the live registration / checkout form.</p>
-        <a href="<?php echo htmlspecialchars($registrationPageUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light" target="_blank" rel="noopener noreferrer"><i class="fas fa-external-link-alt"></i> Open registration</a>
-    </div>
-    <div class="control-settings-card">
-        <h3><i class="fas fa-globe"></i> Public marketing site</h3>
-        <p>View the live homepage and pricing section (<code>#programs</code>).</p>
-        <a href="<?php echo htmlspecialchars($publicMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light" target="_blank" rel="noopener noreferrer"><i class="fas fa-external-link-alt"></i> View public site</a>
+        <h3><i class="fas fa-tags"></i> Client registration &amp; pricing</h3>
+        <p>Opens the live pricing section (Gold / Platinum). Clients register from the Gold or Platinum card.</p>
+        <a href="<?php echo htmlspecialchars($clientPricingPageUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light" target="_blank" rel="noopener noreferrer"><i class="fas fa-external-link-alt"></i> View pricing</a>
+        <a href="<?php echo htmlspecialchars($registrationPageUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary ms-2" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-signature"></i> Open checkout form</a>
     </div>
     <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings">
         <h3><i class="fas fa-file-lines"></i> Edit homepage CMS</h3>

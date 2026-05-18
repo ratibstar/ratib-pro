@@ -134,6 +134,30 @@ if (!function_exists('control_panel_marketing_url_append_query')) {
     }
 }
 
+if (!function_exists('control_panel_pricing_page_url')) {
+    /**
+     * Marketing homepage pricing cards (#programs), optional plan pre-select in query.
+     */
+    function control_panel_pricing_page_url(
+        ?mysqli $ctrl = null,
+        string $plan = 'gold',
+        int $years = 1
+    ): string {
+        $query = array_merge(
+            control_panel_registration_country_query(),
+            [
+                'plan' => $plan,
+                'years' => $years,
+            ]
+        );
+
+        return control_panel_marketing_url_append_query(
+            control_panel_public_marketing_home_url($ctrl, 'programs'),
+            $query
+        );
+    }
+}
+
 if (!function_exists('control_panel_public_marketing_home_url')) {
     /**
      * View live marketing site (optional hash e.g. programs for pricing tables).
