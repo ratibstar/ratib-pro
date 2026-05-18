@@ -234,6 +234,12 @@ if (!function_exists('ratib_public_materialize_include')) {
             $stub = <<<'PHP'
 <?php
 declare(strict_types=1);
+if (!function_exists('ratib_enterprise_mailto')) {
+    function ratib_enterprise_mailto(string $subject): string
+    {
+        return 'mailto:info@out.ratib.sa?subject=' . rawurlencode($subject);
+    }
+}
 if (!function_exists('ratib_enterprise_trust_render_home')) {
     function ratib_enterprise_trust_render_home(array $ratibHome, string $baseUrl): void {}
     function ratib_enterprise_trust_render_hero_strip(array $ratibHome): void {}

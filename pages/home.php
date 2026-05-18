@@ -345,6 +345,12 @@ if (is_file($ratibEntTrustInclude)) {
     {
     }
 }
+if (!function_exists('ratib_enterprise_mailto')) {
+    function ratib_enterprise_mailto(string $subject): string
+    {
+        return 'mailto:info@out.ratib.sa?subject=' . rawurlencode($subject);
+    }
+}
 
 $ratibOpProofInclude = __DIR__ . '/../includes/ratib-operational-proof-render.php';
 $ratibOpProofAvailable = is_file($ratibOpProofInclude);

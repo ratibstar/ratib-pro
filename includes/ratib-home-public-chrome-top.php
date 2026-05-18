@@ -73,14 +73,19 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 $ratibBrandProfileHref = $ratibProfileUrl;
                 $ratibBrandProfileCurrent = $ratibOnProfilePage;
                 $ratibProfileClickJs = '';
-                $ratibPillHref = static function (string $homeHash, string $profileHash) use ($ratibOnProfilePage, $ratibNavPrefix, $ratibProfileUrl): string {
+                $ratibPillHref = static function (string $homeHash, string $profileHash) use ($ratibOnProfilePage, $ratibNavPrefix, $baseUrl): string {
                     if ($ratibOnProfilePage) {
-                        return rtrim($ratibProfileUrl, '/') . $profileHash;
+                        $hash = $profileHash !== '' && $profileHash[0] === '#'
+                            ? $profileHash
+                            : '#' . ltrim($profileHash, '#');
+
+                        return rtrim($baseUrl, '/') . '/profile' . $hash;
                     }
+
                     return $ratibNavPrefix . $homeHash;
                 };
                 $ratibTourHref = $ratibOnProfilePage
-                    ? (rtrim($ratibProfileUrl, '/') . '#top')
+                    ? (rtrim($baseUrl, '/') . '/profile/#top')
                     : ($ratibNavPrefix . $ratibNavProductTourHref);
                 ?>
             <div class="ratib-nav__brand-block">
@@ -95,7 +100,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
             </button>
             <!-- ratib-home-nav-build: chrome=<?php echo htmlspecialchars($ratibChromeBundleHash ?? '', ENT_QUOTES, 'UTF-8'); ?> ui-rev=<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?> home.php-mtime=<?php echo htmlspecialchars($ratibHomePhpMtime, ENT_QUOTES, 'UTF-8'); ?> primary-links=8 brand-profile=plain-href-v6 mega-nav-root=#ratibMegaNavRoot -->
             <!-- ratib-profile-nav=plain-href-v5 -->
-            <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary" data-ratib-primary-nav-links="8" data-ratib-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-nav-visual="svg-glyphs-semantic-<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
+            <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary" data-ratib-nav-sync="1" data-ratib-primary-nav-links="8" data-ratib-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-nav-visual="svg-glyphs-semantic-<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php ratib_mega_nav_render($baseUrl, $ratibNavPrefix); ?>
                 <div class="ratib-nav__platform-links" role="group" aria-label="Platform">
                 <?php

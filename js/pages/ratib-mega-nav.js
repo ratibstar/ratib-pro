@@ -165,49 +165,6 @@
         blk.appendChild(prof);
     }
 
-    function findProfileLink(ev) {
-        var t = ev.target;
-        if (t && t.closest) {
-            var hit = t.closest(
-                '.ratib-nav__brand-profile, .ratib-nav__link--about, [data-ratib-profile-nav]'
-            );
-            if (hit) {
-                return hit;
-            }
-        }
-        var x = ev.clientX;
-        var y = ev.clientY;
-        var links = document.querySelectorAll(
-            '.ratib-nav__brand-profile, .ratib-nav__link--about, [data-ratib-profile-nav]'
-        );
-        for (var i = 0; i < links.length; i++) {
-            var el = links[i];
-            var r = el.getBoundingClientRect();
-            if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
-                return el;
-            }
-        }
-        return null;
-    }
-
-    if (!window.__ratibProfileNavGuard) {
-        window.__ratibProfileNavGuard = 1;
-        var PROFILE = profileHref();
-        document.addEventListener(
-            'click',
-            function (ev) {
-                var a = findProfileLink(ev);
-                if (!a) {
-                    return;
-                }
-                ev.preventDefault();
-                ev.stopImmediatePropagation();
-                window.location.assign(PROFILE);
-            },
-            true
-        );
-    }
-
     function run() {
         fixProfileHrefs();
         injectPill();

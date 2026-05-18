@@ -18,10 +18,8 @@ function ratib_home_nav_emit_sync_guard_style(): void
         require_once __DIR__ . '/ratib-public-base-url.php';
     }
     echo '<style id="ratib-nav-sync-guard">';
-    echo '#ratibNavMenu:not([data-ratib-nav-sync="1"]) .ratib-nav__platform-links{visibility:hidden!important;opacity:0!important;pointer-events:none!important;}';
-    echo '#ratibNavMenu[data-ratib-nav-sync="1"] .ratib-nav__platform-links{visibility:visible!important;opacity:1!important;pointer-events:auto!important;}';
-    echo '.ratib-nav__brand-profile,.ratib-nav__link--about{position:relative;z-index:32;pointer-events:auto!important;isolation:isolate;}';
-    echo '.ratib-nav__link--about,.ratib-nav__brand-profile{cursor:pointer!important;}';
+    echo '#ratibNavMenu:not([data-ratib-nav-sync="1"]) .ratib-nav__platform-links{opacity:0.01!important;}';
+    echo '#ratibNavMenu[data-ratib-nav-sync="1"] .ratib-nav__platform-links{opacity:1!important;}';
     echo '.ratib-nav__platform-links .ratib-nav__link--about{min-width:5.5rem;}';
     echo '</style>';
 }
