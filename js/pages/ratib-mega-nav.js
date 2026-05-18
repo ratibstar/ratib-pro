@@ -89,7 +89,7 @@
 
     function profileHref() {
         var o = window.location.origin || '';
-        return o ? o + '/profile' : '/profile';
+        return o ? o + '/profile/' : '/profile/';
     }
 
     function fixProfileHrefs() {

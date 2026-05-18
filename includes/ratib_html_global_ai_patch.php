@@ -79,7 +79,7 @@ function ratib_register_public_profile_nav_patch(): void
         }
         $host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : 'out.ratib.sa';
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $profile = json_encode($scheme . '://' . $host . '/profile', JSON_UNESCAPED_SLASHES);
+        $profile = json_encode($scheme . '://' . $host . '/profile/', JSON_UNESCAPED_SLASHES);
         $patch = '<script id="ratib-profile-head-lock">(function(){var P=' . $profile . ';function go(ev){var a=ev.target&&ev.target.closest&&ev.target.closest(".ratib-nav__brand-profile,.ratib-nav__link--about,[data-ratib-profile-nav],[data-ratib-go-profile],a.ratib-footer-link--about");if(!a)return;ev.preventDefault();ev.stopImmediatePropagation();window.location.assign(P);}document.addEventListener("mousedown",go,true);document.addEventListener("click",go,true);document.querySelectorAll(".ratib-nav__brand-profile,.ratib-nav__link--about,.ratib-footer-link--about").forEach(function(a){a.setAttribute("href",P);});})();</script>';
         if (stripos($html, '</head>') !== false) {
             return preg_replace('/<\/head>/i', $patch . '</head>', $html, 1) ?? $html;

@@ -74,6 +74,25 @@
     }
   }
 
+  function initProfileNavHighlight() {
+    var profile = (window.location.origin || '') + '/profile/';
+    document
+      .querySelectorAll(
+        '.ratib-nav__brand-profile, .ratib-nav__link--about, .ratib-nav__go-profile, [data-ratib-profile-nav], .ratib-footer-link--about'
+      )
+      .forEach(function (a) {
+        a.setAttribute('href', profile);
+        a.classList.add('is-current');
+        a.setAttribute('aria-current', 'page');
+      });
+    document.querySelectorAll('.ratib-nav__platform-links .ratib-nav__link').forEach(function (a) {
+      if (!a.classList.contains('ratib-nav__link--about')) {
+        a.classList.remove('is-current');
+        a.removeAttribute('aria-current');
+      }
+    });
+  }
+
   function initMetricJitter() {
     if (prefersReduced) return;
     var values = document.querySelectorAll('.ratib-about-metric__value[data-ratib-count]');
@@ -152,6 +171,7 @@
   }
 
   function boot() {
+    initProfileNavHighlight();
     initReveal();
     initArchSync();
     initMetricJitter();

@@ -1102,6 +1102,12 @@ ratib_emit_profile_nav_guard($baseUrl);
     <script type="application/json" id="ratib-home-bootstrap"><?php echo json_encode($ratibHomeBootstrap, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
     <?php
     ?>
+    <?php
+    $ratibProfileGuardJsHome = __DIR__ . '/../js/pages/ratib-profile-nav-guard.js';
+    clearstatcache(true, $ratibProfileGuardJsHome);
+    $ratibProfileGuardQHome = (string) (int) (@filemtime($ratibProfileGuardJsHome) ?: time());
+    ?>
+    <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-profile-nav-guard.js?v=<?php echo htmlspecialchars($ratibProfileGuardQHome, ENT_QUOTES, 'UTF-8'); ?>"></script>
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/home-page.js?v=<?php echo htmlspecialchars($ratibHomeJsQ, ENT_QUOTES, 'UTF-8'); ?>"></script>
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-mega-nav.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 
