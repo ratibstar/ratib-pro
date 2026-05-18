@@ -73,6 +73,20 @@ body.ratib-about-page {
 }
 
 /* Typography */
+.ratib-about-page-label {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #e9d5ff;
+  background: rgba(139, 92, 246, 0.22);
+  border: 1px solid rgba(167, 139, 250, 0.45);
+}
+
 .ratib-about-eyebrow {
   margin: 0 0 0.65rem;
   font-size: 0.72rem;

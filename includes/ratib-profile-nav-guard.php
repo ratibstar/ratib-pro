@@ -13,29 +13,11 @@ if (!function_exists('ratib_emit_profile_nav_guard')) {
             return;
         }
         $done = true;
-        $profileUrl = rtrim($baseUrl, '/') . '/profile';
+        $guardJs = __DIR__ . '/../js/pages/ratib-profile-nav-guard.js';
+        clearstatcache(true, $guardJs);
+        $guardQ = is_file($guardJs) ? (string) (int) filemtime($guardJs) : (string) time();
         ?>
-<script>
-(function ratibProfileNavGuard() {
-    var PROFILE = <?php echo json_encode($profileUrl, JSON_UNESCAPED_SLASHES); ?>;
-    document.addEventListener('click', function (ev) {
-        var a = ev.target.closest(
-            '.ratib-nav__brand-profile, .ratib-nav__link--about, [data-ratib-profile-nav]'
-        );
-        if (!a) {
-            return;
-        }
-        ev.preventDefault();
-        ev.stopImmediatePropagation();
-        var href = (a.getAttribute('href') || '').replace(/#.*$/, '');
-        if (/company-profile\.php/i.test(href) || /\/profile\/?$/i.test(href)) {
-            window.location.assign(href);
-            return;
-        }
-        window.location.assign(PROFILE);
-    }, true);
-})();
-</script>
+<script src="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/js/pages/ratib-profile-nav-guard.js?v=' . $guardQ, ENT_QUOTES, 'UTF-8'); ?>"></script>
         <?php
     }
 }

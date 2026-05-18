@@ -158,3 +158,19 @@
     setTimeout(run, 0);
     setTimeout(run, 200);
 })();
+
+/** Profile nav — load guard when chrome-top on server is stale (single file deploy). */
+(function ratibProfileNavGuardLoader() {
+    if (window.__ratibProfileNavGuard || document.querySelector('script[src*="ratib-profile-nav-guard"]')) {
+        return;
+    }
+    var base = '';
+    var ref = document.querySelector('script[src*="ratib-mega-nav.js"]');
+    if (ref && ref.src) {
+        base = ref.src.replace(/js\/pages\/ratib-mega-nav\.js(\?.*)?$/i, '');
+    }
+    var s = document.createElement('script');
+    s.src = (base || '') + 'js/pages/ratib-profile-nav-guard.js?v=20260518-profile-both-nav';
+    s.async = false;
+    document.head.appendChild(s);
+})();

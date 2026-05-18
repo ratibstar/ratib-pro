@@ -24,6 +24,7 @@ if (!function_exists('ratib_about_render_sections')) {
         <section class="ratib-about-hero" id="top" aria-labelledby="about-hero-title">
             <div class="ratib-about-container ratib-about-hero__grid">
                 <div class="ratib-about-hero__copy" data-ratib-reveal>
+                    <p class="ratib-about-page-label" aria-hidden="true">Company profile</p>
                     <p class="ratib-about-eyebrow">Ratib Company · Workforce Program Infrastructure</p>
                     <h1 id="about-hero-title" class="ratib-about-hero__title">Enterprise Workforce Program <span class="ratib-about-gradient">Infrastructure</span></h1>
                     <p class="ratib-about-hero__lead">Recruitment orchestration, workforce telemetry, compliance governance, and finance-grade operations on one multi-tenant control plane.</p>
