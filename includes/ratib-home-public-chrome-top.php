@@ -93,7 +93,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 <span></span><span></span><span></span>
             </button>
             <!-- ratib-home-nav-build: chrome=<?php echo htmlspecialchars($ratibChromeBundleHash ?? '', ENT_QUOTES, 'UTF-8'); ?> ui-rev=<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?> home.php-mtime=<?php echo htmlspecialchars($ratibHomePhpMtime, ENT_QUOTES, 'UTF-8'); ?> primary-links=8 brand-profile=v13-onclick mega-nav-root=#ratibMegaNavRoot -->
-            <!-- ratib-profile-nav=v13-onclick -->
+            <!-- ratib-profile-nav=same-tab-v2 -->
             <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary" data-ratib-primary-nav-links="8" data-ratib-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-nav-visual="svg-glyphs-semantic-<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php ratib_mega_nav_render($baseUrl, $ratibNavPrefix); ?>
                 <div class="ratib-nav__platform-links" role="group" aria-label="Platform">

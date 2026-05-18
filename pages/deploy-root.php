@@ -29,6 +29,7 @@ echo 'about_php=' . (is_file($aboutPath) ? 'yes bytes=' . filesize($aboutPath) :
 echo 'home_open_about=' . (str_contains($homeSample, "=== 'about'") ? 'yes' : 'no') . "\n";
 echo 'chrome_about_link=' . (str_contains($chromeSample, 'ratib-nav__link--about') ? 'yes' : 'no') . "\n";
 echo 'chrome_primary_links_8=' . (str_contains($chromeSample, 'primary-links=8') ? 'yes' : 'no') . "\n";
+echo 'chrome_profile_same_tab=' . (str_contains($chromeSample, 'ratib-profile-nav=same-tab-v2') ? 'yes' : 'no') . "\n";
 echo 'home_mtime=' . (is_file($homePath) ? (string) (int) filemtime($homePath) : '0') . "\n";
 echo 'about_mtime=' . (is_file($aboutPath) ? (string) (int) filemtime($aboutPath) : '0') . "\n";
 $profileLanding = $root . '/profile/index.php';

@@ -66,6 +66,18 @@
 
     var PROFILE = profileUrl();
 
+    function sameTabLink(a) {
+        if (!a) {
+            return;
+        }
+        a.removeAttribute('target');
+        a.removeAttribute('rel');
+        var oc = a.getAttribute('onclick');
+        if (oc && /window\.open/i.test(oc)) {
+            a.removeAttribute('onclick');
+        }
+    }
+
     function fixHrefs() {
         document
             .querySelectorAll(
@@ -75,8 +87,7 @@
                 a.setAttribute('href', PROFILE);
                 a.setAttribute('data-ratib-profile-nav', '1');
                 a.setAttribute('data-ratib-go-profile', '1');
-                a.removeAttribute('target');
-                a.removeAttribute('rel');
+                sameTabLink(a);
             });
         document.querySelectorAll('a.ratib-mega-nav__card').forEach(function (card) {
             var t = card.querySelector('.ratib-mega-nav__card-title');
