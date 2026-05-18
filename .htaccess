@@ -9,9 +9,10 @@ RewriteRule ^ - [L]
 RewriteCond %{REQUEST_URI} ^/Designed(?:/|$) [NC]
 RewriteRule ^.*$ public/index.php [L,QSA]
 
-# Company profile — internal rewrite only (no 302 to /profile).
-RewriteRule ^profile/?$ /pages/ratib-profile-landing.php [L,QSA]
-RewriteRule ^pages/profile/?$ /profile [R=302,L]
+# Company profile — physical profile/index.php (/profile/ works; bare /profile gets trailing slash).
+RewriteRule ^profile$ /profile/ [R=301,L]
+RewriteRule ^profile/$ profile/index.php [L,QSA]
+RewriteRule ^pages/profile/?$ /profile/ [R=302,L]
 
 # Legacy URLs → canonical /profile (THE_REQUEST = browser URL only; avoids internal rewrite loops).
 RewriteCond %{THE_REQUEST} \s/+pages/company-profile\.php[\s?] [NC]

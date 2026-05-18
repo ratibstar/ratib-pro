@@ -31,9 +31,9 @@ echo 'chrome_about_link=' . (str_contains($chromeSample, 'ratib-nav__link--about
 echo 'chrome_primary_links_8=' . (str_contains($chromeSample, 'primary-links=8') ? 'yes' : 'no') . "\n";
 echo 'home_mtime=' . (is_file($homePath) ? (string) (int) filemtime($homePath) : '0') . "\n";
 echo 'about_mtime=' . (is_file($aboutPath) ? (string) (int) filemtime($aboutPath) : '0') . "\n";
-$landingPath = $root . '/pages/ratib-profile-landing.php';
-echo 'profile_landing_php=' . (is_file($landingPath) ? 'yes bytes=' . filesize($landingPath) : 'no') . "\n";
-$htPath = $root . '/.htaccess';
-$htSample = is_file($htPath) ? (string) file_get_contents($htPath, false, null, 0, 8000) : '';
-echo 'htaccess_profile_landing=' . (str_contains($htSample, 'ratib-profile-landing.php') ? 'yes' : 'no') . "\n";
+$profileLanding = $root . '/profile/index.php';
+echo 'profile_index_php=' . (is_file($profileLanding) ? 'yes bytes=' . filesize($profileLanding) : 'no') . "\n";
+$htaccessPath = $root . '/.htaccess';
+$htaccessSample = is_file($htaccessPath) ? (string) file_get_contents($htaccessPath, false, null, 0, 8000) : '';
+echo 'htaccess_profile_index=' . (str_contains($htaccessSample, 'profile/index.php') ? 'yes' : 'no') . "\n";
 

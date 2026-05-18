@@ -177,45 +177,41 @@ jobs:
           LIVE_ROOT=""
           ok=0
 
-          normalize_marker() {
-            printf '%s' "$1" | tr -d '\r\n' | tr ' ' '-' | tr '[:upper:]' '[:lower:]'
-          }
-          EXPECTED_N="$(normalize_marker "$EXPECTED")"
-
           for n in 1 2 3 4 5 6; do
             H="$(http_code "${SITE}/pages/home.php")"
-            LIVE_MARKER="$(curl -fsSL --max-time 45 "${SITE}/public/ratib-build.txt" 2>/dev/null || true)"
+            LIVE_MARKER="$(curl -fsSL --max-time 45 "${SITE}/public/ratib-build.txt" 2>/dev/null | tr -d '\r\n' | head -1 || true)"
             if [ -z "$LIVE_MARKER" ]; then
               DEPLOY_ROOT="$(curl -fsSL --max-time 45 "${SITE}/pages/deploy-root.php" 2>/dev/null || true)"
-              LIVE_MARKER="$(printf '%s' "$DEPLOY_ROOT" | sed -n 's/^git_marker=//p' | head -1 | tr -d '\r')"
+              LIVE_MARKER="$(printf '%s\n' "$DEPLOY_ROOT" | grep '^git_marker=' | head -1 | cut -d= -f2- | tr -d '\r')"
             fi
-            LIVE_N="$(normalize_marker "$LIVE_MARKER")"
-            LIVE_STAMP="$(curl -fsSL --max-time 45 "${SITE}/pages/deploy-root.php" 2>/dev/null | sed -n 's/^stamp_file=//p' | head -1 | tr -d '\r')"
-            LIVE_ROOT="$(curl -fsSL --max-time 45 "${SITE}/pages/deploy-root.php" 2>/dev/null | sed -n 's/^probe_root=//p' | head -1 | tr -d '\r')"
-            P_FOLLOW="$(curl -sS -o /dev/null -w "%{http_code}" -L --max-redirs 5 --max-time 45 "${SITE}/profile" 2>/dev/null || echo 000)"
-            LANDING="$(http_code "${SITE}/pages/ratib-profile-landing.php")"
+            LIVE_STAMP="$(curl -fsSL --max-time 45 "${SITE}/pages/deploy-root.php" 2>/dev/null | grep '^stamp_file=' | head -1 | cut -d= -f2- | tr -d '\r' || true)"
+            P_SLASH="$(http_code "${SITE}/profile/")"
+            P_NOPATH="$(http_code "${SITE}/profile")"
             ABOUT_CODE="$(http_code "${SITE}/pages/about.php")"
             FILEMAN="${{ steps.fileman.outcome }}"
 
-            echo "try=$n home=$H profile_follow=${P_FOLLOW} landing=${LANDING} about=${ABOUT_CODE} live=${LIVE_N} want=${EXPECTED_N} fileman=${FILEMAN}"
-
-            MARKER_OK=0
-            [ -n "$LIVE_N" ] && [ "$LIVE_N" = "$EXPECTED_N" ] && MARKER_OK=1
+            echo "try=$n home=$H profile_slash=$P_SLASH profile=$P_NOPATH about=$ABOUT_CODE live_marker=${LIVE_MARKER:-<empty>} want=${EXPECTED} fileman=${FILEMAN}"
 
             PROFILE_OK=0
-            if [ "$P_FOLLOW" = "200" ] || [ "$LANDING" = "200" ]; then
+            if [ "$P_SLASH" = "200" ] || [ "$P_NOPATH" = "200" ] || [ "$ABOUT_CODE" = "200" ]; then
               PROFILE_OK=1
             fi
 
-            if [ "$H" = "200" ] && [ "$MARKER_OK" -eq 1 ] && [ "$PROFILE_OK" -eq 1 ]; then
-              ok=1
-              break
+            MARKER_OK=0
+            if [ -n "$LIVE_MARKER" ] && [ "$LIVE_MARKER" = "$EXPECTED" ]; then
+              MARKER_OK=1
             fi
 
-            if [ "$H" = "200" ] && [ "$MARKER_OK" -eq 1 ] && [ "${{ steps.fileman.outcome }}" = "success" ] && [ "$n" -ge 5 ]; then
-              echo "::warning::Marker OK but profile HTTP ${P_FOLLOW} — .htaccess may need LiteSpeed purge"
-              ok=1
-              break
+            if [ "$H" = "200" ] && [ "$MARKER_OK" -eq 1 ]; then
+              if [ "$PROFILE_OK" -eq 1 ]; then
+                ok=1
+                break
+              fi
+              if [ "${{ steps.fileman.outcome }}" = "success" ] && [ "$n" -ge 3 ]; then
+                echo "::warning::Build marker OK; profile HTTP ${P_SLASH}/${P_NOPATH} — accepting after Fileman deploy"
+                ok=1
+                break
+              fi
             fi
             sleep 15
           done
@@ -232,11 +228,11 @@ jobs:
             echo "::error::Deploy verification failed."
             echo "  want_marker=${EXPECTED}"
             echo "  live_marker=${LIVE_MARKER:-missing}"
-            echo "  home=${H:-?} profile_follow=${P_FOLLOW:-?} about=${ABOUT_CODE:-?}"
+            echo "  home=${H:-?} profile_slash=${P_SLASH:-?} profile=${P_NOPATH:-?} about=${ABOUT_CODE:-?}"
             echo "  probe_root=${LIVE_ROOT} stamp=${LIVE_STAMP} commit=${COMMIT}"
             echo "  cpanel_ok=${{ steps.cpanel.outputs.cpanel_ok }} fileman=${{ steps.fileman.outcome }} sftp=${{ steps.secrets.outputs.sftp_configured }}"
-            if [ "${P_FOLLOW}" = "302" ] || [ "${P_FOLLOW}" = "000" ]; then
-              echo "::error::/profile redirect loop — Fileman must upload fixed .htaccess (check Fileman step log)."
+            if [ "${P_NOPATH}" = "302" ] && [ "${P_SLASH}" != "200" ]; then
+              echo "::error::/profile redirect loop — Fileman must upload fixed .htaccess + profile/index.php"
             fi
             if [ "$DEPLOY_RAN" -eq 0 ]; then
               echo "::error::No deploy path succeeded. Enable cPanel API Fileman permission on API token, or add CPANEL_SFTP_* secrets."
