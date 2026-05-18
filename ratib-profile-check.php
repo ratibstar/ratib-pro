@@ -178,6 +178,7 @@ foreach ($checks as $rel) {
 $build = $root . '/public/ratib-build.txt';
 echo "\nbuild_marker=" . (is_file($build) ? trim((string) file_get_contents($build)) : 'missing') . "\n";
 
-echo "\n>>> DEPLOY NOW:\n";
+echo "\n>>> If site shows 403 or no CSS, fix permissions first:\n";
+echo "https://{$host}/pages/ratib-fix-perms.php?run=1&key=ratib-deploy-sync-2026\n";
+echo "\n>>> Then deploy Profile:\n";
 echo "https://{$host}/pages/ratib-profile-deploy.php?deploy=1&key=ratib-deploy-sync-2026\n";
-echo "(or root) https://{$host}/ratib-profile-check.php?deploy=1&key=ratib-deploy-sync-2026\n";

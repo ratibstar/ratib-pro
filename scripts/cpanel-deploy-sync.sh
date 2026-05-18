@@ -77,15 +77,15 @@ PUBLIC_REAL="$(realpath "$PUBLIC_HTML" 2>/dev/null || echo "$PUBLIC_HTML")"
 
 fix_live_permissions() {
   local TARGET="$1"
-  # Apache must read .htaccess (644). Wrong mode after rsync causes site-wide 403.
+  # Apache must read every .htaccess (644). Wrong mode after rsync → site-wide 403 + no CSS.
   find "${TARGET}" -type d -exec chmod 755 {} \; 2>/dev/null || true
   find "${TARGET}" -type f -name '.htaccess' -exec chmod 644 {} \; 2>/dev/null || true
   if [ -f "${TARGET}/.htaccess" ]; then
     chmod 644 "${TARGET}/.htaccess" 2>/dev/null || true
   fi
-  # PHP/HTML assets: readable by web server
-  find "${TARGET}/pages" -type f -name '*.php' -exec chmod 644 {} \; 2>/dev/null || true
-  find "${TARGET}/includes" -type f -name '*.php' -exec chmod 644 {} \; 2>/dev/null || true
+  find "${TARGET}/pages" "${TARGET}/includes" "${TARGET}/css" "${TARGET}/js" "${TARGET}/control-panel" \
+    -type f \( -name '*.php' -o -name '*.css' -o -name '*.js' -o -name '*.svg' \) \
+    -exec chmod 644 {} \; 2>/dev/null || true
 }
 
 sync_one_target() {
