@@ -26,7 +26,7 @@ if (!function_exists('ratib_op_sample_badge')) {
 if (!function_exists('ratib_operational_proof_render')) {
     /**
      * @param array<string, mixed>|null $copy Optional section overrides (from CMS)
-     * @param array{diagrams?:bool,screenshots?:bool,workflows?:bool} $show
+     * @param array{government?:bool,diagrams?:bool,screenshots?:bool,workflows?:bool} $show
      */
     function ratib_operational_proof_render(string $baseUrl, ?array $copy = null, array $show = []): void
     {
@@ -38,10 +38,12 @@ if (!function_exists('ratib_operational_proof_render')) {
         if (is_array($copy)) {
             $sec = array_merge($sec, $copy);
         }
+        $showGovernment = $show['government'] ?? true;
         $showDiagrams = $show['diagrams'] ?? true;
         $showScreenshots = $show['screenshots'] ?? true;
         $showWorkflows = $show['workflows'] ?? true;
         $disclaimer = (string) ($cfg['disclaimer'] ?? '');
+        $gov = is_array($cfg['government'] ?? null) ? $cfg['government'] : [];
         ?>
         <section class="ratib-op-proof" id="operational-proof" aria-labelledby="ratib-op-proof-title">
             <div class="ratib-op-proof__inner ratib-about-container">
@@ -53,6 +55,46 @@ if (!function_exists('ratib_operational_proof_render')) {
                     <p class="ratib-op-proof__disclaimer ratib-mono"><?php echo ratib_op_h($disclaimer); ?></p>
                     <?php } ?>
                 </header>
+
+                <?php if ($showGovernment && !empty($gov['screenshots'])) {
+                    $govId = (string) ($gov['id'] ?? 'government-oversight');
+                    $govNote = (string) ($gov['note'] ?? 'Sample operational data');
+                    ?>
+                <div class="ratib-op-proof__block ratib-op-gov" id="<?php echo ratib_op_h($govId); ?>" aria-labelledby="ratib-op-gov-title">
+                    <header class="ratib-op-gov__head">
+                        <p class="ratib-op-gov__eyebrow"><?php echo ratib_op_h((string) ($gov['eyebrow'] ?? 'Government & labor oversight')); ?></p>
+                        <h3 id="ratib-op-gov-title" class="ratib-op-proof__block-title ratib-op-gov__title"><?php echo ratib_op_h((string) ($gov['title'] ?? '')); ?></h3>
+                        <p class="ratib-op-gov__lead"><?php echo ratib_op_h((string) ($gov['lead'] ?? '')); ?></p>
+                        <?php if (!empty($gov['points'])) { ?>
+                        <ul class="ratib-op-gov__points">
+                            <?php foreach ($gov['points'] as $point) { ?>
+                            <li><?php echo ratib_op_h((string) $point); ?></li>
+                            <?php } ?>
+                        </ul>
+                        <?php } ?>
+                        <p class="ratib-op-proof__block-note"><?php echo ratib_op_sample_badge($govNote); ?></p>
+                    </header>
+                    <div class="ratib-op-gov__grid">
+                        <?php foreach ($gov['screenshots'] as $s) {
+                            $badge = (string) ($s['label'] ?? 'Sample operational data');
+                            $featured = !empty($s['featured']);
+                            ?>
+                        <figure class="ratib-op-screen-card<?php echo $featured ? ' ratib-op-screen-card--featured' : ''; ?>">
+                            <div class="ratib-op-screen-card__frame">
+                                <?php echo ratib_op_sample_badge($badge); ?>
+                                <img src="<?php echo ratib_op_h((string) ($s['src'] ?? '')); ?>" alt="<?php echo ratib_op_h((string) ($s['alt'] ?? '')); ?>" loading="<?php echo $featured ? 'eager' : 'lazy'; ?>" decoding="async">
+                            </div>
+                            <figcaption>
+                                <strong><?php echo ratib_op_h((string) ($s['title'] ?? '')); ?></strong>
+                                <?php if (!empty($s['caption'])) { ?>
+                                <span><?php echo ratib_op_h((string) $s['caption']); ?></span>
+                                <?php } ?>
+                            </figcaption>
+                        </figure>
+                        <?php } ?>
+                    </div>
+                </div>
+                <?php } ?>
 
                 <?php if ($showDiagrams && !empty($cfg['diagrams'])) { ?>
                 <div class="ratib-op-proof__block">

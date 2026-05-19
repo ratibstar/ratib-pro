@@ -187,7 +187,8 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
                 'telemetry' => '#telemetry',
                 'governance' => '#governance',
                 'trust' => '#trust',
-                'operational_proof' => '#operational-proof',
+                'operational_proof' => '#government-oversight',
+                'government_oversight' => '#government-oversight',
                 'how_it_works' => '#operations',
                 'company_profile' => '#company-profile',
             ];

@@ -17,13 +17,60 @@ if (!function_exists('ratib_operational_proof_config')) {
         $diagram = static function (string $file) use ($root): string {
             return $root . '/assets/images/diagrams/' . rawurlencode($file);
         };
+        $govImg = static function (string $file) use ($root): string {
+            return $root . '/assets/images/government/' . rawurlencode($file);
+        };
 
         return [
             'disclaimer' => 'Screenshots, diagrams, and metrics on this page use sample operational data or illustrative interfaces. They are not live production dashboards, audited statistics, or evidence of universal government integrations.',
             'section' => [
                 'eyebrow' => 'Operational proof',
                 'title' => 'How teams run programs on RATIB',
-                'sub' => 'Reference flows, interface examples, and separation models—structured for procurement and operations review.',
+                'sub' => 'Government oversight, field tracking, and mobile mobilization—then agency workspace, diagrams, and reference flows for procurement review.',
+            ],
+            'government' => [
+                'id' => 'government-oversight',
+                'eyebrow' => 'Government & labor oversight',
+                'title' => 'Inspections, violations, live tracking, and worker mobilization',
+                'lead' => 'RATIB includes a government-aligned control surface for labor monitoring demonstrations: inspectors record findings, violations and blacklist rules gate deployments, supervisors open a live tracking map with geofences, and field teams onboard workers to the mobile app via QR credentials—all scoped to the active agency database with role-based access.',
+                'points' => [
+                    'Government Control consolidates inspections, violations, blacklist, worker alerts, and monitoring tabs behind one console—with optional read-only government view and a link to the live tracking map.',
+                    'Inspection workflows capture worker and agency context, inspector identity, status (pending, passed, failed), and hashed credentials where policies require authenticated field access.',
+                    'Tracking Map filters by tenant, agency, country, and session status; supports geofence creation, route playback, and latest worker locations on OpenStreetMap.',
+                    'Worker Mobile Onboarding issues QR credentials so workers join the mobile program without sharing passwords in chat—device and identity fields stay optional for controlled pilots.',
+                ],
+                'note' => 'Sample operational data · demonstration interfaces · not a claim of live government integration unless contracted separately.',
+                'screenshots' => [
+                    [
+                        'title' => 'Government Control',
+                        'caption' => 'Labor monitoring console—violations, blacklist, worker alerts, and inspection tabs in one place.',
+                        'label' => 'Sample operational data',
+                        'featured' => true,
+                        'src' => $govImg('government-control.png'),
+                        'alt' => 'Government Control dashboard with summary cards and inspection form',
+                    ],
+                    [
+                        'title' => 'Inspection records',
+                        'caption' => 'Inspection history with status badges, inspector attribution, and agency-scoped rows.',
+                        'label' => 'Sample operational data',
+                        'src' => $govImg('government-inspections.png'),
+                        'alt' => 'Inspection table showing pending, passed, and failed statuses',
+                    ],
+                    [
+                        'title' => 'Tracking Map',
+                        'caption' => 'Live map, geofences, playback, and filters for tenant, agency, and country.',
+                        'label' => 'Sample operational data',
+                        'src' => $govImg('tracking-map.png'),
+                        'alt' => 'Tracking map with geofence controls and worker location marker',
+                    ],
+                    [
+                        'title' => 'Worker Mobile Onboarding',
+                        'caption' => 'QR-based credentials for worker mobile app mobilization.',
+                        'label' => 'Illustrative interface',
+                        'src' => $govImg('worker-mobile-onboarding.png'),
+                        'alt' => 'Worker mobile onboarding screen generating a QR code',
+                    ],
+                ],
             ],
             'diagrams' => [
                 [

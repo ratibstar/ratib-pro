@@ -113,6 +113,7 @@ $ratibMarketingHomeUrl = ratib_public_marketing_home_url($baseUrl);
             <a href="#platform-overview">Platform</a>
             <a href="#what-is-ratib">Capabilities</a>
             <a href="#architecture">Architecture</a>
+            <a href="#government-oversight">Government</a>
             <a href="#operational-proof">Operational proof</a>
             <a href="#operations">Operations</a>
             <a href="#telemetry">Telemetry</a>

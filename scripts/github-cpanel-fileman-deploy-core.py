@@ -25,6 +25,7 @@ DEPLOY_ALLOW_PREFIXES = (
     "api/",
     "config/env/",
     "public/",
+    "assets/images/government/",
 )
 DEPLOY_ALLOW_FILES = frozenset({
     ".htaccess",
