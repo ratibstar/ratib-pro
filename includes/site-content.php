@@ -928,7 +928,7 @@ if (!function_exists('ratib_site_content_asset_url')) {
         /** Public script that serves CMS uploads + bundled fallbacks (pages/ deploys reliably). */
         function ratib_site_content_media_endpoint_script(): string
         {
-            return '/pages/site-content-media.php';
+            return '/public/cms-media.php';
         }
     }
     if (!function_exists('ratib_site_content_media_filename_for_key')) {

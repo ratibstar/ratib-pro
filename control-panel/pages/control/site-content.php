@@ -26,7 +26,7 @@ function ratib_control_site_content_media_preview_url(string $val): string
     if (preg_match('#^https?://#i', $val)) {
         return $val;
     }
-    // Must use public site root (not /control-panel/...): media is served from /api/site-content-media.php at app root.
+    // Must use public site root (not /control-panel/...): media is served from /public/cms-media.php at app root.
     $baseUrl = '';
     if (function_exists('control_ratib_pro_public_base_url')) {
         $baseUrl = rtrim((string) control_ratib_pro_public_base_url(), '/');

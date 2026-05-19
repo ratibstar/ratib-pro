@@ -51,6 +51,7 @@ CRITICAL_FILES=(
   "pages/home.php"
   "pages/about.php"
   "pages/site-content-media.php"
+  "public/cms-media.php"
   "control-panel/pages/control/site-content.php"
   "pages/company-profile.php"
   "pages/about.php"

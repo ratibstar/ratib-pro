@@ -65,6 +65,7 @@ FAST_FILES = [
     "includes/ratib-public-deploy-ensure.php",
     "pages/about.php",
     "pages/site-content-media.php",
+    "public/cms-media.php",
     "pages/home.php",
     "control-panel/pages/control/site-content.php",
     "includes/ratib-about-sections.php",
