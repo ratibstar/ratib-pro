@@ -118,7 +118,17 @@ $videoSrcRel = '';
 $videoUrl = '';
 if (function_exists('ratib_site_content_home_video_src_strings_from_flat') && function_exists('ratib_site_content_home_resolve_video_display_url')) {
     foreach (ratib_site_content_home_video_src_strings_from_flat($ratibHome) as $vs) {
-        $u = ratib_site_content_home_resolve_video_display_url((string) $vs, $baseUrl);
+        $vs = trim((string) $vs);
+        if ($vs === '') {
+            continue;
+        }
+        if (str_starts_with($vs, 'scmedia:') && function_exists('ratib_site_content_media_filename_from_token') && function_exists('ratib_site_content_media_resolve_fs')) {
+            $vf = ratib_site_content_media_filename_from_token($vs);
+            if ($vf === '' || ratib_site_content_media_resolve_fs($vf) === null) {
+                continue;
+            }
+        }
+        $u = ratib_site_content_home_resolve_video_display_url($vs, $baseUrl);
         if ($u !== '') {
             $ratibVideoSources[] = $u;
         }

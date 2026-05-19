@@ -988,6 +988,16 @@ if (!function_exists('ratib_site_content_asset_url')) {
             return $map;
         }
     }
+    if (!function_exists('ratib_site_content_media_is_video_file')) {
+        function ratib_site_content_media_is_video_file(string $fs): bool
+        {
+            $ext = strtolower((string) pathinfo($fs, PATHINFO_EXTENSION));
+
+            return in_array($ext, ['mp4', 'webm', 'mov'], true)
+                && is_file($fs)
+                && filesize($fs) > 0;
+        }
+    }
     if (!function_exists('ratib_site_content_media_file_is_valid')) {
         /** Reject corrupt CMS uploads (UTF-8-mangled deploy) so bundled defaults can serve. */
         function ratib_site_content_media_file_is_valid(string $fs): bool
@@ -1071,8 +1081,10 @@ if (!function_exists('ratib_site_content_asset_url')) {
                 return null;
             }
             $uploaded = ratib_site_content_media_storage_dir() . DIRECTORY_SEPARATOR . $fileName;
-            if (is_file($uploaded) && ratib_site_content_media_file_is_valid($uploaded)) {
-                return $uploaded;
+            if (is_file($uploaded)) {
+                if (ratib_site_content_media_is_video_file($uploaded) || ratib_site_content_media_file_is_valid($uploaded)) {
+                    return $uploaded;
+                }
             }
             $root = dirname(__DIR__);
             $map = ratib_site_content_media_bundled_map();
@@ -1156,13 +1168,14 @@ if (!function_exists('ratib_site_content_asset_url')) {
                 return '';
             }
             $fs = ratib_site_content_media_resolve_fs($name);
-            if ($fs !== null) {
-                $direct = ratib_site_content_bundled_asset_public_url($baseUrl, $fs);
-                if ($direct !== '') {
-                    return $direct;
-                }
+            if ($fs === null) {
+                return '';
             }
-            $v = $fs !== null ? (int) filemtime($fs) : time();
+            $direct = ratib_site_content_bundled_asset_public_url($baseUrl, $fs);
+            if ($direct !== '') {
+                return $direct;
+            }
+            $v = (int) filemtime($fs);
             $script = ratib_site_content_media_endpoint_script();
 
             return rtrim($baseUrl, '/') . $script . '?f=' . rawurlencode($name) . '&v=' . $v;

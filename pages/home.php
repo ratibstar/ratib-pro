@@ -630,7 +630,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                         <div class="video-wrap">
                             <div class="video-fallback-box">
                                 <i class="fas fa-video-slash fa-3x mb-3"></i>
-                                <p>Add videos in <strong>Public site content</strong> (video/pic section): upload an MP4 or choose an existing file for each slot.</p>
+                                <p>Video not available on the server. Re-upload the MP4 in <strong>Public site content</strong> (video/pic section), or clear the slot to hide this block.</p>
                             </div>
                         </div>
                     </div>
