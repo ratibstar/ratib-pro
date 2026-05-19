@@ -10,6 +10,7 @@ import json
 import mimetypes
 import os
 import secrets
+import shutil
 import subprocess
 import sys
 import urllib.parse
@@ -378,43 +379,82 @@ def remote_dir(remote_base: str, rel: str) -> str:
     return f"{remote_base}/{parent}"
 
 
-def upload_binary_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
-    if not os.path.isfile(rel):
-        return rel, False, "missing"
-    abs_dir = remote_dir(remote_base, rel)
-    name = os.path.basename(rel)
-    ensure_remote_dir(abs_dir, remote_base)
-    api2_fileop_unlink(fileman_home_rel(abs_dir, name))
-    with open(rel, "rb") as f:
-        raw = f.read()
-    local_size = len(raw)
+def upload_binary_via_curl(
+    rel: str,
+    local_path: str,
+    name: str,
+    dest_dir: str,
+) -> tuple[str, bool, str]:
+    """cPanel-documented curl multipart upload (more reliable than hand-built bodies)."""
+    host = os.environ["CPANEL_HOST"]
+    port = os.environ.get("CPANEL_PORT", "2083")
+    user = os.environ["CPANEL_USER"]
+    token = os.environ["CPANEL_API_TOKEN"]
+    url = f"https://{host}:{port}/execute/Fileman/upload_files"
+    cmd = [
+        "curl",
+        "-sfS",
+        "--connect-timeout",
+        "60",
+        "--max-time",
+        "120",
+        "-H",
+        f"Authorization: cpanel {user}:{token}",
+        "-F",
+        f"dir={dest_dir}",
+        "-F",
+        "overwrite=1",
+        "-F",
+        f"file=@{local_path};filename={name}",
+        url,
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        err = (proc.stderr or proc.stdout or "curl failed").strip()
+        return rel, False, err[:200]
+    try:
+        payload = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return rel, False, (proc.stdout or "invalid JSON")[:200]
+    if upload_files_ok(payload):
+        return rel, True, ""
+    return rel, False, json.dumps(payload)[:200]
+
+
+def upload_binary_via_multipart(
+    rel: str,
+    raw: bytes,
+    name: str,
+    dest_dir: str,
+) -> tuple[str, bool, str]:
     body, ctype = build_multipart_body(
-        {
-            "dir": fileman_upload_dir(abs_dir),
-            "overwrite": "1",
-        },
-        [("file-1", name, raw, mime_for_filename(name))],
+        {"dir": dest_dir, "overwrite": "1"},
+        [("file", name, raw, mime_for_filename(name))],
     )
     try:
         payload = api_post_raw("Fileman/upload_files", body, ctype)
     except Exception as e:
         return rel, False, str(e)
-    if not upload_files_ok(payload):
-        rblock = payload.get("result", payload) or {}
-        return rel, False, json.dumps(rblock)[:200]
-    try:
-        info = api_post(
-            "Fileman/get_file_information",
-            {"file": fileman_home_rel(abs_dir, name)},
-        )
-        rblock = info.get("result", info) or {}
-        data = rblock.get("data") if isinstance(rblock.get("data"), dict) else {}
-        remote_size = int(data.get("size", data.get("filesize", 0)) or 0)
-        if remote_size > 0 and remote_size != local_size:
-            return rel, False, f"size mismatch local={local_size} remote={remote_size}"
-    except Exception:
-        pass
-    return rel, True, ""
+    if upload_files_ok(payload):
+        return rel, True, ""
+    rblock = payload.get("result", payload) or {}
+    return rel, False, json.dumps(rblock)[:200]
+
+
+def upload_binary_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
+    if not os.path.isfile(rel):
+        return rel, False, "missing"
+    abs_dir = remote_dir(remote_base, rel)
+    name = os.path.basename(rel)
+    dest_dir = fileman_upload_dir(abs_dir)
+    ensure_remote_dir(abs_dir, remote_base)
+    api2_fileop_unlink(fileman_home_rel(abs_dir, name))
+    local_path = os.path.abspath(rel)
+    if shutil.which("curl"):
+        return upload_binary_via_curl(rel, local_path, name, dest_dir)
+    with open(rel, "rb") as f:
+        raw = f.read()
+    return upload_binary_via_multipart(rel, raw, name, dest_dir)
 
 
 def upload_text_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
