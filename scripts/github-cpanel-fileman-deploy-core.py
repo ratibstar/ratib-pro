@@ -81,6 +81,44 @@ def fileman_upload_dir(abs_dir: str) -> str:
     return abs_dir
 
 
+def fileman_home_rel(abs_dir: str, name: str) -> str:
+    """Path from account home, e.g. public_html/public/cms-bundle-gov-control.png."""
+    parent = fileman_upload_dir(abs_dir)
+    return f"{parent}/{name}" if parent else name
+
+
+def api2_fileop_unlink(home_rel_path: str) -> None:
+    """Remove an existing file so upload_files can replace corrupt bytes (overwrite alone is unreliable)."""
+    host = os.environ["CPANEL_HOST"]
+    port = os.environ.get("CPANEL_PORT", "2083")
+    user = os.environ["CPANEL_USER"]
+    token = os.environ["CPANEL_API_TOKEN"]
+    params = urllib.parse.urlencode(
+        {
+            "cpanel_jsonapi_user": user,
+            "cpanel_jsonapi_apiversion": "2",
+            "cpanel_jsonapi_module": "Fileman",
+            "cpanel_jsonapi_func": "fileop",
+            "op": "unlink",
+            "sourcefiles": home_rel_path,
+        }
+    ).encode("utf-8")
+    req = urllib.request.Request(
+        f"https://{host}:{port}/json-api/cpanel",
+        data=params,
+        method="POST",
+        headers={
+            "Authorization": f"cpanel {user}:{token}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            json.loads(resp.read().decode("utf-8", errors="replace"))
+    except Exception:
+        pass
+
+
 def build_multipart_body(
     fields: dict[str, str],
     files: list[tuple[str, str, bytes, str]],
@@ -346,8 +384,10 @@ def upload_binary_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
     abs_dir = remote_dir(remote_base, rel)
     name = os.path.basename(rel)
     ensure_remote_dir(abs_dir, remote_base)
+    api2_fileop_unlink(fileman_home_rel(abs_dir, name))
     with open(rel, "rb") as f:
         raw = f.read()
+    local_size = len(raw)
     body, ctype = build_multipart_body(
         {
             "dir": fileman_upload_dir(abs_dir),
@@ -359,10 +399,22 @@ def upload_binary_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
         payload = api_post_raw("Fileman/upload_files", body, ctype)
     except Exception as e:
         return rel, False, str(e)
-    if upload_files_ok(payload):
-        return rel, True, ""
-    rblock = payload.get("result", payload) or {}
-    return rel, False, json.dumps(rblock)[:200]
+    if not upload_files_ok(payload):
+        rblock = payload.get("result", payload) or {}
+        return rel, False, json.dumps(rblock)[:200]
+    try:
+        info = api_post(
+            "Fileman/get_file_information",
+            {"file": fileman_home_rel(abs_dir, name)},
+        )
+        rblock = info.get("result", info) or {}
+        data = rblock.get("data") if isinstance(rblock.get("data"), dict) else {}
+        remote_size = int(data.get("size", data.get("filesize", 0)) or 0)
+        if remote_size > 0 and remote_size != local_size:
+            return rel, False, f"size mismatch local={local_size} remote={remote_size}"
+    except Exception:
+        pass
+    return rel, True, ""
 
 
 def upload_text_one(rel: str, remote_base: str) -> tuple[str, bool, str]:

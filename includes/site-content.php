@@ -988,6 +988,81 @@ if (!function_exists('ratib_site_content_asset_url')) {
             return $map;
         }
     }
+    if (!function_exists('ratib_site_content_media_file_is_valid')) {
+        /** Reject corrupt CMS uploads (UTF-8-mangled deploy) so bundled defaults can serve. */
+        function ratib_site_content_media_file_is_valid(string $fs): bool
+        {
+            if (!is_file($fs) || !is_readable($fs)) {
+                return false;
+            }
+            $fh = @fopen($fs, 'rb');
+            if ($fh === false) {
+                return false;
+            }
+            $sig = @fread($fh, 12);
+            @fclose($fh);
+            if (!is_string($sig) || strlen($sig) < 3) {
+                return false;
+            }
+            if (strncmp($sig, "\x89PNG\r\n\x1a\n", 8) === 0) {
+                return true;
+            }
+            if (strncmp($sig, "\xFF\xD8\xFF", 3) === 0) {
+                return true;
+            }
+            if (strncmp($sig, 'GIF87a', 6) === 0 || strncmp($sig, 'GIF89a', 6) === 0) {
+                return true;
+            }
+            if (strlen($sig) >= 12 && strncmp($sig, 'RIFF', 4) === 0 && substr($sig, 8, 4) === 'WEBP') {
+                return true;
+            }
+            if (str_starts_with(ltrim($sig), '<svg') || str_starts_with(ltrim($sig), '<?xml')) {
+                return true;
+            }
+
+            return false;
+        }
+    }
+    if (!function_exists('ratib_site_content_media_detect_mime')) {
+        function ratib_site_content_media_detect_mime(string $fs, string $ext): string
+        {
+            $allowed = [
+                'jpg' => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'png' => 'image/png',
+                'webp' => 'image/webp',
+                'gif' => 'image/gif',
+                'svg' => 'image/svg+xml',
+                'mp4' => 'video/mp4',
+                'webm' => 'video/webm',
+                'mov' => 'video/quicktime',
+            ];
+            $fh = @fopen($fs, 'rb');
+            if ($fh !== false) {
+                $sig = @fread($fh, 12);
+                @fclose($fh);
+                if (is_string($sig)) {
+                    if (strncmp($sig, "\x89PNG\r\n\x1a\n", 8) === 0) {
+                        return 'image/png';
+                    }
+                    if (strncmp($sig, "\xFF\xD8\xFF", 3) === 0) {
+                        return 'image/jpeg';
+                    }
+                    if (strncmp($sig, 'GIF87a', 6) === 0 || strncmp($sig, 'GIF89a', 6) === 0) {
+                        return 'image/gif';
+                    }
+                    if (strlen($sig) >= 12 && strncmp($sig, 'RIFF', 4) === 0 && substr($sig, 8, 4) === 'WEBP') {
+                        return 'image/webp';
+                    }
+                    if (str_starts_with(ltrim($sig), '<svg') || str_starts_with(ltrim($sig), '<?xml')) {
+                        return 'image/svg+xml';
+                    }
+                }
+            }
+
+            return $allowed[$ext] ?? 'application/octet-stream';
+        }
+    }
     if (!function_exists('ratib_site_content_media_resolve_fs')) {
         function ratib_site_content_media_resolve_fs(string $fileName): ?string
         {
@@ -996,7 +1071,7 @@ if (!function_exists('ratib_site_content_asset_url')) {
                 return null;
             }
             $uploaded = ratib_site_content_media_storage_dir() . DIRECTORY_SEPARATOR . $fileName;
-            if (is_file($uploaded)) {
+            if (is_file($uploaded) && ratib_site_content_media_file_is_valid($uploaded)) {
                 return $uploaded;
             }
             $root = dirname(__DIR__);
@@ -1045,7 +1120,7 @@ if (!function_exists('ratib_site_content_asset_url')) {
                 http_response_code(404);
                 exit;
             }
-            header('Content-Type: ' . $allowed[$ext]);
+            header('Content-Type: ' . ratib_site_content_media_detect_mime($fs, $ext));
             header('Content-Length: ' . (string) filesize($fs));
             header('Cache-Control: public, max-age=604800, immutable');
             readfile($fs);
