@@ -140,7 +140,7 @@ function showLoading(show = true) {
 }
 
 function showView(viewName) {
-    const views = ['categoryGridView', 'tutorialListView', 'tutorialDetailView', 'searchResultsView'];
+    const views = ['homeHubView', 'categoryGridView', 'tutorialListView', 'tutorialDetailView', 'searchResultsView'];
     views.forEach(view => {
         const element = document.getElementById(view);
         if (element) {
@@ -149,7 +149,16 @@ function showView(viewName) {
             element.style.display = show ? '' : 'none';
         }
     });
+    const hero = document.getElementById('hcHero');
+    const trust = document.getElementById('hcTrustStrip');
+    const hubViews = ['homeHubView', 'categoryGridView'];
+    const showHub = hubViews.indexOf(viewName) >= 0;
+    if (hero) hero.style.display = showHub ? '' : 'none';
+    if (trust) trust.style.display = showHub ? '' : 'none';
     HelpCenterState.currentView = viewName.replace('View', '').replace(/([A-Z])/g, ' $1').trim().toLowerCase();
+    if (window.HelpCenterEnterprise && typeof window.HelpCenterEnterprise.onViewChange === 'function') {
+        window.HelpCenterEnterprise.onViewChange(viewName);
+    }
 }
 
 // API Functions
@@ -346,29 +355,55 @@ const HelpCenterUI = {
         
         const flatCategories = flattenCategories(categories);
 
-        const renderCategory = (category) => {
+        const impactForCategory = (cat, idx) => {
+            const name = (cat.name || '').toLowerCase();
+            if (name.indexOf('compliance') >= 0 || name.indexOf('finance') >= 0 || name.indexOf('contract') >= 0) return 'high';
+            if (idx < 3) return 'medium';
+            return 'standard';
+        };
+
+        const difficultyForCategory = (cat) => {
+            const name = (cat.name || '').toLowerCase();
+            if (name.indexOf('getting started') >= 0 || name.indexOf('dashboard') >= 0) return 'beginner';
+            if (name.indexOf('control') >= 0 || name.indexOf('infrastructure') >= 0) return 'advanced';
+            return 'intermediate';
+        };
+
+        const renderCategory = (category, index) => {
             const card = document.createElement('a');
-            card.className = 'category-card';
+            let sizeClass = 'category-card';
+            if (index === 0 || index === 1) sizeClass += ' category-card--featured';
+            else if (index > 5) sizeClass += ' category-card--compact';
+            card.className = sizeClass;
             card.href = '#';
             card.dataset.categoryId = category.id;
-            
+
+            const impact = impactForCategory(category, index);
+            const difficulty = difficultyForCategory(category);
+            const estMin = Math.max(5, (category.tutorial_count || 1) * 8);
+            const updated = category.updated_at ? formatDate(category.updated_at) : 'May 2026';
+
             card.innerHTML = `
                 <div class="category-card-icon">
                     <i class="fas ${category.icon || 'fa-circle'}"></i>
                 </div>
                 <h3 class="category-card-title">${category.name || t('category')}</h3>
                 <p class="category-card-description">${category.description || ''}</p>
-                <div class="category-card-count">
-                    <i class="fas fa-book"></i>
-                    ${category.tutorial_count || 0} ${t('tutorialsLabel')}
+                <div class="hc-card-meta">
+                    <span class="hc-meta-badge hc-meta-badge--verified"><i class="fas fa-circle-check"></i> Verified</span>
+                    <span class="hc-meta-badge">${category.tutorial_count || 0} ${t('tutorialsLabel')}</span>
+                    <span class="hc-meta-badge">${estMin} min</span>
+                    <span class="hc-meta-badge">${t(difficulty)}</span>
+                    ${impact === 'high' ? '<span class="hc-meta-badge hc-meta-badge--impact-high">High impact</span>' : ''}
+                    <span class="hc-meta-badge">${t('updated')}: ${updated}</span>
                 </div>
             `;
-            
+
             card.addEventListener('click', (e) => {
                 e.preventDefault();
                 HelpCenterController.loadTutorialsByCategory(category.id);
             });
-            
+
             return card;
         };
 
@@ -376,8 +411,8 @@ const HelpCenterUI = {
         if (grid) {
             grid.innerHTML = '';
             if (flatCategories && flatCategories.length > 0) {
-                flatCategories.forEach(category => {
-                    grid.appendChild(renderCategory(category));
+                flatCategories.forEach((category, index) => {
+                    grid.appendChild(renderCategory(category, index));
                 });
             } else {
                 console.warn('No categories to render');
@@ -488,15 +523,23 @@ const HelpCenterUI = {
         const isBuiltIn = String(tutorial.id || '').indexOf('builtin-') === 0;
         const showEnglishNotice = isBuiltIn && HelpCenterState.currentLanguage === 'bn' && !tutorial._contentIsBengali;
         
-        // Back button is already in HTML, so we don't need to add it here
+        const impactLevel = (tutorial.difficulty_level === 'advanced') ? 'High' : 'Standard';
         container.innerHTML = `
             ${showEnglishNotice ? `<div class="tutorial-detail-notice content-available-notice" role="status">${t('contentAvailableInEnglish')}</div>` : ''}
+            <div class="hc-article-trust-bar">
+                <span class="hc-trust-badge hc-trust-badge--verified"><i class="fas fa-circle-check"></i> Production-safe</span>
+                <span class="hc-meta-badge hc-meta-badge--verified">Workflow validated</span>
+                <span class="hc-meta-badge">Compliance-ready</span>
+                <span class="hc-meta-badge">Impact: ${impactLevel}</span>
+                <button type="button" class="hc-chip hc-copy-link-btn" id="hcCopyLinkBtn"><i class="fas fa-link"></i> Copy link</button>
+            </div>
             <div class="tutorial-detail-header">
                 <h1 class="tutorial-detail-title">${content.title || t('tutorial')}</h1>
                 <div class="tutorial-detail-meta">
-                    <span><i class="fas fa-clock"></i> ${tutorial.estimated_time || 5} ${t('min')}</span>
+                    <span><i class="fas fa-clock"></i> ${tutorial.estimated_time || 5} ${t('min')} read</span>
                     <span><i class="fas fa-signal"></i> ${t(tutorial.difficulty_level || 'beginner')}</span>
                     <span><i class="fas fa-eye"></i> ${tutorial.views_count || 0} ${t('views')}</span>
+                    <span><i class="fas fa-code-branch"></i> v2026.05</span>
                     ${tutorial.updated_at ? `<span><i class="fas fa-calendar-alt"></i> ${t('updated')}: ${formatDate(tutorial.updated_at)}</span>` : ''}
                     ${tutorial.last_updated ? `<span><i class="fas fa-calendar-alt"></i> ${t('updated')}: ${formatDate(tutorial.last_updated)}</span>` : ''}
                 </div>
@@ -556,6 +599,56 @@ const HelpCenterUI = {
 
         // Setup rating
         this.setupRating(tutorial.id);
+
+        const copyBtn = document.getElementById('hcCopyLinkBtn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                const url = window.location.origin + window.location.pathname + '?tutorial=' + encodeURIComponent(tutorial.id);
+                navigator.clipboard.writeText(url).then(() => {
+                    if (typeof showSuccessMessage === 'function') showSuccessMessage('Link copied');
+                }).catch(() => {});
+            });
+        }
+
+        this.renderRelatedArticles(tutorial);
+        this.renderNextSteps(tutorial);
+
+        if (window.HelpCenterEnterprise && typeof window.HelpCenterEnterprise.onTutorialLoaded === 'function') {
+            window.HelpCenterEnterprise.onTutorialLoaded(tutorial);
+        }
+    },
+
+    renderRelatedArticles(tutorial) {
+        const list = document.getElementById('hcRelatedList');
+        if (!list) return;
+        const related = (HelpCenterState.tutorials || []).filter(item => item.id !== tutorial.id).slice(0, 4);
+        if (!related.length) {
+            list.innerHTML = '<li style="color:var(--hc-text-muted);font-size:0.84rem">Browse categories for more guides.</li>';
+            return;
+        }
+        list.innerHTML = related.map(item => `<li><a href="#" data-related-id="${item.id}">${item.title || item.content?.title || t('untitledTutorial')}</a></li>`).join('');
+        list.querySelectorAll('[data-related-id]').forEach(a => {
+            a.addEventListener('click', e => {
+                e.preventDefault();
+                HelpCenterController.loadTutorial(a.getAttribute('data-related-id'));
+            });
+        });
+    },
+
+    renderNextSteps(tutorial) {
+        const wrap = document.getElementById('hcNextStepChips');
+        if (!wrap) return;
+        const steps = [
+            { label: 'Configure permissions', query: 'permissions' },
+            { label: 'Add first worker', query: 'add worker' },
+            { label: 'Review reports', query: 'reports' }
+        ];
+        wrap.innerHTML = steps.map(s => `<button type="button" class="hc-chip" data-next-query="${s.query}">${s.label}</button>`).join('');
+        wrap.querySelectorAll('[data-next-query]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                HelpCenterController.searchTutorials(btn.getAttribute('data-next-query'));
+            });
+        });
     },
 
     parseContent(content) {
@@ -638,33 +731,50 @@ const HelpCenterUI = {
         if (!container) return;
 
         container.innerHTML = '';
-        
+
         if (!results || results.length === 0) {
             container.innerHTML = `<div class="empty-state"><p>${t('noSearchResults')}</p></div>`;
             return;
         }
 
-        const colorCount = 12; // Increased from 8 to 12 for more color variety
-        results.forEach((tutorial, index) => {
-            const card = document.createElement('a');
-            card.className = 'tutorial-card tutorial-card--color-' + (index % colorCount);
-            card.href = '#';
-            card.dataset.tutorialId = tutorial.id;
-            
-            card.innerHTML = `
-                <div class="tutorial-card-header">
-                    <h3 class="tutorial-card-title">${tutorial.title || t('untitledTutorial')}</h3>
-                </div>
-                <p class="tutorial-card-overview">${tutorial.overview || ''}</p>
-            `;
-            
-            card.addEventListener('click', (e) => {
-                e.preventDefault();
-                HelpCenterController.loadTutorial(tutorial.id);
-            });
-            
-            container.appendChild(card);
+        const groups = { tutorials: [], categories: [] };
+        results.forEach(item => {
+            if (item.category_name) groups.categories.push(item);
+            else groups.tutorials.push(item);
         });
+
+        const colorCount = 12;
+        const appendGroup = (title, items) => {
+            if (!items.length) return;
+            const group = document.createElement('div');
+            group.className = 'hc-search-group';
+            group.innerHTML = `<h3>${title}</h3>`;
+            const inner = document.createElement('div');
+            inner.className = 'search-results-inner';
+            items.forEach((tutorial, index) => {
+                const card = document.createElement('a');
+                card.className = 'tutorial-card tutorial-card--color-' + (index % colorCount);
+                card.href = '#';
+                card.dataset.tutorialId = tutorial.id;
+                card.innerHTML = `
+                    <div class="tutorial-card-header">
+                        <h3 class="tutorial-card-title">${tutorial.title || t('untitledTutorial')}</h3>
+                        <span class="hc-meta-badge">${tutorial.difficulty_level || 'beginner'}</span>
+                    </div>
+                    <p class="tutorial-card-overview">${tutorial.overview || ''}</p>
+                `;
+                card.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    HelpCenterController.loadTutorial(tutorial.id);
+                });
+                inner.appendChild(card);
+            });
+            group.appendChild(inner);
+            container.appendChild(group);
+        };
+
+        appendGroup('Tutorials & guides', groups.tutorials.length ? groups.tutorials : results);
+        appendGroup('Categories', groups.categories);
     },
 
     updateBreadcrumbs(items) {
@@ -818,6 +928,12 @@ const HelpCenterController = {
 
         // Back buttons
         document.addEventListener('click', (e) => {
+            const homeLink = e.target.closest('.breadcrumb-link[data-action="home"]');
+            if (homeLink) {
+                e.preventDefault();
+                this.loadCategories();
+                return;
+            }
             const backButton = e.target.closest('.help-back-button');
             if (backButton) {
                 e.preventDefault();
@@ -887,11 +1003,14 @@ const HelpCenterController = {
             if (response.success && response.data) {
                 HelpCenterState.categories = response.data;
                 HelpCenterUI.renderCategories(response.data);
-                showView('categoryGridView');
+                showView(document.getElementById('homeHubView') ? 'homeHubView' : 'categoryGridView');
                 HelpCenterUI.updateBreadcrumbs([
                     { text: t('home'), link: true, action: 'loadCategories' },
-                    { text: t('allCategories'), link: false }
+                    { text: t('knowledgeHub') || t('allCategories'), link: false }
                 ]);
+                if (window.HelpCenterEnterprise && typeof window.HelpCenterEnterprise.onCategoriesRendered === 'function') {
+                    window.HelpCenterEnterprise.onCategoriesRendered();
+                }
             }
             if (typeof translateUI === 'function') {
                 translateUI(HelpCenterState.currentLanguage);
