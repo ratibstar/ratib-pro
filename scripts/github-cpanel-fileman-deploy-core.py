@@ -223,6 +223,9 @@ FAST_FILES = [
     "pages/security-compliance.php",
     "pages/procurement-legal.php",
     "js/pages/about-enterprise.js",
+    "js/pages/ratib-gallery-lightbox.js",
+    "js/pages/ratib-op-proof-compact.js",
+    "includes/ratib-gallery-lightbox-markup.php",
 ]
 
 CRITICAL = [

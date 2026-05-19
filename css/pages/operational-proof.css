@@ -384,9 +384,29 @@ body.ratib-saas-home .ratib-op-proof__inner.ratib-about-container {
   display: none;
 }
 
+.ratib-op-proof--compact {
+  padding: clamp(1.5rem, 3vw, 2rem) 0;
+}
+
+.ratib-op-proof--compact .ratib-op-proof__head {
+  margin-bottom: 1.25rem;
+}
+
+.ratib-op-proof--compact .ratib-op-proof__block {
+  margin-bottom: 1.35rem;
+}
+
+.ratib-op-proof--compact .ratib-op-gov {
+  padding: 0.85rem 1rem;
+}
+
+.ratib-op-proof--compact .ratib-op-collapsible:not(.is-expanded) .ratib-op-gov__grid .ratib-op-screen-card--featured {
+  grid-column: auto;
+}
+
 .ratib-op-proof--compact .ratib-op-gov__grid .ratib-op-screen-card__frame img,
 .ratib-op-proof--compact .ratib-op-screen-grid .ratib-op-screen-card__frame img {
-  max-height: min(28vh, 200px);
+  max-height: min(22vh, 160px);
 }
 
 .ratib-op-proof--compact .ratib-op-diagram-card__frame {
@@ -398,7 +418,11 @@ body.ratib-saas-home .ratib-op-proof__inner.ratib-about-container {
 }
 
 .ratib-op-proof--compact .ratib-op-gov__grid .ratib-op-screen-card--featured .ratib-op-screen-card__frame img {
-  max-height: min(32vh, 240px);
+  max-height: min(24vh, 180px);
+}
+
+.ratib-op-proof--compact .ratib-op-collapsible:not(.is-expanded) .ratib-op-gov__points {
+  display: none;
 }
 
 .ratib-op-more-btn {

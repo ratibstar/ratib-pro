@@ -35,13 +35,19 @@ $ratibAboutJsPath = __DIR__ . '/../js/pages/about-enterprise.js';
 clearstatcache(true, $ratibAboutJsPath);
 $ratibAboutJsQuery = (int) (@filemtime($ratibAboutJsPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
 
+$ratibOpBuildMarker = '';
+$ratibOpBuildPath = __DIR__ . '/../public/ratib-build.txt';
+if (is_file($ratibOpBuildPath)) {
+    $ratibOpBuildMarker = trim((string) file_get_contents($ratibOpBuildPath));
+}
+
 $ratibGalleryLbJsPath = __DIR__ . '/../js/pages/ratib-gallery-lightbox.js';
 clearstatcache(true, $ratibGalleryLbJsPath);
-$ratibGalleryLbJsQuery = (int) (@filemtime($ratibGalleryLbJsPath) ?: time()) . '-' . $ratibHomeUiRev;
+$ratibGalleryLbJsQuery = (int) (@filemtime($ratibGalleryLbJsPath) ?: time()) . '-' . $ratibHomeUiRev . ($ratibOpBuildMarker !== '' ? '-' . $ratibOpBuildMarker : '');
 
 $ratibOpCompactJsPath = __DIR__ . '/../js/pages/ratib-op-proof-compact.js';
 clearstatcache(true, $ratibOpCompactJsPath);
-$ratibOpCompactJsQuery = (int) (@filemtime($ratibOpCompactJsPath) ?: time()) . '-' . $ratibHomeUiRev;
+$ratibOpCompactJsQuery = (int) (@filemtime($ratibOpCompactJsPath) ?: time()) . '-' . $ratibHomeUiRev . ($ratibOpBuildMarker !== '' ? '-' . $ratibOpBuildMarker : '');
 
 $metaTitle = (string) ($about['meta']['title'] ?? 'About RATIB');
 $metaDesc = (string) ($about['meta']['description'] ?? '');
@@ -73,7 +79,7 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo htmlspecialchars($ratibAboutCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <?php
     $ratibOpCssPath = __DIR__ . '/../css/pages/operational-proof.css';
-    $ratibOpCssQuery = (int) (@filemtime($ratibOpCssPath) ?: time()) . '-' . $ratibHomeUiRev;
+    $ratibOpCssQuery = (int) (@filemtime($ratibOpCssPath) ?: time()) . '-' . $ratibHomeUiRev . ($ratibOpBuildMarker !== '' ? '-' . $ratibOpBuildMarker : '');
     ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/operational-proof.css?v=<?php echo htmlspecialchars($ratibOpCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <script type="application/ld+json"><?php echo json_encode([

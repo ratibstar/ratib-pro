@@ -23,10 +23,25 @@ if (!function_exists('ratib_op_sample_badge')) {
     }
 }
 
+if (!function_exists('ratib_op_more_item_hidden')) {
+    function ratib_op_more_item_hidden(bool $compact, int $index, int $limit): bool
+    {
+        return $compact && $index >= $limit;
+    }
+}
+
 if (!function_exists('ratib_op_more_item_class')) {
     function ratib_op_more_item_class(bool $compact, int $index, int $limit): string
     {
-        return ($compact && $index >= $limit) ? ' ratib-op-item--more' : '';
+        return ratib_op_more_item_hidden($compact, $index, $limit) ? ' ratib-op-item--more' : '';
+    }
+}
+
+if (!function_exists('ratib_op_more_item_attr')) {
+    /** hidden attribute so collapsed items stay hidden even if CSS is cached */
+    function ratib_op_more_item_attr(bool $compact, int $index, int $limit): string
+    {
+        return ratib_op_more_item_hidden($compact, $index, $limit) ? ' hidden' : '';
     }
 }
 
@@ -85,12 +100,12 @@ if (!function_exists('ratib_operational_proof_render')) {
         $showWorkflows = $show['workflows'] ?? true;
         $compact = !empty($show['compact']);
         $limits = [
-            'gov_shots' => 2,
-            'gov_points' => 1,
-            'diagrams' => 2,
-            'screenshots' => 2,
+            'gov_shots' => 1,
+            'gov_points' => 0,
+            'diagrams' => 1,
+            'screenshots' => 1,
             'workflows' => 1,
-            'workflow_steps' => 2,
+            'workflow_steps' => 1,
         ];
         if (!empty($show['compact_limits']) && is_array($show['compact_limits'])) {
             $limits = array_merge($limits, $show['compact_limits']);
@@ -130,7 +145,7 @@ if (!function_exists('ratib_operational_proof_render')) {
                         <?php if (!empty($govPoints)) { ?>
                         <ul class="ratib-op-gov__points">
                             <?php foreach ($govPoints as $pi => $point) { ?>
-                            <li class="<?php echo trim(ratib_op_more_item_class($compact, (int) $pi, $limits['gov_points'])); ?>"><?php echo ratib_op_h((string) $point); ?></li>
+                            <li class="<?php echo trim(ratib_op_more_item_class($compact, (int) $pi, $limits['gov_points'])); ?>"<?php echo ratib_op_more_item_attr($compact, (int) $pi, $limits['gov_points']); ?>><?php echo ratib_op_h((string) $point); ?></li>
                             <?php } ?>
                         </ul>
                         <?php } ?>
@@ -141,7 +156,7 @@ if (!function_exists('ratib_operational_proof_render')) {
                             $badge = (string) ($s['label'] ?? 'Sample operational data');
                             $featured = !empty($s['featured']);
                             ?>
-                        <figure class="ratib-op-screen-card<?php echo $featured ? ' ratib-op-screen-card--featured' : ''; ?><?php echo ratib_op_more_item_class($compact, (int) $gi, $limits['gov_shots']); ?>">
+                        <figure class="ratib-op-screen-card<?php echo $featured ? ' ratib-op-screen-card--featured' : ''; ?><?php echo ratib_op_more_item_class($compact, (int) $gi, $limits['gov_shots']); ?>"<?php echo ratib_op_more_item_attr($compact, (int) $gi, $limits['gov_shots']); ?>>
                             <div class="ratib-op-screen-card__frame">
                                 <?php echo ratib_op_gallery_thumb(
                                     (string) ($s['src'] ?? ''),
@@ -172,7 +187,7 @@ if (!function_exists('ratib_operational_proof_render')) {
                     <p class="ratib-op-proof__block-note"><?php echo ratib_op_sample_badge('Illustrative diagrams · not live system output'); ?></p>
                     <div class="ratib-op-diagram-grid">
                         <?php foreach ($diagrams as $di => $d) { ?>
-                        <figure class="ratib-op-diagram-card<?php echo ratib_op_more_item_class($compact, (int) $di, $limits['diagrams']); ?>">
+                        <figure class="ratib-op-diagram-card<?php echo ratib_op_more_item_class($compact, (int) $di, $limits['diagrams']); ?>"<?php echo ratib_op_more_item_attr($compact, (int) $di, $limits['diagrams']); ?>>
                             <div class="ratib-op-diagram-card__frame">
                                 <?php echo ratib_op_gallery_thumb(
                                     (string) ($d['src'] ?? ''),
@@ -203,7 +218,7 @@ if (!function_exists('ratib_operational_proof_render')) {
                         <?php foreach ($screenshots as $si => $s) {
                             $badge = (string) ($s['label'] ?? 'Illustrative interface');
                             ?>
-                        <figure class="ratib-op-screen-card<?php echo ratib_op_more_item_class($compact, (int) $si, $limits['screenshots']); ?>">
+                        <figure class="ratib-op-screen-card<?php echo ratib_op_more_item_class($compact, (int) $si, $limits['screenshots']); ?>"<?php echo ratib_op_more_item_attr($compact, (int) $si, $limits['screenshots']); ?>>
                             <div class="ratib-op-screen-card__frame">
                                 <?php echo ratib_op_gallery_thumb(
                                     (string) ($s['src'] ?? ''),
@@ -241,7 +256,7 @@ if (!function_exists('ratib_operational_proof_render')) {
                             $steps = is_array($w['steps'] ?? null) ? $w['steps'] : [];
                             $wfMore = $compact && (int) $wi >= $limits['workflows'];
                             ?>
-                        <article class="ratib-op-workflow<?php echo $wfMore ? ' ratib-op-item--more' : ''; ?>" id="<?php echo ratib_op_h((string) ($w['id'] ?? '')); ?>">
+                        <article class="ratib-op-workflow<?php echo $wfMore ? ' ratib-op-item--more' : ''; ?>" id="<?php echo ratib_op_h((string) ($w['id'] ?? '')); ?>"<?php echo $wfMore ? ' hidden' : ''; ?>>
                             <header class="ratib-op-workflow__head">
                                 <span class="ratib-op-workflow__icon" aria-hidden="true"><i class="fas <?php echo ratib_op_h((string) ($w['icon'] ?? 'fa-circle')); ?>"></i></span>
                                 <h4><?php echo ratib_op_h((string) ($w['title'] ?? '')); ?></h4>
@@ -250,7 +265,7 @@ if (!function_exists('ratib_operational_proof_render')) {
                                 <?php foreach ($steps as $sti => $step) {
                                     $stepHidden = $compact && (((int) $wi === 0 && (int) $sti >= $limits['workflow_steps']) || (int) $wi > 0);
                                     ?>
-                                <li<?php echo $stepHidden ? ' class="ratib-op-item--more"' : ''; ?>><?php echo ratib_op_h((string) $step); ?></li>
+                                <li<?php echo $stepHidden ? ' class="ratib-op-item--more" hidden' : ''; ?>><?php echo ratib_op_h((string) $step); ?></li>
                                 <?php } ?>
                             </ol>
                             <p class="ratib-op-workflow__outcome<?php echo $compact ? ' ratib-op-text--clamp-2' : ''; ?>"><span class="ratib-mono">Outcome</span> <?php echo ratib_op_h((string) ($w['outcome'] ?? '')); ?></p>
