@@ -51,23 +51,34 @@
     }
 
     items.forEach(function (li) {
-        var btn = li.querySelector('.ratib-mega-nav__trigger');
-        if (!btn) {
+        var btn = li.querySelector('button.ratib-mega-nav__trigger');
+        var triggerEl = btn && btn.getAttribute('id') ? btn : li.querySelector('.ratib-mega-nav__trigger-label');
+        if (!triggerEl) {
             return;
         }
 
-        btn.addEventListener('click', function (ev) {
+        function onActivate(ev) {
+            if (ev.target && ev.target.closest && ev.target.closest('.ratib-mega-nav__panel')) {
+                return;
+            }
             ev.preventDefault();
             ev.stopPropagation();
             toggleItem(li);
-        });
+        }
 
-        btn.addEventListener('keydown', function (ev) {
-            if (ev.key === 'Escape') {
-                closeAll();
-                btn.focus();
-            }
-        });
+        triggerEl.addEventListener('click', onActivate);
+        if (triggerEl !== btn && btn) {
+            btn.addEventListener('click', onActivate);
+        }
+
+        if (btn && btn.addEventListener) {
+            btn.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Escape') {
+                    closeAll();
+                    btn.focus();
+                }
+            });
+        }
     });
 
     document.addEventListener('click', function (ev) {

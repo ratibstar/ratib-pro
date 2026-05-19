@@ -70,6 +70,19 @@ if (!function_exists('ratib_public_marketing_toggle_density_url')) {
     }
 }
 
+if (!function_exists('ratib_public_profile_nav_prefix')) {
+    /** Profile page nav prefix — adds ?density=full when sections are server-collapsed. */
+    function ratib_public_profile_nav_prefix(string $baseUrl): string
+    {
+        $root = rtrim($baseUrl, '/') . '/profile/';
+        if (ratib_public_marketing_is_focused()) {
+            return $root . '?density=full';
+        }
+
+        return $root;
+    }
+}
+
 if (!function_exists('ratib_marketing_emit_focused_rescue_css')) {
     /** Inline hide rules — works even if home-marketing-focused.css is cached or missing. */
     function ratib_marketing_emit_focused_rescue_css(): void

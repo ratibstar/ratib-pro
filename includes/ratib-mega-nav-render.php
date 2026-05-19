@@ -70,13 +70,7 @@ function ratib_mega_nav_render(string $baseUrl, string $navPrefix): void
             }
             ?>
         <li class="ratib-mega-nav__li ratib-mega-nav__li--mega" role="listitem" data-ratib-mega-id="<?php echo $h($mid); ?>">
-            <button type="button"
-                class="ratib-mega-nav__trigger"
-                id="<?php echo $h($tid); ?>"
-                aria-expanded="false"
-                aria-haspopup="true"
-                aria-controls="<?php echo $h($panelId); ?>"
-                data-ratib-mega-trigger="<?php echo $h($mid); ?>">
+            <button type="button" class="ratib-mega-nav__trigger" id="<?php echo $h($tid); ?>" aria-expanded="false" aria-haspopup="true" aria-controls="<?php echo $h($panelId); ?>" data-ratib-mega-trigger="<?php echo $h($mid); ?>">
                 <span class="ratib-mega-nav__trigger-label"><?php echo $h($label); ?></span>
                 <i class="fas fa-chevron-down ratib-mega-nav__chev" aria-hidden="true"></i>
             </button>

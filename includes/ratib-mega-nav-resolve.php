@@ -11,7 +11,12 @@
 if (!function_exists('ratib_mega_nav_is_profile_context')) {
     function ratib_mega_nav_is_profile_context(string $navPrefix): bool
     {
-        return $navPrefix !== '' && preg_match('#/profile/?$#i', rtrim($navPrefix, '/')) === 1;
+        if ($navPrefix === '') {
+            return false;
+        }
+        $path = (string) (parse_url($navPrefix, PHP_URL_PATH) ?: $navPrefix);
+
+        return (bool) preg_match('#/profile/?$#i', rtrim($path, '/'));
     }
 }
 
@@ -40,8 +45,12 @@ if (!function_exists('ratib_mega_nav_profile_hash')) {
     function ratib_mega_nav_profile_hash(string $profileRoot, string $hash): string
     {
         $hash = $hash !== '' && $hash[0] === '#' ? $hash : '#' . ltrim($hash, '#');
+        $root = rtrim($profileRoot, '/');
+        if (strpos($root, '?') !== false) {
+            return $root . $hash;
+        }
 
-        return rtrim($profileRoot, '/') . '/' . $hash;
+        return $root . '/' . $hash;
     }
 }
 

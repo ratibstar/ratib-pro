@@ -25,7 +25,9 @@ require_once __DIR__ . '/../includes/ratib-about-sections.php';
 $about = ratib_about_profile_config($baseUrl);
 $ratibAboutPageActive = true;
 // Keep platform pills on /profile/ anchors — not home.php#platform (that felt like "opening home").
-$ratibHomeNavHrefPrefix = rtrim($baseUrl, '/') . '/profile/';
+$ratibHomeNavHrefPrefix = function_exists('ratib_public_profile_nav_prefix')
+    ? ratib_public_profile_nav_prefix($baseUrl)
+    : rtrim($baseUrl, '/') . '/profile/';
 
 $ratibAboutCssPath = __DIR__ . '/../css/pages/about-enterprise.css';
 clearstatcache(true, $ratibAboutCssPath);

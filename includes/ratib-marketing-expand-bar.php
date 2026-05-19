@@ -18,7 +18,7 @@ if (!function_exists('ratib_marketing_expand_bar_render')) {
         $hint = $hints[$context] ?? $hints['home'];
         $isFocused = ratib_public_marketing_is_focused();
         $toggleHref = function_exists('ratib_public_marketing_toggle_density_url')
-            ? ratib_public_marketing_toggle_density_url(!$isFocused)
+            ? ratib_public_marketing_toggle_density_url($isFocused)
             : '#';
         $toggleLabel = $isFocused ? 'Show full details' : 'Show shorter page';
         ?>
