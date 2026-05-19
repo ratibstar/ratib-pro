@@ -23,6 +23,26 @@ if (!function_exists('ratib_op_sample_badge')) {
     }
 }
 
+if (!function_exists('ratib_op_gallery_thumb')) {
+    /**
+     * Clickable screenshot/diagram — opens home lightbox with prev/next (data-ratib-gallery-open).
+     */
+    function ratib_op_gallery_thumb(string $src, string $alt, string $caption, string $badgeLabel, string $loading = 'lazy'): string
+    {
+        if ($src === '') {
+            return '';
+        }
+        $viewLabel = trim($caption) !== '' ? trim($caption) : ($alt !== '' ? $alt : 'Image');
+        $aria = 'View larger: ' . $viewLabel;
+
+        return '<button type="button" class="ratib-op-gallery-thumb" data-ratib-gallery-open data-full-src="'
+            . ratib_op_h($src) . '" data-caption="' . ratib_op_h($caption) . '" aria-label="' . ratib_op_h($aria) . '">'
+            . ratib_op_sample_badge($badgeLabel)
+            . '<img src="' . ratib_op_h($src) . '" alt="' . ratib_op_h($alt) . '" loading="' . ratib_op_h($loading) . '" decoding="async">'
+            . '</button>';
+    }
+}
+
 if (!function_exists('ratib_operational_proof_render')) {
     /**
      * @param array<string, mixed>|null $copy Optional section overrides (from CMS)
@@ -81,8 +101,13 @@ if (!function_exists('ratib_operational_proof_render')) {
                             ?>
                         <figure class="ratib-op-screen-card<?php echo $featured ? ' ratib-op-screen-card--featured' : ''; ?>">
                             <div class="ratib-op-screen-card__frame">
-                                <?php echo ratib_op_sample_badge($badge); ?>
-                                <img src="<?php echo ratib_op_h((string) ($s['src'] ?? '')); ?>" alt="<?php echo ratib_op_h((string) ($s['alt'] ?? '')); ?>" loading="<?php echo $featured ? 'eager' : 'lazy'; ?>" decoding="async">
+                                <?php echo ratib_op_gallery_thumb(
+                                    (string) ($s['src'] ?? ''),
+                                    (string) ($s['alt'] ?? ''),
+                                    (string) ($s['title'] ?? ''),
+                                    $badge,
+                                    $featured ? 'eager' : 'lazy'
+                                ); ?>
                             </div>
                             <figcaption>
                                 <strong><?php echo ratib_op_h((string) ($s['title'] ?? '')); ?></strong>
@@ -104,7 +129,13 @@ if (!function_exists('ratib_operational_proof_render')) {
                         <?php foreach ($cfg['diagrams'] as $d) { ?>
                         <figure class="ratib-op-diagram-card">
                             <div class="ratib-op-diagram-card__frame">
-                                <img src="<?php echo ratib_op_h((string) ($d['src'] ?? '')); ?>" alt="<?php echo ratib_op_h((string) ($d['title'] ?? '')); ?>" width="640" height="400" loading="lazy" decoding="async">
+                                <?php echo ratib_op_gallery_thumb(
+                                    (string) ($d['src'] ?? ''),
+                                    (string) ($d['title'] ?? ''),
+                                    trim((string) ($d['title'] ?? '') . ' — ' . (string) ($d['caption'] ?? '')),
+                                    'Illustrative diagram',
+                                    'lazy'
+                                ); ?>
                             </div>
                             <figcaption>
                                 <strong><?php echo ratib_op_h((string) ($d['title'] ?? '')); ?></strong>
@@ -126,8 +157,13 @@ if (!function_exists('ratib_operational_proof_render')) {
                             ?>
                         <figure class="ratib-op-screen-card">
                             <div class="ratib-op-screen-card__frame">
-                                <?php echo ratib_op_sample_badge($badge); ?>
-                                <img src="<?php echo ratib_op_h((string) ($s['src'] ?? '')); ?>" alt="<?php echo ratib_op_h((string) ($s['alt'] ?? '')); ?>" loading="lazy" decoding="async">
+                                <?php echo ratib_op_gallery_thumb(
+                                    (string) ($s['src'] ?? ''),
+                                    (string) ($s['alt'] ?? ''),
+                                    (string) ($s['title'] ?? ''),
+                                    $badge,
+                                    'lazy'
+                                ); ?>
                             </div>
                             <figcaption><?php echo ratib_op_h((string) ($s['title'] ?? '')); ?></figcaption>
                         </figure>

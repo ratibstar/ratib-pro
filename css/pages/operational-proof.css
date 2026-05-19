@@ -155,6 +155,29 @@
   background: #0f172a;
 }
 
+.ratib-op-gallery-thumb {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  position: relative;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+}
+
+.ratib-op-gallery-thumb:focus-visible {
+  outline: 2px solid rgba(139, 92, 246, 0.95);
+  outline-offset: 3px;
+}
+
+.ratib-op-gallery-thumb .ratib-op-sample {
+  pointer-events: none;
+}
+
 .ratib-op-screen-card__frame .ratib-op-sample {
   position: absolute;
   top: 0.5rem;

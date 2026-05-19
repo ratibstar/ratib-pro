@@ -1319,18 +1319,27 @@
             }
         }
 
-        var mqForSlides = document.querySelector('[data-ratib-program-marquee]');
-        /* First half of thumbnails = one full marquee cycle (same order as CMS slots). The second half is only for infinite scroll — do not dedupe by URL or duplicate captions collapse to one slide and hide Prev/Next. */
-        var slides = [];
-        if (mqForSlides) {
-            var allProgOpen = mqForSlides.querySelectorAll('[data-ratib-program-open]');
-            var total = allProgOpen.length;
-            var halfCount = Math.floor(total / 2);
-            slides = Array.prototype.slice.call(allProgOpen, 0, halfCount > 0 ? halfCount : total);
+        function collectGallerySlides() {
+            var out = [];
+            var opRoot = document.getElementById('operational-proof');
+            if (opRoot) {
+                out = Array.prototype.slice.call(opRoot.querySelectorAll('[data-ratib-gallery-open]'));
+            }
+            var mqForSlides = document.querySelector('[data-ratib-program-marquee]');
+            /* First half of thumbnails = one full marquee cycle. Second half is only for infinite scroll. */
+            if (mqForSlides) {
+                var allProgOpen = mqForSlides.querySelectorAll('[data-ratib-program-open]');
+                var total = allProgOpen.length;
+                var halfCount = Math.floor(total / 2);
+                var prog = Array.prototype.slice.call(allProgOpen, 0, halfCount > 0 ? halfCount : total);
+                out = out.concat(prog);
+            }
+            return out;
         }
 
+        var slides = collectGallerySlides();
         var lb = document.getElementById('ratib-program-lightbox');
-        if (!lb) {
+        if (!lb || !slides.length) {
             return;
         }
         var imgEl = lb.querySelector('.ratib-program-lightbox__img');
@@ -1353,7 +1362,7 @@
             return { src: full, alt: altText, caption: cap };
         }
 
-        function indexOfProgramSlide(btn) {
+        function indexOfGallerySlide(btn) {
             var idx = slides.indexOf(btn);
             if (idx >= 0) {
                 return idx;
@@ -1471,12 +1480,12 @@
                 }
             }
 
-            var btn = ev.target.closest('[data-ratib-program-open]');
+            var btn = ev.target.closest('[data-ratib-gallery-open], [data-ratib-program-open]');
             if (!btn) {
                 return;
             }
             ev.preventDefault();
-            openLbAt(indexOfProgramSlide(btn));
+            openLbAt(indexOfGallerySlide(btn));
         });
 
         document.addEventListener('keydown', function (ev) {

@@ -661,7 +661,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                                         ?>
                             <div class="ratib-cms-media-strip__item ratib-cms-media-strip__item--program">
                                 <figure class="ratib-hero__photo ratib-hero__photo--program" role="listitem">
-                                    <button type="button" class="ratib-program-strip__thumb" data-ratib-program-open data-full-src="<?php echo htmlspecialchars($ratibProgSrc, ENT_QUOTES, 'UTF-8'); ?>" data-caption="<?php echo htmlspecialchars((string) $ratibProgSlot['caption'], ENT_QUOTES, 'UTF-8'); ?>" aria-label="<?php echo htmlspecialchars('View larger: ' . ((string) $ratibProgSlot['caption'] !== '' ? (string) $ratibProgSlot['caption'] : (string) $ratibProgSlot['alt']), ENT_QUOTES, 'UTF-8'); ?>">
+                                    <button type="button" class="ratib-program-strip__thumb" data-ratib-gallery-open data-ratib-program-open data-full-src="<?php echo htmlspecialchars($ratibProgSrc, ENT_QUOTES, 'UTF-8'); ?>" data-caption="<?php echo htmlspecialchars((string) $ratibProgSlot['caption'], ENT_QUOTES, 'UTF-8'); ?>" aria-label="<?php echo htmlspecialchars('View larger: ' . ((string) $ratibProgSlot['caption'] !== '' ? (string) $ratibProgSlot['caption'] : (string) $ratibProgSlot['alt']), ENT_QUOTES, 'UTF-8'); ?>">
                                         <img src="<?php echo htmlspecialchars($ratibProgSrc, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars((string) $ratibProgSlot['alt'], ENT_QUOTES, 'UTF-8'); ?>" width="800" height="500" loading="lazy" decoding="async">
                                     </button>
                                     <figcaption><?php echo htmlspecialchars((string) $ratibProgSlot['caption'], ENT_QUOTES, 'UTF-8'); ?></figcaption>
@@ -676,28 +676,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                     </div>
                 </div>
             </div>
-            <div class="ratib-program-lightbox" id="ratib-program-lightbox" hidden data-ratib-program-lightbox>
-                <div class="ratib-program-lightbox__backdrop" data-ratib-program-lightbox-close tabindex="-1"></div>
-                <div class="ratib-program-lightbox__panel" role="dialog" aria-modal="true" aria-label="Program image preview">
-                    <button type="button" class="ratib-program-lightbox__close" data-ratib-program-lightbox-close aria-label="Close preview">&times;</button>
-                    <div class="ratib-program-lightbox__stage">
-                        <img src="" alt="" class="ratib-program-lightbox__img" id="ratib-program-lightbox-img" decoding="async">
-                        <div class="ratib-program-lightbox__overlay-nav" id="ratib-program-lightbox-controls" hidden>
-                            <button type="button" class="ratib-program-lightbox__btn ratib-program-lightbox__btn--prev" data-ratib-program-lightbox-prev aria-label="Previous image">
-                                <span class="ratib-program-lightbox__btn-ic" aria-hidden="true">&#8249;</span>
-                                <span class="ratib-program-lightbox__btn-lbl">Prev</span>
-                            </button>
-                            <span class="ratib-program-lightbox__counter" id="ratib-program-lightbox-counter" aria-live="polite"></span>
-                            <button type="button" class="ratib-program-lightbox__btn ratib-program-lightbox__btn--next" data-ratib-program-lightbox-next aria-label="Next image">
-                                <span class="ratib-program-lightbox__btn-lbl">Next</span>
-                                <span class="ratib-program-lightbox__btn-ic" aria-hidden="true">&#8250;</span>
-                            </button>
-                        </div>
-                    </div>
-                    <p class="ratib-program-lightbox__caption" id="ratib-program-lightbox-caption" hidden></p>
-                </div>
-            </div>
-            <?php else: ?>
+                        <?php else: ?>
             <div class="ratib-hero__photo-strip ratib-hero__program-strip ratib-hero__program-strip--empty" id="program-previews">
                 <div class="ratib-container">
                     <p class="ratib-hero__photo-eyebrow"><?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? 'Program previews', ENT_QUOTES, 'UTF-8'); ?></p>
@@ -1150,7 +1129,30 @@ ratib_emit_profile_nav_guard($baseUrl);
                 </div>
             </div>
         </section>
-    </main>
+    
+<div class="ratib-program-lightbox" id="ratib-program-lightbox" hidden data-ratib-program-lightbox>
+                <div class="ratib-program-lightbox__backdrop" data-ratib-program-lightbox-close tabindex="-1"></div>
+                <div class="ratib-program-lightbox__panel" role="dialog" aria-modal="true" aria-label="Image preview">
+                    <button type="button" class="ratib-program-lightbox__close" data-ratib-program-lightbox-close aria-label="Close preview">&times;</button>
+                    <div class="ratib-program-lightbox__stage">
+                        <img src="" alt="" class="ratib-program-lightbox__img" id="ratib-program-lightbox-img" decoding="async">
+                        <div class="ratib-program-lightbox__overlay-nav" id="ratib-program-lightbox-controls" hidden>
+                            <button type="button" class="ratib-program-lightbox__btn ratib-program-lightbox__btn--prev" data-ratib-program-lightbox-prev aria-label="Previous image">
+                                <span class="ratib-program-lightbox__btn-ic" aria-hidden="true">&#8249;</span>
+                                <span class="ratib-program-lightbox__btn-lbl">Prev</span>
+                            </button>
+                            <span class="ratib-program-lightbox__counter" id="ratib-program-lightbox-counter" aria-live="polite"></span>
+                            <button type="button" class="ratib-program-lightbox__btn ratib-program-lightbox__btn--next" data-ratib-program-lightbox-next aria-label="Next image">
+                                <span class="ratib-program-lightbox__btn-lbl">Next</span>
+                                <span class="ratib-program-lightbox__btn-ic" aria-hidden="true">&#8250;</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="ratib-program-lightbox__caption" id="ratib-program-lightbox-caption" hidden></p>
+                </div>
+            </div>
+
+</main>
 
 <?php include __DIR__ . '/../includes/ratib-home-public-footer.php'; ?>
 
