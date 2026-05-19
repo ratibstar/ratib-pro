@@ -229,6 +229,12 @@
     });
   }
 
+  function initGalleryLightbox() {
+    if (window.RatibGalleryLightbox && typeof window.RatibGalleryLightbox.init === 'function') {
+      window.RatibGalleryLightbox.init();
+    }
+  }
+
   function boot() {
     initProfileNavHighlight();
     initScrollToCompanyProfile();
@@ -237,6 +243,7 @@
     initMetricJitter();
     initEventStream();
     initJumpNavActive();
+    initGalleryLightbox();
   }
 
   if (document.readyState === 'loading') {
