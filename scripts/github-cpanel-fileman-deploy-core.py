@@ -49,6 +49,17 @@ DEPLOY_DENY_PREFIXES = (
 )
 FAST_DEPLOY_CHANGED_CAP = 40
 
+# Binary-safe POST body for Fileman::save_file_content (urlencode() would UTF-8-mangle bytes 128–255).
+
+
+def build_save_file_post_body(dir_path: str, file_name: str, raw: bytes) -> bytes:
+    """Percent-encode raw file bytes without UTF-8 re-encoding (fixes corrupt PNG/WebP on deploy)."""
+    qdir = urllib.parse.quote(dir_path, safe="")
+    qfile = urllib.parse.quote(file_name, safe="")
+    qcontent = urllib.parse.quote_from_bytes(raw, safe="")
+    return f"dir={qdir}&file={qfile}&content={qcontent}".encode("ascii")
+
+
 # ~1–2 min on push: always-sync core + build marker LAST.
 FAST_FILES = [
     ".htaccess",
@@ -180,6 +191,24 @@ _print_lock = Lock()
 _mkdir_cache: set[str] = set()
 
 
+def api_post_raw(module: str, data: bytes) -> dict:
+    host = os.environ["CPANEL_HOST"]
+    port = os.environ.get("CPANEL_PORT", "2083")
+    user = os.environ["CPANEL_USER"]
+    token = os.environ["CPANEL_API_TOKEN"]
+    req = urllib.request.Request(
+        f"https://{host}:{port}/execute/{module}",
+        data=data,
+        method="POST",
+        headers={
+            "Authorization": f"cpanel {user}:{token}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=90) as resp:
+        return json.loads(resp.read().decode("utf-8", errors="replace"))
+
+
 def api_post(module: str, params: dict) -> dict:
     host = os.environ["CPANEL_HOST"]
     port = os.environ.get("CPANEL_PORT", "2083")
@@ -249,14 +278,11 @@ def upload_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
     ensure_remote_dir(dir_path, remote_base)
     with open(rel, "rb") as f:
         raw = f.read()
+    data = build_save_file_post_body(dir_path, name, raw)
     try:
-        content = raw.decode("utf-8")
-    except UnicodeDecodeError:
-        content = raw.decode("latin-1")
-    try:
-        payload = api_post(
+        payload = api_post_raw(
             "Fileman/save_file_content",
-            {"dir": dir_path, "file": name, "content": content},
+            data,
         )
     except Exception as e:
         return rel, False, str(e)
