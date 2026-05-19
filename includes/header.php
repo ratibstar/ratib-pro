@@ -238,6 +238,25 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
                 <span>Notifications</span>
                 <span class="notification-badge badge bg-danger ms-1 d-none" id="headerNotificationBadge">0</span>
             </a>
+            <?php
+            if (!function_exists('ratib_public_marketing_home_register_url')) {
+                require_once __DIR__ . '/ratib-public-base-url.php';
+            }
+            $registerProRoot = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : rtrim((string) getBaseUrl(), '/');
+            $registerProExtra = [];
+            $registerProCountryCode = strtoupper(trim((string) ($_SESSION['country_code'] ?? (defined('COUNTRY_CODE') ? COUNTRY_CODE : ''))));
+            $registerProCountryName = trim((string) ($_SESSION['country_name'] ?? (defined('COUNTRY_NAME') ? COUNTRY_NAME : '')));
+            if ($registerProCountryCode !== '') {
+                $registerProExtra['country_code'] = $registerProCountryCode;
+            } elseif ($registerProCountryName !== '') {
+                $registerProExtra['country_name'] = $registerProCountryName;
+            }
+            $registerProUrl = ratib_public_marketing_home_register_url($registerProRoot, 'gold', 1, $registerProExtra);
+            ?>
+            <a href="<?php echo htmlspecialchars($registerProUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="nav-item nav-link nav-register-pro" title="Gold / Platinum registration on the marketing site">
+                <i class="nav-icon fas fa-external-link-alt"></i>
+                <span>Register Pro</span>
+            </a>
             <?php if (function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user() && isset($_SESSION['role_id']) && (int)$_SESSION['role_id'] === 1): ?>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="manage_settings">
                 <i class="nav-icon fas fa-cog"></i>
