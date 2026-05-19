@@ -655,13 +655,18 @@ $ratibPublicRoot = rtrim((string) $ratibPublicRoot, '/');
 $editorCss = ($ratibPublicRoot !== '' ? $ratibPublicRoot : '') . '/css/control/site-content-home-editor.css';
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
-startControlLayout('Public site content', [$editorCss], []);
+startControlLayout('Public site content — full site', [$editorCss], []);
 
 ?>
 <div class="ratib-site-content-editor ratib-site-content-editor--dark" lang="en">
     <div class="ratib-site-content-intro mb-3">
-        <strong><i class="fas fa-globe me-2"></i>Public site content</strong>
-        <p class="mb-0 small text-muted">Edit the live marketing homepage (<code>pages/home.php</code>) and the public <strong>company profile</strong> (<code>/profile</code>)—including <strong>government &amp; mobilization</strong> screenshots (first block on the profile). Values are stored in <code>ratib_site_content</code>. Expand a section—use <strong>Save</strong> at the bottom.</p>
+        <strong><i class="fas fa-globe me-2"></i>Public site content — entire marketing site</strong>
+        <p class="mb-2 small text-muted">Single CMS for everything visitors see on the public site: <strong>marketing home</strong>, <strong>company profile</strong> (government block first), <strong>architecture</strong>, <strong>security &amp; compliance</strong>, and <strong>procurement &amp; legal</strong>. Text and images are stored in <code>ratib_site_content</code> on the control database. Expand a section, edit, then <strong>Save all</strong> at the bottom and hard-refresh the live page.</p>
+        <?php if (function_exists('ratib_site_content_public_page_links')) {
+            foreach (ratib_site_content_public_page_links() as $plink) { ?>
+        <a class="btn btn-sm btn-outline-light me-1 mb-1" href="<?php echo htmlspecialchars($plink['path'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($plink['label'], ENT_QUOTES, 'UTF-8'); ?></a>
+        <?php }
+        } ?>
     </div>
 
 <?php if (!$tableOk): ?>

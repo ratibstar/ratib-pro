@@ -4,6 +4,8 @@
  */
 declare(strict_types=1);
 
+require_once __DIR__ . '/ratib-public-cms.php';
+
 if (!function_exists('ratib_security_compliance_config')) {
     /**
      * @return array<string, mixed>
@@ -17,13 +19,13 @@ if (!function_exists('ratib_security_compliance_config')) {
 
         return [
             'meta' => [
-                'title' => 'Security & Compliance — RATIB Trust Center',
-                'description' => 'RATIB security architecture, compliance governance, tenant isolation, and operational reliability — designed for regulated workforce program infrastructure and enterprise procurement review.',
+                'title' => ratib_public_cms('trust.meta.title', 'Security & Compliance — RATIB Trust Center'),
+                'description' => ratib_public_cms('trust.meta.description', 'RATIB security architecture, compliance governance, tenant isolation, and operational reliability — designed for regulated workforce program infrastructure and enterprise procurement review.'),
             ],
             'hero' => [
-                'eyebrow' => 'Trust center',
-                'title' => 'Security & compliance for regulated workforce operations',
-                'lead' => 'RATIB is enterprise workforce program infrastructure designed for agencies and government-aligned programs that require auditable operations, tenant isolation, and procurement-ready governance — without overstating certifications.',
+                'eyebrow' => ratib_public_cms('trust.hero.eyebrow', 'Trust center'),
+                'title' => ratib_public_cms('trust.hero.title', 'Security & compliance for regulated workforce operations'),
+                'lead' => ratib_public_cms('trust.hero.lead', 'RATIB is enterprise workforce program infrastructure designed for agencies and government-aligned programs that require auditable operations, tenant isolation, and procurement-ready governance — without overstating certifications.'),
                 'chips' => [
                     ['label' => 'TLS 1.3 to edge', 'ok' => true],
                     ['label' => 'Tenant isolation', 'ok' => true],
@@ -31,7 +33,7 @@ if (!function_exists('ratib_security_compliance_config')) {
                     ['label' => 'Replay-safe workflows', 'ok' => true],
                 ],
             ],
-            'disclaimer' => 'This trust center describes platform architecture and operational design. RATIB does not claim third-party certifications (such as SOC 2 or ISO) unless separately documented in a signed enterprise agreement.',
+            'disclaimer' => ratib_public_cms('trust.disclaimer', 'This trust center describes platform architecture and operational design. RATIB does not claim third-party certifications (such as SOC 2 or ISO) unless separately documented in a signed enterprise agreement.'),
             'sections' => [
                 'security_overview' => [
                     'id' => 'security-overview',

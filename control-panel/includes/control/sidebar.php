@@ -35,7 +35,7 @@ $clientPlatformLinks = control_client_platform_links();
             }
             ?>
             <li class="sidebar-section"><span class="section-label">Public site</span></li>
-            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'site-content.php') ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings"><i class="fas fa-globe"></i><span>Public site content</span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'site-content.php') ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings" title="Marketing home, company profile, architecture, security, procurement"><i class="fas fa-globe"></i><span>Public site content</span></a></li>
             <?php if ($ratibPublicProfileUrl !== '') { ?>
             <li><a href="<?php echo htmlspecialchars($ratibPublicProfileUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-building"></i><span>Company profile (live)</span></a></li>
             <?php } ?>

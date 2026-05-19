@@ -5,6 +5,7 @@
  */
 require_once __DIR__ . '/site-content-home-slots.php';
 require_once __DIR__ . '/site-content-profile-data.php';
+require_once __DIR__ . '/site-content-public-data.php';
 
 if (!function_exists('ratib_site_content_public_source_resolved')) {
     /**
@@ -397,7 +398,10 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.chat.subtitle'] = 'Help guides & live support';
 
         if (function_exists('ratib_site_content_defaults_profile')) {
-            return array_merge($d, ratib_site_content_defaults_profile());
+            $d = array_merge($d, ratib_site_content_defaults_profile());
+        }
+        if (function_exists('ratib_site_content_defaults_public_pages')) {
+            $d = array_merge($d, ratib_site_content_defaults_public_pages());
         }
 
         return $d;
@@ -629,19 +633,15 @@ if (!function_exists('ratib_site_content_home_nl_lines')) {
     }
 }
 
-if (!function_exists('ratib_site_content_home_editor_groups')) {
+if (!function_exists('ratib_site_content_home_editor_groups_core')) {
     /**
-     * Declarative editor sections for control-panel/pages/control/site-content.php
+     * Homepage-only editor sections (prefixed "Homepage ·" when merged into public editor).
      *
      * @return list<array<string, mixed>>
      */
-    function ratib_site_content_home_editor_groups(): array
+    function ratib_site_content_home_editor_groups_core(): array
     {
-        $profileGroups = function_exists('ratib_site_content_profile_editor_groups')
-            ? ratib_site_content_profile_editor_groups()
-            : [];
-
-        $homeGroups = [
+        return [
             [
                 'id' => 'meta',
                 'title' => 'Meta & browser title',
@@ -990,8 +990,22 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                 ],
             ],
         ];
+    }
+}
 
-        return array_merge($profileGroups, $homeGroups);
+if (!function_exists('ratib_site_content_home_editor_groups')) {
+    /**
+     * Full public site editor (profile, trust pages, homepage, …).
+     *
+     * @return list<array<string, mixed>>
+     */
+    function ratib_site_content_home_editor_groups(): array
+    {
+        if (function_exists('ratib_site_content_public_editor_groups')) {
+            return ratib_site_content_public_editor_groups();
+        }
+
+        return ratib_site_content_home_editor_groups_core();
     }
 }
 

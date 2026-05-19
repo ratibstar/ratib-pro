@@ -5,6 +5,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/site-content-profile-data.php';
+require_once __DIR__ . '/ratib-public-cms.php';
 
 if (!function_exists('ratib_about_profile_config')) {
     /**
@@ -20,31 +21,40 @@ if (!function_exists('ratib_about_profile_config')) {
 
         return [
             'meta' => [
-                'title' => 'RATIB — Company profile',
-                'description' => 'Legal identity, platform scope, corridors, and operational capabilities of Ratib Software Foundation for Information Technology.',
+                'title' => ratib_public_cms('profile.meta.title', 'RATIB — Company profile'),
+                'description' => ratib_public_cms('profile.meta.description', 'Legal identity, platform scope, corridors, and operational capabilities of Ratib Software Foundation for Information Technology.'),
+            ],
+            'platform' => [
+                'eyebrow' => ratib_public_cms('profile.platform.eyebrow', 'Platform overview'),
+                'title' => ratib_public_cms('profile.platform.title', 'RATIB operations platform'),
+                'lead' => ratib_public_cms('profile.platform.lead', 'How sending-country agencies and host-market programs coordinate recruitment, field operations, compliance, and finance in one workspace.'),
+            ],
+            'what' => [
+                'title' => ratib_public_cms('profile.what.title', 'What RATIB is — and what it is not'),
+                'sub' => ratib_public_cms('profile.what.sub', 'RATIB is workforce program infrastructure for regulated, high-volume international recruitment—not a lightweight CRM.'),
             ],
             'company' => [
                 'trade_name' => trim((string) ($pf['profile.company.trade_name'] ?? '')) ?: 'RATIB',
                 'legal_name' => trim((string) ($pf['profile.company.legal_name'] ?? '')) ?: 'Ratib Software Foundation for Information Technology',
                 'tagline' => trim((string) ($pf['profile.company.tagline'] ?? '')) ?: 'Enterprise workforce program infrastructure',
-                'founded' => '2018',
-                'hq' => 'Riyadh, Kingdom of Saudi Arabia',
-                'address' => 'Riyadh, Saudi Arabia',
-                'website' => 'https://out.ratib.sa',
-                'email' => 'info@out.ratib.sa',
-                'phone' => '+966 599 863 868',
-                'whatsapp' => 'https://wa.me/966599863868',
+                'founded' => ratib_public_cms('profile.company.founded', '2018'),
+                'hq' => ratib_public_cms('profile.company.hq', 'Riyadh, Kingdom of Saudi Arabia'),
+                'address' => ratib_public_cms('profile.company.address', 'Riyadh, Saudi Arabia'),
+                'website' => ratib_public_cms('public.contact.website', 'https://out.ratib.sa'),
+                'email' => ratib_public_cms('public.contact.email', 'info@out.ratib.sa'),
+                'phone' => ratib_public_cms('public.contact.phone', '+966 599 863 868'),
+                'whatsapp' => ratib_public_cms('public.contact.whatsapp', 'https://wa.me/966599863868'),
                 'cr_label' => 'Commercial registration',
-                'cr_value' => 'On file · available under NDA for enterprise procurement',
+                'cr_value' => ratib_public_cms('profile.company.cr_value', 'On file · available under NDA for enterprise procurement'),
                 'vat_label' => 'VAT',
-                'vat_value' => 'Available on invoice / registration documents',
-                'industry' => 'Workforce program software · Cross-border recruitment operations',
-                'employees_band' => '51–200 (operations & engineering)',
+                'vat_value' => ratib_public_cms('profile.company.vat_value', 'Available on invoice / registration documents'),
+                'industry' => ratib_public_cms('profile.company.industry', 'Workforce program software · Cross-border recruitment operations'),
+                'employees_band' => ratib_public_cms('profile.company.employees_band', '51–200 (operations & engineering)'),
                 'markets' => trim((string) ($pf['profile.company.markets'] ?? '')) ?: 'Saudi Arabia (HQ) · Philippines · Bangladesh · Indonesia · Kenya · Uganda · Ethiopia · Nigeria · Rwanda · Sri Lanka · Nepal · Thailand',
                 'mission' => trim((string) ($pf['profile.company.mission'] ?? '')) ?: 'Give sending-country agencies and host-market programs one workspace to run regulated workforce corridors—with workflow coordination, operational visibility, compliance checkpoints, and finance linked to program events.',
                 'vision' => trim((string) ($pf['profile.company.vision'] ?? '')) ?: 'Cross-border workforce programs run on consistent records and auditable workflows—not disconnected spreadsheets.',
                 'summary' => trim((string) ($pf['profile.company.summary'] ?? '')) ?: 'Ratib Software Foundation for Information Technology develops and operates RATIB: a multi-agency workflow platform with separate program databases, field-operations support, policy controls, and integrated billing for agencies and oversight-aligned programs.',
-                'services' => [
+                'services' => ratib_public_cms_lines('profile.company.services', [
                     'Workforce lifecycle workflows',
                     'Agency operations workspace (multi-level agents)',
                     'Worker records & document handling',
@@ -53,7 +63,7 @@ if (!function_exists('ratib_about_profile_config')) {
                     'Ledger, AR/AP, and payment checkout',
                     'Partner & host-market portals',
                     'Domain, SSL, and branded agency sites',
-                ],
+                ]),
                 'highlights' => [
                     ['label' => 'Corridors supported', 'value' => '11+ sending markets'],
                     ['label' => 'Service targets', 'value' => 'Defined per agreement'],
@@ -157,19 +167,19 @@ if (!function_exists('ratib_about_profile_config')) {
                 ['title' => 'Hosting setup', 'body' => 'DNS, SSL, and hosting steps for agency-branded sites.', 'icon' => 'fa-cloud'],
                 ['title' => 'Branded agency sites', 'body' => 'White-label fronts on the same platform—not a separate product per agency.', 'icon' => 'fa-palette'],
             ],
-            'not_crm' => [
+            'not_crm' => ratib_public_cms_lines('profile.what.not_crm', [
                 'A lightweight CRM with a basic map plugin',
                 'Spreadsheet replacement with a login screen',
                 'One shared database for every agency',
                 'Marketing site with static dashboard images only',
-            ],
-            'is_infrastructure' => [
+            ]),
+            'is_infrastructure' => ratib_public_cms_lines('profile.what.is_infra', [
                 'Workforce program workflow platform',
                 'Multi-country agency operations workspace',
                 'Field-operations support with location checkpoints',
                 'Policy, audit history, and oversight-oriented modules',
                 'Finance module linked to placements and fees',
-            ],
+            ]),
         ];
     }
 }

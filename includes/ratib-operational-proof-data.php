@@ -5,6 +5,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/site-content-profile-data.php';
+require_once __DIR__ . '/ratib-public-cms.php';
 if (!function_exists('ratib_site_content_asset_url')) {
     require_once __DIR__ . '/site-content.php';
 }
@@ -45,11 +46,11 @@ if (!function_exists('ratib_operational_proof_config')) {
         };
 
         $cfg = [
-            'disclaimer' => 'Screenshots, diagrams, and metrics on this page use sample operational data or illustrative interfaces. They are not live production dashboards, audited statistics, or evidence of universal government integrations.',
+            'disclaimer' => ratib_public_cms('profile.opproof.disclaimer', 'Screenshots, diagrams, and metrics on this page use sample operational data or illustrative interfaces. They are not live production dashboards, audited statistics, or evidence of universal government integrations.'),
             'section' => [
-                'eyebrow' => 'Operational proof',
-                'title' => 'How teams run programs on RATIB',
-                'sub' => 'Government oversight, field tracking, and mobile mobilization—then agency workspace, diagrams, and reference flows for procurement review.',
+                'eyebrow' => ratib_public_cms('profile.opproof.eyebrow', 'Operational proof'),
+                'title' => ratib_public_cms('profile.opproof.title', 'How teams run programs on RATIB'),
+                'sub' => ratib_public_cms('profile.opproof.sub', 'Government oversight, field tracking, and mobile mobilization—then agency workspace, diagrams, and reference flows for procurement review.'),
             ],
             'government' => [
                 'id' => 'government-oversight',

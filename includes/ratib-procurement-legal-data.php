@@ -4,6 +4,8 @@
  */
 declare(strict_types=1);
 
+require_once __DIR__ . '/ratib-public-cms.php';
+
 if (!function_exists('ratib_procurement_legal_config')) {
     /**
      * @return array<string, mixed>
@@ -18,14 +20,14 @@ if (!function_exists('ratib_procurement_legal_config')) {
 
         return [
             'meta' => [
-                'title' => 'Procurement & Legal — RATIB Enterprise',
-                'description' => 'Legal identity, enterprise engagement process, security governance references, tenant boundaries, and procurement contact for government buyers, enterprise procurement, and international partners.',
+                'title' => ratib_public_cms('proc.meta.title', 'Procurement & Legal — RATIB Enterprise'),
+                'description' => ratib_public_cms('proc.meta.description', 'Legal identity, enterprise engagement process, security governance references, tenant boundaries, and procurement contact for government buyers, enterprise procurement, and international partners.'),
             ],
             'hero' => [
-                'eyebrow' => 'Procurement & legal',
-                'title' => 'Enterprise procurement and compliance review',
-                'lead' => 'Formal reference for government buyers, enterprise procurement teams, international partners, and compliance reviewers evaluating RATIB as workforce program orchestration infrastructure.',
-                'notice' => 'This page states verifiable company and platform facts. RATIB does not claim government partnerships, regulatory licenses, or third-party certifications unless separately documented in a signed agreement.',
+                'eyebrow' => ratib_public_cms('proc.hero.eyebrow', 'Procurement & legal'),
+                'title' => ratib_public_cms('proc.hero.title', 'Enterprise procurement and compliance review'),
+                'lead' => ratib_public_cms('proc.hero.lead', 'Formal reference for government buyers, enterprise procurement teams, international partners, and compliance reviewers evaluating RATIB as workforce program orchestration infrastructure.'),
+                'notice' => ratib_public_cms('proc.hero.notice', 'This page states verifiable company and platform facts. RATIB does not claim government partnerships, regulatory licenses, or third-party certifications unless separately documented in a signed agreement.'),
             ],
             'identity' => [
                 'id' => 'company-identity',
@@ -33,13 +35,13 @@ if (!function_exists('ratib_procurement_legal_config')) {
                 'title' => 'Legal entity and official contact',
                 'sub' => 'Registered Saudi technology company operating enterprise workforce program infrastructure.',
                 'fields' => [
-                    ['label' => 'Legal company name', 'value' => 'Ratib Software Foundation for Information Technology', 'icon' => 'fa-building'],
-                    ['label' => 'Trade name', 'value' => 'RATIB', 'icon' => 'fa-tag'],
-                    ['label' => 'Headquarters', 'value' => 'Riyadh, Kingdom of Saudi Arabia', 'icon' => 'fa-location-dot'],
-                    ['label' => 'Commercial registration', 'value' => 'On file — available to enterprise procurement under NDA upon request', 'icon' => 'fa-file-contract'],
-                    ['label' => 'VAT', 'value' => 'Available on invoice or upon formal request during procurement', 'icon' => 'fa-receipt'],
-                    ['label' => 'Official email', 'value' => 'info@out.ratib.sa', 'icon' => 'fa-envelope', 'href' => 'mailto:info@out.ratib.sa'],
-                    ['label' => 'Business phone', 'value' => '+966 599 863 868', 'icon' => 'fa-phone', 'href' => 'tel:+966599863868'],
+                    ['label' => 'Legal company name', 'value' => ratib_public_cms('proc.identity.legal_name', 'Ratib Software Foundation for Information Technology'), 'icon' => 'fa-building'],
+                    ['label' => 'Trade name', 'value' => ratib_public_cms('proc.identity.trade_name', 'RATIB'), 'icon' => 'fa-tag'],
+                    ['label' => 'Headquarters', 'value' => ratib_public_cms('proc.identity.hq', 'Riyadh, Kingdom of Saudi Arabia'), 'icon' => 'fa-location-dot'],
+                    ['label' => 'Commercial registration', 'value' => ratib_public_cms('proc.identity.cr', 'On file — available to enterprise procurement under NDA upon request'), 'icon' => 'fa-file-contract'],
+                    ['label' => 'VAT', 'value' => ratib_public_cms('proc.identity.vat', 'Available on invoice or upon formal request during procurement'), 'icon' => 'fa-receipt'],
+                    ['label' => 'Official email', 'value' => ratib_public_cms('public.contact.email', 'info@out.ratib.sa'), 'icon' => 'fa-envelope', 'href' => 'mailto:' . ratib_public_cms('public.contact.email', 'info@out.ratib.sa')],
+                    ['label' => 'Business phone', 'value' => ratib_public_cms('public.contact.phone', '+966 599 863 868'), 'icon' => 'fa-phone', 'href' => 'tel:+966599863868'],
                     ['label' => 'Public website', 'value' => 'out.ratib.sa', 'icon' => 'fa-globe', 'href' => 'https://out.ratib.sa'],
                 ],
             ],

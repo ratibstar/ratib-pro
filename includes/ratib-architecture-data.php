@@ -4,6 +4,8 @@
  */
 declare(strict_types=1);
 
+require_once __DIR__ . '/ratib-public-cms.php';
+
 if (!function_exists('ratib_architecture_config')) {
     /**
      * @return array<string, mixed>
@@ -15,13 +17,13 @@ if (!function_exists('ratib_architecture_config')) {
 
         return [
             'meta' => [
-                'title' => 'Platform Architecture — RATIB',
-                'description' => 'Layered workforce program platform: shared core, tenant isolation, event delivery, field operations, finance module, and deployment topology for enterprise technical review.',
+                'title' => ratib_public_cms('arch.meta.title', 'Platform Architecture — RATIB'),
+                'description' => ratib_public_cms('arch.meta.description', 'Layered workforce program platform: shared core, tenant isolation, event delivery, field operations, finance module, and deployment topology for enterprise technical review.'),
             ],
             'hero' => [
-                'eyebrow' => 'Platform architecture',
-                'title' => 'Multi-agency workforce program platform',
-                'lead' => 'RATIB is organized in platform layers that connect agency workspaces, partner portals, and regulated corridors—with separate agency databases, event-driven workflows, and policy controls in the stack.',
+                'eyebrow' => ratib_public_cms('arch.hero.eyebrow', 'Platform architecture'),
+                'title' => ratib_public_cms('arch.hero.title', 'Multi-agency workforce program platform'),
+                'lead' => ratib_public_cms('arch.hero.lead', 'RATIB is organized in platform layers that connect agency workspaces, partner portals, and regulated corridors—with separate agency databases, event-driven workflows, and policy controls in the stack.'),
                 'diagram_label' => 'platform layer stack',
                 'stack_preview' => [
                     'Experience',
@@ -36,8 +38,8 @@ if (!function_exists('ratib_architecture_config')) {
             'overview' => [
                 'id' => 'architecture-overview',
                 'eyebrow' => 'Architecture overview',
-                'title' => 'Orchestration infrastructure, not a single application',
-                'sub' => 'Programs, corridors, and agencies share a common workflow core while program data stays in separate agency databases. The platform separates user interfaces, workflow execution, field operations, finance, and storage.',
+                'title' => ratib_public_cms('arch.overview.title', 'Orchestration infrastructure, not a single application'),
+                'sub' => ratib_public_cms('arch.overview.sub', 'Programs, corridors, and agencies share a common workflow core while program data stays in separate agency databases. The platform separates user interfaces, workflow execution, field operations, finance, and storage.'),
                 'points' => [
                     ['label' => 'Primary role', 'body' => 'Coordinate workforce lifecycle stages, documents, finance events, and field telemetry across sending and host markets.'],
                     ['label' => 'Tenancy model', 'body' => 'Shared orchestration with isolated agency datastores and policy-scoped operator access.'],

@@ -111,9 +111,9 @@ if (!function_exists('ratib_about_render_sections')) {
         <section class="ratib-about-hero" id="platform-overview" aria-labelledby="about-hero-title">
             <div class="ratib-about-container ratib-about-hero__grid">
                 <div class="ratib-about-hero__copy" data-ratib-reveal>
-                    <p class="ratib-about-eyebrow">Platform overview</p>
-                    <h2 id="about-hero-title" class="ratib-about-hero__title">RATIB <span class="ratib-about-gradient">operations platform</span></h2>
-                    <p class="ratib-about-hero__lead">How sending-country agencies and host-market programs coordinate recruitment, field operations, compliance, and finance in one workspace.</p>
+                    <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['platform']['eyebrow'] ?? 'Platform overview')); ?></p>
+                    <h2 id="about-hero-title" class="ratib-about-hero__title"><?php echo ratib_about_h((string) ($about['platform']['title'] ?? 'RATIB operations platform')); ?></h2>
+                    <p class="ratib-about-hero__lead"><?php echo ratib_about_h((string) ($about['platform']['lead'] ?? '')); ?></p>
                     <div class="ratib-about-hero__actions">
                         <a href="<?php echo ratib_about_h($contactWa); ?>" target="_blank" rel="noopener noreferrer" class="ratib-about-btn ratib-about-btn--primary ratib-about-btn--lg">Request Platform Demo</a>
                         <a href="<?php echo ratib_about_h($homeRegister); ?>" class="ratib-about-btn ratib-about-btn--outline ratib-about-btn--lg">Launch Agency Workspace</a>
@@ -148,8 +148,8 @@ if (!function_exists('ratib_about_render_sections')) {
             <div class="ratib-about-container">
                 <header class="ratib-about-head" data-ratib-reveal>
                     <p class="ratib-about-eyebrow">Category definition</p>
-                    <h2 id="about-what-title" class="ratib-about-title">What RATIB is — and what it is not</h2>
-                    <p class="ratib-about-sub">RATIB is workforce program infrastructure for regulated, high-volume international recruitment—not a lightweight CRM.</p>
+                    <h2 id="about-what-title" class="ratib-about-title"><?php echo ratib_about_h((string) ($about['what']['title'] ?? 'What RATIB is — and what it is not')); ?></h2>
+                    <p class="ratib-about-sub"><?php echo ratib_about_h((string) ($about['what']['sub'] ?? '')); ?></p>
                 </header>
                 <div class="ratib-about-compare">
                     <div class="ratib-about-glass ratib-about-compare__col ratib-about-compare__col--no" data-ratib-reveal>
