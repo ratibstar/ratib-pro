@@ -15,17 +15,19 @@
     --hc-accent: #3b82f6;
     --hc-accent-soft: rgba(59, 130, 246, 0.12);
     --hc-radius: 10px;
-    --hc-header-h: 116px;
-    --hc-header-toc-h: 152px;
     --hc-max: 920px;
     --hc-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --hc-ease: 0.15s ease;
 }
 
+.content-wrapper:has(.hc-enterprise) {
+    padding-top: 0 !important;
+}
+
 .hc-enterprise.help-center-wrapper {
-    background: var(--hc-bg);
-    padding: 0;
-    padding-top: var(--hc-header-h);
+    background: var(--hc-bg) !important;
+    padding: 0 !important;
+    margin: 0 !important;
     min-height: 100vh;
     font-family: var(--hc-font);
     font-size: 15px;
@@ -34,30 +36,24 @@
     -webkit-font-smoothing: antialiased;
 }
 
-.hc-enterprise.hc-toc-visible.help-center-wrapper {
-    padding-top: var(--hc-header-toc-h);
-}
-
 .hc-enterprise .help-center-header,
 .hc-enterprise .help-center-top-bar { display: none !important; }
 
-.hc-enterprise .content-wrapper {
-    margin-left: 240px !important;
+.hc-enterprise .help-center-content,
+.hc-enterprise .help-center-content.hc-content {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
 }
 
-/* Fixed site header (all nav on top) */
+/* Sticky top nav — flush with page content (no fixed-header gap) */
 .hc-site-header {
-    position: fixed;
+    position: sticky;
     top: 0;
-    left: 0;
-    right: 0;
     z-index: 100;
     background: var(--hc-bg-elevated);
     border-bottom: 1px solid var(--hc-border);
-}
-
-@media (min-width: 769px) {
-    .hc-site-header { left: 240px; }
 }
 
 .hc-top-bar {
@@ -299,17 +295,13 @@
 .hc-shell { position: relative; z-index: 1; }
 
 .hc-main {
-    margin-left: 0;
-    padding: 24px 28px 64px;
-    max-width: calc(var(--hc-max) + 80px);
-    margin-right: auto;
-    margin-left: auto;
+    margin: 0;
+    padding: 12px 20px 48px;
 }
 
-@media (min-width: 769px) {
-    .hc-main { margin-left: 240px; margin-right: 0; max-width: none; padding-right: 32px; }
-    .hc-main .hc-content,
-    .hc-main .hc-hero { max-width: var(--hc-max); }
+.hc-main .hc-content,
+.hc-main .hc-hero {
+    max-width: var(--hc-max);
 }
 
 .hc-progress-bar {
@@ -696,12 +688,7 @@
 
 .hc-enterprise .tutorial-detail-body h2,
 .hc-enterprise .tutorial-detail-body h3 {
-    scroll-margin-top: calc(var(--hc-header-h) + 12px);
-}
-
-.hc-enterprise.hc-toc-visible .tutorial-detail-body h2,
-.hc-enterprise.hc-toc-visible .tutorial-detail-body h3 {
-    scroll-margin-top: calc(var(--hc-header-toc-h) + 12px);
+    scroll-margin-top: 80px;
 }
 
 .hc-enterprise .tutorial-detail-body h2 {
@@ -827,18 +814,8 @@
 }
 
 @media (max-width: 768px) {
-    .hc-enterprise.help-center-wrapper {
-        --hc-header-h: 108px;
-        --hc-header-toc-h: 140px;
-    }
-
-    .hc-site-header {
-        left: 0;
-    }
-
     .hc-main {
-        margin-left: 0;
-        padding: 16px 16px 56px;
+        padding: 8px 12px 40px;
     }
 
     .hc-top-bar-inner {

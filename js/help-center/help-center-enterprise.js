@@ -57,11 +57,6 @@
         }
     }
 
-    function setTocVisible(visible) {
-        const root = document.getElementById('helpCenterRoot');
-        if (root) root.classList.toggle('hc-toc-visible', !!visible);
-    }
-
     function setupFeedback() {
         document.querySelectorAll('.hc-feedback-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
@@ -87,10 +82,8 @@
         const headings = body.querySelectorAll('h2, h3');
         if (!headings.length) {
             if (tocPanel) tocPanel.classList.add('help-hidden');
-            setTocVisible(false);
         } else {
             if (tocPanel) tocPanel.classList.remove('help-hidden');
-            setTocVisible(true);
             headings.forEach(function (h, i) {
                 if (!h.id) h.id = 'hc-h-' + i;
                 const a = document.createElement('a');
@@ -141,7 +134,6 @@
             if (!isArticle) {
                 const tocPanel = document.getElementById('hcArticleToc');
                 if (tocPanel) tocPanel.classList.add('help-hidden');
-                setTocVisible(false);
             }
             if (view === 'homeHubView') {
                 document.querySelectorAll('.category-link').forEach(function (link) {
