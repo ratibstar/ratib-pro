@@ -31,11 +31,11 @@
  <text x="380" y="242" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">s.rehman</text>
  <text x="560" y="242" fill="#94a3b8" font-family="ui-monospace,monospace" font-size="11">STAGE_COMMIT</text>
  <rect x="24" y="288" width="360" height="160" rx="8" fill="#020617" stroke="#334155"/>
- <text x="40" y="318" fill="#cbd5e1" font-family="system-ui,sans-serif" font-size="12" font-weight="600">GPS · corridor</text>
- <text x="40" y="344" fill="#64748b" font-family="system-ui,sans-serif" font-size="11">Riyadh · last ping 2m · geofence OK</text>
+ <text x="40" y="318" fill="#cbd5e1" font-family="system-ui,sans-serif" font-size="12" font-weight="600">GPS  -  corridor</text>
+ <text x="40" y="344" fill="#64748b" font-family="system-ui,sans-serif" font-size="11">Riyadh  -  last ping 2m  -  geofence OK</text>
  <circle cx="200" cy="400" r="48" fill="none" stroke="#22d3ee44" stroke-width="2"/>
  <circle cx="200" cy="400" r="6" fill="#22d3ee"/>
  <rect x="400" y="288" width="376" height="160" rx="8" fill="#020617" stroke="#334155"/>
  <text x="416" y="318" fill="#cbd5e1" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Verification queue</text>
- <text x="416" y="344" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="11">Med bundle · emb scan · police · median 14m</text>
+ <text x="416" y="344" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="11">Med bundle  -  emb scan  -  police  -  median 14m</text>
 </svg>
