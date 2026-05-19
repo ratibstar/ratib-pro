@@ -13,11 +13,13 @@ if (!function_exists('ratib_about_profile_config')) {
      */
     function ratib_about_profile_config(string $baseUrl): array
     {
-        $img = static function (string $file) use ($baseUrl): string {
-            return $baseUrl . '/assets/images/' . rawurlencode($file);
-        };
-
         $pf = function_exists('ratib_site_content_profile_flat') ? ratib_site_content_profile_flat() : [];
+        $shot = static function (string $key, string $fallback, string $altKey, string $defaultAlt) use ($baseUrl): array {
+            return [
+                'src' => ratib_public_cms_image($baseUrl, $key, $fallback),
+                'alt' => ratib_public_cms($altKey, $defaultAlt),
+            ];
+        };
 
         return [
             'meta' => [
@@ -32,6 +34,38 @@ if (!function_exists('ratib_about_profile_config')) {
             'what' => [
                 'title' => ratib_public_cms('profile.what.title', 'What RATIB is — and what it is not'),
                 'sub' => ratib_public_cms('profile.what.sub', 'RATIB is workforce program infrastructure for regulated, high-volume international recruitment—not a lightweight CRM.'),
+            ],
+            'sections' => [
+                'arch' => [
+                    'eyebrow' => ratib_public_cms('profile.section.arch.eyebrow', 'Platform architecture'),
+                    'title' => ratib_public_cms('profile.section.arch.title', 'Platform layers'),
+                    'sub' => ratib_public_cms('profile.section.arch.sub', 'Seven layers—from user-facing pages to separate agency databases.'),
+                ],
+                'ops' => [
+                    'eyebrow' => ratib_public_cms('profile.section.ops.eyebrow', 'Agency workspace'),
+                    'title' => ratib_public_cms('profile.section.ops.title', 'Agency workspace'),
+                    'sub' => ratib_public_cms('profile.section.ops.sub', 'Day-to-day screens for agents, workforce records, finance, HR, and partner coordination.'),
+                ],
+                'tel' => [
+                    'eyebrow' => ratib_public_cms('profile.section.tel.eyebrow', 'Field operations'),
+                    'title' => ratib_public_cms('profile.section.tel.title', 'Field operations support'),
+                    'sub' => ratib_public_cms('profile.section.tel.sub', 'Location-assisted workforce coordination with offline sync, geofence rules, and audit-friendly event history—not a standalone tracking app.'),
+                ],
+                'gov' => [
+                    'eyebrow' => ratib_public_cms('profile.section.gov.eyebrow', 'Policy & oversight'),
+                    'title' => ratib_public_cms('profile.section.gov.title', 'Compliance & governance'),
+                    'sub' => ratib_public_cms('profile.section.gov.sub', 'Recorded workflow history, labor-oversight tools, and separate agency data for regulated programs.'),
+                ],
+                'fin' => [
+                    'eyebrow' => ratib_public_cms('profile.section.fin.eyebrow', 'Controllers & CFOs'),
+                    'title' => ratib_public_cms('profile.section.fin.title', 'Operational finance infrastructure'),
+                    'sub' => ratib_public_cms('profile.section.fin.sub', 'Integrated ledger and invoicing—linked to workers and placements, not a bolt-on spreadsheet.'),
+                ],
+                'cor' => [
+                    'eyebrow' => ratib_public_cms('profile.section.cor.eyebrow', 'Multi-corridor fabric'),
+                    'title' => ratib_public_cms('profile.section.cor.title', 'Multi-country operations'),
+                    'sub' => ratib_public_cms('profile.section.cor.sub', 'Worker-sending markets on one orchestration core—with country-scoped governance and expanding corridors.'),
+                ],
             ],
             'company' => [
                 'trade_name' => trim((string) ($pf['profile.company.trade_name'] ?? '')) ?: 'RATIB',
@@ -72,14 +106,14 @@ if (!function_exists('ratib_about_profile_config')) {
                 ],
             ],
             'screenshots' => [
-                'hero' => ['src' => $img('about-ratib-command.png'), 'alt' => 'RATIB agency workspace — workforce records and SLA views'],
-                'ops' => ['src' => $img('1.jpg'), 'alt' => 'Agency operations workspace with workforce and agent views'],
-                'workers' => ['src' => $img('2.jpg'), 'alt' => 'Worker records — lifecycle and documents'],
-                'telemetry' => ['src' => $img('3.jpg'), 'alt' => 'Operations map — field checkpoints and corridor context'],
-                'accounting' => ['src' => $img('4.jpg'), 'alt' => 'Accounting and invoicing module'],
-                'control' => ['src' => $img('5.jpg'), 'alt' => 'Administration — multi-country agency settings'],
-                'partners' => ['src' => $img('6.jpg'), 'alt' => 'Partner portal — deployments and documents'],
-                'pipeline' => ['src' => $img('7.jpg'), 'alt' => 'Workflow pipeline across recruitment stages'],
+                'hero' => $shot('profile.image.hero', 'assets/images/about-ratib-command.png', 'profile.image.hero.alt', 'RATIB agency workspace — workforce records and SLA views'),
+                'ops' => $shot('profile.image.ops', 'assets/images/about-ratib-command.png', 'profile.image.ops.alt', 'Agency operations workspace with workforce and agent views'),
+                'workers' => $shot('profile.image.workers', 'assets/images/about-ratib-command.png', 'profile.image.workers.alt', 'Worker records — lifecycle and documents'),
+                'telemetry' => $shot('profile.image.telemetry', 'assets/images/about-ratib-command.png', 'profile.image.telemetry.alt', 'Operations map — field checkpoints and corridor context'),
+                'accounting' => $shot('profile.image.accounting', 'assets/images/about-ratib-command.png', 'profile.image.accounting.alt', 'Accounting and invoicing module'),
+                'control' => $shot('profile.image.control', 'assets/images/about-ratib-command.png', 'profile.image.control.alt', 'Administration — multi-country agency settings'),
+                'partners' => $shot('profile.image.partners', 'assets/images/about-ratib-command.png', 'profile.image.partners.alt', 'Partner portal — deployments and documents'),
+                'pipeline' => $shot('profile.image.pipeline', 'assets/images/about-ratib-command.png', 'profile.image.pipeline.alt', 'Workflow pipeline across recruitment stages'),
             ],
             'hero_metrics' => [
                 ['label' => 'Sample workload', 'value' => '2.8k', 'delta' => 'illustrative UI', 'tone' => 'blue'],

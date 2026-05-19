@@ -175,9 +175,9 @@ if (!function_exists('ratib_about_render_sections')) {
         <section class="ratib-about-section ratib-about-section--arch" id="architecture" aria-labelledby="about-arch-title">
             <div class="ratib-about-container">
                 <header class="ratib-about-head ratib-about-head--center" data-ratib-reveal>
-                    <p class="ratib-about-eyebrow">Platform architecture</p>
-                    <h2 id="about-arch-title" class="ratib-about-title">Platform layers</h2>
-                    <p class="ratib-about-sub">Seven layers—from user-facing pages to separate agency databases.</p>
+                    <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['sections']['arch']['eyebrow'] ?? 'Platform architecture')); ?></p>
+                    <h2 id="about-arch-title" class="ratib-about-title"><?php echo ratib_about_h((string) ($about['sections']['arch']['title'] ?? 'Platform layers')); ?></h2>
+                    <p class="ratib-about-sub"><?php echo ratib_about_h((string) ($about['sections']['arch']['sub'] ?? '')); ?></p>
                 </header>
                 <div class="ratib-about-arch">
                     <div class="ratib-about-arch__viz" data-ratib-reveal aria-hidden="true">
@@ -229,9 +229,9 @@ if (!function_exists('ratib_about_render_sections')) {
         <section class="ratib-about-section" id="operations" aria-labelledby="about-ops-title">
             <div class="ratib-about-container">
                 <header class="ratib-about-head" data-ratib-reveal>
-                    <p class="ratib-about-eyebrow">Agency workspace</p>
-                    <h2 id="about-ops-title" class="ratib-about-title">Agency workspace</h2>
-                    <p class="ratib-about-sub">Day-to-day screens for agents, workforce records, finance, HR, and partner coordination.</p>
+                    <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['sections']['ops']['eyebrow'] ?? 'Agency workspace')); ?></p>
+                    <h2 id="about-ops-title" class="ratib-about-title"><?php echo ratib_about_h((string) ($about['sections']['ops']['title'] ?? 'Agency workspace')); ?></h2>
+                    <p class="ratib-about-sub"><?php echo ratib_about_h((string) ($about['sections']['ops']['sub'] ?? '')); ?></p>
                 </header>
                 <div class="ratib-about-split">
                     <div class="ratib-about-split__media" data-ratib-reveal>
@@ -271,9 +271,9 @@ if (!function_exists('ratib_about_render_sections')) {
         <section class="ratib-about-section ratib-about-section--telemetry" id="telemetry" aria-labelledby="about-tel-title">
             <div class="ratib-about-container">
                 <header class="ratib-about-head" data-ratib-reveal>
-                    <p class="ratib-about-eyebrow">Field operations</p>
-                    <h2 id="about-tel-title" class="ratib-about-title">Field operations support</h2>
-                    <p class="ratib-about-sub">Location-assisted workforce coordination with offline sync, geofence rules, and audit-friendly event history—not a standalone tracking app.</p>
+                    <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['sections']['tel']['eyebrow'] ?? 'Field operations')); ?></p>
+                    <h2 id="about-tel-title" class="ratib-about-title"><?php echo ratib_about_h((string) ($about['sections']['tel']['title'] ?? 'Field operations support')); ?></h2>
+                    <p class="ratib-about-sub"><?php echo ratib_about_h((string) ($about['sections']['tel']['sub'] ?? '')); ?></p>
                 </header>
                 <div class="ratib-about-split ratib-about-split--reverse">
                     <div class="ratib-about-split__content">
@@ -306,9 +306,9 @@ if (!function_exists('ratib_about_render_sections')) {
         <section class="ratib-about-section" id="governance" aria-labelledby="about-gov-title">
             <div class="ratib-about-container">
                 <header class="ratib-about-head ratib-about-head--center" data-ratib-reveal>
-                    <p class="ratib-about-eyebrow">Policy &amp; oversight</p>
-                    <h2 id="about-gov-title" class="ratib-about-title">Compliance &amp; governance</h2>
-                    <p class="ratib-about-sub">Recorded workflow history, labor-oversight tools, and separate agency data for regulated programs.</p>
+                    <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['sections']['gov']['eyebrow'] ?? 'Policy & oversight')); ?></p>
+                    <h2 id="about-gov-title" class="ratib-about-title"><?php echo ratib_about_h((string) ($about['sections']['gov']['title'] ?? 'Compliance & governance')); ?></h2>
+                    <p class="ratib-about-sub"><?php echo ratib_about_h((string) ($about['sections']['gov']['sub'] ?? '')); ?></p>
                 </header>
                 <div class="ratib-about-feature-grid ratib-about-feature-grid--3">
                     <?php foreach ($about['governance_features'] ?? [] as $i => $f) { ?>
@@ -325,9 +325,9 @@ if (!function_exists('ratib_about_render_sections')) {
         <section class="ratib-about-section" id="finance" aria-labelledby="about-fin-title">
             <div class="ratib-about-container">
                 <header class="ratib-about-head" data-ratib-reveal>
-                    <p class="ratib-about-eyebrow">Controllers &amp; CFOs</p>
-                    <h2 id="about-fin-title" class="ratib-about-title">Operational finance infrastructure</h2>
-                    <p class="ratib-about-sub">Integrated ledger and invoicing—linked to workers and placements, not a bolt-on spreadsheet.</p>
+                    <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['sections']['fin']['eyebrow'] ?? 'Controllers & CFOs')); ?></p>
+                    <h2 id="about-fin-title" class="ratib-about-title"><?php echo ratib_about_h((string) ($about['sections']['fin']['title'] ?? 'Operational finance infrastructure')); ?></h2>
+                    <p class="ratib-about-sub"><?php echo ratib_about_h((string) ($about['sections']['fin']['sub'] ?? '')); ?></p>
                 </header>
                 <div class="ratib-about-split">
                     <div class="ratib-about-split__media" data-ratib-reveal>
@@ -351,9 +351,9 @@ if (!function_exists('ratib_about_render_sections')) {
         <section class="ratib-about-section ratib-about-section--corridors" id="corridors" aria-labelledby="about-cor-title">
             <div class="ratib-about-container">
                 <header class="ratib-about-head ratib-about-head--center" data-ratib-reveal>
-                    <p class="ratib-about-eyebrow">Multi-corridor fabric</p>
-                    <h2 id="about-cor-title" class="ratib-about-title">Multi-country operations</h2>
-                    <p class="ratib-about-sub">Worker-sending markets on one orchestration core—with country-scoped governance and expanding corridors.</p>
+                    <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['sections']['cor']['eyebrow'] ?? 'Multi-corridor fabric')); ?></p>
+                    <h2 id="about-cor-title" class="ratib-about-title"><?php echo ratib_about_h((string) ($about['sections']['cor']['title'] ?? 'Multi-country operations')); ?></h2>
+                    <p class="ratib-about-sub"><?php echo ratib_about_h((string) ($about['sections']['cor']['sub'] ?? '')); ?></p>
                 </header>
                 <div class="ratib-about-corridors" data-ratib-reveal>
                     <div class="ratib-about-corridors__map" aria-hidden="true">
