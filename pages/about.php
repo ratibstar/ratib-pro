@@ -39,6 +39,10 @@ $ratibGalleryLbJsPath = __DIR__ . '/../js/pages/ratib-gallery-lightbox.js';
 clearstatcache(true, $ratibGalleryLbJsPath);
 $ratibGalleryLbJsQuery = (int) (@filemtime($ratibGalleryLbJsPath) ?: time()) . '-' . $ratibHomeUiRev;
 
+$ratibOpCompactJsPath = __DIR__ . '/../js/pages/ratib-op-proof-compact.js';
+clearstatcache(true, $ratibOpCompactJsPath);
+$ratibOpCompactJsQuery = (int) (@filemtime($ratibOpCompactJsPath) ?: time()) . '-' . $ratibHomeUiRev;
+
 $metaTitle = (string) ($about['meta']['title'] ?? 'About RATIB');
 $metaDesc = (string) ($about['meta']['description'] ?? '');
 ?>
@@ -143,6 +147,7 @@ $ratibProfileGuardQAbout = (string) (int) (@filemtime($ratibProfileGuardJsAbout)
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-mega-nav.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-gallery-lightbox.js?v=<?php echo htmlspecialchars($ratibGalleryLbJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-op-proof-compact.js?v=<?php echo htmlspecialchars($ratibOpCompactJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/about-enterprise.js?v=<?php echo htmlspecialchars($ratibAboutJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php
 require_once __DIR__ . '/../includes/ratib-page-stamp.php';

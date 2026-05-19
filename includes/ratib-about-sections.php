@@ -222,7 +222,7 @@ if (!function_exists('ratib_about_render_sections')) {
 
         <?php
         if (function_exists('ratib_operational_proof_render')) {
-            ratib_operational_proof_render($baseUrl);
+            ratib_operational_proof_render($baseUrl, null, ['compact' => true]);
         }
         ?>
 
