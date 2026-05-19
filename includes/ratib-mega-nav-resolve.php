@@ -164,7 +164,15 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
             case 'customer_portal':
                 return $baseUrl . '/pages/customer-portal.php';
             case 'help_center':
-                return $baseUrl . '/pages/help-center.php';
+                // Public marketing — in-app help-center.php requires login (Ratib Pro).
+                if (ratib_mega_nav_is_profile_context($navPrefix)) {
+                    return ratib_mega_nav_profile_hash(
+                        ratib_mega_nav_profile_root($baseUrl, $navPrefix),
+                        '#contact-cta'
+                    );
+                }
+
+                return ratib_mega_nav_home_hash($baseUrl, $navPrefix, '#contact');
             case 'company_profile':
             case 'about':
                 return $baseUrl . '/profile/#company-profile';

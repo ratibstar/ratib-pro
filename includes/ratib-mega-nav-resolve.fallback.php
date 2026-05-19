@@ -7,7 +7,12 @@ declare(strict_types=1);
 if (!function_exists('ratib_mega_nav_is_profile_context')) {
     function ratib_mega_nav_is_profile_context(string $navPrefix): bool
     {
-        return $navPrefix !== '' && preg_match('#/profile/?$#i', rtrim($navPrefix, '/')) === 1;
+        if ($navPrefix === '') {
+            return false;
+        }
+        $path = (string) (parse_url($navPrefix, PHP_URL_PATH) ?: $navPrefix);
+
+        return (bool) preg_match('#/profile/?$#i', rtrim($path, '/'));
     }
 }
 
@@ -102,6 +107,7 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
                 'features' => '#what-is-ratib',
                 'agencies' => '#partners',
                 'contact' => '#contact-cta',
+                'help_center' => '#contact-cta',
                 'domains' => '#corridors',
                 'company_profile' => '#company-profile',
                 'about' => '#company-profile',
@@ -122,7 +128,7 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
             'domains' => '#domains',
             'company_profile' => '/profile/#company-profile',
             'about' => '/profile/#company-profile',
-            'help_center' => '/pages/help-center.php',
+            'help_center' => '#contact',
             'customer_portal' => '/pages/customer-portal.php',
         ];
         if (isset($hashMap[$hrefKey])) {
