@@ -381,18 +381,31 @@ const HelpCenterUI = {
             const impact = impactForCategory(category, index);
             const difficulty = difficultyForCategory(category);
             const estMin = Math.max(5, (category.tutorial_count || 1) * 8);
+            const setupMin = Math.max(10, estMin + 5);
             const updated = category.updated_at ? formatDate(category.updated_at) : 'May 2026';
+            const nameLower = (category.name || '').toLowerCase();
+            let labels = '';
+            if (index === 0) labels += '<span class="hc-card-label hc-card-label--hot">Most Used</span>';
+            if (impact === 'high' || nameLower.indexOf('worker') >= 0 || nameLower.indexOf('contract') >= 0) {
+                labels += '<span class="hc-card-label hc-card-label--critical">Operational Critical</span>';
+            }
+            if (nameLower.indexOf('notification') >= 0 || nameLower.indexOf('automation') >= 0 || index === 2) {
+                labels += '<span class="hc-card-label hc-card-label--ai">AI Assisted</span>';
+            }
+            const preview = (category.description || 'Operational workflows and production guides.').substring(0, 72);
 
             card.innerHTML = `
-                <div class="category-card-icon">
+                ${labels ? '<div class="hc-card-labels">' + labels + '</div>' : ''}
+                <div class="category-card-icon hc-category-icon-wrap">
                     <i class="fas ${category.icon || 'fa-circle'}"></i>
                 </div>
                 <h3 class="category-card-title">${category.name || t('category')}</h3>
                 <p class="category-card-description">${category.description || ''}</p>
+                <p class="hc-card-preview">${preview}${preview.length >= 72 ? '…' : ''}</p>
                 <div class="hc-card-meta">
                     <span class="hc-meta-badge hc-meta-badge--verified"><i class="fas fa-circle-check"></i> Verified</span>
-                    <span class="hc-meta-badge">${category.tutorial_count || 0} ${t('tutorialsLabel')}</span>
-                    <span class="hc-meta-badge">${estMin} min</span>
+                    <span class="hc-meta-badge">${category.tutorial_count || 0} articles</span>
+                    <span class="hc-meta-badge">~${setupMin}m setup</span>
                     <span class="hc-meta-badge">${t(difficulty)}</span>
                     ${impact === 'high' ? '<span class="hc-meta-badge hc-meta-badge--impact-high">High impact</span>' : ''}
                     <span class="hc-meta-badge">${t('updated')}: ${updated}</span>
@@ -1038,6 +1051,9 @@ const HelpCenterController = {
             HelpCenterUI.renderTutorials(tutorials);
             showView('tutorialListView');
             const category = helpCenterFindCategory(HelpCenterState.categories, categoryId);
+            if (window.HelpCenterEnterprise && typeof window.HelpCenterEnterprise.onCategoryOpened === 'function') {
+                window.HelpCenterEnterprise.onCategoryOpened(category);
+            }
             HelpCenterUI.updateBreadcrumbs([
                 { text: t('home'), link: true, action: 'loadCategories' },
                 { text: category?.name || t('category'), link: false }

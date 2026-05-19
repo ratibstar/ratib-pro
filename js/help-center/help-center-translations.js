@@ -52,6 +52,10 @@ window.HELP_CENTER_TRANSLATIONS = {
         copilotWelcome: 'I can explain workflows, generate checklists, troubleshoot operations, and navigate you to the right guide.',
         copilotPlaceholder: 'Ask about onboarding, permissions, payroll sync…',
         context: 'Context:',
+        recentActivity: 'Recent activity',
+        quickCommands: 'Commands',
+        favorites: 'Pinned',
+        checklistMode: 'Checklist mode',
         
         // Navigation
         home: 'Home',

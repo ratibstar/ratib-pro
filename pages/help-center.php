@@ -42,9 +42,11 @@ include '../includes/header.php';
 <div class="help-center-wrapper hc-enterprise" id="helpCenterRoot">
     <!-- Ambient mesh background -->
     <div class="hc-mesh" aria-hidden="true">
+        <div class="hc-mesh-noise"></div>
         <div class="hc-mesh-orb hc-mesh-orb--1"></div>
         <div class="hc-mesh-orb hc-mesh-orb--2"></div>
         <div class="hc-mesh-orb hc-mesh-orb--3"></div>
+        <div class="hc-particles" id="hcParticles" aria-hidden="true"></div>
     </div>
 
     <!-- Top utility bar -->
@@ -78,6 +80,13 @@ include '../includes/header.php';
     <div class="hc-shell">
         <!-- Slim contextual sidebar -->
         <aside class="help-sidebar hc-sidebar" id="helpSidebar">
+                        <div class="hc-workspace-mini" id="hcWorkspaceMini">
+                <div class="hc-workspace-avatar"><i class="fas fa-building"></i></div>
+                <div class="hc-workspace-info">
+                    <span class="hc-workspace-name">Operations Workspace</span>
+                    <span class="hc-workspace-status"><span class="hc-status-dot"></span> Ready</span>
+                </div>
+            </div>
             <div class="sidebar-header hc-sidebar-header">
                 <h3 data-translate="navLabel">Navigate</h3>
                 <button class="sidebar-toggle" id="sidebarToggle" aria-label="Close sidebar" data-translate-aria-label="closeSidebar">
@@ -101,6 +110,20 @@ include '../includes/header.php';
             </div>
 
             <div class="hc-sidebar-section">
+                <button type="button" class="hc-sidebar-section-toggle" data-section="favorites" aria-expanded="true">
+                    <span data-translate="favorites">Pinned</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="hc-sidebar-section-body"><ul class="hc-shortcut-list" id="hcFavoritesList"></ul></div>
+            </div>
+            <div class="hc-sidebar-section">
+                <button type="button" class="hc-sidebar-section-toggle" data-section="ai" aria-expanded="false">
+                    <span>AI shortcuts</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="hc-sidebar-section-body"><ul class="hc-shortcut-list" id="hcAiShortcutList"></ul></div>
+            </div>
+            <div class="hc-sidebar-section">
                 <button type="button" class="hc-sidebar-section-toggle" data-section="categories" aria-expanded="true">
                     <span data-translate="categories">Categories</span>
                     <i class="fas fa-chevron-down"></i>
@@ -118,6 +141,7 @@ include '../includes/header.php';
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 <div class="hc-sidebar-section-body">
+                    <div class="hc-onboarding-compact" id="hcOnboardingSteps"></div>
                     <div class="progress-summary" id="progressSummary">
                         <div class="hc-progress-ring-wrap">
                             <svg class="hc-progress-ring" viewBox="0 0 36 36" aria-hidden="true">
@@ -172,13 +196,6 @@ include '../includes/header.php';
                         <div class="hc-chip-row" id="hcQuickActionChips"></div>
                     </div>
 
-                    <div class="hc-onboarding-status" id="hcOnboardingStatus">
-                        <div class="hc-onboarding-status-header">
-                            <i class="fas fa-chart-line"></i>
-                            <span data-translate="onboardingStatus">Onboarding status</span>
-                        </div>
-                        <div class="hc-onboarding-steps" id="hcOnboardingSteps"></div>
-                    </div>
                 </div>
 
                 <div class="hc-hero-right">
@@ -196,6 +213,9 @@ include '../includes/header.php';
                         </div>
                     </div>
                 </div>
+            </section>
+            <section class="hc-telemetry" id="hcTelemetry" aria-label="Operational telemetry">
+                <div class="hc-telemetry-scroll" id="hcTelemetryScroll"></div>
             </section>
 
             <!-- Operational trust strip -->
@@ -218,7 +238,17 @@ include '../includes/header.php';
                 <div class="help-main-content hc-main-content">
                     <!-- Home Hub (default) -->
                     <div class="help-view-mode" id="homeHubView">
-                        <div id="hcEnterpriseModules"></div>
+                        <div class="hc-hub-layout">
+                            <div class="hc-hub-main">
+                                <section class="hc-activity" id="hcActivitySection" aria-label="Recent activity">
+                                    <div class="hc-section-header hc-section-header--compact">
+                                        <h2 data-translate="recentActivity">Recent activity</h2>
+                                        <span class="hc-live-dot"></span>
+                                    </div>
+                                    <ul class="hc-activity-feed" id="hcActivityFeed"></ul>
+                                </section>
+                                <div id="hcFeaturedBanner" class="hc-featured-banner"></div>
+                                <div id="hcEnterpriseModules"></div>
                         <div class="hc-section-header hc-section-header--spaced">
                             <h2 data-translate="browseCategories">Browse all categories</h2>
                             <p data-translate="browseCategoriesSub">Adaptive collections with difficulty, impact, and completion metadata</p>
@@ -227,6 +257,11 @@ include '../includes/header.php';
                             <div class="loading-placeholder hc-shimmer">
                                 <i class="fas fa-spinner fa-spin"></i> <span data-translate="loadingCategories">Loading categories...</span>
                             </div>
+                        </div>
+                            </div>
+                            <aside class="hc-hub-rail" id="hcHubRail">
+                                <div id="hcQuickPanels"></div>
+                            </aside>
                         </div>
                     </div>
 
@@ -270,6 +305,12 @@ include '../includes/header.php';
                                 </div>
                             </aside>
                             <div class="hc-article-main">
+                                <div class="hc-article-toolbar help-hidden" id="hcArticleToolbar">
+                                    <button type="button" class="hc-toolbar-btn" id="hcChecklistMode">Checklist mode</button>
+                                    <button type="button" class="hc-toolbar-btn" id="hcExplainWorkflow">Explain workflow</button>
+                                    <button type="button" class="hc-toolbar-btn" id="hcCopilotSummarize">Summarize</button>
+                                    <div class="hc-article-deps" id="hcArticleDeps"></div>
+                                </div>
                                 <div class="hc-ai-summary-panel help-hidden" id="hcAiSummaryPanel">
                                     <div class="hc-ai-summary-header">
                                         <i class="fas fa-magic"></i>
@@ -338,6 +379,10 @@ include '../includes/header.php';
             <button type="button" class="hc-cmd-filter" data-filter="actions">Actions</button>
         </div>
         <div class="hc-cmd-sections" id="hcCmdResults">
+            <div class="hc-cmd-group" id="hcCmdCommands">
+                <h4 data-translate="quickCommands">Commands</h4>
+                <ul class="hc-cmd-list" id="hcCmdCommandsList"></ul>
+            </div>
             <div class="hc-cmd-group" id="hcCmdTrending">
                 <h4 data-translate="trendingSearches">Trending</h4>
                 <ul class="hc-cmd-list" id="hcCmdTrendingList"></ul>
@@ -380,6 +425,7 @@ include '../includes/header.php';
         <div class="hc-copilot-context" id="hcCopilotContext">
             <span class="hc-copilot-context-label" data-translate="context">Context:</span>
             <span id="hcCopilotContextText">Knowledge Hub</span>
+            <span class="hc-copilot-confidence" id="hcCopilotConfidence">94%</span>
         </div>
         <div class="hc-copilot-messages" id="hcCopilotMessages">
             <div class="hc-copilot-msg hc-copilot-msg--assistant">
@@ -390,6 +436,7 @@ include '../includes/header.php';
                 </div>
             </div>
         </div>
+        <div class="hc-copilot-memory" id="hcCopilotMemoryHint"></div>
         <div class="hc-copilot-composer">
             <textarea id="hcCopilotInput" rows="1" placeholder="Ask about onboarding, permissions, payroll sync…" data-translate-placeholder="copilotPlaceholder"></textarea>
             <button type="button" id="hcCopilotSend" aria-label="Send"><i class="fas fa-paper-plane"></i></button>
