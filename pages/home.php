@@ -428,6 +428,9 @@ $ratibSiteRoot = rtrim($baseUrl, '/');
     <?php } ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/ratib-mega-nav.css?v=<?php echo htmlspecialchars($ratibMegaNavCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-marketing-focused.css?v=<?php echo htmlspecialchars($ratibMarketingFocusedCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php if (function_exists('ratib_marketing_emit_focused_rescue_css')) {
+        ratib_marketing_emit_focused_rescue_css();
+    } ?>
     <style id="ratib-nav-css-fallback">
       /* Layout-only rescue — no fixed icon sizes here (!important would override home-public / ratib-mega-nav). */
       #ratibNavMenu .ratib-nav__platform-links .ratib-nav__link{display:inline-flex!important;align-items:center!important;gap:.5rem!important}
@@ -459,13 +462,16 @@ ratib_emit_profile_nav_guard($baseUrl);
                         <li><i class="fas fa-location-crosshairs"></i> <?php echo htmlspecialchars($ratibHome['home.hero.bullet.3'] ?? '', ENT_QUOTES, 'UTF-8'); ?></li>
                         <li><i class="fas fa-bolt"></i> <?php echo htmlspecialchars($ratibHome['home.hero.bullet.4'] ?? '', ENT_QUOTES, 'UTF-8'); ?></li>
                     </ul>
-                    <?php ratib_enterprise_trust_render_hero_strip($ratibHome); ?>
+                    <?php if (!function_exists('ratib_public_marketing_should_render_deep') || ratib_public_marketing_should_render_deep()) {
+                        ratib_enterprise_trust_render_hero_strip($ratibHome);
+                    } ?>
                     <div class="ratib-hero__actions">
                         <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATIB — Request Enterprise Demo'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--primary ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.hero.cta_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                         <a href="<?php echo htmlspecialchars($ratibSiteRoot . '/architecture/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.hero.cta_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                         <a href="#video" class="ratib-btn ratib-btn--ghost ratib-btn--lg"><i class="fas fa-play" aria-hidden="true"></i> <?php echo htmlspecialchars($ratibHome['home.nav.tour'] ?? 'Platform walkthrough', ENT_QUOTES, 'UTF-8'); ?></a>
                     </div>
                 </div>
+                <?php if (!function_exists('ratib_public_marketing_should_render_deep') || ratib_public_marketing_should_render_deep()) { ?>
                 <div class="ratib-hero__visual" aria-hidden="true" data-ratib-marketing-depth="deep">
                     <div class="ratib-dash">
                         <div class="ratib-dash__chrome">
@@ -608,8 +614,9 @@ ratib_emit_profile_nav_guard($baseUrl);
                         </div>
                     </div>
                 </div>
+                <?php } ?>
             </div>
-            <?php if ($ratibShowHomeVideoBand): ?>
+            <?php if ($ratibShowHomeVideoBand && (!function_exists('ratib_public_marketing_should_render_deep') || ratib_public_marketing_should_render_deep())): ?>
             <div class="ratib-hero__video-band video-section ratib-video ratib-video--hero" id="video">
                 <div class="ratib-container">
                     <header class="ratib-hero__video-head ratib-section__head ratib-section__head--left">
@@ -645,7 +652,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                 </div>
             </div>
             <?php endif; ?>
-            <?php if (!empty($ratibProgSlotsOut)): ?>
+            <?php if (!empty($ratibProgSlotsOut) && (!function_exists('ratib_public_marketing_should_render_deep') || ratib_public_marketing_should_render_deep())): ?>
             <div class="ratib-hero__photo-strip ratib-hero__program-strip" id="program-previews">
                 <div class="ratib-container">
                     <p class="ratib-hero__photo-eyebrow"><?php echo htmlspecialchars($ratibHome['home.program.strip_eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
@@ -693,7 +700,10 @@ ratib_emit_profile_nav_guard($baseUrl);
             <?php endif; ?>
         </section>
 
-        <section class="ratib-section ratib-trust" id="platform">
+        <?php ratib_marketing_expand_bar_render('home'); ?>
+
+        <?php if (!function_exists('ratib_public_marketing_should_render_deep') || ratib_public_marketing_should_render_deep()) { ?>
+        <section class="ratib-section ratib-trust" id="platform" data-ratib-marketing-depth="deep">
             <div class="ratib-container">
                 <header class="ratib-section__head">
                     <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHome['home.platform.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
@@ -710,8 +720,6 @@ ratib_emit_profile_nav_guard($baseUrl);
                 </div>
             </div>
         </section>
-
-        <?php ratib_marketing_expand_bar_render('home'); ?>
 
         <?php ratib_enterprise_trust_render_home($ratibHome, $baseUrl); ?>
 
@@ -935,6 +943,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                 <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATIB — Contact Solutions Team'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline"><?php echo htmlspecialchars($ratibHome['home.api.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
         </section>
+        <?php } ?>
 
         <section class="pricing-section ratib-pricing-saas" id="programs">
             <div class="ratib-container">
@@ -1003,6 +1012,7 @@ ratib_emit_profile_nav_guard($baseUrl);
             </div>
         </section>
 
+        <?php if (!function_exists('ratib_public_marketing_should_render_deep') || ratib_public_marketing_should_render_deep()) { ?>
         <section class="register-section<?php echo $openRegister ? '' : ' register-section-hidden'; ?> ratib-register-wrap" id="register">
         <div class="ratib-info">
             <h2><i class="fas fa-info-circle me-2 register-info-icon"></i><?php echo htmlspecialchars($ratibHome['home.register.info.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
@@ -1124,6 +1134,7 @@ ratib_emit_profile_nav_guard($baseUrl);
             </form>
         </div>
     </section>
+        <?php } ?>
 
         <section class="ratib-final-cta ratib-final-cta--enterprise" aria-labelledby="ratib-final-cta-title">
             <div class="ratib-final-cta__bg" aria-hidden="true"></div>

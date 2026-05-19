@@ -37,3 +37,55 @@ if (!function_exists('ratib_public_marketing_density_body_class')) {
             : 'ratib-marketing--full';
     }
 }
+
+if (!function_exists('ratib_public_marketing_should_render_deep')) {
+    /** When false, PHP skips deep blocks (reliable vs CSS cache). */
+    function ratib_public_marketing_should_render_deep(): bool
+    {
+        return !ratib_public_marketing_is_focused();
+    }
+}
+
+if (!function_exists('ratib_public_marketing_toggle_density_url')) {
+    function ratib_public_marketing_toggle_density_url(bool $wantFull): string
+    {
+        $qs = $_GET;
+        if ($wantFull) {
+            $qs['density'] = 'full';
+        } else {
+            unset($qs['density']);
+        }
+        $req = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+        $path = (string) (parse_url($req, PHP_URL_PATH) ?: '/');
+        $hash = (string) (parse_url($req, PHP_URL_FRAGMENT) ?: '');
+        $url = $path;
+        if ($qs !== []) {
+            $url .= '?' . http_build_query($qs);
+        }
+        if ($hash !== '') {
+            $url .= '#' . ltrim($hash, '#');
+        }
+
+        return $url;
+    }
+}
+
+if (!function_exists('ratib_marketing_emit_focused_rescue_css')) {
+    /** Inline hide rules — works even if home-marketing-focused.css is cached or missing. */
+    function ratib_marketing_emit_focused_rescue_css(): void
+    {
+        if (!ratib_public_marketing_is_focused()) {
+            return;
+        }
+        echo '<style id="ratib-marketing-focused-rescue">'
+            . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) [data-ratib-marketing-depth="deep"],'
+            . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-marketing-deep-wrap,'
+            . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-hero__visual,'
+            . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-hero__video-band,'
+            . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-hero__program-strip,'
+            . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) #program-previews,'
+            . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) #platform.ratib-trust--deep,'
+            . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-register-wrap'
+            . '{display:none!important}</style>';
+    }
+}

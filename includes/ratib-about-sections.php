@@ -18,6 +18,7 @@ if (!function_exists('ratib_about_render_company_dossier')) {
     function ratib_about_render_company_dossier(array $company, string $baseUrl): void
     {
         $wa = (string) ($company['whatsapp'] ?? 'https://wa.me/966599863868');
+        $focused = function_exists('ratib_public_marketing_is_focused') && ratib_public_marketing_is_focused();
         ?>
         <section class="ratib-company-dossier" id="company-profile" aria-labelledby="company-profile-title">
             <div class="ratib-about-container">
@@ -57,6 +58,7 @@ if (!function_exists('ratib_about_render_company_dossier')) {
                         </div>
                     </div>
 
+                    <?php if (!$focused) { ?>
                     <article class="ratib-company-dossier__card ratib-company-dossier__card--wide" data-ratib-reveal data-ratib-delay="90">
                         <h2 class="ratib-company-dossier__card-title">About the company</h2>
                         <p class="ratib-company-dossier__text"><?php echo ratib_about_h((string) ($company['summary'] ?? '')); ?></p>
@@ -77,6 +79,8 @@ if (!function_exists('ratib_about_render_company_dossier')) {
                         </ul>
                     </article>
 
+                    <?php } ?>
+                    <?php if (!$focused) { ?>
                     <div class="ratib-company-dossier__stats" data-ratib-reveal data-ratib-delay="150">
                         <?php foreach ($company['highlights'] ?? [] as $h) { ?>
                         <div class="ratib-company-dossier__stat">
@@ -85,6 +89,7 @@ if (!function_exists('ratib_about_render_company_dossier')) {
                         </div>
                         <?php } ?>
                     </div>
+                    <?php } ?>
                 </div>
             </div>
         </section>
@@ -109,6 +114,23 @@ if (!function_exists('ratib_about_render_sections')) {
         }
         if (function_exists('ratib_marketing_expand_bar_render')) {
             ratib_marketing_expand_bar_render('profile');
+        }
+        if (function_exists('ratib_public_marketing_should_render_deep') && !ratib_public_marketing_should_render_deep()) {
+            ?>
+        <section class="ratib-about-cta" id="contact-cta" aria-labelledby="about-cta-title">
+            <div class="ratib-about-container ratib-about-cta__inner" data-ratib-reveal>
+                <h2 id="about-cta-title" class="ratib-about-cta__title">Operate corridors, not spreadsheets.</h2>
+                <p class="ratib-about-cta__sub">Deploy production-grade workforce program infrastructure for your agency or country program.</p>
+                <div class="ratib-about-cta__actions">
+                    <a href="<?php echo ratib_about_h($contactWa); ?>" target="_blank" rel="noopener noreferrer" class="ratib-about-btn ratib-about-btn--primary ratib-about-btn--xl">Request Enterprise Demo</a>
+                    <a href="<?php echo ratib_about_h($homeRegister); ?>" class="ratib-about-btn ratib-about-btn--outline ratib-about-btn--xl">Deploy Agency Workspace</a>
+                    <a href="mailto:info@out.ratib.sa" class="ratib-about-btn ratib-about-btn--ghost">Talk to Solutions Team</a>
+                </div>
+                <p class="ratib-about-cta__legal ratib-mono">Ratib Software Foundation for Information Technology · Riyadh, Saudi Arabia · out.ratib.sa</p>
+            </div>
+        </section>
+            <?php
+            return;
         }
         ?>
         <section class="ratib-about-hero" id="platform-overview" aria-labelledby="about-hero-title" data-ratib-marketing-depth="deep">
