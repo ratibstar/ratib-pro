@@ -78,19 +78,19 @@ FAST_FILES = [
     "includes/site-content-public-data.php",
     "api/site-content-media.php",
     "css/pages/operational-proof.css",
-    "public/profile-media/about-ratib-command.png",
-    "public/profile-media/program-preview-pipeline.svg",
-    "public/profile-media/program-preview-workers.svg",
-    "public/profile-media/program-preview-finance.svg",
-    "public/profile-media/government/government-control.png",
-    "public/profile-media/government/government-inspections.png",
-    "public/profile-media/government/tracking-map.png",
-    "public/profile-media/government/worker-mobile-onboarding.png",
-    "public/profile-media/diagrams/workflow-lifecycle.svg",
-    "public/profile-media/diagrams/onboarding-flow.svg",
-    "public/profile-media/diagrams/deployment-lifecycle.svg",
-    "public/profile-media/diagrams/tenant-isolation.svg",
-    "public/profile-media/diagrams/event-processing.svg",
+    "public/cms-bundle-about.png",
+    "public/cms-bundle-pipeline.svg",
+    "public/cms-bundle-workers.svg",
+    "public/cms-bundle-finance.svg",
+    "public/cms-bundle-gov-control.png",
+    "public/cms-bundle-gov-inspections.png",
+    "public/cms-bundle-gov-tracking.png",
+    "public/cms-bundle-gov-onboarding.png",
+    "public/cms-bundle-diagram-workflow.svg",
+    "public/cms-bundle-diagram-onboarding.svg",
+    "public/cms-bundle-diagram-deployment.svg",
+    "public/cms-bundle-diagram-tenant.svg",
+    "public/cms-bundle-diagram-events.svg",
     "includes/ratib-home-public-chrome-top.php",
     "includes/ratib-home-public-nav-sync.php",
     "includes/ratib-profile-nav-guard.php",
@@ -167,6 +167,7 @@ MUST_OK = [
     ".htaccess",
     "public/ratib-build.txt",
     "public/cms-media.php",
+    "public/cms-bundle-gov-control.png",
     "pages/about.php",
     "pages/home.php",
     "includes/site-content.php",
@@ -374,6 +375,10 @@ def run_uploads(files: list[str], remote_base: str, workers: int) -> tuple[int, 
 
     if not existing:
         return ok, fail, succeeded
+
+    remote_dirs = sorted({remote_dir(remote_base, rel) for rel in existing}, key=lambda d: d.count("/"))
+    for d in remote_dirs:
+        ensure_remote_dir(d, remote_base)
 
     if workers <= 1:
         n = done

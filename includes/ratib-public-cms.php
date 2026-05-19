@@ -65,35 +65,34 @@ if (!function_exists('ratib_public_resolve_profile_media_rel')) {
     function ratib_public_resolve_profile_media_rel(string $rel): string
     {
         $rel = ltrim(str_replace('\\', '/', $rel), '/');
-        if (str_starts_with($rel, 'public/profile-media/')) {
+        if (str_starts_with($rel, 'public/cms-bundle-')) {
             return $rel;
         }
         $map = [
-            'assets/images/about-ratib-command.png' => 'public/profile-media/about-ratib-command.png',
-            'assets/images/program-preview-pipeline.svg' => 'public/profile-media/program-preview-pipeline.svg',
-            'assets/images/program-preview-workers.svg' => 'public/profile-media/program-preview-workers.svg',
-            'assets/images/program-preview-finance.svg' => 'public/profile-media/program-preview-finance.svg',
-            'assets/images/government/government-control.png' => 'public/profile-media/government/government-control.png',
-            'assets/images/government/government-inspections.png' => 'public/profile-media/government/government-inspections.png',
-            'assets/images/government/tracking-map.png' => 'public/profile-media/government/tracking-map.png',
-            'assets/images/government/worker-mobile-onboarding.png' => 'public/profile-media/government/worker-mobile-onboarding.png',
-            'assets/images/diagrams/workflow-lifecycle.svg' => 'public/profile-media/diagrams/workflow-lifecycle.svg',
-            'assets/images/diagrams/onboarding-flow.svg' => 'public/profile-media/diagrams/onboarding-flow.svg',
-            'assets/images/diagrams/deployment-lifecycle.svg' => 'public/profile-media/diagrams/deployment-lifecycle.svg',
-            'assets/images/diagrams/tenant-isolation.svg' => 'public/profile-media/diagrams/tenant-isolation.svg',
-            'assets/images/diagrams/event-processing.svg' => 'public/profile-media/diagrams/event-processing.svg',
+            'assets/images/about-ratib-command.png' => 'public/cms-bundle-about.png',
+            'assets/images/program-preview-pipeline.svg' => 'public/cms-bundle-pipeline.svg',
+            'assets/images/program-preview-workers.svg' => 'public/cms-bundle-workers.svg',
+            'assets/images/program-preview-finance.svg' => 'public/cms-bundle-finance.svg',
+            'assets/images/government/government-control.png' => 'public/cms-bundle-gov-control.png',
+            'assets/images/government/government-inspections.png' => 'public/cms-bundle-gov-inspections.png',
+            'assets/images/government/tracking-map.png' => 'public/cms-bundle-gov-tracking.png',
+            'assets/images/government/worker-mobile-onboarding.png' => 'public/cms-bundle-gov-onboarding.png',
+            'public/profile-media/about-ratib-command.png' => 'public/cms-bundle-about.png',
+            'public/profile-media/program-preview-pipeline.svg' => 'public/cms-bundle-pipeline.svg',
+            'public/profile-media/program-preview-workers.svg' => 'public/cms-bundle-workers.svg',
+            'public/profile-media/program-preview-finance.svg' => 'public/cms-bundle-finance.svg',
+            'public/profile-media/government/government-control.png' => 'public/cms-bundle-gov-control.png',
+            'public/profile-media/government/government-inspections.png' => 'public/cms-bundle-gov-inspections.png',
+            'public/profile-media/government/tracking-map.png' => 'public/cms-bundle-gov-tracking.png',
+            'public/profile-media/government/worker-mobile-onboarding.png' => 'public/cms-bundle-gov-onboarding.png',
+            'public/profile-media/diagrams/workflow-lifecycle.svg' => 'public/cms-bundle-diagram-workflow.svg',
+            'public/profile-media/diagrams/onboarding-flow.svg' => 'public/cms-bundle-diagram-onboarding.svg',
+            'public/profile-media/diagrams/deployment-lifecycle.svg' => 'public/cms-bundle-diagram-deployment.svg',
+            'public/profile-media/diagrams/tenant-isolation.svg' => 'public/cms-bundle-diagram-tenant.svg',
+            'public/profile-media/diagrams/event-processing.svg' => 'public/cms-bundle-diagram-events.svg',
         ];
         if (isset($map[$rel])) {
             return $map[$rel];
-        }
-        if (str_starts_with($rel, 'assets/images/government/')) {
-            return 'public/profile-media/government/' . substr($rel, strlen('assets/images/government/'));
-        }
-        if (str_starts_with($rel, 'assets/images/diagrams/')) {
-            return 'public/profile-media/diagrams/' . substr($rel, strlen('assets/images/diagrams/'));
-        }
-        if (str_starts_with($rel, 'assets/images/program-preview-')) {
-            return 'public/profile-media/' . basename($rel);
         }
 
         return $rel;
@@ -143,9 +142,9 @@ if (!function_exists('ratib_public_cms_image_or')) {
         $flat = ratib_public_cms_flat();
         $stored = trim((string) ($flat[$primaryKey] ?? ''));
         $legacyGeneric = 'assets/images/about-ratib-command.png';
-        $legacyGenericPublic = 'public/profile-media/about-ratib-command.png';
+        $legacyGenericPublic = 'public/cms-bundle-about.png';
         $legacyGenericScmedia = function_exists('ratib_site_content_media_default_token')
-            ? ratib_site_content_media_default_token($primaryKey, 'public/profile-media/about-ratib-command.png')
+            ? ratib_site_content_media_default_token($primaryKey, 'public/cms-bundle-about.png')
             : '';
         if (($stored === $legacyGeneric || $stored === $legacyGenericPublic || ($legacyGenericScmedia !== '' && $stored === $legacyGenericScmedia)) && $secondaryKey !== '') {
             $secondaryStored = trim((string) ($flat[$secondaryKey] ?? ''));
