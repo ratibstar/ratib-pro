@@ -1399,3 +1399,140 @@ body.dark-mode .hc-enterprise .hc-categories-grid .category-card:nth-child(12n+9
 body.dark-mode .hc-enterprise .hc-categories-grid .category-card:nth-child(12n+10):hover .category-card-title { color: #fef08a !important; }
 body.dark-mode .hc-enterprise .hc-categories-grid .category-card:nth-child(12n+11):hover .category-card-title { color: #fbcfe8 !important; }
 body.dark-mode .hc-enterprise .hc-categories-grid .category-card:nth-child(12n):hover .category-card-title { color: #e2e8f0 !important; }
+
+/* ── Category accent scopes (tutorial pages, list cards, article headers) ── */
+.hc-enterprise .hc-cat-accent-1 { --hc-cat-title: #1d4ed8; --hc-cat-border: #2563eb; }
+.hc-enterprise .hc-cat-accent-2 { --hc-cat-title: #6d28d9; --hc-cat-border: #7c3aed; }
+.hc-enterprise .hc-cat-accent-3 { --hc-cat-title: #0e7490; --hc-cat-border: #0891b2; }
+.hc-enterprise .hc-cat-accent-4 { --hc-cat-title: #047857; --hc-cat-border: #059669; }
+.hc-enterprise .hc-cat-accent-5 { --hc-cat-title: #b45309; --hc-cat-border: #d97706; }
+.hc-enterprise .hc-cat-accent-6 { --hc-cat-title: #b91c1c; --hc-cat-border: #dc2626; }
+.hc-enterprise .hc-cat-accent-7 { --hc-cat-title: #4338ca; --hc-cat-border: #4f46e5; }
+.hc-enterprise .hc-cat-accent-8 { --hc-cat-title: #0f766e; --hc-cat-border: #0d9488; }
+.hc-enterprise .hc-cat-accent-9 { --hc-cat-title: #c2410c; --hc-cat-border: #ea580c; }
+.hc-enterprise .hc-cat-accent-10 { --hc-cat-title: #a16207; --hc-cat-border: #ca8a04; }
+.hc-enterprise .hc-cat-accent-11 { --hc-cat-title: #be185d; --hc-cat-border: #db2777; }
+.hc-enterprise .hc-cat-accent-12 { --hc-cat-title: #475569; --hc-cat-border: #64748b; }
+
+@media (prefers-color-scheme: dark) {
+    .hc-enterprise .hc-cat-accent-1 { --hc-cat-title: #93c5fd; --hc-cat-border: #60a5fa; }
+    .hc-enterprise .hc-cat-accent-2 { --hc-cat-title: #c4b5fd; --hc-cat-border: #a78bfa; }
+    .hc-enterprise .hc-cat-accent-3 { --hc-cat-title: #67e8f9; --hc-cat-border: #22d3ee; }
+    .hc-enterprise .hc-cat-accent-4 { --hc-cat-title: #6ee7b7; --hc-cat-border: #34d399; }
+    .hc-enterprise .hc-cat-accent-5 { --hc-cat-title: #fcd34d; --hc-cat-border: #fbbf24; }
+    .hc-enterprise .hc-cat-accent-6 { --hc-cat-title: #fca5a5; --hc-cat-border: #f87171; }
+    .hc-enterprise .hc-cat-accent-7 { --hc-cat-title: #a5b4fc; --hc-cat-border: #818cf8; }
+    .hc-enterprise .hc-cat-accent-8 { --hc-cat-title: #5eead4; --hc-cat-border: #2dd4bf; }
+    .hc-enterprise .hc-cat-accent-9 { --hc-cat-title: #fdba74; --hc-cat-border: #fb923c; }
+    .hc-enterprise .hc-cat-accent-10 { --hc-cat-title: #fde047; --hc-cat-border: #facc15; }
+    .hc-enterprise .hc-cat-accent-11 { --hc-cat-title: #f9a8d4; --hc-cat-border: #f472b6; }
+    .hc-enterprise .hc-cat-accent-12 { --hc-cat-title: #cbd5e1; --hc-cat-border: #94a3b8; }
+}
+
+body.dark-mode .hc-enterprise .hc-cat-accent-1 { --hc-cat-title: #93c5fd; --hc-cat-border: #60a5fa; }
+body.dark-mode .hc-enterprise .hc-cat-accent-2 { --hc-cat-title: #c4b5fd; --hc-cat-border: #a78bfa; }
+body.dark-mode .hc-enterprise .hc-cat-accent-3 { --hc-cat-title: #67e8f9; --hc-cat-border: #22d3ee; }
+body.dark-mode .hc-enterprise .hc-cat-accent-4 { --hc-cat-title: #6ee7b7; --hc-cat-border: #34d399; }
+body.dark-mode .hc-enterprise .hc-cat-accent-5 { --hc-cat-title: #fcd34d; --hc-cat-border: #fbbf24; }
+body.dark-mode .hc-enterprise .hc-cat-accent-6 { --hc-cat-title: #fca5a5; --hc-cat-border: #f87171; }
+body.dark-mode .hc-enterprise .hc-cat-accent-7 { --hc-cat-title: #a5b4fc; --hc-cat-border: #818cf8; }
+body.dark-mode .hc-enterprise .hc-cat-accent-8 { --hc-cat-title: #5eead4; --hc-cat-border: #2dd4bf; }
+body.dark-mode .hc-enterprise .hc-cat-accent-9 { --hc-cat-title: #fdba74; --hc-cat-border: #fb923c; }
+body.dark-mode .hc-enterprise .hc-cat-accent-10 { --hc-cat-title: #fde047; --hc-cat-border: #facc15; }
+body.dark-mode .hc-enterprise .hc-cat-accent-11 { --hc-cat-title: #f9a8d4; --hc-cat-border: #f472b6; }
+body.dark-mode .hc-enterprise .hc-cat-accent-12 { --hc-cat-title: #cbd5e1; --hc-cat-border: #94a3b8; }
+
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-title,
+.hc-enterprise [class*="hc-cat-accent-"].tutorial-detail-title,
+.hc-enterprise [class*="hc-cat-accent-"] #tutorialListTitle,
+.hc-enterprise #tutorialListTitle[class*="hc-cat-accent-"],
+.hc-enterprise .tutorial-card[class*="hc-cat-accent-"] .tutorial-card-title {
+    color: var(--hc-cat-title) !important;
+    background: none !important;
+    -webkit-text-fill-color: unset !important;
+    text-shadow: none !important;
+    filter: none !important;
+}
+
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-header {
+    border-left: 3px solid var(--hc-cat-border);
+    padding-left: 16px;
+    margin-left: 0;
+}
+
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-body h2,
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-body h3 {
+    color: var(--hc-cat-title) !important;
+    background: none !important;
+    -webkit-text-fill-color: unset !important;
+    background-clip: unset !important;
+    text-shadow: none !important;
+    filter: none !important;
+    border-bottom-color: color-mix(in srgb, var(--hc-cat-border) 35%, transparent) !important;
+    padding-bottom: 0.35em;
+    margin-top: 1.75em;
+}
+
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-body h2::after {
+    display: none !important;
+}
+
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-body h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+}
+
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-body h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* Calm article body under enterprise (override legacy gradients) */
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-body p {
+    color: var(--hc-text-secondary) !important;
+    background: transparent !important;
+    border-left: none !important;
+    padding: 0 !important;
+    margin: 0 0 1em !important;
+    text-shadow: none !important;
+    transform: none !important;
+    font-size: 0.9375rem !important;
+    font-weight: 400 !important;
+}
+
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-body p:hover {
+    background: transparent !important;
+    transform: none !important;
+}
+
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-body p:first-of-type {
+    background: transparent !important;
+    border-left: none !important;
+}
+
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-body ul,
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-body ol {
+    background: transparent !important;
+    border-left: none !important;
+    padding: 0 0 0 1.25em !important;
+    margin: 0 0 1em !important;
+}
+
+.hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-body strong {
+    background: color-mix(in srgb, var(--hc-cat-border) 12%, transparent) !important;
+    color: var(--hc-cat-title) !important;
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    font-weight: 600;
+    -webkit-text-fill-color: unset !important;
+}
+
+.hc-enterprise [class*="hc-cat-accent-"] .hc-top-toc-scroll a.active {
+    color: var(--hc-cat-title) !important;
+    border-color: color-mix(in srgb, var(--hc-cat-border) 40%, transparent) !important;
+    background: color-mix(in srgb, var(--hc-cat-border) 10%, transparent) !important;
+}

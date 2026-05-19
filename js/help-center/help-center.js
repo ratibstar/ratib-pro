@@ -25,6 +25,7 @@ const HelpCenterState = {
     currentCategory: null,
     currentTutorial: null,
     categories: [],
+    flatCategoryIds: [],
     tutorials: [],
     searchQuery: '',
     currentPage: 1,
@@ -109,6 +110,59 @@ function helpCenterBuiltinTutorialsForCategory(categoryId) {
     return HELP_CENTER_BUILTIN[categoryId];
 }
 
+function helpCenterFlattenCategories(cats) {
+    let flat = [];
+    if (!Array.isArray(cats)) return flat;
+    cats.forEach(function (cat) {
+        flat.push(cat);
+        if (cat.children && cat.children.length) {
+            flat = flat.concat(helpCenterFlattenCategories(cat.children));
+        }
+    });
+    return flat;
+}
+
+function helpCenterResolveCategoryId(tutorial) {
+    if (HelpCenterState.currentCategory != null && HelpCenterState.currentCategory !== '') {
+        return HelpCenterState.currentCategory;
+    }
+    if (tutorial && tutorial.category_id != null) {
+        return tutorial.category_id;
+    }
+    const id = tutorial && tutorial.id ? String(tutorial.id) : '';
+    const match = id.match(/^builtin-(\d+)-/);
+    if (match) return match[1];
+    return null;
+}
+
+function helpCenterCategoryColorIndex(categoryId) {
+    if (categoryId == null || categoryId === '') return 1;
+    const ids = HelpCenterState.flatCategoryIds || [];
+    const idx = ids.findIndex(function (id) { return String(id) === String(categoryId); });
+    if (idx < 0) {
+        const n = parseInt(categoryId, 10);
+        if (!isNaN(n)) return ((Math.max(n, 1) - 1) % 12) + 1;
+        return 1;
+    }
+    return (idx % 12) + 1;
+}
+
+function helpCenterApplyCategoryAccent(el, categoryId) {
+    if (!el) return;
+    const n = helpCenterCategoryColorIndex(categoryId);
+    for (let i = 1; i <= 12; i++) {
+        el.classList.remove('hc-cat-accent-' + i);
+    }
+    el.classList.add('hc-cat-accent-' + n);
+}
+
+function helpCenterClearCategoryAccent(el) {
+    if (!el) return;
+    for (let i = 1; i <= 12; i++) {
+        el.classList.remove('hc-cat-accent-' + i);
+    }
+}
+
 // Helper Functions
 function getApiBase() {
     return (window.APP_CONFIG && window.APP_CONFIG.baseUrl) || (window.BASE_PATH || '');
@@ -153,6 +207,14 @@ function showView(viewName) {
     const hubViews = ['homeHubView', 'categoryGridView'];
     const showHub = hubViews.indexOf(viewName) >= 0;
     if (hero) hero.classList.toggle('hc-hero--hidden', !showHub);
+    if (viewName === 'homeHubView' || viewName === 'categoryGridView') {
+        helpCenterClearCategoryAccent(document.getElementById('tutorialListView'));
+        helpCenterClearCategoryAccent(document.getElementById('tutorialDetailView'));
+        const listHeader = document.getElementById('tutorialListTitle');
+        if (listHeader && listHeader.closest) {
+            helpCenterClearCategoryAccent(listHeader.closest('.hc-section-header'));
+        }
+    }
     HelpCenterState.currentView = viewName.replace('View', '').replace(/([A-Z])/g, ' $1').trim().toLowerCase();
     if (window.HelpCenterEnterprise && typeof window.HelpCenterEnterprise.onViewChange === 'function') {
         window.HelpCenterEnterprise.onViewChange(viewName);
@@ -337,21 +399,8 @@ const HelpCenterUI = {
         
         if (!grid && !sidebar) return;
 
-        // Flatten categories if they're in a tree structure
-        const flattenCategories = (cats) => {
-            let flat = [];
-            if (Array.isArray(cats)) {
-                cats.forEach(cat => {
-                    flat.push(cat);
-                    if (cat.children && Array.isArray(cat.children) && cat.children.length > 0) {
-                        flat = flat.concat(flattenCategories(cat.children));
-                    }
-                });
-            }
-            return flat;
-        };
-        
-        const flatCategories = flattenCategories(categories);
+        const flatCategories = helpCenterFlattenCategories(categories);
+        HelpCenterState.flatCategoryIds = flatCategories.map(function (c) { return c.id; });
 
         const renderCategory = (category) => {
             const card = document.createElement('a');
@@ -438,7 +487,7 @@ const HelpCenterUI = {
             return;
         }
 
-        const colorCount = 12; // Increased from 8 to 12 for more color variety
+        const colorIdx = helpCenterCategoryColorIndex(HelpCenterState.currentCategory);
         const useBn = HelpCenterState.currentLanguage === 'bn' && window.HELP_CENTER_BUILTIN_BN;
         tutorials.forEach((tutorial, index) => {
             var displayTitle = tutorial.title;
@@ -449,7 +498,7 @@ const HelpCenterUI = {
                 if (bnT.overview) displayOverview = bnT.overview;
             }
             const card = document.createElement('a');
-            card.className = 'tutorial-card tutorial-card--color-' + (index % colorCount);
+            card.className = 'tutorial-card hc-cat-accent-' + colorIdx;
             card.href = '#';
             card.dataset.tutorialId = tutorial.id;
             
@@ -573,6 +622,13 @@ const HelpCenterUI = {
 
         this.renderRelatedArticles(tutorial);
         this.renderNextSteps(tutorial);
+
+        const categoryId = helpCenterResolveCategoryId(tutorial);
+        helpCenterApplyCategoryAccent(document.getElementById('tutorialDetailView'), categoryId);
+        const listTitle = document.getElementById('tutorialListTitle');
+        if (listTitle) {
+            helpCenterApplyCategoryAccent(listTitle.closest('.hc-section-header') || listTitle, categoryId);
+        }
 
         if (window.HelpCenterEnterprise && typeof window.HelpCenterEnterprise.onTutorialLoaded === 'function') {
             window.HelpCenterEnterprise.onTutorialLoaded(tutorial);
@@ -704,7 +760,6 @@ const HelpCenterUI = {
             else groups.tutorials.push(item);
         });
 
-        const colorCount = 12;
         const appendGroup = (title, items) => {
             if (!items.length) return;
             const group = document.createElement('div');
@@ -712,9 +767,10 @@ const HelpCenterUI = {
             group.innerHTML = `<h3>${title}</h3>`;
             const inner = document.createElement('div');
             inner.className = 'search-results-inner';
-            items.forEach((tutorial, index) => {
+            items.forEach((tutorial) => {
+                const catId = tutorial.category_id || HelpCenterState.currentCategory;
                 const card = document.createElement('a');
-                card.className = 'tutorial-card tutorial-card--color-' + (index % colorCount);
+                card.className = 'tutorial-card hc-cat-accent-' + helpCenterCategoryColorIndex(catId);
                 card.href = '#';
                 card.dataset.tutorialId = tutorial.id;
                 card.innerHTML = `
@@ -999,6 +1055,13 @@ const HelpCenterController = {
             HelpCenterUI.renderTutorials(tutorials);
             showView('tutorialListView');
             const category = helpCenterFindCategory(HelpCenterState.categories, categoryId);
+            const listView = document.getElementById('tutorialListView');
+            helpCenterApplyCategoryAccent(listView, categoryId);
+            const listTitle = document.getElementById('tutorialListTitle');
+            if (listTitle) {
+                listTitle.textContent = category?.name || t('tutorials');
+                helpCenterApplyCategoryAccent(listTitle, categoryId);
+            }
             if (window.HelpCenterEnterprise && typeof window.HelpCenterEnterprise.onCategoryOpened === 'function') {
                 window.HelpCenterEnterprise.onCategoryOpened(category);
             }
@@ -1074,6 +1137,9 @@ const HelpCenterController = {
             const response = await HelpCenterAPIHandler.getTutorial(tutorialId);
             if (response.success && response.data) {
                 HelpCenterState.currentTutorial = response.data;
+                if (response.data.category_id) {
+                    HelpCenterState.currentCategory = response.data.category_id;
+                }
                 HelpCenterUI.renderTutorialDetail(response.data);
                 showView('tutorialDetailView');
                 const tutorial = response.data;
