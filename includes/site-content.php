@@ -1012,6 +1012,15 @@ if (!function_exists('ratib_site_content_asset_url')) {
                     return $fs;
                 }
             }
+            if (function_exists('ratib_site_content_scmedia_bundled_rel')) {
+                $legacyRel = ratib_site_content_scmedia_bundled_rel($fileName);
+                if ($legacyRel !== '') {
+                    $fs = $root . '/' . str_replace('/', DIRECTORY_SEPARATOR, ltrim($legacyRel, '/'));
+                    if (is_file($fs)) {
+                        return $fs;
+                    }
+                }
+            }
 
             return null;
         }

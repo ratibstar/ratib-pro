@@ -166,14 +166,60 @@ CRITICAL_SET = set(CRITICAL) | set(FAST_FILES)
 MUST_OK = [
     ".htaccess",
     "public/ratib-build.txt",
+    "public/cms-media.php",
     "pages/about.php",
     "pages/home.php",
+    "includes/site-content.php",
     "includes/ratib-mega-nav-resolve.php",
     "includes/ratib-mega-nav-resolve.fallback.php",
     "js/pages/ratib-profile-nav-guard.js",
 ]
 
 _print_lock = Lock()
+_mkdir_cache: set[str] = set()
+
+
+def api_post(module: str, params: dict) -> dict:
+    host = os.environ["CPANEL_HOST"]
+    port = os.environ.get("CPANEL_PORT", "2083")
+    user = os.environ["CPANEL_USER"]
+    token = os.environ["CPANEL_API_TOKEN"]
+    data = urllib.parse.urlencode(params).encode("utf-8")
+    req = urllib.request.Request(
+        f"https://{host}:{port}/execute/{module}",
+        data=data,
+        method="POST",
+        headers={
+            "Authorization": f"cpanel {user}:{token}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=90) as resp:
+        return json.loads(resp.read().decode("utf-8", errors="replace"))
+
+
+def ensure_remote_dir(remote_dir: str, remote_base: str) -> None:
+    """Create nested remote dirs (required before save_file_content for public/profile-media/...)."""
+    remote_dir = remote_dir.rstrip("/")
+    remote_base = remote_base.rstrip("/")
+    if remote_dir in _mkdir_cache or remote_dir == remote_base:
+        return
+    suffix = remote_dir[len(remote_base) :].strip("/")
+    if suffix == "":
+        _mkdir_cache.add(remote_dir)
+        return
+    built = remote_base
+    for part in suffix.split("/"):
+        if not part:
+            continue
+        built = f"{built}/{part}"
+        if built in _mkdir_cache:
+            continue
+        try:
+            api_post("Fileman/mkdir", {"path": built, "permissions": "0755"})
+        except Exception:
+            pass
+        _mkdir_cache.add(built)
 
 
 def is_auto_deploy_path(path: str) -> bool:
@@ -199,43 +245,25 @@ def upload_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
         return rel, False, "missing"
     dir_path = remote_dir(remote_base, rel)
     name = os.path.basename(rel)
+    ensure_remote_dir(dir_path, remote_base)
     with open(rel, "rb") as f:
         raw = f.read()
     try:
         content = raw.decode("utf-8")
     except UnicodeDecodeError:
         content = raw.decode("latin-1")
-    host = os.environ["CPANEL_HOST"]
-    port = os.environ.get("CPANEL_PORT", "2083")
-    user = os.environ["CPANEL_USER"]
-    token = os.environ["CPANEL_API_TOKEN"]
-    url = f"https://{host}:{port}/execute/Fileman/save_file_content"
-    data = urllib.parse.urlencode(
-        {"dir": dir_path, "file": name, "content": content}
-    ).encode("utf-8")
-    req = urllib.request.Request(
-        url,
-        data=data,
-        method="POST",
-        headers={
-            "Authorization": f"cpanel {user}:{token}",
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-    )
     try:
-        with urllib.request.urlopen(req, timeout=45) as r:
-            body = r.read().decode("utf-8", errors="replace")
+        payload = api_post(
+            "Fileman/save_file_content",
+            {"dir": dir_path, "file": name, "content": content},
+        )
     except Exception as e:
         return rel, False, str(e)
-    try:
-        d = json.loads(body)
-    except json.JSONDecodeError:
-        return rel, False, body[:200]
-    rblock = d.get("result", d) or {}
-    st = int(rblock.get("status", d.get("status", 0)) or 0)
+    rblock = payload.get("result", payload) or {}
+    st = int(rblock.get("status", payload.get("status", 0)) or 0)
     if st == 1:
         return rel, True, ""
-    return rel, False, body[:200]
+    return rel, False, json.dumps(rblock)[:200]
 
 
 def git_changed_paths() -> set[str]:
@@ -333,7 +361,10 @@ def run_uploads(files: list[str], remote_base: str, workers: int) -> tuple[int, 
     succeeded: set[str] = set()
     done = 0
 
-    existing = [f for f in files if os.path.isfile(f)]
+    existing = sorted(
+        [f for f in files if os.path.isfile(f)],
+        key=lambda p: p.count("/"),
+    )
     for rel in files:
         if rel in existing:
             continue

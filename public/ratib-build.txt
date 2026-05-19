@@ -1,1 +1,1 @@
-cms-media-public-endpoint-20260519
+deploy-mkdir-profile-media-20260519
