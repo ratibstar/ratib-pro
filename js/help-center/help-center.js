@@ -150,11 +150,9 @@ function showView(viewName) {
         }
     });
     const hero = document.getElementById('hcHero');
-    const trust = document.getElementById('hcTrustStrip');
     const hubViews = ['homeHubView', 'categoryGridView'];
     const showHub = hubViews.indexOf(viewName) >= 0;
-    if (hero) hero.style.display = showHub ? '' : 'none';
-    if (trust) trust.style.display = showHub ? '' : 'none';
+    if (hero) hero.classList.toggle('hc-hero--hidden', !showHub);
     HelpCenterState.currentView = viewName.replace('View', '').replace(/([A-Z])/g, ' $1').trim().toLowerCase();
     if (window.HelpCenterEnterprise && typeof window.HelpCenterEnterprise.onViewChange === 'function') {
         window.HelpCenterEnterprise.onViewChange(viewName);
