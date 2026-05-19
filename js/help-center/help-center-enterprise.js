@@ -1165,11 +1165,8 @@
     }
 
     function setHubChromeVisible(visible) {
-        ['hcHero', 'hcTelemetry', 'hcTrustStrip'].forEach(function (id) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.classList.toggle(id === 'hcHero' ? 'hc-hero--hidden' : (id === 'hcTelemetry' ? 'hc-telemetry--hidden' : 'hc-trust-strip--hidden'), !visible);
-        });
+        const hero = document.getElementById('hcHero');
+        if (hero) hero.classList.toggle('hc-hero--hidden', !visible);
     }
 
     function setupCategorySpotlight() {
@@ -1240,28 +1237,17 @@
     /* Public hooks for help-center.js */
     window.HelpCenterEnterprise = {
         init: function () {
-            renderParticles();
             renderQuickActions();
-            renderEnterpriseModules();
             renderRecentPages();
-            renderTelemetryStrip({});
-            renderActivityFeed();
-            renderQuickPanels();
-            renderFeaturedBanner();
-            renderSidebarExtras();
             renderCmdCommands();
             loadProgressUI();
             setupCmdPalette();
             setupCopilot();
             setupSidebar();
             setupHeroSearch();
-            setupCategorySpotlight();
-            updateLastAuditRelative();
             setHubChromeVisible(true);
         },
-        onCategoriesRendered: function () {
-            renderFeaturedBanner();
-        },
+        onCategoriesRendered: function () {},
         onCategoryOpened: function (category) {
             HC_CONTEXT.categoryName = category && category.name ? category.name : null;
             HC_CONTEXT.categoryId = category && category.id ? category.id : null;
@@ -1292,12 +1278,7 @@
                 updateCopilotContext();
             }
         },
-        onProgressLoaded: function (data) {
-            renderTelemetryStrip({
-                completed: data.completed_count || 0,
-                incidents: 0
-            });
-        },
+        onProgressLoaded: function () {},
         saveRecentPage: saveRecentPage,
         smartSearch: smartSearch,
         buildCopilotAnswer: buildCopilotAnswer

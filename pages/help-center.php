@@ -15,6 +15,7 @@ $pageTitle = "Enterprise Operations Knowledge Center";
 $pageCss = [
     asset('css/help-center/help-center.css') . "?v=" . time(),
     asset('css/help-center/help-center-enterprise.css') . "?v=" . time(),
+    asset('css/help-center/help-center-polish.css') . "?v=" . time(),
     asset('css/contextual-help.css') . "?v=" . time()
 ];
 
@@ -43,10 +44,6 @@ include '../includes/header.php';
     <!-- Ambient mesh background -->
     <div class="hc-mesh" aria-hidden="true">
         <div class="hc-mesh-noise"></div>
-        <div class="hc-mesh-orb hc-mesh-orb--1"></div>
-        <div class="hc-mesh-orb hc-mesh-orb--2"></div>
-        <div class="hc-mesh-orb hc-mesh-orb--3"></div>
-        <div class="hc-particles" id="hcParticles" aria-hidden="true"></div>
     </div>
 
     <!-- Top utility bar -->
@@ -55,9 +52,7 @@ include '../includes/header.php';
             <button type="button" class="hc-sidebar-mobile-toggle" id="hcSidebarMobileToggle" aria-label="Open navigation">
                 <i class="fas fa-bars"></i>
             </button>
-            <div class="hc-top-bar-meta">
-                <span class="hc-status-pill hc-status-pill--live"><span class="hc-status-dot"></span> Knowledge base operational</span>
-            </div>
+            <div class="hc-top-bar-meta"></div>
             <div class="hc-top-bar-actions">
                 <button type="button" class="hc-cmd-trigger" id="hcCmdTrigger" title="Command palette (Ctrl+K)">
                     <i class="fas fa-search"></i>
@@ -80,13 +75,6 @@ include '../includes/header.php';
     <div class="hc-shell">
         <!-- Slim contextual sidebar -->
         <aside class="help-sidebar hc-sidebar" id="helpSidebar">
-                        <div class="hc-workspace-mini" id="hcWorkspaceMini">
-                <div class="hc-workspace-avatar"><i class="fas fa-building"></i></div>
-                <div class="hc-workspace-info">
-                    <span class="hc-workspace-name">Operations Workspace</span>
-                    <span class="hc-workspace-status"><span class="hc-status-dot"></span> Ready</span>
-                </div>
-            </div>
             <div class="sidebar-header hc-sidebar-header">
                 <h3 data-translate="navLabel">Navigate</h3>
                 <button class="sidebar-toggle" id="sidebarToggle" aria-label="Close sidebar" data-translate-aria-label="closeSidebar">
@@ -110,20 +98,6 @@ include '../includes/header.php';
             </div>
 
             <div class="hc-sidebar-section">
-                <button type="button" class="hc-sidebar-section-toggle" data-section="favorites" aria-expanded="true">
-                    <span data-translate="favorites">Pinned</span>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="hc-sidebar-section-body"><ul class="hc-shortcut-list" id="hcFavoritesList"></ul></div>
-            </div>
-            <div class="hc-sidebar-section">
-                <button type="button" class="hc-sidebar-section-toggle" data-section="ai" aria-expanded="false">
-                    <span>AI shortcuts</span>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="hc-sidebar-section-body"><ul class="hc-shortcut-list" id="hcAiShortcutList"></ul></div>
-            </div>
-            <div class="hc-sidebar-section">
                 <button type="button" class="hc-sidebar-section-toggle" data-section="categories" aria-expanded="true">
                     <span data-translate="categories">Categories</span>
                     <i class="fas fa-chevron-down"></i>
@@ -141,7 +115,6 @@ include '../includes/header.php';
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 <div class="hc-sidebar-section-body">
-                    <div class="hc-onboarding-compact" id="hcOnboardingSteps"></div>
                     <div class="progress-summary" id="progressSummary">
                         <div class="hc-progress-ring-wrap">
                             <svg class="hc-progress-ring" viewBox="0 0 36 36" aria-hidden="true">
@@ -184,11 +157,6 @@ include '../includes/header.php';
                             <button type="button" class="hc-voice-btn" id="hcVoiceBtn" aria-label="Voice search" title="Voice search"><i class="fas fa-microphone"></i></button>
                             <button type="button" class="hc-ai-submit" id="hcAiSubmit" aria-label="Search"><i class="fas fa-arrow-right"></i></button>
                         </div>
-                        <div class="hc-search-meta">
-                            <span class="hc-kbd-hint"><kbd>↑</kbd><kbd>↓</kbd> <span data-translate="navigate">navigate</span></span>
-                            <span class="hc-kbd-hint"><kbd>↵</kbd> <span data-translate="open">open</span></span>
-                            <span class="hc-kbd-hint"><kbd>esc</kbd> <span data-translate="close">close</span></span>
-                        </div>
                     </div>
 
                     <div class="hc-quick-actions" id="hcQuickActions">
@@ -202,7 +170,7 @@ include '../includes/header.php';
                     <div class="hc-panel hc-panel--glass" id="hcOnboardingPanel">
                         <div class="hc-panel-header">
                             <h3 data-translate="continueLearning">Continue where you left off</h3>
-                            <span class="hc-trust-badge hc-trust-badge--verified"><i class="fas fa-circle-check"></i> <span data-translate="verifiedWorkflows">Verified workflows</span></span>
+                            
                         </div>
                         <div class="hc-continue-card" id="hcContinueCard">
                             <div class="hc-shimmer hc-continue-placeholder" data-translate="loadingProgress">Loading your progress…</div>
@@ -214,19 +182,7 @@ include '../includes/header.php';
                     </div>
                 </div>
             </section>
-            <section class="hc-telemetry" id="hcTelemetry" aria-label="Operational telemetry">
-                <div class="hc-telemetry-scroll" id="hcTelemetryScroll"></div>
-            </section>
-
-            <!-- Operational trust strip -->
-            <section class="hc-trust-strip" id="hcTrustStrip" aria-label="Operational trust indicators">
-                <div class="hc-trust-item"><i class="fas fa-check-circle"></i> <span data-translate="productionSafe">Production-safe guides</span></div>
-                <div class="hc-trust-item"><i class="fas fa-clipboard-check"></i> <span data-translate="workflowValidated">Workflow validated</span></div>
-                <div class="hc-trust-item"><i class="fas fa-shield-alt"></i> <span data-translate="complianceReady">Compliance-ready</span></div>
-                <div class="hc-trust-item hc-trust-item--muted"><i class="fas fa-clock"></i> <span data-translate="lastAudit">Last audit:</span> <time id="hcLastAuditDate">2026-05-01</time></div>
-            </section>
-
-            <nav class="help-breadcrumbs hc-breadcrumbs" id="helpBreadcrumbs">
+<nav class="help-breadcrumbs hc-breadcrumbs" id="helpBreadcrumbs">
                 <a href="#" class="breadcrumb-link" data-action="home">
                     <i class="fas fa-home"></i> <span class="breadcrumb-home-text" data-translate="home">Home</span>
                 </a>
@@ -238,30 +194,14 @@ include '../includes/header.php';
                 <div class="help-main-content hc-main-content">
                     <!-- Home Hub (default) -->
                     <div class="help-view-mode" id="homeHubView">
-                        <div class="hc-hub-layout">
-                            <div class="hc-hub-main">
-                                <section class="hc-activity" id="hcActivitySection" aria-label="Recent activity">
-                                    <div class="hc-section-header hc-section-header--compact">
-                                        <h2 data-translate="recentActivity">Recent activity</h2>
-                                        <span class="hc-live-dot"></span>
-                                    </div>
-                                    <ul class="hc-activity-feed" id="hcActivityFeed"></ul>
-                                </section>
-                                <div id="hcFeaturedBanner" class="hc-featured-banner"></div>
-                                <div id="hcEnterpriseModules"></div>
                         <div class="hc-section-header hc-section-header--spaced">
                             <h2 data-translate="browseCategories">Browse all categories</h2>
-                            <p data-translate="browseCategoriesSub">Adaptive collections with difficulty, impact, and completion metadata</p>
+                            <p data-translate="browseCategoriesSub">Guides and workflows for your team</p>
                         </div>
                         <div class="categories-grid hc-categories-adaptive" id="categoriesGrid">
                             <div class="loading-placeholder hc-shimmer">
                                 <i class="fas fa-spinner fa-spin"></i> <span data-translate="loadingCategories">Loading categories...</span>
                             </div>
-                        </div>
-                            </div>
-                            <aside class="hc-hub-rail" id="hcHubRail">
-                                <div id="hcQuickPanels"></div>
-                            </aside>
                         </div>
                     </div>
 
