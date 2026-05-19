@@ -660,8 +660,8 @@ startControlLayout('Public site content', [$editorCss], []);
 ?>
 <div class="ratib-site-content-editor ratib-site-content-editor--dark" lang="en">
     <div class="ratib-site-content-intro mb-3">
-        <strong><i class="fas fa-globe me-2"></i>Full public homepage copy</strong>
-        <p class="mb-0 small text-muted">Edit English marketing text for <code>pages/home.php</code> (hero through footer). Values are stored as keys in <code>ratib_site_content</code> on the control database. Expand a section below—use <strong>Save</strong> at the bottom.</p>
+        <strong><i class="fas fa-globe me-2"></i>Public site content</strong>
+        <p class="mb-0 small text-muted">Edit the live marketing homepage (<code>pages/home.php</code>) and the public <strong>company profile</strong> (<code>/profile</code>)—including <strong>government &amp; mobilization</strong> screenshots (first block on the profile). Values are stored in <code>ratib_site_content</code>. Expand a section—use <strong>Save</strong> at the bottom.</p>
     </div>
 
 <?php if (!$tableOk): ?>
@@ -709,6 +709,9 @@ foreach ($groups as $gx => $group) {
             <summary><?php echo $gtitle; ?></summary>
             <div class="ratib-site-content-details__body">
     <?php
+    if (!empty($group['intro'])) {
+        echo '<p class="small text-muted mb-3">' . (string) $group['intro'] . '</p>';
+    }
     foreach ($group['fields'] ?? [] as $field) {
         if (!isset($field['key'])) {
             continue;

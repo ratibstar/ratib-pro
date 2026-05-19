@@ -4,6 +4,29 @@
  */
 declare(strict_types=1);
 
+require_once __DIR__ . '/site-content-profile-data.php';
+if (!function_exists('ratib_site_content_asset_url')) {
+    require_once __DIR__ . '/site-content.php';
+}
+
+if (!function_exists('ratib_operational_proof_gov_image_url')) {
+    function ratib_operational_proof_gov_image_url(string $baseUrl, string $cmsKey, string $fallbackFile): string
+    {
+        $stored = '';
+        if (function_exists('ratib_site_content_profile_flat')) {
+            $flat = ratib_site_content_profile_flat();
+            $stored = trim((string) ($flat[$cmsKey] ?? ''));
+        }
+        $fallbackRel = 'assets/images/government/' . ltrim($fallbackFile, '/');
+        $fallbackFs = dirname(__DIR__) . '/' . str_replace('/', DIRECTORY_SEPARATOR, $fallbackRel);
+        if (function_exists('ratib_site_content_asset_url')) {
+            return ratib_site_content_asset_url($baseUrl, $stored, $fallbackRel, $fallbackFs);
+        }
+
+        return rtrim($baseUrl, '/') . '/' . $fallbackRel;
+    }
+}
+
 if (!function_exists('ratib_operational_proof_config')) {
     /**
      * @return array<string, mixed>
@@ -17,11 +40,11 @@ if (!function_exists('ratib_operational_proof_config')) {
         $diagram = static function (string $file) use ($root): string {
             return $root . '/assets/images/diagrams/' . rawurlencode($file);
         };
-        $govImg = static function (string $file) use ($root): string {
-            return $root . '/assets/images/government/' . rawurlencode($file);
+        $govImg = static function (string $cmsKey, string $file) use ($baseUrl): string {
+            return ratib_operational_proof_gov_image_url($baseUrl, $cmsKey, $file);
         };
 
-        return [
+        $cfg = [
             'disclaimer' => 'Screenshots, diagrams, and metrics on this page use sample operational data or illustrative interfaces. They are not live production dashboards, audited statistics, or evidence of universal government integrations.',
             'section' => [
                 'eyebrow' => 'Operational proof',
@@ -46,28 +69,28 @@ if (!function_exists('ratib_operational_proof_config')) {
                         'caption' => 'Labor monitoring console—violations, blacklist, worker alerts, and inspection tabs in one place.',
                         'label' => 'Sample operational data',
                         'featured' => true,
-                        'src' => $govImg('government-control.png'),
+                        'src' => $govImg('profile.gov.image.control', 'government-control.png'),
                         'alt' => 'Government Control dashboard with summary cards and inspection form',
                     ],
                     [
                         'title' => 'Inspection records',
                         'caption' => 'Inspection history with status badges, inspector attribution, and agency-scoped rows.',
                         'label' => 'Sample operational data',
-                        'src' => $govImg('government-inspections.png'),
+                        'src' => $govImg('profile.gov.image.inspections', 'government-inspections.png'),
                         'alt' => 'Inspection table showing pending, passed, and failed statuses',
                     ],
                     [
                         'title' => 'Tracking Map',
                         'caption' => 'Live map, geofences, playback, and filters for tenant, agency, and country.',
                         'label' => 'Sample operational data',
-                        'src' => $govImg('tracking-map.png'),
+                        'src' => $govImg('profile.gov.image.tracking', 'tracking-map.png'),
                         'alt' => 'Tracking map with geofence controls and worker location marker',
                     ],
                     [
                         'title' => 'Worker Mobile Onboarding',
                         'caption' => 'QR-based credentials for worker mobile app mobilization.',
                         'label' => 'Illustrative interface',
-                        'src' => $govImg('worker-mobile-onboarding.png'),
+                        'src' => $govImg('profile.gov.image.onboarding', 'worker-mobile-onboarding.png'),
                         'alt' => 'Worker mobile onboarding screen generating a QR code',
                     ],
                 ],
@@ -205,5 +228,31 @@ if (!function_exists('ratib_operational_proof_config')) {
                 ],
             ],
         ];
+
+        if (function_exists('ratib_site_content_profile_flat')) {
+            $pf = ratib_site_content_profile_flat();
+            $gov = &$cfg['government'];
+            $gov['eyebrow'] = trim((string) ($pf['profile.gov.eyebrow'] ?? $gov['eyebrow']));
+            $gov['title'] = trim((string) ($pf['profile.gov.title'] ?? $gov['title']));
+            $gov['lead'] = trim((string) ($pf['profile.gov.lead'] ?? $gov['lead']));
+            $pointsRaw = trim((string) ($pf['profile.gov.points'] ?? ''));
+            if ($pointsRaw !== '') {
+                $gov['points'] = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $pointsRaw) ?: [])));
+            }
+            $capKeys = [
+                ['profile.gov.caption.control', 0],
+                ['profile.gov.caption.inspections', 1],
+                ['profile.gov.caption.tracking', 2],
+                ['profile.gov.caption.onboarding', 3],
+            ];
+            foreach ($capKeys as [$ck, $idx]) {
+                $cap = trim((string) ($pf[$ck] ?? ''));
+                if ($cap !== '' && isset($gov['screenshots'][$idx])) {
+                    $gov['screenshots'][$idx]['caption'] = $cap;
+                }
+            }
+        }
+
+        return $cfg;
     }
 }

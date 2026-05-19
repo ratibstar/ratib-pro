@@ -4,6 +4,8 @@
  */
 declare(strict_types=1);
 
+require_once __DIR__ . '/site-content-profile-data.php';
+
 if (!function_exists('ratib_about_profile_config')) {
     /**
      * @return array<string, mixed>
@@ -14,15 +16,17 @@ if (!function_exists('ratib_about_profile_config')) {
             return $baseUrl . '/assets/images/' . rawurlencode($file);
         };
 
+        $pf = function_exists('ratib_site_content_profile_flat') ? ratib_site_content_profile_flat() : [];
+
         return [
             'meta' => [
                 'title' => 'RATIB — Company profile',
                 'description' => 'Legal identity, platform scope, corridors, and operational capabilities of Ratib Software Foundation for Information Technology.',
             ],
             'company' => [
-                'trade_name' => 'RATIB',
-                'legal_name' => 'Ratib Software Foundation for Information Technology',
-                'tagline' => 'Enterprise workforce program infrastructure',
+                'trade_name' => trim((string) ($pf['profile.company.trade_name'] ?? '')) ?: 'RATIB',
+                'legal_name' => trim((string) ($pf['profile.company.legal_name'] ?? '')) ?: 'Ratib Software Foundation for Information Technology',
+                'tagline' => trim((string) ($pf['profile.company.tagline'] ?? '')) ?: 'Enterprise workforce program infrastructure',
                 'founded' => '2018',
                 'hq' => 'Riyadh, Kingdom of Saudi Arabia',
                 'address' => 'Riyadh, Saudi Arabia',
@@ -36,10 +40,10 @@ if (!function_exists('ratib_about_profile_config')) {
                 'vat_value' => 'Available on invoice / registration documents',
                 'industry' => 'Workforce program software · Cross-border recruitment operations',
                 'employees_band' => '51–200 (operations & engineering)',
-                'markets' => 'Saudi Arabia (HQ) · Philippines · Bangladesh · Indonesia · Kenya · Uganda · Ethiopia · Nigeria · Rwanda · Sri Lanka · Nepal · Thailand',
-                'mission' => 'Give sending-country agencies and host-market programs one workspace to run regulated workforce corridors—with workflow coordination, operational visibility, compliance checkpoints, and finance linked to program events.',
-                'vision' => 'Cross-border workforce programs run on consistent records and auditable workflows—not disconnected spreadsheets.',
-                'summary' => 'Ratib Software Foundation for Information Technology develops and operates RATIB: a multi-agency workflow platform with separate program databases, field-operations support, policy controls, and integrated billing for agencies and oversight-aligned programs.',
+                'markets' => trim((string) ($pf['profile.company.markets'] ?? '')) ?: 'Saudi Arabia (HQ) · Philippines · Bangladesh · Indonesia · Kenya · Uganda · Ethiopia · Nigeria · Rwanda · Sri Lanka · Nepal · Thailand',
+                'mission' => trim((string) ($pf['profile.company.mission'] ?? '')) ?: 'Give sending-country agencies and host-market programs one workspace to run regulated workforce corridors—with workflow coordination, operational visibility, compliance checkpoints, and finance linked to program events.',
+                'vision' => trim((string) ($pf['profile.company.vision'] ?? '')) ?: 'Cross-border workforce programs run on consistent records and auditable workflows—not disconnected spreadsheets.',
+                'summary' => trim((string) ($pf['profile.company.summary'] ?? '')) ?: 'Ratib Software Foundation for Information Technology develops and operates RATIB: a multi-agency workflow platform with separate program databases, field-operations support, policy controls, and integrated billing for agencies and oversight-aligned programs.',
                 'services' => [
                     'Workforce lifecycle workflows',
                     'Agency operations workspace (multi-level agents)',

@@ -4,6 +4,7 @@
  * Keys are flat strings stored in ratib_site_content.content_key.
  */
 require_once __DIR__ . '/site-content-home-slots.php';
+require_once __DIR__ . '/site-content-profile-data.php';
 
 if (!function_exists('ratib_site_content_public_source_resolved')) {
     /**
@@ -395,6 +396,10 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.chat.title'] = 'Ratib Assistant';
         $d['home.chat.subtitle'] = 'Help guides & live support';
 
+        if (function_exists('ratib_site_content_defaults_profile')) {
+            return array_merge($d, ratib_site_content_defaults_profile());
+        }
+
         return $d;
     }
 }
@@ -632,7 +637,11 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
      */
     function ratib_site_content_home_editor_groups(): array
     {
-        return [
+        $profileGroups = function_exists('ratib_site_content_profile_editor_groups')
+            ? ratib_site_content_profile_editor_groups()
+            : [];
+
+        $homeGroups = [
             [
                 'id' => 'meta',
                 'title' => 'Meta & browser title',
@@ -981,6 +990,8 @@ if (!function_exists('ratib_site_content_home_editor_groups')) {
                 ],
             ],
         ];
+
+        return array_merge($profileGroups, $homeGroups);
     }
 }
 

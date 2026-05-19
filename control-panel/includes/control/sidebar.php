@@ -28,6 +28,17 @@ $clientPlatformLinks = control_client_platform_links();
             <li><a href="<?php echo pageUrl('control/dashboard.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'dashboard.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-home"></i><span>Dashboard</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/control-hub.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'control-hub.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-layer-group"></i><span>Control hub</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'help-center.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-book"></i><span>Help center</span></a></li>
+            <?php
+            $ratibPublicProfileUrl = '';
+            if (function_exists('control_ratib_pro_public_base_url')) {
+                $ratibPublicProfileUrl = rtrim((string) control_ratib_pro_public_base_url(), '/') . '/profile/';
+            }
+            ?>
+            <li class="sidebar-section"><span class="section-label">Public site</span></li>
+            <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'site-content.php') ? 'active' : ''; ?>" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings"><i class="fas fa-globe"></i><span>Public site content</span></a></li>
+            <?php if ($ratibPublicProfileUrl !== '') { ?>
+            <li><a href="<?php echo htmlspecialchars($ratibPublicProfileUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-building"></i><span>Company profile (live)</span></a></li>
+            <?php } ?>
             <li class="sidebar-collapsible" data-sidebar-group="client-platform">
                 <button type="button" class="sidebar-item sidebar-item-toggle" data-sidebar-toggle="client-platform" aria-expanded="false" data-permission="control_dashboard">
                     <i class="fas fa-table-cells-large"></i>

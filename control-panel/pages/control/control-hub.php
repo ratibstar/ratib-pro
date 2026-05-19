@@ -174,9 +174,9 @@ startControlLayout('Control hub', ['css/system-settings.css'], []);
         <a href="<?php echo htmlspecialchars($registrationPageUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary ms-2" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-signature"></i> Open checkout form</a>
     </div>
     <div class="control-settings-card" data-permission="control_system_settings,view_control_system_settings,edit_control_system_settings">
-        <h3><i class="fas fa-file-lines"></i> Edit homepage CMS</h3>
-        <p>Homepage copy, nav labels, and CMS fields for <code>home.php</code>.</p>
-        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-pen-to-square"></i> Edit site content</a>
+        <h3><i class="fas fa-globe"></i> Public site content</h3>
+        <p>Marketing homepage, <strong>company profile</strong> (/profile), and government mobilization screenshots.</p>
+        <a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/site-content.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary"><i class="fas fa-pen-to-square"></i> Open public site editor</a>
     </div>
     <?php if (false && isset($designedAppUrl) && $designedAppUrl !== ''): ?>
     <div class="control-settings-card" data-permission="control_designed_site,view_control_designed_site">
