@@ -935,6 +935,26 @@ if (!function_exists('ratib_site_content_asset_url')) {
             return rtrim($baseUrl, '/') . '/api/site-content-media.php?f=' . rawurlencode($name);
         }
     }
+    if (!function_exists('ratib_site_content_scmedia_bundled_rel')) {
+        /**
+         * When a CMS upload (scmedia:) is missing on disk, serve bundled assets instead.
+         */
+        function ratib_site_content_scmedia_bundled_rel(string $fileName): string
+        {
+            $fileName = basename(str_replace('\\', '/', $fileName));
+            $gov = [
+                'gov-government-control.png' => 'assets/images/government/government-control.png',
+                'gov-government-inspections.png' => 'assets/images/government/government-inspections.png',
+                'gov-tracking-map.png' => 'assets/images/government/tracking-map.png',
+                'gov-worker-mobile-onboarding.png' => 'assets/images/government/worker-mobile-onboarding.png',
+            ];
+            if (isset($gov[$fileName])) {
+                return $gov[$fileName];
+            }
+
+            return '';
+        }
+    }
     /**
      * @param string $stored     Empty = use fallback; or full URL; or site-relative path e.g. assets/images/x.svg
      * @param string $fallbackRel from project root, e.g. assets/images/program-preview-pipeline.svg
@@ -956,7 +976,17 @@ if (!function_exists('ratib_site_content_asset_url')) {
 
                     return $tokUrl . '&v=' . $v;
                 }
-                // Missing CMS upload — use bundled fallback below.
+                $bundledRel = ratib_site_content_scmedia_bundled_rel($name);
+                if ($bundledRel !== '') {
+                    $root = dirname(__DIR__);
+                    $bundledFs = $root . '/' . str_replace('/', DIRECTORY_SEPARATOR, $bundledRel);
+                    if (is_file($bundledFs)) {
+                        $v = (int) filemtime($bundledFs);
+
+                        return rtrim($baseUrl, '/') . '/' . $bundledRel . '?v=' . $v;
+                    }
+                }
+                // Missing CMS upload — use caller fallback below.
             } elseif (!str_starts_with($stored, 'scmedia:')) {
                 $rel = ltrim(str_replace('\\', '/', $stored), '/');
                 $root = dirname(__DIR__);

@@ -107,12 +107,12 @@ if (!function_exists('ratib_about_profile_config')) {
             'screenshots' => [
                 'hero' => $shot('profile.image.hero', 'assets/images/about-ratib-command.png', 'profile.image.hero.alt', 'RATIB agency workspace — workforce records and SLA views'),
                 'ops' => $shot('profile.image.ops', 'assets/images/about-ratib-command.png', 'profile.image.ops.alt', 'Agency operations workspace with workforce and agent views'),
-                'workers' => $shot('profile.image.workers', 'assets/images/about-ratib-command.png', 'profile.image.workers.alt', 'Worker records — lifecycle and documents'),
-                'telemetry' => $shot('profile.image.telemetry', 'assets/images/about-ratib-command.png', 'profile.image.telemetry.alt', 'Operations map — field checkpoints and corridor context'),
-                'accounting' => $shot('profile.image.accounting', 'assets/images/about-ratib-command.png', 'profile.image.accounting.alt', 'Accounting and invoicing module'),
-                'control' => $shot('profile.image.control', 'assets/images/about-ratib-command.png', 'profile.image.control.alt', 'Administration — multi-country agency settings'),
+                'workers' => $shot('profile.image.workers', 'assets/images/program-preview-workers.svg', 'profile.image.workers.alt', 'Worker records — lifecycle and documents'),
+                'telemetry' => $shot('profile.image.telemetry', 'assets/images/government/tracking-map.png', 'profile.image.telemetry.alt', 'Operations map — field checkpoints and corridor context'),
+                'accounting' => $shot('profile.image.accounting', 'assets/images/program-preview-finance.svg', 'profile.image.accounting.alt', 'Accounting and invoicing module'),
+                'control' => $shot('profile.image.control', 'assets/images/government/government-control.png', 'profile.image.control.alt', 'Administration — multi-country agency settings'),
                 'partners' => $shot('profile.image.partners', 'assets/images/about-ratib-command.png', 'profile.image.partners.alt', 'Partner portal — deployments and documents'),
-                'pipeline' => $shot('profile.image.pipeline', 'assets/images/about-ratib-command.png', 'profile.image.pipeline.alt', 'Workflow pipeline across recruitment stages'),
+                'pipeline' => $shot('profile.image.pipeline', 'assets/images/program-preview-pipeline.svg', 'profile.image.pipeline.alt', 'Workflow pipeline across recruitment stages'),
             ],
             'hero_metrics' => [
                 ['label' => 'Sample workload', 'value' => '2.8k', 'delta' => 'illustrative UI', 'tone' => 'blue'],

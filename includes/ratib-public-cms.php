@@ -58,6 +58,24 @@ if (!function_exists('ratib_public_cms_lines')) {
     }
 }
 
+if (!function_exists('ratib_public_bundled_asset_url')) {
+    /** Absolute URL for a site-relative asset with cache-busting mtime. */
+    function ratib_public_bundled_asset_url(string $baseUrl, string $relPath): string
+    {
+        $rel = ltrim(str_replace('\\', '/', $relPath), '/');
+        $fs = dirname(__DIR__) . '/' . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+        if (!function_exists('ratib_site_content_asset_url')) {
+            require_once __DIR__ . '/site-content.php';
+        }
+        if (function_exists('ratib_site_content_asset_url')) {
+            return ratib_site_content_asset_url($baseUrl, $rel, $rel, $fs);
+        }
+        $v = is_file($fs) ? (int) filemtime($fs) : 1;
+
+        return rtrim($baseUrl, '/') . '/' . $rel . '?v=' . $v;
+    }
+}
+
 if (!function_exists('ratib_public_cms_image')) {
     function ratib_public_cms_image(string $baseUrl, string $key, string $fallbackRel): string
     {
@@ -82,6 +100,15 @@ if (!function_exists('ratib_public_cms_image_or')) {
     {
         $flat = ratib_public_cms_flat();
         $stored = trim((string) ($flat[$primaryKey] ?? ''));
+        $legacyGeneric = 'assets/images/about-ratib-command.png';
+        if ($stored === $legacyGeneric && $secondaryKey !== '') {
+            $secondaryStored = trim((string) ($flat[$secondaryKey] ?? ''));
+            if ($secondaryStored !== '' && $secondaryStored !== $legacyGeneric) {
+                $stored = $secondaryStored;
+            } elseif ($secondaryStored === '') {
+                $stored = '';
+            }
+        }
         if ($stored === '' && $secondaryKey !== '') {
             $stored = trim((string) ($flat[$secondaryKey] ?? ''));
         }

@@ -25,12 +25,8 @@ if (!function_exists('ratib_operational_proof_config')) {
      */
     function ratib_operational_proof_config(string $baseUrl): array
     {
-        $root = rtrim($baseUrl, '/');
-        $img = static function (string $file) use ($root): string {
-            return $root . '/assets/images/' . rawurlencode($file);
-        };
-        $diagram = static function (string $file) use ($root): string {
-            return $root . '/assets/images/diagrams/' . rawurlencode($file);
+        $diagram = static function (string $file) use ($baseUrl): string {
+            return ratib_public_bundled_asset_url($baseUrl, 'assets/images/diagrams/' . ltrim($file, '/'));
         };
         $govImg = static function (string $cmsKey, string $file) use ($baseUrl): string {
             return ratib_operational_proof_gov_image_url($baseUrl, $cmsKey, $file);
@@ -123,7 +119,7 @@ if (!function_exists('ratib_operational_proof_config')) {
                 [
                     'title' => 'Workforce pipeline',
                     'label' => 'Illustrative interface',
-                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.pipeline', 'profile.image.pipeline', 'assets/images/about-ratib-command.png'),
+                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.pipeline', 'profile.image.pipeline', 'assets/images/program-preview-pipeline.svg'),
                     'alt' => ratib_public_cms('profile.image.pipeline.alt', 'Sample workforce pipeline board with stages and SLA column'),
                 ],
                 [
@@ -135,19 +131,19 @@ if (!function_exists('ratib_operational_proof_config')) {
                 [
                     'title' => 'Finance ledger',
                     'label' => 'Illustrative interface',
-                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.finance', 'profile.image.accounting', 'assets/images/about-ratib-command.png'),
+                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.finance', 'profile.image.accounting', 'assets/images/program-preview-finance.svg'),
                     'alt' => ratib_public_cms('profile.image.accounting.alt', 'Sample ledger and invoicing screen'),
                 ],
                 [
                     'title' => 'Audit history',
                     'label' => 'Sample operational data',
-                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.audit', 'profile.image.control', 'assets/images/about-ratib-command.png'),
+                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.audit', 'profile.gov.image.inspections', 'assets/images/government/government-inspections.png'),
                     'alt' => ratib_public_cms('profile.image.control.alt', 'Sample administration screen with settings and history context'),
                 ],
                 [
                     'title' => 'Field operations map',
                     'label' => 'Sample operational data',
-                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.map', 'profile.image.telemetry', 'assets/images/about-ratib-command.png'),
+                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.map', 'profile.image.telemetry', 'assets/images/government/tracking-map.png'),
                     'alt' => ratib_public_cms('profile.image.telemetry.alt', 'Sample map view with checkpoints and corridor context'),
                 ],
                 [

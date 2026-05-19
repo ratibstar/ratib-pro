@@ -26,7 +26,11 @@ DEPLOY_ALLOW_PREFIXES = (
     "config/env/",
     "public/",
     "assets/images/government/",
+    "assets/images/diagrams/",
     "assets/images/about-ratib-command.png",
+    "assets/images/program-preview-pipeline.svg",
+    "assets/images/program-preview-workers.svg",
+    "assets/images/program-preview-finance.svg",
     "uploads/ratib_cms_media/",
 )
 DEPLOY_ALLOW_FILES = frozenset({
