@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-cPanel Fileman deploy — same save_file_content API as run #858/#860.
+cPanel Fileman deploy — text via save_file_content; images/SVG via upload_files (multipart).
 fast mode: FAST_FILES baseline + any commit-changed paths under DEPLOY_ALLOW_PREFIXES.
 critical/all on manual full sync only.
 """
 from __future__ import annotations
 
 import json
+import mimetypes
 import os
+import secrets
 import subprocess
 import sys
 import urllib.parse
@@ -49,15 +51,65 @@ DEPLOY_DENY_PREFIXES = (
 )
 FAST_DEPLOY_CHANGED_CAP = 40
 
-# Binary-safe POST body for Fileman::save_file_content (urlencode() would UTF-8-mangle bytes 128–255).
+# save_file_content percent-encoded bodies break cPanel JSON serializer on PNG/large files.
+BINARY_EXTENSIONS = frozenset({
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".ico",
+    ".svg",
+    ".woff",
+    ".woff2",
+    ".ttf",
+    ".eot",
+    ".pdf",
+})
 
 
-def build_save_file_post_body(dir_path: str, file_name: str, raw: bytes) -> bytes:
-    """Percent-encode raw file bytes without UTF-8 re-encoding (fixes corrupt PNG/WebP on deploy)."""
-    qdir = urllib.parse.quote(dir_path, safe="")
-    qfile = urllib.parse.quote(file_name, safe="")
-    qcontent = urllib.parse.quote_from_bytes(raw, safe="")
-    return f"dir={qdir}&file={qfile}&content={qcontent}".encode("ascii")
+def is_binary_upload(rel: str) -> bool:
+    return os.path.splitext(rel)[1].lower() in BINARY_EXTENSIONS
+
+
+def fileman_upload_dir(abs_dir: str) -> str:
+    """upload_files expects dir relative to account home (e.g. public_html/public)."""
+    marker = "/public_html"
+    idx = abs_dir.find(marker)
+    if idx >= 0:
+        return "public_html" + abs_dir[idx + len(marker) :]
+    return abs_dir
+
+
+def build_multipart_body(
+    fields: dict[str, str],
+    files: list[tuple[str, str, bytes, str]],
+) -> tuple[bytes, str]:
+    boundary = secrets.token_hex(16)
+    bnd = boundary.encode("ascii")
+    chunks: list[bytes] = []
+    for key, val in fields.items():
+        chunks.append(b"--" + bnd + b"\r\n")
+        chunks.append(
+            f'Content-Disposition: form-data; name="{key}"\r\n\r\n'.encode("utf-8")
+        )
+        chunks.append(val.encode("utf-8") + b"\r\n")
+    for field, filename, content, mime in files:
+        chunks.append(b"--" + bnd + b"\r\n")
+        chunks.append(
+            (
+                f'Content-Disposition: form-data; name="{field}"; filename="{filename}"\r\n'
+                f"Content-Type: {mime}\r\n\r\n"
+            ).encode("utf-8")
+        )
+        chunks.append(content + b"\r\n")
+    chunks.append(b"--" + bnd + b"--\r\n")
+    return b"".join(chunks), f"multipart/form-data; boundary={boundary}"
+
+
+def mime_for_filename(name: str) -> str:
+    guessed, _ = mimetypes.guess_type(name)
+    return guessed or "application/octet-stream"
 
 
 # ~1–2 min on push: always-sync core + build marker LAST.
@@ -191,7 +243,7 @@ _print_lock = Lock()
 _mkdir_cache: set[str] = set()
 
 
-def api_post_raw(module: str, data: bytes) -> dict:
+def api_post_raw(module: str, data: bytes, content_type: str) -> dict:
     host = os.environ["CPANEL_HOST"]
     port = os.environ.get("CPANEL_PORT", "2083")
     user = os.environ["CPANEL_USER"]
@@ -202,10 +254,10 @@ def api_post_raw(module: str, data: bytes) -> dict:
         method="POST",
         headers={
             "Authorization": f"cpanel {user}:{token}",
-            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Type": content_type,
         },
     )
-    with urllib.request.urlopen(req, timeout=90) as resp:
+    with urllib.request.urlopen(req, timeout=120) as resp:
         return json.loads(resp.read().decode("utf-8", errors="replace"))
 
 
@@ -224,8 +276,14 @@ def api_post(module: str, params: dict) -> dict:
             "Content-Type": "application/x-www-form-urlencoded",
         },
     )
-    with urllib.request.urlopen(req, timeout=90) as resp:
+    with urllib.request.urlopen(req, timeout=120) as resp:
         return json.loads(resp.read().decode("utf-8", errors="replace"))
+
+
+def uapi_ok(payload: dict) -> bool:
+    rblock = payload.get("result", payload) or {}
+    st = int(rblock.get("status", payload.get("status", 0)) or 0)
+    return st == 1
 
 
 def ensure_remote_dir(remote_dir: str, remote_base: str) -> None:
@@ -270,7 +328,29 @@ def remote_dir(remote_base: str, rel: str) -> str:
     return f"{remote_base}/{parent}"
 
 
-def upload_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
+def upload_binary_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
+    if not os.path.isfile(rel):
+        return rel, False, "missing"
+    abs_dir = remote_dir(remote_base, rel)
+    name = os.path.basename(rel)
+    ensure_remote_dir(abs_dir, remote_base)
+    with open(rel, "rb") as f:
+        raw = f.read()
+    body, ctype = build_multipart_body(
+        {"dir": fileman_upload_dir(abs_dir)},
+        [("file-1", name, raw, mime_for_filename(name))],
+    )
+    try:
+        payload = api_post_raw("Fileman/upload_files", body, ctype)
+    except Exception as e:
+        return rel, False, str(e)
+    if uapi_ok(payload):
+        return rel, True, ""
+    rblock = payload.get("result", payload) or {}
+    return rel, False, json.dumps(rblock)[:200]
+
+
+def upload_text_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
     if not os.path.isfile(rel):
         return rel, False, "missing"
     dir_path = remote_dir(remote_base, rel)
@@ -278,19 +358,27 @@ def upload_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
     ensure_remote_dir(dir_path, remote_base)
     with open(rel, "rb") as f:
         raw = f.read()
-    data = build_save_file_post_body(dir_path, name, raw)
     try:
-        payload = api_post_raw(
+        content = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        content = raw.decode("latin-1")
+    try:
+        payload = api_post(
             "Fileman/save_file_content",
-            data,
+            {"dir": dir_path, "file": name, "content": content},
         )
     except Exception as e:
         return rel, False, str(e)
-    rblock = payload.get("result", payload) or {}
-    st = int(rblock.get("status", payload.get("status", 0)) or 0)
-    if st == 1:
+    if uapi_ok(payload):
         return rel, True, ""
+    rblock = payload.get("result", payload) or {}
     return rel, False, json.dumps(rblock)[:200]
+
+
+def upload_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
+    if is_binary_upload(rel):
+        return upload_binary_one(rel, remote_base)
+    return upload_text_one(rel, remote_base)
 
 
 def git_changed_paths() -> set[str]:
@@ -378,7 +466,10 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
             + (" …" if len(extras) > 8 else ""),
             flush=True,
         )
-    return files, 2
+    workers = 2
+    if any(is_binary_upload(f) for f in files):
+        workers = 1
+    return files, workers
 
 
 def run_uploads(files: list[str], remote_base: str, workers: int) -> tuple[int, int, set[str]]:
@@ -463,6 +554,8 @@ def main() -> int:
     )
     need = sum(1 for m in MUST_OK if os.path.isfile(m))
     must_hit = sum(1 for m in MUST_OK if m in succeeded)
+    if fail > 0:
+        return 1
     return 0 if must_hit >= need else 1
 
 
