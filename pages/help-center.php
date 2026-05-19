@@ -39,71 +39,64 @@ include '../includes/header.php';
 ?>
 
 <div class="help-center-wrapper hc-enterprise" id="helpCenterRoot">
-    <header class="hc-top-bar">
-        <div class="hc-top-bar-inner">
-            <button type="button" class="hc-sidebar-mobile-toggle" id="hcSidebarMobileToggle" aria-label="Open navigation">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="hc-top-bar-meta">
-                <span data-translate="knowledgeHub">Help Center</span>
-            </div>
-            <div class="hc-top-bar-actions">
-                <div class="language-switcher-container">
-                    <label for="helpLanguageSwitcher" class="language-label">
-                        <span class="language-label-text" data-translate="languageLabel">Language</span>
-                    </label>
-                    <select id="helpLanguageSwitcher" class="language-switcher">
-                        <option value="en">English</option>
-                    </select>
+    <header class="hc-site-header" id="hcSiteHeader">
+        <div class="hc-top-bar">
+            <div class="hc-top-bar-inner">
+                <a href="#" class="hc-top-bar-brand breadcrumb-link" data-action="home">
+                    <span data-translate="enterpriseTitle">Help Center</span>
+                </a>
+                <div class="hc-search hc-search--top">
+                    <i class="fas fa-search hc-search-icon" aria-hidden="true"></i>
+                    <input type="text" id="helpSearchInput" class="hc-search-input search-input"
+                        data-translate-placeholder="searchPlaceholder"
+                        placeholder="Search guides…" autocomplete="off">
+                </div>
+                <div class="hc-top-bar-actions">
+                    <div class="hc-progress-compact" title="Learning progress">
+                        <div class="hc-progress-bar" id="hcProgressBar">
+                            <div class="hc-progress-bar-fill" id="hcProgressBarFill"></div>
+                        </div>
+                        <span class="hc-progress-text" id="hcProgressText">0%</span>
+                    </div>
+                    <div class="language-switcher-container">
+                        <label for="helpLanguageSwitcher" class="language-label">
+                            <span class="language-label-text" data-translate="languageLabel">Language</span>
+                        </label>
+                        <select id="helpLanguageSwitcher" class="language-switcher">
+                            <option value="en">English</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <nav class="hc-top-nav" id="categoriesList" aria-label="Categories">
+            <div class="hc-top-nav-loading">
+                <span data-translate="loadingCategories">Loading categories...</span>
+            </div>
+        </nav>
+
+        <nav class="help-breadcrumbs hc-breadcrumbs hc-top-breadcrumbs" id="helpBreadcrumbs" aria-label="Breadcrumb">
+            <a href="#" class="breadcrumb-link" data-action="home">
+                <span data-translate="home">Home</span>
+            </a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current" data-translate="knowledgeHub">All guides</span>
+        </nav>
+
+        <nav class="hc-top-toc help-hidden" id="hcArticleToc" aria-label="On this page">
+            <span class="hc-top-toc-label" data-translate="onThisPage">On this page</span>
+            <div class="hc-top-toc-scroll" id="hcTocNav"></div>
+        </nav>
     </header>
 
     <div class="hc-shell">
-        <aside class="help-sidebar hc-sidebar" id="helpSidebar">
-            <button class="sidebar-toggle hc-sidebar-close" id="sidebarToggle" type="button" aria-label="Close sidebar">
-                <i class="fas fa-times"></i>
-            </button>
-
-            <p class="hc-sidebar-label" data-translate="categories">Categories</p>
-            <nav class="hc-sidebar-nav" id="categoriesList">
-                <div class="loading-placeholder">
-                    <span data-translate="loadingCategories">Loading categories...</span>
-                </div>
-            </nav>
-
-            <div class="hc-sidebar-footer">
-                <p class="hc-sidebar-label" data-translate="yourProgress">Progress</p>
-                <div class="hc-progress-bar" id="hcProgressBar">
-                    <div class="hc-progress-bar-fill" id="hcProgressBarFill"></div>
-                </div>
-                <p class="hc-progress-text" id="hcProgressText">0% complete</p>
-            </div>
-        </aside>
-
         <main class="hc-main">
             <section class="hc-hero" id="hcHero">
                 <h1 class="hc-hero-title" data-translate="enterpriseTitle">Help Center</h1>
                 <p class="hc-hero-subtitle" data-translate="enterpriseSubtitle">Guides and documentation for the RATIB platform.</p>
-
-                <div class="hc-search">
-                    <i class="fas fa-search hc-search-icon" aria-hidden="true"></i>
-                    <input type="text" id="helpSearchInput" class="hc-search-input search-input"
-                        data-translate-placeholder="searchPlaceholder"
-                        placeholder="Search guides and tutorials…" autocomplete="off">
-                </div>
-
                 <div class="hc-quick-links" id="hcQuickLinks"></div>
             </section>
-
-            <nav class="help-breadcrumbs hc-breadcrumbs" id="helpBreadcrumbs" aria-label="Breadcrumb">
-                <a href="#" class="breadcrumb-link" data-action="home">
-                    <span data-translate="home">Home</span>
-                </a>
-                <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-current" data-translate="knowledgeHub">All guides</span>
-            </nav>
 
             <div class="help-center-content hc-content">
                 <div class="help-main-content hc-main-content">
@@ -141,10 +134,6 @@ include '../includes/header.php';
                             <span data-translate="backToTutorials">Back</span>
                         </button>
                         <div class="hc-article-layout">
-                            <aside class="hc-article-toc" id="hcArticleToc">
-                                <p class="hc-sidebar-label" data-translate="onThisPage">On this page</p>
-                                <nav id="hcTocNav"></nav>
-                            </aside>
                             <article class="hc-article-main">
                                 <div class="tutorial-detail" id="tutorialDetail"></div>
                                 <footer class="hc-article-footer help-hidden" id="hcArticleFooter">

@@ -51,26 +51,15 @@
             const fill = document.getElementById('hcProgressBarFill');
             const text = document.getElementById('hcProgressText');
             if (fill) fill.style.width = pct + '%';
-            if (text) text.textContent = pct + '% complete';
+            if (text) text.textContent = pct + '%';
         } catch (e) {
             /* ignore */
         }
     }
 
-    function setupSidebar() {
-        const mob = document.getElementById('hcSidebarMobileToggle');
-        const close = document.getElementById('sidebarToggle');
-        const sidebar = document.getElementById('helpSidebar');
-        if (mob && sidebar) {
-            mob.addEventListener('click', function () {
-                sidebar.classList.add('active');
-            });
-        }
-        if (close && sidebar) {
-            close.addEventListener('click', function () {
-                sidebar.classList.remove('active');
-            });
-        }
+    function setTocVisible(visible) {
+        const root = document.getElementById('helpCenterRoot');
+        if (root) root.classList.toggle('hc-toc-visible', !!visible);
     }
 
     function setupFeedback() {
@@ -97,9 +86,11 @@
         nav.innerHTML = '';
         const headings = body.querySelectorAll('h2, h3');
         if (!headings.length) {
-            if (tocPanel) tocPanel.style.display = 'none';
+            if (tocPanel) tocPanel.classList.add('help-hidden');
+            setTocVisible(false);
         } else {
-            if (tocPanel) tocPanel.style.display = '';
+            if (tocPanel) tocPanel.classList.remove('help-hidden');
+            setTocVisible(true);
             headings.forEach(function (h, i) {
                 if (!h.id) h.id = 'hc-h-' + i;
                 const a = document.createElement('a');
@@ -133,7 +124,6 @@
         init: function () {
             renderQuickLinks();
             loadProgressUI();
-            setupSidebar();
             setHubChromeVisible(true);
         },
         onCategoriesRendered: function () {},
@@ -146,7 +136,13 @@
         },
         onViewChange: function (view) {
             const isHub = view === 'homeHubView' || view === 'categoryGridView';
+            const isArticle = view === 'tutorialDetailView';
             setHubChromeVisible(isHub);
+            if (!isArticle) {
+                const tocPanel = document.getElementById('hcArticleToc');
+                if (tocPanel) tocPanel.classList.add('help-hidden');
+                setTocVisible(false);
+            }
             if (view === 'homeHubView') {
                 document.querySelectorAll('.category-link').forEach(function (link) {
                     link.classList.remove('active');

@@ -396,7 +396,7 @@ const HelpCenterUI = {
         if (sidebar) {
             sidebar.innerHTML = '';
             const ul = document.createElement('ul');
-            ul.className = 'categories-list';
+            ul.className = 'categories-list hc-top-nav-list';
             
             flatCategories.forEach(category => {
                     const li = document.createElement('li');
