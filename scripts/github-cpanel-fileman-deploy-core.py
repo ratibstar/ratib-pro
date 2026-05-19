@@ -286,6 +286,18 @@ def uapi_ok(payload: dict) -> bool:
     return st == 1
 
 
+def upload_files_ok(payload: dict) -> bool:
+    if uapi_ok(payload):
+        return True
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        rblock = payload.get("result", payload) or {}
+        data = rblock.get("data") if isinstance(rblock, dict) else None
+    if isinstance(data, dict) and int(data.get("succeeded", 0) or 0) >= 1:
+        return True
+    return False
+
+
 def ensure_remote_dir(remote_dir: str, remote_base: str) -> None:
     """Create nested remote dirs (required before save_file_content for public/profile-media/...)."""
     remote_dir = remote_dir.rstrip("/")
@@ -337,14 +349,17 @@ def upload_binary_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
     with open(rel, "rb") as f:
         raw = f.read()
     body, ctype = build_multipart_body(
-        {"dir": fileman_upload_dir(abs_dir)},
+        {
+            "dir": fileman_upload_dir(abs_dir),
+            "overwrite": "1",
+        },
         [("file-1", name, raw, mime_for_filename(name))],
     )
     try:
         payload = api_post_raw("Fileman/upload_files", body, ctype)
     except Exception as e:
         return rel, False, str(e)
-    if uapi_ok(payload):
+    if upload_files_ok(payload):
         return rel, True, ""
     rblock = payload.get("result", payload) or {}
     return rel, False, json.dumps(rblock)[:200]
