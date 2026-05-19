@@ -761,15 +761,32 @@ foreach ($groups as $gx => $group) {
 <?php if ($tableOk && hasControlPermission('edit_control_system_settings')): ?>
             <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save all</button>
 <?php
+if (function_exists('ratib_site_content_public_page_links')) {
+    foreach (ratib_site_content_public_page_links() as $ratibPreviewLink) {
+        $ratibPreviewUrl = (string) ($ratibPreviewLink['path'] ?? '');
+        if ($ratibPreviewUrl === '') {
+            continue;
+        }
+        if ($pageRevision !== '') {
+            $ratibPreviewUrl .= (strpos($ratibPreviewUrl, '?') !== false ? '&' : '?') . 'cms_rev=' . rawurlencode($pageRevision);
+        }
+        ?>
+            <a href="<?php echo htmlspecialchars($ratibPreviewUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary ms-2 mb-1"><?php echo htmlspecialchars((string) ($ratibPreviewLink['label'] ?? 'Preview'), ENT_QUOTES, 'UTF-8'); ?></a>
+<?php
+    }
+} else {
     $ratibPublicHomeUrl = '/pages/home.php';
-if (function_exists('control_ratib_pro_public_base_url')) {
-    $ratibPublicHomeUrl = rtrim((string) control_ratib_pro_public_base_url(), '/') . '/pages/home.php';
-}
-if ($pageRevision !== '') {
-    $ratibPublicHomeUrl .= (strpos($ratibPublicHomeUrl, '?') !== false ? '&' : '?') . 'cms_rev=' . rawurlencode($pageRevision);
+    if (function_exists('control_ratib_pro_public_base_url')) {
+        $ratibPublicHomeUrl = rtrim((string) control_ratib_pro_public_base_url(), '/') . '/pages/home.php';
+    }
+    if ($pageRevision !== '') {
+        $ratibPublicHomeUrl .= (strpos($ratibPublicHomeUrl, '?') !== false ? '&' : '?') . 'cms_rev=' . rawurlencode($pageRevision);
+    }
+    ?>
+            <a href="<?php echo htmlspecialchars($ratibPublicHomeUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary ms-2">Open public home</a>
+<?php
 }
 ?>
-            <a href="<?php echo htmlspecialchars($ratibPublicHomeUrl, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-outline-secondary ms-2">Open public home</a>
 <?php elseif (!$tableOk): ?>
             <button type="button" class="btn btn-secondary" disabled>Save (create table first)</button>
 <?php else: ?>

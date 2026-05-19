@@ -951,16 +951,22 @@ if (!function_exists('ratib_site_content_asset_url')) {
             if ($tokUrl !== '') {
                 $name = ratib_site_content_media_filename_from_token($stored);
                 $mediaFs = ratib_site_content_media_storage_dir() . DIRECTORY_SEPARATOR . $name;
-                $v = is_file($mediaFs) ? (int) filemtime($mediaFs) : time();
+                if (is_file($mediaFs)) {
+                    $v = (int) filemtime($mediaFs);
 
-                return $tokUrl . '&v=' . $v;
+                    return $tokUrl . '&v=' . $v;
+                }
+                // Missing CMS upload — use bundled fallback below.
+            } elseif (!str_starts_with($stored, 'scmedia:')) {
+                $rel = ltrim(str_replace('\\', '/', $stored), '/');
+                $root = dirname(__DIR__);
+                $fs = $root . '/' . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+                if (is_file($fs)) {
+                    $v = (int) filemtime($fs);
+
+                    return rtrim($baseUrl, '/') . '/' . $rel . '?v=' . $v;
+                }
             }
-            $rel = ltrim(str_replace('\\', '/', $stored), '/');
-            $root = dirname(__DIR__);
-            $fs = $root . '/' . str_replace('/', DIRECTORY_SEPARATOR, $rel);
-            $v = is_file($fs) ? (int) filemtime($fs) : time();
-
-            return rtrim($baseUrl, '/') . '/' . $rel . '?v=' . $v;
         }
         $v = (int) (@filemtime($fallbackFs) ?: 1);
 

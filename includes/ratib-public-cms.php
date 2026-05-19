@@ -73,3 +73,26 @@ if (!function_exists('ratib_public_cms_image')) {
         return rtrim($baseUrl, '/') . '/' . ltrim($fallbackRel, '/');
     }
 }
+
+if (!function_exists('ratib_public_cms_image_or')) {
+    /**
+     * Primary CMS image key; if empty, uses secondary key (avoids duplicate uploads).
+     */
+    function ratib_public_cms_image_or(string $baseUrl, string $primaryKey, string $secondaryKey, string $fallbackRel): string
+    {
+        $flat = ratib_public_cms_flat();
+        $stored = trim((string) ($flat[$primaryKey] ?? ''));
+        if ($stored === '' && $secondaryKey !== '') {
+            $stored = trim((string) ($flat[$secondaryKey] ?? ''));
+        }
+        $fallbackFs = dirname(__DIR__) . '/' . str_replace('/', DIRECTORY_SEPARATOR, ltrim($fallbackRel, '/'));
+        if (!function_exists('ratib_site_content_asset_url')) {
+            require_once __DIR__ . '/site-content.php';
+        }
+        if (function_exists('ratib_site_content_asset_url')) {
+            return ratib_site_content_asset_url($baseUrl, $stored, ltrim($fallbackRel, '/'), $fallbackFs);
+        }
+
+        return rtrim($baseUrl, '/') . '/' . ltrim($fallbackRel, '/');
+    }
+}

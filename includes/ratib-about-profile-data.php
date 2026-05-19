@@ -13,7 +13,6 @@ if (!function_exists('ratib_about_profile_config')) {
      */
     function ratib_about_profile_config(string $baseUrl): array
     {
-        $pf = function_exists('ratib_site_content_profile_flat') ? ratib_site_content_profile_flat() : [];
         $shot = static function (string $key, string $fallback, string $altKey, string $defaultAlt) use ($baseUrl): array {
             return [
                 'src' => ratib_public_cms_image($baseUrl, $key, $fallback),
@@ -68,9 +67,9 @@ if (!function_exists('ratib_about_profile_config')) {
                 ],
             ],
             'company' => [
-                'trade_name' => trim((string) ($pf['profile.company.trade_name'] ?? '')) ?: 'RATIB',
-                'legal_name' => trim((string) ($pf['profile.company.legal_name'] ?? '')) ?: 'Ratib Software Foundation for Information Technology',
-                'tagline' => trim((string) ($pf['profile.company.tagline'] ?? '')) ?: 'Enterprise workforce program infrastructure',
+                'trade_name' => ratib_public_cms('profile.company.trade_name', 'RATIB'),
+                'legal_name' => ratib_public_cms('profile.company.legal_name', 'Ratib Software Foundation for Information Technology'),
+                'tagline' => ratib_public_cms('profile.company.tagline', 'Enterprise workforce program infrastructure'),
                 'founded' => ratib_public_cms('profile.company.founded', '2018'),
                 'hq' => ratib_public_cms('profile.company.hq', 'Riyadh, Kingdom of Saudi Arabia'),
                 'address' => ratib_public_cms('profile.company.address', 'Riyadh, Saudi Arabia'),
@@ -84,10 +83,10 @@ if (!function_exists('ratib_about_profile_config')) {
                 'vat_value' => ratib_public_cms('profile.company.vat_value', 'Available on invoice / registration documents'),
                 'industry' => ratib_public_cms('profile.company.industry', 'Workforce program software · Cross-border recruitment operations'),
                 'employees_band' => ratib_public_cms('profile.company.employees_band', '51–200 (operations & engineering)'),
-                'markets' => trim((string) ($pf['profile.company.markets'] ?? '')) ?: 'Saudi Arabia (HQ) · Philippines · Bangladesh · Indonesia · Kenya · Uganda · Ethiopia · Nigeria · Rwanda · Sri Lanka · Nepal · Thailand',
-                'mission' => trim((string) ($pf['profile.company.mission'] ?? '')) ?: 'Give sending-country agencies and host-market programs one workspace to run regulated workforce corridors—with workflow coordination, operational visibility, compliance checkpoints, and finance linked to program events.',
-                'vision' => trim((string) ($pf['profile.company.vision'] ?? '')) ?: 'Cross-border workforce programs run on consistent records and auditable workflows—not disconnected spreadsheets.',
-                'summary' => trim((string) ($pf['profile.company.summary'] ?? '')) ?: 'Ratib Software Foundation for Information Technology develops and operates RATIB: a multi-agency workflow platform with separate program databases, field-operations support, policy controls, and integrated billing for agencies and oversight-aligned programs.',
+                'markets' => ratib_public_cms('profile.company.markets', 'Saudi Arabia (HQ) · Philippines · Bangladesh · Indonesia · Kenya · Uganda · Ethiopia · Nigeria · Rwanda · Sri Lanka · Nepal · Thailand'),
+                'mission' => ratib_public_cms('profile.company.mission', 'Give sending-country agencies and host-market programs one workspace to run regulated workforce corridors—with workflow coordination, operational visibility, compliance checkpoints, and finance linked to program events.'),
+                'vision' => ratib_public_cms('profile.company.vision', 'Cross-border workforce programs run on consistent records and auditable workflows—not disconnected spreadsheets.'),
+                'summary' => ratib_public_cms('profile.company.summary', 'Ratib Software Foundation for Information Technology develops and operates RATIB: a multi-agency workflow platform with separate program databases, field-operations support, policy controls, and integrated billing for agencies and oversight-aligned programs.'),
                 'services' => ratib_public_cms_lines('profile.company.services', [
                     'Workforce lifecycle workflows',
                     'Agency operations workspace (multi-level agents)',

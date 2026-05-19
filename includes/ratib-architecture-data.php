@@ -37,7 +37,7 @@ if (!function_exists('ratib_architecture_config')) {
             ],
             'overview' => [
                 'id' => 'architecture-overview',
-                'eyebrow' => 'Architecture overview',
+                'eyebrow' => ratib_public_cms('arch.overview.eyebrow', 'Architecture overview'),
                 'title' => ratib_public_cms('arch.overview.title', 'Orchestration infrastructure, not a single application'),
                 'sub' => ratib_public_cms('arch.overview.sub', 'Programs, corridors, and agencies share a common workflow core while program data stays in separate agency databases. The platform separates user interfaces, workflow execution, field operations, finance, and storage.'),
                 'points' => [
