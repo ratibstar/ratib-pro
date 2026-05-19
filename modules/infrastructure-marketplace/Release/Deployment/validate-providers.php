@@ -9,7 +9,7 @@ use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
 $pdo = null;
 try {
     $pdo = DatabaseConnectionFactory::createPdo();
-} catch (\Throwable) {
+} catch (\Throwable $e) {
     $pdo = null;
 }
 

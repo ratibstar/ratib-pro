@@ -196,7 +196,7 @@ final class OrderCommerceMapper
             $stmt->execute(['c' => $planCode]);
 
             return (int) $stmt->fetchColumn();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             return 0;
         }
     }

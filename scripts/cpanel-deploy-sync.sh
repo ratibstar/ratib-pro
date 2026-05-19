@@ -117,6 +117,9 @@ CRITICAL_FILES=(
   "public/cms-bundle-diagram-deployment.svg"
   "public/cms-bundle-diagram-tenant.svg"
   "public/cms-bundle-diagram-events.svg"
+  "modules/infrastructure-marketplace/Infrastructure/SchemaHelpers.php"
+  "api/infrastructure-marketplace/providers.php"
+  "api/infrastructure-marketplace/provider-activation.php"
 )
 
 TARGETS=()

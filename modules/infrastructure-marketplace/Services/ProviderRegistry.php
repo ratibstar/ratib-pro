@@ -47,7 +47,7 @@ final class ProviderRegistry
     {
         try {
             $resolved = self::fromEnvironment();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             $resolved = new self();
         }
 

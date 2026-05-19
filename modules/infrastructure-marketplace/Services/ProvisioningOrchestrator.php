@@ -110,7 +110,7 @@ final class ProvisioningOrchestrator implements ProvisioningOrchestratorInterfac
         try {
             return SchemaHelpers::tableExists($pdo, 'ratib_infra_provisioning_jobs')
                 && SchemaHelpers::tableExists($pdo, 'ratib_infra_job_logs');
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             return false;
         }
     }

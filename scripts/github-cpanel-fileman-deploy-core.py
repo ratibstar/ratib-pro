@@ -26,6 +26,7 @@ DEPLOY_ALLOW_PREFIXES = (
     "js/",
     "css/",
     "api/",
+    "modules/infrastructure-marketplace/",
     "config/env/",
     "public/",
     "public/profile-media/",

@@ -50,12 +50,12 @@ final class SchemaHelpers
             $stmt->execute([$table, $column]);
 
             return (bool) $stmt->fetchColumn();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             try {
                 $stmt = $pdo->query('SHOW COLUMNS FROM `' . $table . '` LIKE ' . $pdo->quote($column));
 
                 return $stmt instanceof \PDOStatement && $stmt->fetchColumn() !== false;
-            } catch (\Throwable) {
+            } catch (\Throwable $e2) {
                 return false;
             }
         }

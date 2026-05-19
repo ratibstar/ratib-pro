@@ -46,7 +46,7 @@ final class ExecutionSafetyLayer
                 if ($ts > 0 && (time() - $ts) > 86400) {
                     $warnings[] = 'Stale PENDING order (>24h) — confirm payment / settlement before activation.';
                 }
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
             }
         }
         $warnings = array_merge($warnings, StateNamespaceRegistry::validateQueueState($status));
@@ -114,7 +114,7 @@ final class ExecutionSafetyLayer
             if ($stmt->fetchColumn()) {
                 return true;
             }
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             $like = '%"order_public_id":"' . str_replace(['%', '_'], ['\\%', '\\_'], $orderPublicId) . '"%';
             $stmt = $this->pdo->prepare(
                 'SELECT id FROM ratib_infra_audit_entries WHERE action_type = :a AND payload_json LIKE :l LIMIT 1'
@@ -144,7 +144,7 @@ final class ExecutionSafetyLayer
             ]);
 
             return (bool) $stmt->fetchColumn();
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
             return false;
         }
     }
