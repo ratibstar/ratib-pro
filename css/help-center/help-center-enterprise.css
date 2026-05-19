@@ -875,34 +875,176 @@ body.dark-mode .hc-enterprise {
 }
 
 @media (max-width: 768px) {
+    .content-wrapper:has(.hc-enterprise) {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .hc-enterprise.help-center-wrapper {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .hc-site-header {
+        max-height: min(52vh, 420px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .hc-main {
-        padding: 8px 12px 40px;
+        padding: 8px 12px 32px;
+        max-width: 100%;
+    }
+
+    .hc-main .hc-content,
+    .hc-main .hc-hero {
+        max-width: 100%;
     }
 
     .hc-top-bar-inner {
         flex-wrap: wrap;
+        align-items: center;
         height: auto;
-        min-height: 44px;
-        padding-top: 8px;
-        padding-bottom: 8px;
+        min-height: 0;
+        padding: 8px 12px;
+        gap: 8px;
+    }
+
+    .hc-top-bar-brand {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 0.8125rem;
+    }
+
+    .hc-top-bar-actions {
+        flex-shrink: 0;
     }
 
     .hc-search--top {
         order: 3;
         flex: 1 1 100%;
         max-width: none;
+        min-width: 0;
+    }
+
+    .hc-enterprise .language-label-text {
+        display: none;
+    }
+
+    .hc-enterprise .language-switcher {
+        min-width: 0;
+        max-width: 5.5rem;
     }
 
     .hc-progress-compact {
         display: none;
     }
 
+    .hc-top-nav {
+        min-height: 36px;
+    }
+
+    .hc-top-nav .categories-list {
+        padding: 4px 10px 6px;
+        gap: 3px;
+    }
+
+    .hc-enterprise .hc-top-nav .category-link {
+        padding: 5px 10px !important;
+        font-size: 0.75rem !important;
+        max-width: 100%;
+    }
+
+    .hc-enterprise .hc-top-nav .category-link > span {
+        max-width: 9.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .hc-top-breadcrumbs {
+        padding: 6px 12px !important;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .hc-top-toc {
+        min-height: 32px;
+        padding: 0 10px;
+    }
+
     .hc-top-toc-label {
         display: none;
     }
 
+    .hc-top-toc-scroll a {
+        max-width: 8.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 0.6875rem;
+    }
+
+    .hc-hero {
+        margin-bottom: 12px;
+    }
+
+    .hc-hero-title {
+        font-size: 1.25rem;
+    }
+
+    .hc-hero-subtitle {
+        font-size: 0.8125rem;
+        margin-bottom: 8px;
+    }
+
+    .hc-quick-links {
+        gap: 6px 12px;
+    }
+
     .hc-categories-grid {
         grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .hc-enterprise .tutorial-detail-title {
+        font-size: 1.2rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-header {
+        padding-left: 10px;
+        margin-right: 0;
+    }
+
+    .hc-enterprise [class*="hc-cat-accent-"] .tutorial-detail-body h2 {
+        font-size: 1rem;
+    }
+
+    .hc-enterprise .tutorial-card {
+        padding: 14px !important;
+    }
+
+    .hc-enterprise .help-breadcrumbs {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .hc-enterprise .hc-top-nav .category-link > span {
+        max-width: 6.5rem;
+    }
+
+    .hc-enterprise .hc-top-nav .category-link i {
+        font-size: 0.6875rem;
     }
 }
 
