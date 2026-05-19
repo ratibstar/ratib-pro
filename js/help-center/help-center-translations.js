@@ -12,7 +12,7 @@ window.HELP_CENTER_TRANSLATIONS = {
         // Header
         title: 'Help & Learning Center',
         enterpriseTitle: 'Enterprise Operations Knowledge Center',
-        enterpriseSubtitle: 'Interactive guidance, operational workflows, AI assistance, and production-grade learning for the RATIB platform.',
+        enterpriseSubtitle: 'Guides, workflows, and AI assistance for running the RATIB platform.',
         subtitle: 'Master the system with step-by-step guides, interactive tutorials, and expert tips',
         searchPlaceholder: 'Search tutorials, guides, and FAQs...',
         aiAskPlaceholder: 'Ask AI or search workflows, guides, and playbooks…',
@@ -36,7 +36,7 @@ window.HELP_CENTER_TRANSLATIONS = {
         complianceReady: 'Compliance-ready',
         lastAudit: 'Last audit:',
         browseCategories: 'Browse all categories',
-        browseCategoriesSub: 'Adaptive collections with difficulty, impact, and completion metadata',
+        browseCategoriesSub: 'Step-by-step guides organized by module',
         onThisPage: 'On this page',
         readingProgress: 'Reading progress',
         aiSummary: 'AI Summary',

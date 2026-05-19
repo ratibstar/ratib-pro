@@ -1165,8 +1165,11 @@
     }
 
     function setHubChromeVisible(visible) {
-        const hero = document.getElementById('hcHero');
-        if (hero) hero.classList.toggle('hc-hero--hidden', !visible);
+        ['hcHero', 'hcTelemetry', 'hcTrustStrip'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.toggle(id === 'hcHero' ? 'hc-hero--hidden' : (id === 'hcTelemetry' ? 'hc-telemetry--hidden' : 'hc-trust-strip--hidden'), !visible);
+        });
     }
 
     function setupCategorySpotlight() {
@@ -1185,19 +1188,6 @@
         const deps = document.getElementById('hcArticleDeps');
         if (deps) {
             deps.innerHTML = '<span>Updated ~2h ago</span> · <span>AI reviewed</span> · <span>Prerequisites: basic navigation</span>';
-        }
-        const body = document.querySelector('.tutorial-detail-body');
-        if (body && !body.querySelector('.hc-workflow-map')) {
-            const map = document.createElement('div');
-            map.className = 'hc-workflow-map';
-            map.innerHTML = '<strong>Workflow map</strong> — typical execution path for this guide.' +
-                '<div class="hc-workflow-map-steps">' +
-                '<span class="hc-workflow-map-step">Prepare</span>' +
-                '<span class="hc-workflow-map-step">Execute</span>' +
-                '<span class="hc-workflow-map-step">Verify</span>' +
-                '<span class="hc-workflow-map-step">Close</span>' +
-                '</div>';
-            body.insertBefore(map, body.firstChild);
         }
         const checklistBtn = document.getElementById('hcChecklistMode');
         const main = document.querySelector('.hc-article-main');
@@ -1237,9 +1227,7 @@
     /* Public hooks for help-center.js */
     window.HelpCenterEnterprise = {
         init: function () {
-            renderQuickActions();
             renderRecentPages();
-            renderCmdCommands();
             loadProgressUI();
             setupCmdPalette();
             setupCopilot();

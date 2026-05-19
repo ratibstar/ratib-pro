@@ -355,31 +355,13 @@ const HelpCenterUI = {
         
         const flatCategories = flattenCategories(categories);
 
-        const impactForCategory = (cat, idx) => {
-            const name = (cat.name || '').toLowerCase();
-            if (name.indexOf('compliance') >= 0 || name.indexOf('finance') >= 0 || name.indexOf('contract') >= 0) return 'high';
-            if (idx < 3) return 'medium';
-            return 'standard';
-        };
-
-        const difficultyForCategory = (cat) => {
-            const name = (cat.name || '').toLowerCase();
-            if (name.indexOf('getting started') >= 0 || name.indexOf('dashboard') >= 0) return 'beginner';
-            if (name.indexOf('control') >= 0 || name.indexOf('infrastructure') >= 0) return 'advanced';
-            return 'intermediate';
-        };
-
         const renderCategory = (category) => {
             const card = document.createElement('a');
             card.className = 'category-card';
             card.href = '#';
             card.dataset.categoryId = category.id;
-
-            const impact = impactForCategory(category, index);
-            const difficulty = difficultyForCategory(category);
-            const estMin = Math.max(5, (category.tutorial_count || 1) * 8);
-            const updated = category.updated_at ? formatDate(category.updated_at) : 'May 2026';
-
+            const count = category.tutorial_count || 0;
+            const estMin = Math.max(5, count * 6);
             card.innerHTML = `
                 <div class="category-card-icon hc-category-icon-wrap">
                     <i class="fas ${category.icon || 'fa-circle'}"></i>
@@ -387,17 +369,14 @@ const HelpCenterUI = {
                 <h3 class="category-card-title">${category.name || t('category')}</h3>
                 <p class="category-card-description">${category.description || ''}</p>
                 <div class="hc-card-meta">
-                    <span class="hc-meta-badge">${category.tutorial_count || 0} ${t('tutorialsLabel')}</span>
-                    <span class="hc-meta-badge">${estMin} min</span>
-                    <span class="hc-meta-badge">${t(difficulty)}</span>
+                    <span class="hc-meta-badge">${count} ${t('tutorialsLabel')}</span>
+                    <span class="hc-meta-badge">${estMin} ${t('min')}</span>
                 </div>
             `;
-
             card.addEventListener('click', (e) => {
                 e.preventDefault();
                 HelpCenterController.loadTutorialsByCategory(category.id);
             });
-
             return card;
         };
 
@@ -405,7 +384,7 @@ const HelpCenterUI = {
         if (grid) {
             grid.innerHTML = '';
             if (flatCategories && flatCategories.length > 0) {
-                flatCategories.forEach((category) => {
+                flatCategories.forEach((category, index) => {
                     grid.appendChild(renderCategory(category));
                 });
             } else {
@@ -519,17 +498,13 @@ const HelpCenterUI = {
         
         container.innerHTML = `
             ${showEnglishNotice ? `<div class="tutorial-detail-notice content-available-notice" role="status">${t('contentAvailableInEnglish')}</div>` : ''}
-            <div class="hc-article-trust-bar">
-                <button type="button" class="hc-chip hc-copy-link-btn" id="hcCopyLinkBtn"><i class="fas fa-link"></i> Copy link</button>
-            </div>
             <div class="tutorial-detail-header">
                 <h1 class="tutorial-detail-title">${content.title || t('tutorial')}</h1>
                 <div class="tutorial-detail-meta">
-                    <span><i class="fas fa-clock"></i> ${tutorial.estimated_time || 5} ${t('min')} read</span>
+                    <span><i class="fas fa-clock"></i> ${tutorial.estimated_time || 5} ${t('min')}</span>
                     <span><i class="fas fa-signal"></i> ${t(tutorial.difficulty_level || 'beginner')}</span>
-                    <span><i class="fas fa-eye"></i> ${tutorial.views_count || 0} ${t('views')}</span>
-                    ${tutorial.updated_at ? `<span><i class="fas fa-calendar-alt"></i> ${t('updated')}: ${formatDate(tutorial.updated_at)}</span>` : ''}
-                    ${tutorial.last_updated ? `<span><i class="fas fa-calendar-alt"></i> ${t('updated')}: ${formatDate(tutorial.last_updated)}</span>` : ''}
+                    <button type="button" class="hc-toolbar-btn hc-copy-link-btn" id="hcCopyLinkBtn"><i class="fas fa-link"></i> Copy link</button>
+                    ${tutorial.updated_at ? `<span><i class="fas fa-calendar-alt"></i> ${formatDate(tutorial.updated_at)}</span>` : ''}
                 </div>
             </div>
             
