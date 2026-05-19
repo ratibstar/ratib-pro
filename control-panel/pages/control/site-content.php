@@ -186,6 +186,127 @@ function ratib_control_site_content_store_media(array $file, string $kind): arra
     return ['ok' => true, 'path' => $token, 'error' => ''];
 }
 
+/**
+ * Stable filename per CMS key so re-upload replaces the same asset.
+ *
+ * @return array{ok:bool,path:string,error:string}
+ */
+function ratib_control_site_content_store_media_for_key(array $file, string $contentKey): array
+{
+    if (!isset($file['tmp_name'], $file['name'], $file['error'])) {
+        return ['ok' => false, 'path' => '', 'error' => 'Invalid upload payload.'];
+    }
+    $err = (int) $file['error'];
+    if ($err !== UPLOAD_ERR_OK) {
+        return ['ok' => false, 'path' => '', 'error' => 'Upload failed (error ' . $err . ').'];
+    }
+    $ext = strtolower((string) pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+    $allow = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
+    if ($ext === '' || !in_array($ext, $allow, true)) {
+        return ['ok' => false, 'path' => '', 'error' => 'Unsupported image type.'];
+    }
+    $finalName = function_exists('ratib_site_content_media_filename_for_key')
+        ? ratib_site_content_media_filename_for_key($contentKey, $ext)
+        : ('cms-' . preg_replace('/[^a-z0-9]+/i', '-', $contentKey) . '.' . $ext);
+
+    return ratib_control_site_content_store_media_named($file, $finalName);
+}
+
+/**
+ * @return array{ok:bool,path:string,error:string}
+ */
+function ratib_control_site_content_store_media_named(array $file, string $finalName): array
+{
+    $finalName = basename(str_replace('\\', '/', $finalName));
+    if (!preg_match('/^[a-zA-Z0-9._-]+$/', $finalName)) {
+        return ['ok' => false, 'path' => '', 'error' => 'Invalid target filename.'];
+    }
+    $tmp = (string) $file['tmp_name'];
+    if ($tmp === '' || !is_uploaded_file($tmp)) {
+        return ['ok' => false, 'path' => '', 'error' => 'Upload temp file missing.'];
+    }
+    $size = isset($file['size']) ? (int) $file['size'] : 0;
+    if ($size <= 0 || $size > 12 * 1024 * 1024) {
+        return ['ok' => false, 'path' => '', 'error' => 'Image must be under 12 MB.'];
+    }
+    $targetDir = function_exists('ratib_site_content_media_storage_dir')
+        ? ratib_site_content_media_storage_dir()
+        : (dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'ratib_cms_media');
+    if (!is_dir($targetDir) && !@mkdir($targetDir, 0775, true) && !is_dir($targetDir)) {
+        return ['ok' => false, 'path' => '', 'error' => 'Cannot create media directory.'];
+    }
+    if (!is_writable($targetDir)) {
+        return ['ok' => false, 'path' => '', 'error' => 'Media directory is not writable.'];
+    }
+    $abs = rtrim($targetDir, '/\\') . DIRECTORY_SEPARATOR . $finalName;
+    if (is_file($abs)) {
+        @unlink($abs);
+    }
+    if (!@move_uploaded_file($tmp, $abs)) {
+        return ['ok' => false, 'path' => '', 'error' => 'Failed moving uploaded file.'];
+    }
+    @chmod($abs, 0644);
+    $token = function_exists('ratib_site_content_media_token_from_filename')
+        ? ratib_site_content_media_token_from_filename($finalName)
+        : ('scmedia:' . $finalName);
+
+    return ['ok' => true, 'path' => $token, 'error' => ''];
+}
+
+/**
+ * @param array<string, mixed> $posted
+ * @param array<string, mixed> $files
+ * @param array<string, mixed> $post
+ * @param list<string> $allowedKeys
+ */
+function ratib_control_site_content_apply_media_fields_post(array &$posted, array $files, array $post, array $allowedKeys): string
+{
+    $allowed = array_flip($allowedKeys);
+    $uploads = $files['media_upload'] ?? null;
+    if (is_array($uploads) && isset($uploads['name']) && is_array($uploads['name'])) {
+        foreach ($uploads['name'] as $key => $origName) {
+            if (!is_string($key) || !isset($allowed[$key])) {
+                continue;
+            }
+            $err = isset($uploads['error'][$key]) ? (int) $uploads['error'][$key] : UPLOAD_ERR_NO_FILE;
+            if ($err === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            $file = [
+                'name' => $uploads['name'][$key] ?? '',
+                'type' => $uploads['type'][$key] ?? '',
+                'tmp_name' => $uploads['tmp_name'][$key] ?? '',
+                'error' => $err,
+                'size' => isset($uploads['size'][$key]) ? (int) $uploads['size'][$key] : 0,
+            ];
+            $prev = trim((string) ($posted[$key] ?? ''));
+            if ($prev !== '') {
+                ratib_control_site_content_try_delete_media_file($prev);
+            }
+            $up = ratib_control_site_content_store_media_for_key($file, $key);
+            if (!$up['ok']) {
+                return 'Image upload failed (' . $key . '): ' . $up['error'];
+            }
+            $posted[$key] = $up['path'];
+        }
+    }
+    $deletes = $post['media_delete'] ?? null;
+    if (is_array($deletes)) {
+        foreach ($deletes as $key => $flag) {
+            if (!is_string($key) || !isset($allowed[$key]) || !$flag) {
+                continue;
+            }
+            $prev = trim((string) ($posted[$key] ?? ''));
+            if ($prev !== '') {
+                ratib_control_site_content_try_delete_media_file($prev);
+            }
+            $posted[$key] = '';
+        }
+    }
+
+    return '';
+}
+
 function ratib_control_site_content_try_delete_media_file(string $storedPath): void
 {
     $storedPath = trim($storedPath);
@@ -583,6 +704,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ratib_site_content_sa
         if ($slotErr !== '') {
             $flashErr = $slotErr;
         }
+        if ($flashErr === '') {
+            $mediaErr = ratib_control_site_content_apply_media_fields_post($posted, $_FILES, $_POST, $allowedKeys);
+            if ($mediaErr !== '') {
+                $flashErr = $mediaErr;
+            }
+        }
         if ($flashErr !== '') {
             foreach (array_keys($defaults) as $k) {
                 if (array_key_exists($k, $posted)) {
@@ -661,7 +788,7 @@ startControlLayout('Public site content — full site', [$editorCss], []);
 <div class="ratib-site-content-editor ratib-site-content-editor--dark" lang="en">
     <div class="ratib-site-content-intro mb-3">
         <strong><i class="fas fa-globe me-2"></i>Public site content — entire marketing site</strong>
-        <p class="mb-2 small text-muted">Single CMS for everything visitors see on the public site: <strong>marketing home</strong>, <strong>company profile</strong> (government block first), <strong>architecture</strong>, <strong>security &amp; compliance</strong>, and <strong>procurement &amp; legal</strong>. Text and images are stored in <code>ratib_site_content</code> on the control database. Expand a section, edit, then <strong>Save all</strong> at the bottom and hard-refresh the live page.</p>
+        <p class="mb-2 small text-muted">Single CMS for the entire public site: <strong>marketing home</strong>, <strong>company profile</strong> (government screenshots, diagrams, platform screens), <strong>architecture</strong>, <strong>security</strong>, and <strong>procurement</strong>. For any image field, use <strong>Choose file</strong> then <strong>Save all</strong> — uploads go to the server automatically (no FTP). Text and paths are stored in <code>ratib_site_content</code>.</p>
         <?php if (function_exists('ratib_site_content_public_page_links')) {
             foreach (ratib_site_content_public_page_links() as $plink) { ?>
         <a class="btn btn-sm btn-outline-light me-1 mb-1" href="<?php echo htmlspecialchars($plink['path'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($plink['label'], ENT_QUOTES, 'UTF-8'); ?></a>

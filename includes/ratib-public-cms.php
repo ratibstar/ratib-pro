@@ -144,7 +144,10 @@ if (!function_exists('ratib_public_cms_image_or')) {
         $stored = trim((string) ($flat[$primaryKey] ?? ''));
         $legacyGeneric = 'assets/images/about-ratib-command.png';
         $legacyGenericPublic = 'public/profile-media/about-ratib-command.png';
-        if (($stored === $legacyGeneric || $stored === $legacyGenericPublic) && $secondaryKey !== '') {
+        $legacyGenericScmedia = function_exists('ratib_site_content_media_default_token')
+            ? ratib_site_content_media_default_token($primaryKey, 'public/profile-media/about-ratib-command.png')
+            : '';
+        if (($stored === $legacyGeneric || $stored === $legacyGenericPublic || ($legacyGenericScmedia !== '' && $stored === $legacyGenericScmedia)) && $secondaryKey !== '') {
             $secondaryStored = trim((string) ($flat[$secondaryKey] ?? ''));
             if ($secondaryStored !== '' && $secondaryStored !== $legacyGeneric && $secondaryStored !== $legacyGenericPublic) {
                 $stored = $secondaryStored;

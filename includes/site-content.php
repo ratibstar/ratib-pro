@@ -924,6 +924,130 @@ if (!function_exists('ratib_site_content_asset_url')) {
             return $name;
         }
     }
+    if (!function_exists('ratib_site_content_media_endpoint_script')) {
+        /** Public script that serves CMS uploads + bundled fallbacks (pages/ deploys reliably). */
+        function ratib_site_content_media_endpoint_script(): string
+        {
+            return '/pages/site-content-media.php';
+        }
+    }
+    if (!function_exists('ratib_site_content_media_filename_for_key')) {
+        function ratib_site_content_media_filename_for_key(string $contentKey, string $ext): string
+        {
+            $slug = strtolower((string) preg_replace('/[^a-z0-9]+/i', '-', $contentKey));
+            $slug = trim($slug, '-');
+            if ($slug === '') {
+                $slug = 'asset';
+            }
+
+            return 'cms-' . $slug . '.' . strtolower($ext);
+        }
+    }
+    if (!function_exists('ratib_site_content_media_bundled_map')) {
+        /**
+         * @return array<string, list<string>> scmedia filename => site-relative paths (first existing wins)
+         */
+        function ratib_site_content_media_bundled_map(): array
+        {
+            $map = [
+                'gov-government-control.png' => ['public/profile-media/government/government-control.png', 'assets/images/government/government-control.png'],
+                'gov-government-inspections.png' => ['public/profile-media/government/government-inspections.png', 'assets/images/government/government-inspections.png'],
+                'gov-tracking-map.png' => ['public/profile-media/government/tracking-map.png', 'assets/images/government/tracking-map.png'],
+                'gov-worker-mobile-onboarding.png' => ['public/profile-media/government/worker-mobile-onboarding.png', 'assets/images/government/worker-mobile-onboarding.png'],
+                'diag-workflow-lifecycle.svg' => ['public/profile-media/diagrams/workflow-lifecycle.svg', 'assets/images/diagrams/workflow-lifecycle.svg'],
+                'diag-onboarding-flow.svg' => ['public/profile-media/diagrams/onboarding-flow.svg', 'assets/images/diagrams/onboarding-flow.svg'],
+                'diag-deployment-lifecycle.svg' => ['public/profile-media/diagrams/deployment-lifecycle.svg', 'assets/images/diagrams/deployment-lifecycle.svg'],
+                'diag-tenant-isolation.svg' => ['public/profile-media/diagrams/tenant-isolation.svg', 'assets/images/diagrams/tenant-isolation.svg'],
+                'diag-event-processing.svg' => ['public/profile-media/diagrams/event-processing.svg', 'assets/images/diagrams/event-processing.svg'],
+            ];
+            $profileFallbacks = [
+                'profile.image.hero' => 'public/profile-media/about-ratib-command.png',
+                'profile.image.ops' => 'public/profile-media/about-ratib-command.png',
+                'profile.image.workers' => 'public/profile-media/program-preview-workers.svg',
+                'profile.image.telemetry' => 'public/profile-media/government/tracking-map.png',
+                'profile.image.accounting' => 'public/profile-media/program-preview-finance.svg',
+                'profile.image.control' => 'public/profile-media/government/government-control.png',
+                'profile.image.partners' => 'public/profile-media/about-ratib-command.png',
+                'profile.image.pipeline' => 'public/profile-media/program-preview-pipeline.svg',
+                'profile.gov.image.control' => 'public/profile-media/government/government-control.png',
+                'profile.gov.image.inspections' => 'public/profile-media/government/government-inspections.png',
+                'profile.gov.image.tracking' => 'public/profile-media/government/tracking-map.png',
+                'profile.gov.image.onboarding' => 'public/profile-media/government/worker-mobile-onboarding.png',
+                'profile.diagram.workflow' => 'public/profile-media/diagrams/workflow-lifecycle.svg',
+                'profile.diagram.onboarding' => 'public/profile-media/diagrams/onboarding-flow.svg',
+                'profile.diagram.deployment' => 'public/profile-media/diagrams/deployment-lifecycle.svg',
+                'profile.diagram.tenant' => 'public/profile-media/diagrams/tenant-isolation.svg',
+                'profile.diagram.events' => 'public/profile-media/diagrams/event-processing.svg',
+            ];
+            foreach ($profileFallbacks as $key => $rel) {
+                $ext = strtolower((string) pathinfo($rel, PATHINFO_EXTENSION));
+                if ($ext === '') {
+                    continue;
+                }
+                $fname = ratib_site_content_media_filename_for_key($key, $ext);
+                if (!isset($map[$fname])) {
+                    $map[$fname] = [$rel];
+                }
+            }
+
+            return $map;
+        }
+    }
+    if (!function_exists('ratib_site_content_media_resolve_fs')) {
+        function ratib_site_content_media_resolve_fs(string $fileName): ?string
+        {
+            $fileName = basename(str_replace('\\', '/', $fileName));
+            if ($fileName === '' || !preg_match('/^[a-zA-Z0-9._-]+$/', $fileName)) {
+                return null;
+            }
+            $uploaded = ratib_site_content_media_storage_dir() . DIRECTORY_SEPARATOR . $fileName;
+            if (is_file($uploaded)) {
+                return $uploaded;
+            }
+            $root = dirname(__DIR__);
+            $map = ratib_site_content_media_bundled_map();
+            foreach ($map[$fileName] ?? [] as $rel) {
+                $fs = $root . '/' . str_replace('/', DIRECTORY_SEPARATOR, ltrim($rel, '/'));
+                if (is_file($fs)) {
+                    return $fs;
+                }
+            }
+
+            return null;
+        }
+    }
+    if (!function_exists('ratib_site_content_media_serve')) {
+        function ratib_site_content_media_serve(string $fileName): void
+        {
+            $fileName = basename(str_replace('\\', '/', $fileName));
+            $ext = strtolower((string) pathinfo($fileName, PATHINFO_EXTENSION));
+            $allowed = [
+                'jpg' => 'image/jpeg',
+                'jpeg' => 'image/jpeg',
+                'png' => 'image/png',
+                'webp' => 'image/webp',
+                'gif' => 'image/gif',
+                'svg' => 'image/svg+xml',
+                'mp4' => 'video/mp4',
+                'webm' => 'video/webm',
+                'mov' => 'video/quicktime',
+            ];
+            if ($fileName === '' || !isset($allowed[$ext])) {
+                http_response_code(404);
+                exit;
+            }
+            $fs = ratib_site_content_media_resolve_fs($fileName);
+            if ($fs === null) {
+                http_response_code(404);
+                exit;
+            }
+            header('Content-Type: ' . $allowed[$ext]);
+            header('Content-Length: ' . (string) filesize($fs));
+            header('Cache-Control: public, max-age=604800, immutable');
+            readfile($fs);
+            exit;
+        }
+    }
     if (!function_exists('ratib_site_content_media_public_url')) {
         function ratib_site_content_media_public_url(string $baseUrl, string $stored): string
         {
@@ -931,8 +1055,24 @@ if (!function_exists('ratib_site_content_asset_url')) {
             if ($name === '') {
                 return '';
             }
+            $fs = ratib_site_content_media_resolve_fs($name);
+            $v = $fs !== null ? (int) filemtime($fs) : time();
+            $script = ratib_site_content_media_endpoint_script();
 
-            return rtrim($baseUrl, '/') . '/api/site-content-media.php?f=' . rawurlencode($name);
+            return rtrim($baseUrl, '/') . $script . '?f=' . rawurlencode($name) . '&v=' . $v;
+        }
+    }
+    if (!function_exists('ratib_site_content_media_default_token')) {
+        function ratib_site_content_media_default_token(string $contentKey, string $bundledRel): string
+        {
+            $ext = strtolower((string) pathinfo($bundledRel, PATHINFO_EXTENSION));
+            if ($ext === '') {
+                return '';
+            }
+
+            return ratib_site_content_media_token_from_filename(
+                ratib_site_content_media_filename_for_key($contentKey, $ext)
+            );
         }
     }
     if (!function_exists('ratib_site_content_resolve_public_media_rel')) {
@@ -995,25 +1135,9 @@ if (!function_exists('ratib_site_content_asset_url')) {
             }
             $tokUrl = ratib_site_content_media_public_url($baseUrl, $stored);
             if ($tokUrl !== '') {
-                $name = ratib_site_content_media_filename_from_token($stored);
-                $mediaFs = ratib_site_content_media_storage_dir() . DIRECTORY_SEPARATOR . $name;
-                if (is_file($mediaFs)) {
-                    $v = (int) filemtime($mediaFs);
-
-                    return $tokUrl . '&v=' . $v;
-                }
-                $bundledRel = ratib_site_content_scmedia_bundled_rel($name);
-                if ($bundledRel !== '') {
-                    $root = dirname(__DIR__);
-                    $bundledFs = $root . '/' . str_replace('/', DIRECTORY_SEPARATOR, $bundledRel);
-                    if (is_file($bundledFs)) {
-                        $v = (int) filemtime($bundledFs);
-
-                        return rtrim($baseUrl, '/') . '/' . $bundledRel . '?v=' . $v;
-                    }
-                }
-                // Missing CMS upload — use caller fallback below.
-            } elseif (!str_starts_with($stored, 'scmedia:')) {
+                return $tokUrl;
+            }
+            if (!str_starts_with($stored, 'scmedia:')) {
                 $rel = ratib_site_content_resolve_public_media_rel($stored);
                 $root = dirname(__DIR__);
                 $fs = $root . '/' . str_replace('/', DIRECTORY_SEPARATOR, $rel);

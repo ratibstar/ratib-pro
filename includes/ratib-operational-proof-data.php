@@ -25,8 +25,8 @@ if (!function_exists('ratib_operational_proof_config')) {
      */
     function ratib_operational_proof_config(string $baseUrl): array
     {
-        $diagram = static function (string $file) use ($baseUrl): string {
-            return ratib_public_bundled_asset_url($baseUrl, 'public/profile-media/diagrams/' . ltrim($file, '/'));
+        $diagram = static function (string $cmsKey, string $file) use ($baseUrl): string {
+            return ratib_public_cms_image($baseUrl, $cmsKey, 'public/profile-media/diagrams/' . ltrim($file, '/'));
         };
         $govImg = static function (string $cmsKey, string $file) use ($baseUrl): string {
             return ratib_operational_proof_gov_image_url($baseUrl, $cmsKey, $file);
@@ -88,31 +88,31 @@ if (!function_exists('ratib_operational_proof_config')) {
                     'id' => 'workflow-lifecycle',
                     'title' => 'Worker lifecycle workflow',
                     'caption' => 'Stage graph from intake through deployment and closure.',
-                    'src' => $diagram('workflow-lifecycle.svg'),
+                    'src' => $diagram('profile.diagram.workflow', 'workflow-lifecycle.svg'),
                 ],
                 [
                     'id' => 'onboarding-flow',
                     'title' => 'Agency onboarding',
                     'caption' => 'From qualification to production workspace.',
-                    'src' => $diagram('onboarding-flow.svg'),
+                    'src' => $diagram('profile.diagram.onboarding', 'onboarding-flow.svg'),
                 ],
                 [
                     'id' => 'deployment-lifecycle',
                     'title' => 'Deployment lifecycle',
                     'caption' => 'Program setup, field coordination, host handover.',
-                    'src' => $diagram('deployment-lifecycle.svg'),
+                    'src' => $diagram('profile.diagram.deployment', 'deployment-lifecycle.svg'),
                 ],
                 [
                     'id' => 'tenant-isolation',
                     'title' => 'Tenant separation',
                     'caption' => 'Shared platform core; separate agency databases.',
-                    'src' => $diagram('tenant-isolation.svg'),
+                    'src' => $diagram('profile.diagram.tenant', 'tenant-isolation.svg'),
                 ],
                 [
                     'id' => 'event-processing',
                     'title' => 'Event processing',
                     'caption' => 'Emit, route, verify, and commit with replay safety.',
-                    'src' => $diagram('event-processing.svg'),
+                    'src' => $diagram('profile.diagram.events', 'event-processing.svg'),
                 ],
             ],
             'screenshots' => [

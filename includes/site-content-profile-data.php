@@ -4,6 +4,17 @@
  */
 declare(strict_types=1);
 
+if (!function_exists('ratib_site_content_profile_media_default')) {
+    function ratib_site_content_profile_media_default(string $contentKey, string $bundledRel): string
+    {
+        if (function_exists('ratib_site_content_media_default_token')) {
+            return ratib_site_content_media_default_token($contentKey, $bundledRel);
+        }
+
+        return $bundledRel;
+    }
+}
+
 if (!function_exists('ratib_site_content_defaults_profile')) {
     /**
      * @return array<string, string>
@@ -30,10 +41,15 @@ if (!function_exists('ratib_site_content_defaults_profile')) {
             'profile.gov.title' => 'Inspections, violations, live tracking, and worker mobilization',
             'profile.gov.lead' => $govLead,
             'profile.gov.points' => $govPoints,
-            'profile.gov.image.control' => 'public/profile-media/government/government-control.png',
-            'profile.gov.image.inspections' => 'public/profile-media/government/government-inspections.png',
-            'profile.gov.image.tracking' => 'public/profile-media/government/tracking-map.png',
-            'profile.gov.image.onboarding' => 'public/profile-media/government/worker-mobile-onboarding.png',
+            'profile.gov.image.control' => ratib_site_content_profile_media_default('profile.gov.image.control', 'public/profile-media/government/government-control.png'),
+            'profile.gov.image.inspections' => ratib_site_content_profile_media_default('profile.gov.image.inspections', 'public/profile-media/government/government-inspections.png'),
+            'profile.gov.image.tracking' => ratib_site_content_profile_media_default('profile.gov.image.tracking', 'public/profile-media/government/tracking-map.png'),
+            'profile.gov.image.onboarding' => ratib_site_content_profile_media_default('profile.gov.image.onboarding', 'public/profile-media/government/worker-mobile-onboarding.png'),
+            'profile.diagram.workflow' => ratib_site_content_profile_media_default('profile.diagram.workflow', 'public/profile-media/diagrams/workflow-lifecycle.svg'),
+            'profile.diagram.onboarding' => ratib_site_content_profile_media_default('profile.diagram.onboarding', 'public/profile-media/diagrams/onboarding-flow.svg'),
+            'profile.diagram.deployment' => ratib_site_content_profile_media_default('profile.diagram.deployment', 'public/profile-media/diagrams/deployment-lifecycle.svg'),
+            'profile.diagram.tenant' => ratib_site_content_profile_media_default('profile.diagram.tenant', 'public/profile-media/diagrams/tenant-isolation.svg'),
+            'profile.diagram.events' => ratib_site_content_profile_media_default('profile.diagram.events', 'public/profile-media/diagrams/event-processing.svg'),
             'profile.gov.caption.control' => 'Labor monitoring console—violations, blacklist, worker alerts, and inspection tabs in one place.',
             'profile.gov.caption.inspections' => 'Inspection history with status badges, inspector attribution, and agency-scoped rows.',
             'profile.gov.caption.tracking' => 'Live map, geofences, playback, and filters for tenant, agency, and country.',
@@ -59,7 +75,7 @@ if (!function_exists('ratib_site_content_profile_editor_groups')) {
             [
                 'id' => 'profile-government',
                 'title' => 'Company profile — Government & mobilization (always on top)',
-                'intro' => 'First block on the profile page under Operational proof. Upload PNG/WebP screenshots; leave path empty to keep the bundled default.',
+                'intro' => 'First block on the profile page. <strong>Upload a file</strong> for each screenshot (or paste <code>scmedia:…</code> from another field). Click <strong>Save all</strong> at the bottom — uploads are stored on the server and appear on /profile immediately.',
                 'fields' => [
                     ['key' => 'profile.gov.eyebrow', 'label' => 'Section eyebrow', 'type' => 'text'],
                     ['key' => 'profile.gov.title', 'label' => 'Section title', 'type' => 'text'],
