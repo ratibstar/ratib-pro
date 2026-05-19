@@ -48,6 +48,8 @@ $ratibGalleryLbJsQuery = (int) (@filemtime($ratibGalleryLbJsPath) ?: time()) . '
 $ratibOpCompactJsPath = __DIR__ . '/../js/pages/ratib-op-proof-compact.js';
 clearstatcache(true, $ratibOpCompactJsPath);
 $ratibOpCompactJsQuery = (int) (@filemtime($ratibOpCompactJsPath) ?: time()) . '-' . $ratibHomeUiRev . ($ratibOpBuildMarker !== '' ? '-' . $ratibOpBuildMarker : '');
+$ratibMarketingFocusedJsPath = __DIR__ . '/../js/pages/ratib-marketing-focused.js';
+$ratibMarketingFocusedJsQuery = (int) (@filemtime($ratibMarketingFocusedJsPath) ?: time()) . '-' . $ratibHomeUiRev;
 
 $metaTitle = (string) ($about['meta']['title'] ?? 'About RATIB');
 $metaDesc = (string) ($about['meta']['description'] ?? '');
@@ -82,6 +84,11 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
     $ratibOpCssQuery = (int) (@filemtime($ratibOpCssPath) ?: time()) . '-' . $ratibHomeUiRev . ($ratibOpBuildMarker !== '' ? '-' . $ratibOpBuildMarker : '');
     ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/operational-proof.css?v=<?php echo htmlspecialchars($ratibOpCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php
+    $ratibMarketingFocusedCssPath = __DIR__ . '/../css/pages/home-marketing-focused.css';
+    $ratibMarketingFocusedCssQuery = (int) (@filemtime($ratibMarketingFocusedCssPath) ?: time()) . '-' . $ratibHomeUiRev;
+    ?>
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-marketing-focused.css?v=<?php echo htmlspecialchars($ratibMarketingFocusedCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <script type="application/ld+json"><?php echo json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'Organization',
@@ -103,7 +110,7 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
 </head>
-<body class="ratib-saas-home ratib-about-page" data-ratib-about="1" style="background:#12081f !important">
+<body class="ratib-saas-home ratib-about-page <?php echo htmlspecialchars(ratib_public_marketing_density_body_class(), ENT_QUOTES, 'UTF-8'); ?>" data-ratib-about="1" data-ratib-marketing-density="<?php echo htmlspecialchars(ratib_public_marketing_density(), ENT_QUOTES, 'UTF-8'); ?>" style="background:#12081f !important">
 
 <?php
 include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
@@ -124,6 +131,7 @@ $ratibMarketingHomeUrl = ratib_public_marketing_home_url($baseUrl);
     <nav class="ratib-about-jump" aria-label="On this page">
         <div class="ratib-about-container ratib-about-jump__inner">
             <a href="#company-profile">Company</a>
+            <?php if (!ratib_public_marketing_is_focused()) { ?>
             <a href="#platform-overview">Platform</a>
             <a href="#what-is-ratib">Capabilities</a>
             <a href="#architecture">Architecture</a>
@@ -134,6 +142,10 @@ $ratibMarketingHomeUrl = ratib_public_marketing_home_url($baseUrl);
             <a href="#governance">Governance</a>
             <a href="#finance">Finance</a>
             <a href="#corridors">Corridors</a>
+            <?php } else { ?>
+            <a href="<?php echo htmlspecialchars(ratib_public_marketing_home_url($baseUrl, [], '#programs'), ENT_QUOTES, 'UTF-8'); ?>">Pricing</a>
+            <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/architecture/', ENT_QUOTES, 'UTF-8'); ?>">Architecture</a>
+            <?php } ?>
             <a href="#contact-cta">Contact</a>
         </div>
     </nav>
@@ -155,6 +167,7 @@ $ratibProfileGuardQAbout = (string) (int) (@filemtime($ratibProfileGuardJsAbout)
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-gallery-lightbox.js?v=<?php echo htmlspecialchars($ratibGalleryLbJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-op-proof-compact.js?v=<?php echo htmlspecialchars($ratibOpCompactJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/about-enterprise.js?v=<?php echo htmlspecialchars($ratibAboutJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-marketing-focused.js?v=<?php echo htmlspecialchars($ratibMarketingFocusedJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php
 require_once __DIR__ . '/../includes/ratib-page-stamp.php';
 ratib_emit_page_stamp('profile');

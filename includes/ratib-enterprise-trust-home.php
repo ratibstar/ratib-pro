@@ -35,7 +35,7 @@ if (!function_exists('ratib_enterprise_trust_render_home')) {
             ['L1', 'Data', 'Platform config · tenant DBs'],
         ];
         ?>
-        <section class="ratib-section ratib-ent-trust" id="enterprise-infrastructure" aria-labelledby="ent-trust-title">
+        <section class="ratib-section ratib-ent-trust" id="enterprise-infrastructure" aria-labelledby="ent-trust-title" data-ratib-marketing-depth="deep">
             <div class="ratib-container">
                 <header class="ratib-section__head ratib-ent-trust__head">
                     <p class="ratib-eyebrow ratib-eyebrow--enterprise"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.eyebrow'] ?? 'Infrastructure posture')); ?></p>

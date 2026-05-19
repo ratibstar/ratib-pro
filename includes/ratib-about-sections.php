@@ -107,8 +107,11 @@ if (!function_exists('ratib_about_render_sections')) {
         if ($company !== []) {
             ratib_about_render_company_dossier($company, $baseUrl);
         }
+        if (function_exists('ratib_marketing_expand_bar_render')) {
+            ratib_marketing_expand_bar_render('profile');
+        }
         ?>
-        <section class="ratib-about-hero" id="platform-overview" aria-labelledby="about-hero-title">
+        <section class="ratib-about-hero" id="platform-overview" aria-labelledby="about-hero-title" data-ratib-marketing-depth="deep">
             <div class="ratib-about-container ratib-about-hero__grid">
                 <div class="ratib-about-hero__copy" data-ratib-reveal>
                     <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['platform']['eyebrow'] ?? 'Platform overview')); ?></p>
@@ -144,7 +147,7 @@ if (!function_exists('ratib_about_render_sections')) {
             <div class="ratib-about-hero__glow" aria-hidden="true"></div>
         </section>
 
-        <section class="ratib-about-section" id="what-is-ratib" aria-labelledby="about-what-title">
+        <section class="ratib-about-section" id="what-is-ratib" aria-labelledby="about-what-title" data-ratib-marketing-depth="deep">
             <div class="ratib-about-container">
                 <header class="ratib-about-head" data-ratib-reveal>
                     <p class="ratib-about-eyebrow">Category definition</p>
@@ -172,7 +175,7 @@ if (!function_exists('ratib_about_render_sections')) {
             </div>
         </section>
 
-        <section class="ratib-about-section ratib-about-section--arch" id="architecture" aria-labelledby="about-arch-title">
+        <section class="ratib-about-section ratib-about-section--arch" id="architecture" aria-labelledby="about-arch-title" data-ratib-marketing-depth="deep">
             <div class="ratib-about-container">
                 <header class="ratib-about-head ratib-about-head--center" data-ratib-reveal>
                     <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['sections']['arch']['eyebrow'] ?? 'Platform architecture')); ?></p>
@@ -226,7 +229,7 @@ if (!function_exists('ratib_about_render_sections')) {
         }
         ?>
 
-        <section class="ratib-about-section" id="operations" aria-labelledby="about-ops-title">
+        <section class="ratib-about-section" id="operations" aria-labelledby="about-ops-title" data-ratib-marketing-depth="deep">
             <div class="ratib-about-container">
                 <header class="ratib-about-head" data-ratib-reveal>
                     <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['sections']['ops']['eyebrow'] ?? 'Agency workspace')); ?></p>
@@ -268,7 +271,7 @@ if (!function_exists('ratib_about_render_sections')) {
             </div>
         </section>
 
-        <section class="ratib-about-section ratib-about-section--telemetry" id="telemetry" aria-labelledby="about-tel-title">
+        <section class="ratib-about-section ratib-about-section--telemetry" id="telemetry" aria-labelledby="about-tel-title" data-ratib-marketing-depth="deep">
             <div class="ratib-about-container">
                 <header class="ratib-about-head" data-ratib-reveal>
                     <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['sections']['tel']['eyebrow'] ?? 'Field operations')); ?></p>
@@ -303,7 +306,7 @@ if (!function_exists('ratib_about_render_sections')) {
             </div>
         </section>
 
-        <section class="ratib-about-section" id="governance" aria-labelledby="about-gov-title">
+        <section class="ratib-about-section" id="governance" aria-labelledby="about-gov-title" data-ratib-marketing-depth="deep">
             <div class="ratib-about-container">
                 <header class="ratib-about-head ratib-about-head--center" data-ratib-reveal>
                     <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['sections']['gov']['eyebrow'] ?? 'Policy & oversight')); ?></p>
@@ -322,7 +325,7 @@ if (!function_exists('ratib_about_render_sections')) {
             </div>
         </section>
 
-        <section class="ratib-about-section" id="finance" aria-labelledby="about-fin-title">
+        <section class="ratib-about-section" id="finance" aria-labelledby="about-fin-title" data-ratib-marketing-depth="deep">
             <div class="ratib-about-container">
                 <header class="ratib-about-head" data-ratib-reveal>
                     <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['sections']['fin']['eyebrow'] ?? 'Controllers & CFOs')); ?></p>
@@ -348,7 +351,7 @@ if (!function_exists('ratib_about_render_sections')) {
             </div>
         </section>
 
-        <section class="ratib-about-section ratib-about-section--corridors" id="corridors" aria-labelledby="about-cor-title">
+        <section class="ratib-about-section ratib-about-section--corridors" id="corridors" aria-labelledby="about-cor-title" data-ratib-marketing-depth="deep">
             <div class="ratib-about-container">
                 <header class="ratib-about-head ratib-about-head--center" data-ratib-reveal>
                     <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['sections']['cor']['eyebrow'] ?? 'Multi-corridor fabric')); ?></p>
@@ -394,7 +397,7 @@ if (!function_exists('ratib_about_render_sections')) {
             </div>
         </section>
 
-        <section class="ratib-about-section" id="trust" aria-labelledby="about-trust-title">
+        <section class="ratib-about-section" id="trust" aria-labelledby="about-trust-title" data-ratib-marketing-depth="deep">
             <div class="ratib-about-container">
                 <header class="ratib-about-head ratib-about-head--center" data-ratib-reveal>
                     <p class="ratib-about-eyebrow">Enterprise trust</p>
@@ -412,7 +415,7 @@ if (!function_exists('ratib_about_render_sections')) {
             </div>
         </section>
 
-        <section class="ratib-about-section" id="partners" aria-labelledby="about-part-title">
+        <section class="ratib-about-section" id="partners" aria-labelledby="about-part-title" data-ratib-marketing-depth="deep">
             <div class="ratib-about-container">
                 <header class="ratib-about-head" data-ratib-reveal>
                     <p class="ratib-about-eyebrow">Host-market ecosystem</p>
@@ -436,7 +439,7 @@ if (!function_exists('ratib_about_render_sections')) {
             </div>
         </section>
 
-        <section class="ratib-about-section ratib-about-section--services" id="platform-services" aria-labelledby="about-svc-title">
+        <section class="ratib-about-section ratib-about-section--services" id="platform-services" aria-labelledby="about-svc-title" data-ratib-marketing-depth="deep">
             <div class="ratib-about-container">
                 <header class="ratib-about-head ratib-about-head--center" data-ratib-reveal>
                     <p class="ratib-about-eyebrow">Secondary · digital edge</p>

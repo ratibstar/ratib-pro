@@ -118,7 +118,7 @@ if (!function_exists('ratib_operational_proof_render')) {
         $screenshots = is_array($cfg['screenshots'] ?? null) ? $cfg['screenshots'] : [];
         $workflows = is_array($cfg['workflows'] ?? null) ? $cfg['workflows'] : [];
         ?>
-        <section class="ratib-op-proof<?php echo $compact ? ' ratib-op-proof--compact' : ''; ?>" id="operational-proof" aria-labelledby="ratib-op-proof-title">
+        <section class="ratib-op-proof<?php echo $compact ? ' ratib-op-proof--compact' : ''; ?>" id="operational-proof" aria-labelledby="ratib-op-proof-title" data-ratib-marketing-depth="deep">
             <div class="ratib-op-proof__inner ratib-about-container">
                 <header class="ratib-op-proof__head">
                     <p class="ratib-op-proof__eyebrow"><?php echo ratib_op_h((string) ($sec['eyebrow'] ?? '')); ?></p>

@@ -388,6 +388,12 @@ $ratibOpCssPath = __DIR__ . '/../css/pages/operational-proof.css';
 clearstatcache(true, $ratibOpCssPath);
 $ratibOpCssQuery = (int) (@filemtime($ratibOpCssPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
 $ratibOpCssAvailable = is_file($ratibOpCssPath);
+$ratibMarketingFocusedCssPath = __DIR__ . '/../css/pages/home-marketing-focused.css';
+clearstatcache(true, $ratibMarketingFocusedCssPath);
+$ratibMarketingFocusedCssQuery = (int) (@filemtime($ratibMarketingFocusedCssPath) ?: time()) . '-' . $ratibHomeUiRev;
+$ratibMarketingFocusedJsPath = __DIR__ . '/../js/pages/ratib-marketing-focused.js';
+clearstatcache(true, $ratibMarketingFocusedJsPath);
+$ratibMarketingFocusedJsQuery = (int) (@filemtime($ratibMarketingFocusedJsPath) ?: time()) . '-' . $ratibHomeUiRev;
 $ratibSiteRoot = rtrim($baseUrl, '/');
 ?>
 <!DOCTYPE html>
@@ -421,6 +427,7 @@ $ratibSiteRoot = rtrim($baseUrl, '/');
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/operational-proof.css?v=<?php echo htmlspecialchars($ratibOpCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <?php } ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/ratib-mega-nav.css?v=<?php echo htmlspecialchars($ratibMegaNavCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-marketing-focused.css?v=<?php echo htmlspecialchars($ratibMarketingFocusedCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <style id="ratib-nav-css-fallback">
       /* Layout-only rescue — no fixed icon sizes here (!important would override home-public / ratib-mega-nav). */
       #ratibNavMenu .ratib-nav__platform-links .ratib-nav__link{display:inline-flex!important;align-items:center!important;gap:.5rem!important}
@@ -430,7 +437,7 @@ $ratibSiteRoot = rtrim($baseUrl, '/');
       .ratib-nav__partner-icon{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex-shrink:0!important;width:2.2rem!important;height:2.2rem!important}
     </style>
 </head>
-<body class="ratib-saas-home" data-ratib-home-layout="video-hero-program-svgs" data-ratib-home-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-deploy="<?php echo htmlspecialchars($ratibHomePhpMtime . '-' . $ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
+<body class="ratib-saas-home <?php echo htmlspecialchars(ratib_public_marketing_density_body_class(), ENT_QUOTES, 'UTF-8'); ?>" data-ratib-marketing-density="<?php echo htmlspecialchars(ratib_public_marketing_density(), ENT_QUOTES, 'UTF-8'); ?>" data-ratib-home-layout="video-hero-program-svgs" data-ratib-home-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-deploy="<?php echo htmlspecialchars($ratibHomePhpMtime . '-' . $ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
 
 <?php
 include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
@@ -459,7 +466,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                         <a href="#video" class="ratib-btn ratib-btn--ghost ratib-btn--lg"><i class="fas fa-play" aria-hidden="true"></i> <?php echo htmlspecialchars($ratibHome['home.nav.tour'] ?? 'Platform walkthrough', ENT_QUOTES, 'UTF-8'); ?></a>
                     </div>
                 </div>
-                <div class="ratib-hero__visual" aria-hidden="true">
+                <div class="ratib-hero__visual" aria-hidden="true" data-ratib-marketing-depth="deep">
                     <div class="ratib-dash">
                         <div class="ratib-dash__chrome">
                             <div class="ratib-dash__chrome-main">
@@ -704,6 +711,8 @@ ratib_emit_profile_nav_guard($baseUrl);
             </div>
         </section>
 
+        <?php ratib_marketing_expand_bar_render('home'); ?>
+
         <?php ratib_enterprise_trust_render_home($ratibHome, $baseUrl); ?>
 
         <?php if ($ratibOpProofAvailable) {
@@ -714,7 +723,7 @@ ratib_emit_profile_nav_guard($baseUrl);
             ]);
         } ?>
 
-        <section class="ratib-section ratib-domains-embed" id="domains">
+        <section class="ratib-section ratib-domains-embed" id="domains" data-ratib-marketing-depth="deep">
             <div class="ratib-container">
                 <header class="ratib-section__head">
                     <p class="ratib-eyebrow">Domains</p>
@@ -733,7 +742,7 @@ ratib_emit_profile_nav_guard($baseUrl);
             </div>
         </section>
 
-        <section class="ratib-section ratib-how" id="how-it-works">
+        <section class="ratib-section ratib-how" id="how-it-works" data-ratib-marketing-depth="deep">
             <div class="ratib-container">
                 <header class="ratib-section__head">
                     <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.how.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
@@ -768,7 +777,7 @@ ratib_emit_profile_nav_guard($baseUrl);
             </div>
         </section>
 
-        <section class="ratib-section ratib-pipeline-section" id="tracking">
+        <section class="ratib-section ratib-pipeline-section" id="tracking" data-ratib-marketing-depth="deep">
             <div class="ratib-container">
                 <header class="ratib-section__head">
                     <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.pipeline.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
@@ -788,7 +797,7 @@ ratib_emit_profile_nav_guard($baseUrl);
             </div>
         </section>
 
-        <section class="ratib-section ratib-ai-section" id="solutions">
+        <section class="ratib-section ratib-ai-section" id="solutions" data-ratib-marketing-depth="deep">
             <div class="ratib-container">
                 <header class="ratib-section__head ratib-section__head--left">
                     <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.solutions.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
@@ -815,7 +824,7 @@ ratib_emit_profile_nav_guard($baseUrl);
             </div>
         </section>
 
-        <section class="ratib-section ratib-eco" id="agencies">
+        <section class="ratib-section ratib-eco" id="agencies" data-ratib-marketing-depth="deep">
             <div class="ratib-container">
                 <header class="ratib-section__head">
                     <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.agencies.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
@@ -837,7 +846,7 @@ ratib_emit_profile_nav_guard($baseUrl);
             </div>
         </section>
 
-        <section class="ratib-section ratib-analytics">
+        <section class="ratib-section ratib-analytics" data-ratib-marketing-depth="deep">
             <div class="ratib-container">
                 <header class="ratib-section__head ratib-section__head--left">
                     <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.analytics.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
@@ -853,7 +862,7 @@ ratib_emit_profile_nav_guard($baseUrl);
             </div>
         </section>
 
-        <section class="ratib-section ratib-ops-visibility" id="operational">
+        <section class="ratib-section ratib-ops-visibility" id="operational" data-ratib-marketing-depth="deep">
             <div class="ratib-container">
                 <header class="ratib-section__head">
                     <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.ops.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
@@ -916,7 +925,7 @@ ratib_emit_profile_nav_guard($baseUrl);
             </div>
         </section>
 
-        <section class="ratib-section ratib-api-strip" id="api">
+        <section class="ratib-section ratib-api-strip" id="api" data-ratib-marketing-depth="deep">
             <div class="ratib-container ratib-api-strip__inner">
                 <div>
                     <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.api.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
@@ -1207,6 +1216,7 @@ ratib_emit_profile_nav_guard($baseUrl);
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-gallery-lightbox.js?v=<?php echo htmlspecialchars($ratibGalleryLbJsQHome, ENT_QUOTES, 'UTF-8'); ?>"></script>
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/home-page.js?v=<?php echo htmlspecialchars($ratibHomeJsQ, ENT_QUOTES, 'UTF-8'); ?>"></script>
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-mega-nav.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
+    <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-marketing-focused.js?v=<?php echo htmlspecialchars($ratibMarketingFocusedJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 
     <!-- Chat Widget - Auto-answer support -->
     <button class="chat-widget-button" id="chatWidgetButton" aria-label="Open Chat"><i class="fas fa-comments"></i></button>

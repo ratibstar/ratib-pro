@@ -1,0 +1,123 @@
+/**
+ * Focused marketing density — shorter home & profile by default.
+ * Full page: ?density=full or body.ratib-marketing--expanded
+ */
+
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-topbar__ops {
+  display: none;
+}
+
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) [data-ratib-marketing-depth="deep"] {
+  display: none !important;
+}
+
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-hero__visual {
+  display: none;
+}
+
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-hero__grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-hero__bullets li:nth-child(n + 3) {
+  display: none;
+}
+
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-ent-hero-strip {
+  display: none;
+}
+
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-hero__video-band,
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-hero__program-strip,
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) #program-previews {
+  display: none !important;
+}
+
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-hero__lead {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+body.ratib-about-page.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-company-dossier__card--wide,
+body.ratib-about-page.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-company-dossier__stats {
+  display: none;
+}
+
+body.ratib-about-page.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-company-dossier__head .ratib-about-page-label {
+  display: none;
+}
+
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-trust-card:nth-child(n + 4) {
+  display: none;
+}
+
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-feature-card:nth-child(n + 7) {
+  display: none;
+}
+
+body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-how__step:nth-child(n + 4) {
+  display: none;
+}
+
+body.ratib-marketing--focused.ratib-marketing--expanded .ratib-marketing-expand-bar__hint {
+  display: none;
+}
+
+body.ratib-marketing--focused .ratib-nav__platform-links .ratib-nav__link--about {
+  display: none;
+}
+
+body.ratib-about-page.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-about-jump a:not([href="#company-profile"]):not([href="#contact-cta"]) {
+  display: none;
+}
+
+body.ratib-about-page.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-profile-distinct-banner__text {
+  display: none;
+}
+
+.ratib-marketing-expand-bar {
+  padding: 1rem 0 1.25rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.55), transparent);
+}
+
+.ratib-marketing-expand-bar__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+}
+
+.ratib-marketing-expand-bar__hint {
+  margin: 0;
+  flex: 1 1 16rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: rgba(226, 232, 240, 0.82);
+}
+
+.ratib-marketing-expand-bar__btn {
+  flex: 0 0 auto;
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  background: rgba(37, 99, 235, 0.18);
+  color: #e0f2fe;
+  border-radius: 999px;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.ratib-marketing-expand-bar__btn:hover {
+  background: rgba(37, 99, 235, 0.32);
+  border-color: rgba(147, 197, 253, 0.65);
+}
+
+.ratib-marketing-expand-bar__btn:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}

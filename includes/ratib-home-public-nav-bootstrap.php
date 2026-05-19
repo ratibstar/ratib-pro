@@ -293,3 +293,5 @@ if (!function_exists('ratib_public_load_operational_proof_render')) {
 ratib_public_load_operational_proof_render();
 
 require_once __DIR__ . '/ratib-home-public-nav-sync.php';
+require_once __DIR__ . '/ratib-public-marketing-density.php';
+require_once __DIR__ . '/ratib-marketing-expand-bar.php';
