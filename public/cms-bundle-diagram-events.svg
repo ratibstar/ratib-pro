@@ -1,24 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="200" viewBox="0 0 720 200" role="img" aria-labelledby="t">
-  <title id="t">Event processing  illustrative</title>
-  <rect width="720" height="200" fill="#0f172a" rx="8"/>
-  <text x="24" y="28" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">Event path · sample</text>
-  <g font-family="system-ui,sans-serif" font-size="11" fill="#e2e8f0">
-    <rect x="40" y="70" width="96" height="48" rx="6" fill="#1e293b" stroke="#475569"/>
-    <text x="88" y="92" text-anchor="middle">Emit</text>
-    <text x="88" y="106" fill="#64748b" font-size="9" text-anchor="middle">stage commit</text>
-    <text x="148" y="98" fill="#64748b">’</text>
-    <rect x="168" y="70" width="96" height="48" rx="6" fill="#1e293b" stroke="#475569"/>
-    <text x="216" y="98" text-anchor="middle">Route</text>
-    <text x="276" y="98" fill="#64748b">’</text>
-    <rect x="296" y="70" width="96" height="48" rx="6" fill="#1e293b" stroke="#475569"/>
-    <text x="344" y="98" text-anchor="middle">Verify</text>
-    <text x="404" y="98" fill="#64748b">’</text>
-    <rect x="424" y="70" width="96" height="48" rx="6" fill="#1e293b" stroke="#475569"/>
-    <text x="472" y="98" text-anchor="middle">Commit</text>
-    <text x="532" y="98" fill="#64748b">’</text>
-    <rect x="552" y="70" width="128" height="48" rx="6" fill="#334155" stroke="#94a3b8"/>
-    <text x="616" y="92" text-anchor="middle">Webhook / SSE</text>
-    <text x="616" y="106" fill="#94a3b8" font-size="9" text-anchor="middle">idempotent</text>
-  </g>
-  <text x="24" y="160" fill="#64748b" font-family="ui-monospace,monospace" font-size="10">correlation_id on envelope · illustrative only</text>
+ <title id="t">Event processing Â· illustrative</title>
+ <rect width="720" height="200" fill="#0f172a" rx="8"/>
+ <text x="24" y="28" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">Event path Â· sample</text>
+ <g font-family="system-ui,sans-serif" font-size="11" fill="#e2e8f0">
+ <rect x="40" y="70" width="96" height="48" rx="6" fill="#1e293b" stroke="#475569"/>
+ <text x="88" y="92" text-anchor="middle">Emit</text>
+ <text x="88" y="106" fill="#64748b" font-size="9" text-anchor="middle">stage commit</text>
+ <text x="148" y="98" fill="#64748b">Â·</text>
+ <rect x="168" y="70" width="96" height="48" rx="6" fill="#1e293b" stroke="#475569"/>
+ <text x="216" y="98" text-anchor="middle">Route</text>
+ <text x="276" y="98" fill="#64748b">Â·</text>
+ <rect x="296" y="70" width="96" height="48" rx="6" fill="#1e293b" stroke="#475569"/>
+ <text x="344" y="98" text-anchor="middle">Verify</text>
+ <text x="404" y="98" fill="#64748b">Â·</text>
+ <rect x="424" y="70" width="96" height="48" rx="6" fill="#1e293b" stroke="#475569"/>
+ <text x="472" y="98" text-anchor="middle">Commit</text>
+ <text x="532" y="98" fill="#64748b">Â·</text>
+ <rect x="552" y="70" width="128" height="48" rx="6" fill="#334155" stroke="#94a3b8"/>
+ <text x="616" y="92" text-anchor="middle">Webhook / SSE</text>
+ <text x="616" y="106" fill="#94a3b8" font-size="9" text-anchor="middle">idempotent</text>
+ </g>
+ <text x="24" y="160" fill="#64748b" font-family="ui-monospace,monospace" font-size="10">correlation_id on envelope Â· illustrative only</text>
 </svg>

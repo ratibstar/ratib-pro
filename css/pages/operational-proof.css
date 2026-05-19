@@ -105,14 +105,23 @@
 }
 
 .ratib-op-diagram-card__frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 10rem;
+  padding: 0.5rem;
   background: #0f172a;
   line-height: 0;
 }
 
 .ratib-op-diagram-card__frame img {
   width: 100%;
+  max-width: 100%;
   height: auto;
+  max-height: 14rem;
   display: block;
+  object-fit: contain;
+  object-position: center;
 }
 
 .ratib-op-diagram-card figcaption {
@@ -155,9 +164,14 @@
 
 .ratib-op-screen-card__frame img {
   width: 100%;
+  max-width: 100%;
   height: auto;
   display: block;
-  opacity: 0.96;
+  object-fit: contain;
+  object-position: top center;
+  vertical-align: top;
+  opacity: 1;
+  image-rendering: auto;
 }
 
 .ratib-op-screen-card figcaption {
@@ -222,7 +236,12 @@
 
 .ratib-op-gov__grid {
   display: grid;
-  gap: 1rem;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ratib-op-gov__grid .ratib-op-screen-card {
+  min-width: 0;
 }
 
 @media (min-width: 720px) {
@@ -241,7 +260,8 @@
 
 .ratib-op-gov__grid .ratib-op-screen-card--featured .ratib-op-screen-card__frame img {
   width: 100%;
-  max-height: min(56vh, 520px);
+  max-width: 100%;
+  max-height: min(52vh, 480px);
   object-fit: contain;
   object-position: top center;
 }

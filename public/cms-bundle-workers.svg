@@ -1,41 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500" role="img" aria-labelledby="t">
-  <title id="t">Workers registry: status and assignment</title>
-  <defs>
-    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f172a"/>
-      <stop offset="100%" stop-color="#134e4a22"/>
-    </linearGradient>
-  </defs>
-  <rect width="800" height="500" fill="url(#bg2)" rx="12"/>
-  <rect x="24" y="20" width="752" height="40" rx="8" fill="#020617" stroke="#334155"/>
-  <text x="40" y="46" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="14" font-weight="600">Workers - active cohort</text>
-  <text x="560" y="46" fill="#64748b" font-family="ui-monospace,monospace" font-size="11">filter: stage ` CLOSED</text>
-  <rect x="24" y="76" width="752" height="36" rx="6" fill="#0f172a" stroke="#334155"/>
-  <text x="40" y="98" fill="#64748b" font-family="system-ui,sans-serif" font-size="11" font-weight="600">REF</text>
-  <text x="200" y="98" fill="#64748b" font-family="system-ui,sans-serif" font-size="11" font-weight="600">STAGE</text>
-  <text x="380" y="98" fill="#64748b" font-family="system-ui,sans-serif" font-size="11" font-weight="600">ASSIGNED</text>
-  <text x="560" y="98" fill="#64748b" font-family="system-ui,sans-serif" font-size="11" font-weight="600">LAST EVENT</text>
-  <rect x="24" y="120" width="752" height="44" fill="#020617" stroke="#1e293b"/>
-  <text x="40" y="146" fill="#cbd5e1" font-family="ui-monospace,monospace" font-size="12">WKR-ME-44821</text>
-  <text x="200" y="146" fill="#fcd34d" font-family="system-ui,sans-serif" font-size="12">MEDICAL</text>
-  <text x="380" y="146" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">n.alharbi</text>
-  <text x="560" y="146" fill="#94a3b8" font-family="ui-monospace,monospace" font-size="11">PIPELINE_UPDATE</text>
-  <rect x="24" y="168" width="752" height="44" fill="#020617" stroke="#1e293b"/>
-  <text x="40" y="194" fill="#cbd5e1" font-family="ui-monospace,monospace" font-size="12">WKR-UG-90213</text>
-  <text x="200" y="194" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">EMBASSY</text>
-  <text x="380" y="194" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">queue</text>
-  <text x="560" y="194" fill="#94a3b8" font-family="ui-monospace,monospace" font-size="11">DOC_RECEIVED</text>
-  <rect x="24" y="216" width="752" height="44" fill="#020617" stroke="#1e293b"/>
-  <text x="40" y="242" fill="#cbd5e1" font-family="ui-monospace,monospace" font-size="12">WKR-BD-77104</text>
-  <text x="200" y="242" fill="#6ee7b7" font-family="system-ui,sans-serif" font-size="12">VISA</text>
-  <text x="380" y="242" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">s.rehman</text>
-  <text x="560" y="242" fill="#94a3b8" font-family="ui-monospace,monospace" font-size="11">STAGE_COMMIT</text>
-  <rect x="24" y="288" width="360" height="160" rx="8" fill="#020617" stroke="#334155"/>
-  <text x="40" y="318" fill="#cbd5e1" font-family="system-ui,sans-serif" font-size="12" font-weight="600">GPS ù corridor</text>
-  <text x="40" y="344" fill="#64748b" font-family="system-ui,sans-serif" font-size="11">Riyadh ù last ping 2m ù geofence OK</text>
-  <circle cx="200" cy="400" r="48" fill="none" stroke="#22d3ee44" stroke-width="2"/>
-  <circle cx="200" cy="400" r="6" fill="#22d3ee"/>
-  <rect x="400" y="288" width="376" height="160" rx="8" fill="#020617" stroke="#334155"/>
-  <text x="416" y="318" fill="#cbd5e1" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Verification queue</text>
-  <text x="416" y="344" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="11">Med bundle ù emb scan ù police ù median 14m</text>
+ <title id="t">Workers registry: status and assignment</title>
+ <defs>
+ <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+ <stop offset="0%" stop-color="#0f172a"/>
+ <stop offset="100%" stop-color="#134e4a22"/>
+ </linearGradient>
+ </defs>
+ <rect width="800" height="500" fill="url(#bg2)" rx="12"/>
+ <rect x="24" y="20" width="752" height="40" rx="8" fill="#020617" stroke="#334155"/>
+ <text x="40" y="46" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="14" font-weight="600">Workers - active cohort</text>
+ <text x="560" y="46" fill="#64748b" font-family="ui-monospace,monospace" font-size="11">filter: stage ` CLOSED</text>
+ <rect x="24" y="76" width="752" height="36" rx="6" fill="#0f172a" stroke="#334155"/>
+ <text x="40" y="98" fill="#64748b" font-family="system-ui,sans-serif" font-size="11" font-weight="600">REF</text>
+ <text x="200" y="98" fill="#64748b" font-family="system-ui,sans-serif" font-size="11" font-weight="600">STAGE</text>
+ <text x="380" y="98" fill="#64748b" font-family="system-ui,sans-serif" font-size="11" font-weight="600">ASSIGNED</text>
+ <text x="560" y="98" fill="#64748b" font-family="system-ui,sans-serif" font-size="11" font-weight="600">LAST EVENT</text>
+ <rect x="24" y="120" width="752" height="44" fill="#020617" stroke="#1e293b"/>
+ <text x="40" y="146" fill="#cbd5e1" font-family="ui-monospace,monospace" font-size="12">WKR-ME-44821</text>
+ <text x="200" y="146" fill="#fcd34d" font-family="system-ui,sans-serif" font-size="12">MEDICAL</text>
+ <text x="380" y="146" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">n.alharbi</text>
+ <text x="560" y="146" fill="#94a3b8" font-family="ui-monospace,monospace" font-size="11">PIPELINE_UPDATE</text>
+ <rect x="24" y="168" width="752" height="44" fill="#020617" stroke="#1e293b"/>
+ <text x="40" y="194" fill="#cbd5e1" font-family="ui-monospace,monospace" font-size="12">WKR-UG-90213</text>
+ <text x="200" y="194" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">EMBASSY</text>
+ <text x="380" y="194" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">queue</text>
+ <text x="560" y="194" fill="#94a3b8" font-family="ui-monospace,monospace" font-size="11">DOC_RECEIVED</text>
+ <rect x="24" y="216" width="752" height="44" fill="#020617" stroke="#1e293b"/>
+ <text x="40" y="242" fill="#cbd5e1" font-family="ui-monospace,monospace" font-size="12">WKR-BD-77104</text>
+ <text x="200" y="242" fill="#6ee7b7" font-family="system-ui,sans-serif" font-size="12">VISA</text>
+ <text x="380" y="242" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">s.rehman</text>
+ <text x="560" y="242" fill="#94a3b8" font-family="ui-monospace,monospace" font-size="11">STAGE_COMMIT</text>
+ <rect x="24" y="288" width="360" height="160" rx="8" fill="#020617" stroke="#334155"/>
+ <text x="40" y="318" fill="#cbd5e1" font-family="system-ui,sans-serif" font-size="12" font-weight="600">GPS ¬∑ corridor</text>
+ <text x="40" y="344" fill="#64748b" font-family="system-ui,sans-serif" font-size="11">Riyadh ¬∑ last ping 2m ¬∑ geofence OK</text>
+ <circle cx="200" cy="400" r="48" fill="none" stroke="#22d3ee44" stroke-width="2"/>
+ <circle cx="200" cy="400" r="6" fill="#22d3ee"/>
+ <rect x="400" y="288" width="376" height="160" rx="8" fill="#020617" stroke="#334155"/>
+ <text x="416" y="318" fill="#cbd5e1" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Verification queue</text>
+ <text x="416" y="344" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="11">Med bundle ¬∑ emb scan ¬∑ police ¬∑ median 14m</text>
 </svg>

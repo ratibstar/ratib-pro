@@ -1,18 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="240" viewBox="0 0 720 240" role="img" aria-labelledby="t">
-  <title id="t">Deployment lifecycle  illustrative</title>
-  <rect width="720" height="240" fill="#0f172a" rx="8"/>
-  <text x="24" y="28" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">Deployment lifecycle (sample)</text>
-  <rect x="280" y="48" width="160" height="36" rx="6" fill="#1e293b" stroke="#64748b"/>
-  <text x="360" y="71" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="12" text-anchor="middle">Program configured</text>
-  <line x1="360" y1="84" x2="360" y2="108" stroke="#64748b"/>
-  <rect x="120" y="108" width="140" height="36" rx="6" fill="#1e293b" stroke="#475569"/>
-  <text x="190" y="131" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="11" text-anchor="middle">Field coordination</text>
-  <rect x="460" y="108" width="140" height="36" rx="6" fill="#1e293b" stroke="#475569"/>
-  <text x="530" y="131" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="11" text-anchor="middle">Host handover</text>
-  <line x1="190" y1="144" x2="190" y2="168" stroke="#64748b"/>
-  <line x1="530" y1="144" x2="530" y2="168" stroke="#64748b"/>
-  <line x1="190" y1="168" x2="530" y2="168" stroke="#64748b"/>
-  <line x1="360" y1="168" x2="360" y2="188" stroke="#64748b"/>
-  <rect x="280" y="188" width="160" height="36" rx="6" fill="#334155" stroke="#94a3b8"/>
-  <text x="360" y="211" fill="#f1f5f9" font-family="system-ui,sans-serif" font-size="12" text-anchor="middle">Closure &amp; reporting</text>
+ <title id="t">Deployment lifecycle · illustrative</title>
+ <rect width="720" height="240" fill="#0f172a" rx="8"/>
+ <text x="24" y="28" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">Deployment lifecycle (sample)</text>
+ <rect x="280" y="48" width="160" height="36" rx="6" fill="#1e293b" stroke="#64748b"/>
+ <text x="360" y="71" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="12" text-anchor="middle">Program configured</text>
+ <line x1="360" y1="84" x2="360" y2="108" stroke="#64748b"/>
+ <rect x="120" y="108" width="140" height="36" rx="6" fill="#1e293b" stroke="#475569"/>
+ <text x="190" y="131" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="11" text-anchor="middle">Field coordination</text>
+ <rect x="460" y="108" width="140" height="36" rx="6" fill="#1e293b" stroke="#475569"/>
+ <text x="530" y="131" fill="#e2e8f0" font-family="system-ui,sans-serif" font-size="11" text-anchor="middle">Host handover</text>
+ <line x1="190" y1="144" x2="190" y2="168" stroke="#64748b"/>
+ <line x1="530" y1="144" x2="530" y2="168" stroke="#64748b"/>
+ <line x1="190" y1="168" x2="530" y2="168" stroke="#64748b"/>
+ <line x1="360" y1="168" x2="360" y2="188" stroke="#64748b"/>
+ <rect x="280" y="188" width="160" height="36" rx="6" fill="#334155" stroke="#94a3b8"/>
+ <text x="360" y="211" fill="#f1f5f9" font-family="system-ui,sans-serif" font-size="12" text-anchor="middle">Closure &amp; reporting</text>
 </svg>

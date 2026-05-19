@@ -1123,8 +1123,29 @@ if (!function_exists('ratib_site_content_asset_url')) {
             header('Content-Type: ' . ratib_site_content_media_detect_mime($fs, $ext));
             header('Content-Length: ' . (string) filesize($fs));
             header('Cache-Control: public, max-age=604800, immutable');
+            if ($ext === 'svg') {
+                $svg = (string) file_get_contents($fs);
+                $svg = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', ' ', $svg) ?? $svg;
+                echo $svg;
+
+                exit;
+            }
             readfile($fs);
             exit;
+        }
+    }
+    if (!function_exists('ratib_site_content_bundled_asset_public_url')) {
+        /** Static /public/cms-bundle-* URLs (reliable for SVG; avoids PHP nosniff edge cases). */
+        function ratib_site_content_bundled_asset_public_url(string $baseUrl, string $fsPath): string
+        {
+            $root = dirname(__DIR__);
+            $rel = str_replace('\\', '/', substr($fsPath, strlen($root) + 1));
+            if (!str_starts_with($rel, 'public/cms-bundle-')) {
+                return '';
+            }
+            $v = is_file($fsPath) ? (int) filemtime($fsPath) : time();
+
+            return rtrim($baseUrl, '/') . '/' . $rel . '?v=' . $v;
         }
     }
     if (!function_exists('ratib_site_content_media_public_url')) {
@@ -1135,6 +1156,12 @@ if (!function_exists('ratib_site_content_asset_url')) {
                 return '';
             }
             $fs = ratib_site_content_media_resolve_fs($name);
+            if ($fs !== null) {
+                $direct = ratib_site_content_bundled_asset_public_url($baseUrl, $fs);
+                if ($direct !== '') {
+                    return $direct;
+                }
+            }
             $v = $fs !== null ? (int) filemtime($fs) : time();
             $script = ratib_site_content_media_endpoint_script();
 
