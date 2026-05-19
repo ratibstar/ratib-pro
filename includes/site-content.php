@@ -935,6 +935,32 @@ if (!function_exists('ratib_site_content_asset_url')) {
             return rtrim($baseUrl, '/') . '/api/site-content-media.php?f=' . rawurlencode($name);
         }
     }
+    if (!function_exists('ratib_site_content_resolve_public_media_rel')) {
+        function ratib_site_content_resolve_public_media_rel(string $rel): string
+        {
+            if (function_exists('ratib_public_resolve_profile_media_rel')) {
+                return ratib_public_resolve_profile_media_rel($rel);
+            }
+            $rel = ltrim(str_replace('\\', '/', $rel), '/');
+            if (str_starts_with($rel, 'public/profile-media/')) {
+                return $rel;
+            }
+            if (str_starts_with($rel, 'assets/images/government/')) {
+                return 'public/profile-media/government/' . substr($rel, strlen('assets/images/government/'));
+            }
+            if (str_starts_with($rel, 'assets/images/diagrams/')) {
+                return 'public/profile-media/diagrams/' . substr($rel, strlen('assets/images/diagrams/'));
+            }
+            if ($rel === 'assets/images/about-ratib-command.png') {
+                return 'public/profile-media/about-ratib-command.png';
+            }
+            if (str_starts_with($rel, 'assets/images/program-preview-')) {
+                return 'public/profile-media/' . basename($rel);
+            }
+
+            return $rel;
+        }
+    }
     if (!function_exists('ratib_site_content_scmedia_bundled_rel')) {
         /**
          * When a CMS upload (scmedia:) is missing on disk, serve bundled assets instead.
@@ -943,10 +969,10 @@ if (!function_exists('ratib_site_content_asset_url')) {
         {
             $fileName = basename(str_replace('\\', '/', $fileName));
             $gov = [
-                'gov-government-control.png' => 'assets/images/government/government-control.png',
-                'gov-government-inspections.png' => 'assets/images/government/government-inspections.png',
-                'gov-tracking-map.png' => 'assets/images/government/tracking-map.png',
-                'gov-worker-mobile-onboarding.png' => 'assets/images/government/worker-mobile-onboarding.png',
+                'gov-government-control.png' => 'public/profile-media/government/government-control.png',
+                'gov-government-inspections.png' => 'public/profile-media/government/government-inspections.png',
+                'gov-tracking-map.png' => 'public/profile-media/government/tracking-map.png',
+                'gov-worker-mobile-onboarding.png' => 'public/profile-media/government/worker-mobile-onboarding.png',
             ];
             if (isset($gov[$fileName])) {
                 return $gov[$fileName];
@@ -988,7 +1014,7 @@ if (!function_exists('ratib_site_content_asset_url')) {
                 }
                 // Missing CMS upload — use caller fallback below.
             } elseif (!str_starts_with($stored, 'scmedia:')) {
-                $rel = ltrim(str_replace('\\', '/', $stored), '/');
+                $rel = ratib_site_content_resolve_public_media_rel($stored);
                 $root = dirname(__DIR__);
                 $fs = $root . '/' . str_replace('/', DIRECTORY_SEPARATOR, $rel);
                 if (is_file($fs)) {
@@ -998,9 +1024,11 @@ if (!function_exists('ratib_site_content_asset_url')) {
                 }
             }
         }
-        $v = (int) (@filemtime($fallbackFs) ?: 1);
+        $resolvedFallback = ratib_site_content_resolve_public_media_rel($fallbackRel);
+        $resolvedFs = dirname(__DIR__) . '/' . str_replace('/', DIRECTORY_SEPARATOR, ltrim($resolvedFallback, '/'));
+        $v = (int) (@filemtime($resolvedFs) ?: (@filemtime($fallbackFs) ?: 1));
 
-        return rtrim($baseUrl, '/') . '/' . ltrim($fallbackRel, '/') . '?v=' . $v;
+        return rtrim($baseUrl, '/') . '/' . ltrim($resolvedFallback, '/') . '?v=' . $v;
     }
 }
 

@@ -13,7 +13,7 @@ if (!function_exists('ratib_site_content_asset_url')) {
 if (!function_exists('ratib_operational_proof_gov_image_url')) {
     function ratib_operational_proof_gov_image_url(string $baseUrl, string $cmsKey, string $fallbackFile): string
     {
-        $fallbackRel = 'assets/images/government/' . ltrim($fallbackFile, '/');
+        $fallbackRel = 'public/profile-media/government/' . ltrim($fallbackFile, '/');
 
         return ratib_public_cms_image($baseUrl, $cmsKey, $fallbackRel);
     }
@@ -26,7 +26,7 @@ if (!function_exists('ratib_operational_proof_config')) {
     function ratib_operational_proof_config(string $baseUrl): array
     {
         $diagram = static function (string $file) use ($baseUrl): string {
-            return ratib_public_bundled_asset_url($baseUrl, 'assets/images/diagrams/' . ltrim($file, '/'));
+            return ratib_public_bundled_asset_url($baseUrl, 'public/profile-media/diagrams/' . ltrim($file, '/'));
         };
         $govImg = static function (string $cmsKey, string $file) use ($baseUrl): string {
             return ratib_operational_proof_gov_image_url($baseUrl, $cmsKey, $file);
@@ -119,37 +119,37 @@ if (!function_exists('ratib_operational_proof_config')) {
                 [
                     'title' => 'Workforce pipeline',
                     'label' => 'Illustrative interface',
-                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.pipeline', 'profile.image.pipeline', 'assets/images/program-preview-pipeline.svg'),
+                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.pipeline', 'profile.image.pipeline', 'public/profile-media/program-preview-pipeline.svg'),
                     'alt' => ratib_public_cms('profile.image.pipeline.alt', 'Sample workforce pipeline board with stages and SLA column'),
                 ],
                 [
                     'title' => 'Operations dashboard',
                     'label' => 'Illustrative interface',
-                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.ops', 'profile.image.ops', 'assets/images/about-ratib-command.png'),
+                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.ops', 'profile.image.ops', 'public/profile-media/about-ratib-command.png'),
                     'alt' => ratib_public_cms('profile.image.ops.alt', 'Sample agency operations dashboard with queues and summaries'),
                 ],
                 [
                     'title' => 'Finance ledger',
                     'label' => 'Illustrative interface',
-                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.finance', 'profile.image.accounting', 'assets/images/program-preview-finance.svg'),
+                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.finance', 'profile.image.accounting', 'public/profile-media/program-preview-finance.svg'),
                     'alt' => ratib_public_cms('profile.image.accounting.alt', 'Sample ledger and invoicing screen'),
                 ],
                 [
                     'title' => 'Audit history',
                     'label' => 'Sample operational data',
-                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.audit', 'profile.gov.image.inspections', 'assets/images/government/government-inspections.png'),
+                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.audit', 'profile.gov.image.inspections', 'public/profile-media/government/government-inspections.png'),
                     'alt' => ratib_public_cms('profile.image.control.alt', 'Sample administration screen with settings and history context'),
                 ],
                 [
                     'title' => 'Field operations map',
                     'label' => 'Sample operational data',
-                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.map', 'profile.image.telemetry', 'assets/images/government/tracking-map.png'),
+                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.map', 'profile.image.telemetry', 'public/profile-media/government/tracking-map.png'),
                     'alt' => ratib_public_cms('profile.image.telemetry.alt', 'Sample map view with checkpoints and corridor context'),
                 ],
                 [
                     'title' => 'Partner portal',
                     'label' => 'Illustrative interface',
-                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.partner', 'profile.image.partners', 'assets/images/about-ratib-command.png'),
+                    'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.partner', 'profile.image.partners', 'public/profile-media/about-ratib-command.png'),
                     'alt' => ratib_public_cms('profile.image.partners.alt', 'Sample partner portal with deployments and documents'),
                 ],
             ],

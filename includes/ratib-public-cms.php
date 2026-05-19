@@ -58,11 +58,53 @@ if (!function_exists('ratib_public_cms_lines')) {
     }
 }
 
+if (!function_exists('ratib_public_resolve_profile_media_rel')) {
+    /**
+     * Map legacy assets/images/* paths to public/profile-media/* (always deployed with public/).
+     */
+    function ratib_public_resolve_profile_media_rel(string $rel): string
+    {
+        $rel = ltrim(str_replace('\\', '/', $rel), '/');
+        if (str_starts_with($rel, 'public/profile-media/')) {
+            return $rel;
+        }
+        $map = [
+            'assets/images/about-ratib-command.png' => 'public/profile-media/about-ratib-command.png',
+            'assets/images/program-preview-pipeline.svg' => 'public/profile-media/program-preview-pipeline.svg',
+            'assets/images/program-preview-workers.svg' => 'public/profile-media/program-preview-workers.svg',
+            'assets/images/program-preview-finance.svg' => 'public/profile-media/program-preview-finance.svg',
+            'assets/images/government/government-control.png' => 'public/profile-media/government/government-control.png',
+            'assets/images/government/government-inspections.png' => 'public/profile-media/government/government-inspections.png',
+            'assets/images/government/tracking-map.png' => 'public/profile-media/government/tracking-map.png',
+            'assets/images/government/worker-mobile-onboarding.png' => 'public/profile-media/government/worker-mobile-onboarding.png',
+            'assets/images/diagrams/workflow-lifecycle.svg' => 'public/profile-media/diagrams/workflow-lifecycle.svg',
+            'assets/images/diagrams/onboarding-flow.svg' => 'public/profile-media/diagrams/onboarding-flow.svg',
+            'assets/images/diagrams/deployment-lifecycle.svg' => 'public/profile-media/diagrams/deployment-lifecycle.svg',
+            'assets/images/diagrams/tenant-isolation.svg' => 'public/profile-media/diagrams/tenant-isolation.svg',
+            'assets/images/diagrams/event-processing.svg' => 'public/profile-media/diagrams/event-processing.svg',
+        ];
+        if (isset($map[$rel])) {
+            return $map[$rel];
+        }
+        if (str_starts_with($rel, 'assets/images/government/')) {
+            return 'public/profile-media/government/' . substr($rel, strlen('assets/images/government/'));
+        }
+        if (str_starts_with($rel, 'assets/images/diagrams/')) {
+            return 'public/profile-media/diagrams/' . substr($rel, strlen('assets/images/diagrams/'));
+        }
+        if (str_starts_with($rel, 'assets/images/program-preview-')) {
+            return 'public/profile-media/' . basename($rel);
+        }
+
+        return $rel;
+    }
+}
+
 if (!function_exists('ratib_public_bundled_asset_url')) {
     /** Absolute URL for a site-relative asset with cache-busting mtime. */
     function ratib_public_bundled_asset_url(string $baseUrl, string $relPath): string
     {
-        $rel = ltrim(str_replace('\\', '/', $relPath), '/');
+        $rel = ratib_public_resolve_profile_media_rel($relPath);
         $fs = dirname(__DIR__) . '/' . str_replace('/', DIRECTORY_SEPARATOR, $rel);
         if (!function_exists('ratib_site_content_asset_url')) {
             require_once __DIR__ . '/site-content.php';
@@ -101,9 +143,10 @@ if (!function_exists('ratib_public_cms_image_or')) {
         $flat = ratib_public_cms_flat();
         $stored = trim((string) ($flat[$primaryKey] ?? ''));
         $legacyGeneric = 'assets/images/about-ratib-command.png';
-        if ($stored === $legacyGeneric && $secondaryKey !== '') {
+        $legacyGenericPublic = 'public/profile-media/about-ratib-command.png';
+        if (($stored === $legacyGeneric || $stored === $legacyGenericPublic) && $secondaryKey !== '') {
             $secondaryStored = trim((string) ($flat[$secondaryKey] ?? ''));
-            if ($secondaryStored !== '' && $secondaryStored !== $legacyGeneric) {
+            if ($secondaryStored !== '' && $secondaryStored !== $legacyGeneric && $secondaryStored !== $legacyGenericPublic) {
                 $stored = $secondaryStored;
             } elseif ($secondaryStored === '') {
                 $stored = '';

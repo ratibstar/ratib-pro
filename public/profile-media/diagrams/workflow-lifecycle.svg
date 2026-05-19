@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="200" viewBox="0 0 720 200" role="img" aria-labelledby="t">
+  <title id="t">Worker lifecycle workflow  illustrative</title>
+  <rect width="720" height="200" fill="#0f172a" rx="8"/>
+  <text x="24" y="28" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="12">Sample workflow · worker lifecycle</text>
+  <g font-family="system-ui,sans-serif" font-size="11" fill="#e2e8f0">
+    <rect x="24" y="56" width="88" height="40" rx="6" fill="#1e293b" stroke="#475569"/>
+    <text x="68" y="81" text-anchor="middle">Intake</text>
+    <path d="M112 76h28" stroke="#64748b" marker-end="url(#a)"/>
+    <rect x="140" y="56" width="88" height="40" rx="6" fill="#1e293b" stroke="#475569"/>
+    <text x="184" y="81" text-anchor="middle">Verify</text>
+    <path d="M228 76h28" stroke="#64748b"/>
+    <rect x="256" y="56" width="88" height="40" rx="6" fill="#1e293b" stroke="#475569"/>
+    <text x="300" y="81" text-anchor="middle">Medical</text>
+    <path d="M344 76h28" stroke="#64748b"/>
+    <rect x="372" y="56" width="88" height="40" rx="6" fill="#1e293b" stroke="#475569"/>
+    <text x="416" y="81" text-anchor="middle">Embassy</text>
+    <path d="M460 76h28" stroke="#64748b"/>
+    <rect x="488" y="56" width="88" height="40" rx="6" fill="#1e293b" stroke="#475569"/>
+    <text x="532" y="81" text-anchor="middle">Deploy</text>
+    <path d="M576 76h28" stroke="#64748b"/>
+    <rect x="604" y="56" width="88" height="40" rx="6" fill="#1e293b" stroke="#475569"/>
+    <text x="648" y="81" text-anchor="middle">Close</text>
+  </g>
+  <text x="24" y="140" fill="#64748b" font-family="ui-monospace,monospace" font-size="10">Policy gate before each transition · actor logged · sample data</text>
+  <defs><marker id="a" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#64748b"/></marker></defs>
+</svg>
