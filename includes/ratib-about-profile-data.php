@@ -110,7 +110,7 @@ if (!function_exists('ratib_about_profile_config')) {
                 'workers' => $shot('profile.image.workers', 'public/cms-bundle-workers.svg', 'profile.image.workers.alt', 'Worker records — lifecycle and documents'),
                 'telemetry' => $shot('profile.image.telemetry', 'public/cms-bundle-gov-tracking.png', 'profile.image.telemetry.alt', 'Operations map — field checkpoints and corridor context'),
                 'accounting' => $shot('profile.image.accounting', 'public/cms-bundle-finance.svg', 'profile.image.accounting.alt', 'Accounting and invoicing module'),
-                'control' => $shot('profile.image.control', 'public/cms-bundle-gov-control.png', 'profile.image.control.alt', 'Administration — multi-country agency settings'),
+                'control' => $shot('profile.image.control', 'public/cms-bundle-gov-control-v2.png', 'profile.image.control.alt', 'Administration — multi-country agency settings'),
                 'partners' => $shot('profile.image.partners', 'public/cms-bundle-about.png', 'profile.image.partners.alt', 'Partner portal — deployments and documents'),
                 'pipeline' => $shot('profile.image.pipeline', 'public/cms-bundle-pipeline.svg', 'profile.image.pipeline.alt', 'Workflow pipeline across recruitment stages'),
             ],

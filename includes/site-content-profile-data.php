@@ -41,7 +41,7 @@ if (!function_exists('ratib_site_content_defaults_profile')) {
             'profile.gov.title' => 'Inspections, violations, live tracking, and worker mobilization',
             'profile.gov.lead' => $govLead,
             'profile.gov.points' => $govPoints,
-            'profile.gov.image.control' => ratib_site_content_profile_media_default('profile.gov.image.control', 'public/cms-bundle-gov-control.png'),
+            'profile.gov.image.control' => ratib_site_content_profile_media_default('profile.gov.image.control', 'public/cms-bundle-gov-control-v2.png'),
             'profile.gov.image.inspections' => ratib_site_content_profile_media_default('profile.gov.image.inspections', 'public/cms-bundle-gov-inspections.png'),
             'profile.gov.image.tracking' => ratib_site_content_profile_media_default('profile.gov.image.tracking', 'public/cms-bundle-gov-tracking.png'),
             'profile.gov.image.onboarding' => ratib_site_content_profile_media_default('profile.gov.image.onboarding', 'public/cms-bundle-gov-onboarding.png'),

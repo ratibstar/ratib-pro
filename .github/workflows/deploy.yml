@@ -53,6 +53,17 @@ jobs:
           HR="$(code "${REG}")"
           BODY="$(curl -sS -L --connect-timeout 8 --max-time 25 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${REG}" 2>/dev/null | head -c 250000 || true)"
           echo "profile/=$P home.php(follow)=$H register=$HR guard.js=$G"
+          GOV_BYTES="$(curl -sS -L --connect-timeout 8 --max-time 20 "${SITE}/public/cms-bundle-gov-control-v2.png" 2>/dev/null | wc -c | tr -d ' ')"
+          GOV_MAGIC="$(curl -sS -L --connect-timeout 8 --max-time 20 "${SITE}/public/cms-bundle-gov-control-v2.png" 2>/dev/null | head -c 3 | xxd -p 2>/dev/null || echo 000000)"
+          echo "gov-control-v2 bytes=${GOV_BYTES} magic=${GOV_MAGIC}"
+          if [ "${GOV_BYTES:-0}" -lt 80000 ] || [ "${GOV_BYTES:-0}" -gt 150000 ]; then
+            echo "::error::gov-control-v2 bundle wrong size (${GOV_BYTES} bytes) — image deploy broken"
+            exit 1
+          fi
+          if [ "$GOV_MAGIC" != "ffd8ff" ] && [ "$GOV_MAGIC" != "89504e" ]; then
+            echo "::error::gov-control-v2 not a valid image (magic ${GOV_MAGIC})"
+            exit 1
+          fi
           if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ] && [ "$HR" = "200" ]; then
             if echo "$BODY" | grep -qi '<!DOCTYPE'; then
               if echo "$BODY" | grep -q 'register-section-hidden ratib-register-wrap'; then

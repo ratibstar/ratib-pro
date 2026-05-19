@@ -14,12 +14,12 @@ if (!function_exists('ratib_operational_proof_gov_image_url')) {
     function ratib_operational_proof_gov_image_url(string $baseUrl, string $cmsKey, string $fallbackFile): string
     {
         $govFlat = [
-            'government-control.png' => 'public/cms-bundle-gov-control.png',
+            'government-control.png' => 'public/cms-bundle-gov-control-v2.png',
             'government-inspections.png' => 'public/cms-bundle-gov-inspections.png',
             'tracking-map.png' => 'public/cms-bundle-gov-tracking.png',
             'worker-mobile-onboarding.png' => 'public/cms-bundle-gov-onboarding.png',
         ];
-        $fallbackRel = $govFlat[ltrim($fallbackFile, '/')] ?? ('public/cms-bundle-gov-control.png');
+        $fallbackRel = $govFlat[ltrim($fallbackFile, '/')] ?? ('public/cms-bundle-gov-control-v2.png');
 
         return ratib_public_cms_image($baseUrl, $cmsKey, $fallbackRel);
     }

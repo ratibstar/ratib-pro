@@ -103,6 +103,7 @@ CRITICAL_FILES=(
   "public/cms-bundle-workers.svg"
   "public/cms-bundle-finance.svg"
   "public/cms-bundle-gov-control.png"
+  "public/cms-bundle-gov-control-v2.png"
   "public/cms-bundle-gov-inspections.png"
   "public/cms-bundle-gov-tracking.png"
   "public/cms-bundle-gov-onboarding.png"

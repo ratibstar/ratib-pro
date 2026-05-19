@@ -950,7 +950,7 @@ if (!function_exists('ratib_site_content_asset_url')) {
         function ratib_site_content_media_bundled_map(): array
         {
             $map = [
-                'gov-government-control.png' => ['public/cms-bundle-gov-control.png'],
+                'gov-government-control.png' => ['public/cms-bundle-gov-control-v2.png', 'public/cms-bundle-gov-control.png'],
                 'gov-government-inspections.png' => ['public/cms-bundle-gov-inspections.png'],
                 'gov-tracking-map.png' => ['public/cms-bundle-gov-tracking.png'],
                 'gov-worker-mobile-onboarding.png' => ['public/cms-bundle-gov-onboarding.png'],
@@ -961,10 +961,10 @@ if (!function_exists('ratib_site_content_asset_url')) {
                 'profile.image.workers' => 'public/cms-bundle-workers.svg',
                 'profile.image.telemetry' => 'public/cms-bundle-gov-tracking.png',
                 'profile.image.accounting' => 'public/cms-bundle-finance.svg',
-                'profile.image.control' => 'public/cms-bundle-gov-control.png',
+                'profile.image.control' => 'public/cms-bundle-gov-control-v2.png',
                 'profile.image.partners' => 'public/cms-bundle-about.png',
                 'profile.image.pipeline' => 'public/cms-bundle-pipeline.svg',
-                'profile.gov.image.control' => 'public/cms-bundle-gov-control.png',
+                'profile.gov.image.control' => 'public/cms-bundle-gov-control-v2.png',
                 'profile.gov.image.inspections' => 'public/cms-bundle-gov-inspections.png',
                 'profile.gov.image.tracking' => 'public/cms-bundle-gov-tracking.png',
                 'profile.gov.image.onboarding' => 'public/cms-bundle-gov-onboarding.png',
@@ -1172,7 +1172,7 @@ if (!function_exists('ratib_site_content_asset_url')) {
         {
             $fileName = basename(str_replace('\\', '/', $fileName));
             $flat = [
-                'gov-government-control.png' => 'public/cms-bundle-gov-control.png',
+                'gov-government-control.png' => 'public/cms-bundle-gov-control-v2.png',
                 'gov-government-inspections.png' => 'public/cms-bundle-gov-inspections.png',
                 'gov-tracking-map.png' => 'public/cms-bundle-gov-tracking.png',
                 'gov-worker-mobile-onboarding.png' => 'public/cms-bundle-gov-onboarding.png',
