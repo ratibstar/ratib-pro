@@ -111,6 +111,10 @@ if (!function_exists('ratib_mega_nav_home_hash')) {
     {
         $hash = $hash !== '' && $hash[0] === '#' ? $hash : '#' . ltrim($hash, '#');
         if (ratib_mega_nav_use_relative_home_anchors($navPrefix)) {
+            if (function_exists('ratib_public_marketing_home_anchor')) {
+                return ratib_public_marketing_home_anchor($hash);
+            }
+
             return $hash;
         }
         if ($navPrefix !== '' && !ratib_mega_nav_is_profile_context($navPrefix)) {
@@ -127,6 +131,10 @@ if (!function_exists('ratib_public_nav_tour_href')) {
     {
         $tourHash = $tourHash !== '' && $tourHash[0] === '#' ? $tourHash : '#' . ltrim($tourHash, '#');
         if (ratib_mega_nav_use_relative_home_anchors($navPrefix)) {
+            if (function_exists('ratib_public_marketing_home_anchor')) {
+                return ratib_public_marketing_home_anchor($tourHash);
+            }
+
             return $tourHash;
         }
         if (ratib_mega_nav_is_profile_context($navPrefix)) {

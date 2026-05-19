@@ -395,6 +395,17 @@ $ratibMarketingFocusedJsPath = __DIR__ . '/../js/pages/ratib-marketing-focused.j
 clearstatcache(true, $ratibMarketingFocusedJsPath);
 $ratibMarketingFocusedJsQuery = (int) (@filemtime($ratibMarketingFocusedJsPath) ?: time()) . '-' . $ratibHomeUiRev;
 $ratibSiteRoot = rtrim($baseUrl, '/');
+$ratibHomeAnchor = static function (string $hash): string {
+    return function_exists('ratib_public_marketing_home_anchor')
+        ? ratib_public_marketing_home_anchor($hash)
+        : ($hash !== '' && $hash[0] === '#' ? $hash : '#' . ltrim($hash, '#'));
+};
+$ratibRegisterHref = $ratibHomeAnchor('#register');
+$ratibHeroTourHref = $ratibHomeAnchor('#video');
+$ratibArchSectionsOk = is_file(__DIR__ . '/../includes/ratib-architecture-sections.php');
+$ratibWalkthroughHref = $ratibArchSectionsOk
+    ? $ratibSiteRoot . '/architecture/'
+    : $ratibHomeAnchor('#enterprise-infrastructure');
 ?>
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
@@ -467,8 +478,8 @@ ratib_emit_profile_nav_guard($baseUrl);
                     } ?>
                     <div class="ratib-hero__actions">
                         <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATIB — Request Enterprise Demo'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--primary ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.hero.cta_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                        <a href="<?php echo htmlspecialchars($ratibSiteRoot . '/architecture/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.hero.cta_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                        <a href="#video" class="ratib-btn ratib-btn--ghost ratib-btn--lg"><i class="fas fa-play" aria-hidden="true"></i> <?php echo htmlspecialchars($ratibHome['home.nav.tour'] ?? 'Platform walkthrough', ENT_QUOTES, 'UTF-8'); ?></a>
+                        <a href="<?php echo htmlspecialchars($ratibWalkthroughHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.hero.cta_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                        <a href="<?php echo htmlspecialchars($ratibHeroTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--ghost ratib-btn--lg"><i class="fas fa-play" aria-hidden="true"></i> <?php echo htmlspecialchars($ratibHome['home.nav.tour'] ?? 'Tour', ENT_QUOTES, 'UTF-8'); ?></a>
                     </div>
                 </div>
                 <?php if (!function_exists('ratib_public_marketing_should_render_deep') || ratib_public_marketing_should_render_deep()) { ?>
@@ -702,8 +713,7 @@ ratib_emit_profile_nav_guard($baseUrl);
 
         <?php ratib_marketing_expand_bar_render('home'); ?>
 
-        <?php if (!function_exists('ratib_public_marketing_should_render_deep') || ratib_public_marketing_should_render_deep()) { ?>
-        <section class="ratib-section ratib-trust" id="platform" data-ratib-marketing-depth="deep">
+        <section class="ratib-section ratib-trust" id="platform">
             <div class="ratib-container">
                 <header class="ratib-section__head">
                     <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHome['home.platform.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
@@ -721,6 +731,7 @@ ratib_emit_profile_nav_guard($baseUrl);
             </div>
         </section>
 
+        <?php if (!function_exists('ratib_public_marketing_should_render_deep') || ratib_public_marketing_should_render_deep()) { ?>
         <?php ratib_enterprise_trust_render_home($ratibHome, $baseUrl); ?>
 
         <?php if ($ratibOpProofAvailable) {
@@ -964,7 +975,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                     <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ratibLine, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php } ?>
                 </ul>
-                <a href="#register" class="btn-register btn-register-starter js-open-register" data-register-plan="pro" data-register-amount="" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratibHome['home.pricing.starter.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratibRegisterHref, ENT_QUOTES, 'UTF-8'); ?>" class="btn-register btn-register-starter js-open-register" data-register-plan="pro" data-register-amount="" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratibHome['home.pricing.starter.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
             <div class="price-card gold price-card--featured">
                 <span class="card-badge"><?php echo htmlspecialchars($ratibHome['home.pricing.gold.badge'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
@@ -985,7 +996,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                     <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ratibLine, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php } ?>
                 </ul>
-                <a href="#register" id="goldRegisterBtn" class="btn-register js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratibHome['home.pricing.gold.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratibRegisterHref, ENT_QUOTES, 'UTF-8'); ?>" id="goldRegisterBtn" class="btn-register js-open-register" data-register-plan="gold" data-register-amount="<?php echo (float)$goldTestPriceYear1; ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratibHome['home.pricing.gold.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
             <div class="price-card platinum">
                 <span class="card-badge"><?php echo htmlspecialchars($ratibHome['home.pricing.platinum.badge'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
@@ -1006,13 +1017,12 @@ ratib_emit_profile_nav_guard($baseUrl);
                     <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ratibLine, ENT_QUOTES, 'UTF-8'); ?></li>
                     <?php } ?>
                 </ul>
-                <a href="#register" id="platinumRegisterBtn" class="btn-register js-open-register" data-register-plan="platinum" data-register-amount="<?php echo (float)($plans['platinum']['amount'] ?? $platinumTestPriceYear1); ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratibHome['home.pricing.platinum.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars($ratibRegisterHref, ENT_QUOTES, 'UTF-8'); ?>" id="platinumRegisterBtn" class="btn-register js-open-register" data-register-plan="platinum" data-register-amount="<?php echo (float)($plans['platinum']['amount'] ?? $platinumTestPriceYear1); ?>" data-register-years="1"><i class="fas fa-arrow-right me-2"></i> <?php echo htmlspecialchars($ratibHome['home.pricing.platinum.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
         </div>
             </div>
         </section>
 
-        <?php if (!function_exists('ratib_public_marketing_should_render_deep') || ratib_public_marketing_should_render_deep()) { ?>
         <section class="register-section<?php echo $openRegister ? '' : ' register-section-hidden'; ?> ratib-register-wrap" id="register">
         <div class="ratib-info">
             <h2><i class="fas fa-info-circle me-2 register-info-icon"></i><?php echo htmlspecialchars($ratibHome['home.register.info.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
@@ -1134,16 +1144,15 @@ ratib_emit_profile_nav_guard($baseUrl);
             </form>
         </div>
     </section>
-        <?php } ?>
 
-        <section class="ratib-final-cta ratib-final-cta--enterprise" aria-labelledby="ratib-final-cta-title">
+        <section class="ratib-final-cta ratib-final-cta--enterprise" id="contact" aria-labelledby="ratib-final-cta-title">
             <div class="ratib-final-cta__bg" aria-hidden="true"></div>
             <div class="ratib-container ratib-final-cta__inner">
                 <h2 id="ratib-final-cta-title" class="ratib-final-cta__title"><?php echo htmlspecialchars($ratibHome['home.final_cta.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
                 <p class="ratib-final-cta__sub"><?php echo htmlspecialchars($ratibHome['home.final_cta.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 <div class="ratib-final-cta__actions">
                     <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATIB — Request Enterprise Demo'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--primary ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                    <a href="<?php echo htmlspecialchars($ratibSiteRoot . '/architecture/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                    <a href="<?php echo htmlspecialchars($ratibWalkthroughHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                     <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATIB — Contact Solutions Team'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_tertiary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                     <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATIB — Request Security Brief'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--ghost ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_quaternary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 </div>

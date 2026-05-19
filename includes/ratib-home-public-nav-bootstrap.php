@@ -273,6 +273,8 @@ PHP;
     ratib_public_materialize_include('ratib-enterprise-trust-home.php');
     ratib_public_materialize_include('ratib-operational-proof-data.php');
     ratib_public_materialize_include('ratib-operational-proof-render.php');
+    ratib_public_materialize_include('ratib-architecture-data.php');
+    ratib_public_materialize_include('ratib-architecture-sections.php');
 }
 
 if (!function_exists('ratib_public_load_operational_proof_render')) {

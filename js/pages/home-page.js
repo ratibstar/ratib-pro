@@ -785,6 +785,21 @@
         var openA = e.target.closest('a.js-open-register');
         if (openA) {
             e.preventDefault();
+            var registerSection = document.getElementById('register');
+            if (!registerSection) {
+                var regHref = openA.getAttribute('href') || '';
+                if (regHref.indexOf('density=full') === -1) {
+                    try {
+                        var regUrl = new URL(window.location.href);
+                        regUrl.searchParams.set('density', 'full');
+                        regUrl.hash = 'register';
+                        window.location.assign(regUrl.toString());
+                    } catch (err) {
+                        window.location.assign(regHref + (regHref.indexOf('?') === -1 ? '?density=full' : '&density=full') + '#register');
+                    }
+                    return;
+                }
+            }
             var plan = openA.getAttribute('data-register-plan') || 'gold';
             var amount = parseFloat(openA.getAttribute('data-register-amount') || '0') || 0;
             var yrs = parseInt(openA.getAttribute('data-register-years') || '1', 10);

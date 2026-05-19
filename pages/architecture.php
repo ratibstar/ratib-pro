@@ -20,8 +20,14 @@ require_once __DIR__ . '/../includes/ratib-public-base-url.php';
 $baseUrl = ratib_public_site_base_url();
 
 require_once __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php';
-require_once __DIR__ . '/../includes/ratib-architecture-data.php';
-require_once __DIR__ . '/../includes/ratib-architecture-sections.php';
+$ratibArchDataPath = __DIR__ . '/../includes/ratib-architecture-data.php';
+$ratibArchSectionsPath = __DIR__ . '/../includes/ratib-architecture-sections.php';
+if (!is_file($ratibArchDataPath) || !is_file($ratibArchSectionsPath)) {
+    header('Location: ' . ratib_public_marketing_home_url($baseUrl, ['density' => 'full'], '#enterprise-infrastructure'), true, 302);
+    exit;
+}
+require_once $ratibArchDataPath;
+require_once $ratibArchSectionsPath;
 
 $arch = ratib_architecture_config($baseUrl);
 $ratibArchPageActive = true;

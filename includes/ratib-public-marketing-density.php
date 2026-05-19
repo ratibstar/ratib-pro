@@ -70,6 +70,30 @@ if (!function_exists('ratib_public_marketing_toggle_density_url')) {
     }
 }
 
+if (!function_exists('ratib_public_marketing_home_anchor')) {
+    /**
+     * In-page anchor on marketing home — adds ?density=full when sections are collapsed.
+     */
+    function ratib_public_marketing_home_anchor(string $hash): string
+    {
+        $hash = $hash !== '' && $hash[0] === '#' ? $hash : '#' . ltrim($hash, '#');
+        if (!ratib_public_marketing_is_focused()) {
+            if (!empty($GLOBALS['ratib_public_nav_on_marketing_home'])) {
+                return $hash;
+            }
+            if (function_exists('ratib_public_marketing_home_url')) {
+                return ratib_public_marketing_home_url('', [], $hash);
+            }
+
+            return $hash;
+        }
+        $qs = $_GET;
+        $qs['density'] = 'full';
+
+        return '?' . http_build_query($qs) . $hash;
+    }
+}
+
 if (!function_exists('ratib_public_profile_nav_prefix')) {
     /** Profile page nav prefix — adds ?density=full when sections are server-collapsed. */
     function ratib_public_profile_nav_prefix(string $baseUrl): string
@@ -97,8 +121,6 @@ if (!function_exists('ratib_marketing_emit_focused_rescue_css')) {
             . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-hero__video-band,'
             . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-hero__program-strip,'
             . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) #program-previews,'
-            . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) #platform.ratib-trust--deep,'
-            . 'body.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-register-wrap'
             . '{display:none!important}</style>';
     }
 }
