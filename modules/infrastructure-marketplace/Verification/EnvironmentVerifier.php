@@ -86,13 +86,10 @@ final class EnvironmentVerifier
 
     private function hasNamecheapCredentials(SecretManager $secret): bool
     {
-        $apiUser = ModuleConfig::namecheapSecretFromRuntime('api_user')
-            ?: ($secret->getSecret('RATIB_INFRA_NAMECHEAP', 'API_USER') ?? getenv('RATIB_INFRA_NAMECHEAP_API_USER'));
-        $apiKey = ModuleConfig::namecheapSecretFromRuntime('api_key')
-            ?: ($secret->getSecret('RATIB_INFRA_NAMECHEAP', 'API_KEY') ?? getenv('RATIB_INFRA_NAMECHEAP_API_KEY'));
-        $username = ModuleConfig::namecheapSecretFromRuntime('username')
-            ?: ($secret->getSecret('RATIB_INFRA_NAMECHEAP', 'USERNAME') ?? getenv('RATIB_INFRA_NAMECHEAP_USERNAME'));
-        $clientIp = ModuleConfig::namecheapSecretFromRuntime('client_ip') ?: getenv('RATIB_INFRA_NAMECHEAP_CLIENT_IP');
+        $apiUser = ModuleConfig::namecheapCredential('api_user');
+        $apiKey = ModuleConfig::namecheapCredential('api_key');
+        $username = ModuleConfig::namecheapCredential('username');
+        $clientIp = ModuleConfig::namecheapCredential('client_ip');
 
         return is_string($apiUser) && trim($apiUser) !== ''
             && is_string($apiKey) && trim($apiKey) !== ''

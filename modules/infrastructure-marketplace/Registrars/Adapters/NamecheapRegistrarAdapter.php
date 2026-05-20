@@ -25,7 +25,7 @@ final class NamecheapRegistrarAdapter implements RegistrarProviderInterface
         ?ProviderRolloutPolicy $rollout = null
     ) {
         $this->http = $http ?? new CurlHttpClient();
-        $this->secrets = $secrets ?? SecretManager::withEnvProvider();
+        $this->secrets = $secrets ?? SecretManager::withDefaultProvidersLazy();
         $this->rollout = $rollout ?? new ProviderRolloutPolicy();
     }
 
@@ -77,13 +77,10 @@ final class NamecheapRegistrarAdapter implements RegistrarProviderInterface
             return $result;
         }
 
-        $apiUser = ModuleConfig::namecheapSecretFromRuntime('api_user')
-            ?: ($this->secrets->getSecret('RATIB_INFRA_NAMECHEAP', 'API_USER') ?? getenv('RATIB_INFRA_NAMECHEAP_API_USER'));
-        $apiKey = ModuleConfig::namecheapSecretFromRuntime('api_key')
-            ?: ($this->secrets->getSecret('RATIB_INFRA_NAMECHEAP', 'API_KEY') ?? getenv('RATIB_INFRA_NAMECHEAP_API_KEY'));
-        $user = ModuleConfig::namecheapSecretFromRuntime('username')
-            ?: ($this->secrets->getSecret('RATIB_INFRA_NAMECHEAP', 'USERNAME') ?? getenv('RATIB_INFRA_NAMECHEAP_USERNAME'));
-        $clientIp = ModuleConfig::namecheapSecretFromRuntime('client_ip') ?: getenv('RATIB_INFRA_NAMECHEAP_CLIENT_IP');
+        $apiUser = ModuleConfig::namecheapCredential('api_user');
+        $apiKey = ModuleConfig::namecheapCredential('api_key');
+        $user = ModuleConfig::namecheapCredential('username');
+        $clientIp = ModuleConfig::namecheapCredential('client_ip');
         if (!is_string($apiUser) || !is_string($apiKey) || !is_string($user) || !is_string($clientIp) || $apiUser === '' || $apiKey === '' || $user === '' || $clientIp === '') {
             $result = ['provider' => 'namecheap', 'fqdn' => $fqdn, 'status' => 'missing_credentials'];
             $this->logProviderEvent('health_check', $tenant, $started, $requestId, $result);

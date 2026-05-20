@@ -31,6 +31,17 @@ final class SecretManager
         return new self($providers);
     }
 
+    public static function withDefaultProvidersLazy(?int $tenantId = null, ?int $agencyId = null): self
+    {
+        try {
+            $pdo = \Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory::createPdo();
+
+            return self::withDefaultProviders($pdo, $tenantId, $agencyId);
+        } catch (\Throwable $e) {
+            return self::withEnvProvider();
+        }
+    }
+
     public function getSecret(string $scope, string $key): ?string
     {
         foreach ($this->providers as $provider) {

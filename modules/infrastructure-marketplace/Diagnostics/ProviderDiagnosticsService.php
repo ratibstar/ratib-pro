@@ -126,13 +126,10 @@ final class ProviderDiagnosticsService
         if ($this->providerDisabled('registrar') || $this->providerFlagsDisableExecution('namecheap')) {
             return $this->withTiming(['name' => 'namecheap_reachability', 'status' => 'WARN', 'message' => 'disabled_provider', 'request_id' => $requestId], $started);
         }
-        $apiUser = ModuleConfig::namecheapSecretFromRuntime('api_user')
-            ?: ($secret->getSecret('RATIB_INFRA_NAMECHEAP', 'API_USER') ?? getenv('RATIB_INFRA_NAMECHEAP_API_USER'));
-        $apiKey = ModuleConfig::namecheapSecretFromRuntime('api_key')
-            ?: ($secret->getSecret('RATIB_INFRA_NAMECHEAP', 'API_KEY') ?? getenv('RATIB_INFRA_NAMECHEAP_API_KEY'));
-        $user = ModuleConfig::namecheapSecretFromRuntime('username')
-            ?: ($secret->getSecret('RATIB_INFRA_NAMECHEAP', 'USERNAME') ?? getenv('RATIB_INFRA_NAMECHEAP_USERNAME'));
-        $clientIp = ModuleConfig::namecheapSecretFromRuntime('client_ip') ?: getenv('RATIB_INFRA_NAMECHEAP_CLIENT_IP');
+        $apiUser = ModuleConfig::namecheapCredential('api_user');
+        $apiKey = ModuleConfig::namecheapCredential('api_key');
+        $user = ModuleConfig::namecheapCredential('username');
+        $clientIp = ModuleConfig::namecheapCredential('client_ip');
         $ready = is_string($apiUser) && $apiUser !== '' && is_string($apiKey) && $apiKey !== '' && is_string($user) && $user !== '' && is_string($clientIp) && $clientIp !== '';
         if (!$ready) {
             return $this->withTiming(['name' => 'namecheap_reachability', 'status' => 'WARN', 'message' => 'credentials_missing', 'request_id' => $requestId], $started);

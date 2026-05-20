@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Ratib\InfrastructureMarketplace\Config;
 
+use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
+
 /**
  * Reads module flags from environment. No provider credentials or URLs are stored here.
  */
@@ -147,10 +149,15 @@ final class ModuleConfig
     {
         $override = self::runtimeOverride('cpanel_api_token');
         if (is_string($override) && trim($override) !== '') {
-            return trim($override);
+            return self::normalizeSecret(trim($override));
+        }
+        $lazy = SecretManager::withDefaultProvidersLazy()->getSecret('RATIB_INFRA_CPANEL', 'API_TOKEN');
+        if (is_string($lazy) && $lazy !== '') {
+            return self::normalizeSecret($lazy);
         }
         $v = getenv('RATIB_INFRA_CPANEL_API_TOKEN');
-        return is_string($v) && trim($v) !== '' ? trim($v) : null;
+
+        return is_string($v) && trim($v) !== '' ? self::normalizeSecret(trim($v)) : null;
     }
 
     public static function defaultMarketplaceCurrency(): string
@@ -258,6 +265,42 @@ final class ModuleConfig
         }
 
         return trim($nc[$key]);
+    }
+
+    /**
+     * Runtime file first, then encrypted DB / env (same order as execution adapters).
+     *
+     * @param 'api_user'|'api_key'|'username'|'client_ip' $key
+     */
+    public static function namecheapCredential(string $key): ?string
+    {
+        $fromRuntime = self::namecheapSecretFromRuntime($key);
+        if ($fromRuntime !== null) {
+            return $fromRuntime;
+        }
+        $secretMap = [
+            'api_user' => 'API_USER',
+            'api_key' => 'API_KEY',
+            'username' => 'USERNAME',
+            'client_ip' => 'CLIENT_IP',
+        ];
+        $secretKey = $secretMap[$key] ?? null;
+        if ($secretKey === null) {
+            return null;
+        }
+        $fromStore = SecretManager::withDefaultProvidersLazy()->getSecret('RATIB_INFRA_NAMECHEAP', $secretKey);
+        if (is_string($fromStore) && $fromStore !== '') {
+            return self::normalizeSecret($fromStore);
+        }
+        $envName = 'RATIB_INFRA_NAMECHEAP_' . $secretKey;
+        $v = getenv($envName);
+
+        return is_string($v) && trim($v) !== '' ? self::normalizeSecret(trim($v)) : null;
+    }
+
+    private static function normalizeSecret(string $value): string
+    {
+        return trim(str_replace(["\r", "\n", "\t"], '', $value));
     }
 
     public static function rolloutTenantAllowlist(): array

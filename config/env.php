@@ -186,6 +186,49 @@ foreach ($ratibNgeniusSecretPaths as $ratibNgeniusSecretsPath) {
     }
 }
 
+/* Infrastructure marketplace secrets (config/infra.secrets.php — gitignored). */
+$ratibInfraSecretPaths = [
+    __DIR__ . DIRECTORY_SEPARATOR . 'infra.secrets.php',
+    __DIR__ . DIRECTORY_SEPARATOR . 'env' . DIRECTORY_SEPARATOR . 'infra.secrets.php',
+];
+$ratibInfraEnvKeys = [
+    'RATIB_INFRA_SECRET_KEY',
+    'RATIB_INFRA_PROVIDER_SECRET_KEY',
+    'RATIB_INFRA_CPANEL_BASE_URL',
+    'RATIB_INFRA_CPANEL_USERNAME',
+    'RATIB_INFRA_CPANEL_API_TOKEN',
+    'RATIB_INFRA_NAMECHEAP_API_USER',
+    'RATIB_INFRA_NAMECHEAP_API_KEY',
+    'RATIB_INFRA_NAMECHEAP_USERNAME',
+    'RATIB_INFRA_NAMECHEAP_CLIENT_IP',
+    'RATIB_INFRA_CLOUDFLARE_API_TOKEN',
+    'RATIB_INFRA_MARKETPLACE_ENABLED',
+];
+foreach ($ratibInfraSecretPaths as $ratibInfraSecretsPath) {
+    if (!is_readable($ratibInfraSecretsPath)) {
+        continue;
+    }
+    try {
+        $ratibInfraSecrets = require $ratibInfraSecretsPath;
+    } catch (Throwable $ratibInfraLoadErr) {
+        @error_log('ratib: could not load ' . $ratibInfraSecretsPath . ' - ' . $ratibInfraLoadErr->getMessage());
+        continue;
+    }
+    if (!is_array($ratibInfraSecrets)) {
+        continue;
+    }
+    foreach ($ratibInfraEnvKeys as $ratibInfraKey) {
+        if (
+            isset($ratibInfraSecrets[$ratibInfraKey])
+            && is_string($ratibInfraSecrets[$ratibInfraKey])
+            && trim($ratibInfraSecrets[$ratibInfraKey]) !== ''
+        ) {
+            $APP_ENV_DEFAULTS[$ratibInfraKey] = trim($ratibInfraSecrets[$ratibInfraKey]);
+        }
+    }
+    break;
+}
+
 /*
  * Must NOT be named getEnv: PHP treats that the same as the built-in getenv() (case-insensitive),
  * so function_exists('getEnv') is true and this wrapper would never load - then getEnv('K','')

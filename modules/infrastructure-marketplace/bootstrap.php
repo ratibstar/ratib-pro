@@ -15,6 +15,12 @@ if (!defined('RATIB_INFRASTRUCTURE_MARKETPLACE_ROOT')) {
     define('RATIB_INFRASTRUCTURE_MARKETPLACE_ROOT', __DIR__);
 }
 
+$ratibInfraEnvBootstrap = __DIR__ . '/Infrastructure/InfraEnvBootstrap.php';
+if (is_file($ratibInfraEnvBootstrap)) {
+    require_once $ratibInfraEnvBootstrap;
+    \Ratib\InfrastructureMarketplace\Infrastructure\InfraEnvBootstrap::load();
+}
+
 spl_autoload_register(static function (string $class): void {
     $prefix = 'Ratib\\InfrastructureMarketplace\\';
     $len = strlen($prefix);

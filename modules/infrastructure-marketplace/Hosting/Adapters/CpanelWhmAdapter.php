@@ -24,7 +24,7 @@ final class CpanelWhmAdapter implements HostingProvisioningInterface
         ?SecretManager $secrets = null
     ) {
         $this->http = $http ?? new CurlHttpClient();
-        $this->secrets = $secrets ?? SecretManager::withEnvProvider();
+        $this->secrets = $secrets ?? SecretManager::withDefaultProvidersLazy();
     }
 
     public function createAccount(TenantContext $tenant, ProvisioningPayload $payload): array

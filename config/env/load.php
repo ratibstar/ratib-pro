@@ -102,6 +102,17 @@ if (!function_exists('ratib_env_load_bridge_dotenv')) {
             'RATIB_SITE_CONTENT_DIAG_SECRET',
             'RATIB_SITE_CONTENT_PUBLIC_SOURCE',
             'RATIB_SITE_CONTENT_SKIP_DISK_JSON_CACHE',
+            'RATIB_INFRA_SECRET_KEY',
+            'RATIB_INFRA_PROVIDER_SECRET_KEY',
+            'RATIB_INFRA_CPANEL_BASE_URL',
+            'RATIB_INFRA_CPANEL_USERNAME',
+            'RATIB_INFRA_CPANEL_API_TOKEN',
+            'RATIB_INFRA_NAMECHEAP_API_USER',
+            'RATIB_INFRA_NAMECHEAP_API_KEY',
+            'RATIB_INFRA_NAMECHEAP_USERNAME',
+            'RATIB_INFRA_NAMECHEAP_CLIENT_IP',
+            'RATIB_INFRA_CLOUDFLARE_API_TOKEN',
+            'RATIB_INFRA_MARKETPLACE_ENABLED',
         ];
         $lines = @file($path, FILE_IGNORE_NEW_LINES);
         if (!is_array($lines)) {

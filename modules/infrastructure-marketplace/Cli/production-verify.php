@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
+use Ratib\InfrastructureMarketplace\Infrastructure\InfraEnvBootstrap;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
 use Ratib\InfrastructureMarketplace\Infrastructure\SchemaHelpers;
 use Ratib\InfrastructureMarketplace\Observability\ProviderEventLogger;
@@ -39,9 +40,11 @@ if (SchemaHelpers::tableExists($pdo, 'ratib_infra_provider_events')) {
 }
 $checks[] = ['name' => 'provider_events_indexes', 'status' => $indexOk ? 'PASS' : 'WARN', 'detail' => $indexOk ? 'ok' : 'expected index missing'];
 
+InfraEnvBootstrap::load();
+
 $encryptOk = false;
 $encryptDetail = 'skipped_no_key';
-if (getenv('RATIB_INFRA_SECRET_KEY') !== false && trim((string) getenv('RATIB_INFRA_SECRET_KEY')) !== '') {
+if (InfraEnvBootstrap::hasSecretKey()) {
     try {
         $cipher = new ProviderSecretCipher();
         $enc = $cipher->encrypt('verify-' . bin2hex(random_bytes(4)));

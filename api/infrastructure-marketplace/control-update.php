@@ -19,7 +19,11 @@ require_once dirname(__DIR__, 2) . '/modules/infrastructure-marketplace/bootstra
 
 use Ratib\InfrastructureMarketplace\Audit\RuntimeConfigAuditLogger;
 use Ratib\InfrastructureMarketplace\Config\RuntimeOverrideStore;
+use Ratib\InfrastructureMarketplace\Diagnostics\ProviderDiagnosticsService;
+use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
+use Ratib\InfrastructureMarketplace\Infrastructure\InfraEnvBootstrap;
 use Ratib\InfrastructureMarketplace\Security\ControlSecurityGuard;
+use Ratib\InfrastructureMarketplace\Security\Secrets\InfraProviderSecretsSync;
 
 /**
  * @param int $code
@@ -393,10 +397,40 @@ if (isset($sanitizedOut['cpanel_api_token'])) {
     $sanitizedOut['cpanel_api_token'] = '[set via Control Panel — omitted from response]';
 }
 
+$secretsSync = ['skipped' => true, 'reason' => 'not_attempted'];
+$providerChecks = [];
+try {
+    InfraEnvBootstrap::load();
+    $pdo = DatabaseConnectionFactory::createPdo();
+    $secretsSync = (new InfraProviderSecretsSync($pdo))->syncFromRuntimeOverrides(
+        $newOverrides,
+        (string) ($_SESSION['control_username'] ?? 'control-update')
+    );
+    $diag = new ProviderDiagnosticsService($pdo);
+    foreach ((array) ($diag->verify()['checks'] ?? []) as $check) {
+        if (!is_array($check)) {
+            continue;
+        }
+        $name = (string) ($check['name'] ?? '');
+        if (!in_array($name, ['cpanel_connectivity', 'namecheap_reachability', 'cloudflare_connectivity'], true)) {
+            continue;
+        }
+        $providerChecks[$name] = [
+            'status' => (string) ($check['status'] ?? 'WARN'),
+            'message' => (string) ($check['message'] ?? ''),
+            'http_status' => $check['http_status'] ?? null,
+        ];
+    }
+} catch (\Throwable $e) {
+    $secretsSync = ['skipped' => true, 'reason' => substr($e->getMessage(), 0, 120)];
+}
+
 echo json_encode([
     'ok' => true,
     'message' => 'Infrastructure control settings updated',
     'file' => RuntimeOverrideStore::path(),
     'overrides' => $sanitizedOut,
     'changed_keys' => array_keys($patch),
+    'secrets_sync' => $secretsSync,
+    'provider_checks' => $providerChecks,
 ], JSON_UNESCAPED_SLASHES);

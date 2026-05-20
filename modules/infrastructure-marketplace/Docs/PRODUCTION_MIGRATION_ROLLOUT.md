@@ -51,11 +51,14 @@ Import `ALL_for_outratib_control_panel_db.sql` into the control panel database o
 
 ## Post-migration verify
 
+1. Create `config/infra.secrets.php` from `config/infra.secrets.example.php` and set `RATIB_INFRA_SECRET_KEY` (32+ byte random hex).
+2. Re-save Infrastructure → Control (Namecheap + WHM token) so runtime and encrypted DB stay in sync.
+
 ```bash
 php modules/infrastructure-marketplace/Cli/production-verify.php
 ```
 
-Expect `overall: PASS` or `WARN` (WARN if `RATIB_INFRA_SECRET_KEY` not set yet).
+Expect `overall: PASS` when `RATIB_INFRA_SECRET_KEY` is set and provider credentials validate.
 
 ## Rollback notes
 

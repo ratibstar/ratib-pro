@@ -1,6 +1,9 @@
 # N-Genius / local secrets (never commit)
 .env
 config/ngenius.secrets.php
+config/infra.secrets.php
+config/env/infra.secrets.php
+storage/.ratib_infra_local_secret_key
 
 # Environment variants
 .env.*

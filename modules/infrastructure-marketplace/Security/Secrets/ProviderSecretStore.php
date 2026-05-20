@@ -83,6 +83,10 @@ final class ProviderSecretStore
             return null;
         }
 
-        return $this->cipher->decrypt((string) $row['encrypted_value']);
+        try {
+            return $this->cipher->decrypt((string) $row['encrypted_value']);
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 }
