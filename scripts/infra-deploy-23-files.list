@@ -1,0 +1,24 @@
+# Infrastructure marketplace — 23 files (sync with cpanel-deploy-sync.sh CRITICAL infra block)
+modules/infrastructure-marketplace/Infrastructure/InfraEnvBootstrap.php
+modules/infrastructure-marketplace/Security/Secrets/InfraProviderSecretsSync.php
+modules/infrastructure-marketplace/Cli/infra-ensure-secret-key.php
+modules/infrastructure-marketplace/Config/RuntimeOverrideStore.php
+modules/infrastructure-marketplace/Config/ModuleConfig.php
+modules/infrastructure-marketplace/bootstrap.php
+api/infrastructure-marketplace/control-update.php
+storage/infrastructure-marketplace/.htaccess
+modules/infrastructure-marketplace/Infrastructure/SchemaHelpers.php
+modules/infrastructure-marketplace/Migrations/005_provider_activation_marketplace.sql
+modules/infrastructure-marketplace/Migrations/008_provider_secrets_and_events.sql
+modules/infrastructure-marketplace/Security/Secrets/ProviderSecretCipher.php
+modules/infrastructure-marketplace/Security/Secrets/ProviderSecretStore.php
+modules/infrastructure-marketplace/Security/Secrets/ProviderSecretDbProvider.php
+modules/infrastructure-marketplace/Observability/ProviderEventLogger.php
+modules/infrastructure-marketplace/Observability/ProviderEventBus.php
+modules/infrastructure-marketplace/Providers/Health/ProviderHealthMonitor.php
+modules/infrastructure-marketplace/Cli/provider-health-monitor.php
+modules/infrastructure-marketplace/Cli/provider-events-retention.php
+modules/infrastructure-marketplace/Cli/production-verify.php
+modules/infrastructure-marketplace/Observability/ProviderFailureThrottle.php
+modules/infrastructure-marketplace/Observability/ProviderEventsRetention.php
+scripts/run-infra-migrations-safe.sh

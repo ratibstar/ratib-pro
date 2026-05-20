@@ -536,8 +536,30 @@ def git_changed_paths() -> set[str]:
         return set()
 
 
+def _files_from_list_spec(spec: str) -> list[str]:
+    paths: list[str] = []
+    if os.path.isfile(spec):
+        with open(spec, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    paths.append(line)
+    else:
+        for part in spec.replace(";", "\n").splitlines():
+            part = part.strip()
+            if part:
+                paths.append(part)
+    return [p for p in paths if os.path.isfile(p)]
+
+
 def build_file_list(mode: str) -> tuple[list[str], int]:
     """Return ordered file list and parallel worker count."""
+    list_spec = os.environ.get("CPANEL_DEPLOY_FILELIST", "").strip()
+    if not list_spec and mode == "list":
+        list_spec = "scripts/infra-deploy-23-files.list"
+    if list_spec:
+        return _files_from_list_spec(list_spec), 2
+
     if mode == "all":
         out = subprocess.check_output(
             [

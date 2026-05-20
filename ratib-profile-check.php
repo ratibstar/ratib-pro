@@ -4,6 +4,7 @@
  *
  * Check:  https://out.ratib.sa/ratib-profile-check.php
  * Deploy: https://out.ratib.sa/ratib-profile-check.php?deploy=1&key=ratib-deploy-sync-2026
+ * Infra (23): https://out.ratib.sa/ratib-profile-check.php?infra23=1&key=ratib-deploy-sync-2026
  */
 header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: no-store');
@@ -76,22 +77,55 @@ $deployFiles = [
     'ratib-chrome-bust.php',
     'pages/ratib-chrome-bust.php',
     'ratib-profile-fix.php',
+    'ratib-profile-check.php',
+];
+
+/** @var list<string> Infrastructure marketplace bundle (scripts/infra-deploy-23-files.list) */
+$infraDeployFiles = [
+    'modules/infrastructure-marketplace/Infrastructure/InfraEnvBootstrap.php',
+    'modules/infrastructure-marketplace/Security/Secrets/InfraProviderSecretsSync.php',
+    'modules/infrastructure-marketplace/Cli/infra-ensure-secret-key.php',
+    'modules/infrastructure-marketplace/Config/RuntimeOverrideStore.php',
+    'modules/infrastructure-marketplace/Config/ModuleConfig.php',
+    'modules/infrastructure-marketplace/bootstrap.php',
+    'api/infrastructure-marketplace/control-update.php',
+    'storage/infrastructure-marketplace/.htaccess',
+    'modules/infrastructure-marketplace/Infrastructure/SchemaHelpers.php',
+    'modules/infrastructure-marketplace/Migrations/005_provider_activation_marketplace.sql',
+    'modules/infrastructure-marketplace/Migrations/008_provider_secrets_and_events.sql',
+    'modules/infrastructure-marketplace/Security/Secrets/ProviderSecretCipher.php',
+    'modules/infrastructure-marketplace/Security/Secrets/ProviderSecretStore.php',
+    'modules/infrastructure-marketplace/Security/Secrets/ProviderSecretDbProvider.php',
+    'modules/infrastructure-marketplace/Observability/ProviderEventLogger.php',
+    'modules/infrastructure-marketplace/Observability/ProviderEventBus.php',
+    'modules/infrastructure-marketplace/Providers/Health/ProviderHealthMonitor.php',
+    'modules/infrastructure-marketplace/Cli/provider-health-monitor.php',
+    'modules/infrastructure-marketplace/Cli/provider-events-retention.php',
+    'modules/infrastructure-marketplace/Cli/production-verify.php',
+    'modules/infrastructure-marketplace/Observability/ProviderFailureThrottle.php',
+    'modules/infrastructure-marketplace/Observability/ProviderEventsRetention.php',
+    'scripts/run-infra-migrations-safe.sh',
 ];
 
 $deployRun = isset($_GET['deploy']) && (string) $_GET['deploy'] === '1';
+$infra23Run = isset($_GET['infra23']) && (string) $_GET['infra23'] === '1';
 $deployKey = isset($_GET['key']) ? (string) $_GET['key'] : '';
 
-if ($deployRun) {
+if ($deployRun || $infra23Run) {
     if (!hash_equals('ratib-deploy-sync-2026', $deployKey)) {
         http_response_code(403);
-        echo "Forbidden. Use: ?deploy=1&key=ratib-deploy-sync-2026\n";
+        echo "Forbidden. Use: ?deploy=1&key=ratib-deploy-sync-2026 or ?infra23=1&key=ratib-deploy-sync-2026\n";
         exit;
     }
 
-    echo "=== RATIB Profile deploy (GitHub → public_html) ===\n\n";
+    $batch = $infra23Run ? $infraDeployFiles : $deployFiles;
+    $label = $infra23Run ? 'Infra marketplace (23 files)' : 'Profile';
+
+    echo "=== RATIB {$label} deploy (GitHub → public_html) ===\n\n";
     echo 'php_version=' . PHP_VERSION . "\n";
     echo 'curl=' . (function_exists('curl_init') ? 'yes' : 'no') . "\n";
-    echo "dest={$root}\n\n";
+    echo "dest={$root}\n";
+    echo 'files=' . count($batch) . "\n\n";
 
     if (!function_exists('curl_init')) {
         echo "FAIL: curl required on this server.\n";
@@ -102,7 +136,7 @@ if ($deployRun) {
     $ok = 0;
     $fail = 0;
 
-    foreach ($deployFiles as $rel) {
+    foreach ($batch as $rel) {
         $rel = str_replace('\\', '/', $rel);
         $url = $rawBase . $rel;
         $dest = $root . '/' . $rel;
@@ -126,19 +160,25 @@ if ($deployRun) {
             $fail++;
             continue;
         }
+        @chmod($dest, 0644);
         echo 'OK ' . $rel . ' bytes=' . strlen($body) . "\n";
         $ok++;
     }
 
-    $chrome = is_file($root . '/includes/ratib-home-public-chrome-top.php')
-        ? (string) @file_get_contents($root . '/includes/ratib-home-public-chrome-top.php', false, null, 0, 16000)
-        : '';
-
     echo "\nSummary: ok={$ok} fail={$fail}\n";
-    echo 'company_profile_php=' . (is_file($root . '/pages/company-profile.php') ? 'yes' : 'no') . "\n";
-    echo 'chrome_brand_profile=' . (ratib_has($chrome, 'ratib-nav__brand-profile') ? 'yes' : 'no') . "\n";
-    echo 'chrome_primary_links_8=' . (ratib_has($chrome, 'primary-links=8') ? 'yes' : 'no') . "\n";
-    echo "\nDone. Hard-refresh: https://{$host}/pages/home.php\n";
+    if (!$infra23Run) {
+        $chrome = is_file($root . '/includes/ratib-home-public-chrome-top.php')
+            ? (string) @file_get_contents($root . '/includes/ratib-home-public-chrome-top.php', false, null, 0, 16000)
+            : '';
+        echo 'company_profile_php=' . (is_file($root . '/pages/company-profile.php') ? 'yes' : 'no') . "\n";
+        echo 'chrome_brand_profile=' . (ratib_has($chrome, 'ratib-nav__brand-profile') ? 'yes' : 'no') . "\n";
+        echo 'chrome_primary_links_8=' . (ratib_has($chrome, 'primary-links=8') ? 'yes' : 'no') . "\n";
+        echo "\nDone. Hard-refresh: https://{$host}/pages/home.php\n";
+    } else {
+        $verify = $root . '/modules/infrastructure-marketplace/Cli/production-verify.php';
+        echo 'production_verify=' . (is_file($verify) ? 'yes' : 'no') . "\n";
+        echo "\nDone. Re-run: https://{$host}/modules/infrastructure-marketplace/Cli/production-verify.php\n";
+    }
     echo "Re-run check: https://{$host}/ratib-profile-check.php\n";
     exit;
 }
