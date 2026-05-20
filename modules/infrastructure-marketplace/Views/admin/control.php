@@ -263,7 +263,14 @@ $ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($
         if (j.ok) {
           alert('Saved. Reload this page to refresh summaries.');
         } else {
-          alert(j.message || 'Save failed');
+          var msg = j.message || 'Save failed';
+          if (j.detail) {
+            msg += '\n\n' + j.detail;
+          }
+          if (j.hint) {
+            msg += '\n\n' + j.hint;
+          }
+          alert(msg);
         }
       })
       .catch(function () {

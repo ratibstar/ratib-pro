@@ -342,7 +342,9 @@ try {
     $respond(500, [
         'ok' => false,
         'message' => 'Unable to write runtime overrides file',
-        'hint' => 'Ensure storage/infrastructure-marketplace/ is writable by PHP, or set RATIB_INFRA_RUNTIME_OVERRIDES_PATH to a writable file path.',
+        'hint' => 'Ensure storage/infrastructure-marketplace/ (or ratib_uploads) is writable by PHP, or set RATIB_INFRA_RUNTIME_OVERRIDES_PATH.',
+        'target' => RuntimeOverrideStore::path(),
+        'detail' => substr($e->getMessage(), 0, 240),
     ]);
 }
 

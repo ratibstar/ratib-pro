@@ -5,19 +5,14 @@ namespace Ratib\InfrastructureMarketplace\Config;
 
 final class RuntimeOverrideStore
 {
+    private static ?string $resolvedWritePath = null;
+
     /**
-     * Writable runtime config (module tree is often read-only on cPanel after deploy).
+     * Resolved path for reads/writes (writable candidate or default).
      */
     public static function path(): string
     {
-        $fromEnv = getenv('RATIB_INFRA_RUNTIME_OVERRIDES_PATH');
-        if (is_string($fromEnv) && trim($fromEnv) !== '') {
-            return trim($fromEnv);
-        }
-
-        return self::projectRoot() . DIRECTORY_SEPARATOR . 'storage'
-            . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
-            . DIRECTORY_SEPARATOR . 'runtime-overrides.json';
+        return self::resolveWritePath();
     }
 
     /**
@@ -30,7 +25,7 @@ final class RuntimeOverrideStore
 
     private static function lockPath(): string
     {
-        return dirname(self::path()) . DIRECTORY_SEPARATOR . 'runtime-overrides.lock';
+        return dirname(self::resolveWritePath()) . DIRECTORY_SEPARATOR . 'runtime-overrides.lock';
     }
 
     private static function projectRoot(): string
@@ -41,18 +36,98 @@ final class RuntimeOverrideStore
         return $rp !== false ? $rp : $root;
     }
 
+    private static function defaultPath(): string
+    {
+        return self::projectRoot() . DIRECTORY_SEPARATOR . 'storage'
+            . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
+            . DIRECTORY_SEPARATOR . 'runtime-overrides.json';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function writeCandidatePaths(): array
+    {
+        $fromEnv = getenv('RATIB_INFRA_RUNTIME_OVERRIDES_PATH');
+        if (is_string($fromEnv) && trim($fromEnv) !== '') {
+            return [trim($fromEnv)];
+        }
+
+        $root = self::projectRoot();
+        $out = [
+            self::defaultPath(),
+        ];
+
+        $uploadsHelper = $root . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'ratib_uploads_base.php';
+        if (is_file($uploadsHelper)) {
+            require_once $uploadsHelper;
+            if (function_exists('ratib_uploads_base_dir')) {
+                $base = ratib_uploads_base_dir();
+                if (is_string($base) && $base !== '') {
+                    $out[] = rtrim($base, DIRECTORY_SEPARATOR)
+                        . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
+                        . DIRECTORY_SEPARATOR . 'runtime-overrides.json';
+                }
+            }
+            if (function_exists('ratib_uploads_candidate_base_dirs')) {
+                foreach (ratib_uploads_candidate_base_dirs(false) as $base) {
+                    if (!is_string($base) || $base === '') {
+                        continue;
+                    }
+                    $out[] = rtrim($base, DIRECTORY_SEPARATOR)
+                        . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
+                        . DIRECTORY_SEPARATOR . 'runtime-overrides.json';
+                }
+            }
+        }
+
+        $parent = dirname($root);
+        if ($parent !== '' && $parent !== '.' && $parent !== $root) {
+            $out[] = $parent . DIRECTORY_SEPARATOR . 'ratib_infra' . DIRECTORY_SEPARATOR . 'runtime-overrides.json';
+        }
+
+        $unique = [];
+        foreach ($out as $p) {
+            $norm = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $p);
+            if (!in_array($norm, $unique, true)) {
+                $unique[] = $norm;
+            }
+        }
+
+        return $unique;
+    }
+
+    private static function resolveWritePath(): string
+    {
+        if (self::$resolvedWritePath !== null) {
+            return self::$resolvedWritePath;
+        }
+
+        foreach (self::writeCandidatePaths() as $candidate) {
+            if (self::ensureWritableDirectory(dirname($candidate))) {
+                self::$resolvedWritePath = $candidate;
+
+                return self::$resolvedWritePath;
+            }
+        }
+
+        self::$resolvedWritePath = self::defaultPath();
+
+        return self::$resolvedWritePath;
+    }
+
     /**
      * @return list<string>
      */
     private static function readCandidatePaths(): array
     {
-        $primary = self::path();
+        $paths = self::writeCandidatePaths();
         $legacy = self::legacyPath();
-        if ($primary === $legacy) {
-            return [$primary];
+        if (!in_array($legacy, $paths, true)) {
+            $paths[] = $legacy;
         }
 
-        return [$primary, $legacy];
+        return $paths;
     }
 
     /**
@@ -83,15 +158,26 @@ final class RuntimeOverrideStore
      */
     public static function updateAtomic(callable $mutator): array
     {
-        $path = self::path();
-        $dir = dirname($path);
-        if (!self::ensureWritableDirectory($dir)) {
-            throw new \RuntimeException('Unable to create runtime config directory: ' . $dir);
+        $triedDirs = [];
+        $path = null;
+        foreach (self::writeCandidatePaths() as $candidate) {
+            $dir = dirname($candidate);
+            $triedDirs[] = $dir;
+            if (self::ensureWritableDirectory($dir)) {
+                $path = $candidate;
+                self::$resolvedWritePath = $candidate;
+                break;
+            }
+        }
+        if ($path === null) {
+            throw new \RuntimeException(
+                'No writable runtime overrides directory. Tried: ' . implode('; ', array_unique($triedDirs))
+            );
         }
 
         $lockFp = @fopen(self::lockPath(), 'c+');
         if (!is_resource($lockFp)) {
-            throw new \RuntimeException('Unable to open runtime config lock file');
+            throw new \RuntimeException('Unable to open runtime config lock file: ' . self::lockPath());
         }
 
         try {
@@ -114,7 +200,7 @@ final class RuntimeOverrideStore
 
             $written = @file_put_contents($tmp, $json, LOCK_EX);
             if ($written === false) {
-                throw new \RuntimeException('Unable to write runtime overrides temporary file');
+                throw new \RuntimeException('Unable to write runtime overrides temporary file: ' . $tmp);
             }
 
             @chmod($tmp, 0660);
@@ -123,7 +209,7 @@ final class RuntimeOverrideStore
                 @unlink($path);
                 if (!@rename($tmp, $path)) {
                     @unlink($tmp);
-                    throw new \RuntimeException('Unable to atomically replace runtime overrides file');
+                    throw new \RuntimeException('Unable to atomically replace runtime overrides file: ' . $path);
                 }
             }
 
@@ -148,6 +234,10 @@ final class RuntimeOverrideStore
             return true;
         }
         @chmod($dir, 0775);
+        if (@is_writable($dir)) {
+            return true;
+        }
+        @chmod($dir, 0777);
 
         return @is_writable($dir);
     }
