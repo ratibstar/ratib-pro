@@ -21,7 +21,7 @@ final class InfraEnvBootstrap
         self::loadConfigFiles($root);
 
         if (!self::hasSecretKey()) {
-            self::loadStorageSecretKey($root, false);
+            self::loadStorageSecretKey($root);
         }
         if (!self::hasSecretKey()) {
             self::loadLocalDevSecretKey($root);
@@ -52,14 +52,15 @@ final class InfraEnvBootstrap
                 : ['ok' => false, 'message' => 'config_write_failed_load'];
         }
 
-        $storagePath = self::storageSecretKeyPath($root);
-        if (self::tryWriteStorageSecretKey($root, true)) {
+        foreach (self::secretKeyCandidatePaths($root) as $storagePath) {
+            if (!self::tryWriteSecretKeyFile($storagePath)) {
+                continue;
+            }
             self::$loaded = false;
             self::load();
-
-            return self::hasSecretKey()
-                ? ['ok' => true, 'path' => $storagePath, 'message' => 'created_storage_secret_key']
-                : ['ok' => false, 'message' => 'storage_write_failed_load'];
+            if (self::hasSecretKey()) {
+                return ['ok' => true, 'path' => $storagePath, 'message' => 'created_storage_secret_key'];
+            }
         }
 
         return ['ok' => false, 'message' => 'no_writable_path_for_secret_key'];
@@ -78,9 +79,68 @@ final class InfraEnvBootstrap
 
     public static function storageSecretKeyPath(string $root): string
     {
-        return $root . DIRECTORY_SEPARATOR . 'storage'
+        $candidates = self::secretKeyCandidatePaths($root);
+
+        return $candidates[0] ?? ($root . DIRECTORY_SEPARATOR . 'storage'
             . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
-            . DIRECTORY_SEPARATOR . '.ratib_infra_secret_key';
+            . DIRECTORY_SEPARATOR . '.ratib_infra_secret_key');
+    }
+
+    /**
+     * Same writable roots as runtime-overrides (uploads / parent ratib_infra / storage).
+     *
+     * @return list<string>
+     */
+    public static function secretKeyCandidatePaths(string $root): array
+    {
+        $out = [
+            $root . DIRECTORY_SEPARATOR . 'storage'
+                . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
+                . DIRECTORY_SEPARATOR . '.ratib_infra_secret_key',
+        ];
+
+        $uploadsHelper = $root . DIRECTORY_SEPARATOR . 'includes' . DIRECTORY_SEPARATOR . 'ratib_uploads_base.php';
+        if (is_file($uploadsHelper)) {
+            require_once $uploadsHelper;
+            if (function_exists('ratib_uploads_base_dir')) {
+                $base = ratib_uploads_base_dir();
+                if (is_string($base) && $base !== '') {
+                    $out[] = rtrim($base, DIRECTORY_SEPARATOR)
+                        . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
+                        . DIRECTORY_SEPARATOR . '.ratib_infra_secret_key';
+                }
+            }
+            if (function_exists('ratib_uploads_candidate_base_dirs')) {
+                foreach (ratib_uploads_candidate_base_dirs(false) as $base) {
+                    if (!is_string($base) || $base === '') {
+                        continue;
+                    }
+                    $out[] = rtrim($base, DIRECTORY_SEPARATOR)
+                        . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
+                        . DIRECTORY_SEPARATOR . '.ratib_infra_secret_key';
+                }
+            }
+        }
+
+        $parent = dirname($root);
+        if ($parent !== '' && $parent !== '.' && $parent !== $root) {
+            $out[] = $parent . DIRECTORY_SEPARATOR . 'ratib_infra' . DIRECTORY_SEPARATOR . '.ratib_infra_secret_key';
+        }
+
+        $fromEnv = getenv('RATIB_INFRA_SECRET_KEY_FILE');
+        if (is_string($fromEnv) && trim($fromEnv) !== '') {
+            array_unshift($out, trim($fromEnv));
+        }
+
+        $unique = [];
+        foreach ($out as $p) {
+            $norm = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $p);
+            if (!in_array($norm, $unique, true)) {
+                $unique[] = $norm;
+            }
+        }
+
+        return $unique;
     }
 
     private static function projectRoot(): string
@@ -133,20 +193,20 @@ final class InfraEnvBootstrap
         }
     }
 
-    private static function loadStorageSecretKey(string $root, bool $allowCreate): void
+    private static function loadStorageSecretKey(string $root): void
     {
-        $path = self::storageSecretKeyPath($root);
-        if (!is_file($path) && $allowCreate) {
-            self::tryWriteStorageSecretKey($root, true);
-        }
-        if (!is_readable($path)) {
+        foreach (self::secretKeyCandidatePaths($root) as $path) {
+            if (!is_readable($path)) {
+                continue;
+            }
+            $raw = trim((string) file_get_contents($path));
+            if ($raw === '') {
+                continue;
+            }
+            self::applySecretKey($raw);
+
             return;
         }
-        $raw = trim((string) file_get_contents($path));
-        if ($raw === '') {
-            return;
-        }
-        self::applySecretKey($raw);
     }
 
     private static function loadLocalDevSecretKey(string $root): void
@@ -215,12 +275,8 @@ final class InfraEnvBootstrap
         return true;
     }
 
-    private static function tryWriteStorageSecretKey(string $root, bool $create): bool
+    private static function tryWriteSecretKeyFile(string $path): bool
     {
-        if (!$create) {
-            return false;
-        }
-        $path = self::storageSecretKeyPath($root);
         $dir = dirname($path);
         if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
             @mkdir($dir, 0777, true);
@@ -236,6 +292,14 @@ final class InfraEnvBootstrap
             return false;
         }
         @chmod($path, 0600);
+        $htaccess = $dir . DIRECTORY_SEPARATOR . '.htaccess';
+        if (!is_file($htaccess)) {
+            @file_put_contents(
+                $htaccess,
+                "# Deny HTTP access\n<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n",
+                LOCK_EX
+            );
+        }
 
         return true;
     }
