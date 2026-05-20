@@ -242,7 +242,7 @@ final class ModuleConfig
         $v = getenv('RATIB_INFRA_PROVIDER_' . strtoupper($pk) . '_SANDBOX');
         if (!is_string($v) || trim($v) === '') {
             // Namecheap can stay intentionally disabled in production until credentials are ready.
-            if ($pk === 'namecheap') {
+            if ($pk === 'namecheap' || $pk === 'cloudflare_dns') {
                 return false;
             }
             return true;

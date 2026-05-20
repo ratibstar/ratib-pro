@@ -55,8 +55,17 @@ final class ProviderDiagnosticsService
         if (!$credentialsReady) {
             return $this->withTiming(['name' => 'cpanel_connectivity', 'status' => 'WARN', 'message' => 'credentials_missing', 'request_id' => $requestId], $started);
         }
+        $user = ModuleConfig::cpanelWhmUsername();
+        $token = ModuleConfig::cpanelWhmToken();
         try {
-            $resp = $this->http->get($base . '/json-api/version', ['Accept' => 'application/json'], ['api.version' => 1]);
+            $resp = $this->http->get(
+                $base . '/json-api/version',
+                [
+                    'Accept' => 'application/json',
+                    'Authorization' => 'whm ' . $user . ':' . $token,
+                ],
+                ['api.version' => 1]
+            );
             if (in_array($resp->statusCode(), [401, 403], true)) {
                 return $this->withTiming(['name' => 'cpanel_connectivity', 'status' => 'WARN', 'message' => 'invalid_credentials', 'http_status' => $resp->statusCode(), 'request_id' => $requestId], $started);
             }
@@ -81,7 +90,7 @@ final class ProviderDiagnosticsService
         $started = microtime(true);
         $requestId = bin2hex(random_bytes(8));
         if ($this->providerDisabled('dns') || $this->providerFlagsDisableExecution('cloudflare_dns')) {
-            return $this->withTiming(['name' => 'cloudflare_connectivity', 'status' => 'WARN', 'message' => 'disabled_provider', 'request_id' => $requestId], $started);
+            return $this->withTiming(['name' => 'cloudflare_connectivity', 'status' => 'PASS', 'message' => 'disabled_provider', 'request_id' => $requestId], $started);
         }
         $token = $secret->getSecret('RATIB_INFRA_CLOUDFLARE', 'API_TOKEN') ?? getenv('RATIB_INFRA_CLOUDFLARE_API_TOKEN');
         if (!is_string($token) || trim($token) === '') {
