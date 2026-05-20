@@ -1,4 +1,5 @@
-# Infrastructure marketplace — 23 files (sync with cpanel-deploy-sync.sh CRITICAL infra block)
+# Infrastructure marketplace — 23 files (sync with cpanel-deploy-sync.sh CRITICAL infra block).
+# Note: .sql / .sh / storage/.htaccess are applied on-server (migrations already run); use list mode only if needed.
 modules/infrastructure-marketplace/Infrastructure/InfraEnvBootstrap.php
 modules/infrastructure-marketplace/Security/Secrets/InfraProviderSecretsSync.php
 modules/infrastructure-marketplace/Cli/infra-ensure-secret-key.php

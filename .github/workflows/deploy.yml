@@ -14,6 +14,14 @@ on:
         options:
           - "false"
           - "true"
+      infra_only:
+        description: "Upload only scripts/infra-deploy-23-files.list (PHP/sql/sh). Use after a failed infra bundle push."
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 concurrency:
   group: production-deploy
@@ -39,7 +47,7 @@ jobs:
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
           CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
           CPANEL_REMOTE_BASE: ${{ secrets.CPANEL_SFTP_REMOTE_DIR || '/home/outratib/public_html' }}
-          CPANEL_DEPLOY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.full_sync == 'true' && 'critical' || 'fast' }}
+          CPANEL_DEPLOY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.infra_only == 'true' && 'list' || (github.event_name == 'workflow_dispatch' && inputs.full_sync == 'true' && 'critical' || 'fast') }}
         run: bash scripts/github-cpanel-fileman-deploy.sh
 
       - name: Verify live site (~20s)
