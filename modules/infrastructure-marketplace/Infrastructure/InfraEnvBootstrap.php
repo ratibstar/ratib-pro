@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Ratib\InfrastructureMarketplace\Infrastructure;
 
 /**
- * Loads RATIB_INFRA_* from config/infra.secrets.php and writable storage fallback.
+ * Loads RATIB_INFRA_* from config/infra.secrets.php and writable storage/ratib_uploads fallback.
  */
 final class InfraEnvBootstrap
 {
