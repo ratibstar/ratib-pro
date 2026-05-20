@@ -39,6 +39,10 @@ try {
 } catch (\Throwable $e) {
     // 200 so DevTools does not flag a hard failure; clients use ok + report.status.
     http_response_code(200);
+    $detail = $e->getMessage();
+    if (strlen($detail) > 240) {
+        $detail = substr($detail, 0, 240) . '…';
+    }
     echo json_encode([
         'ok' => false,
         'report' => [
@@ -47,7 +51,8 @@ try {
             'matrix' => ['PASS' => 0, 'WARN' => 0, 'FAIL' => 1],
             'sections' => [],
             'recommendations' => [
-                'Fix DB connection (RATIB_INFRA_DB_DSN or RATIB_INFRA_DB_* / legacy DB_*), credentials (RATIB_INFRA_DB_USER if needed), and apply infra migrations 002+ on the target database.',
+                'Prelaunch health failed: ' . $detail,
+                'If this mentions a missing table, apply infra migrations on the control panel DB (see Docs/PRODUCTION_MIGRATION_ROLLOUT.md).',
             ],
         ],
     ], JSON_UNESCAPED_SLASHES);
