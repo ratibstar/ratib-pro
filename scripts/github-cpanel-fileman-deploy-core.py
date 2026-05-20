@@ -43,6 +43,7 @@ DEPLOY_ALLOW_FILES = frozenset({
     ".htaccess",
     "index.php",
     "ratib-profile-fix.php",
+    "config/env.php",
 })
 DEPLOY_DENY_PREFIXES = (
     "Designed/",
@@ -215,15 +216,6 @@ FAST_FILES = [
     "pages/ratib-purge-cache.php",
     "includes/ratib-page-stamp.php",
     "includes/ratib-profile-force-same-tab.php",
-    "api/infrastructure-marketplace/control-update.php",
-    "modules/infrastructure-marketplace/Infrastructure/InfraEnvBootstrap.php",
-    "modules/infrastructure-marketplace/Security/Secrets/InfraProviderSecretsSync.php",
-    "modules/infrastructure-marketplace/Cli/infra-ensure-secret-key.php",
-    "modules/infrastructure-marketplace/Cli/production-verify.php",
-    "modules/infrastructure-marketplace/Config/RuntimeOverrideStore.php",
-    "modules/infrastructure-marketplace/Config/ModuleConfig.php",
-    "modules/infrastructure-marketplace/Config/ModuleConfig.php",
-    "storage/infrastructure-marketplace/.htaccess",
     "public/ratib-build.txt",
     "control-panel/includes/control/public-marketing-urls.php",
     "control-panel/includes/control/sidebar.php",
