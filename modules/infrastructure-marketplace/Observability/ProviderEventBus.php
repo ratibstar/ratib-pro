@@ -24,6 +24,22 @@ final class ProviderEventBus
             if ($logger === null) {
                 return;
             }
+            $status = (string) ($context['status'] ?? 'unknown');
+            $throttle = new ProviderFailureThrottle($logger->pdo());
+            if (!$throttle->allowEventLog($providerCode, $eventName, $status)) {
+                return;
+            }
+            if ($providerType === 'orchestration'
+                && $providerCode === 'provisioning_queue'
+                && in_array($eventName, ['retries', 'failures'], true)) {
+                $jobPublicId = '';
+                if (isset($context['payload']) && is_array($context['payload'])) {
+                    $jobPublicId = (string) ($context['payload']['public_id'] ?? '');
+                }
+                if ($jobPublicId !== '' && !$throttle->allowWorkerFailureLog($jobPublicId)) {
+                    return;
+                }
+            }
             $logger->log($providerType, $providerCode, $eventName, $context);
         } catch (\Throwable $e) {
             // Intentionally swallowed: observability must be additive, never blocking.

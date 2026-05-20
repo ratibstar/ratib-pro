@@ -1,0 +1,25 @@
+# Infrastructure Marketplace — suggested cron (cPanel or system crontab)
+# Replace /home/outratib/public_html with your docroot.
+# All times UTC; adjust for Riyadh (UTC+3) as needed.
+
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+MAILTO=ops@out.ratib.sa
+
+# --- Provider health (every 5 minutes) ---
+*/5 * * * * cd /home/outratib/public_html && /usr/local/bin/php modules/infrastructure-marketplace/Cli/provider-health-monitor.php >> /home/outratib/logs/infra-health-monitor.log 2>&1
+
+# --- Provider events retention (daily 03:15 UTC) ---
+15 3 * * * cd /home/outratib/public_html && /usr/local/bin/php modules/infrastructure-marketplace/Cli/provider-events-retention.php >> /home/outratib/logs/infra-events-retention.log 2>&1
+
+# --- Production verification probe (daily 04:00 UTC) ---
+0 4 * * * cd /home/outratib/public_html && /usr/local/bin/php modules/infrastructure-marketplace/Cli/production-verify.php >> /home/outratib/logs/infra-production-verify.log 2>&1
+
+# --- Provisioning worker (continuous — use Supervisor/systemd in production; cron fallback every minute) ---
+* * * * * cd /home/outratib/public_html && /usr/local/bin/php modules/infrastructure-marketplace/Workers/InfrastructureProvisioningWorker.php >> /home/outratib/logs/infra-worker.log 2>&1
+
+# --- FUTURE: reconciliation sweep (enable when reconcile CLI is wired) ---
+# 0 */6 * * * cd /home/outratib/public_html && /usr/local/bin/php modules/infrastructure-marketplace/Cli/reconciliation-sweep.php >> /home/outratib/logs/infra-reconcile.log 2>&1
+
+# --- FUTURE: dead-letter / queue recovery (see Docs/RUNBOOK_WORKER_QUEUE_RECOVERY.md) ---
+# 30 2 * * * cd /home/outratib/public_html && /usr/local/bin/php modules/infrastructure-marketplace/Cli/queue-recovery-drill.php --dry-run >> /home/outratib/logs/infra-queue-recovery.log 2>&1

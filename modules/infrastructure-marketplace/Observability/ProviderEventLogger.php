@@ -12,6 +12,11 @@ final class ProviderEventLogger
         $this->pdo = $pdo;
     }
 
+    public function pdo(): \PDO
+    {
+        return $this->pdo;
+    }
+
     /**
      * @param array<string, mixed> $context
      */
