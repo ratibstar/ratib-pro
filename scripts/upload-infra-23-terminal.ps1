@@ -1,30 +1,41 @@
-# Terminal upload: 23 infrastructure files to out.ratib.sa (GitHub main → live docroot).
-# Step 1: refresh ratib-profile-check.php on the server (includes infra23 handler).
-# Step 2: pull all 23 infra files from GitHub main onto the server.
+# Terminal upload: 23 infrastructure files to out.ratib.sa.
+# Preferred: cPanel Fileman API (set CPANEL_HOST, CPANEL_USER, CPANEL_API_TOKEN).
+# Fallback: git push main → GitHub Actions fast deploy (FAST_FILES infra bundle).
 
 $ErrorActionPreference = 'Stop'
-$base = 'https://out.ratib.sa/ratib-profile-check.php'
-$key = 'ratib-deploy-sync-2026'
+$root = Split-Path -Parent $PSScriptRoot
+Set-Location $root
 
-function Invoke-RatibDeploy([string]$Query) {
-    $url = "${base}?${Query}&key=${key}"
-    Write-Host "`n>>> GET $url" -ForegroundColor Cyan
-    $out = curl.exe -sS $url
-    Write-Host $out
-    if ($out -match 'Summary: ok=(\d+) fail=(\d+)') {
-        $f = [int]$Matches[2]
-        if ($f -gt 0) { throw "Deploy reported $f failure(s)." }
-    } elseif ($out -match 'Forbidden') {
-        throw 'Deploy forbidden (wrong key or blocked).'
-    }
+$hasCpanel = @('CPANEL_HOST', 'CPANEL_USER', 'CPANEL_API_TOKEN') | ForEach-Object {
+    Test-Path "Env:$_"
+} | Where-Object { $_ -eq $true }
+
+if ($hasCpanel.Count -eq 3) {
+    Write-Host 'Uploading 23 files via cPanel Fileman API...' -ForegroundColor Cyan
+    $env:CPANEL_DEPLOY_MODE = 'list'
+    $env:CPANEL_DEPLOY_FILELIST = 'scripts/infra-deploy-23-files.list'
+    if (-not $env:CPANEL_PORT) { $env:CPANEL_PORT = '2083' }
+    if (-not $env:CPANEL_REMOTE_BASE) { $env:CPANEL_REMOTE_BASE = '/home/outratib/public_html' }
+    $py = Get-Command python -ErrorAction SilentlyContinue
+    if (-not $py) { $py = Get-Command python3 -ErrorAction SilentlyContinue }
+    if (-not $py) { throw 'Python not found on PATH' }
+    & $py.Source scripts/github-cpanel-fileman-deploy-core.py
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+} else {
+    Write-Host 'CPANEL_* not set — pushing to main to trigger GitHub Actions deploy...' -ForegroundColor Yellow
+    $git = 'C:\Program Files\Git\cmd\git.exe'
+    if (-not (Test-Path $git)) { $git = 'git' }
+    & $git add public/ratib-build.txt scripts/github-cpanel-fileman-deploy-core.py
+    & $git commit -m 'Deploy infra 23-file bundle via FAST_FILES baseline' 2>$null
+    if ($LASTEXITCODE -eq 0) { & $git push origin main }
+    else { Write-Host 'Nothing to commit; ensure latest main is pushed for Actions deploy.' }
+    Write-Host 'Waiting 90s for GitHub Actions...'
+    Start-Sleep -Seconds 90
 }
 
-Write-Host 'Step 1/2: update deploy helper on server...'
-Invoke-RatibDeploy -Query 'deploy=1'
-
-Write-Host 'Step 2/2: upload 23 infrastructure files...'
-Invoke-RatibDeploy -Query 'infra23=1'
-
-Write-Host "`nBuild marker on live site:"
+Write-Host "`nLive build marker:"
 curl.exe -sS 'https://out.ratib.sa/public/ratib-build.txt'
+Write-Host ''
+Write-Host 'Production verify:'
+curl.exe -sS 'https://out.ratib.sa/modules/infrastructure-marketplace/Cli/production-verify.php'
 Write-Host ''
