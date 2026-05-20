@@ -1,1 +1,1 @@
-infra-prelaunch-php74-match-fix-20260520
+infra-namecheap-disabled-redeploy-20260520

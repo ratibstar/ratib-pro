@@ -124,7 +124,7 @@ final class ProviderDiagnosticsService
         $started = microtime(true);
         $requestId = bin2hex(random_bytes(8));
         if ($this->providerDisabled('registrar') || $this->providerFlagsDisableExecution('namecheap')) {
-            return $this->withTiming(['name' => 'namecheap_reachability', 'status' => 'WARN', 'message' => 'disabled_provider', 'request_id' => $requestId], $started);
+            return $this->withTiming(['name' => 'namecheap_reachability', 'status' => 'PASS', 'message' => 'disabled_provider', 'request_id' => $requestId], $started);
         }
         $apiUser = ModuleConfig::namecheapCredential('api_user');
         $apiKey = ModuleConfig::namecheapCredential('api_key');

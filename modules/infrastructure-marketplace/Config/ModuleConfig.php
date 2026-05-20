@@ -240,8 +240,15 @@ final class ModuleConfig
             return self::boolFromMixed($row['sandbox'], true);
         }
         $v = getenv('RATIB_INFRA_PROVIDER_' . strtoupper($pk) . '_SANDBOX');
+        if (!is_string($v) || trim($v) === '') {
+            // Namecheap can stay intentionally disabled in production until credentials are ready.
+            if ($pk === 'namecheap') {
+                return false;
+            }
+            return true;
+        }
 
-        return !is_string($v) || !in_array(strtolower(trim($v)), ['0', 'false', 'off', 'no'], true);
+        return !in_array(strtolower(trim($v)), ['0', 'false', 'off', 'no'], true);
     }
 
     /**
