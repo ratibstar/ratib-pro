@@ -20,6 +20,17 @@ final class SecretManager
         return new self([new EnvSecretProvider()]);
     }
 
+    public static function withDefaultProviders(?\PDO $pdo = null, ?int $tenantId = null, ?int $agencyId = null): self
+    {
+        $providers = [new EnvSecretProvider()];
+        if ($pdo !== null) {
+            $providers[] = new PreparedEncryptedDbSecretProvider($pdo);
+            $providers[] = new ProviderSecretDbProvider(new ProviderSecretStore($pdo), $tenantId, $agencyId);
+        }
+
+        return new self($providers);
+    }
+
     public function getSecret(string $scope, string $key): ?string
     {
         foreach ($this->providers as $provider) {

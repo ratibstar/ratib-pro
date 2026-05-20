@@ -71,6 +71,7 @@ final class PrelaunchHealthService
             dirname(__DIR__) . '/Assets/css/infrastructure-admin-dashboard.css',
         ];
         $migrationAsset = dirname(__DIR__) . '/Migrations/005_provider_activation_marketplace.sql';
+        $securityObsMigrationAsset = dirname(__DIR__) . '/Migrations/008_provider_secrets_and_events.sql';
         $missing = [];
         foreach ($requiredFiles as $f) {
             if (!is_file($f)) {
@@ -81,6 +82,9 @@ final class PrelaunchHealthService
             || ($this->tableExists('ratib_infra_provider_activations')
                 && $this->tableExists('ratib_infra_orders')
                 && $this->tableExists('ratib_infra_services'));
+        $securityObsMigrationCompatible = is_file($securityObsMigrationAsset)
+            || ($this->tableExists('ratib_infra_provider_secrets')
+                && $this->tableExists('ratib_infra_provider_events'));
         $runtimeOverridePath = RuntimeOverrideStore::path();
         $runtimeOverrideDir = dirname($runtimeOverridePath);
         $runtimeWritable = (is_file($runtimeOverridePath) && is_writable($runtimeOverridePath))
@@ -88,6 +92,7 @@ final class PrelaunchHealthService
         $checks = [
             ['name' => 'required_assets_present', 'status' => $missing === [] ? 'PASS' : 'FAIL', 'missing_count' => count($missing)],
             ['name' => 'provider_activation_migration_compatible', 'status' => $migrationCompatible ? 'PASS' : 'FAIL'],
+            ['name' => 'provider_security_observability_migration_compatible', 'status' => $securityObsMigrationCompatible ? 'PASS' : 'WARN'],
             ['name' => 'module_readable', 'status' => is_readable(dirname(__DIR__)) ? 'PASS' : 'FAIL'],
             ['name' => 'module_writable', 'status' => $runtimeWritable ? 'PASS' : 'WARN'],
         ];
@@ -106,6 +111,8 @@ final class PrelaunchHealthService
     {
         $checks = [
             ['name' => 'secret_masking_helper_present', 'status' => class_exists('Ratib\\InfrastructureMarketplace\\Security\\Secrets\\SecretManager') ? 'PASS' : 'FAIL'],
+            ['name' => 'provider_secret_store_present', 'status' => class_exists('Ratib\\InfrastructureMarketplace\\Security\\Secrets\\ProviderSecretStore') ? 'PASS' : 'WARN'],
+            ['name' => 'provider_secret_table_present', 'status' => $this->tableExists('ratib_infra_provider_secrets') ? 'PASS' : 'WARN'],
             ['name' => 'audit_table_present', 'status' => $this->tableExists('ratib_infra_audit_entries') ? 'PASS' : 'FAIL'],
             ['name' => 'tenant_isolation_component_present', 'status' => class_exists('Ratib\\InfrastructureMarketplace\\Compliance\\TenantIsolationCompliance') ? 'PASS' : 'FAIL'],
             ['name' => 'admin_action_traceability_present', 'status' => class_exists('Ratib\\InfrastructureMarketplace\\Compliance\\AdminActionHistory') ? 'PASS' : 'FAIL'],
@@ -125,6 +132,8 @@ final class PrelaunchHealthService
             ['name' => 'queue_saturation_alert_path', 'status' => method_exists('Ratib\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'queueSaturation') ? 'PASS' : 'FAIL'],
             ['name' => 'ssl_expiration_alert_path', 'status' => method_exists('Ratib\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'sslExpiration') ? 'PASS' : 'FAIL'],
             ['name' => 'reconciliation_anomaly_alert_path', 'status' => method_exists('Ratib\\InfrastructureMarketplace\\Observability\\InfrastructureAlertingService', 'reconciliationAnomaly') ? 'PASS' : 'FAIL'],
+            ['name' => 'provider_health_monitor_present', 'status' => class_exists('Ratib\\InfrastructureMarketplace\\Providers\\Health\\ProviderHealthMonitor') ? 'PASS' : 'WARN'],
+            ['name' => 'provider_event_table_present', 'status' => $this->tableExists('ratib_infra_provider_events') ? 'PASS' : 'WARN'],
         ];
         return ['checks' => $checks];
     }

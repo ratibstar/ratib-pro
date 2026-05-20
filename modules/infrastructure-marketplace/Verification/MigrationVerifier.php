@@ -28,6 +28,8 @@ final class MigrationVerifier
             'ratib_infra_audit_entries',
             'ratib_infra_secret_refs',
             'ratib_infra_provider_activations',
+            'ratib_infra_provider_secrets',
+            'ratib_infra_provider_events',
             'ratib_infra_orders',
             'ratib_infra_domain_search_cache',
             'ratib_infra_domain_search_rate',

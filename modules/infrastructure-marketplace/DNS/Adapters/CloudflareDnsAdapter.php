@@ -8,6 +8,7 @@ use Ratib\InfrastructureMarketplace\Domain\Contracts\DnsProviderInterface;
 use Ratib\InfrastructureMarketplace\Domain\TenantContext;
 use Ratib\InfrastructureMarketplace\Http\Clients\CurlHttpClient;
 use Ratib\InfrastructureMarketplace\Http\Contracts\HttpClientInterface;
+use Ratib\InfrastructureMarketplace\Observability\ProviderEventBus;
 use Ratib\InfrastructureMarketplace\Security\Rollout\ProviderRolloutPolicy;
 use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
@@ -29,12 +30,18 @@ final class CloudflareDnsAdapter implements DnsProviderInterface
 
     public function applyRecords(TenantContext $tenant, string $zoneFqdn, array $records): array
     {
+        $started = microtime(true);
+        $requestId = bin2hex(random_bytes(8));
         if (!$this->rollout->canExecute($tenant, 'cloudflare_dns')) {
-            return ['provider' => 'cloudflare_dns', 'state' => 'disabled_by_rollout'];
+            $result = ['provider' => 'cloudflare_dns', 'state' => 'disabled_by_rollout'];
+            $this->logProviderEvent('dns_updates', $tenant, $started, $requestId, $result);
+            return $result;
         }
         $zoneId = $this->resolveZoneId($zoneFqdn);
         if ($zoneId === null) {
-            return ['provider' => 'cloudflare_dns', 'state' => 'zone_not_found', 'retryable' => false];
+            $result = ['provider' => 'cloudflare_dns', 'state' => 'zone_not_found', 'retryable' => false];
+            $this->logProviderEvent('dns_updates', $tenant, $started, $requestId, $result);
+            return $result;
         }
 
         $results = [];
@@ -57,22 +64,31 @@ final class CloudflareDnsAdapter implements DnsProviderInterface
             $results[] = $this->createRecord($zoneId, $type, $name, $target, $ttl);
         }
 
-        return [
+        $result = [
             'provider' => 'cloudflare_dns',
             'state' => 'applied',
             'mode' => $this->rollout->executionMode('cloudflare_dns'),
             'results' => $results,
         ];
+        $this->logProviderEvent('dns_updates', $tenant, $started, $requestId, $result);
+
+        return $result;
     }
 
     public function purgeZone(TenantContext $tenant, string $zoneFqdn): array
     {
+        $started = microtime(true);
+        $requestId = bin2hex(random_bytes(8));
         if (!$this->rollout->canExecute($tenant, 'cloudflare_dns')) {
-            return ['provider' => 'cloudflare_dns', 'state' => 'disabled_by_rollout'];
+            $result = ['provider' => 'cloudflare_dns', 'state' => 'disabled_by_rollout'];
+            $this->logProviderEvent('dns_updates', $tenant, $started, $requestId, $result);
+            return $result;
         }
         $zoneId = $this->resolveZoneId($zoneFqdn);
         if ($zoneId === null) {
-            return ['provider' => 'cloudflare_dns', 'state' => 'zone_not_found'];
+            $result = ['provider' => 'cloudflare_dns', 'state' => 'zone_not_found'];
+            $this->logProviderEvent('dns_updates', $tenant, $started, $requestId, $result);
+            return $result;
         }
         $resp = $this->cfGet('/zones/' . $zoneId . '/dns_records', ['per_page' => 100]);
         $records = is_array($resp['result'] ?? null) ? $resp['result'] : [];
@@ -84,7 +100,10 @@ final class CloudflareDnsAdapter implements DnsProviderInterface
             $this->cfDelete('/zones/' . $zoneId . '/dns_records/' . (string) $r['id']);
             $deleted++;
         }
-        return ['provider' => 'cloudflare_dns', 'state' => 'purged', 'deleted' => $deleted];
+        $result = ['provider' => 'cloudflare_dns', 'state' => 'purged', 'deleted' => $deleted];
+        $this->logProviderEvent('dns_updates', $tenant, $started, $requestId, $result);
+
+        return $result;
     }
 
     public function getCapabilityMatrix(): array
@@ -230,6 +249,27 @@ final class CloudflareDnsAdapter implements DnsProviderInterface
             return rtrim(trim($base), '/');
         }
         return 'https://api.cloudflare.com/client/v4';
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     */
+    private function logProviderEvent(string $eventName, TenantContext $tenant, float $startedAt, string $requestId, array $result): void
+    {
+        $state = strtolower((string) ($result['state'] ?? 'unknown'));
+        $status = in_array($state, ['applied', 'purged'], true)
+            ? 'success'
+            : (!empty($result['retryable']) ? 'retry' : 'failed');
+        ProviderEventBus::log('dns', 'cloudflare_dns', $eventName, [
+            'request_id' => $requestId,
+            'operation_name' => $eventName,
+            'status' => $status,
+            'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+            'tenant_id' => $tenant->tenantId(),
+            'agency_id' => $tenant->agencyId(),
+            'payload' => $result,
+            'error_message' => $status === 'success' ? null : $state,
+        ]);
     }
 }
 

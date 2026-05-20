@@ -10,6 +10,7 @@ use Ratib\InfrastructureMarketplace\Hosting\DTOs\HostingOperationResult;
 use Ratib\InfrastructureMarketplace\Hosting\DTOs\HostingUsageSnapshot;
 use Ratib\InfrastructureMarketplace\Http\Clients\CurlHttpClient;
 use Ratib\InfrastructureMarketplace\Http\Contracts\HttpClientInterface;
+use Ratib\InfrastructureMarketplace\Observability\ProviderEventBus;
 use Ratib\InfrastructureMarketplace\Provisioning\ProvisioningPayload;
 use Ratib\InfrastructureMarketplace\Security\Secrets\SecretManager;
 
@@ -28,45 +29,69 @@ final class CpanelWhmAdapter implements HostingProvisioningInterface
 
     public function createAccount(TenantContext $tenant, ProvisioningPayload $payload): array
     {
+        $started = microtime(true);
+        $requestId = bin2hex(random_bytes(8));
         $query = $payload->attributes();
         $username = (string) ($query['username'] ?? '');
         $package = (string) ($query['plan'] ?? $query['pkgname'] ?? '');
         if ($username === '' || $package === '') {
-            return $this->errorResult('create_account', $username, 'validation', false, 'username and package are required');
+            $result = $this->errorResult('create_account', $username, 'validation', false, 'username and package are required');
+            $this->logProviderEvent('create', $tenant, $started, $requestId, $result);
+            return $result;
         }
         if (!$this->packageExists($tenant, $package)) {
-            return $this->errorResult('create_account', $username, 'validation', false, 'Package not found: ' . $package);
+            $result = $this->errorResult('create_account', $username, 'validation', false, 'Package not found: ' . $package);
+            $this->logProviderEvent('create', $tenant, $started, $requestId, $result);
+            return $result;
         }
         $existing = $this->accountSummary($tenant, $username);
         if ($existing !== null) {
-            return (new HostingOperationResult(true, 'create_account', $username, [
+            $result = (new HostingOperationResult(true, 'create_account', $username, [
                 'idempotent' => true,
                 'account' => $existing,
             ]))->toArray();
+            $this->logProviderEvent('create', $tenant, $started, $requestId, $result);
+            return $result;
         }
-        return $this->callWhmApi('createacct', $tenant, $query, 'create_account');
+        $result = $this->callWhmApi('createacct', $tenant, $query, 'create_account');
+        $this->logProviderEvent('create', $tenant, $started, $requestId, $result);
+        return $result;
     }
 
     public function suspendAccount(TenantContext $tenant, string $externalReference): array
     {
+        $started = microtime(true);
+        $requestId = bin2hex(random_bytes(8));
         $result = $this->callWhmApi('suspendacct', $tenant, ['user' => $externalReference], 'suspend_account');
         $verify = $this->accountSummary($tenant, $externalReference);
         $result['data']['suspended_verified'] = is_array($verify) && ((string) ($verify['suspended'] ?? '') === '1');
+        $this->logProviderEvent('suspend', $tenant, $started, $requestId, $result);
         return $result;
     }
 
     public function unsuspendAccount(TenantContext $tenant, string $externalReference): array
     {
-        return $this->callWhmApi('unsuspendacct', $tenant, ['user' => $externalReference], 'unsuspend_account');
+        $started = microtime(true);
+        $requestId = bin2hex(random_bytes(8));
+        $result = $this->callWhmApi('unsuspendacct', $tenant, ['user' => $externalReference], 'unsuspend_account');
+        $this->logProviderEvent('unsuspend', $tenant, $started, $requestId, $result);
+
+        return $result;
     }
 
     public function terminateAccount(TenantContext $tenant, string $externalReference): array
     {
+        $started = microtime(true);
+        $requestId = bin2hex(random_bytes(8));
         $before = $this->accountSummary($tenant, $externalReference);
         if ($before === null) {
-            return (new HostingOperationResult(true, 'terminate_account', $externalReference, ['idempotent' => true]))->toArray();
+            $result = (new HostingOperationResult(true, 'terminate_account', $externalReference, ['idempotent' => true]))->toArray();
+            $this->logProviderEvent('terminate', $tenant, $started, $requestId, $result);
+            return $result;
         }
-        return $this->callWhmApi('removeacct', $tenant, ['user' => $externalReference], 'terminate_account');
+        $result = $this->callWhmApi('removeacct', $tenant, ['user' => $externalReference], 'terminate_account');
+        $this->logProviderEvent('terminate', $tenant, $started, $requestId, $result);
+        return $result;
     }
 
     public function listPackages(TenantContext $tenant): array
@@ -257,6 +282,24 @@ final class CpanelWhmAdapter implements HostingProvisioningInterface
         $base['error_class'] = $class;
         $base['transient'] = $transient;
         return $base;
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     */
+    private function logProviderEvent(string $eventName, TenantContext $tenant, float $startedAt, string $requestId, array $result): void
+    {
+        $status = !empty($result['success']) ? 'success' : (!empty($result['retryable']) ? 'retry' : 'failed');
+        ProviderEventBus::log('hosting', 'cpanel_whm', $eventName, [
+            'request_id' => $requestId,
+            'operation_name' => (string) ($result['operation'] ?? $eventName),
+            'status' => $status,
+            'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+            'tenant_id' => $tenant->tenantId(),
+            'agency_id' => $tenant->agencyId(),
+            'payload' => $result,
+            'error_message' => isset($result['error']) ? (string) $result['error'] : null,
+        ]);
     }
 }
 

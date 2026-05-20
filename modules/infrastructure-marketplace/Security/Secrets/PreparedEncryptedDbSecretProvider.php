@@ -9,9 +9,11 @@ namespace Ratib\InfrastructureMarketplace\Security\Secrets;
 final class PreparedEncryptedDbSecretProvider implements SecretProviderInterface
 {
     private \PDO $pdo;
+    private ProviderSecretCipher $cipher;
 
-    public function __construct(\PDO $pdo) {
+    public function __construct(\PDO $pdo, ?ProviderSecretCipher $cipher = null) {
         $this->pdo = $pdo;
+        $this->cipher = $cipher ?? new ProviderSecretCipher();
     }
 
 
@@ -29,7 +31,8 @@ final class PreparedEncryptedDbSecretProvider implements SecretProviderInterface
         if (!is_array($row) || !isset($row['encrypted_value'])) {
             return null;
         }
-        return null;
+
+        return $this->cipher->decrypt((string) $row['encrypted_value']);
     }
 }
 

@@ -10,6 +10,7 @@ use Ratib\InfrastructureMarketplace\Events\InfrastructureEventEmitter;
 use Ratib\InfrastructureMarketplace\Infrastructure\DatabaseConnectionFactory;
 use Ratib\InfrastructureMarketplace\Observability\InfrastructureAlertingService;
 use Ratib\InfrastructureMarketplace\Observability\InfrastructureMetrics;
+use Ratib\InfrastructureMarketplace\Observability\ProviderEventBus;
 use Ratib\InfrastructureMarketplace\Provisioning\Execution\ProvisioningExecutionEngine;
 use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobLogRepository;
 use Ratib\InfrastructureMarketplace\Provisioning\Persistence\ProvisioningJobRepository;
@@ -97,6 +98,21 @@ final class InfrastructureProvisioningWorker
                 $metrics->incrementFailureCounter('worker_job', 'runtime_exception');
                 $events->structuredLog('error', 'Worker execution failure', ['job_id' => $jobId, 'worker' => $this->workerName]);
                 $alerts->workerFailure($this->workerName, 'job_exception');
+                $isRetry = $attempts < $maxAttempts;
+                ProviderEventBus::log('orchestration', 'provisioning_queue', $isRetry ? 'retries' : 'failures', [
+                    'request_id' => bin2hex(random_bytes(8)),
+                    'operation_name' => 'worker_execute',
+                    'status' => $isRetry ? 'retry' : 'failed',
+                    'retry_count' => $attempts,
+                    'tenant_id' => isset($row['tenant_id']) ? (int) $row['tenant_id'] : null,
+                    'agency_id' => isset($row['agency_id']) ? (int) $row['agency_id'] : null,
+                    'payload' => [
+                        'job_id' => $jobId,
+                        'public_id' => (string) ($row['public_id'] ?? ''),
+                        'max_attempts' => $maxAttempts,
+                    ],
+                    'error_message' => substr($e->getMessage(), 0, 500),
+                ]);
             }
             $processedJobs++;
 
