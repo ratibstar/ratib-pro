@@ -5,14 +5,54 @@ namespace Ratib\InfrastructureMarketplace\Config;
 
 final class RuntimeOverrideStore
 {
+    /**
+     * Writable runtime config (module tree is often read-only on cPanel after deploy).
+     */
     public static function path(): string
     {
-        return dirname(__DIR__) . '/Config/runtime-overrides.json';
+        $fromEnv = getenv('RATIB_INFRA_RUNTIME_OVERRIDES_PATH');
+        if (is_string($fromEnv) && trim($fromEnv) !== '') {
+            return trim($fromEnv);
+        }
+
+        return self::projectRoot() . DIRECTORY_SEPARATOR . 'storage'
+            . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
+            . DIRECTORY_SEPARATOR . 'runtime-overrides.json';
+    }
+
+    /**
+     * Legacy path inside the module (read-only on many production hosts).
+     */
+    public static function legacyPath(): string
+    {
+        return dirname(__DIR__) . DIRECTORY_SEPARATOR . 'Config' . DIRECTORY_SEPARATOR . 'runtime-overrides.json';
     }
 
     private static function lockPath(): string
     {
-        return dirname(__DIR__) . '/Config/runtime-overrides.lock';
+        return dirname(self::path()) . DIRECTORY_SEPARATOR . 'runtime-overrides.lock';
+    }
+
+    private static function projectRoot(): string
+    {
+        $root = dirname(__DIR__, 3);
+        $rp = realpath($root);
+
+        return $rp !== false ? $rp : $root;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function readCandidatePaths(): array
+    {
+        $primary = self::path();
+        $legacy = self::legacyPath();
+        if ($primary === $legacy) {
+            return [$primary];
+        }
+
+        return [$primary, $legacy];
     }
 
     /**
@@ -20,16 +60,21 @@ final class RuntimeOverrideStore
      */
     public static function read(): array
     {
-        $path = self::path();
-        if (!is_file($path)) {
-            return [];
+        foreach (self::readCandidatePaths() as $path) {
+            if (!is_file($path)) {
+                continue;
+            }
+            $raw = @file_get_contents($path);
+            if (!is_string($raw) || trim($raw) === '') {
+                continue;
+            }
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded) && $decoded !== []) {
+                return $decoded;
+            }
         }
-        $raw = @file_get_contents($path);
-        if (!is_string($raw) || trim($raw) === '') {
-            return [];
-        }
-        $decoded = json_decode($raw, true);
-        return is_array($decoded) ? $decoded : [];
+
+        return [];
     }
 
     /**
@@ -40,8 +85,8 @@ final class RuntimeOverrideStore
     {
         $path = self::path();
         $dir = dirname($path);
-        if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
-            throw new \RuntimeException('Unable to create runtime config directory');
+        if (!self::ensureWritableDirectory($dir)) {
+            throw new \RuntimeException('Unable to create runtime config directory: ' . $dir);
         }
 
         $lockFp = @fopen(self::lockPath(), 'c+');
@@ -72,7 +117,7 @@ final class RuntimeOverrideStore
                 throw new \RuntimeException('Unable to write runtime overrides temporary file');
             }
 
-            @chmod($tmp, 0640);
+            @chmod($tmp, 0660);
 
             if (!@rename($tmp, $path)) {
                 @unlink($path);
@@ -90,5 +135,20 @@ final class RuntimeOverrideStore
             @fclose($lockFp);
         }
     }
-}
 
+    private static function ensureWritableDirectory(string $dir): bool
+    {
+        if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
+        if (!is_dir($dir)) {
+            return false;
+        }
+        if (@is_writable($dir)) {
+            return true;
+        }
+        @chmod($dir, 0775);
+
+        return @is_writable($dir);
+    }
+}

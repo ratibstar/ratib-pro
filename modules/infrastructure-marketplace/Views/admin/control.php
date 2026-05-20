@@ -59,7 +59,7 @@ $ratibAdminControlV = is_file($ratibAdminControlCssPath) ? (string) @filemtime($
     <div class="infra-control-layout">
         <article class="infra-market-card infra-control-form-card">
             <h3>Apply runtime controls</h3>
-            <p class="infra-form-hint">Persists to <code>/modules/infrastructure-marketplace/Config/runtime-overrides.json</code></p>
+            <p class="infra-form-hint">Persists to <code>/storage/infrastructure-marketplace/runtime-overrides.json</code> (override via <code>RATIB_INFRA_RUNTIME_OVERRIDES_PATH</code>)</p>
             <form id="infra-runtime-controls-form" method="post" action="/api/infrastructure-marketplace/control-update.php">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($infraControlCsrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="source" value="ui">

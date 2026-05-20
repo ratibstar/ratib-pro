@@ -27,18 +27,8 @@ final class ModuleConfig
         if (self::$runtimeOverridesCache !== null) {
             return self::$runtimeOverridesCache;
         }
-        $path = dirname(__DIR__) . '/Config/runtime-overrides.json';
-        if (!is_file($path)) {
-            self::$runtimeOverridesCache = [];
-            return self::$runtimeOverridesCache;
-        }
-        $raw = @file_get_contents($path);
-        if (!is_string($raw) || trim($raw) === '') {
-            self::$runtimeOverridesCache = [];
-            return self::$runtimeOverridesCache;
-        }
-        $decoded = json_decode($raw, true);
-        self::$runtimeOverridesCache = is_array($decoded) ? $decoded : [];
+        self::$runtimeOverridesCache = RuntimeOverrideStore::read();
+
         return self::$runtimeOverridesCache;
     }
 

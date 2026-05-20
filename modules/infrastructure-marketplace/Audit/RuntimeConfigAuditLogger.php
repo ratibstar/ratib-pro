@@ -9,7 +9,21 @@ final class RuntimeConfigAuditLogger
 
     public function __construct(?string $file = null)
     {
-        $this->file = $file ?? (dirname(__DIR__) . '/Audit/runtime-config-audit.jsonl');
+        if ($file !== null) {
+            $this->file = $file;
+            return;
+        }
+        $fromEnv = getenv('RATIB_INFRA_RUNTIME_AUDIT_PATH');
+        if (is_string($fromEnv) && trim($fromEnv) !== '') {
+            $this->file = trim($fromEnv);
+            return;
+        }
+        $root = dirname(__DIR__, 3);
+        $rp = realpath($root);
+        $base = $rp !== false ? $rp : $root;
+        $this->file = $base . DIRECTORY_SEPARATOR . 'storage'
+            . DIRECTORY_SEPARATOR . 'infrastructure-marketplace'
+            . DIRECTORY_SEPARATOR . 'runtime-config-audit.jsonl';
     }
 
     /**

@@ -339,7 +339,11 @@ try {
     $oldOverrides = $updated['old'];
     $newOverrides = $updated['new'];
 } catch (\Throwable $e) {
-    $respond(500, ['ok' => false, 'message' => 'Unable to write runtime overrides file']);
+    $respond(500, [
+        'ok' => false,
+        'message' => 'Unable to write runtime overrides file',
+        'hint' => 'Ensure storage/infrastructure-marketplace/ is writable by PHP, or set RATIB_INFRA_RUNTIME_OVERRIDES_PATH to a writable file path.',
+    ]);
 }
 
 /** @var array<string, array{old:mixed,new:mixed}> $changes */
@@ -390,7 +394,7 @@ if (isset($sanitizedOut['cpanel_api_token'])) {
 echo json_encode([
     'ok' => true,
     'message' => 'Infrastructure control settings updated',
-    'file' => '/modules/infrastructure-marketplace/Config/runtime-overrides.json',
+    'file' => RuntimeOverrideStore::path(),
     'overrides' => $sanitizedOut,
     'changed_keys' => array_keys($patch),
 ], JSON_UNESCAPED_SLASHES);

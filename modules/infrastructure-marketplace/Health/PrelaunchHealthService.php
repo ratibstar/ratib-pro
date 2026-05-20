@@ -87,8 +87,11 @@ final class PrelaunchHealthService
                 && $this->tableExists('ratib_infra_provider_events'));
         $runtimeOverridePath = RuntimeOverrideStore::path();
         $runtimeOverrideDir = dirname($runtimeOverridePath);
+        if (!is_dir($runtimeOverrideDir)) {
+            @mkdir($runtimeOverrideDir, 0775, true);
+        }
         $runtimeWritable = (is_file($runtimeOverridePath) && is_writable($runtimeOverridePath))
-            || (!is_file($runtimeOverridePath) && is_dir($runtimeOverrideDir) && is_writable($runtimeOverrideDir));
+            || (is_dir($runtimeOverrideDir) && is_writable($runtimeOverrideDir));
         $checks = [
             ['name' => 'required_assets_present', 'status' => $missing === [] ? 'PASS' : 'FAIL', 'missing_count' => count($missing)],
             ['name' => 'provider_activation_migration_compatible', 'status' => $migrationCompatible ? 'PASS' : 'FAIL'],

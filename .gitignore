@@ -18,6 +18,9 @@ storage/.ratib_effective_upload_root
 # Homepage CMS snapshot (generated on control-panel save; server-local)
 storage/ratib_site_content_home.json
 uploads/ratib_cms_cache/ratib_site_content_home.json
+storage/infrastructure-marketplace/runtime-overrides.json
+storage/infrastructure-marketplace/runtime-overrides.lock
+storage/infrastructure-marketplace/runtime-config-audit.jsonl
 
 # Logs, cache, temp
 logs/
