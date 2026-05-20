@@ -40,6 +40,7 @@ if (SchemaHelpers::tableExists($pdo, 'ratib_infra_provider_events')) {
 }
 $checks[] = ['name' => 'provider_events_indexes', 'status' => $indexOk ? 'PASS' : 'WARN', 'detail' => $indexOk ? 'ok' : 'expected index missing'];
 
+InfraEnvBootstrap::ensureSecretKeyProvisioned();
 InfraEnvBootstrap::load();
 
 $encryptOk = false;

@@ -24,6 +24,7 @@ uploads/ratib_cms_cache/ratib_site_content_home.json
 storage/infrastructure-marketplace/runtime-overrides.json
 storage/infrastructure-marketplace/runtime-overrides.lock
 storage/infrastructure-marketplace/runtime-config-audit.jsonl
+storage/infrastructure-marketplace/.ratib_infra_secret_key
 
 # Logs, cache, temp
 logs/
