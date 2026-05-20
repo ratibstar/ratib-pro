@@ -211,11 +211,14 @@ final class PrelaunchHealthService
 
     private function statusWeight(string $status): float
     {
-        return match ($status) {
-            'PASS' => 1.0,
-            'WARN' => 0.75,
-            default => 0.0,
-        };
+        if ($status === 'PASS') {
+            return 1.0;
+        }
+        if ($status === 'WARN') {
+            return 0.75;
+        }
+
+        return 0.0;
     }
 }
 
