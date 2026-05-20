@@ -32,6 +32,7 @@ cache/
 *.tar
 *.gz
 *.sql
+!modules/infrastructure-marketplace/Migrations/*.sql
 *.sqlite
 
 # Editor/system files

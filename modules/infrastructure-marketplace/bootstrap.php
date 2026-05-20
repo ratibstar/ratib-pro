@@ -4,6 +4,13 @@
  */
 declare(strict_types=1);
 
+if (!function_exists('str_contains')) {
+    $ratibInfraPhp74Compat = dirname(__DIR__, 2) . '/includes/ratib-php74-compat.php';
+    if (is_file($ratibInfraPhp74Compat)) {
+        require_once $ratibInfraPhp74Compat;
+    }
+}
+
 if (!defined('RATIB_INFRASTRUCTURE_MARKETPLACE_ROOT')) {
     define('RATIB_INFRASTRUCTURE_MARKETPLACE_ROOT', __DIR__);
 }
