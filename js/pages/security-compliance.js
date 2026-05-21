@@ -1,5 +1,5 @@
 /**
- * RATIB security & compliance trust center — scroll reveals.
+ * RATEB security & compliance trust center — scroll reveals.
  */
 (function () {
     'use strict';

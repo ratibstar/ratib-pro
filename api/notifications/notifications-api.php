@@ -247,7 +247,7 @@ function buildFallbackContactMessage($contactName, $contactEmail, $contactPhone,
         "If any details need to be corrected, reply to this email.",
         "",
         "Best regards,",
-        "Ratib Program Team"
+        "RATEB Team"
     ]);
 }
 

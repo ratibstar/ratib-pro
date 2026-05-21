@@ -25,7 +25,7 @@ if (!defined('SITE_URL')) {
     define('SITE_URL', 'https://bangladesh.out.ratib.sa');
 }
 if (!defined('APP_NAME')) {
-    define('APP_NAME', 'Ratib Program');
+    define('APP_NAME', 'RATEB');
 }
 if (!defined('APP_VERSION')) {
     define('APP_VERSION', '1.0.0');

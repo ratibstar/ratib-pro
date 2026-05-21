@@ -17,7 +17,7 @@ define('DB_NAME', 'outratib_out');
 define('CONTROL_PANEL_DB_NAME', getenv('CONTROL_PANEL_DB_NAME') ?: 'outratib_control_panel_db');
 
 define('SITE_URL', 'https://bangladesh.out.ratib.sa');
-define('APP_NAME', 'Ratib Program');
+define('APP_NAME', 'RATEB');
 define('APP_VERSION', '1.0.0');
 define('BASE_URL', '');
 define('NO_BANGLA', true);

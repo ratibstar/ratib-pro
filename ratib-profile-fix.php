@@ -58,7 +58,7 @@ $buildMarker = is_file($build) ? trim((string) file_get_contents($build)) : 'mis
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>RATIB Profile fix status</title>
+    <title>RATEB Profile fix status</title>
     <style>
         body{font-family:system-ui,sans-serif;max-width:720px;margin:2rem auto;padding:0 1rem;line-height:1.5}
         .ok{color:#0a7}.bad{color:#c30}.box{background:#f4f4f5;border-radius:8px;padding:1rem;margin:1rem 0}

@@ -1,5 +1,5 @@
 /**
- * RATIB platform architecture page — scroll reveals.
+ * RATEB platform architecture page — scroll reveals.
  */
 (function () {
     'use strict';

@@ -19,7 +19,7 @@ if (empty($_GET['embedded'])) {
     exit;
 }
 
-$pageTitle = 'HR Management - Control Panel';
+$pageTitle = 'HR Management — RATEB';
 $baseUrl = getBaseUrl();
 $path = $_SERVER['REQUEST_URI'] ?? '';
 $basePath = preg_replace('#/pages/[^?]*.*$#', '', $path) ?: '';

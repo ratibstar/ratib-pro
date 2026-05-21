@@ -12,7 +12,7 @@ if (empty($_SESSION['control_logged_in'])) {
 requireControlPermission(CONTROL_PERM_GOVERNMENT, 'view_control_government', 'gov_admin', CONTROL_PERM_ADMINS);
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
-startControlLayout('Tracking Health', ['css/control/government.css', 'css/control/tracking-health.css'], []);
+startControlLayout('Telemetry Health', ['css/control/government.css', 'css/control/tracking-health.css'], []);
 ?>
 <div id="tracking-health-page">
     <div class="card gov-card mb-3 tracking-health-intro">

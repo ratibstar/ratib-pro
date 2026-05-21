@@ -2159,7 +2159,7 @@ function getSentMessages($pdo) {
  */
 function sendContactEmail($to, $subject, $message) {
     $fromEmail = defined('SMTP_FROM_EMAIL') ? constant('SMTP_FROM_EMAIL') : 'noreply@ratibprogram.com';
-    $fromName = defined('SMTP_FROM_NAME') ? constant('SMTP_FROM_NAME') : 'Ratib Program';
+    $fromName = defined('SMTP_FROM_NAME') ? constant('SMTP_FROM_NAME') : 'RATEB';
     $smtpHost = defined('SMTP_HOST') ? constant('SMTP_HOST') : 'smtp.gmail.com';
     $smtpPort = defined('SMTP_PORT') ? constant('SMTP_PORT') : 587;
     $smtpUser = defined('SMTP_USER') ? constant('SMTP_USER') : '';

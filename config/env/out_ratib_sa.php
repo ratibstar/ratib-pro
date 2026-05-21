@@ -25,7 +25,7 @@ define('CONTROL_PANEL_DB_NAME', getenv('CONTROL_PANEL_DB_NAME') ?: 'outratib_con
 
 define('SITE_URL', 'https://out.ratib.sa');
 define('SINGLE_URL_MODE', true);  // All countries use same URL; DB switches by country selection
-define('APP_NAME', 'Ratib Program');
+define('APP_NAME', 'RATEB');
 define('APP_VERSION', '1.0.0');
 define('BASE_URL', '');
 define('NO_BANGLA', true);

@@ -41,7 +41,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 // Build static permission groups (same as get_permissions_groups control list)
 $permissionGroups = [
     ['id' => 'control_core', 'name' => 'Control Panel - Core', 'count' => 8, 'permissions' => [
-        ['id' => 'control_dashboard', 'name' => 'View Dashboard'],
+        ['id' => 'control_dashboard', 'name' => 'View Operations Control Plane'],
         ['id' => 'control_select_country', 'name' => 'Select Country (all countries)'],
         ['id' => 'hide_dashboard_countries_card', 'name' => 'Show Dashboard "Active Countries" card'],
         ['id' => 'hide_dashboard_agencies_card', 'name' => 'Show Dashboard "Total Agencies" card'],

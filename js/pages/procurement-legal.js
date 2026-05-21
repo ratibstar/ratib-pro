@@ -1,5 +1,5 @@
 /**
- * RATIB procurement & legal page — scroll reveals.
+ * RATEB procurement & legal page — scroll reveals.
  */
 (function () {
     'use strict';

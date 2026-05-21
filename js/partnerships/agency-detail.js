@@ -591,7 +591,7 @@
 
     function applyAgency(agency) {
         const name = displayValue(agency.name);
-        document.title = `${name} · Partner Agency · Ratib`;
+        document.title = `${name} · Partner Agency · RATEB`;
 
         const titleEl = document.getElementById('detailPageTitle');
         if (titleEl) titleEl.textContent = name;

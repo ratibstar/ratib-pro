@@ -4,7 +4,7 @@
  * AR: يدير سلوك جزء من التطبيق في `index.php`.
  */
 /**
- * Main Entry Point - Ratib Pro
+ * Main Entry Point - RATEB
  * Redirects to login page or dashboard if already logged in
  */
 require_once 'includes/config.php';

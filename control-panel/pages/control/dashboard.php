@@ -193,7 +193,7 @@ if ($ctrl instanceof mysqli && function_exists('trf_resolve_effective_flag')) {
 
 // EN: Render dashboard page with cards + quick links and inject front-end config.
 // AR: عرض صفحة اللوحة مع بطاقات الإحصاء والروابط السريعة وتمرير إعدادات الواجهة.
-$pageTitle = 'Control Panel Dashboard';
+$pageTitle = 'Operations Control Plane';
 $controlPopupError = '';
 if (!empty($_SESSION['control_popup_error'])) {
     $controlPopupError = (string) $_SESSION['control_popup_error'];

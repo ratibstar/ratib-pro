@@ -58,7 +58,7 @@ if (!$conn) {
 
 echo "Database: " . DB_NAME . "\n";
 echo "Host: " . ($_SERVER['HTTP_HOST'] ?? '') . "\n";
-echo "Mode: Ratib Pro\n\n";
+echo "Mode: RATEB\n\n";
 
 $stmt = $conn->prepare("SELECT user_id, username, status, role_id, LEFT(password, 20) as pwd_preview FROM users WHERE username = 'admin' LIMIT 1");
 $stmt->execute();

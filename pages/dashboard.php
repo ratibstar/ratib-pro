@@ -46,7 +46,7 @@ if (!isset($conn) || $conn === null) {
         die("Database connection failed. Please contact administrator.");
     }
 }
-$pageTitle = "Dashboard";
+$pageTitle = "Operations Control Plane";
 $pageCss = [
     asset('css/dashboard.css'),
     asset('css/system-settings.css') . "?v=" . time()

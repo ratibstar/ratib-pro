@@ -54,7 +54,7 @@ startControlLayout('Country program', ['css/control/government.css'], []);
         <div class="col-md-6">
             <div class="card gov-card h-100">
                 <div class="card-body">
-                    <h6 class="card-title"><i class="fas fa-map-location-dot me-2"></i>Tracking Map</h6>
+                    <h6 class="card-title"><i class="fas fa-map-location-dot me-2"></i>Geospatial Operations Console</h6>
                     <p class="small text-muted mb-3">Live sessions filtered to your allowed countries (country operators cannot query other states).</p>
                     <a class="btn btn-sm btn-outline-light" href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-map.php')); ?>">Open</a>
                 </div>
@@ -63,7 +63,7 @@ startControlLayout('Country program', ['css/control/government.css'], []);
         <div class="col-md-6">
             <div class="card gov-card h-100">
                 <div class="card-body">
-                    <h6 class="card-title"><i class="fas fa-heart-pulse me-2"></i>Tracking Health</h6>
+                    <h6 class="card-title"><i class="fas fa-heart-pulse me-2"></i>Telemetry Health</h6>
                     <p class="small text-muted mb-3">Session/device overview for scoped tenants.</p>
                     <a class="btn btn-sm btn-outline-light" href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-health.php')); ?>">Open</a>
                 </div>
@@ -72,7 +72,7 @@ startControlLayout('Country program', ['css/control/government.css'], []);
         <div class="col-md-6">
             <div class="card gov-card h-100">
                 <div class="card-body">
-                    <h6 class="card-title"><i class="fas fa-qrcode me-2"></i>Tracking Onboarding</h6>
+                    <h6 class="card-title"><i class="fas fa-qrcode me-2"></i>Workforce Telemetry Onboarding</h6>
                     <p class="small text-muted mb-3">QR onboarding credentials (manage permission required).</p>
                     <?php if (hasControlPermission('manage_control_government') || hasControlPermission('gov_admin') || hasControlPermission(CONTROL_PERM_ADMINS)): ?>
                         <a class="btn btn-sm btn-outline-light" href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-onboarding.php')); ?>">Open</a>

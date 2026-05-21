@@ -517,7 +517,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                         <div class="ratib-dash__body">
                             <div class="ratib-dash__sidebar">
                                 <div class="ratib-dash__nav-item ratib-dash__nav-item--active">Pipeline</div>
-                                <div class="ratib-dash__nav-item">Workers</div>
+                                <div class="ratib-dash__nav-item">Workforce</div>
                                 <div class="ratib-dash__nav-item">Agencies</div>
                                 <div class="ratib-dash__nav-item">Finance</div>
                             </div>

@@ -935,7 +935,7 @@ try {
     $redirectUrl = appendOrderId($redirectBase, $localOrderId);
     $cancelUrl = appendOrderId($cancelBase, $localOrderId);
 
-    $merchantRef = 'RATIB-' . $localOrderId;
+    $merchantRef = 'RATEB-' . $localOrderId;
     if ($company !== '') {
         $merchantRef .= '-' . substr((string) preg_replace('/[^A-Za-z0-9]/', '', $company), 0, 20);
     }

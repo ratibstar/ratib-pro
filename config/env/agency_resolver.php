@@ -70,7 +70,7 @@ function resolve_agency_by_host($host) {
         define('CONTROL_PANEL_DB_NAME', ($_cp !== false && $_cp !== '') ? $_cp : 'outratib_control_panel_db');
     }
     define('SITE_URL', rtrim(rtrim($row['site_url'] ?? '', '/')) ?: ('https://' . $host));
-    define('APP_NAME', 'Ratib Program');
+    define('APP_NAME', 'RATEB');
     define('APP_VERSION', '1.0.0');
     define('BASE_URL', '');
     return true;

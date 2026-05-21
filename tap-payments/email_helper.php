@@ -133,7 +133,7 @@ function buildPaymentVoucherEmail($customerName, $paymentData) {
                             
                             <p style="color: #555; font-size: 15px; margin: 30px 0 0 0;">
                                 Best regards,<br>
-                                <strong style="color: #333;">Ratib Program Team</strong>
+                                <strong style="color: #333;">RATEB Team</strong>
                             </p>
                         </td>
                     </tr>
@@ -206,7 +206,7 @@ function buildPaymentFailureEmail($customerName, $paymentData) {
                             
                             <p style="color: #555; font-size: 15px; margin: 30px 0 0 0;">
                                 Best regards,<br>
-                                <strong style="color: #333;">Ratib Program Team</strong>
+                                <strong style="color: #333;">RATEB Team</strong>
                             </p>
                         </td>
                     </tr>
@@ -244,7 +244,7 @@ function sendTapEmail($to, $subject, $htmlBody) {
     
     // Fallback: Use basic PHP mail() or PHPMailer if available
     $fromEmail = defined('SMTP_FROM_EMAIL') ? constant('SMTP_FROM_EMAIL') : 'noreply@ratibprogram.com';
-    $fromName = defined('SMTP_FROM_NAME') ? constant('SMTP_FROM_NAME') : 'Ratib Program';
+    $fromName = defined('SMTP_FROM_NAME') ? constant('SMTP_FROM_NAME') : 'RATEB';
     
     // Try PHPMailer if available
     if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {

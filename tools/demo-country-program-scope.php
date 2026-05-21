@@ -97,7 +97,7 @@ function demo_tenant_ids_for_countries(PDO $pdo, array $countryIds): array
     return array_values(array_unique($out));
 }
 
-print_header('RATIB — Country program scope demo');
+print_header('RATEB — Country program scope demo');
 
 echo <<<TXT
 
@@ -112,7 +112,7 @@ MANUAL TEST IN THE BROWSER (recommended)
 1) Create/edit a control admin with JSON permissions like:
    ["view_control_government","manage_control_government","country_indonesia"]
    (omit "control_select_country").
-2) Log in as that admin. Open: Country program → Tracking Map / Tracking Health.
+2) Log in as that admin. Open: Country program → Geospatial Operations Console / Telemetry Health.
 3) Confirm another country's sessions do not appear (use a super-admin account to compare).
 4) Optional: grant ["control_select_country", ...] — operator can switch countries via Select Country.
 

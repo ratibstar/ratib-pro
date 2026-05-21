@@ -33,7 +33,7 @@
         
         <!-- EN: Floating assistant widget shell (UI only; behavior loaded from JS files below).
              AR: هيكل واجهة مساعد راتب العائم (السلوك الفعلي يتم تحميله من ملفات JS بالأسفل). -->
-        <!-- Ratib Assistant (floating chat) -->
+        <!-- RATEB Assistant (floating chat) -->
         <button class="chat-widget-button" id="chatWidgetButton" aria-label="Open Chat">
             <i class="fas fa-comments"></i>
         </button>

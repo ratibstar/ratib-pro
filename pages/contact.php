@@ -67,7 +67,7 @@ if (!hasPermission('view_contacts')) {
         <div class="nav-items">
             <a href="<?php echo htmlspecialchars(ratib_nav_url('dashboard.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
                 <i class="nav-icon fas fa-home"></i>
-                <span>Dashboard</span>
+                <span>Operations Control Plane</span>
             </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('agent.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
                 <i class="nav-icon fas fa-users"></i>
@@ -79,7 +79,7 @@ if (!hasPermission('view_contacts')) {
             </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('Worker.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
                 <i class="nav-icon fas fa-tools"></i>
-                <span>Workers</span>
+                <span>Workforce</span>
             </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('cases/cases-table.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
                 <i class="nav-icon fas fa-clipboard-list"></i>
@@ -103,7 +103,7 @@ if (!hasPermission('view_contacts')) {
             </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
                 <i class="nav-icon fas fa-bell"></i>
-                <span>Notifications</span>
+                <span>Operational Signaling</span>
             </a>
             <a href="<?php echo htmlspecialchars(ratib_logout_url(), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
                 <i class="nav-icon fas fa-sign-out-alt"></i>
@@ -112,7 +112,7 @@ if (!hasPermission('view_contacts')) {
             <?php if (false): ?>
             <a href="<?php echo pageUrl('system-settings.php'); ?>" class="nav-item nav-link">
                 <i class="nav-icon fas fa-cog"></i>
-                <span>System Settings</span>
+                <span>Tenant Policy Configuration</span>
             </a>
             <?php endif; ?>
         </div>

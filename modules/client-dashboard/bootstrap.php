@@ -200,7 +200,7 @@ if (!function_exists('ratib_client_dashboard_nav_sections')) {
         return [
             [
                 'key' => 'home',
-                'label' => 'Dashboard',
+                'label' => 'Operations Control Plane',
                 'icon' => 'fa-gauge-high',
                 'href' => $u('dashboard.php'),
             ],

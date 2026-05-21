@@ -96,8 +96,8 @@ $orderData = [
         [
             'reference_id' => 'ratib_' . uniqid(), // Unique reference for your system
             'description' => $years === 0
-                ? sprintf('Ratib %s Plan - Monthly', ucfirst($plan))
-                : sprintf('Ratib %s Plan - %d Year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),
+                ? sprintf('RATEB %s Plan - Monthly', ucfirst($plan))
+                : sprintf('RATEB %s Plan - %d Year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),
             'custom_id' => sprintf('plan:%s:years:%d', $plan, $years), // For tracking in your system
             'amount' => [
                 'currency_code' => CURRENCY,
@@ -116,11 +116,11 @@ $orderData = [
             'items' => [
                 [
                     'name' => $years === 0
-                        ? sprintf('Ratib %s Plan - Monthly', ucfirst($plan))
-                        : sprintf('Ratib %s Plan - %d Year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),
+                        ? sprintf('RATEB %s Plan - Monthly', ucfirst($plan))
+                        : sprintf('RATEB %s Plan - %d Year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),
                     'description' => $years === 0
-                        ? sprintf('Ratib %s Plan monthly subscription', ucfirst($plan))
-                        : sprintf('Ratib %s Plan subscription for %d year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),
+                        ? sprintf('RATEB %s Plan monthly subscription', ucfirst($plan))
+                        : sprintf('RATEB %s Plan subscription for %d year%s', ucfirst($plan), $years, $years > 1 ? 's' : ''),
                     'unit_amount' => [
                         'currency_code' => CURRENCY,
                         'value' => number_format($amount, 2, '.', ''),
@@ -140,7 +140,7 @@ $orderData = [
         ],
     ],
     'application_context' => [
-        'brand_name' => 'Ratib Software Foundation',
+        'brand_name' => 'RATEB Software Foundation',
         'locale' => 'en-US',
         'landing_page' => 'NO_PREFERENCE', // BILLING, LOGIN, or NO_PREFERENCE
         'shipping_preference' => 'NO_SHIPPING', // Digital product

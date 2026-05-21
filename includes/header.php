@@ -196,7 +196,7 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
         <div class="nav-items">
             <a href="<?php echo htmlspecialchars(ratib_nav_url('dashboard.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_dashboard">
                 <i class="nav-icon fas fa-home"></i>
-                <span>Dashboard</span>
+                <span>Operations Control Plane</span>
             </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('agent.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_agents">
                 <i class="nav-icon fas fa-users"></i>
@@ -208,7 +208,7 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
             </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('Worker.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_workers">
                 <i class="nav-icon fas fa-tools"></i>
-                <span>Workers</span>
+                <span>Workforce</span>
             </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('partner-agencies.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_partner_agencies,view_workers">
                 <i class="nav-icon fas fa-globe"></i>
@@ -236,7 +236,7 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
             </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_notifications">
                 <i class="nav-icon fas fa-bell"></i>
-                <span>Notifications</span>
+                <span>Operational Signaling</span>
                 <span class="notification-badge badge bg-danger ms-1 d-none" id="headerNotificationBadge">0</span>
             </a>
             <?php
@@ -261,7 +261,7 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
             <?php if (function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user() && isset($_SESSION['role_id']) && (int)$_SESSION['role_id'] === 1): ?>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="manage_settings">
                 <i class="nav-icon fas fa-cog"></i>
-                <span>System Settings</span>
+                <span>Tenant Policy Configuration</span>
             </a>
             <?php endif; ?>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link nav-help-center">
