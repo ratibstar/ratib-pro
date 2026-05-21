@@ -34,9 +34,9 @@ extract($viewData, EXTR_SKIP);
         </div>
         <div class="header-center">
             <a href="<?php echo htmlspecialchars($siteBaseUrl . '/pages/home.php', ENT_QUOTES, 'UTF-8'); ?>" class="logo">
-                <img src="<?php echo htmlspecialchars($siteBaseUrl . '/assets/ratib-logo.svg?v=3', ENT_QUOTES, 'UTF-8'); ?>" alt="RATIB ? Ratib Software Foundation for Information Technology">
+                <img src="<?php echo htmlspecialchars($siteBaseUrl . '/assets/ratib-logo.svg?v=4', ENT_QUOTES, 'UTF-8'); ?>" alt="RATEB — Ratib Software Foundation for Information Technology">
             </a>
-            <div class="tagline">RATIB — Recruitment Automation &amp; Tracking Intelligence Base</div>
+            <div class="tagline">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</div>
         </div>
         <div class="header-right">
             <a href="<?php echo htmlspecialchars($siteBaseUrl . '/pages/home.php', ENT_QUOTES, 'UTF-8'); ?>" class="nav-link">Home</a>

@@ -143,7 +143,7 @@ function run(){
       brand.parentNode.insertBefore(blk,brand);
       blk.appendChild(brand);
       var bt=brand.querySelector('.ratib-nav__brand-text');
-      if(bt)bt.textContent='RATIB';
+      if(bt)bt.textContent='RATEB';
       blk.appendChild(prof);
     }
   }

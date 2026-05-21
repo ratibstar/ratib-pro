@@ -41,7 +41,7 @@ $ratibTrustJsPath = __DIR__ . '/../js/pages/security-compliance.js';
 clearstatcache(true, $ratibTrustJsPath);
 $ratibTrustJsQuery = (int) (@filemtime($ratibTrustJsPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
 
-$metaTitle = (string) ($trust['meta']['title'] ?? 'Security & Compliance — RATIB');
+$metaTitle = (string) ($trust['meta']['title'] ?? 'Security & Compliance — RATEB');
 $metaDesc = (string) ($trust['meta']['description'] ?? '');
 $canonicalUrl = rtrim($baseUrl, '/') . '/security-compliance/';
 ?>
@@ -86,7 +86,7 @@ $canonicalUrl = rtrim($baseUrl, '/') . '/security-compliance/';
         'url' => $canonicalUrl,
         'isPartOf' => [
             '@type' => 'WebSite',
-            'name' => 'RATIB',
+            'name' => 'RATEB',
             'url' => rtrim($baseUrl, '/') . '/',
         ],
         'about' => [
@@ -107,7 +107,7 @@ $ratibMarketingHomeUrl = function_exists('ratib_public_marketing_home_url')
 <div class="ratib-trust-distinct-banner" role="status" data-ratib-trust-distinct="1">
     <div class="ratib-about-container ratib-trust-distinct-banner__inner">
         <span class="ratib-trust-distinct-banner__badge" aria-hidden="true">Trust center</span>
-        <p class="ratib-trust-distinct-banner__text">Security, compliance governance, and tenant isolation for <strong>RATIB</strong> enterprise workforce program infrastructure.</p>
+        <p class="ratib-trust-distinct-banner__text">Security, compliance governance, and tenant isolation for <strong>RATEB</strong> enterprise workforce program infrastructure.</p>
         <a class="ratib-trust-distinct-banner__link" href="<?php echo htmlspecialchars($ratibMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home →</a>
     </div>
 </div>

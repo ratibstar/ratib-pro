@@ -41,7 +41,7 @@ $ratibProcJsPath = __DIR__ . '/../js/pages/procurement-legal.js';
 clearstatcache(true, $ratibProcJsPath);
 $ratibProcJsQuery = (int) (@filemtime($ratibProcJsPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
 
-$metaTitle = (string) ($proc['meta']['title'] ?? 'Procurement & Legal — RATIB');
+$metaTitle = (string) ($proc['meta']['title'] ?? 'Procurement & Legal — RATEB');
 $metaDesc = (string) ($proc['meta']['description'] ?? '');
 $canonicalUrl = rtrim($baseUrl, '/') . '/procurement-legal/';
 $root = rtrim($baseUrl, '/');

@@ -4,6 +4,34 @@
  */
 declare(strict_types=1);
 
+if (!function_exists('ratib_brand_name')) {
+    function ratib_brand_name(): string
+    {
+        return 'RATEB';
+    }
+}
+
+if (!function_exists('ratib_brand_expansion')) {
+    function ratib_brand_expansion(): string
+    {
+        return 'Recruitment Automation & Telemetry Enterprise Base';
+    }
+}
+
+if (!function_exists('ratib_brand_full_title')) {
+    function ratib_brand_full_title(): string
+    {
+        return ratib_brand_name() . ' — ' . ratib_brand_expansion();
+    }
+}
+
+if (!function_exists('ratib_brand_category')) {
+    function ratib_brand_category(): string
+    {
+        return 'Enterprise Workforce Program Infrastructure';
+    }
+}
+
 if (!function_exists('ratib_public_cms_flat')) {
     /**
      * @return array<string, string>

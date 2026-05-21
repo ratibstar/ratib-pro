@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Ad phrases for background animation
     const adPhrases = [
-        'Ratibprogram',
+        'RATEB',
         'Manage Your Business',
         'Streamline Operations',
         'Boost Productivity',

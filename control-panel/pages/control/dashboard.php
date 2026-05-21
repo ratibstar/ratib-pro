@@ -245,7 +245,7 @@ if (!empty($_SESSION['control_popup_error'])) {
     <header class="control-header">
         <div class="header-left">
             <h1><i class="fas fa-cog"></i> Control Panel</h1>
-            <span class="header-subtitle header-subtitle-ratib">RATIB — Recruitment Automation &amp; Tracking Intelligence Base</span>
+            <span class="header-subtitle header-subtitle-ratib">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</span>
         </div>
         <div class="header-right">
             <div class="header-alerts" id="headerAlerts" data-permission="control_support_chats,view_control_support">

@@ -424,6 +424,18 @@ $ratibWalkthroughHref = $ratibArchSectionsOk
     <meta http-equiv="Pragma" content="no-cache">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236b21a8'/%3E%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
     <title><?php echo htmlspecialchars($ratibHome['home.meta.page_title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></title>
+    <?php
+    $ratibHomeMetaDesc = trim((string) ($ratibHome['home.hero.lead'] ?? 'Recruitment orchestration, workforce telemetry, compliance, and finance-grade operations on one multi-tenant control plane.'));
+    $ratibHomeCanonical = rtrim($baseUrl, '/') . '/';
+    ?>
+    <meta name="description" content="<?php echo htmlspecialchars($ratibHomeMetaDesc, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:title" content="<?php echo htmlspecialchars((string) ($ratibHome['home.meta.page_title'] ?? 'RATEB — Enterprise Workforce Program Infrastructure'), ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:description" content="<?php echo htmlspecialchars($ratibHomeMetaDesc, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="<?php echo htmlspecialchars($ratibHomeCanonical, ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?php echo htmlspecialchars((string) ($ratibHome['home.meta.page_title'] ?? 'RATEB — Enterprise Workforce Program Infrastructure'), ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="twitter:description" content="<?php echo htmlspecialchars($ratibHomeMetaDesc, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -460,7 +472,7 @@ ratib_emit_profile_nav_guard($baseUrl);
 ?>
 
     <main class="ratib-main">
-        <!-- RATIB public home layout: product tour video directly under hero grid; program preview SVGs below. Deploy fingerprint: search HTML for id="video" on hero band + data-ratib-home-layout on body. -->
+        <!-- RATEB public home layout: product tour video directly under hero grid; program preview SVGs below. Deploy fingerprint: search HTML for id="video" on hero band + data-ratib-home-layout on body. -->
         <section class="ratib-hero">
             <div class="ratib-container ratib-hero__grid">
                 <div class="ratib-hero__copy">
@@ -477,7 +489,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                         ratib_enterprise_trust_render_hero_strip($ratibHome);
                     } ?>
                     <div class="ratib-hero__actions">
-                        <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATIB — Request Enterprise Demo'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--primary ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.hero.cta_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                        <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATEB — Request Enterprise Demo'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--primary ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.hero.cta_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                         <a href="<?php echo htmlspecialchars($ratibWalkthroughHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.hero.cta_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                         <a href="<?php echo htmlspecialchars($ratibHeroTourHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--ghost ratib-btn--lg"><i class="fas fa-play" aria-hidden="true"></i> <?php echo htmlspecialchars($ratibHome['home.nav.tour'] ?? 'Tour', ENT_QUOTES, 'UTF-8'); ?></a>
                     </div>
@@ -488,7 +500,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                         <div class="ratib-dash__chrome">
                             <div class="ratib-dash__chrome-main">
                                 <span class="ratib-dash__dot"></span><span class="ratib-dash__dot"></span><span class="ratib-dash__dot"></span>
-                                <span class="ratib-dash__title">RATIB Command</span>
+                                <span class="ratib-dash__title">RATEB Command</span>
                                 <span class="ratib-dash__live" title="Sample UI — illustrative"><span class="ratib-live-dot"></span> Sample</span>
                             </div>
                             <div class="ratib-dash__chrome-sub ratib-mono-ops">
@@ -951,7 +963,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                     <h2 class="ratib-api-strip__title"><?php echo htmlspecialchars($ratibHome['home.api.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
                     <p class="ratib-api-strip__sub"><?php echo htmlspecialchars($ratibHome['home.api.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 </div>
-                <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATIB — Contact Solutions Team'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline"><?php echo htmlspecialchars($ratibHome['home.api.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATEB — Contact Solutions Team'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline"><?php echo htmlspecialchars($ratibHome['home.api.cta'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
         </section>
         <?php } ?>
@@ -1151,10 +1163,10 @@ ratib_emit_profile_nav_guard($baseUrl);
                 <h2 id="ratib-final-cta-title" class="ratib-final-cta__title"><?php echo htmlspecialchars($ratibHome['home.final_cta.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
                 <p class="ratib-final-cta__sub"><?php echo htmlspecialchars($ratibHome['home.final_cta.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 <div class="ratib-final-cta__actions">
-                    <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATIB — Request Enterprise Demo'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--primary ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                    <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATEB — Request Enterprise Demo'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--primary ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_primary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                     <a href="<?php echo htmlspecialchars($ratibWalkthroughHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_secondary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                    <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATIB — Contact Solutions Team'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_tertiary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
-                    <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATIB — Request Security Brief'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--ghost ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_quaternary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                    <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATEB — Contact Solutions Team'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--outline ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_tertiary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
+                    <a href="<?php echo htmlspecialchars(ratib_enterprise_mailto('RATEB — Request Security Brief'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-btn ratib-btn--ghost ratib-btn--lg"><?php echo htmlspecialchars($ratibHome['home.final_cta.btn_quaternary'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 </div>
             </div>
         </section>

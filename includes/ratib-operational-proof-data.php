@@ -48,21 +48,21 @@ if (!function_exists('ratib_operational_proof_config')) {
         };
 
         $cfg = [
-            'disclaimer' => ratib_public_cms('profile.opproof.disclaimer', 'Screenshots, diagrams, and metrics on this page use sample operational data or illustrative interfaces. They are not live production dashboards, audited statistics, or evidence of universal government integrations.'),
+            'disclaimer' => ratib_public_cms('profile.opproof.disclaimer', 'Screenshots, diagrams, and metrics on this page use sample operational data or illustrative interfaces. They are not live production operations control planes, audited statistics, or evidence of universal government integrations.'),
             'section' => [
                 'eyebrow' => ratib_public_cms('profile.opproof.eyebrow', 'Operational proof'),
-                'title' => ratib_public_cms('profile.opproof.title', 'How teams run programs on RATIB'),
-                'sub' => ratib_public_cms('profile.opproof.sub', 'Government oversight, field tracking, and mobile mobilization—then agency workspace, diagrams, and reference flows for procurement review.'),
+                'title' => ratib_public_cms('profile.opproof.title', 'How teams run programs on RATEB'),
+                'sub' => ratib_public_cms('profile.opproof.sub', 'Government oversight, workforce telemetry, and mobile mobilization—then agency workspace, diagrams, and reference flows for procurement review.'),
             ],
             'government' => [
                 'id' => 'government-oversight',
                 'eyebrow' => ratib_public_cms('profile.gov.eyebrow', 'Government & labor oversight'),
-                'title' => ratib_public_cms('profile.gov.title', 'Inspections, violations, live tracking, and worker mobilization'),
-                'lead' => ratib_public_cms('profile.gov.lead', 'RATIB includes a government-aligned control surface for labor monitoring demonstrations.'),
+                'title' => ratib_public_cms('profile.gov.title', 'Inspections, violations, geospatial telemetry, and worker mobilization'),
+                'lead' => ratib_public_cms('profile.gov.lead', 'RATEB includes a government-aligned control surface for labor oversight demonstrations.'),
                 'points' => ratib_public_cms_lines('profile.gov.points', [
-                    'Government Control consolidates inspections, violations, blacklist, worker alerts, and monitoring tabs behind one console.',
+                    'Government Control consolidates inspections, violations, blacklist, worker alerts, and monitoring tabs behind one operations control plane.',
                     'Inspection workflows capture worker and agency context, inspector identity, and status.',
-                    'Tracking Map filters by tenant, agency, country, and session status; supports geofences and playback.',
+                    'Geospatial Operations Console filters by tenant, agency, country, and session status; supports geofences and playback.',
                     'Worker Mobile Onboarding issues QR credentials for controlled mobile mobilization.',
                 ]),
                 'note' => 'Sample operational data · demonstration interfaces · not a claim of live government integration unless contracted separately.',
@@ -83,11 +83,11 @@ if (!function_exists('ratib_operational_proof_config')) {
                         'alt' => 'Inspection table showing pending, passed, and failed statuses',
                     ],
                     [
-                        'title' => 'Tracking Map',
-                        'caption' => ratib_public_cms('profile.gov.caption.tracking', 'Live map, geofences, playback, and filters for tenant, agency, and country.'),
+                        'title' => 'Geospatial Operations Console',
+                        'caption' => ratib_public_cms('profile.gov.caption.tracking', 'Geospatial operations console—geofences, playback, and filters for tenant, agency, and country.'),
                         'label' => 'Sample operational data',
                         'src' => $govImg('profile.gov.image.tracking', 'tracking-map.png'),
-                        'alt' => 'Tracking map with geofence controls and worker location marker',
+                        'alt' => 'Geospatial operations console with geofence controls and workforce telemetry marker',
                     ],
                     [
                         'title' => 'Worker Mobile Onboarding',
@@ -138,10 +138,10 @@ if (!function_exists('ratib_operational_proof_config')) {
                     'alt' => ratib_public_cms('profile.image.pipeline.alt', 'Sample workforce pipeline board with stages and SLA column'),
                 ],
                 [
-                    'title' => 'Operations dashboard',
+                    'title' => 'Operations control plane',
                     'label' => 'Illustrative interface',
                     'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.ops', 'profile.image.ops', 'public/cms-bundle-about.png'),
-                    'alt' => ratib_public_cms('profile.image.ops.alt', 'Sample agency operations dashboard with queues and summaries'),
+                    'alt' => ratib_public_cms('profile.image.ops.alt', 'Sample agency operations control plane with queues and summaries'),
                 ],
                 [
                     'title' => 'Finance ledger',
@@ -156,10 +156,10 @@ if (!function_exists('ratib_operational_proof_config')) {
                     'alt' => ratib_public_cms('profile.image.control.alt', 'Sample administration screen with settings and history context'),
                 ],
                 [
-                    'title' => 'Field operations map',
+                    'title' => 'Geospatial operations console',
                     'label' => 'Sample operational data',
                     'src' => ratib_public_cms_image_or($baseUrl, 'opproof.image.map', 'profile.image.telemetry', 'public/cms-bundle-gov-tracking.png'),
-                    'alt' => ratib_public_cms('profile.image.telemetry.alt', 'Sample map view with checkpoints and corridor context'),
+                    'alt' => ratib_public_cms('profile.image.telemetry.alt', 'Sample geospatial operations console with checkpoints and corridor context'),
                 ],
                 [
                     'title' => 'Partner portal',
@@ -179,14 +179,14 @@ if (!function_exists('ratib_operational_proof_config')) {
                         'Run verification bundles (medical, police, embassy as configured).',
                         'Advance stage when policy checks pass; notify owners.',
                     ],
-                    'outcome' => 'Worker file is ready for deployment queue with full history.',
+                    'outcome' => 'Workforce system of record is ready for deployment queue with full history.',
                 ],
                 [
                     'id' => 'compliance-review',
                     'title' => 'Compliance review',
                     'icon' => 'fa-clipboard-check',
                     'steps' => [
-                        'Inspector or reviewer opens worker file and corridor context.',
+                        'Inspector or reviewer opens workforce system of record and corridor context.',
                         'Compare documents and stage state to country policy profile.',
                         'Record finding, violation, or deploy hold if required.',
                         'Release or block next transition with actor attribution.',

@@ -1,6 +1,6 @@
 <?php
 /**
- * Mega navigation structure for public home chrome (RATIB SaaS header).
+ * Mega navigation structure for public home chrome (RATEB SaaS header).
  * URLs use $baseUrl and $navPrefix (home hash prefix) — resolved at render time.
  *
  * Top row is intentionally short: related product lines are merged (e.g. Sites = web + hosting + mail;
@@ -20,7 +20,7 @@ function ratib_mega_nav_config(): array
                 [
                     'heading' => 'Ratib Software Foundation for Information Technology',
                     'items' => [
-                        ['icon' => 'fa-building', 'title' => 'Company profile', 'desc' => 'About RATIB, legal entity, markets, and platform scope.', 'href_key' => 'company_profile'],
+                        ['icon' => 'fa-building', 'title' => 'Company profile', 'desc' => 'About RATEB, legal entity, markets, and platform scope.', 'href_key' => 'company_profile'],
                         ['icon' => 'fa-shield-halved', 'title' => 'Security & compliance', 'desc' => 'Trust center for procurement, isolation, governance, and reliability.', 'href_key' => 'security_compliance'],
                         ['icon' => 'fa-sitemap', 'title' => 'Platform architecture', 'desc' => 'Platform layers, isolation model, and deployment topology.', 'href_key' => 'architecture'],
                         ['icon' => 'fa-file-contract', 'title' => 'Procurement & legal', 'desc' => 'Company identity, engagement process, and procurement requests.', 'href_key' => 'procurement_legal'],
@@ -41,7 +41,7 @@ function ratib_mega_nav_config(): array
                     'heading' => 'Find a domain',
                     'items' => [
                         ['icon' => 'fa-magnifying-glass', 'title' => 'Search for Domain Names', 'desc' => 'Availability search + catalog in this page flow.', 'href_key' => 'marketplace_domains'],
-                        ['icon' => 'fa-right-left', 'title' => 'Transfer Domain Names', 'desc' => 'Contact solutions to move domains to RATIB.', 'href_key' => 'contact'],
+                        ['icon' => 'fa-right-left', 'title' => 'Transfer Domain Names', 'desc' => 'Contact solutions to move domains to RATEB.', 'href_key' => 'contact'],
                         ['icon' => 'fa-layer-group', 'title' => 'Domain Extensions', 'desc' => 'Explore TLD options in this page flow.', 'href_key' => 'marketplace_domains'],
                     ],
                 ],
@@ -72,7 +72,7 @@ function ratib_mega_nav_config(): array
                 [
                     'heading' => 'Build',
                     'items' => [
-                        ['icon' => 'fa-pen-ruler', 'title' => 'Website Builder', 'desc' => 'Drag-and-drop layouts with RATIB styling.', 'href_key' => 'features'],
+                        ['icon' => 'fa-pen-ruler', 'title' => 'Website Builder', 'desc' => 'Drag-and-drop layouts with RATEB styling.', 'href_key' => 'features'],
                         ['icon' => 'fa-robot', 'title' => 'AI Website Builder', 'desc' => 'Generate pages and copy from prompts.', 'href_key' => 'features'],
                         ['icon' => 'fa-border-all', 'title' => 'Templates', 'desc' => 'Industry starter kits and sections.', 'href_key' => 'program_previews'],
                     ],

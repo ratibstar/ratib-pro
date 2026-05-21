@@ -14,7 +14,7 @@ require_once __DIR__ . '/../includes/ratib-mega-nav-config.php';
 require_once __DIR__ . '/../includes/ratib-mega-nav-resolve.php';
 
 $ratibNavPrefix = '';
-$pageTitle = 'Navigation map — ' . trim((string) ($ratibHome['home.meta.page_title'] ?? 'RATIB'));
+$pageTitle = 'Navigation map — ' . trim((string) ($ratibHome['home.meta.page_title'] ?? 'RATEB — Enterprise Workforce Program Infrastructure'));
 
 $h = static function (string $s): string {
     return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');

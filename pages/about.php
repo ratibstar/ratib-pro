@@ -1,6 +1,6 @@
 <?php
 /**
- * Public: Enterprise company profile / About RATIB.
+ * Public: Enterprise company profile / About RATEB.
  */
 declare(strict_types=1);
 
@@ -53,7 +53,7 @@ $ratibOpCompactJsQuery = (int) (@filemtime($ratibOpCompactJsPath) ?: time()) . '
 $ratibMarketingFocusedJsPath = __DIR__ . '/../js/pages/ratib-marketing-focused.js';
 $ratibMarketingFocusedJsQuery = (int) (@filemtime($ratibMarketingFocusedJsPath) ?: time()) . '-' . $ratibHomeUiRev;
 
-$metaTitle = (string) ($about['meta']['title'] ?? 'About RATIB');
+$metaTitle = (string) ($about['meta']['title'] ?? 'About RATEB');
 $metaDesc = (string) ($about['meta']['description'] ?? '');
 ?>
 <!DOCTYPE html>
@@ -97,7 +97,7 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
     <script type="application/ld+json"><?php echo json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'Organization',
-        'name' => 'RATIB — Ratib Software Foundation for Information Technology',
+        'name' => 'RATEB — Ratib Software Foundation for Information Technology',
         'url' => $baseUrl . '/profile',
         'logo' => $baseUrl . '/assets/ratib-logo.svg',
         'description' => $metaDesc,

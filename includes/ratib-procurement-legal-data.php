@@ -20,14 +20,14 @@ if (!function_exists('ratib_procurement_legal_config')) {
 
         return [
             'meta' => [
-                'title' => ratib_public_cms('proc.meta.title', 'Procurement & Legal — RATIB Enterprise'),
+                'title' => ratib_public_cms('proc.meta.title', 'Procurement & Legal — RATEB Enterprise'),
                 'description' => ratib_public_cms('proc.meta.description', 'Legal identity, enterprise engagement process, security governance references, tenant boundaries, and procurement contact for government buyers, enterprise procurement, and international partners.'),
             ],
             'hero' => [
                 'eyebrow' => ratib_public_cms('proc.hero.eyebrow', 'Procurement & legal'),
                 'title' => ratib_public_cms('proc.hero.title', 'Enterprise procurement and compliance review'),
-                'lead' => ratib_public_cms('proc.hero.lead', 'Formal reference for government buyers, enterprise procurement teams, international partners, and compliance reviewers evaluating RATIB as workforce program orchestration infrastructure.'),
-                'notice' => ratib_public_cms('proc.hero.notice', 'This page states verifiable company and platform facts. RATIB does not claim government partnerships, regulatory licenses, or third-party certifications unless separately documented in a signed agreement.'),
+                'lead' => ratib_public_cms('proc.hero.lead', 'Formal reference for government buyers, enterprise procurement teams, international partners, and compliance reviewers evaluating RATEB as workforce program orchestration infrastructure.'),
+                'notice' => ratib_public_cms('proc.hero.notice', 'This page states verifiable company and platform facts. RATEB does not claim government partnerships, regulatory licenses, or third-party certifications unless separately documented in a signed agreement.'),
             ],
             'identity' => [
                 'id' => 'company-identity',
@@ -36,7 +36,7 @@ if (!function_exists('ratib_procurement_legal_config')) {
                 'sub' => 'Registered Saudi technology company operating enterprise workforce program infrastructure.',
                 'fields' => [
                     ['label' => 'Legal company name', 'value' => ratib_public_cms('proc.identity.legal_name', ratib_public_cms('profile.company.legal_name', 'Ratib Software Foundation for Information Technology')), 'icon' => 'fa-building'],
-                    ['label' => 'Trade name', 'value' => ratib_public_cms('proc.identity.trade_name', ratib_public_cms('profile.company.trade_name', 'RATIB')), 'icon' => 'fa-tag'],
+                    ['label' => 'Trade name', 'value' => ratib_public_cms('proc.identity.trade_name', ratib_public_cms('profile.company.trade_name', 'RATEB')), 'icon' => 'fa-tag'],
                     ['label' => 'Headquarters', 'value' => ratib_public_cms('proc.identity.hq', ratib_public_cms('profile.company.hq', 'Riyadh, Kingdom of Saudi Arabia')), 'icon' => 'fa-location-dot'],
                     ['label' => 'Commercial registration', 'value' => ratib_public_cms('proc.identity.cr', ratib_public_cms('profile.company.cr_value', 'On file — available to enterprise procurement under NDA upon request')), 'icon' => 'fa-file-contract'],
                     ['label' => 'VAT', 'value' => ratib_public_cms('proc.identity.vat', ratib_public_cms('profile.company.vat_value', 'Available on invoice or upon formal request during procurement')), 'icon' => 'fa-receipt'],
@@ -63,7 +63,7 @@ if (!function_exists('ratib_procurement_legal_config')) {
                 'eyebrow' => 'Security & governance',
                 'title' => 'Procurement-oriented security summary',
                 'sub' => 'Detailed posture documentation is maintained on dedicated trust and architecture pages.',
-                'summary' => 'RATIB architecture includes TLS-protected edges, role-based access, audit-oriented lifecycle history, tenant-isolated datastores, webhook integrity controls, and operational logging designed for enterprise review. Third-party certification claims (e.g. SOC 2, ISO) are not stated on public pages unless covered in a signed enterprise agreement.',
+                'summary' => 'RATEB architecture includes TLS-protected edges, role-based access, audit-oriented lifecycle history, tenant-isolated datastores, webhook integrity controls, and operational logging designed for enterprise review. Third-party certification claims (e.g. SOC 2, ISO) are not stated on public pages unless covered in a signed enterprise agreement.',
                 'links' => [
                     [
                         'title' => 'Security & compliance center',
@@ -99,7 +99,7 @@ if (!function_exists('ratib_procurement_legal_config')) {
                 'items' => [
                     [
                         'title' => 'Service scope',
-                        'body' => 'RATIB provides software for workforce program workflows, field-operations support, commercial settlement, and operational governance—not placement brokerage or immigration legal services unless separately contracted.',
+                        'body' => 'RATEB provides software for workforce program workflows, field-operations support, commercial settlement, and operational governance—not placement brokerage or immigration legal services unless separately contracted.',
                     ],
                     [
                         'title' => 'Platform role',
@@ -124,28 +124,28 @@ if (!function_exists('ratib_procurement_legal_config')) {
                     [
                         'title' => 'Request Company Deck',
                         'body' => 'Corporate overview, markets served, and platform scope for vendor files.',
-                        'href' => $mailto('RATIB — Request Company Deck'),
+                        'href' => $mailto('RATEB — Request Company Deck'),
                         'icon' => 'fa-file-lines',
                         'variant' => 'primary',
                     ],
                     [
                         'title' => 'Request Enterprise Demo',
                         'body' => 'Guided walkthrough of agency workspace, corridors, and governance modules.',
-                        'href' => $mailto('RATIB — Request Enterprise Demo'),
+                        'href' => $mailto('RATEB — Request Enterprise Demo'),
                         'icon' => 'fa-display',
                         'variant' => 'outline',
                     ],
                     [
                         'title' => 'Request Architecture Brief',
                         'body' => 'Technical summary for IT architecture and integration planning.',
-                        'href' => $mailto('RATIB — Request Architecture Brief'),
+                        'href' => $mailto('RATEB — Request Architecture Brief'),
                         'icon' => 'fa-diagram-project',
                         'variant' => 'outline',
                     ],
                     [
                         'title' => 'Contact Enterprise Team',
                         'body' => 'Procurement, legal, and program inquiries — info@out.ratib.sa',
-                        'href' => $mailto('RATIB — Enterprise Team Inquiry'),
+                        'href' => $mailto('RATEB — Enterprise Team Inquiry'),
                         'icon' => 'fa-envelope',
                         'variant' => 'ghost',
                     ],

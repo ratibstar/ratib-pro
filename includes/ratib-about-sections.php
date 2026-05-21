@@ -137,7 +137,7 @@ if (!function_exists('ratib_about_render_sections')) {
             <div class="ratib-about-container ratib-about-hero__grid">
                 <div class="ratib-about-hero__copy" data-ratib-reveal>
                     <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['platform']['eyebrow'] ?? 'Platform overview')); ?></p>
-                    <h2 id="about-hero-title" class="ratib-about-hero__title"><?php echo ratib_about_h((string) ($about['platform']['title'] ?? 'RATIB operations platform')); ?></h2>
+                    <h2 id="about-hero-title" class="ratib-about-hero__title"><?php echo ratib_about_h((string) ($about['platform']['title'] ?? 'RATEB operations control plane')); ?></h2>
                     <p class="ratib-about-hero__lead"><?php echo ratib_about_h((string) ($about['platform']['lead'] ?? '')); ?></p>
                     <div class="ratib-about-hero__actions">
                         <a href="<?php echo ratib_about_h($contactWa); ?>" target="_blank" rel="noopener noreferrer" class="ratib-about-btn ratib-about-btn--primary ratib-about-btn--lg">Request Platform Demo</a>
@@ -173,7 +173,7 @@ if (!function_exists('ratib_about_render_sections')) {
             <div class="ratib-about-container">
                 <header class="ratib-about-head" data-ratib-reveal>
                     <p class="ratib-about-eyebrow">Category definition</p>
-                    <h2 id="about-what-title" class="ratib-about-title"><?php echo ratib_about_h((string) ($about['what']['title'] ?? 'What RATIB is — and what it is not')); ?></h2>
+                    <h2 id="about-what-title" class="ratib-about-title"><?php echo ratib_about_h((string) ($about['what']['title'] ?? 'What RATEB is — and what it is not')); ?></h2>
                     <p class="ratib-about-sub"><?php echo ratib_about_h((string) ($about['what']['sub'] ?? '')); ?></p>
                 </header>
                 <div class="ratib-about-compare">
@@ -186,7 +186,7 @@ if (!function_exists('ratib_about_render_sections')) {
                         </ul>
                     </div>
                     <div class="ratib-about-glass ratib-about-compare__col ratib-about-compare__col--yes" data-ratib-reveal data-ratib-delay="80">
-                        <h3 class="ratib-about-compare__heading"><i class="fas fa-check" aria-hidden="true"></i> This is RATIB</h3>
+                        <h3 class="ratib-about-compare__heading"><i class="fas fa-check" aria-hidden="true"></i> This is RATEB</h3>
                         <ul class="ratib-about-list ratib-about-list--check">
                             <?php foreach ($about['is_infrastructure'] ?? [] as $line) { ?>
                             <li><?php echo ratib_about_h((string) $line); ?></li>

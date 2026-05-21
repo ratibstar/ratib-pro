@@ -788,7 +788,7 @@ include '../includes/header.php';
             <?php endif; ?>
             <div class="header-bar">
                 <div class="logo-section">
-                    <div class="ratib-dashboard-banner">RATIB — Recruitment Automation &amp; Tracking Intelligence Base</div>
+                    <div class="ratib-dashboard-banner">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</div>
                     <div class="flashing-text" id="flashingText">Welcome Back</div>
                 </div>
                 <div class="header-bar-right">

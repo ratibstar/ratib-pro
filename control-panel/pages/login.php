@@ -162,8 +162,8 @@ if (!empty($_SESSION['control_logged_in'])) {
 <body class="cp-login-page dark-mode">
     <div class="hyperdimensional-container">
         <div class="animated-background cp-login-bg" aria-hidden="true">
-            <span class="cp-bg-word">WELCOME TO RATIB</span>
-            <span class="cp-bg-word">RATIB PRO</span>
+            <span class="cp-bg-word">WELCOME TO RATEB</span>
+            <span class="cp-bg-word">RATEB PRO</span>
             <span class="cp-bg-word">E-INVOICING</span>
             <span class="cp-bg-word">ACCOUNTING</span>
             <span class="cp-bg-word">HR SYSTEM</span>

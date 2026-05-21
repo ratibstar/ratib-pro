@@ -70,7 +70,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
             <?php
                 $ratibBrandName = trim((string) ($ratibHome['home.brand.name'] ?? ''));
                 if ($ratibBrandName === '') {
-                    $ratibBrandName = 'RATIB';
+                    $ratibBrandName = 'RATEB';
                 }
                 $ratibBrandProfileLabel = trim((string) ($ratibHome['home.brand.profile_tab'] ?? ''));
                 if ($ratibBrandProfileLabel === '') {

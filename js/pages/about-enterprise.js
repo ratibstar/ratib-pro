@@ -1,5 +1,5 @@
 /**
- * RATIB enterprise company profile — scroll reveals, architecture hover, live metrics.
+ * RATEB enterprise company profile — scroll reveals, architecture hover, live metrics.
  */
 (function () {
   'use strict';

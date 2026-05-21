@@ -3412,7 +3412,7 @@ function buildEmptyCvHtml(worker) {
                 return window.RATIB_AGENCY_DISPLAY_NAME.trim();
             }
         } catch (_e) { /* ignore */ }
-        return 'RATIB';
+        return 'RATEB';
     })();
 
     return `

@@ -17,13 +17,13 @@ if (!function_exists('ratib_architecture_config')) {
 
         return [
             'meta' => [
-                'title' => ratib_public_cms('arch.meta.title', 'Platform Architecture — RATIB'),
+                'title' => ratib_public_cms('arch.meta.title', 'Platform Architecture — RATEB'),
                 'description' => ratib_public_cms('arch.meta.description', 'Layered workforce program platform: shared core, tenant isolation, event delivery, field operations, finance module, and deployment topology for enterprise technical review.'),
             ],
             'hero' => [
                 'eyebrow' => ratib_public_cms('arch.hero.eyebrow', 'Platform architecture'),
                 'title' => ratib_public_cms('arch.hero.title', 'Multi-agency workforce program platform'),
-                'lead' => ratib_public_cms('arch.hero.lead', 'RATIB is organized in platform layers that connect agency workspaces, partner portals, and regulated corridors—with separate agency databases, event-driven workflows, and policy controls in the stack.'),
+                'lead' => ratib_public_cms('arch.hero.lead', 'RATEB is organized in platform layers that connect agency workspaces, partner portals, and regulated corridors—with separate agency databases, event-driven workflows, and policy controls in the stack.'),
                 'diagram_label' => 'platform layer stack',
                 'stack_preview' => [
                     'Experience',
@@ -206,7 +206,7 @@ if (!function_exists('ratib_architecture_config')) {
             'briefing' => [
                 'title' => 'Architecture review',
                 'body' => 'Request a technical walkthrough of layers, isolation, and deployment topology for procurement or engineering review.',
-                'href' => 'mailto:' . $enterpriseMail . '?subject=' . rawurlencode('RATIB — Request Architecture Review'),
+                'href' => 'mailto:' . $enterpriseMail . '?subject=' . rawurlencode('RATEB — Request Architecture Review'),
                 'secondary_label' => 'Security & compliance center',
                 'secondary_href' => $securityUrl,
             ],

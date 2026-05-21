@@ -6,6 +6,7 @@
 if (!defined('APP_NAME')) {
     require_once __DIR__ . '/config.php';
 }
+require_once __DIR__ . '/ratib-public-cms.php';
 $globalAiButtonPath = __DIR__ . '/../app/UI/GlobalAIButton.php';
 if (PHP_VERSION_ID >= 70000 && is_file($globalAiButtonPath)) {
     require_once $globalAiButtonPath;
@@ -37,7 +38,7 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="password-manager" content="disabled">
     <meta name="google-password-manager" content="disabled">
-    <title><?php echo (isset($pageTitle) ? $pageTitle : 'Default Title'); ?> | RATIB — Recruitment Automation &amp; Tracking Intelligence Base</title>
+    <title><?php echo (isset($pageTitle) ? $pageTitle : 'Default Title'); ?> | <?php echo htmlspecialchars(ratib_brand_full_title(), ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%235a4a6a'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23d4c4e4' font-size='18' font-weight='bold'%3ER%3C/text%3E%3C/svg%3E" type="image/svg+xml">
     <?php
     $navCssDisk = __DIR__ . '/../css/nav.css';

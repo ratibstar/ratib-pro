@@ -173,7 +173,7 @@ $pageTitle = 'Worker CV';
 </head>
 <body>
 <div class="pp-cv-wrap">
-    <div class="pp-cv-brand">RATIB PROGRAM</div>
+    <div class="pp-cv-brand">RATEB</div>
     <div class="pp-cv-head">
         <div class="pp-cv-head-text">
             <h1 class="pp-cv-name"><?php echo pp_cv_h($name); ?></h1>

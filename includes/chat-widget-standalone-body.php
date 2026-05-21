@@ -39,7 +39,7 @@ $chatJsV = file_exists($chatJsPath) ? filemtime($chatJsPath) : time();
         <div class="chat-widget-header-info">
             <div class="chat-widget-header-avatar" aria-hidden="true"><i class="fas fa-wand-magic-sparkles"></i></div>
             <div class="chat-widget-header-text">
-                <h3>Ratib Assistant</h3>
+                <h3>RATEB Assistant</h3>
                 <p class="online">Help guides &amp; live support</p>
             </div>
         </div>

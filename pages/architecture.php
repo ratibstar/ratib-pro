@@ -47,7 +47,7 @@ $ratibArchJsPath = __DIR__ . '/../js/pages/architecture.js';
 clearstatcache(true, $ratibArchJsPath);
 $ratibArchJsQuery = (int) (@filemtime($ratibArchJsPath) ?: time()) . '-' . $ratibHomeUiRev . '-c' . $ratibChromeBundleHash;
 
-$metaTitle = (string) ($arch['meta']['title'] ?? 'Platform Architecture — RATIB');
+$metaTitle = (string) ($arch['meta']['title'] ?? 'Platform Architecture — RATEB');
 $metaDesc = (string) ($arch['meta']['description'] ?? '');
 $canonicalUrl = rtrim($baseUrl, '/') . '/architecture/';
 ?>
@@ -101,11 +101,11 @@ $canonicalUrl = rtrim($baseUrl, '/') . '/architecture/';
         ],
         'publisher' => [
             '@type' => 'Organization',
-            'name' => 'RATIB',
+            'name' => 'RATEB',
         ],
         'isPartOf' => [
             '@type' => 'WebSite',
-            'name' => 'RATIB',
+            'name' => 'RATEB',
             'url' => rtrim($baseUrl, '/') . '/',
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
@@ -123,7 +123,7 @@ $ratibSecurityUrl = rtrim($baseUrl, '/') . '/security-compliance/';
 <div class="ratib-arch-distinct-banner" role="status">
     <div class="ratib-about-container ratib-arch-distinct-banner__inner">
         <span class="ratib-arch-distinct-banner__badge" aria-hidden="true">Architecture</span>
-        <p class="ratib-arch-distinct-banner__text">Platform architecture documentation for <strong>RATIB</strong> workforce program operations — technical briefing, not a product landing page.</p>
+        <p class="ratib-arch-distinct-banner__text">Platform architecture documentation for <strong>RATEB</strong> workforce program operations — technical briefing, not a product landing page.</p>
         <a class="ratib-arch-distinct-banner__link" href="<?php echo htmlspecialchars($ratibSecurityUrl, ENT_QUOTES, 'UTF-8'); ?>">Security center</a>
         <a class="ratib-arch-distinct-banner__link" href="<?php echo htmlspecialchars($ratibMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home</a>
     </div>

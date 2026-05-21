@@ -30,7 +30,7 @@ final class Ratib_ClientDashboard_DomainsAdapter
             [
                 'service_id' => 'dom:demo:1',
                 'fqdn' => 'example.sa',
-                'registrar' => 'RATIB',
+                'registrar' => 'RATEB',
                 'expires_at' => gmdate('Y-m-d', strtotime('+300 days')),
                 'auto_renew' => true,
                 'transfer_lock' => true,

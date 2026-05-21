@@ -19,13 +19,13 @@ if (!function_exists('ratib_security_compliance_config')) {
 
         return [
             'meta' => [
-                'title' => ratib_public_cms('trust.meta.title', 'Security & Compliance — RATIB Trust Center'),
-                'description' => ratib_public_cms('trust.meta.description', 'RATIB security architecture, compliance governance, tenant isolation, and operational reliability — designed for regulated workforce program infrastructure and enterprise procurement review.'),
+                'title' => ratib_public_cms('trust.meta.title', 'Security & Compliance — RATEB Trust Center'),
+                'description' => ratib_public_cms('trust.meta.description', 'RATEB security architecture, compliance governance, tenant isolation, and operational reliability — designed for regulated workforce program infrastructure and enterprise procurement review.'),
             ],
             'hero' => [
                 'eyebrow' => ratib_public_cms('trust.hero.eyebrow', 'Trust center'),
                 'title' => ratib_public_cms('trust.hero.title', 'Security & compliance for regulated workforce operations'),
-                'lead' => ratib_public_cms('trust.hero.lead', 'RATIB is enterprise workforce program infrastructure designed for agencies and government-aligned programs that require auditable operations, tenant isolation, and procurement-ready governance — without overstating certifications.'),
+                'lead' => ratib_public_cms('trust.hero.lead', 'RATEB is enterprise workforce program infrastructure designed for agencies and government-aligned programs that require auditable operations, tenant isolation, and procurement-ready governance — without overstating certifications.'),
                 'chips' => [
                     ['label' => 'TLS 1.3 to edge', 'ok' => true],
                     ['label' => 'Tenant isolation', 'ok' => true],
@@ -33,7 +33,7 @@ if (!function_exists('ratib_security_compliance_config')) {
                     ['label' => 'Replay-safe workflows', 'ok' => true],
                 ],
             ],
-            'disclaimer' => ratib_public_cms('trust.disclaimer', 'This trust center describes platform architecture and operational design. RATIB does not claim third-party certifications (such as SOC 2 or ISO) unless separately documented in a signed enterprise agreement.'),
+            'disclaimer' => ratib_public_cms('trust.disclaimer', 'This trust center describes platform architecture and operational design. RATEB does not claim third-party certifications (such as SOC 2 or ISO) unless separately documented in a signed enterprise agreement.'),
             'sections' => [
                 'security_overview' => [
                     'id' => 'security-overview',
@@ -113,7 +113,7 @@ if (!function_exists('ratib_security_compliance_config')) {
                         ['title' => 'Managed cloud', 'body' => 'Deployed on managed cloud infrastructure with operational backups and continuity planning paths.', 'icon' => 'fa-cloud'],
                         ['title' => 'Edge protection', 'body' => 'TLS termination, rate limits, and edge scrubbing patterns for public and API surfaces.', 'icon' => 'fa-shield'],
                         ['title' => 'Observability', 'body' => 'Metrics, structured logs, and event streams for executive and ops reviews.', 'icon' => 'fa-chart-line'],
-                        ['title' => 'Field operations monitoring', 'body' => 'Location checkpoints and exception routing for operational visibility—not passive tracking alone.', 'icon' => 'fa-satellite-dish'],
+                        ['title' => 'Workforce telemetry', 'body' => 'Geospatial workforce telemetry and exception routing for operational intelligence—not passive monitoring alone.', 'icon' => 'fa-satellite-dish'],
                         ['title' => 'Secure provisioning', 'body' => 'Agency onboarding, domain edges, and SSL lifecycle orchestration with auditable provisioning steps.', 'icon' => 'fa-lock'],
                     ],
                 ],
@@ -127,21 +127,21 @@ if (!function_exists('ratib_security_compliance_config')) {
                     [
                         'title' => 'Request Security Brief',
                         'body' => 'Receive an architecture-oriented security overview for vendor assessment and InfoSec review.',
-                        'href' => $mailto('RATIB — Request Security Brief'),
+                        'href' => $mailto('RATEB — Request Security Brief'),
                         'icon' => 'fa-file-shield',
                         'variant' => 'primary',
                     ],
                     [
                         'title' => 'Request Architecture Review',
                         'body' => 'Schedule a technical walkthrough of tenant isolation, governance, and integration boundaries.',
-                        'href' => $mailto('RATIB — Request Architecture Review'),
+                        'href' => $mailto('RATEB — Request Architecture Review'),
                         'icon' => 'fa-diagram-project',
                         'variant' => 'outline',
                     ],
                     [
                         'title' => 'Contact Enterprise Team',
                         'body' => 'Riyadh HQ · info@out.ratib.sa · enterprise program and corridor deployments.',
-                        'href' => $mailto('RATIB — Enterprise Team Inquiry'),
+                        'href' => $mailto('RATEB — Enterprise Team Inquiry'),
                         'icon' => 'fa-envelope',
                         'variant' => 'ghost',
                     ],

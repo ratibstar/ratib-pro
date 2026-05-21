@@ -21,24 +21,24 @@ if (!function_exists('ratib_site_content_defaults_profile')) {
      */
     function ratib_site_content_defaults_profile(): array
     {
-        $govLead = 'RATIB includes a government-aligned control surface for labor monitoring demonstrations: inspectors record findings, violations and blacklist rules gate deployments, supervisors open a live tracking map with geofences, and field teams onboard workers to the mobile app via QR credentials—all scoped to the active agency database with role-based access.';
+        $govLead = 'RATEB includes a government-aligned control surface for labor oversight demonstrations: inspectors record findings, violations and blacklist rules gate deployments, supervisors open the geospatial operations console with geofences, and field teams onboard workers to the mobile program via QR credentials—all scoped to the active agency database with role-based access.';
         $govPoints = implode("\n", [
-            'Government Control consolidates inspections, violations, blacklist, worker alerts, and monitoring tabs behind one console—with optional read-only government view and a link to the live tracking map.',
+            'Government Control consolidates inspections, violations, blacklist, worker alerts, and monitoring tabs behind one operations control plane—with optional read-only government view and a link to the geospatial operations console.',
             'Inspection workflows capture worker and agency context, inspector identity, status (pending, passed, failed), and hashed credentials where policies require authenticated field access.',
-            'Tracking Map filters by tenant, agency, country, and session status; supports geofence creation, route playback, and latest worker locations on OpenStreetMap.',
+            'Geospatial Operations Console filters by tenant, agency, country, and session status; supports geofence creation, route playback, and latest workforce telemetry on OpenStreetMap.',
             'Worker Mobile Onboarding issues QR credentials so workers join the mobile program without sharing passwords in chat—device and identity fields stay optional for controlled pilots.',
         ]);
 
         return [
-            'profile.company.trade_name' => 'RATIB',
+            'profile.company.trade_name' => 'RATEB',
             'profile.company.legal_name' => 'Ratib Software Foundation for Information Technology',
-            'profile.company.tagline' => 'Enterprise workforce program infrastructure',
-            'profile.company.summary' => 'Ratib Software Foundation for Information Technology develops and operates RATIB: a multi-agency workflow platform with separate program databases, field-operations support, policy controls, and integrated billing for agencies and oversight-aligned programs.',
-            'profile.company.mission' => 'Give sending-country agencies and host-market programs one workspace to run regulated workforce corridors—with workflow coordination, operational visibility, compliance checkpoints, and finance linked to program events.',
+            'profile.company.tagline' => 'Enterprise Workforce Program Infrastructure',
+            'profile.company.summary' => 'Ratib Software Foundation for Information Technology develops and operates RATEB: a multi-agency workflow platform with separate program databases, workforce telemetry, policy controls, and integrated billing for agencies and oversight-aligned programs.',
+            'profile.company.mission' => 'Give sending-country agencies and host-market programs one control plane to run regulated workforce corridors—with recruitment orchestration, operational telemetry, compliance checkpoints, and finance linked to program events.',
             'profile.company.vision' => 'Cross-border workforce programs run on consistent records and auditable workflows—not disconnected spreadsheets.',
             'profile.company.markets' => 'Saudi Arabia (HQ) · Philippines · Bangladesh · Indonesia · Kenya · Uganda · Ethiopia · Nigeria · Rwanda · Sri Lanka · Nepal · Thailand',
             'profile.gov.eyebrow' => 'Government & labor oversight',
-            'profile.gov.title' => 'Inspections, violations, live tracking, and worker mobilization',
+            'profile.gov.title' => 'Inspections, violations, geospatial telemetry, and worker mobilization',
             'profile.gov.lead' => $govLead,
             'profile.gov.points' => $govPoints,
             'profile.gov.image.control' => ratib_site_content_profile_media_default('profile.gov.image.control', 'public/cms-bundle-gov-control-v2.png'),
@@ -52,8 +52,8 @@ if (!function_exists('ratib_site_content_defaults_profile')) {
             'profile.diagram.events' => ratib_site_content_profile_media_default('profile.diagram.events', 'public/cms-bundle-diagram-events.svg'),
             'profile.gov.caption.control' => 'Labor monitoring console—violations, blacklist, worker alerts, and inspection tabs in one place.',
             'profile.gov.caption.inspections' => 'Inspection history with status badges, inspector attribution, and agency-scoped rows.',
-            'profile.gov.caption.tracking' => 'Live map, geofences, playback, and filters for tenant, agency, and country.',
-            'profile.gov.caption.onboarding' => 'QR-based credentials for worker mobile app mobilization.',
+            'profile.gov.caption.tracking' => 'Geospatial operations console—geofences, playback, and filters for tenant, agency, and country.',
+            'profile.gov.caption.onboarding' => 'QR-based credentials for worker mobile program mobilization.',
         ];
     }
 }
@@ -85,8 +85,8 @@ if (!function_exists('ratib_site_content_profile_editor_groups')) {
                     ['key' => 'profile.gov.caption.control', 'label' => 'Caption · Government Control', 'type' => 'text'],
                     ['key' => 'profile.gov.image.inspections', 'label' => 'Screenshot · Inspection records', 'type' => 'media_image'],
                     ['key' => 'profile.gov.caption.inspections', 'label' => 'Caption · Inspection records', 'type' => 'text'],
-                    ['key' => 'profile.gov.image.tracking', 'label' => 'Screenshot · Tracking Map', 'type' => 'media_image'],
-                    ['key' => 'profile.gov.caption.tracking', 'label' => 'Caption · Tracking Map', 'type' => 'text'],
+                    ['key' => 'profile.gov.image.tracking', 'label' => 'Screenshot · Geospatial Operations Console', 'type' => 'media_image'],
+                    ['key' => 'profile.gov.caption.tracking', 'label' => 'Caption · Geospatial Operations Console', 'type' => 'text'],
                     ['key' => 'profile.gov.image.onboarding', 'label' => 'Screenshot · Worker Mobile Onboarding', 'type' => 'media_image'],
                     ['key' => 'profile.gov.caption.onboarding', 'label' => 'Caption · Worker Mobile Onboarding', 'type' => 'text'],
                 ],
@@ -116,10 +116,10 @@ if (!function_exists('ratib_site_content_profile_editor_groups')) {
                     ['key' => 'profile.platform.eyebrow', 'label' => 'Platform overview · eyebrow', 'type' => 'text'],
                     ['key' => 'profile.platform.title', 'label' => 'Platform overview · title', 'type' => 'text'],
                     ['key' => 'profile.platform.lead', 'label' => 'Platform overview · lead', 'type' => 'textarea', 'rows' => 3],
-                    ['key' => 'profile.what.title', 'label' => 'What RATIB is · title', 'type' => 'text'],
-                    ['key' => 'profile.what.sub', 'label' => 'What RATIB is · subtitle', 'type' => 'textarea', 'rows' => 2],
+                    ['key' => 'profile.what.title', 'label' => 'What RATEB is · title', 'type' => 'text'],
+                    ['key' => 'profile.what.sub', 'label' => 'What RATEB is · subtitle', 'type' => 'textarea', 'rows' => 2],
                     ['key' => 'profile.what.not_crm', 'label' => '“Not this” bullets (one per line)', 'type' => 'textarea', 'rows' => 5],
-                    ['key' => 'profile.what.is_infra', 'label' => '“This is RATIB” bullets (one per line)', 'type' => 'textarea', 'rows' => 5],
+                    ['key' => 'profile.what.is_infra', 'label' => '“This is RATEB” bullets (one per line)', 'type' => 'textarea', 'rows' => 5],
                     ['key' => 'profile.opproof.eyebrow', 'label' => 'Operational proof · eyebrow', 'type' => 'text'],
                     ['key' => 'profile.opproof.title', 'label' => 'Operational proof · title', 'type' => 'text'],
                     ['key' => 'profile.opproof.sub', 'label' => 'Operational proof · subtitle', 'type' => 'textarea', 'rows' => 2],

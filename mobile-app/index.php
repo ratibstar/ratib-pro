@@ -8,7 +8,7 @@ $qrJsVersion = @filemtime(__DIR__ . '/assets/js/html5-qrcode.min.js') ?: time();
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-    <title>RATIB Worker Tracker — Recruitment Automation &amp; Tracking Intelligence Base</title>
+    <title>RATEB Field Program — Recruitment Automation &amp; Telemetry Enterprise Base</title>
     <meta name="theme-color" content="#0f172a">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="/mobile-app/assets/icons/icon-192.svg">

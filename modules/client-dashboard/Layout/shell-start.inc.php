@@ -57,7 +57,7 @@ $ratibCpIsControlWrapper = function_exists('ratib_client_dashboard_is_control_wr
         <div class="ratib-cp-sidebar__brand">
             <span class="ratib-cp-sidebar__logo" aria-hidden="true">R</span>
             <div>
-                <div class="ratib-cp-sidebar__title">RATIB</div>
+                <div class="ratib-cp-sidebar__title">RATEB</div>
                 <div class="ratib-cp-sidebar__subtitle">Client Platform</div>
             </div>
         </div>

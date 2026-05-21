@@ -34,9 +34,9 @@ if (!function_exists('ratib_site_content_home_default_program_slots_json')) {
     function ratib_site_content_home_default_program_slots_json(): string
     {
         $rows = [
-            ['caption' => 'Pipeline board', 'alt' => 'RATIB pipeline board with stages, SLA, and worker rows', 'src' => ''],
-            ['caption' => 'Workers registry', 'alt' => 'RATIB workers registry with stages, owners, and GPS context', 'src' => ''],
-            ['caption' => 'Finance & ledger', 'alt' => 'RATIB finance view with invoices, throughput, and connector latency', 'src' => ''],
+            ['caption' => 'Pipeline board', 'alt' => 'RATEB pipeline board with stages, SLA, and workforce rows', 'src' => ''],
+            ['caption' => 'Workers registry', 'alt' => 'RATEB workforce registry with stages, owners, and geospatial telemetry context', 'src' => ''],
+            ['caption' => 'Finance & ledger', 'alt' => 'RATEB finance view with invoices, throughput, and connector latency', 'src' => ''],
         ];
 
         return json_encode($rows, JSON_UNESCAPED_UNICODE);

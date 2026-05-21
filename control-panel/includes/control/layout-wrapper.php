@@ -46,7 +46,7 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
         if ($standalone) {
             echo htmlspecialchars((string) $pageTitle, ENT_QUOTES, 'UTF-8');
         } else {
-            echo htmlspecialchars((string) $pageTitle, ENT_QUOTES, 'UTF-8') . ' | RATIB — Recruitment Automation &amp; Tracking Intelligence Base';
+            echo htmlspecialchars((string) $pageTitle, ENT_QUOTES, 'UTF-8') . ' | RATEB — Recruitment Automation &amp; Telemetry Enterprise Base';
         }
     ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">

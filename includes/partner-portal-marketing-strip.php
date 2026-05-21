@@ -28,9 +28,9 @@ $ppCustomerPortal = htmlspecialchars(pageUrl('customer-portal.php'), ENT_QUOTES,
     </div>
     <div class="header-center">
         <a href="<?php echo $ppHome; ?>" class="logo" aria-label="Ratib Home">
-            <img src="<?php echo htmlspecialchars(asset('assets/ratib-logo.svg?v=3'), ENT_QUOTES, 'UTF-8'); ?>" alt="RATIB — Ratib Software Foundation for Information Technology">
+            <img src="<?php echo htmlspecialchars(asset('assets/ratib-logo.svg?v=4'), ENT_QUOTES, 'UTF-8'); ?>" alt="RATEB — Ratib Software Foundation for Information Technology">
         </a>
-        <div class="tagline">RATIB — Recruitment Automation &amp; Tracking Intelligence Base</div>
+        <div class="tagline">RATEB — Recruitment Automation &amp; Telemetry Enterprise Base</div>
     </div>
     <div class="header-right">
         <a href="<?php echo $ppHome; ?>" class="nav-link">Home</a>

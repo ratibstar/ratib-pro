@@ -171,7 +171,7 @@
         blk.appendChild(brand);
         var bt = brand.querySelector('.ratib-nav__brand-text');
         if (bt) {
-            bt.textContent = 'RATIB';
+            bt.textContent = 'RATEB';
         }
         blk.appendChild(prof);
     }

@@ -265,7 +265,7 @@
     const knowledgeBaseEN = [
         {
             keywords: ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good afternoon', 'good evening', 'salam', 'مرحبا'],
-            answer: "Hello! 👋 Welcome to Ratib Program support. I'm your AI assistant and I'm here to help you with any questions about the system. What would you like to know?",
+            answer: "Hello! 👋 Welcome to RATEB support. I'm your AI assistant and I'm here to help you with any questions about the platform. What would you like to know?",
             category: 'greeting',
             synonyms: ['greet', 'welcome', 'salutation']
         },
@@ -308,7 +308,7 @@
         },
         {
             keywords: ['accounting', 'invoice', 'bill', 'payment', 'transaction', 'chart of accounts'],
-            answer: "Accounting in Ratib covers:\n• Chart of accounts and journals\n• Invoices and money you’re owed\n• Bills and what you pay\n• Bank/cash movements\n• Financial reports by period\n\nTypical flow: open Accounting → choose the area (e.g. invoices or journal) → use Add / New → post or save. Use Reports when you need a printed or exported summary.",
+            answer: "Accounting in RATEB covers:\n• Chart of accounts and journals\n• Invoices and money you’re owed\n• Bills and what you pay\n• Bank/cash movements\n• Financial reports by period\n\nTypical flow: open Accounting → choose the area (e.g. invoices or journal) → use Add / New → post or save. Use Reports when you need a printed or exported summary.",
             category: 'accounting'
         },
         {
@@ -368,7 +368,7 @@
         },
         {
             keywords: ['recruitment', 'recruit', 'agency program', 'ratib program', 'your program', 'about ratib'],
-            answer: "RATIB is an enterprise workforce program infrastructure platform for agencies and host-market programs. It helps you manage:\n• Candidates & documents\n• Your branded agency portal\n• E-invoice system\n• Contracts & compliance\n\nRegister above to get started or watch the 'How it works' video for an overview.",
+            answer: "RATEB is enterprise workforce program infrastructure for agencies and host-market programs. Recruitment orchestration, workforce telemetry, compliance, and finance-grade operations run on one multi-tenant control plane. It helps you manage:\n• Candidates & workforce systems of record\n• Your branded agency portal\n• E-invoice system\n• Contracts & compliance governance\n\nRegister above to get started or watch the 'How it works' video for an overview.",
             category: 'program'
         },
         {
@@ -1790,9 +1790,9 @@
             if (typeof getTranslation === 'function') {
                 headerText.textContent = getTranslation('supportTeam', lang);
             } else if (window.HELP_CENTER_TRANSLATIONS && window.HELP_CENTER_TRANSLATIONS[lang]) {
-                headerText.textContent = window.HELP_CENTER_TRANSLATIONS[lang].supportTeam || 'Ratib Assistant';
+                headerText.textContent = window.HELP_CENTER_TRANSLATIONS[lang].supportTeam || 'RATEB Assistant';
             } else {
-                headerText.textContent = 'Ratib Assistant';
+                headerText.textContent = 'RATEB Assistant';
             }
         }
         

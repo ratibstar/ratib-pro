@@ -59,7 +59,7 @@ $legacyMarketplaceSrc = htmlspecialchars(
                             <tbody>
                                 <tr>
                                     <td>example.sa</td>
-                                    <td>RATIB</td>
+                                    <td>RATEB</td>
                                     <td><?php echo htmlspecialchars(gmdate('Y-m-d', strtotime('+300 days')), ENT_QUOTES, 'UTF-8'); ?></td>
                                     <td><span class="ratib-status ratib-status--active">On</span></td>
                                     <td><span class="ratib-status ratib-status--active">Transfer lock</span></td>

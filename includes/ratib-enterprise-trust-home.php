@@ -166,10 +166,10 @@ if (!function_exists('ratib_enterprise_trust_render_home')) {
                 </div>
 
                 <div class="ratib-ent-cta-bar" aria-label="Enterprise contact actions">
-                    <a href="<?php echo ratib_ent_h(ratib_enterprise_mailto('RATIB — Request Enterprise Demo')); ?>" class="ratib-btn ratib-btn--primary"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.cta.demo'] ?? 'Request Enterprise Demo')); ?></a>
+                    <a href="<?php echo ratib_ent_h(ratib_enterprise_mailto('RATEB — Request Enterprise Demo')); ?>" class="ratib-btn ratib-btn--primary"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.cta.demo'] ?? 'Request Enterprise Demo')); ?></a>
                     <a href="<?php echo ratib_ent_h($root . '/architecture/'); ?>" class="ratib-btn ratib-btn--outline"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.cta.architecture'] ?? 'Review Architecture')); ?></a>
-                    <a href="<?php echo ratib_ent_h(ratib_enterprise_mailto('RATIB — Contact Solutions Team')); ?>" class="ratib-btn ratib-btn--outline"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.cta.solutions'] ?? 'Contact Solutions Team')); ?></a>
-                    <a href="<?php echo ratib_ent_h(ratib_enterprise_mailto('RATIB — Request Security Brief')); ?>" class="ratib-btn ratib-btn--ghost"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.cta.security'] ?? 'Request Security Brief')); ?></a>
+                    <a href="<?php echo ratib_ent_h(ratib_enterprise_mailto('RATEB — Contact Solutions Team')); ?>" class="ratib-btn ratib-btn--outline"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.cta.solutions'] ?? 'Contact Solutions Team')); ?></a>
+                    <a href="<?php echo ratib_ent_h(ratib_enterprise_mailto('RATEB — Request Security Brief')); ?>" class="ratib-btn ratib-btn--ghost"><?php echo ratib_ent_h((string) ($ratibHome['home.ent.cta.security'] ?? 'Request Security Brief')); ?></a>
                 </div>
             </div>
         </section>

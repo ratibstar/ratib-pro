@@ -32,12 +32,12 @@ if (!$embedMode && !$compatMode && !$controlMode && ratib_client_dashboard_can_a
 }
 /* Public-facing: avoid "Infrastructure Marketplace" in title — same page as header "Find a domain". */
 $pageTitle = $focusDomains
-    ? 'Find a domain — RATIB'
-    : 'Domains & services — RATIB';
+    ? 'Find a domain — RATEB'
+    : 'Domains & services — RATEB';
 $h1Text = $focusDomains ? 'Find a domain' : 'Domains & services';
 $headerLead = $focusDomains
     ? 'Search domain availability, then use the catalog below for infrastructure offers when enabled.'
-    : 'Domain search, provisioning catalog, and status — one place for RATIB infrastructure services.';
+    : 'Domain search, provisioning catalog, and status — one place for RATEB infrastructure services.';
 $domainSectionH2 = $focusDomains ? 'Availability search' : 'Domains';
 ?>
 <!doctype html>

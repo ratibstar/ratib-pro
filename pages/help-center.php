@@ -94,7 +94,7 @@ include '../includes/header.php';
         <main class="hc-main">
             <section class="hc-hero" id="hcHero">
                 <h1 class="hc-hero-title" data-translate="enterpriseTitle">Help Center</h1>
-                <p class="hc-hero-subtitle" data-translate="enterpriseSubtitle">Guides and documentation for the RATIB platform.</p>
+                <p class="hc-hero-subtitle" data-translate="enterpriseSubtitle">Guides and documentation for the RATEB platform.</p>
                 <div class="hc-quick-links" id="hcQuickLinks"></div>
             </section>
 
