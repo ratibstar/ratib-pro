@@ -44,6 +44,32 @@ if (!function_exists('ratib_site_content_rebrand_apply_substrings')) {
     }
 }
 
+if (!function_exists('ratib_site_content_rebrand_public_default_keys')) {
+    /**
+     * Public marketing always uses PHP defaults for these keys (DB cannot override).
+     *
+     * @return list<string>
+     */
+    function ratib_site_content_rebrand_public_default_keys(): array
+    {
+        return [
+            'home.brand.name',
+            'home.meta.page_title',
+            'home.hero.eyebrow',
+            'home.hero.lead',
+            'home.hero.title_before',
+            'home.hero.title_gradient',
+            'home.footer.brand',
+            'home.footer.copyright_suffix',
+            'profile.meta.title',
+            'profile.company.trade_name',
+            'profile.company.legal_name',
+            'profile.company.tagline',
+            'profile.company.summary',
+        ];
+    }
+}
+
 if (!function_exists('ratib_site_content_rebrand_value_is_stale')) {
     function ratib_site_content_rebrand_value_is_stale(string $key, string $value): bool
     {
@@ -56,6 +82,10 @@ if (!function_exists('ratib_site_content_rebrand_value_is_stale')) {
         if (str_contains($low, 'ratib software foundation')
             || str_contains($low, 'ratib company')
             || str_contains($low, 'tracking intelligence')) {
+            return true;
+        }
+
+        if (preg_match('/\.(title|page_title)$/', $key) && preg_match('/\bRATIB\b/', $v) && !str_contains($v, 'RATEB')) {
             return true;
         }
 
@@ -76,6 +106,15 @@ if (!function_exists('ratib_site_content_rebrand_value_is_stale')) {
         }
 
         if ($key === 'home.hero.eyebrow' && str_contains($low, 'tracking intelligence')) {
+            return true;
+        }
+
+        if ($key === 'home.hero.title_gradient' && str_contains($low, 'workforce intelligence')) {
+            return true;
+        }
+
+        if ($key === 'home.hero.title_before' && str_contains($low, 'recruitment automation')
+            && !str_contains($low, 'enterprise workforce')) {
             return true;
         }
 
@@ -133,6 +172,12 @@ if (!function_exists('ratib_site_content_rebrand_sanitize_flat')) {
             $flat['home.brand.name'] = ratib_site_content_rebrand_resolve_brand_name((string) $flat['home.brand.name']);
         }
 
+        foreach (ratib_site_content_rebrand_public_default_keys() as $forceKey) {
+            if (array_key_exists($forceKey, $defaults)) {
+                $flat[$forceKey] = (string) $defaults[$forceKey];
+            }
+        }
+
         return $flat;
     }
 }
@@ -169,6 +214,8 @@ if (!function_exists('ratib_site_content_rebrand_persist_stale_keys')) {
             return $stats;
         }
 
+        $forceKeys = array_flip(ratib_site_content_rebrand_public_default_keys());
+
         foreach ($after as $key => $newVal) {
             if (!array_key_exists($key, $before)) {
                 continue;
@@ -179,7 +226,8 @@ if (!function_exists('ratib_site_content_rebrand_persist_stale_keys')) {
 
                 continue;
             }
-            if (!ratib_site_content_rebrand_value_is_stale($key, $oldVal)
+            if (!isset($forceKeys[$key])
+                && !ratib_site_content_rebrand_value_is_stale($key, $oldVal)
                 && ratib_site_content_rebrand_apply_substrings($oldVal) === (string) $newVal) {
                 $stats['skipped']++;
 

@@ -74,6 +74,14 @@ jobs:
             echo "::error::gov-control-v2 not a valid image (magic ${GOV_MAGIC})"
             exit 1
           fi
+          HOME_RAW="$(curl -sS -L --connect-timeout 8 --max-time 25 -H 'Cache-Control: no-cache' "${SITE}/pages/home.php" 2>/dev/null | head -c 250000 || true)"
+          BRAND_FAIL=0
+          echo "$HOME_RAW" | grep -qi 'Ratib Company' && { echo "::error::home still contains Ratib Company"; BRAND_FAIL=1; }
+          echo "$HOME_RAW" | grep -q 'Workforce Intelligence</span>' && { echo "::error::home hero still uses Workforce Intelligence (stale CMS title)"; BRAND_FAIL=1; }
+          LIVE_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 15 "${SITE}/public/ratib-build.txt" 2>/dev/null | tr -d '\r' || true)"
+          echo "live_build=${LIVE_BUILD}"
+          echo "$LIVE_BUILD" | grep -q 'rateb-public-brand-force-defaults' && echo "rebrand_build_marker=ok" || echo "::warning::ratib-build.txt not updated on server yet"
+          [ "$BRAND_FAIL" -eq 1 ] && exit 1
           if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ] && [ "$HR" = "200" ]; then
             if echo "$BODY" | grep -qi '<!DOCTYPE'; then
               if echo "$BODY" | grep -q 'register-section-hidden ratib-register-wrap'; then
