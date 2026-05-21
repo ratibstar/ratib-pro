@@ -63,6 +63,8 @@ $deployFiles = [
     'includes/ratib-profile-nav-guard.php',
     'includes/ratib-public-base-url.php',
     'includes/ratib-home-public-chrome-top.php',
+    'includes/ratib-site-content-rebrand-sanitize.php',
+    'includes/site-content-home-data.php',
     'includes/ratib-home-public-nav-sync.php',
     'includes/ratib-home-public-nav-bootstrap.php',
     'includes/ratib-about-profile-data.php',
@@ -78,6 +80,7 @@ $deployFiles = [
     'pages/ratib-chrome-bust.php',
     'ratib-profile-fix.php',
     'ratib-profile-check.php',
+    'pages/ratib-cms-rebrand-apply.php',
 ];
 
 /** @var list<string> Infrastructure marketplace bundle (scripts/infra-deploy-23-files.list) */
@@ -270,7 +273,10 @@ if ($liveProfile === false) {
     echo "live_profile=FAIL fetch\n";
 } else {
     echo 'live_distinct_banner=' . (ratib_has($liveProfile, 'ratib-profile-distinct-banner') ? 'yes' : 'no (STALE)') . "\n";
-    echo 'live_about_title=' . (ratib_has($liveProfile, 'About <span class="ratib-about-gradient">Ratib Company</span>') ? 'yes' : 'no (STALE)') . "\n";
+    echo 'live_about_title=' . (ratib_has($liveProfile, 'About <span class="ratib-about-gradient">Ratib Company</span>') ? 'yes (STALE)' : 'no') . "\n";
+    echo 'live_profile_legal_stale=' . (ratib_has($liveProfile, 'Ratib Software Foundation for Information Technology') ? 'yes (STALE)' : 'no') . "\n";
+    echo 'live_profile_trade_rateb=' . (ratib_has($liveProfile, 'ratib-company-dossier__title') && ratib_has($liveProfile, '>RATEB<') ? 'yes' : 'no (STALE)') . "\n";
+    echo 'live_home_ratib_company=' . (ratib_has($liveHome ?? '', 'Ratib Company') ? 'yes (STALE)' : 'no') . "\n";
     echo 'live_page_stamp=' . (ratib_has($liveProfile, 'data-ratib-page-stamp="profile"') ? 'yes' : 'no') . "\n";
     echo 'live_home_hero_on_profile=' . (ratib_has($liveProfile, 'class="ratib-hero__title"') ? 'yes WRONG' : 'no') . "\n";
 }
@@ -325,5 +331,8 @@ echo "https://{$host}/pages/ratib-profile-deploy.php?deploy=1&key=ratib-deploy-s
 echo "\n>>> Chrome / cache diagnostic:\n";
 echo "https://{$host}/ratib-chrome-bust.php\n";
 echo "https://{$host}/pages/ratib-chrome-bust.php\n";
+echo "\n>>> Apply CMS rebrand to database (stale Ratib Company / RATIB copy):\n";
+echo "https://{$host}/pages/ratib-cms-rebrand-apply.php?key=ratib-deploy-sync-2026\n";
+echo "https://{$host}/pages/ratib-cms-rebrand-apply.php?key=ratib-deploy-sync-2026&dry=1\n";
 echo "\n>>> Purge LiteSpeed cache for home (after uploading .htaccess + home.php):\n";
 echo "https://{$host}/pages/home.php?ratib_purge_lscache=1&key=ratib-deploy-sync-2026\n";

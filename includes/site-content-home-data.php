@@ -358,7 +358,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.final_cta.btn_tertiary'] = 'Contact Solutions Team';
         $d['home.final_cta.btn_quaternary'] = 'Request Security Brief';
 
-        $d['home.footer.brand'] = 'Workforce program software — workflows, field operations, compliance, and integrated finance for multi-country recruitment programs.';
+        $d['home.footer.brand'] = 'Enterprise workforce program infrastructure — recruitment orchestration, workforce telemetry, compliance, and finance-grade operations on one multi-tenant control plane.';
         $d['home.footer.col.platform'] = 'Platform';
         $d['home.footer.col.company'] = 'Company';
         $d['home.footer.col.support'] = 'Support';
@@ -519,12 +519,20 @@ if (!function_exists('ratib_site_content_home_flat')) {
             return $out;
         };
 
-        $finalizeHomeFlat = static function (array $base) use ($mergeLegacyMedia): array {
-            if (!$mergeLegacyMedia || !function_exists('ratib_site_content_home_merge_legacy_media_into_values')) {
-                return $base;
+        $rebrandFile = __DIR__ . '/ratib-site-content-rebrand-sanitize.php';
+        if (is_file($rebrandFile)) {
+            require_once $rebrandFile;
+        }
+
+        $finalizeHomeFlat = static function (array $base) use ($mergeLegacyMedia, $defaults): array {
+            if ($mergeLegacyMedia && function_exists('ratib_site_content_home_merge_legacy_media_into_values')) {
+                $base = ratib_site_content_home_merge_legacy_media_into_values($base);
+            }
+            if (function_exists('ratib_site_content_rebrand_sanitize_flat')) {
+                $base = ratib_site_content_rebrand_sanitize_flat($base, $defaults);
             }
 
-            return ratib_site_content_home_merge_legacy_media_into_values($base);
+            return $base;
         };
 
         // Optional env (see .env.example): RATIB_SITE_CONTENT_PUBLIC_SOURCE=db_only

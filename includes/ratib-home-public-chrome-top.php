@@ -69,9 +69,15 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
         <div class="ratib-container ratib-nav-shell__inner">
             <?php
                 $ratibBrandName = trim((string) ($ratibHome['home.brand.name'] ?? ''));
+                if (function_exists('ratib_site_content_rebrand_resolve_brand_name')) {
+                    $ratibBrandName = ratib_site_content_rebrand_resolve_brand_name($ratibBrandName);
+                } elseif ($ratibBrandName === '' || preg_match('/ratib/i', $ratibBrandName)) {
+                    $ratibBrandName = function_exists('ratib_brand_name') ? ratib_brand_name() : 'RATEB';
+                }
                 if ($ratibBrandName === '') {
                     $ratibBrandName = 'RATEB';
                 }
+                $ratibHideBrandText = strtoupper($ratibBrandName) === 'RATEB';
                 $ratibBrandProfileLabel = trim((string) ($ratibHome['home.brand.profile_tab'] ?? ''));
                 if ($ratibBrandProfileLabel === '') {
                     $ratibBrandProfileLabel = 'Profile';
@@ -107,8 +113,10 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 ?>
             <div class="ratib-nav__brand-block">
                 <a href="<?php echo htmlspecialchars($ratibMarketingHomeHref ?? (function_exists('ratib_public_marketing_home_url') ? ratib_public_marketing_home_url($baseUrl) : rtrim($baseUrl, '/') . '/pages/home.php'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__brand">
-                    <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=3'); ?>" alt="<?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?>" width="120" height="36">
+                    <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=6'); ?>" alt="<?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?>" width="120" height="36">
+                    <?php if (!$ratibHideBrandText) { ?>
                     <span class="ratib-nav__brand-text"><?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?></span>
+                    <?php } ?>
                 </a>
                 <a href="<?php echo htmlspecialchars($ratibBrandProfileHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__brand-profile ratib-nav__go-profile<?php echo $ratibBrandProfileCurrent ? ' is-current' : ''; ?>" data-ratib-profile-nav="1" data-ratib-go-profile="1"<?php echo $ratibBrandProfileCurrent ? ' aria-current="page"' : ''; ?>><?php echo htmlspecialchars($ratibBrandProfileLabel, ENT_QUOTES, 'UTF-8'); ?></a>
             </div>
