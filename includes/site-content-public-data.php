@@ -43,7 +43,7 @@ if (!function_exists('ratib_site_content_defaults_public_pages')) {
             'public.contact.website' => 'https://out.ratib.sa',
 
             'profile.meta.title' => 'RATEB — Company profile',
-            'profile.meta.description' => 'Legal identity, platform scope, corridors, and operational capabilities of Ratib Software Foundation for Information Technology.',
+            'profile.meta.description' => 'Legal identity, platform scope, corridors, and operational capabilities of Rateb Software Foundation for Information Technology.',
             'profile.company.founded' => '2018',
             'profile.company.hq' => 'Riyadh, Kingdom of Saudi Arabia',
             'profile.company.address' => 'Riyadh, Saudi Arabia',
@@ -146,7 +146,7 @@ if (!function_exists('ratib_site_content_defaults_public_pages')) {
             'proc.hero.title' => 'Enterprise procurement and compliance review',
             'proc.hero.lead' => 'Formal reference for government buyers, enterprise procurement teams, international partners, and compliance reviewers evaluating RATEB as workforce program orchestration infrastructure.',
             'proc.hero.notice' => 'This page states verifiable company and platform facts. RATEB does not claim government partnerships, regulatory licenses, or third-party certifications unless separately documented in a signed agreement.',
-            'proc.identity.legal_name' => 'Ratib Software Foundation for Information Technology',
+            'proc.identity.legal_name' => 'Rateb Software Foundation for Information Technology',
             'proc.identity.trade_name' => 'RATEB',
             'proc.identity.hq' => 'Riyadh, Kingdom of Saudi Arabia',
             'proc.identity.cr' => 'On file — available to enterprise procurement under NDA upon request',

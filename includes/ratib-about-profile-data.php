@@ -23,7 +23,7 @@ if (!function_exists('ratib_about_profile_config')) {
         return [
             'meta' => [
                 'title' => ratib_public_cms('profile.meta.title', 'RATEB — Company profile'),
-                'description' => ratib_public_cms('profile.meta.description', 'Legal identity, platform scope, corridors, and operational capabilities of Ratib Software Foundation for Information Technology.'),
+                'description' => ratib_public_cms('profile.meta.description', 'Legal identity, platform scope, corridors, and operational capabilities of Rateb Software Foundation for Information Technology.'),
             ],
             'platform' => [
                 'eyebrow' => ratib_public_cms('profile.platform.eyebrow', 'Platform overview'),
@@ -68,7 +68,7 @@ if (!function_exists('ratib_about_profile_config')) {
             ],
             'company' => [
                 'trade_name' => ratib_public_cms('profile.company.trade_name', 'RATEB'),
-                'legal_name' => ratib_public_cms('profile.company.legal_name', 'Ratib Software Foundation for Information Technology'),
+                'legal_name' => ratib_public_cms('profile.company.legal_name', 'Rateb Software Foundation for Information Technology'),
                 'tagline' => ratib_public_cms('profile.company.tagline', 'Enterprise workforce program infrastructure'),
                 'founded' => ratib_public_cms('profile.company.founded', '2018'),
                 'hq' => ratib_public_cms('profile.company.hq', 'Riyadh, Kingdom of Saudi Arabia'),
@@ -86,7 +86,7 @@ if (!function_exists('ratib_about_profile_config')) {
                 'markets' => ratib_public_cms('profile.company.markets', 'Saudi Arabia (HQ) · Philippines · Bangladesh · Indonesia · Kenya · Uganda · Ethiopia · Nigeria · Rwanda · Sri Lanka · Nepal · Thailand'),
                 'mission' => ratib_public_cms('profile.company.mission', 'Give sending-country agencies and host-market programs one workspace to run regulated workforce corridors—with workflow coordination, operational visibility, compliance checkpoints, and finance linked to program events.'),
                 'vision' => ratib_public_cms('profile.company.vision', 'Cross-border workforce programs run on consistent records and auditable workflows—not disconnected spreadsheets.'),
-                'summary' => ratib_public_cms('profile.company.summary', 'Ratib Software Foundation for Information Technology develops and operates RATEB: a multi-agency workflow platform with separate program databases, field-operations support, policy controls, and integrated billing for agencies and oversight-aligned programs.'),
+                'summary' => ratib_public_cms('profile.company.summary', 'Rateb Software Foundation for Information Technology develops and operates RATEB: a multi-agency workflow platform with separate program databases, field-operations support, policy controls, and integrated billing for agencies and oversight-aligned programs.'),
                 'services' => ratib_public_cms_lines('profile.company.services', [
                     'Workforce lifecycle workflows',
                     'Agency operations workspace (multi-level agents)',

@@ -18,7 +18,7 @@ function ratib_mega_nav_config(): array
             'panel_id' => 'ratib-mega-panel-company',
             'columns' => [
                 [
-                    'heading' => 'Ratib Software Foundation for Information Technology',
+                    'heading' => 'Rateb Software Foundation for Information Technology',
                     'items' => [
                         ['icon' => 'fa-building', 'title' => 'Company profile', 'desc' => 'About RATEB, legal entity, markets, and platform scope.', 'href_key' => 'company_profile'],
                         ['icon' => 'fa-shield-halved', 'title' => 'Security & compliance', 'desc' => 'Trust center for procurement, isolation, governance, and reliability.', 'href_key' => 'security_compliance'],

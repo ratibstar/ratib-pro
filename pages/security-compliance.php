@@ -91,7 +91,7 @@ $canonicalUrl = rtrim($baseUrl, '/') . '/security-compliance/';
         ],
         'about' => [
             '@type' => 'Organization',
-            'name' => 'Ratib Software Foundation for Information Technology',
+            'name' => 'Rateb Software Foundation for Information Technology',
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>
 </head>

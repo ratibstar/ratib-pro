@@ -24,7 +24,7 @@ if (!function_exists('ratib_about_render_company_dossier')) {
             <div class="ratib-about-container">
                 <header class="ratib-company-dossier__head" data-ratib-reveal>
                     <p class="ratib-about-page-label">Full company profile</p>
-                    <h1 id="company-profile-title" class="ratib-company-dossier__title"><?php echo ratib_about_h((string) ($company['trade_name'] ?? 'Ratib Software Foundation for Information Technology')); ?></h1>
+                    <h1 id="company-profile-title" class="ratib-company-dossier__title"><?php echo ratib_about_h((string) ($company['trade_name'] ?? 'RATEB')); ?></h1>
                     <p class="ratib-company-dossier__legal"><?php echo ratib_about_h((string) ($company['legal_name'] ?? '')); ?></p>
                     <p class="ratib-company-dossier__tagline"><?php echo ratib_about_h((string) ($company['tagline'] ?? '')); ?></p>
                 </header>
@@ -126,7 +126,7 @@ if (!function_exists('ratib_about_render_sections')) {
                     <a href="<?php echo ratib_about_h($homeRegister); ?>" class="ratib-about-btn ratib-about-btn--outline ratib-about-btn--xl">Deploy Agency Workspace</a>
                     <a href="mailto:info@out.ratib.sa" class="ratib-about-btn ratib-about-btn--ghost">Talk to Solutions Team</a>
                 </div>
-                <p class="ratib-about-cta__legal ratib-mono">Ratib Software Foundation for Information Technology · Riyadh, Saudi Arabia · out.ratib.sa</p>
+                <p class="ratib-about-cta__legal ratib-mono"><?php echo ratib_about_h((function_exists('ratib_legal_entity_name') ? ratib_legal_entity_name() : 'Rateb Software Foundation for Information Technology') . ' · Riyadh, Saudi Arabia · out.ratib.sa'); ?></p>
             </div>
         </section>
             <?php
@@ -489,7 +489,7 @@ if (!function_exists('ratib_about_render_sections')) {
                     <a href="<?php echo ratib_about_h($homeRegister); ?>" class="ratib-about-btn ratib-about-btn--outline ratib-about-btn--xl">Deploy Agency Workspace</a>
                     <a href="mailto:info@out.ratib.sa" class="ratib-about-btn ratib-about-btn--ghost">Talk to Solutions Team</a>
                 </div>
-                <p class="ratib-about-cta__legal ratib-mono">Ratib Software Foundation for Information Technology · Riyadh, Saudi Arabia · out.ratib.sa</p>
+                <p class="ratib-about-cta__legal ratib-mono"><?php echo ratib_about_h((function_exists('ratib_legal_entity_name') ? ratib_legal_entity_name() : 'Rateb Software Foundation for Information Technology') . ' · Riyadh, Saudi Arabia · out.ratib.sa'); ?></p>
             </div>
         </section>
         <?php

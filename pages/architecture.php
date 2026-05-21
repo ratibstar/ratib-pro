@@ -97,7 +97,7 @@ $canonicalUrl = rtrim($baseUrl, '/') . '/architecture/';
         'url' => $canonicalUrl,
         'author' => [
             '@type' => 'Organization',
-            'name' => 'Ratib Software Foundation for Information Technology',
+            'name' => 'Rateb Software Foundation for Information Technology',
         ],
         'publisher' => [
             '@type' => 'Organization',

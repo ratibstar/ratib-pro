@@ -376,7 +376,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.footer.strip.1'] = 'target 99.95% SLA · synthetic checks';
         $d['home.footer.strip.2'] = 'API gateway · rate limits · idempotent writes';
         $d['home.footer.strip.3'] = 'orchestrator · audit · replay-safe logs';
-        $d['home.footer.copyright_suffix'] = 'RATEB — Ratib Software Foundation for Information Technology';
+        $d['home.footer.copyright_suffix'] = function_exists('ratib_brand_footer_legal_line') ? ratib_brand_footer_legal_line() : 'RATEB — Rateb Software Foundation for Information Technology';
         $d['home.footer.location'] = 'Riyadh, Saudi Arabia';
 
         $d['home.footer.link.platform.overview'] = 'Platform overview';

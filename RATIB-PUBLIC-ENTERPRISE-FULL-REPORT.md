@@ -55,7 +55,7 @@ All work was **incremental PHP + CSS + includes** — same chrome (`home-public.
 ### 2.1 Goals
 
 - Replace public-facing emails with **`info@out.ratib.sa`**
-- Normalize brand: **Ratib Software Foundation for Information Technology** (legal), **RATIB** (short)
+- Normalize brand: **Rateb Software Foundation for Information Technology** (legal), **RATIB** (short)
 - Position as **enterprise workforce program infrastructure**
 - Avoid weak CRM/recruitment-SaaS tone on public copy
 - Generate audit trails: `enterprise-identity-audit.md`, `replaced-email-references.md`, `public-brand-normalization-report.md`

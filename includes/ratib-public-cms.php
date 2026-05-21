@@ -32,6 +32,20 @@ if (!function_exists('ratib_brand_category')) {
     }
 }
 
+if (!function_exists('ratib_legal_entity_name')) {
+    function ratib_legal_entity_name(): string
+    {
+        return 'Rateb Software Foundation for Information Technology';
+    }
+}
+
+if (!function_exists('ratib_brand_footer_legal_line')) {
+    function ratib_brand_footer_legal_line(): string
+    {
+        return ratib_brand_name() . ' — ' . ratib_legal_entity_name();
+    }
+}
+
 if (!function_exists('ratib_public_cms_flat')) {
     /**
      * @return array<string, string>

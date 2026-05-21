@@ -31,9 +31,9 @@ if (!function_exists('ratib_site_content_defaults_profile')) {
 
         return [
             'profile.company.trade_name' => 'RATEB',
-            'profile.company.legal_name' => 'Ratib Software Foundation for Information Technology',
+            'profile.company.legal_name' => 'Rateb Software Foundation for Information Technology',
             'profile.company.tagline' => 'Enterprise Workforce Program Infrastructure',
-            'profile.company.summary' => 'Ratib Software Foundation for Information Technology develops and operates RATEB: a multi-agency workflow platform with separate program databases, workforce telemetry, policy controls, and integrated billing for agencies and oversight-aligned programs.',
+            'profile.company.summary' => 'Rateb Software Foundation for Information Technology develops and operates RATEB: a multi-agency workflow platform with separate program databases, workforce telemetry, policy controls, and integrated billing for agencies and oversight-aligned programs.',
             'profile.company.mission' => 'Give sending-country agencies and host-market programs one control plane to run regulated workforce corridors—with recruitment orchestration, operational telemetry, compliance checkpoints, and finance linked to program events.',
             'profile.company.vision' => 'Cross-border workforce programs run on consistent records and auditable workflows—not disconnected spreadsheets.',
             'profile.company.markets' => 'Saudi Arabia (HQ) · Philippines · Bangladesh · Indonesia · Kenya · Uganda · Ethiopia · Nigeria · Rwanda · Sri Lanka · Nepal · Thailand',

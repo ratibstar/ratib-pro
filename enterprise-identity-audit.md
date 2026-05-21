@@ -4,7 +4,7 @@ Objective: strengthen trust posture and procurement readiness on public marketin
 
 ## Preferred Identity Baseline
 
-- Legal identity: `Ratib Software Foundation for Information Technology`
+- Legal identity: `Rateb Software Foundation for Information Technology`
 - Short form: `RATIB`
 - Positioning: `Enterprise workforce program infrastructure`
 
