@@ -185,6 +185,7 @@ FAST_FILES = [
     "includes/ratib-public-cms.php",
     "includes/ratib-site-content-rebrand-sanitize.php",
     "includes/ratib-enterprise-schema.php",
+    "includes/ratib-enterprise-terminology.php",
     "includes/ratib-enterprise-trust-hub-data.php",
     "includes/ratib-enterprise-trust-hub-sections.php",
     "pages/enterprise-trust.php",
