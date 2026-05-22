@@ -7,7 +7,7 @@ declare(strict_types=1);
 <div class="ratib-program-lightbox" id="ratib-program-lightbox" hidden data-ratib-program-lightbox>
     <div class="ratib-program-lightbox__backdrop" data-ratib-program-lightbox-close tabindex="-1"></div>
     <div class="ratib-program-lightbox__panel" role="dialog" aria-modal="true" aria-label="Image preview">
-        <button type="button" class="ratib-program-lightbox__close" data-ratib-program-lightbox-close aria-label="Close preview">&times;</button>
+        <button type="button" class="ratib-program-lightbox__close" data-ratib-program-lightbox-close aria-label="Dismiss image preview">&times;</button>
         <div class="ratib-program-lightbox__stage">
             <img src="" alt="" class="ratib-program-lightbox__img" id="ratib-program-lightbox-img" decoding="async">
             <div class="ratib-program-lightbox__overlay-nav" id="ratib-program-lightbox-controls" hidden>

@@ -44,11 +44,11 @@ $chatJsV = file_exists($chatJsPath) ? filemtime($chatJsPath) : time();
             </div>
         </div>
         <div class="chat-widget-header-actions">
-            <button type="button" class="chat-widget-clear" id="chatWidgetClear" aria-label="Clear conversation" title="Clear assistant chat">
-                <i class="fas fa-trash-alt"></i>
+            <button type="button" class="chat-widget-clear" id="chatWidgetClear" aria-label="Clear assistant conversation">
+                <i class="fas fa-trash-alt" aria-hidden="true"></i>
             </button>
-            <button type="button" class="chat-widget-close" id="chatWidgetClose" aria-label="Close chat">
-                <i class="fas fa-times"></i>
+            <button type="button" class="chat-widget-close" id="chatWidgetClose" aria-label="Dismiss assistant chat">
+                <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>
     </div>

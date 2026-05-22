@@ -65,7 +65,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                     <span class="ratib-lang ratib-lang--active">EN</span>
                     <span class="ratib-lang-sep">·</span>
                     <?php $ratibMarketingHomeHref = function_exists('ratib_public_marketing_home_url') ? ratib_public_marketing_home_url($baseUrl) : rtrim($baseUrl, '/') . (function_exists('ratib_marketing_home_path') ? ratib_marketing_home_path() : '/home'); ?>
-                <a href="<?php echo htmlspecialchars($ratibMarketingHomeHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-lang" title="Arabic experience inside partner portals">AR</a>
+                <a href="<?php echo htmlspecialchars($ratibMarketingHomeHref, ENT_QUOTES, 'UTF-8'); ?>" class="ratib-lang" aria-label="Arabic experience inside partner portals">AR</a>
                 </span>
             </div>
         </div>

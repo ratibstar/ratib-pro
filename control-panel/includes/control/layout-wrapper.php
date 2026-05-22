@@ -93,10 +93,13 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
             <div class="content-header">
                 <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
                 <?php if (isset($pageTitle) && $pageTitle): ?><h2><?php echo htmlspecialchars($pageTitle); ?></h2><?php endif; ?>
-                <a href="<?php echo htmlspecialchars($coreAiUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn-coreai" target="_blank" rel="noopener noreferrer" title="Open CoreAI">
-                    <i class="fas fa-robot"></i>
+                <div class="content-header-toolbar">
+                <a href="<?php echo htmlspecialchars($coreAiUrl, ENT_QUOTES, 'UTF-8'); ?>" class="btn-coreai" target="_blank" rel="noopener noreferrer" aria-label="Open CoreAI in a new tab">
+                    <i class="fas fa-robot" aria-hidden="true"></i>
                     <span>CoreAI</span>
                 </a>
+                <?php echo \App\UI\GlobalAIButton::renderButton($fullBase, 'header'); ?>
+                </div>
                 <div class="header-alerts" id="headerAlerts" data-permission="control_support_chats,view_control_support">
                     <button type="button" class="header-alert-btn" id="supportAlertsBtn" aria-label="Support alerts" title="Support alerts">
                         <i class="fas fa-bell"></i>
@@ -111,7 +114,7 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
                     </div>
                 </div>
             </div>
-            <?php echo \App\UI\GlobalAIButton::render($fullBase); ?>
+            <?php echo \App\UI\GlobalAIButton::renderModalAndScript($fullBase); ?>
         <?php else: ?>
         <main class="control-content control-content-standalone-full">
         <?php endif; ?>

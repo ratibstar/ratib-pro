@@ -133,6 +133,12 @@
     display: flex;
 }
 
+/* When chat is closed, hide header dismiss controls (prevents stray tooltips near top bar) */
+.chat-widget-container:not(.active) .chat-widget-header-actions {
+    visibility: hidden;
+    pointer-events: none;
+}
+
 @keyframes chatSlideUp {
     from {
         opacity: 0;

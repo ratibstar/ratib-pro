@@ -555,6 +555,14 @@ body.control-layout-no-header .control-content {
     flex-wrap: wrap;
 }
 
+.content-header-toolbar {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
 .back-button {
     display: inline-flex;
     align-items: center;
