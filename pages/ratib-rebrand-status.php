@@ -28,7 +28,7 @@ echo 'profile_title=' . ($flat['profile.meta.title'] ?? '') . "\n";
 echo 'legal=' . ($flat['profile.company.legal_name'] ?? '') . "\n";
 
 $bad = [];
-foreach (['Ratib Company', 'Ratib Software Foundation', 'TRACKING INTELLIGENCE', 'Workforce Intelligence'] as $needle) {
+foreach (['Ratib Company', 'Ratib Software Foundation', 'Rateb Software Foundation', 'Software Foundation for Information Technology', 'TRACKING INTELLIGENCE', 'Tracking Intelligence', 'Workforce Intelligence', 'RATIB — Recruitment Automation & Tracking'] as $needle) {
     foreach ($flat as $k => $v) {
         if (is_string($v) && str_contains($v, $needle)) {
             $bad[] = "{$k} => {$needle}";

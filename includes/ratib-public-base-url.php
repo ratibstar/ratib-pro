@@ -51,6 +51,7 @@ if (!function_exists('ratib_public_build_marker_is_valid')) {
             'rateb-cms-rebrand-sanitize-20260521',
             'rateb-public-brand-force-defaults-20260522',
             'rateb-lscache-bust-20260522b',
+            'rateb-official-brand-v20260522',
         ];
 
         if ($req === $canonical || in_array($req, $legacy, true)) {

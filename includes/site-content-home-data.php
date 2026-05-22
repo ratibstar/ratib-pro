@@ -4,6 +4,7 @@
  * Keys are flat strings stored in ratib_site_content.content_key.
  */
 require_once __DIR__ . '/site-content-home-slots.php';
+require_once __DIR__ . '/ratib-public-cms.php';
 require_once __DIR__ . '/site-content-profile-data.php';
 require_once __DIR__ . '/site-content-public-data.php';
 
@@ -43,7 +44,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
             'contact' => 'Contact',
         ];
         $d = [];
-        $d['home.meta.page_title'] = 'RATEB — Enterprise Workforce Program Infrastructure';
+        $d['home.meta.page_title'] = 'RATEB — Recruitment Automation & Telemetry Enterprise Base';
 
         $d['home.topbar.phone_display'] = '+966 59 986 3868';
         $d['home.topbar.wa_label'] = 'Live on WhatsApp';
@@ -72,9 +73,11 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.nav.cta_partner'] = 'Partner Login';
 
         $d['home.hero.eyebrow'] = 'Enterprise Workforce Program Infrastructure';
-        $d['home.hero.lead'] = 'Recruitment orchestration, workforce telemetry, compliance, and finance-grade operations on one multi-tenant control plane.';
-        $d['home.hero.title_before'] = 'Enterprise Workforce';
-        $d['home.hero.title_gradient'] = 'Program Infrastructure';
+        $d['home.hero.lead'] = function_exists('ratib_brand_hero_lead')
+            ? ratib_brand_hero_lead()
+            : 'Enterprise infrastructure for cross-border workforce programs.';
+        $d['home.hero.title_before'] = 'RATEB';
+        $d['home.hero.title_gradient'] = 'Recruitment Automation & Telemetry Enterprise Base';
         $bullets = [
             'Recruitment orchestration & corridor sync across sending and host markets',
             'Tenant isolation, RBAC, and per-agency domain edges',
@@ -376,7 +379,7 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.footer.strip.1'] = 'target 99.95% SLA · synthetic checks';
         $d['home.footer.strip.2'] = 'API gateway · rate limits · idempotent writes';
         $d['home.footer.strip.3'] = 'orchestrator · audit · replay-safe logs';
-        $d['home.footer.copyright_suffix'] = function_exists('ratib_brand_footer_legal_line') ? ratib_brand_footer_legal_line() : 'RATEB — Rateb Software Foundation for Information Technology';
+        $d['home.footer.copyright_suffix'] = function_exists('ratib_brand_footer_legal_line') ? ratib_brand_footer_legal_line() : 'RATEB';
         $d['home.footer.location'] = 'Riyadh, Saudi Arabia';
 
         $d['home.footer.link.platform.overview'] = 'Platform overview';

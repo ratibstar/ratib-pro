@@ -140,7 +140,7 @@ $orderData = [
         ],
     ],
     'application_context' => [
-        'brand_name' => 'Rateb Software Foundation for Information Technology',
+        'brand_name' => 'RATEB',
         'locale' => 'en-US',
         'landing_page' => 'NO_PREFERENCE', // BILLING, LOGIN, or NO_PREFERENCE
         'shipping_preference' => 'NO_SHIPPING', // Digital product

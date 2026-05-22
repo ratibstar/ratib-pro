@@ -32,17 +32,39 @@ if (!function_exists('ratib_brand_category')) {
     }
 }
 
+if (!function_exists('ratib_brand_platform_name')) {
+    function ratib_brand_platform_name(): string
+    {
+        return 'RATEB Platform';
+    }
+}
+
+if (!function_exists('ratib_brand_company_name')) {
+    function ratib_brand_company_name(): string
+    {
+        return 'RATEB Company';
+    }
+}
+
+/** @deprecated Public surfaces no longer show legal-entity line; returns platform name. */
 if (!function_exists('ratib_legal_entity_name')) {
     function ratib_legal_entity_name(): string
     {
-        return 'Rateb Software Foundation for Information Technology';
+        return ratib_brand_platform_name();
     }
 }
 
 if (!function_exists('ratib_brand_footer_legal_line')) {
     function ratib_brand_footer_legal_line(): string
     {
-        return ratib_brand_name() . ' — ' . ratib_legal_entity_name();
+        return ratib_brand_name();
+    }
+}
+
+if (!function_exists('ratib_brand_hero_lead')) {
+    function ratib_brand_hero_lead(): string
+    {
+        return 'Enterprise infrastructure for cross-border workforce programs.';
     }
 }
 

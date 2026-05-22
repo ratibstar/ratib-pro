@@ -10,23 +10,37 @@ if (!function_exists('ratib_site_content_rebrand_substring_map')) {
      */
     function ratib_site_content_rebrand_substring_map(): array
     {
-        $legal = function_exists('ratib_legal_entity_name')
-            ? ratib_legal_entity_name()
-            : 'Rateb Software Foundation for Information Technology';
         $expansion = function_exists('ratib_brand_expansion')
             ? ratib_brand_expansion()
             : 'Recruitment Automation & Telemetry Enterprise Base';
+        $platform = function_exists('ratib_brand_platform_name')
+            ? ratib_brand_platform_name()
+            : 'RATEB Platform';
+        $company = function_exists('ratib_brand_company_name')
+            ? ratib_brand_company_name()
+            : 'RATEB Company';
 
         return [
-            ['Ratib Software Foundation for Information Technology', $legal],
-            ['Ratib Software Foundation', 'Rateb Software Foundation'],
+            ['Ratib Software Foundation for Information Technology', $platform],
+            ['Rateb Software Foundation for Information Technology', $platform],
+            ['Ratib Software Foundation', $platform],
+            ['Rateb Software Foundation', $platform],
             ['Ratib Company', 'RATEB'],
+            ['RATIB — Recruitment Automation & Tracking Intelligence Base', 'RATEB — ' . $expansion],
+            ['RATIB - Recruitment Automation & Tracking Intelligence Base', 'RATEB — ' . $expansion],
             ['RECRUITMENT AUTOMATION & TRACKING INTELLIGENCE BASES', strtoupper($expansion)],
             ['RECRUITMENT AUTOMATION & TRACKING INTELLIGENCE BASE', strtoupper($expansion)],
             ['Recruitment Automation & Tracking Intelligence Bases', $expansion],
             ['Recruitment Automation & Tracking Intelligence Base', $expansion],
+            ['Recruitment Automation & Tracking Intelligence', $expansion],
             ['About <span class="ratib-about-gradient">Ratib Company</span>', 'About <span class="ratib-about-gradient">RATEB</span>'],
             ['About Ratib Company', 'About RATEB'],
+            ['RATEB — Rateb Software Foundation for Information Technology', 'RATEB — ' . $expansion],
+            ['RATEB — Ratib Software Foundation for Information Technology', 'RATEB — ' . $expansion],
+            ['Legal identity, platform scope, corridors, and operational capabilities of Rateb Software Foundation for Information Technology.', 'Enterprise workforce program infrastructure — platform scope, corridors, and operational capabilities of ' . $platform . '.'],
+            ['Legal identity, platform scope, corridors, and operational capabilities of Ratib Software Foundation for Information Technology.', 'Enterprise workforce program infrastructure — platform scope, corridors, and operational capabilities of ' . $platform . '.'],
+            ['Rateb Software Foundation for Information Technology develops and operates RATEB:', $company . ' operates the RATEB platform:'],
+            ['Ratib Software Foundation for Information Technology develops and operates RATEB:', $company . ' operates the RATEB platform:'],
         ];
     }
 }
@@ -38,6 +52,9 @@ if (!function_exists('ratib_site_content_rebrand_apply_substrings')) {
             if ($from !== '' && str_contains($value, $from)) {
                 $value = str_replace($from, $to, $value);
             }
+        }
+        if (preg_match('/\bRATIB\b/', $value) && !str_contains($value, 'RATEB')) {
+            $value = (string) preg_replace('/\bRATIB\b/', 'RATEB', $value);
         }
 
         return $value;
@@ -62,10 +79,12 @@ if (!function_exists('ratib_site_content_rebrand_public_default_keys')) {
             'home.footer.brand',
             'home.footer.copyright_suffix',
             'profile.meta.title',
+            'profile.meta.description',
             'profile.company.trade_name',
             'profile.company.legal_name',
             'profile.company.tagline',
             'profile.company.summary',
+            'proc.identity.legal_name',
         ];
     }
 }
@@ -79,13 +98,13 @@ if (!function_exists('ratib_site_content_rebrand_value_is_stale')) {
         }
         $low = strtolower($v);
 
-        if (str_contains($low, 'ratib software foundation')
+        if (str_contains($low, 'software foundation')
             || str_contains($low, 'ratib company')
             || str_contains($low, 'tracking intelligence')) {
             return true;
         }
 
-        if (preg_match('/\.(title|page_title)$/', $key) && preg_match('/\bRATIB\b/', $v) && !str_contains($v, 'RATEB')) {
+        if (preg_match('/\.(title|page_title|description)$/', $key) && preg_match('/\bRATIB\b/', $v) && !str_contains($v, 'RATEB')) {
             return true;
         }
 
@@ -98,6 +117,10 @@ if (!function_exists('ratib_site_content_rebrand_value_is_stale')) {
         }
 
         if ($key === 'profile.company.trade_name' && strtoupper($v) === 'RATIB') {
+            return true;
+        }
+
+        if ($key === 'profile.company.legal_name' && str_contains($low, 'foundation')) {
             return true;
         }
 
@@ -114,7 +137,11 @@ if (!function_exists('ratib_site_content_rebrand_value_is_stale')) {
         }
 
         if ($key === 'home.hero.title_before' && str_contains($low, 'recruitment automation')
-            && !str_contains($low, 'enterprise workforce')) {
+            && !str_contains($low, 'rateb')) {
+            return true;
+        }
+
+        if ($key === 'home.hero.title_before' && str_contains($low, 'enterprise workforce')) {
             return true;
         }
 
@@ -123,7 +150,7 @@ if (!function_exists('ratib_site_content_rebrand_value_is_stale')) {
         }
 
         if ($key === 'home.hero.lead' && str_contains($low, 'production control plane for sending-country agencies')
-            && !str_contains($low, 'multi-tenant control plane')) {
+            && !str_contains($low, 'cross-border workforce')) {
             return true;
         }
 

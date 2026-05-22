@@ -97,7 +97,7 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
     <script type="application/ld+json"><?php echo json_encode([
         '@context' => 'https://schema.org',
         '@type' => 'Organization',
-        'name' => 'RATEB — Rateb Software Foundation for Information Technology',
+        'name' => 'RATEB — Recruitment Automation & Telemetry Enterprise Base',
         'url' => $baseUrl . '/profile',
         'logo' => $baseUrl . '/assets/ratib-logo.svg',
         'description' => $metaDesc,
@@ -127,7 +127,7 @@ $ratibMarketingHomeUrl = ratib_public_marketing_home_url($baseUrl);
 <div class="ratib-profile-distinct-banner" role="status" data-ratib-profile-distinct="1">
     <div class="ratib-about-container ratib-profile-distinct-banner__inner">
         <span class="ratib-profile-distinct-banner__badge" aria-hidden="true">Company profile</span>
-        <p class="ratib-profile-distinct-banner__text">Full <strong>Rateb Software Foundation for Information Technology</strong> profile — legal identity, contact, mission, and services below.</p>
+        <p class="ratib-profile-distinct-banner__text">Full <strong>RATEB Company</strong> profile — platform identity, contact, mission, and services below.</p>
         <a class="ratib-profile-distinct-banner__link" href="<?php echo htmlspecialchars($ratibMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home →</a>
     </div>
 </div>

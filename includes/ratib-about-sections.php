@@ -126,7 +126,7 @@ if (!function_exists('ratib_about_render_sections')) {
                     <a href="<?php echo ratib_about_h($homeRegister); ?>" class="ratib-about-btn ratib-about-btn--outline ratib-about-btn--xl">Deploy Agency Workspace</a>
                     <a href="mailto:info@out.ratib.sa" class="ratib-about-btn ratib-about-btn--ghost">Talk to Solutions Team</a>
                 </div>
-                <p class="ratib-about-cta__legal ratib-mono"><?php echo ratib_about_h((function_exists('ratib_legal_entity_name') ? ratib_legal_entity_name() : 'Rateb Software Foundation for Information Technology') . ' · Riyadh, Saudi Arabia · out.ratib.sa'); ?></p>
+                <p class="ratib-about-cta__legal ratib-mono"><?php echo ratib_about_h((function_exists('ratib_brand_name') ? ratib_brand_name() : 'RATEB') . ' · Riyadh, Saudi Arabia · out.ratib.sa'); ?></p>
             </div>
         </section>
             <?php
@@ -489,7 +489,7 @@ if (!function_exists('ratib_about_render_sections')) {
                     <a href="<?php echo ratib_about_h($homeRegister); ?>" class="ratib-about-btn ratib-about-btn--outline ratib-about-btn--xl">Deploy Agency Workspace</a>
                     <a href="mailto:info@out.ratib.sa" class="ratib-about-btn ratib-about-btn--ghost">Talk to Solutions Team</a>
                 </div>
-                <p class="ratib-about-cta__legal ratib-mono"><?php echo ratib_about_h((function_exists('ratib_legal_entity_name') ? ratib_legal_entity_name() : 'Rateb Software Foundation for Information Technology') . ' · Riyadh, Saudi Arabia · out.ratib.sa'); ?></p>
+                <p class="ratib-about-cta__legal ratib-mono"><?php echo ratib_about_h((function_exists('ratib_brand_name') ? ratib_brand_name() : 'RATEB') . ' · Riyadh, Saudi Arabia · out.ratib.sa'); ?></p>
             </div>
         </section>
         <?php

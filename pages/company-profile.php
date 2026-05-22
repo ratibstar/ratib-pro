@@ -1,6 +1,6 @@
 <?php
 /**
- * Public company profile (Rateb Software Foundation for Information Technology) — enterprise About RATEB page.
+ * Public company profile (RATEB Company) — enterprise About RATEB page.
  * URLs: /profile (via .htaccess) · /pages/company-profile.php (legacy, same content)
  */
 declare(strict_types=1);

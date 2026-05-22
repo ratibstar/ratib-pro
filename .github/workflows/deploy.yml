@@ -80,8 +80,9 @@ jobs:
           echo "$HOME_RAW" | grep -q 'Workforce Intelligence</span>' && { echo "::error::home hero still uses Workforce Intelligence (stale CMS title)"; BRAND_FAIL=1; }
           LIVE_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 15 "${SITE}/public/ratib-build.txt" 2>/dev/null | tr -d '\r' || true)"
           echo "live_build=${LIVE_BUILD}"
-          echo "$LIVE_BUILD" | grep -q 'rateb-lscache-bust' && echo "rebrand_build_marker=ok" || echo "::error::ratib-build.txt stale on server (got: ${LIVE_BUILD})"
-          echo "$LIVE_BUILD" | grep -q 'rateb-lscache-bust' || exit 1
+          echo "$LIVE_BUILD" | grep -q 'rateb-official-brand' && echo "rebrand_build_marker=ok" || echo "::error::ratib-build.txt stale on server (got: ${LIVE_BUILD})"
+          echo "$LIVE_BUILD" | grep -q 'rateb-official-brand' || exit 1
+          echo "$HOME_RAW" | grep -q 'Telemetry Enterprise Base' && echo "hero_expansion=ok" || { echo "::error::home hero missing Telemetry Enterprise Base expansion"; exit 1; }
           [ "$BRAND_FAIL" -eq 1 ] && exit 1
           if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ] && [ "$HR" = "200" ]; then
             if echo "$BODY" | grep -qi '<!DOCTYPE'; then

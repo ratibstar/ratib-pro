@@ -661,8 +661,8 @@ try {
                 ['id' => 'manage_departments', 'name' => 'Manage Departments'],
                 ['id' => 'manage_positions', 'name' => 'Manage Positions']
             ]],
-            ['id' => 'reports', 'name' => 'Reports', 'count' => 6, 'permissions' => [
-                ['id' => 'view_reports', 'name' => 'View Reports'],
+            ['id' => 'reports', 'name' => 'Executive Telemetry', 'count' => 6, 'permissions' => [
+                ['id' => 'view_reports', 'name' => 'View Executive Telemetry'],
                 ['id' => 'view_recruitment_report', 'name' => 'View Recruitment Report'],
                 ['id' => 'view_client_report', 'name' => 'View Client Report'],
                 ['id' => 'view_worker_report', 'name' => 'View Worker Report'],
@@ -677,11 +677,11 @@ try {
                 ['id' => 'reply_to_message', 'name' => 'Reply to Message'],
                 ['id' => 'delete_message', 'name' => 'Delete Message']
             ]],
-            ['id' => 'notifications', 'name' => 'Notifications', 'count' => 4, 'permissions' => [
-                ['id' => 'view_notifications', 'name' => 'View Notifications'],
-                ['id' => 'create_notification', 'name' => 'Create Notification'],
-                ['id' => 'manage_notifications', 'name' => 'Manage Notifications'],
-                ['id' => 'delete_notification', 'name' => 'Delete Notification']
+            ['id' => 'notifications', 'name' => 'Operational Signaling', 'count' => 4, 'permissions' => [
+                ['id' => 'view_notifications', 'name' => 'View Operational Signaling'],
+                ['id' => 'create_notification', 'name' => 'Create Signal'],
+                ['id' => 'manage_notifications', 'name' => 'Manage Operational Signaling'],
+                ['id' => 'delete_notification', 'name' => 'Delete Signal']
             ]],
             ['id' => 'visa_management', 'name' => 'Visa Management', 'count' => 5, 'permissions' => [
                 ['id' => 'view_visas', 'name' => 'View Visas'],

@@ -35,7 +35,7 @@ if (!function_exists('ratib_procurement_legal_config')) {
                 'title' => 'Legal entity and official contact',
                 'sub' => 'Registered Saudi technology company operating enterprise workforce program infrastructure.',
                 'fields' => [
-                    ['label' => 'Legal company name', 'value' => ratib_public_cms('proc.identity.legal_name', ratib_public_cms('profile.company.legal_name', 'Rateb Software Foundation for Information Technology')), 'icon' => 'fa-building'],
+                    ['label' => 'Operating company', 'value' => ratib_public_cms('proc.identity.legal_name', ratib_public_cms('profile.company.legal_name', 'RATEB Company')), 'icon' => 'fa-building'],
                     ['label' => 'Trade name', 'value' => ratib_public_cms('proc.identity.trade_name', ratib_public_cms('profile.company.trade_name', 'RATEB')), 'icon' => 'fa-tag'],
                     ['label' => 'Headquarters', 'value' => ratib_public_cms('proc.identity.hq', ratib_public_cms('profile.company.hq', 'Riyadh, Kingdom of Saudi Arabia')), 'icon' => 'fa-location-dot'],
                     ['label' => 'Commercial registration', 'value' => ratib_public_cms('proc.identity.cr', ratib_public_cms('profile.company.cr_value', 'On file — available to enterprise procurement under NDA upon request')), 'icon' => 'fa-file-contract'],
