@@ -105,6 +105,12 @@ jobs:
           echo "$LIVE_BUILD" | grep -q 'rateb-' && echo "rebrand_build_marker=ok" || echo "::warning::ratib-build.txt CDN cache may lag; brand HTML is the source of truth"
           [ "$BRAND_FAIL" -eq 1 ] && exit 1
           if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ] && [ "$HR" = "200" ]; then
+            HOMECSS="$(code "${SITE}/css/pages/home-public.css")"
+            echo "home-public.css=$HOMECSS"
+            if [ "$HOMECSS" != "200" ]; then
+              echo "::error::css/pages/home-public.css returned $HOMECSS (check .htaccess does not rewrite /css/pages/ as country_slug)"
+              exit 1
+            fi
             if echo "$BODY" | grep -qi '<!DOCTYPE'; then
               if echo "$BODY" | grep -q 'register-section-hidden ratib-register-wrap'; then
                 echo "::error::register section still hidden with open=register (deploy home.php?)"

@@ -158,6 +158,7 @@ def mime_for_filename(name: str) -> str:
 FAST_FILES = [
     ".htaccess",
     "index.php",
+    "includes/ratib-clean-url.php",
     "includes/ratib-public-base-url.php",
     "includes/ratib_html_global_ai_patch.php",
     "includes/ratib-mega-nav-config.php",

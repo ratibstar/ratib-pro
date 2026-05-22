@@ -49,6 +49,11 @@ RewriteRule ^pages/enterprise-pack/?$ /enterprise-pack/ [R=302,L]
 RewriteRule ^sitemap\.xml$ public/sitemap.xml [L]
 RewriteRule ^robots\.txt$ public/robots.txt [L]
 
+# Static assets (/css/pages/, /js/pages/, …) — must run before country_slug rewrites (else /css/pages/foo.css → country_slug=css)
+RewriteCond %{REQUEST_URI} ^/(css|js|assets|modules|public|uploads)/ [NC]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
 # Marketing home (MUST be before country-slug catch-all — /home is not a country code)
 RewriteRule ^home/?$ pages/home.php [L,QSA]
 
@@ -68,8 +73,9 @@ RewriteCond %{REQUEST_URI} !^/(control-panel|pages|api|public|Designed|js|css|as
 RewriteRule ^([a-z0-9_-]+)/?$ /pages/dashboard.php?country_slug=$1 [L,QSA]
 
 # Country-prefixed Ratib pages: /philippines/pages/dashboard → /pages/dashboard?country_slug=philippines (QSA keeps control=, agency_id=)
-# Must NOT match /control-panel/pages/... — "control-panel" was captured as a fake country_slug and looped with the /pages/control/ → control-panel redirect.
+# Must NOT match /control-panel/pages/... or /css/pages/... (css was mistaken for country_slug).
 RewriteCond %{REQUEST_URI} !^/control-panel/ [NC]
+RewriteCond %{REQUEST_URI} !^/(css|js|assets|modules|public|api|Designed|tap-payments|admin)/ [NC]
 RewriteRule ^([a-z0-9_-]+)/pages/(.+)$ /pages/$2?country_slug=$1 [L,QSA]
 
 # Old control panel URLs → new control-panel folder (so bookmarks/links still work)
