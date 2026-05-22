@@ -54,15 +54,19 @@ jobs:
         if: steps.fileman.outcome == 'success'
         run: |
           SITE="${{ secrets.CPANEL_SITE_URL || 'https://out.ratib.sa' }}"
-          # home.php 302-redirects to ?v= build marker — must follow redirects (-L).
+          # home.php 302-redirects to /home — must follow redirects (-L). /home must NOT hit country_slug=home.
           code() { curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 8 --max-time 20 "$1" 2>/dev/null || echo 000; }
           P="$(code "${SITE}/profile/")"
           G="$(code "${SITE}/js/pages/ratib-profile-nav-guard.js")"
-          H="$(code "${SITE}/pages/home.php")"
-          REG="${SITE}/pages/home.php?v=about-enterprise-20260518-profile-same-tab-v6&open=register&plan=gold&years=1&_deploy_verify=1"
+          H="$(code "${SITE}/home")"
+          HLEG="$(code "${SITE}/pages/home.php")"
+          REG="${SITE}/home?open=register&plan=gold&years=1&_deploy_verify=1"
+          if [ -n "$LIVE_BUILD" ]; then
+            REG="${SITE}/home?v=${LIVE_BUILD}&open=register&plan=gold&years=1&_deploy_verify=1"
+          fi
           HR="$(code "${REG}")"
           BODY="$(curl -sS -L --connect-timeout 8 --max-time 25 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${REG}" 2>/dev/null | head -c 250000 || true)"
-          echo "profile/=$P home.php(follow)=$H register=$HR guard.js=$G"
+          echo "profile/=$P home=$H home.php(legacy)=$HLEG register=$HR guard.js=$G"
           GOV_BYTES="$(curl -sS -L --connect-timeout 8 --max-time 20 "${SITE}/public/cms-bundle-gov-control-v2.png" 2>/dev/null | wc -c | tr -d ' ')"
           GOV_MAGIC="$(curl -sS -L --connect-timeout 8 --max-time 20 "${SITE}/public/cms-bundle-gov-control-v2.png" 2>/dev/null | head -c 3 | xxd -p 2>/dev/null || echo 000000)"
           echo "gov-control-v2 bytes=${GOV_BYTES} magic=${GOV_MAGIC}"
@@ -83,9 +87,11 @@ jobs:
               "${SITE}/pages/ratib-rebrand-status.php" 2>/dev/null | sed -n 's/^build=//p' | head -1 | tr -d '\r\n' || true)"
           fi
           echo "live_build=${LIVE_BUILD}"
-          HOME_URL="${SITE}/pages/home.php"
+          HOME_URL="${SITE}/home"
           if [ -n "$LIVE_BUILD" ]; then
             HOME_URL="${HOME_URL}?v=${LIVE_BUILD}&_deploy_verify=1"
+          else
+            HOME_URL="${HOME_URL}?_deploy_verify=1"
           fi
           HOME_RAW="$(curl -sS -L --connect-timeout 8 --max-time 25 \
             -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
@@ -94,7 +100,8 @@ jobs:
           echo "$HOME_RAW" | grep -qi 'Ratib Company' && { echo "::error::home still contains Ratib Company"; BRAND_FAIL=1; }
           echo "$HOME_RAW" | grep -q 'Workforce Intelligence</span>' && { echo "::error::home hero still uses Workforce Intelligence (stale CMS title)"; BRAND_FAIL=1; }
           echo "$HOME_RAW" | grep -q 'Software Foundation for Information Technology' && { echo "::error::home still shows Software Foundation legal line"; BRAND_FAIL=1; }
-          echo "$HOME_RAW" | grep -q 'Telemetry Enterprise Base' && echo "hero_expansion=ok" || { echo "::error::home hero missing Telemetry Enterprise Base expansion"; BRAND_FAIL=1; }
+          echo "$HOME_RAW" | grep -qE 'Telemetry Enterprise Base|ratib-brand-full__word--w3' && echo "hero_expansion=ok" || { echo "::error::home hero missing Telemetry Enterprise Base expansion"; BRAND_FAIL=1; }
+          echo "$HOME_RAW" | grep -qi 'country_slug=home\|Country not found' && { echo "::error::/home wrongly routed as country slug (check .htaccess home rule order)"; BRAND_FAIL=1; }
           echo "$LIVE_BUILD" | grep -q 'rateb-' && echo "rebrand_build_marker=ok" || echo "::warning::ratib-build.txt CDN cache may lag; brand HTML is the source of truth"
           [ "$BRAND_FAIL" -eq 1 ] && exit 1
           if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ] && [ "$HR" = "200" ]; then
@@ -113,7 +120,7 @@ jobs:
             echo "::error::home.php returned 200 but not HTML (likely PHP fatal): ${BODY:0:160}"
             exit 1
           fi
-          echo "::error::verify failed profile/=$P home.php=$H guard.js=$G body=${BODY:0:160}"
+          echo "::error::verify failed profile/=$P home=$H home.php(legacy)=$HLEG guard.js=$G body=${BODY:0:160}"
           exit 1
 
       - name: Deploy failed
