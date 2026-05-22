@@ -53,6 +53,7 @@ if (PHP_VERSION_ID < 80200) {
 // EN: Load environment profile first (host/country-specific overrides).
 // AR: تحميل ملف البيئة أولاً (تخصيصات حسب النطاق/الدولة).
 require_once __DIR__ . '/../config/env/load.php';
+require_once __DIR__ . '/ratib-clean-url.php';
 
 // EN: Central event bus bootstrap (safe no-op if unavailable).
 // AR: تهيئة ناقل الأحداث المركزي (لا يؤثر إذا لم يكن متاحاً).
@@ -270,9 +271,12 @@ if (!function_exists('apiUrl')) {
 // Helper function to get page URL
 if (!function_exists('pageUrl')) {
     function pageUrl($page) {
-        $base = getBaseUrl();
-        $page = ltrim($page, '/');
-        return $base . '/pages/' . $page;
+        $base = rtrim((string) getBaseUrl(), '/');
+        $page = function_exists('ratib_clean_page_segment')
+            ? ratib_clean_page_segment((string) $page)
+            : ltrim((string) $page, '/');
+
+        return ($base !== '' ? $base : '') . '/pages/' . $page;
     }
 }
 
@@ -429,7 +433,9 @@ if (!function_exists('ratib_partner_portal_magic_link_url')) {
     function ratib_partner_portal_magic_link_url(string $token): string
     {
         $root = ratib_absolute_public_base();
-        $path = '/pages/partner-portal.php';
+        $path = function_exists('ratib_public_page_path')
+            ? ratib_public_page_path('partner-portal.php')
+            : '/pages/partner-portal';
         $url = ($root !== '' ? $root : '') . $path . '?token=' . rawurlencode($token);
         if ($root === '') {
             $page = pageUrl('partner-portal.php');

@@ -26,8 +26,11 @@ if (!$ratibHomeSkipBuildBust) {
         if ($needsCanonicalV) {
             $qs = $_GET;
             $qs['v'] = $ratibBuildMarker;
-            $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/pages/home.php'), PHP_URL_PATH);
-            $path = is_string($path) && $path !== '' ? $path : '/pages/home.php';
+            $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/home'), PHP_URL_PATH);
+            $path = is_string($path) && $path !== '' ? $path : '/home';
+            if (preg_match('#/pages/home$#i', $path)) {
+                $path = '/home';
+            }
             $dest = $path . '?' . http_build_query($qs);
             header('Content-Type: text/html; charset=utf-8');
             header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private');
@@ -346,8 +349,11 @@ if ($ratibCmsRev !== '') {
     if ($currentRev !== $ratibCmsRev && !headers_sent()) {
         $qs = $_GET;
         $qs['cms_rev'] = $ratibCmsRev;
-        $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/pages/home.php'), PHP_URL_PATH);
-        $path = is_string($path) && $path !== '' ? $path : '/pages/home.php';
+        $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/home'), PHP_URL_PATH);
+        $path = is_string($path) && $path !== '' ? $path : '/home';
+        if (preg_match('#/pages/home$#i', $path)) {
+            $path = '/home';
+        }
         $newUrl = $path . '?' . http_build_query($qs);
         header('Location: ' . $newUrl, true, 302);
         exit;

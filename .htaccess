@@ -64,10 +64,10 @@ RewriteRule ^([a-z0-9_-]+)/login/?$ /pages/login.php?country_slug=$1 [L,QSA]
 RewriteCond %{REQUEST_URI} !^/(control-panel|pages|api|public|Designed|js|css|assets|tap-payments)(/|$) [NC]
 RewriteRule ^([a-z0-9_-]+)/?$ /pages/dashboard.php?country_slug=$1 [L,QSA]
 
-# Country-prefixed Ratib pages: /philippines/pages/dashboard.php → /pages/dashboard.php?country_slug=philippines (QSA keeps control=, agency_id=)
+# Country-prefixed Ratib pages: /philippines/pages/dashboard → /pages/dashboard?country_slug=philippines (QSA keeps control=, agency_id=)
 # Must NOT match /control-panel/pages/... — "control-panel" was captured as a fake country_slug and looped with the /pages/control/ → control-panel redirect.
 RewriteCond %{REQUEST_URI} !^/control-panel/ [NC]
-RewriteRule ^([a-z0-9_-]+)/pages/(.+\.php)$ /pages/$2?country_slug=$1 [L,QSA]
+RewriteRule ^([a-z0-9_-]+)/pages/(.+)$ /pages/$2?country_slug=$1 [L,QSA]
 
 # Old control panel URLs → new control-panel folder (so bookmarks/links still work)
 RewriteCond %{REQUEST_URI} ^/pages/control/ [NC]
@@ -89,6 +89,49 @@ RewriteRule ^admin/government-tracking/?$ /admin/government-tracking.php [L,QSA]
 # If files are in /public_html/reports/, uncomment next line:
 # RewriteBase /reports/
 
+# ── Extensionless page URLs (hide .php from browsers) ──
+
+# Marketing home: /home → pages/home.php; redirect legacy /pages/home.php
+RewriteRule ^home/?$ pages/home.php [L,QSA]
+RewriteCond %{THE_REQUEST} \s/+pages/home\.php[\s?] [NC]
+RewriteRule ^pages/home\.php$ /home [R=302,L,QSA]
+
+# Browser requested .php under /pages/ → 301 to extensionless (home handled above)
+RewriteCond %{THE_REQUEST} \s/+pages/([^\s?]+)\.php[\s?] [NC]
+RewriteCond %1 !^home$ [NC]
+RewriteRule ^pages/(.+)\.php$ /pages/$1 [R=301,L,QSA]
+
+# Browser requested .php under /control-panel/pages/
+RewriteCond %{THE_REQUEST} \s/+control-panel/pages/([^\s?]+)\.php[\s?] [NC]
+RewriteRule ^control-panel/pages/(.+)\.php$ /control-panel/pages/$1 [R=301,L,QSA]
+
+# Browser requested country-prefixed .php: /philippines/pages/foo.php → /philippines/pages/foo
+RewriteCond %{THE_REQUEST} \s/+([a-z0-9_-]+)/pages/([^\s?]+)\.php[\s?] [NC]
+RewriteCond %1 !^(control-panel|pages|api|public|Designed|js|css|assets|tap-payments|admin)$ [NC]
+RewriteRule ^([a-z0-9_-]+)/pages/(.+)\.php$ /$1/pages/$2 [R=301,L,QSA]
+
+# Browser requested .php under /admin/ (except rules already defined for specific admin paths)
+RewriteCond %{THE_REQUEST} \s/+admin/([^\s?/]+)\.php[\s?] [NC]
+RewriteRule ^admin/(.+)\.php$ /admin/$1 [R=301,L,QSA]
+
+# Internal: extensionless /pages/* → *.php when file exists
+RewriteCond %{REQUEST_URI} ^/pages/(.+)$ [NC]
+RewriteCond %{REQUEST_URI} !\.php$ [NC]
+RewriteCond %{DOCUMENT_ROOT}/pages/%1.php -f
+RewriteRule ^pages/(.+)$ pages/$1.php [L,QSA]
+
+# Internal: extensionless /control-panel/pages/* → *.php
+RewriteCond %{REQUEST_URI} ^/control-panel/pages/(.+)$ [NC]
+RewriteCond %{REQUEST_URI} !\.php$ [NC]
+RewriteCond %{DOCUMENT_ROOT}/control-panel/pages/%1.php -f
+RewriteRule ^control-panel/pages/(.+)$ control-panel/pages/$1.php [L,QSA]
+
+# Internal: extensionless /admin/* → *.php
+RewriteCond %{REQUEST_URI} ^/admin/(.+)$ [NC]
+RewriteCond %{REQUEST_URI} !\.php$ [NC]
+RewriteCond %{DOCUMENT_ROOT}/admin/%1.php -f
+RewriteRule ^admin/(.+)$ admin/$1.php [L,QSA]
+
 # Directory index - tells Apache which file to serve
 DirectoryIndex public/index.php index.php
 
@@ -102,13 +145,14 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ public/index.php [QSA,L]
 
-# LiteSpeed full-page cache: bare /pages/home.php served stale Profile→new-tab HTML. Force ?v= at the edge.
-RewriteCond %{THE_REQUEST} \s/+pages/home\.php[\s?] [NC]
+# LiteSpeed full-page cache: bare /home served stale Profile→new-tab HTML. Force ?v= at the edge.
+RewriteCond %{THE_REQUEST} \s/+home[\s?] [NC]
 RewriteCond %{QUERY_STRING} !(^|&)v=
-RewriteRule ^pages/home\.php$ /pages/home.php?v=about-enterprise-20260518-profile-same-tab-v6 [R=302,L,QSA]
+RewriteRule ^home/?$ /home?v=about-enterprise-20260518-profile-same-tab-v6 [R=302,L,QSA]
 
 # LiteSpeed: do not cache marketing home/profile HTML (stale nav after deploy).
 <IfModule LiteSpeed>
+    CacheDisable public /home
     CacheDisable public /pages/home.php
     CacheDisable public /profile
     CacheDisable public /pages/company-profile.php
@@ -134,6 +178,7 @@ RewriteRule ^pages/home\.php$ /pages/home.php?v=about-enterprise-20260518-profil
     Header set X-XSS-Protection "1; mode=block"
 
     # Bypass cache for home page + its JS/CSS + program preview SVGs (paths may include subdir installs).
+    SetEnvIf Request_URI "/home" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/pages/home\.php" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/pages/about\.php" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/security-compliance" RATIB_NOCACHE=1

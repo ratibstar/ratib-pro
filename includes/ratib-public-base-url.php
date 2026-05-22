@@ -75,7 +75,7 @@ if (!function_exists('ratib_public_marketing_home_url')) {
         if ($baseUrl === '') {
             $baseUrl = ratib_public_site_base_url();
         }
-        $url = rtrim($baseUrl, '/') . '/pages/home.php';
+        $url = rtrim($baseUrl, '/') . (function_exists('ratib_marketing_home_path') ? ratib_marketing_home_path() : '/home');
         $build = ratib_public_build_marker();
         if ($build !== '') {
             $query['v'] = $build;
@@ -102,7 +102,7 @@ if (!function_exists('ratib_public_nav_marketing_home_prefix')) {
             $baseUrl = ratib_public_site_base_url();
         }
 
-        return rtrim($baseUrl, '/') . '/pages/home.php';
+        return rtrim($baseUrl, '/') . (function_exists('ratib_marketing_home_path') ? ratib_marketing_home_path() : '/home');
     }
 }
 

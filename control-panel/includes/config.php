@@ -17,6 +17,10 @@ if (is_file($ratibCompatEarly)) {
 }
 
 require_once __DIR__ . '/../config/env.php';
+$ratibCleanUrl = dirname(__DIR__, 2) . '/includes/ratib-clean-url.php';
+if (is_file($ratibCleanUrl)) {
+    require_once $ratibCleanUrl;
+}
 require_once __DIR__ . '/../core/bootstrap.php';
 require_once __DIR__ . '/control/request-url.php';
 
@@ -54,9 +58,13 @@ if (!function_exists('asset')) {
 }
 if (!function_exists('pageUrl')) {
     function pageUrl($page) {
-        $base = getBaseUrl();
-        $page = ltrim($page, '/');
-        return ($base ? rtrim($base, '/') . '/' : '/') . 'pages/' . $page;
+        $base = rtrim((string) getBaseUrl(), '/');
+        $page = function_exists('ratib_clean_page_segment')
+            ? ratib_clean_page_segment((string) $page)
+            : ltrim((string) $page, '/');
+        $prefix = ($base !== '' ? $base : '');
+
+        return $prefix . '/pages/' . $page;
     }
 }
 if (!function_exists('apiUrl')) {

@@ -85,6 +85,77 @@
     // Set global BASE_PATH for backward compatibility
     window.BASE_PATH = window.APP_CONFIG.baseUrl || '';
     window.API_BASE = window.APP_CONFIG.apiBase || '';
+
+    /** Build extensionless /pages/ URL (matches PHP pageUrl()). */
+    window.ratibPageUrl = function(page, extraQuery) {
+        var p = String(page || '').replace(/^\/+/, '').replace(/\.php$/i, '');
+        var base = String((window.APP_CONFIG && window.APP_CONFIG.baseUrl) || window.BASE_PATH || '').replace(/\/+$/, '');
+        var url = (base || '') + '/pages/' + p;
+        if (extraQuery) {
+            url += (url.indexOf('?') >= 0 ? '&' : '?') + String(extraQuery).replace(/^\?/, '');
+        }
+        return url;
+    };
+
+    /** Strip .php from user-facing page links (not /api/, assets, or Designed). */
+    window.ratibCleanPageHref = function(href) {
+        if (!href || typeof href !== 'string') return href;
+        if (href.indexOf('/api/') !== -1 || href.indexOf('/Designed/') !== -1) return href;
+        if (/\/pages\/[^?#]+\.php/i.test(href) || /\/control-panel\/pages\/[^?#]+\.php/i.test(href)) {
+            return href.replace(/\.php(?=[?#]|$)/i, '');
+        }
+        if (/\/pages\/home\.php/i.test(href)) {
+            return href.replace(/\/pages\/home\.php/i, '/home');
+        }
+        return href;
+    };
+
+    function ratibApplyCleanPageLinks(root) {
+        var scope = root && root.querySelectorAll ? root : document;
+        scope.querySelectorAll('a[href*=".php"]').forEach(function(a) {
+            var h = a.getAttribute('href');
+            if (!h) return;
+            var cleaned = window.ratibCleanPageHref(h);
+            if (cleaned !== h) a.setAttribute('href', cleaned);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { ratibApplyCleanPageLinks(document); });
+    } else {
+        ratibApplyCleanPageLinks(document);
+    }
+
+    if (typeof MutationObserver !== 'undefined') {
+        var cleanLinkObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(m) {
+                m.addedNodes.forEach(function(node) {
+                    if (node.nodeType !== 1) return;
+                    if (node.matches && node.matches('a[href*=".php"]')) {
+                        var h = node.getAttribute('href');
+                        if (h) node.setAttribute('href', window.ratibCleanPageHref(h));
+                    }
+                    ratibApplyCleanPageLinks(node);
+                });
+            });
+        });
+        cleanLinkObserver.observe(document.documentElement, { childList: true, subtree: true });
+    }
+
+    // If user landed on a legacy .php page URL, normalize the address bar after redirect rules.
+    (function() {
+        var path = window.location.pathname || '';
+        if (/\/pages\/home\.php$/i.test(path)) {
+            var next = path.replace(/\/pages\/home\.php$/i, '/home') + (window.location.search || '') + (window.location.hash || '');
+            try { window.history.replaceState(null, '', next); } catch (e) {}
+            return;
+        }
+        if ((/\/pages\/[^/]+\.php$/i.test(path) || /\/pages\/[^/]+\/[^/]+\.php$/i.test(path)) && path.indexOf('/api/') === -1) {
+            var cleanPath = path.replace(/\.php$/i, '');
+            var bar = cleanPath + (window.location.search || '') + (window.location.hash || '');
+            try { window.history.replaceState(null, '', bar); } catch (e) {}
+        }
+    })();
     
     // Global 401 handler: redirect to logout when session expires (applies to all program pages)
     (function() {
@@ -104,7 +175,7 @@
             var isControl = window.location.pathname.indexOf('/control/') !== -1 || (window.location.search || '').indexOf('control=1') !== -1 ||
                 (appCfgEl && appCfgEl.getAttribute('data-control') === '1') || isControlProBridge;
             var controlSuffix = isControl ? '?control=1' : '';
-            var logoutUrl = (base || '/') + sep + 'pages/logout.php' + controlSuffix;
+            var logoutUrl = window.ratibPageUrl('logout.php') + controlSuffix;
             window.location.href = logoutUrl;
         }
 

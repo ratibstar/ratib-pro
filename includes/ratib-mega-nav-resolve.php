@@ -61,7 +61,7 @@ if (!function_exists('ratib_mega_nav_marketing_home')) {
             return ratib_public_marketing_home_url($baseUrl);
         }
 
-        return rtrim($baseUrl, '/') . '/pages/home.php';
+        return rtrim($baseUrl, '/') . (function_exists('ratib_marketing_home_path') ? ratib_marketing_home_path() : '/home');
     }
 }
 
@@ -162,7 +162,9 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
 
         switch ($hrefKey) {
             case 'customer_portal':
-                return $baseUrl . '/pages/customer-portal.php';
+                return function_exists('ratib_public_page_url')
+                    ? ratib_public_page_url($baseUrl, 'customer-portal.php')
+                    : $baseUrl . '/pages/customer-portal';
             case 'help_center':
                 // Public marketing — in-app help-center.php requires login (Ratib Pro).
                 if (ratib_mega_nav_is_profile_context($navPrefix)) {
@@ -191,9 +193,13 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
             case 'enterprise_documents':
                 return $baseUrl . '/enterprise-pack/';
             case 'marketplace':
-                return $baseUrl . '/pages/client/domains.php?catalog=1';
+                return (function_exists('ratib_public_page_url')
+                    ? ratib_public_page_url($baseUrl, 'client/domains.php')
+                    : $baseUrl . '/pages/client/domains') . '?catalog=1';
             case 'infra_status':
-                return $baseUrl . '/pages/client/services.php';
+                return function_exists('ratib_public_page_url')
+                    ? ratib_public_page_url($baseUrl, 'client/services.php')
+                    : $baseUrl . '/pages/client/services';
         }
 
         if (ratib_mega_nav_is_profile_context($navPrefix)) {
