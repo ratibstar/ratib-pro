@@ -169,9 +169,15 @@
         prof.textContent = 'Profile';
         brand.parentNode.insertBefore(blk, brand);
         blk.appendChild(brand);
-        var bt = brand.querySelector('.ratib-nav__brand-text');
-        if (bt) {
-            bt.textContent = 'RATEB';
+        if (brand.querySelector('.ratib-brand-full')) {
+            brand.querySelectorAll('img, .ratib-nav__brand-logo, .ratib-nav__brand-text').forEach(function (el) {
+                el.remove();
+            });
+        } else {
+            var bt = brand.querySelector('.ratib-nav__brand-text');
+            if (bt) {
+                bt.textContent = 'RATEB';
+            }
         }
         blk.appendChild(prof);
     }

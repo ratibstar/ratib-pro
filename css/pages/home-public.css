@@ -1339,13 +1339,39 @@ body.ratib-saas-home {
   max-width: 100%;
 }
 
+/* Nav: one animated line only (R+A+T+E+B + Company + expansion) — no logo row above */
+.ratib-nav__brand--stacked.ratib-nav__brand--animated-title {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2em 0.35em;
+  max-width: min(26rem, 52vw);
+}
+
 .ratib-nav__brand--stacked .ratib-nav__brand-logo {
   flex-shrink: 0;
 }
 
-/* Animated R+A+T+E+B title replaces logo SVG (SVG also spells "RATEB" — duplicate) */
-.ratib-nav__brand--animated-title .ratib-nav__brand-logo {
+.ratib-nav__brand--animated-title img,
+.ratib-nav__brand--animated-title .ratib-nav__brand-logo,
+.ratib-nav__brand--animated-title .ratib-nav__brand-text,
+.ratib-nav__brand:has(.ratib-brand-full) img,
+.ratib-nav__brand:has(.ratib-brand-full) .ratib-nav__brand-text {
   display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
+}
+
+.ratib-nav__brand--animated-title .ratib-brand-full--nav {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ratib-nav__brand--animated-title .ratib-brand-full__rateb {
+  white-space: nowrap;
 }
 
 @media (max-width: 1099px) {

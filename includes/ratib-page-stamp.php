@@ -14,7 +14,7 @@ if (!function_exists('ratib_emit_page_stamp')) {
         $isProfile = $kind === 'profile';
         $label = $isProfile ? 'COMPANY PROFILE' : 'MARKETING HOME';
         $bg = $isProfile ? '#7c3aed' : '#0369a1';
-        $url = $isProfile ? '/profile/' : '/pages/home.php';
+        $url = $isProfile ? '/profile/' : '/home';
         echo '<div id="ratib-page-stamp" data-ratib-page-stamp="' . ($isProfile ? 'profile' : 'home') . '" ';
         echo 'style="position:fixed;bottom:12px;right:12px;z-index:2147483647;max-width:min(92vw,320px);padding:10px 14px;border-radius:10px;';
         echo 'font:bold 14px/1.25 system-ui,-apple-system,sans-serif;color:#fff;background:' . $bg . ';';

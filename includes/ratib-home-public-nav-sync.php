@@ -21,6 +21,9 @@ function ratib_home_nav_emit_sync_guard_style(): void
     echo '#ratibNavMenu:not([data-ratib-nav-sync="1"]) .ratib-nav__platform-links{opacity:0.01!important;}';
     echo '#ratibNavMenu[data-ratib-nav-sync="1"] .ratib-nav__platform-links{opacity:1!important;}';
     echo '.ratib-nav__platform-links .ratib-nav__link--about{min-width:5.5rem;}';
+    echo '.ratib-nav__brand--animated-title img,.ratib-nav__brand--animated-title .ratib-nav__brand-logo,';
+    echo '.ratib-nav__brand--animated-title .ratib-nav__brand-text,';
+    echo '.ratib-nav__brand:has(.ratib-brand-full) img,.ratib-nav__brand:has(.ratib-brand-full) .ratib-nav__brand-text{display:none!important}';
     echo '</style>';
 }
 
@@ -142,8 +145,12 @@ function run(){
       prof.textContent='Profile';
       brand.parentNode.insertBefore(blk,brand);
       blk.appendChild(brand);
-      var bt=brand.querySelector('.ratib-nav__brand-text');
-      if(bt)bt.textContent='RATEB';
+      if(brand.querySelector('.ratib-brand-full')){
+        brand.querySelectorAll('img,.ratib-nav__brand-logo,.ratib-nav__brand-text').forEach(function(el){el.remove();});
+      }else{
+        var bt=brand.querySelector('.ratib-nav__brand-text');
+        if(bt)bt.textContent='RATEB';
+      }
       blk.appendChild(prof);
     }
   }
