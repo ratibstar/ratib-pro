@@ -66,7 +66,7 @@ if (typeof showSuccessMessage === 'undefined') {
 
 // Built-in tutorials (deep details); loaded from help-center-builtin-content.js or fallback below
 const HELP_CENTER_BUILTIN = window.HELP_CENTER_BUILTIN || {
-    1: [{ id: 'builtin-1-0', title: 'Getting Started', overview: 'Introduction to the RATEB program.', content: '<p>Use the left menu: Operations Control Plane, Agent, SubAgent, Workers, Cases, Accounting, HR, Executive Telemetry, Contact, Operational Signaling. Bookmark the Help Center.</p>', estimated_time: 5, difficulty_level: 'beginner', views_count: 0 }],
+    1: [{ id: 'builtin-1-0', title: 'Getting Started', overview: 'Introduction to the RATEB program.', content: '<p>Use the left menu: Operations Control Plane, Agent, SubAgent, Workers, Cases, Accounting, HR, Reports, Contact, Operational Signaling. Bookmark the Help Center.</p>', estimated_time: 5, difficulty_level: 'beginner', views_count: 0 }],
     2: [{ id: 'builtin-2-0', title: 'Dashboard', overview: 'Overview and key numbers.', content: '<p>Review summary cards and charts. Click through to detailed sections. Refresh for latest data.</p>', estimated_time: 5, difficulty_level: 'beginner', views_count: 0 }],
     3: [{ id: 'builtin-3-0', title: 'User Management', overview: 'Roles and permissions.', content: '<p>Go to System Settings. Add users, assign roles, set permissions. Give each role only what it needs.</p>', estimated_time: 5, difficulty_level: 'beginner', views_count: 0 }],
     4: [{ id: 'builtin-4-0', title: 'Contracts & Recruitment', overview: 'Contracts and recruitment workflows.', content: '<p>Create contracts, link parties, track status. Use filters to find items that need action.</p>', estimated_time: 5, difficulty_level: 'beginner', views_count: 0 }],

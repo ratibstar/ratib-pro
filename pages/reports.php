@@ -179,7 +179,7 @@ if (!$statsLoaded) {
     }
 }
 
-$pageTitle = "Executive Telemetry";
+$pageTitle = "Reports";
 $pageCss = [
     asset('css/reports.css'),
     "https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css"

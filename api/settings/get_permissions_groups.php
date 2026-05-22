@@ -661,8 +661,8 @@ try {
                 ['id' => 'manage_departments', 'name' => 'Manage Departments'],
                 ['id' => 'manage_positions', 'name' => 'Manage Positions']
             ]],
-            ['id' => 'reports', 'name' => 'Executive Telemetry', 'count' => 6, 'permissions' => [
-                ['id' => 'view_reports', 'name' => 'View Executive Telemetry'],
+            ['id' => 'reports', 'name' => 'Reports', 'count' => 6, 'permissions' => [
+                ['id' => 'view_reports', 'name' => 'View Reports'],
                 ['id' => 'view_recruitment_report', 'name' => 'View Recruitment Report'],
                 ['id' => 'view_client_report', 'name' => 'View Client Report'],
                 ['id' => 'view_worker_report', 'name' => 'View Worker Report'],

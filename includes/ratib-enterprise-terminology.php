@@ -10,8 +10,8 @@ if (!function_exists('ratib_enterprise_term')) {
         static $map = [
             'Dashboard' => 'Operations Control Plane',
             'dashboard' => 'operations control plane',
-            'Reports' => 'Executive Telemetry',
-            'reports' => 'executive telemetry',
+            'Reports' => 'Reports',
+            'reports' => 'reports',
             'Notifications' => 'Operational Signaling',
             'notifications' => 'operational signaling',
             'Settings' => 'System Settings',

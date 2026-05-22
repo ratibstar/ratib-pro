@@ -56,7 +56,7 @@ if (!function_exists('ratib_enterprise_schema_software_application')) {
                 'Operations Control Plane',
                 'Workforce Telemetry',
                 'Geospatial Workforce Telemetry',
-                'Executive Telemetry',
+                'Reports',
                 'Operational Signaling',
                 'System Settings',
                 'Immutable workflow history',

@@ -913,8 +913,8 @@ include '../includes/header.php';
             </div>
 
             <!-- Reports Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('reports.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_reports" tabindex="0" role="button" aria-label="Executive Telemetry - Total: <?php echo $reportsStats['total'] ?? 0; ?>">
-                <h2>📈 Executive Telemetry</h2>
+            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('reports.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_reports" tabindex="0" role="button" aria-label="Reports - Total: <?php echo $reportsStats['total'] ?? 0; ?>">
+                <h2>📈 Reports</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalReports"><?php echo $reportsStats['total'] ?? 0; ?></span></p>
                     <p class="count">Today: <span id="todayReports"><?php echo $reportsStats['today'] ?? 0; ?></span></p>
