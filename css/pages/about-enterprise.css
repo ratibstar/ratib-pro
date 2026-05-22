@@ -1025,15 +1025,19 @@ body.ratib-about-page {
   }
 }
 
-/* Profile page — same nav brand stack as marketing home */
-body.ratib-about-page .ratib-nav__brand-block--animated {
-  max-width: min(21rem, 48vw);
+/* Profile page — identical header brand card as marketing home */
+body.ratib-about-page .ratib-nav-shell__inner {
+  align-items: flex-start;
 }
 
-@media (max-width: 599px) {
-  body.ratib-about-page .ratib-nav__brand-block--animated {
-    max-width: min(15.5rem, 62vw);
+@media (min-width: 1100px) {
+  body.ratib-about-page .ratib-nav-shell__inner {
+    align-items: center;
   }
+}
+
+body.ratib-about-page .ratib-nav__brand-block--animated {
+  max-width: min(23.5rem, 50vw);
 }
 
 /* Nav highlight on about page — Profile pills, not Platform */
