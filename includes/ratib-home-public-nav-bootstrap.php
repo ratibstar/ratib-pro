@@ -58,6 +58,7 @@ $ratibTopbarKeys = [
     'home.topbar.phone_display',
     'home.topbar.wa_label',
     'home.topbar.tls_label',
+    'home.topbar.ops_line',
     'home.topbar.nodes_count',
     'home.topbar.nodes_suffix',
     'home.topbar.client_login',
@@ -89,12 +90,17 @@ $ratibPhoneRaw = (string) ($ratibHome['home.topbar.phone_display'] ?? '');
 $ratibPhoneDigits = function_exists('ratib_site_content_phone_digits_for_links')
     ? ratib_site_content_phone_digits_for_links($ratibPhoneRaw)
     : (preg_replace('/\D+/', '', $ratibPhoneRaw) ?: '966599863868');
-$ratibTopbarNodesDigits = preg_replace('/\D/', '', (string) ($ratibHome['home.topbar.nodes_count'] ?? '247'));
-$ratibTopbarNodesNum = $ratibTopbarNodesDigits !== '' ? (int) $ratibTopbarNodesDigits : 247;
-// Avoid billion-scale “counts” (usually a pasted phone fragment) confusing the top bar next to the phone.
-if ($ratibTopbarNodesNum > 999999 || strlen($ratibTopbarNodesDigits) > 6) {
-    $ratibTopbarNodesNum = 247;
-    $ratibTopbarNodesDigits = '247';
+$ratibTopbarOpsLine = trim((string) ($ratibHome['home.topbar.ops_line'] ?? ''));
+$ratibTopbarNodesDigits = preg_replace('/\D/', '', (string) ($ratibHome['home.topbar.nodes_count'] ?? ''));
+$ratibTopbarNodesNum = $ratibTopbarNodesDigits !== '' ? (int) $ratibTopbarNodesDigits : 0;
+if ($ratibTopbarOpsLine === '' && $ratibTopbarNodesDigits !== '') {
+    if ($ratibTopbarNodesNum > 999999 || strlen($ratibTopbarNodesDigits) > 6) {
+        $ratibTopbarNodesNum = 0;
+        $ratibTopbarNodesDigits = '';
+    }
+} elseif ($ratibTopbarOpsLine !== '') {
+    $ratibTopbarNodesNum = 0;
+    $ratibTopbarNodesDigits = '';
 }
 $ratibPricingStarterLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.starter.features'] ?? '');
 $ratibPricingGoldLines = ratib_site_content_home_nl_lines($ratibHome['home.pricing.gold.features'] ?? '');

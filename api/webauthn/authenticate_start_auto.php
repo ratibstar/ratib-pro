@@ -19,7 +19,7 @@ try {
     $result = $stmt->get_result();
     
     if ($result->num_rows === 0) {
-        echo json_encode(['success' => false, 'message' => 'No fingerprint registered. Please register in admin panel first.']);
+        echo json_encode(['success' => false, 'message' => 'No fingerprint registered. Please register in platform control plane first.']);
         exit;
     }
     

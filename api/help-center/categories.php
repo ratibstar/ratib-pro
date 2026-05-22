@@ -208,7 +208,7 @@ class CategoriesAPI {
             ];
             $names = [
                 1 => ['Getting Started', 'Introduction to the system and how it works'],
-                2 => ['Dashboard', 'Dashboard navigation and features guide'],
+                2 => ['Operations Control Plane', 'Operations control plane navigation and features guide'],
                 3 => ['User Management & Permissions', 'Managing users, roles, and permissions'],
                 4 => ['Contracts & Recruitment', 'Contract management and recruitment processes'],
                 5 => ['Client Management', 'Managing clients and client relationships'],

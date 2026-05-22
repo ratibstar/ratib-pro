@@ -30,6 +30,25 @@ RewriteRule ^procurement-legal$ /procurement-legal/ [R=301,L]
 RewriteRule ^procurement-legal/$ pages/procurement-legal.php [L,QSA]
 RewriteRule ^pages/procurement-legal/?$ /procurement-legal/ [R=302,L]
 
+# Enterprise trust hub (procurement-grade pillars)
+RewriteRule ^enterprise-trust$ /enterprise-trust/ [R=301,L]
+RewriteRule ^enterprise-trust/$ pages/enterprise-trust.php [L,QSA]
+RewriteRule ^pages/enterprise-trust/?$ /enterprise-trust/ [R=302,L]
+
+# Government & workforce program operations
+RewriteRule ^government-workforce-operations$ /government-workforce-operations/ [R=301,L]
+RewriteRule ^government-workforce-operations/$ pages/government-workforce-operations.php [L,QSA]
+RewriteRule ^pages/government-workforce-operations/?$ /government-workforce-operations/ [R=302,L]
+
+# Enterprise document packs (print → PDF)
+RewriteRule ^enterprise-pack$ /enterprise-pack/ [R=301,L]
+RewriteRule ^enterprise-pack/$ pages/enterprise-pack.php [L,QSA]
+RewriteRule ^pages/enterprise-pack/?$ /enterprise-pack/ [R=302,L]
+
+# SEO — sitemap & robots at site root
+RewriteRule ^sitemap\.xml$ public/sitemap.xml [L]
+RewriteRule ^robots\.txt$ public/robots.txt [L]
+
 # Legacy URLs → canonical /profile (THE_REQUEST = browser URL only; avoids internal rewrite loops).
 RewriteCond %{THE_REQUEST} \s/+pages/company-profile\.php[\s?] [NC]
 RewriteRule ^pages/company-profile\.php$ /profile [R=302,L,QSA]
@@ -100,6 +119,12 @@ RewriteRule ^pages/home\.php$ /pages/home.php?v=about-enterprise-20260518-profil
     CacheDisable public /pages/architecture.php
     CacheDisable public /procurement-legal
     CacheDisable public /pages/procurement-legal.php
+    CacheDisable public /enterprise-trust
+    CacheDisable public /pages/enterprise-trust.php
+    CacheDisable public /government-workforce-operations
+    CacheDisable public /pages/government-workforce-operations.php
+    CacheDisable public /enterprise-pack
+    CacheDisable public /pages/enterprise-pack.php
 </IfModule>
 
 # Security headers
@@ -117,6 +142,12 @@ RewriteRule ^pages/home\.php$ /pages/home.php?v=about-enterprise-20260518-profil
     SetEnvIf Request_URI "/pages/architecture\.php" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/procurement-legal" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/pages/procurement-legal\.php" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/enterprise-trust" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/enterprise-trust\.php" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/government-workforce-operations" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/government-workforce-operations\.php" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/enterprise-pack" RATIB_NOCACHE=1
+    SetEnvIf Request_URI "/pages/enterprise-pack\.php" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/profile" RATIB_NOCACHE=1
     SetEnvIf Request_URI "/pages/company-profile\.php" RATIB_NOCACHE=1
     SetEnvIf Request_URI "ratib-chrome-bust\.php" RATIB_NOCACHE=1

@@ -78,6 +78,11 @@ if (!function_exists('ratib_site_content_rebrand_public_default_keys')) {
             'home.hero.title_gradient',
             'home.footer.brand',
             'home.footer.copyright_suffix',
+            'home.topbar.ops_line',
+            'home.topbar.nodes_count',
+            'home.analytics.sub',
+            'home.analytics.sample_tag',
+            'home.footer.strip.1',
             'profile.meta.title',
             'profile.meta.description',
             'profile.company.trade_name',
@@ -138,6 +143,18 @@ if (!function_exists('ratib_site_content_rebrand_value_is_stale')) {
 
         if ($key === 'home.hero.title_before' && str_contains($low, 'recruitment automation')
             && !str_contains($low, 'rateb')) {
+            return true;
+        }
+
+        if ($key === 'home.topbar.nodes_count' && ($v === '247' || preg_match('/^\d{2,}$/', $v))) {
+            return true;
+        }
+
+        if ($key === 'home.footer.strip.1' && str_contains($low, 'synthetic checks')) {
+            return true;
+        }
+
+        if ($key === 'home.analytics.sub' && !str_contains($low, 'sample') && preg_match('/\d+\.?\d*%|\+?\d+%|\d\.\dk/i', $v)) {
             return true;
         }
 

@@ -182,6 +182,14 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
                 return $baseUrl . '/architecture/';
             case 'procurement_legal':
                 return $baseUrl . '/procurement-legal/';
+            case 'enterprise_trust':
+                return $baseUrl . '/enterprise-trust/';
+            case 'government_workforce':
+            case 'government_operations':
+                return $baseUrl . '/government-workforce-operations/';
+            case 'enterprise_pack':
+            case 'enterprise_documents':
+                return $baseUrl . '/enterprise-pack/';
             case 'marketplace':
                 return $baseUrl . '/pages/client/domains.php?catalog=1';
             case 'infra_status':

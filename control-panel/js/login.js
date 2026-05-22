@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (!startData.publicKey) {
-                showFingerprintStatus(`❌ ${startData.message || 'No fingerprint registered. Please register in admin panel first.'}`, 'error');
+                showFingerprintStatus(`❌ ${startData.message || 'No fingerprint registered. Please register in platform control plane first.'}`, 'error');
                 if (spinner) {
                     spinner.classList.add('d-none');
                     spinner.classList.remove('d-block');
@@ -435,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // This could be Windows Hello not configured or permission denied (not cancellation)
                 errorMessage = 'Windows Hello is not set up. Please configure Windows Hello in Settings.';
             } else if (error.name === 'InvalidStateError') {
-                errorMessage = 'No fingerprint registered. Please register in admin panel first.';
+                errorMessage = 'No fingerprint registered. Please register in platform control plane first.';
             } else if (error.name === 'NotSupportedError') {
                 errorMessage = 'Fingerprint authentication is not supported on this device.';
             } else if (error.message) {

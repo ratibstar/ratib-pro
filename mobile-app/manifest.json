@@ -1,8 +1,8 @@
 {
-  "name": "Worker Tracker",
-  "short_name": "Tracker",
+  "name": "RATEB Workforce Telemetry",
+  "short_name": "RATEB Field",
   "id": "/mobile-app/",
-  "description": "Worker tracking app with live sync and emergency workflows.",
+  "description": "Geospatial workforce telemetry and field operations for RATEB workforce programs.",
   "start_url": "/mobile-app/index.php",
   "scope": "/mobile-app/",
   "display": "standalone",

@@ -228,7 +228,7 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
             </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('reports.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_reports">
                 <i class="nav-icon fas fa-chart-bar"></i>
-                <span>Reports</span>
+                <span>Executive Telemetry</span>
             </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('contact.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_contacts">
                 <i class="nav-icon fas fa-phone"></i>

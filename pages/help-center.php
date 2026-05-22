@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION[
     exit;
 }
 
-$pageTitle = "Help Center";
+$pageTitle = "Operational Knowledge Base";
 $pageCss = [
     asset('css/help-center/help-center.css') . "?v=" . time(),
     asset('css/help-center/help-center-enterprise.css') . "?v=" . time(),
@@ -43,7 +43,7 @@ include '../includes/header.php';
         <div class="hc-top-bar">
             <div class="hc-top-bar-inner">
                 <a href="#" class="hc-top-bar-brand breadcrumb-link" data-action="home">
-                    <span data-translate="enterpriseTitle">Help Center</span>
+                    <span data-translate="enterpriseTitle">Operational Knowledge Base</span>
                 </a>
                 <div class="hc-search hc-search--top">
                     <i class="fas fa-search hc-search-icon" aria-hidden="true"></i>

@@ -432,13 +432,21 @@ $ratibWalkthroughHref = $ratibArchSectionsOk
     $ratibHomeCanonical = rtrim($baseUrl, '/') . '/';
     ?>
     <meta name="description" content="<?php echo htmlspecialchars($ratibHomeMetaDesc, ENT_QUOTES, 'UTF-8'); ?>">
-    <meta property="og:title" content="<?php echo htmlspecialchars((string) ($ratibHome['home.meta.page_title'] ?? 'RATEB — Enterprise Workforce Program Infrastructure'), ENT_QUOTES, 'UTF-8'); ?>">
+    <meta property="og:title" content="<?php echo htmlspecialchars((string) ($ratibHome['home.meta.page_title'] ?? (function_exists('ratib_brand_full_title') ? ratib_brand_full_title() : 'RATEB — Recruitment Automation & Telemetry Enterprise Base')), ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="og:description" content="<?php echo htmlspecialchars($ratibHomeMetaDesc, ENT_QUOTES, 'UTF-8'); ?>">
     <meta property="og:type" content="website">
     <meta property="og:url" content="<?php echo htmlspecialchars($ratibHomeCanonical, ENT_QUOTES, 'UTF-8'); ?>">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="<?php echo htmlspecialchars((string) ($ratibHome['home.meta.page_title'] ?? 'RATEB — Enterprise Workforce Program Infrastructure'), ENT_QUOTES, 'UTF-8'); ?>">
+    <meta name="twitter:title" content="<?php echo htmlspecialchars((string) ($ratibHome['home.meta.page_title'] ?? (function_exists('ratib_brand_full_title') ? ratib_brand_full_title() : 'RATEB — Recruitment Automation & Telemetry Enterprise Base')), ENT_QUOTES, 'UTF-8'); ?>">
     <meta name="twitter:description" content="<?php echo htmlspecialchars($ratibHomeMetaDesc, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="canonical" href="<?php echo htmlspecialchars($ratibHomeCanonical, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php
+    require_once __DIR__ . '/../includes/ratib-enterprise-schema.php';
+    ratib_enterprise_schema_emit([
+        ratib_enterprise_schema_organization($baseUrl),
+        ratib_enterprise_schema_software_application($baseUrl),
+    ]);
+    ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -886,6 +894,9 @@ ratib_emit_profile_nav_guard($baseUrl);
                     <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.analytics.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                     <h2 class="ratib-section__title"><?php echo htmlspecialchars($ratibHome['home.analytics.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h2>
                     <p class="ratib-section__sub"><?php echo htmlspecialchars($ratibHome['home.analytics.sub'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+                    <?php if (trim((string) ($ratibHome['home.analytics.sample_tag'] ?? '')) !== '') { ?>
+                    <p class="rateb-sample-data-tag"><?php echo htmlspecialchars($ratibHome['home.analytics.sample_tag'], ENT_QUOTES, 'UTF-8'); ?></p>
+                    <?php } ?>
                 </header>
                 <div class="ratib-analytics__grid">
                     <article class="ratib-analytics-card"><p class="ratib-analytics-card__stamp ratib-mono-ops"><?php echo htmlspecialchars($ratibHome['home.analytics.1.stamp'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p><h3><?php echo htmlspecialchars($ratibHome['home.analytics.1.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3><div class="ratib-metric"><span class="ratib-metric__val"><?php echo htmlspecialchars($ratibHome['home.analytics.1.metric'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><span class="ratib-metric__chart ratib-metric__chart--line" aria-hidden="true"></span></div><span class="ratib-analytics__illus"><?php echo htmlspecialchars($ratibHome['home.analytics.illus'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><p><?php echo htmlspecialchars($ratibHome['home.analytics.1.body'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p></article>

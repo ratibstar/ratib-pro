@@ -1,0 +1,82 @@
+/**
+ * RATEB Enterprise Design System — public marketing + trust surfaces.
+ * Import after :root in home-public.css or enterprise pages.
+ */
+:root {
+    --rateb-brand: #a855f7;
+    --rateb-brand-dim: #7c3aed;
+    --rateb-accent: #38bdf8;
+    --rateb-success: #34d399;
+    --rateb-warn: #fbbf24;
+    --rateb-danger: #f87171;
+
+    --rateb-bg-deep: #060a14;
+    --rateb-bg-panel: rgba(12, 18, 32, 0.72);
+    --rateb-bg-glass: rgba(18, 26, 44, 0.55);
+    --rateb-border: rgba(148, 163, 184, 0.14);
+    --rateb-border-strong: rgba(168, 85, 247, 0.35);
+
+    --rateb-text: #e8edf7;
+    --rateb-text-muted: #94a3b8;
+    --rateb-text-dim: #64748b;
+
+    --rateb-font-sans: 'Inter', system-ui, sans-serif;
+    --rateb-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+    --rateb-radius-sm: 6px;
+    --rateb-radius-md: 10px;
+    --rateb-radius-lg: 14px;
+
+    --rateb-shadow-panel: 0 12px 40px rgba(0, 0, 0, 0.45);
+    --rateb-shadow-glow: 0 0 24px rgba(168, 85, 247, 0.15);
+
+    --rateb-space-xs: 0.35rem;
+    --rateb-space-sm: 0.65rem;
+    --rateb-space-md: 1rem;
+    --rateb-space-lg: 1.5rem;
+    --rateb-space-xl: 2.25rem;
+
+    --rateb-chip-bg: rgba(56, 189, 248, 0.08);
+    --rateb-chip-border: rgba(56, 189, 248, 0.25);
+    --rateb-status-ok: rgba(52, 211, 153, 0.12);
+    --rateb-status-warn: rgba(251, 191, 36, 0.12);
+}
+
+.rateb-telemetry-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.55rem;
+    font-family: var(--rateb-font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    color: var(--rateb-accent);
+    background: var(--rateb-chip-bg);
+    border: 1px solid var(--rateb-chip-border);
+    border-radius: var(--rateb-radius-sm);
+}
+
+.rateb-glass-panel {
+    background: var(--rateb-bg-glass);
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius-lg);
+    box-shadow: var(--rateb-shadow-panel);
+    backdrop-filter: blur(12px);
+}
+
+.rateb-ops-label {
+    font-family: var(--rateb-font-mono);
+    font-size: 0.75rem;
+    color: var(--rateb-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.rateb-sample-data-tag {
+    font-family: var(--rateb-font-mono);
+    font-size: 0.68rem;
+    color: var(--rateb-warn);
+    border: 1px dashed rgba(251, 191, 36, 0.45);
+    padding: 0.15rem 0.45rem;
+    border-radius: var(--rateb-radius-sm);
+}

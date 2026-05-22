@@ -10,9 +10,9 @@
 window.HELP_CENTER_TRANSLATIONS = {
     en: {
         // Header
-        title: 'Help & Learning Center',
-        enterpriseTitle: 'Help Center',
-        enterpriseSubtitle: 'Guides and documentation for the RATEB platform.',
+        title: 'Operational Knowledge Base',
+        enterpriseTitle: 'Operational Knowledge Base',
+        enterpriseSubtitle: 'Workflow policy guides, telemetry documentation, runbooks, and integration playbooks for RATEB operations.',
         subtitle: 'Master the system with step-by-step guides, interactive tutorials, and expert tips',
         searchPlaceholder: 'Search tutorials, guides, and FAQs...',
         aiAskPlaceholder: 'Ask AI or search workflows, guides, and playbooks…',

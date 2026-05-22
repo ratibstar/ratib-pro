@@ -50,7 +50,7 @@ $homeOk = str_contains($homeHtml, 'ratib-hero__title')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-store">
-    <title>Ratib — which page am I on?</title>
+    <title>RATEB — which page am I on?</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 1.25rem; }

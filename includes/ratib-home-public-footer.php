@@ -110,13 +110,22 @@ $ratibGlyph = function (string $symbolId): string {
                 <h4><?php echo htmlspecialchars($ratibHome['home.footer.col.enterprise'] ?? 'Enterprise', ENT_QUOTES, 'UTF-8'); ?></h4>
                 <ul class="ratib-footer-enterprise__link-list">
                     <li>
+                        <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/enterprise-trust/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-operational'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.enterprise.trust'] ?? '')) ?: 'Enterprise Trust Center', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
                         <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/security-compliance/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--security"><?php echo $ratibGlyph('ratib-ng-operational'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.enterprise.security'] ?? '')) ?: 'Security & Compliance', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/government-workforce-operations/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-programs'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.enterprise.gov'] ?? '')) ?: 'Government & Programs', ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
                         <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/architecture/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--architecture"><?php echo $ratibGlyph('ratib-ng-platform'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.enterprise.architecture'] ?? '')) ?: 'Architecture', ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
                         <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/procurement-legal/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--procurement"><?php echo $ratibGlyph('ratib-ng-programs'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.enterprise.procurement'] ?? '')) ?: 'Procurement & Legal', ENT_QUOTES, 'UTF-8'); ?></span></a>
+                    </li>
+                    <li>
+                        <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/enterprise-pack/', ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-platform'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.enterprise.pack'] ?? '')) ?: 'Document Packs', ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
                         <a href="<?php echo htmlspecialchars($ratibFooterNav('operational'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-operational'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars(trim((string) ($ratibHome['home.footer.link.enterprise.ops_sla'] ?? '')) ?: 'Operations & SLA', ENT_QUOTES, 'UTF-8'); ?></span></a>

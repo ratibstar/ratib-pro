@@ -1,6 +1,6 @@
 <?php
 /**
- * Mega navigation structure for public home chrome (RATEB SaaS header).
+ * Mega navigation structure for public home chrome (RATEB enterprise infrastructure).
  * URLs use $baseUrl and $navPrefix (home hash prefix) — resolved at render time.
  *
  * Top row is intentionally short: related product lines are merged (e.g. Sites = web + hosting + mail;
@@ -21,8 +21,11 @@ function ratib_mega_nav_config(): array
                     'heading' => 'RATEB Company',
                     'items' => [
                         ['icon' => 'fa-building', 'title' => 'Company profile', 'desc' => 'About RATEB, legal entity, markets, and platform scope.', 'href_key' => 'company_profile'],
+                        ['icon' => 'fa-shield-halved', 'title' => 'Enterprise trust center', 'desc' => 'Seven procurement pillars: security, compliance, reliability, auditability, continuity, APIs, deployment.', 'href_key' => 'enterprise_trust'],
                         ['icon' => 'fa-shield-halved', 'title' => 'Security & compliance', 'desc' => 'Trust center for procurement, isolation, governance, and reliability.', 'href_key' => 'security_compliance'],
+                        ['icon' => 'fa-landmark', 'title' => 'Government & workforce programs', 'desc' => 'Ministries, labor programs, inspections, and regulated deployment corridors.', 'href_key' => 'government_workforce'],
                         ['icon' => 'fa-sitemap', 'title' => 'Platform architecture', 'desc' => 'Platform layers, isolation model, and deployment topology.', 'href_key' => 'architecture'],
+                        ['icon' => 'fa-file-pdf', 'title' => 'Enterprise document packs', 'desc' => 'Executive profile, architecture brief, procurement one-pager, partnership deck, API overview.', 'href_key' => 'enterprise_pack'],
                         ['icon' => 'fa-file-contract', 'title' => 'Procurement & legal', 'desc' => 'Company identity, engagement process, and procurement requests.', 'href_key' => 'procurement_legal'],
                         ['icon' => 'fa-diagram-project', 'title' => 'Platform overview', 'desc' => 'Workflow platform, field-operations support, and agency workspace modules.', 'href_key' => 'platform'],
                         ['icon' => 'fa-handshake', 'title' => 'Partners & agencies', 'desc' => 'Sending-country agencies and host-market programs.', 'href_key' => 'agencies'],

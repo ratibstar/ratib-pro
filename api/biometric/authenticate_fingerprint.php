@@ -48,12 +48,12 @@ try {
         if ($checkResult->num_rows > 0) {
             echo json_encode([
                 'success' => false, 
-                'message' => 'Fingerprint template exists but is empty. Please re-register your fingerprint in the admin panel.'
+                'message' => 'Fingerprint template exists but is empty. Please re-register your fingerprint in the platform control plane.'
             ]);
         } else {
             echo json_encode([
                 'success' => false, 
-                'message' => 'No fingerprint registered for user "' . $actualUsername . '". Please register your fingerprint in the admin panel first.'
+                'message' => 'No fingerprint registered for user "' . $actualUsername . '". Please register your fingerprint in the platform control plane first.'
             ]);
         }
         exit;

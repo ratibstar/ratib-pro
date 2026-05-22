@@ -2,6 +2,7 @@
  * RATEB public home — enterprise SaaS marketing surface
  * Register/pricing form styles preserved for home-page.js compatibility.
  */
+@import url('../rateb-enterprise-tokens.css');
 
 [id] {
   scroll-margin-top: 170px;

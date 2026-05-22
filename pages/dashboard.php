@@ -913,8 +913,8 @@ include '../includes/header.php';
             </div>
 
             <!-- Reports Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('reports.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_reports" tabindex="0" role="button" aria-label="Reports - Total: <?php echo $reportsStats['total'] ?? 0; ?>">
-                <h2>📈 Reports</h2>
+            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('reports.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_reports" tabindex="0" role="button" aria-label="Executive Telemetry - Total: <?php echo $reportsStats['total'] ?? 0; ?>">
+                <h2>📈 Executive Telemetry</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalReports"><?php echo $reportsStats['total'] ?? 0; ?></span></p>
                     <p class="count">Today: <span id="todayReports"><?php echo $reportsStats['today'] ?? 0; ?></span></p>
@@ -944,8 +944,8 @@ include '../includes/header.php';
 
             <?php if (false): /* control panel removed */ ?>
             <!-- Settings Card - Control Panel Only -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" tabindex="0" role="button" aria-label="Settings - Total: <?php echo $settingsStats['total'] ?? 0; ?>">
-                <h2>⚙️ Settings</h2>
+            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" tabindex="0" role="button" aria-label="Tenant Policy Configuration - Total: <?php echo $settingsStats['total'] ?? 0; ?>">
+                <h2>⚙️ Tenant Policy Configuration</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalSettings"><?php echo $settingsStats['total'] ?? 0; ?></span></p>
                     <p class="count">Active: <span id="activeSettings"><?php echo $settingsStats['active'] ?? 0; ?></span></p>
@@ -979,8 +979,8 @@ include '../includes/header.php';
             <?php endif; ?>
 
             <!-- Notifications Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_notifications" tabindex="0" role="button" aria-label="Notifications - New: <?php echo $notificationStats['new'] ?? 0; ?>">
-                <h2>🔔 Notifications</h2>
+            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_notifications" tabindex="0" role="button" aria-label="Operational Signaling - New: <?php echo $notificationStats['new'] ?? 0; ?>">
+                <h2>🔔 Operational Signaling</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalNotifications"><?php echo $notificationStats['total'] ?? 0; ?></span></p>
                     <p class="count">New: <span id="newNotifications"><?php echo $notificationStats['new'] ?? 0; ?></span></p>

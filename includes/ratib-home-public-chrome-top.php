@@ -52,7 +52,14 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 </a>
             </div>
             <div class="ratib-topbar__right">
-                <span class="ratib-topbar__ops" aria-hidden="true" dir="ltr"><span class="ratib-mono-tag"><?php echo htmlspecialchars($ratibHome['home.topbar.tls_label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><span class="ratib-topbar__ops-sep">·</span><span class="ratib-mono-tag"><span id="ratib-topbar-nodes-counter" class="ratib-live-counter" data-ratib-counter="<?php echo htmlspecialchars($ratibTopbarNodesDigits, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) $ratibTopbarNodesNum, ENT_QUOTES, 'UTF-8'); ?></span> <?php echo htmlspecialchars($ratibHome['home.topbar.nodes_suffix'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></span>
+                <span class="ratib-topbar__ops" dir="ltr"><span class="ratib-mono-tag"><?php echo htmlspecialchars($ratibHome['home.topbar.tls_label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span><?php
+                    $ratibTopbarOpsLine = trim((string) ($ratibHome['home.topbar.ops_line'] ?? ($ratibTopbarOpsLine ?? '')));
+                    if ($ratibTopbarOpsLine !== '') {
+                        echo '<span class="ratib-topbar__ops-sep">·</span><span class="ratib-mono-tag">' . htmlspecialchars($ratibTopbarOpsLine, ENT_QUOTES, 'UTF-8') . '</span>';
+                    } elseif (!empty($ratibTopbarNodesDigits) && (int) $ratibTopbarNodesNum > 0) {
+                        echo '<span class="ratib-topbar__ops-sep">·</span><span class="ratib-mono-tag"><span id="ratib-topbar-nodes-counter" class="ratib-live-counter" data-ratib-counter="' . htmlspecialchars($ratibTopbarNodesDigits, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars((string) $ratibTopbarNodesNum, ENT_QUOTES, 'UTF-8') . '</span> ' . htmlspecialchars($ratibHome['home.topbar.nodes_suffix'] ?? '', ENT_QUOTES, 'UTF-8') . '</span>';
+                    }
+                ?></span>
                 <a href="<?php echo htmlspecialchars($baseUrl . '/pages/customer-portal.php'); ?>" class="ratib-topbar__link"><?php echo htmlspecialchars($ratibHome['home.topbar.client_login'] ?? '', ENT_QUOTES, 'UTF-8'); ?></a>
                 <span class="ratib-topbar__lang" role="group" aria-label="Language">
                     <span class="ratib-lang ratib-lang--active">EN</span>

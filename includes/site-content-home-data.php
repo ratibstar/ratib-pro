@@ -49,8 +49,9 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.topbar.phone_display'] = '+966 59 986 3868';
         $d['home.topbar.wa_label'] = 'Live on WhatsApp';
         $d['home.topbar.tls_label'] = 'TLS 1.3';
-        $d['home.topbar.nodes_count'] = '247';
-        $d['home.topbar.nodes_suffix'] = 'nodes';
+        $d['home.topbar.ops_line'] = 'RBAC · tenant isolation · audit trails';
+        $d['home.topbar.nodes_count'] = '';
+        $d['home.topbar.nodes_suffix'] = '';
         $d['home.topbar.client_login'] = 'Client login';
         $d['home.brand.name'] = 'RATEB';
         $d['home.brand.profile_tab'] = 'Profile';
@@ -266,23 +267,24 @@ if (!function_exists('ratib_site_content_defaults_home')) {
 
         $d['home.analytics.eyebrow'] = 'Telemetry plane';
         $d['home.analytics.title'] = 'Executive & ops signals from live programs';
-        $d['home.analytics.sub'] = 'Rolling aggregates from committed lifecycle events—same metrics surfaced in operational reviews.';
-        $d['home.analytics.1.stamp'] = 'snapshot · merged shards · UTC';
+        $d['home.analytics.sub'] = 'Illustrative sample operational data for layout demonstration—not live tenant aggregates. Deployed programs surface real executive telemetry in the operations control plane.';
+        $d['home.analytics.sample_tag'] = 'Sample operational data';
+        $d['home.analytics.1.stamp'] = 'sample · snapshot · UTC';
         $d['home.analytics.1.title'] = 'Checkpoint fidelity';
-        $d['home.analytics.1.metric'] = '98.2%';
+        $d['home.analytics.1.metric'] = '—';
         $d['home.analytics.1.body'] = 'Completed checkpoints vs policy graph for in-motion cohorts.';
         $d['home.analytics.2.stamp'] = 'queue depth · 15m resolution';
         $d['home.analytics.2.title'] = 'Active lifecycle workload';
-        $d['home.analytics.2.metric'] = '2.8k';
+        $d['home.analytics.2.metric'] = '—';
         $d['home.analytics.2.body'] = 'Workers in non-terminal stages across connected agencies.';
         $d['home.analytics.3.stamp'] = 'normalized demand index';
         $d['home.analytics.3.title'] = 'Throughput vs baseline';
-        $d['home.analytics.3.metric'] = '+31%';
-        $d['home.analytics.3.note'] = 'QoQ';
+        $d['home.analytics.3.metric'] = '—';
+        $d['home.analytics.3.note'] = 'sample index';
         $d['home.analytics.3.body'] = 'Comparable velocity after seasonal adjustment—not vanity growth.';
         $d['home.analytics.4.stamp'] = 'engine attribution · 7d';
         $d['home.analytics.4.title'] = 'Automated transition ratio';
-        $d['home.analytics.4.metric'] = '76%';
+        $d['home.analytics.4.metric'] = '—';
         $d['home.analytics.4.note'] = 'engine-led hops';
         $d['home.analytics.4.body'] = 'Remainder explicit HITL—policy requires human gates.';
 
@@ -371,12 +373,15 @@ if (!function_exists('ratib_site_content_defaults_home')) {
         $d['home.footer.link.enterprise.security'] = 'Security & Compliance';
         $d['home.footer.link.enterprise.architecture'] = 'Architecture';
         $d['home.footer.link.enterprise.procurement'] = 'Procurement & Legal';
+        $d['home.footer.link.enterprise.trust'] = 'Enterprise Trust Center';
+        $d['home.footer.link.enterprise.gov'] = 'Government & Programs';
+        $d['home.footer.link.enterprise.pack'] = 'Document Packs';
         $d['home.footer.link.enterprise.ops_sla'] = 'Operations & SLA';
         $d['home.footer.infra.copy'] = 'Managed cloud, TLS, isolated tenants, and compliance-oriented audit trails.';
         $d['home.footer.newsletter.label'] = 'Updates';
         $d['home.footer.newsletter.placeholder'] = 'Work email';
         $d['home.footer.newsletter.button'] = 'Subscribe';
-        $d['home.footer.strip.1'] = 'target 99.95% SLA · synthetic checks';
+        $d['home.footer.strip.1'] = 'documented SLA posture · operational reviews';
         $d['home.footer.strip.2'] = 'API gateway · rate limits · idempotent writes';
         $d['home.footer.strip.3'] = 'orchestrator · audit · replay-safe logs';
         $d['home.footer.copyright_suffix'] = function_exists('ratib_brand_footer_legal_line') ? ratib_brand_footer_legal_line() : 'RATEB';
@@ -667,7 +672,8 @@ if (!function_exists('ratib_site_content_home_editor_groups_core')) {
                     ['key' => 'home.topbar.phone_display', 'label' => 'Phone (display text)', 'type' => 'text'],
                     ['key' => 'home.topbar.wa_label', 'label' => 'WhatsApp line', 'type' => 'text'],
                     ['key' => 'home.topbar.tls_label', 'label' => 'Ops · TLS label', 'type' => 'text'],
-                    ['key' => 'home.topbar.nodes_count', 'label' => 'Ops · nodes count (shown)', 'type' => 'text'],
+                    ['key' => 'home.topbar.ops_line', 'label' => 'Ops · posture line (preferred over node counter)', 'type' => 'text'],
+                    ['key' => 'home.topbar.nodes_count', 'label' => 'Ops · nodes count (legacy; leave empty)', 'type' => 'text'],
                     ['key' => 'home.topbar.nodes_suffix', 'label' => 'Ops · after count (e.g. nodes)', 'type' => 'text'],
                     ['key' => 'home.topbar.client_login', 'label' => 'Client login', 'type' => 'text'],
                 ],

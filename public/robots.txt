@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /control-panel/
+Disallow: /api/
+Disallow: /pages/login.php
+Disallow: /Designed/
+
+Sitemap: https://out.ratib.sa/sitemap.xml
