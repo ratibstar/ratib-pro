@@ -17,7 +17,13 @@
             if (!brand.querySelector('.ratib-brand-full')) {
                 return;
             }
+            brand.classList.remove('ratib-nav__brand--stacked');
             brand.classList.add('ratib-nav__brand--animated-title');
+            var blk = brand.closest('.ratib-nav__brand-block');
+            if (blk) {
+                blk.classList.add('ratib-nav__brand-block--animated');
+                blk.setAttribute('data-ratib-brand-nav', 'stack-v3');
+            }
             brand.querySelectorAll('img, .ratib-nav__brand-logo, .ratib-nav__brand-text').forEach(function (el) {
                 el.remove();
             });

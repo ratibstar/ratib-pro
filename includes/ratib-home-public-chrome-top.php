@@ -84,7 +84,8 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                 if ($ratibBrandName === '') {
                     $ratibBrandName = 'RATEB';
                 }
-                $ratibHideBrandText = strtoupper($ratibBrandName) === 'RATEB';
+                $ratibHideBrandText = preg_match('/^RATEB(\s+Company)?$/i', $ratibBrandName) === 1
+                    || preg_match('/^ratib$/i', $ratibBrandName) === 1;
                 $ratibBrandProfileLabel = trim((string) ($ratibHome['home.brand.profile_tab'] ?? ''));
                 if ($ratibBrandProfileLabel === '') {
                     $ratibBrandProfileLabel = 'Profile';
@@ -118,7 +119,12 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                     $ratibNavProductTourHref
                 );
                 ?>
-            <div class="ratib-nav__brand-block<?php echo $ratibHideBrandText ? ' ratib-nav__brand-block--animated' : ''; ?>">
+            <div class="ratib-nav__brand-block<?php echo $ratibHideBrandText ? ' ratib-nav__brand-block--animated' : ''; ?>"<?php echo $ratibHideBrandText ? ' data-ratib-brand-nav="stack-v3"' : ''; ?>>
+                <?php
+                if ($ratibHideBrandText && function_exists('ratib_emit_nav_brand_critical_css')) {
+                    ratib_emit_nav_brand_critical_css();
+                }
+                ?>
                 <?php
                 if (!function_exists('ratib_render_brand_full_title')) {
                     require_once __DIR__ . '/ratib-brand-full-title.php';
