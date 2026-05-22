@@ -944,8 +944,8 @@ include '../includes/header.php';
 
             <?php if (false): /* control panel removed */ ?>
             <!-- Settings Card - Control Panel Only -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" tabindex="0" role="button" aria-label="Tenant Policy Configuration - Total: <?php echo $settingsStats['total'] ?? 0; ?>">
-                <h2>⚙️ Tenant Policy Configuration</h2>
+            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" tabindex="0" role="button" aria-label="System Settings - Total: <?php echo $settingsStats['total'] ?? 0; ?>">
+                <h2>⚙️ System Settings</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalSettings"><?php echo $settingsStats['total'] ?? 0; ?></span></p>
                     <p class="count">Active: <span id="activeSettings"><?php echo $settingsStats['active'] ?? 0; ?></span></p>

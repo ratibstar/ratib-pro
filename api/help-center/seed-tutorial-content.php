@@ -17,11 +17,11 @@ function help_center_seed_content() {
             'Getting Started – Complete Program Overview',
             'Introduction to the RATEB: login, navigation, and how each section fits together.',
             '<h2>What is the RATEB?</h2>
-            <p>The RATEB is a full business management system. After you log in, you use the left sidebar to open <strong>Operations Control Plane</strong>, <strong>Agent</strong>, <strong>SubAgent</strong>, <strong>Workers</strong>, <strong>Cases</strong>, <strong>Accounting</strong>, <strong>HR</strong>, <strong>Reports</strong>, <strong>Contact</strong>, <strong>Operational Signaling</strong>, and <strong>Tenant Policy Configuration</strong>. Each section has its own screen and purpose.</p>
+            <p>The RATEB is a full business management system. After you log in, you use the left sidebar to open <strong>Operations Control Plane</strong>, <strong>Agent</strong>, <strong>SubAgent</strong>, <strong>Workers</strong>, <strong>Cases</strong>, <strong>Accounting</strong>, <strong>HR</strong>, <strong>Reports</strong>, <strong>Contact</strong>, <strong>Operational Signaling</strong>, and <strong>System Settings</strong>. Each section has its own screen and purpose.</p>
             <h2>Logging In and First Steps</h2>
             <p>Go to the login page, enter your username and password, and click to sign in. If you forget your password, use the "Forgot password" link. After login you are taken to the <strong>Operations Control Plane</strong>.</p>
             <h2>Understanding the Navigation</h2>
-            <p>The main navigation is on the left. Only menu items you have permission to see will appear. Click any item (e.g. Agent, Workers, Accounting) to open that section. At the bottom of the menu you will find <strong>Help &amp; Learning Center</strong> (this guide) and <strong>Tenant Policy Configuration</strong> (for admins).</p>
+            <p>The main navigation is on the left. Only menu items you have permission to see will appear. Click any item (e.g. Agent, Workers, Accounting) to open that section. At the bottom of the menu you will find <strong>Help &amp; Learning Center</strong> (this guide) and <strong>System Settings</strong> (for admins).</p>
             <h2>How the Sections Work Together</h2>
             <p><strong>Operations Control Plane</strong> gives you an overview. <strong>Agent</strong> and <strong>SubAgent</strong> manage your agents and sub-agents. <strong>Workers</strong> holds worker profiles and documents. <strong>Cases</strong> tracks cases or files. <strong>Accounting</strong> handles money, accounts, and transactions. <strong>HR</strong> covers employees and HR settings. <strong>Reports</strong> lets you run and view reports. <strong>Contact</strong> is for contact management. <strong>Operational Signaling</strong> shows system alerts. Use this Help Center to learn each section in detail.</p>
             <h2>Expert Tips</h2>
@@ -43,11 +43,11 @@ function help_center_seed_content() {
             'User Management & Permissions – Full Explanation',
             'How users, roles, and permissions work in the program and how to manage them (usually in System Settings).',
             '<h2>What User Management Covers</h2>
-            <p>The program is used by multiple users. Each user has a <strong>role</strong> (e.g. Admin, Manager, Operator). Roles are linked to <strong>permissions</strong> that control what each user can see and do (e.g. view agents, edit workers, manage accounting). User management is typically done under <strong>Tenant Policy Configuration</strong> or a dedicated Users/Roles area.</p>
+            <p>The program is used by multiple users. Each user has a <strong>role</strong> (e.g. Admin, Manager, Operator). Roles are linked to <strong>permissions</strong> that control what each user can see and do (e.g. view agents, edit workers, manage accounting). User management is typically done under <strong>System Settings</strong> or a dedicated Users/Roles area.</p>
             <h2>Main Concepts</h2>
             <p><strong>Users:</strong> People who log in (username, password, maybe name and email). <strong>Roles:</strong> Groups such as Admin or HR Manager. <strong>Permissions:</strong> Fine-grained rights like "view_agents", "edit_workers", "manage_settings". A user gets permissions through their role. Only users with the right permission can access certain menus and actions.</p>
             <h2>How to Manage Users and Permissions</h2>
-            <ol><li>Go to <strong>Tenant Policy Configuration</strong> (or the Users/Permissions section) from the left menu. You need admin or equivalent permission.</li><li>To add a user: create a new user, set username and password, and assign a role.</li><li>To change what a role can do: edit the role and enable or disable specific permissions (e.g. view reports, manage HR).</li><li>Save changes. The user will see only the menus and actions allowed by their role.</li></ol>
+            <ol><li>Go to <strong>System Settings</strong> (or the Users/Permissions section) from the left menu. You need admin or equivalent permission.</li><li>To add a user: create a new user, set username and password, and assign a role.</li><li>To change what a role can do: edit the role and enable or disable specific permissions (e.g. view reports, manage HR).</li><li>Save changes. The user will see only the menus and actions allowed by their role.</li></ol>
             <h2>Expert Tips</h2>
             <ul><li>Follow the principle of least privilege: give each role only the permissions it needs.</li><li>Review roles when job duties change.</li><li>Keep admin accounts secure and limit how many users have full access.</li></ul>'
         ],
@@ -135,7 +135,7 @@ function help_center_seed_content() {
             '<h2>Page Not Loading or Blank Screen</h2>
             <p>Try refreshing the page (F5 or Ctrl+R). Clear your browser cache and cookies for the site. Use a supported browser (e.g. Chrome, Firefox, Edge) and keep it updated. If the problem continues, try another device or network.</p>
             <h2>Cannot Log In</h2>
-            <p>Check username and password (caps lock, language). Use "Forgot password" if available. If the account is locked or disabled, an administrator must enable it in Tenant Policy Configuration or user management.</p>
+            <p>Check username and password (caps lock, language). Use "Forgot password" if available. If the account is locked or disabled, an administrator must enable it in System Settings or user management.</p>
             <h2>Missing Menu or Button</h2>
             <p>Menus and actions depend on <strong>permissions</strong>. If you do not see a section or button, your role may not have the right permission. Contact your administrator to have your role updated.</p>
             <h2>Data Not Saving or Error Message</h2>

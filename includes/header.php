@@ -261,7 +261,7 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
             <?php if (function_exists('ratib_program_session_is_valid_user') && ratib_program_session_is_valid_user() && isset($_SESSION['role_id']) && (int)$_SESSION['role_id'] === 1): ?>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="manage_settings">
                 <i class="nav-icon fas fa-cog"></i>
-                <span>Tenant Policy Configuration</span>
+                <span>System Settings</span>
             </a>
             <?php endif; ?>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link nav-help-center">

@@ -72,7 +72,7 @@ if ($embeddedMode) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tenant Policy Configuration</title>
+    <title>System Settings</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -85,7 +85,7 @@ if ($embeddedMode) {
 <div class="content-wrapper" style="margin-left:0;width:100%;">
 <?php
 } else {
-    $pageTitle = "Tenant Policy Configuration";
+    $pageTitle = "System Settings";
     $pageCss = ["../css/system-settings.css?v=" . time()];
     include '../includes/header.php';
 }
@@ -104,15 +104,15 @@ if ($embeddedMode) {
                     <div class="header-title-row">
                         <h1 class="header-title">
                             <i class="fas fa-cogs"></i>
-                            Tenant Policy Configuration
+                            System Settings
                         </h1>
                         <?php if (true): ?>
-                        <button type="button" class="reset-app-btn" data-action="reset-all-data" data-permission="manage_settings" title="Clear all data: Operations Control Plane, Agents, Workforce, Cases, Accounting, HR, Reports, Contact, Operational Signaling, Help &amp; Tenant Policy Configuration history. Users kept.">
+                        <button type="button" class="reset-app-btn" data-action="reset-all-data" data-permission="manage_settings" title="Clear all data: Operations Control Plane, Agents, Workforce, Cases, Accounting, HR, Reports, Contact, Operational Signaling, Help &amp; System Settings history. Users kept.">
                             <i class="fas fa-eraser"></i> Reset App
                         </button>
                         <?php endif; ?>
                     </div>
-                    <p class="header-subtitle">Manage tenant policy, users, and program configuration for RATEB</p>
+                    <p class="header-subtitle">Manage users, permissions, and program configuration for RATEB</p>
                     
                     <!-- Stats Grid -->
                     <div class="stats-grid">

@@ -7,7 +7,7 @@ require_once __DIR__ . '/../includes/config.php';
 
 // Stay on Ratib Pro when ?control=1&agency_id= is present (sidebar SSO); do not bounce to control-panel copies.
 
-$pageTitle = "Tenant Policy Configuration";
+$pageTitle = "System Settings";
 $pageCss = asset('css/settings.css');
 $pageJs = asset('js/settings/settings.js');
 
@@ -19,7 +19,7 @@ include '../includes/header.php';
     <div class="settings-categories">
         <!-- System Settings -->
         <div class="settings-category" data-category="system">
-            <h3><i class="fas fa-cog"></i> Tenant Policy Configuration</h3>
+            <h3><i class="fas fa-cog"></i> System Settings</h3>
             <div class="category-items">
                 <div class="category-item" data-type="office_manager">
                     <i class="fas fa-user-tie"></i>
@@ -106,7 +106,7 @@ include '../includes/header.php';
                     <?php if (false): ?>
                     <div class="category-item" data-type="system_settings" data-href="system-settings.php">
                         <i class="fas fa-cogs"></i>
-                        <span>Tenant Policy Configuration</span>
+                        <span>System Settings</span>
                     </div>
                     <?php endif; ?>
                     <div class="category-item" data-type="logout" data-href="logout.php">

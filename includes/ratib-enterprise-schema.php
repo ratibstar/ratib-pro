@@ -58,7 +58,7 @@ if (!function_exists('ratib_enterprise_schema_software_application')) {
                 'Geospatial Workforce Telemetry',
                 'Executive Telemetry',
                 'Operational Signaling',
-                'Tenant Policy Configuration',
+                'System Settings',
                 'Immutable workflow history',
                 'RBAC and tenant isolation',
             ],

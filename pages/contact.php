@@ -112,7 +112,7 @@ if (!hasPermission('view_contacts')) {
             <?php if (false): ?>
             <a href="<?php echo pageUrl('system-settings.php'); ?>" class="nav-item nav-link">
                 <i class="nav-icon fas fa-cog"></i>
-                <span>Tenant Policy Configuration</span>
+                <span>System Settings</span>
             </a>
             <?php endif; ?>
         </div>
