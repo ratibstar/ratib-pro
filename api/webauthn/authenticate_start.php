@@ -43,7 +43,7 @@ try {
     if ($res2->num_rows !== 1) {
         echo json_encode([
             'success' => false, 
-            'message' => 'No fingerprint credential registered for this user. Please register your fingerprint first in the platform control plane.'
+            'message' => 'No fingerprint credential registered for this user. Please register your fingerprint first in the System Settings.'
         ]);
         exit;
     }

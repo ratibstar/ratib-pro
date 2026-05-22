@@ -8,7 +8,7 @@ require __DIR__ . '/_common-start.inc.php';
             <div class="ratib-cp-split">
                 <section class="ratib-cp-card">
                     <h2>Primary subscription</h2>
-                    <p class="rcp-value mb-2">Enterprise Control Plane</p>
+                    <p class="rcp-value mb-2">Enterprise Dashboard</p>
                     <span class="ratib-status ratib-status--processing">Renews · auto</span>
                     <ul class="ratib-cp-feed mt-3" role="list">
                         <li><strong>Add-on:</strong> premium support · SLA 15m</li>

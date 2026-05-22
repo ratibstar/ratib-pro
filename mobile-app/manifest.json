@@ -1,8 +1,8 @@
 {
-  "name": "RATEB Workforce Telemetry",
+  "name": "RATEB Field Tracking",
   "short_name": "RATEB Field",
   "id": "/mobile-app/",
-  "description": "Geospatial workforce telemetry and field operations for RATEB workforce programs.",
+  "description": "GPS tracking and field operations for RATEB workforce programs.",
   "start_url": "/mobile-app/index.php",
   "scope": "/mobile-app/",
   "display": "standalone",

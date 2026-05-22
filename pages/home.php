@@ -428,7 +428,7 @@ $ratibWalkthroughHref = $ratibArchSectionsOk
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236b21a8'/%3E%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
     <title><?php echo htmlspecialchars($ratibHome['home.meta.page_title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></title>
     <?php
-    $ratibHomeMetaDesc = trim((string) ($ratibHome['home.hero.lead'] ?? 'Recruitment orchestration, workforce telemetry, compliance, and finance-grade operations on one multi-tenant control plane.'));
+    $ratibHomeMetaDesc = trim((string) ($ratibHome['home.hero.lead'] ?? 'Recruitment orchestration, workforce tracking, compliance, and finance-grade operations on one multi-tenant platform.'));
     $ratibHomeCanonical = rtrim($baseUrl, '/') . '/';
     ?>
     <meta name="description" content="<?php echo htmlspecialchars($ratibHomeMetaDesc, ENT_QUOTES, 'UTF-8'); ?>">
@@ -940,7 +940,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                             <div class="ratib-ops__mini">
                                 <span class="ratib-ops__mini-label">Tracking stability</span>
                                 <span class="ratib-ops__mini-val ratib-ops__mini-val--ok">Stable</span>
-                                <span class="ratib-ops__mini-sub">Telemetry and checkpoint signals within variance</span>
+                                <span class="ratib-ops__mini-sub">Tracking and checkpoint signals within variance</span>
                             </div>
                             <div class="ratib-ops__mini ratib-ops__mini--wide">
                                 <span class="ratib-ops__mini-label">Document verification</span>

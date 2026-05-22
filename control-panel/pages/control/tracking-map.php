@@ -21,7 +21,7 @@ $standaloneLayout = $mapOnlyLayout
     || (isset($_GET['standalone']) && (string) $_GET['standalone'] === '1');
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
-startControlLayout('Geospatial Operations Console', [
+startControlLayout('Tracking Map', [
     'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
     'css/control/government.css',
     'css/control/tracking-map.css',

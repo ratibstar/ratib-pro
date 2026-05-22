@@ -113,7 +113,7 @@ if (!function_exists('ratib_security_compliance_config')) {
                         ['title' => 'Managed cloud', 'body' => 'Deployed on managed cloud infrastructure with operational backups and continuity planning paths.', 'icon' => 'fa-cloud'],
                         ['title' => 'Edge protection', 'body' => 'TLS termination, rate limits, and edge scrubbing patterns for public and API surfaces.', 'icon' => 'fa-shield'],
                         ['title' => 'Observability', 'body' => 'Metrics, structured logs, and event streams for executive and ops reviews.', 'icon' => 'fa-chart-line'],
-                        ['title' => 'Workforce telemetry', 'body' => 'Geospatial workforce telemetry and exception routing for operational intelligence—not passive monitoring alone.', 'icon' => 'fa-satellite-dish'],
+                        ['title' => 'Workforce tracking', 'body' => 'GPS tracking and exception routing for operational intelligence—not passive monitoring alone.', 'icon' => 'fa-satellite-dish'],
                         ['title' => 'Secure provisioning', 'body' => 'Agency onboarding, domain edges, and SSL lifecycle orchestration with auditable provisioning steps.', 'icon' => 'fa-lock'],
                     ],
                 ],

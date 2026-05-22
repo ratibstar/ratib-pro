@@ -16,15 +16,15 @@ if (!function_exists('ratib_enterprise_term')) {
             'notifications' => 'notifications',
             'Settings' => 'System Settings',
             'settings' => 'system settings',
-            'Admin Panel' => 'Platform Control Plane',
-            'admin panel' => 'platform control plane',
-            'GPS Tracking' => 'Geospatial Workforce Telemetry',
-            'GPS tracking' => 'geospatial workforce telemetry',
-            'Tracking' => 'Workforce Telemetry',
-            'Worker Files' => 'Workforce System of Record',
-            'Map' => 'Geospatial Operations Console',
-            'Agency Portal' => 'Agency Operations Workspace',
-            'CRM' => 'Workforce Operations Infrastructure',
+            'Admin Panel' => 'Control Panel Settings',
+            'admin panel' => 'control panel settings',
+            'GPS Tracking' => 'GPS Tracking',
+            'GPS tracking' => 'gps tracking',
+            'Tracking' => 'Tracking',
+            'Worker Files' => 'Worker Files',
+            'Map' => 'Tracking Map',
+            'Agency Portal' => 'Agency Portal',
+            'CRM' => 'CRM',
         ];
 
         return $map[$legacy] ?? $legacy;
@@ -44,7 +44,7 @@ if (!function_exists('ratib_enterprise_brand_meta_description')) {
     function ratib_enterprise_brand_meta_description(): string
     {
         return function_exists('ratib_brand_category')
-            ? ratib_brand_category() . ' — recruitment orchestration, workforce telemetry, compliance, and finance-grade operations on one multi-tenant control plane.'
-            : 'Enterprise Workforce Program Infrastructure — recruitment orchestration, workforce telemetry, compliance, and finance-grade operations.';
+            ? ratib_brand_category() . ' — recruitment orchestration, workforce tracking, compliance, and finance-grade operations on one multi-tenant platform.'
+            : 'Enterprise Workforce Program Infrastructure — recruitment orchestration, workforce tracking, compliance, and finance-grade operations.';
     }
 }

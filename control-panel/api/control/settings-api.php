@@ -40,6 +40,6 @@ if (!hasControlPermission(CONTROL_PERM_SYSTEM_SETTINGS) && !hasControlPermission
 header('Content-Type: application/json; charset=UTF-8');
 echo json_encode([
     'success' => false,
-    'message' => 'Tenant policy configuration API not available in standalone control plane. Deploy with RATEB or copy api/settings/ from the main application.',
+    'message' => 'System Settings API not available in standalone control panel. Deploy with RATEB or copy api/settings/ from the main application.',
 ], JSON_UNESCAPED_UNICODE);
 exit;

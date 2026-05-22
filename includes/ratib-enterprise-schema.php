@@ -26,7 +26,7 @@ if (!function_exists('ratib_enterprise_schema_organization')) {
             'areaServed' => 'Worldwide',
             'knowsAbout' => [
                 'Enterprise Workforce Program Infrastructure',
-                'Workforce Telemetry',
+                'Workforce tracking',
                 'Recruitment Orchestration',
                 'Multi-tenant operations platform',
             ],
@@ -54,8 +54,8 @@ if (!function_exists('ratib_enterprise_schema_software_application')) {
             ],
             'featureList' => [
                 'Dashboard',
-                'Workforce Telemetry',
-                'Geospatial Workforce Telemetry',
+                'Tracking',
+                'GPS Tracking',
                 'Reports',
                 'Notifications',
                 'System Settings',

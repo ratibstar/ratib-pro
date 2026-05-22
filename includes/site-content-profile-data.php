@@ -21,11 +21,11 @@ if (!function_exists('ratib_site_content_defaults_profile')) {
      */
     function ratib_site_content_defaults_profile(): array
     {
-        $govLead = 'RATEB includes a government-aligned control surface for labor oversight demonstrations: inspectors record findings, violations and blacklist rules gate deployments, supervisors open the geospatial operations console with geofences, and field teams onboard workers to the mobile program via QR credentials—all scoped to the active agency database with role-based access.';
+        $govLead = 'RATEB includes a government-aligned control surface for labor oversight demonstrations: inspectors record findings, violations and blacklist rules gate deployments, supervisors open the tracking map with geofences, and field teams onboard workers to the mobile program via QR credentials—all scoped to the active agency database with role-based access.';
         $govPoints = implode("\n", [
-            'Government Control consolidates inspections, violations, blacklist, worker alerts, and monitoring tabs behind one operations control plane—with optional read-only government view and a link to the geospatial operations console.',
+            'Government Control consolidates inspections, violations, blacklist, worker alerts, and monitoring tabs behind one dashboard—with optional read-only government view and a link to the tracking map.',
             'Inspection workflows capture worker and agency context, inspector identity, status (pending, passed, failed), and hashed credentials where policies require authenticated field access.',
-            'Geospatial Operations Console filters by tenant, agency, country, and session status; supports geofence creation, route playback, and latest workforce telemetry on OpenStreetMap.',
+            'Tracking map filters by tenant, agency, country, and session status; supports geofence creation, route playback, and latest workforce locations on OpenStreetMap.',
             'Worker Mobile Onboarding issues QR credentials so workers join the mobile program without sharing passwords in chat—device and identity fields stay optional for controlled pilots.',
         ]);
 
@@ -33,8 +33,8 @@ if (!function_exists('ratib_site_content_defaults_profile')) {
             'profile.company.trade_name' => 'RATEB',
             'profile.company.legal_name' => 'RATEB Company',
             'profile.company.tagline' => 'Enterprise Workforce Program Infrastructure',
-            'profile.company.summary' => 'RATEB Company operates the RATEB platform: a multi-agency workflow system with separate program databases, workforce telemetry, policy controls, and integrated billing for agencies and oversight-aligned programs.',
-            'profile.company.mission' => 'Give sending-country agencies and host-market programs one control plane to run regulated workforce corridors—with recruitment orchestration, operational telemetry, compliance checkpoints, and finance linked to program events.',
+            'profile.company.summary' => 'RATEB Company operates the RATEB platform: a multi-agency workflow system with separate program databases, workforce tracking, policy controls, and integrated billing for agencies and oversight-aligned programs.',
+            'profile.company.mission' => 'Give sending-country agencies and host-market programs one platform to run regulated workforce corridors—with recruitment orchestration, operational visibility, compliance checkpoints, and finance linked to program events.',
             'profile.company.vision' => 'Cross-border workforce programs run on consistent records and auditable workflows—not disconnected spreadsheets.',
             'profile.company.markets' => 'Saudi Arabia (HQ) · Philippines · Bangladesh · Indonesia · Kenya · Uganda · Ethiopia · Nigeria · Rwanda · Sri Lanka · Nepal · Thailand',
             'profile.gov.eyebrow' => 'Government & labor oversight',
@@ -52,7 +52,7 @@ if (!function_exists('ratib_site_content_defaults_profile')) {
             'profile.diagram.events' => ratib_site_content_profile_media_default('profile.diagram.events', 'public/cms-bundle-diagram-events.svg'),
             'profile.gov.caption.control' => 'Labor monitoring console—violations, blacklist, worker alerts, and inspection tabs in one place.',
             'profile.gov.caption.inspections' => 'Inspection history with status badges, inspector attribution, and agency-scoped rows.',
-            'profile.gov.caption.tracking' => 'Geospatial operations console—geofences, playback, and filters for tenant, agency, and country.',
+            'profile.gov.caption.tracking' => 'Tracking map—geofences, playback, and filters for tenant, agency, and country.',
             'profile.gov.caption.onboarding' => 'QR-based credentials for worker mobile program mobilization.',
         ];
     }
@@ -85,8 +85,8 @@ if (!function_exists('ratib_site_content_profile_editor_groups')) {
                     ['key' => 'profile.gov.caption.control', 'label' => 'Caption · Government Control', 'type' => 'text'],
                     ['key' => 'profile.gov.image.inspections', 'label' => 'Screenshot · Inspection records', 'type' => 'media_image'],
                     ['key' => 'profile.gov.caption.inspections', 'label' => 'Caption · Inspection records', 'type' => 'text'],
-                    ['key' => 'profile.gov.image.tracking', 'label' => 'Screenshot · Geospatial Operations Console', 'type' => 'media_image'],
-                    ['key' => 'profile.gov.caption.tracking', 'label' => 'Caption · Geospatial Operations Console', 'type' => 'text'],
+                    ['key' => 'profile.gov.image.tracking', 'label' => 'Screenshot · Tracking Map', 'type' => 'media_image'],
+                    ['key' => 'profile.gov.caption.tracking', 'label' => 'Caption · Tracking Map', 'type' => 'text'],
                     ['key' => 'profile.gov.image.onboarding', 'label' => 'Screenshot · Worker Mobile Onboarding', 'type' => 'media_image'],
                     ['key' => 'profile.gov.caption.onboarding', 'label' => 'Caption · Worker Mobile Onboarding', 'type' => 'text'],
                 ],

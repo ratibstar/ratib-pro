@@ -19,7 +19,7 @@ if (!function_exists('ratib_operational_proof_config')) {
         };
 
         return [
-            'disclaimer' => 'Screenshots, diagrams, and metrics on this page use sample operational data or illustrative interfaces. They are not live production operations control planes, audited statistics, or evidence of universal government integrations.',
+            'disclaimer' => 'Screenshots, diagrams, and metrics on this page use sample operational data or illustrative interfaces. They are not live production dashboards, audited statistics, or evidence of universal government integrations.',
             'section' => [
                 'eyebrow' => 'Operational proof',
                 'title' => 'How teams run programs on RATEB',
@@ -65,10 +65,10 @@ if (!function_exists('ratib_operational_proof_config')) {
                     'alt' => 'Sample workforce pipeline board with stages and SLA column',
                 ],
                 [
-                    'title' => 'Operations control plane',
+                    'title' => 'Dashboard',
                     'label' => 'Illustrative interface',
                     'src' => $img('1.jpg'),
-                    'alt' => 'Sample agency operations control plane with queues and summaries',
+                    'alt' => 'Sample agency dashboard with queues and summaries',
                 ],
                 [
                     'title' => 'Finance ledger',
@@ -83,10 +83,10 @@ if (!function_exists('ratib_operational_proof_config')) {
                     'alt' => 'Sample administration screen with settings and history context',
                 ],
                 [
-                    'title' => 'Geospatial operations console',
+                    'title' => 'Tracking Map',
                     'label' => 'Sample operational data',
                     'src' => $img('3.jpg'),
-                    'alt' => 'Sample geospatial operations console with checkpoints and corridor context',
+                    'alt' => 'Sample tracking map with checkpoints and corridor context',
                 ],
                 [
                     'title' => 'Partner portal',

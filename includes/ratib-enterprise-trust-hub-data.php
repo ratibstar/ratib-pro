@@ -88,7 +88,7 @@ if (!function_exists('ratib_enterprise_trust_hub_config')) {
                     'lead' => 'Continuity planning for sending-country scale.',
                     'points' => [
                         'Escalation routes before SLA commitments slip',
-                        'Operational signaling for exceptions and workforce telemetry alerts',
+                        'Notifications for exceptions and workforce tracking alerts',
                         'SSE realtime channels for operator consoles where enabled',
                         'Runbook-oriented recovery for corridor-specific incidents',
                     ],
@@ -103,7 +103,7 @@ if (!function_exists('ratib_enterprise_trust_hub_config')) {
                     'points' => [
                         'Idempotent write patterns for payment and registration hooks',
                         'Rate limits and gateway controls on public integration edges',
-                        'Telemetry integrity checks on geospatial workforce signals',
+                        'Integrity checks on GPS tracking signals',
                         'Partner and agency workspace APIs scoped to tenant context',
                     ],
                     'href' => $root . '/enterprise-pack/?pack=api',
@@ -117,7 +117,7 @@ if (!function_exists('ratib_enterprise_trust_hub_config')) {
                     'points' => [
                         'Sandbox → production promotion with RBAC parity',
                         'Per-agency branded domains and corridor configuration',
-                        'Government and commercial execution modes on one control plane',
+                        'Government and commercial execution modes on one platform',
                         'Dedicated onboarding playbooks for large sending-country agencies',
                     ],
                     'href' => $root . '/profile/#company-profile',

@@ -199,7 +199,7 @@
             '  <div class="global-ai-result-links">',
             `    <a href="${workerDetailsUrl}" target="_blank" rel="noopener noreferrer">Open Worker</a>`,
             `    <a href="${casesUrl}" target="_blank" rel="noopener noreferrer">Open Cases</a>`,
-            `    <a href="${trackingMapUrl}" target="_blank" rel="noopener noreferrer">Geospatial Operations Console</a>`,
+            `    <a href="${trackingMapUrl}" target="_blank" rel="noopener noreferrer">Tracking Map</a>`,
             `    <a href="${onboardingUrl}" target="_blank" rel="noopener noreferrer">Mobile Onboarding</a>`,
             '  </div>',
             caseLinks ? `  <div class="global-ai-result-sub"><strong>Latest Cases:</strong> ${caseLinks}</div>` : '',

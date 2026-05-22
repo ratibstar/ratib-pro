@@ -27,8 +27,8 @@ if (!function_exists('ratib_about_profile_config')) {
             ],
             'platform' => [
                 'eyebrow' => ratib_public_cms('profile.platform.eyebrow', 'Platform overview'),
-                'title' => ratib_public_cms('profile.platform.title', 'RATEB operations control plane'),
-                'lead' => ratib_public_cms('profile.platform.lead', 'Recruitment orchestration, workforce telemetry, compliance, and finance-grade operations for sending-country agencies and host-market programs—in one multi-tenant control plane.'),
+                'title' => ratib_public_cms('profile.platform.title', 'RATEB dashboard'),
+                'lead' => ratib_public_cms('profile.platform.lead', 'Recruitment orchestration, workforce tracking, compliance, and finance-grade operations for sending-country agencies and host-market programs—in one multi-tenant platform.'),
             ],
             'what' => [
                 'title' => ratib_public_cms('profile.what.title', 'What RATEB is — and what it is not'),
@@ -47,8 +47,8 @@ if (!function_exists('ratib_about_profile_config')) {
                 ],
                 'tel' => [
                     'eyebrow' => ratib_public_cms('profile.section.tel.eyebrow', 'Field operations'),
-                    'title' => ratib_public_cms('profile.section.tel.title', 'Geospatial workforce telemetry'),
-                    'sub' => ratib_public_cms('profile.section.tel.sub', 'Operational telemetry with offline sync, geofence rules, and audit-friendly event history—not a standalone tracking app.'),
+                    'title' => ratib_public_cms('profile.section.tel.title', 'GPS tracking'),
+                    'sub' => ratib_public_cms('profile.section.tel.sub', 'Field tracking with offline sync, geofence rules, and audit-friendly event history—not a standalone tracking app.'),
                 ],
                 'gov' => [
                     'eyebrow' => ratib_public_cms('profile.section.gov.eyebrow', 'Policy & oversight'),
@@ -86,7 +86,7 @@ if (!function_exists('ratib_about_profile_config')) {
                 'markets' => ratib_public_cms('profile.company.markets', 'Saudi Arabia (HQ) · Philippines · Bangladesh · Indonesia · Kenya · Uganda · Ethiopia · Nigeria · Rwanda · Sri Lanka · Nepal · Thailand'),
                 'mission' => ratib_public_cms('profile.company.mission', 'Give sending-country agencies and host-market programs one workspace to run regulated workforce corridors—with workflow coordination, operational visibility, compliance checkpoints, and finance linked to program events.'),
                 'vision' => ratib_public_cms('profile.company.vision', 'Cross-border workforce programs run on consistent records and auditable workflows—not disconnected spreadsheets.'),
-                'summary' => ratib_public_cms('profile.company.summary', 'RATEB Company operates the RATEB platform: a multi-agency workflow system with separate program databases, workforce telemetry, policy controls, and integrated billing for agencies and oversight-aligned programs.'),
+                'summary' => ratib_public_cms('profile.company.summary', 'RATEB Company operates the RATEB platform: a multi-agency workflow system with separate program databases, workforce tracking, policy controls, and integrated billing for agencies and oversight-aligned programs.'),
                 'services' => ratib_public_cms_lines('profile.company.services', [
                     'Workforce lifecycle workflows',
                     'Agency operations workspace (multi-level agents)',
@@ -107,10 +107,10 @@ if (!function_exists('ratib_about_profile_config')) {
             'screenshots' => [
                 'hero' => $shot('profile.image.hero', 'public/cms-bundle-about.png', 'profile.image.hero.alt', 'RATEB agency workspace — workforce systems of record and SLA views'),
                 'ops' => $shot('profile.image.ops', 'public/cms-bundle-about.png', 'profile.image.ops.alt', 'Agency operations workspace with workforce and agent views'),
-                'workers' => $shot('profile.image.workers', 'public/cms-bundle-workers.svg', 'profile.image.workers.alt', 'Workforce system of record — lifecycle and documents'),
-                'telemetry' => $shot('profile.image.telemetry', 'public/cms-bundle-gov-tracking.png', 'profile.image.telemetry.alt', 'Geospatial operations console — field checkpoints and corridor context'),
+                'workers' => $shot('profile.image.workers', 'public/cms-bundle-workers.svg', 'profile.image.workers.alt', 'Worker records — lifecycle and documents'),
+                'telemetry' => $shot('profile.image.telemetry', 'public/cms-bundle-gov-tracking.png', 'profile.image.telemetry.alt', 'Tracking map — field checkpoints and corridor context'),
                 'accounting' => $shot('profile.image.accounting', 'public/cms-bundle-finance.svg', 'profile.image.accounting.alt', 'Accounting and invoicing module'),
-                'control' => $shot('profile.image.control', 'public/cms-bundle-gov-control-v2.png', 'profile.image.control.alt', 'Platform control plane — multi-country tenant policy configuration'),
+                'control' => $shot('profile.image.control', 'public/cms-bundle-gov-control-v2.png', 'profile.image.control.alt', 'Control panel — multi-country system settings'),
                 'partners' => $shot('profile.image.partners', 'public/cms-bundle-about.png', 'profile.image.partners.alt', 'Partner portal — deployments and documents'),
                 'pipeline' => $shot('profile.image.pipeline', 'public/cms-bundle-pipeline.svg', 'profile.image.pipeline.alt', 'Workflow pipeline across recruitment stages'),
             ],
@@ -137,11 +137,11 @@ if (!function_exists('ratib_about_profile_config')) {
             ],
             'ops_modules' => [
                 ['title' => 'Agent hierarchy', 'body' => 'Branches, sub-agents, quotas, and consolidated reporting.', 'icon' => 'fa-sitemap'],
-                ['title' => 'Workforce system of record', 'body' => 'Longitudinal workforce records, documents, Musaned integration, deployment readiness.', 'icon' => 'fa-users'],
+                ['title' => 'Worker records', 'body' => 'Longitudinal workforce records, documents, Musaned integration, deployment readiness.', 'icon' => 'fa-users'],
                 ['title' => 'Deployment programs', 'body' => 'Host-market placements, returns, and exceptions by corridor.', 'icon' => 'fa-plane-departure'],
                 ['title' => 'Operational finance', 'body' => 'Double-entry ledger, AR/AP, banking, multi-currency postings.', 'icon' => 'fa-calculator'],
                 ['title' => 'Human capital module', 'body' => 'Staff HR, attendance, payroll, fleet, and internal documents.', 'icon' => 'fa-id-badge'],
-                ['title' => 'Operational signaling', 'body' => 'Operational signaling when queues or SLAs need attention.', 'icon' => 'fa-bell'],
+                ['title' => 'Notifications', 'body' => 'Notifications when queues or SLAs need attention.', 'icon' => 'fa-bell'],
             ],
             'telemetry_features' => [
                 ['title' => 'Field checkpoints', 'body' => 'Location updates tied to worker and program context, with session state in the workspace.', 'icon' => 'fa-satellite-dish'],
@@ -191,7 +191,7 @@ if (!function_exists('ratib_about_profile_config')) {
             'partner_features' => [
                 ['title' => 'Host-market portal', 'body' => 'Scoped access to deployments, documents, and statements.', 'icon' => 'fa-handshake'],
                 ['title' => 'Document exchange', 'body' => 'Structured sharing—not informal email attachments.', 'icon' => 'fa-file-contract'],
-                ['title' => 'REST API v1', 'body' => 'Bearer-token endpoints for workers, workflows, workforce telemetry, and operational signaling.', 'icon' => 'fa-code'],
+                ['title' => 'REST API v1', 'body' => 'Bearer-token endpoints for workers, workflows, tracking, and notifications.', 'icon' => 'fa-code'],
                 ['title' => 'Webhooks', 'body' => 'Signed callbacks with retry for ERP and partner systems.', 'icon' => 'fa-plug'],
             ],
             'platform_services' => [
@@ -204,12 +204,12 @@ if (!function_exists('ratib_about_profile_config')) {
                 'A lightweight CRM with a basic map plugin',
                 'Spreadsheet replacement with a login screen',
                 'One shared database for every agency',
-                'Marketing site with static operations control plane images only',
+                'Marketing site with static dashboard screenshots only',
             ]),
             'is_infrastructure' => ratib_public_cms_lines('profile.what.is_infra', [
                 'Enterprise workforce program infrastructure',
-                'Multi-country agency operations control plane',
-                'Geospatial workforce telemetry with operational checkpoints',
+                'Multi-country agency dashboard',
+                'GPS tracking with operational checkpoints',
                 'Policy, audit history, and oversight-oriented modules',
                 'Finance-grade module linked to placements and fees',
             ]),

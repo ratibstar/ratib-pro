@@ -16,12 +16,12 @@ $packs = [
     'profile' => [
         'title' => 'RATEB — Executive Company Profile',
         'subtitle' => ratib_brand_expansion(),
-        'body' => 'RATEB is enterprise workforce program infrastructure for regulated, cross-border recruitment programs. Operations control plane, workforce telemetry, compliance checkpoints, and finance-grade events on one multi-tenant stack.',
+        'body' => 'RATEB is enterprise workforce program infrastructure for regulated, cross-border recruitment programs. Dashboard, workforce tracking, compliance checkpoints, and finance-grade events on one multi-tenant stack.',
     ],
     'architecture' => [
         'title' => 'RATEB — Enterprise Architecture Brief',
         'subtitle' => 'Platform layers · tenant isolation · event delivery',
-        'body' => 'Seven-layer model: experience, orchestration, telemetry, business modules, governance, commercial, and data. Separate agency databases, RBAC, replay-safe workflows, and geospatial workforce telemetry.',
+        'body' => 'Seven-layer model: experience, orchestration, tracking, business modules, governance, commercial, and data. Separate agency databases, RBAC, replay-safe workflows, and GPS tracking.',
     ],
     'procurement' => [
         'title' => 'RATEB — Procurement One-Pager',
@@ -31,12 +31,12 @@ $packs = [
     'partners' => [
         'title' => 'RATEB — Agency Partnership Deck',
         'subtitle' => 'Agency operations workspace',
-        'body' => 'Multi-agency corridors, branded domains, stage graphs, workforce system of record, and executive telemetry for sending-country programs.',
+        'body' => 'Multi-agency corridors, branded domains, stage graphs, worker records, and reports for sending-country programs.',
     ],
     'api' => [
         'title' => 'RATEB — API Overview',
         'subtitle' => 'Integration standards',
-        'body' => 'Tenant-scoped APIs, idempotent writes, rate limits, operational signaling webhooks, and finance-linked event hooks.',
+        'body' => 'Tenant-scoped APIs, idempotent writes, rate limits, notification webhooks, and finance-linked event hooks.',
     ],
 ];
 

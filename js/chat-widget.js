@@ -368,7 +368,7 @@
         },
         {
             keywords: ['recruitment', 'recruit', 'agency program', 'ratib program', 'your program', 'about ratib'],
-            answer: "RATEB is enterprise workforce program infrastructure for agencies and host-market programs. Recruitment orchestration, workforce telemetry, compliance, and finance-grade operations run on one multi-tenant control plane. It helps you manage:\n• Candidates & workforce systems of record\n• Your branded agency portal\n• E-invoice system\n• Contracts & compliance governance\n\nRegister above to get started or watch the 'How it works' video for an overview.",
+            answer: "RATEB is enterprise workforce program infrastructure for agencies and host-market programs. Recruitment orchestration, workforce tracking, compliance, and finance-grade operations run on one multi-tenant platform. It helps you manage:\n• Candidates & worker records\n• Your branded agency portal\n• E-invoice system\n• Contracts & compliance governance\n\nRegister above to get started or watch the 'How it works' video for an overview.",
             category: 'program'
         },
         {

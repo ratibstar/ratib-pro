@@ -137,7 +137,7 @@ if (!function_exists('ratib_about_render_sections')) {
             <div class="ratib-about-container ratib-about-hero__grid">
                 <div class="ratib-about-hero__copy" data-ratib-reveal>
                     <p class="ratib-about-eyebrow"><?php echo ratib_about_h((string) ($about['platform']['eyebrow'] ?? 'Platform overview')); ?></p>
-                    <h2 id="about-hero-title" class="ratib-about-hero__title"><?php echo ratib_about_h((string) ($about['platform']['title'] ?? 'RATEB operations control plane')); ?></h2>
+                    <h2 id="about-hero-title" class="ratib-about-hero__title"><?php echo ratib_about_h((string) ($about['platform']['title'] ?? 'RATEB dashboard')); ?></h2>
                     <p class="ratib-about-hero__lead"><?php echo ratib_about_h((string) ($about['platform']['lead'] ?? '')); ?></p>
                     <div class="ratib-about-hero__actions">
                         <a href="<?php echo ratib_about_h($contactWa); ?>" target="_blank" rel="noopener noreferrer" class="ratib-about-btn ratib-about-btn--primary ratib-about-btn--lg">Request Platform Demo</a>

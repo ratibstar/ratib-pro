@@ -25,7 +25,7 @@ $gov = $about['sections']['gov'] ?? [];
 $govPoints = ratib_public_cms_lines('profile.gov.points', []);
 
 $metaTitle = 'Government & Workforce Program Operations — RATEB';
-$metaDesc = 'Oversight, inspections, geospatial workforce telemetry, policy enforcement, and audit replay for ministries and labor programs on RATEB infrastructure.';
+$metaDesc = 'Oversight, inspections, GPS tracking, policy enforcement, and audit replay for ministries and labor programs on RATEB infrastructure.';
 $canonicalUrl = rtrim($baseUrl, '/') . '/government-workforce-operations/';
 
 $ratibAboutCssQuery = (int) (@filemtime(__DIR__ . '/../css/pages/about-enterprise.css') ?: time()) . '-' . $ratibHomeUiRev;
@@ -53,7 +53,7 @@ $ratibTokensCssQuery = (int) (@filemtime(__DIR__ . '/../css/rateb-enterprise-tok
         <div class="ratib-about-container">
             <p class="ratib-eyebrow ratib-eyebrow--enterprise"><?php echo htmlspecialchars((string) ($gov['eyebrow'] ?? 'Government & labor oversight'), ENT_QUOTES, 'UTF-8'); ?></p>
             <h1 class="ratib-eth-hero__title">Government &amp; Workforce Program Operations</h1>
-            <p class="ratib-eth-hero__lead"><?php echo htmlspecialchars((string) ($gov['sub'] ?? 'Oversight, inspections, geospatial workforce telemetry, and policy enforcement for ministries and labor programs on RATEB infrastructure.'), ENT_QUOTES, 'UTF-8'); ?></p>
+            <p class="ratib-eth-hero__lead"><?php echo htmlspecialchars((string) ($gov['sub'] ?? 'Oversight, inspections, GPS tracking, and policy enforcement for ministries and labor programs on RATEB infrastructure.'), ENT_QUOTES, 'UTF-8'); ?></p>
             <p class="rateb-sample-data-tag">Program governance · not a consumer recruitment site</p>
         </div>
     </section>
@@ -64,7 +64,7 @@ $ratibTokensCssQuery = (int) (@filemtime(__DIR__ . '/../css/rateb-enterprise-tok
                 <?php foreach ($govPoints as $line) { ?>
                 <li><?php echo htmlspecialchars($line, ENT_QUOTES, 'UTF-8'); ?></li>
                 <?php } ?>
-                <li>Geospatial workforce telemetry with geofence and route replay for field programs</li>
+                <li>GPS tracking with geofence and route replay for field programs</li>
                 <li>Blacklist handling and deploy blocks tied to inspection outcomes</li>
                 <li>Immutable workflow history for audit replay and ministry review</li>
             </ul>

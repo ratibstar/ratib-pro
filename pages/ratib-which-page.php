@@ -40,7 +40,7 @@ $profileHtml = ratib_which_fetch($base . '/profile/?_r=' . time());
 $homeHtml = ratib_which_fetch($base . '/pages/home.php?_r=' . time());
 
 $profileOk = str_contains($profileHtml, 'ratib-profile-distinct-banner')
-    && str_contains($profileHtml, 'RATEB <span class="ratib-about-gradient">operations control plane</span>');
+    && str_contains($profileHtml, 'RATEB <span class="ratib-about-gradient">dashboard</span>');
 $homeOk = str_contains($homeHtml, 'ratib-hero__title')
     && !str_contains($homeHtml, 'ratib-profile-distinct-banner');
 ?>
@@ -75,7 +75,7 @@ $homeOk = str_contains($homeHtml, 'ratib-hero__title')
     <div class="card <?php echo $profileOk ? 'ok' : 'bad'; ?>">
         <h2>Company profile — <?php echo $profileOk ? 'LIVE OK' : 'PROBLEM'; ?></h2>
         <p>URL: <code>/profile/</code></p>
-        <p>You must see: top banner, headline <strong>RATEB operations control plane</strong>, bottom-right badge <strong>COMPANY PROFILE</strong>.</p>
+        <p>You must see: top banner, headline <strong>RATEB dashboard</strong>, bottom-right badge <strong>COMPANY PROFILE</strong>.</p>
         <a class="btn btn-profile" href="<?php echo htmlspecialchars($base . '/profile/?_r=' . time(), ENT_QUOTES, 'UTF-8'); ?>">Open profile now</a>
     </div>
 

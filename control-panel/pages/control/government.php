@@ -40,7 +40,7 @@ startControlLayout('Government Control', $additionalCSS, []);
             <i class="fas fa-flask me-1"></i>Seed Indonesia demo data
         </button>
         <a class="btn btn-sm btn-outline-info" href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-map.php'), ENT_QUOTES, 'UTF-8'); ?>">
-            <i class="fas fa-map-location-dot me-1"></i>Open Geospatial Operations Console
+            <i class="fas fa-map-location-dot me-1"></i>Open Tracking Map
         </a>
         <a class="btn btn-sm btn-outline-light gov-readonly-link" href="<?php echo htmlspecialchars((defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '') . '/admin/government-tracking.php', ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">
             <i class="fas fa-landmark me-1"></i>Government Read-only View
