@@ -1025,6 +1025,17 @@ body.ratib-about-page {
   }
 }
 
+/* Profile page — same nav brand stack as marketing home */
+body.ratib-about-page .ratib-nav__brand-block--animated {
+  max-width: min(21rem, 48vw);
+}
+
+@media (max-width: 599px) {
+  body.ratib-about-page .ratib-nav__brand-block--animated {
+    max-width: min(15.5rem, 62vw);
+  }
+}
+
 /* Nav highlight on about page — Profile pills, not Platform */
 body.ratib-about-page .ratib-nav__brand-profile.is-current,
 body.ratib-about-page .ratib-nav__link--about.is-current {

@@ -352,15 +352,15 @@ body.ratib-saas-home {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  min-height: 112px;
-  padding-block: 0.95rem;
+  min-height: 88px;
+  padding-block: 0.65rem;
 }
 
 @media (min-width: 1100px) {
   .ratib-nav-shell__inner {
     min-height: 0;
-    padding-block: 0.45rem;
-    gap: 0.65rem;
+    padding-block: 0.5rem;
+    gap: 0.75rem;
   }
 }
 
@@ -368,9 +368,16 @@ body.ratib-saas-home {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.15rem;
-  flex-shrink: 0;
+  gap: 0.28rem;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: min(19.5rem, 46vw);
+}
+
+.ratib-nav__brand-block--animated {
+  gap: 0.32rem;
+  padding: 0.15rem 0.55rem 0.15rem 0;
+  max-width: min(21rem, 48vw);
 }
 
 .ratib-nav__brand {
@@ -383,19 +390,28 @@ body.ratib-saas-home {
   letter-spacing: -0.02em;
 }
 
+.ratib-nav__brand--animated-title {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  border-radius: 0;
+}
+
 .ratib-nav__brand-profile {
   display: inline-flex;
   align-items: center;
-  margin-left: 0.15rem;
-  padding: 0.2rem 0.55rem;
+  align-self: flex-start;
+  margin-left: 0;
+  padding: 0.22rem 0.62rem;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   text-decoration: none;
-  color: rgba(226, 232, 240, 0.88);
-  background: rgba(139, 92, 246, 0.14);
-  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: rgba(226, 232, 240, 0.9);
+  background: rgba(139, 92, 246, 0.16);
+  border: 1px solid rgba(139, 92, 246, 0.38);
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
@@ -1216,15 +1232,83 @@ body.ratib-saas-home {
 }
 
 .ratib-brand-full--hero {
-  font-size: clamp(0.95rem, 2.4vw, 1.55rem);
+  font-size: clamp(0.88rem, 2.1vw, 1.42rem);
+  gap: 0.26em 0.4em;
+  max-width: min(42rem, 100%);
+}
+
+.ratib-brand-full--hero .ratib-brand-letter {
+  font-size: clamp(1.05rem, 2.8vw, 1.65rem);
+  line-height: 1.05;
+}
+
+.ratib-brand-full--hero .ratib-brand-full__word {
+  font-size: clamp(0.82rem, 2vw, 1.28rem);
 }
 
 .ratib-brand-full--nav {
-  font-size: clamp(0.5rem, 1.35vw, 0.68rem);
+  font-size: clamp(0.58rem, 1.1vw, 0.72rem);
   font-weight: 650;
   line-height: 1.2;
   letter-spacing: -0.01em;
-  max-width: min(22rem, 100%);
+  max-width: 100%;
+}
+
+/* Nav header: two-line stack — RATEB + Company, then expansion tagline */
+.ratib-brand-full--nav-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+.ratib-brand-full--nav-stack .ratib-brand-full__head {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0.38em;
+  line-height: 1;
+}
+
+.ratib-brand-full--nav-stack .ratib-brand-full__rateb {
+  gap: 0.04em;
+}
+
+.ratib-brand-full--nav-stack .ratib-brand-letter {
+  font-size: clamp(1.05rem, 2.2vw, 1.28rem);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ratib-brand-full--nav-stack .ratib-brand-full__word--company {
+  font-size: clamp(0.72rem, 1.45vw, 0.88rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.ratib-brand-full--nav-stack .ratib-brand-full__tagline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.22em 0.34em;
+  max-width: 100%;
+  line-height: 1.28;
+  font-size: clamp(0.5rem, 0.95vw, 0.62rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  opacity: 0.94;
+}
+
+.ratib-brand-full--nav-stack .ratib-brand-full__tagline .ratib-brand-full__word {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.ratib-brand-full--nav-stack .ratib-brand-full__word--amp {
+  font-weight: 700;
+  opacity: 0.85;
 }
 
 .ratib-brand-full__rateb {
@@ -1339,15 +1423,6 @@ body.ratib-saas-home {
   max-width: 100%;
 }
 
-/* Nav: one animated line only (R+A+T+E+B + Company + expansion) — no logo row above */
-.ratib-nav__brand--stacked.ratib-nav__brand--animated-title {
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.2em 0.35em;
-  max-width: min(26rem, 52vw);
-}
-
 .ratib-nav__brand--stacked .ratib-nav__brand-logo {
   flex-shrink: 0;
 }
@@ -1365,35 +1440,75 @@ body.ratib-saas-home {
   pointer-events: none !important;
 }
 
-.ratib-nav__brand--animated-title .ratib-brand-full--nav {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.ratib-nav__brand--animated-title .ratib-brand-full__rateb {
-  white-space: nowrap;
-}
-
 @media (max-width: 1099px) {
-  .ratib-brand-full--nav {
-    max-width: 100%;
-    font-size: clamp(0.48rem, 2.8vw, 0.62rem);
+  .ratib-nav__brand-block--animated {
+    max-width: min(17.5rem, 54vw);
   }
 
-  .ratib-nav__brand--stacked {
-    flex: 1 1 auto;
-    min-width: 0;
+  .ratib-brand-full--nav-stack .ratib-brand-letter {
+    font-size: clamp(0.92rem, 4.2vw, 1.12rem);
+  }
+
+  .ratib-brand-full--nav-stack .ratib-brand-full__word--company {
+    font-size: clamp(0.64rem, 2.8vw, 0.78rem);
+  }
+
+  .ratib-brand-full--nav-stack .ratib-brand-full__tagline {
+    font-size: clamp(0.46rem, 2.2vw, 0.56rem);
+    gap: 0.18em 0.28em;
   }
 }
 
 @media (max-width: 599px) {
+  .ratib-nav-shell__inner {
+    min-height: 76px;
+    padding-block: 0.5rem;
+  }
+
+  .ratib-nav__brand-block--animated {
+    max-width: min(15.5rem, 62vw);
+    gap: 0.24rem;
+  }
+
   .ratib-brand-full--hero {
     font-size: clamp(0.82rem, 3.6vw, 1.05rem);
     gap: 0.22em 0.32em;
   }
 
-  .ratib-brand-full--nav {
-    font-size: clamp(0.44rem, 2.5vw, 0.56rem);
+  .ratib-brand-full--nav-stack .ratib-brand-letter {
+    font-size: 0.86rem;
+  }
+
+  .ratib-brand-full--nav-stack .ratib-brand-full__word--company {
+    font-size: 0.62rem;
+  }
+
+  .ratib-brand-full--nav-stack .ratib-brand-full__tagline {
+    font-size: 0.48rem;
+    line-height: 1.32;
+  }
+
+  .ratib-nav__brand-profile {
+    font-size: 0.62rem;
+    padding: 0.18rem 0.5rem;
+  }
+}
+
+@media (min-width: 1100px) {
+  .ratib-nav__brand-block--animated {
+    max-width: 20.5rem;
+  }
+
+  .ratib-brand-full--nav-stack .ratib-brand-letter {
+    font-size: 1.22rem;
+  }
+
+  .ratib-brand-full--nav-stack .ratib-brand-full__word--company {
+    font-size: 0.86rem;
+  }
+
+  .ratib-brand-full--nav-stack .ratib-brand-full__tagline {
+    font-size: 0.6rem;
   }
 }
 

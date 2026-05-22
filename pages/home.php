@@ -498,7 +498,7 @@ ratib_emit_profile_nav_guard($baseUrl);
                     require_once __DIR__ . '/../includes/ratib-brand-full-title.php';
                     ?>
                     <h1 class="ratib-hero__title">
-                        <?php ratib_render_brand_full_title(['variant' => 'hero']); ?>
+                        <?php ratib_render_brand_full_title(['variant' => 'hero', 'layout' => 'inline']); ?>
                     </h1>
                     <p class="ratib-hero__lead"><?php echo htmlspecialchars($ratibHome['home.hero.lead'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                     <ul class="ratib-hero__bullets">

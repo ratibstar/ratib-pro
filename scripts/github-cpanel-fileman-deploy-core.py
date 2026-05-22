@@ -159,6 +159,7 @@ FAST_FILES = [
     ".htaccess",
     "index.php",
     "includes/ratib-clean-url.php",
+    "includes/ratib-brand-full-title.php",
     "includes/ratib-public-base-url.php",
     "includes/ratib_html_global_ai_patch.php",
     "includes/ratib-mega-nav-config.php",
