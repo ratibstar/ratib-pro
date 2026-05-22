@@ -17,27 +17,27 @@ function help_center_seed_content() {
             'Getting Started – Complete Program Overview',
             'Introduction to the RATEB: login, navigation, and how each section fits together.',
             '<h2>What is the RATEB?</h2>
-            <p>The RATEB is a full business management system. After you log in, you use the left sidebar to open <strong>Operations Control Plane</strong>, <strong>Agent</strong>, <strong>SubAgent</strong>, <strong>Workers</strong>, <strong>Cases</strong>, <strong>Accounting</strong>, <strong>HR</strong>, <strong>Reports</strong>, <strong>Contact</strong>, <strong>Operational Signaling</strong>, and <strong>System Settings</strong>. Each section has its own screen and purpose.</p>
+            <p>The RATEB is a full business management system. After you log in, you use the left sidebar to open <strong>Dashboard</strong>, <strong>Agent</strong>, <strong>SubAgent</strong>, <strong>Workers</strong>, <strong>Cases</strong>, <strong>Accounting</strong>, <strong>HR</strong>, <strong>Reports</strong>, <strong>Contact</strong>, <strong>Notifications</strong>, and <strong>System Settings</strong>. Each section has its own screen and purpose.</p>
             <h2>Logging In and First Steps</h2>
-            <p>Go to the login page, enter your username and password, and click to sign in. If you forget your password, use the "Forgot password" link. After login you are taken to the <strong>Operations Control Plane</strong>.</p>
+            <p>Go to the login page, enter your username and password, and click to sign in. If you forget your password, use the "Forgot password" link. After login you are taken to the <strong>Dashboard</strong>.</p>
             <h2>Understanding the Navigation</h2>
             <p>The main navigation is on the left. Only menu items you have permission to see will appear. Click any item (e.g. Agent, Workers, Accounting) to open that section. At the bottom of the menu you will find <strong>Help &amp; Learning Center</strong> (this guide) and <strong>System Settings</strong> (for admins).</p>
             <h2>How the Sections Work Together</h2>
-            <p><strong>Operations Control Plane</strong> gives you an overview. <strong>Agent</strong> and <strong>SubAgent</strong> manage your agents and sub-agents. <strong>Workers</strong> holds worker profiles and documents. <strong>Cases</strong> tracks cases or files. <strong>Accounting</strong> handles money, accounts, and transactions. <strong>HR</strong> covers employees and HR settings. <strong>Reports</strong> lets you run and view reports. <strong>Contact</strong> is for contact management. <strong>Operational Signaling</strong> shows system alerts. Use this Help Center to learn each section in detail.</p>
+            <p><strong>Dashboard</strong> gives you an overview. <strong>Agent</strong> and <strong>SubAgent</strong> manage your agents and sub-agents. <strong>Workers</strong> holds worker profiles and documents. <strong>Cases</strong> tracks cases or files. <strong>Accounting</strong> handles money, accounts, and transactions. <strong>HR</strong> covers employees and HR settings. <strong>Reports</strong> lets you run and view reports. <strong>Contact</strong> is for contact management. <strong>Notifications</strong> shows system alerts. Use this Help Center to learn each section in detail.</p>
             <h2>Expert Tips</h2>
-            <ul><li>Bookmark the Operations Control Plane or main page for quick access.</li><li>Check Operational Signaling regularly so you do not miss important alerts.</li><li>Use the Help &amp; Learning Center whenever you need step-by-step guidance.</li></ul>'
+            <ul><li>Bookmark the Dashboard or main page for quick access.</li><li>Check Notifications regularly so you do not miss important alerts.</li><li>Use the Help &amp; Learning Center whenever you need step-by-step guidance.</li></ul>'
         ],
         2 => [
-            'Operations Control Plane – Full Explanation',
-            'What the Operations Control Plane shows, how to read it, and how to use it for daily oversight.',
-            '<h2>Purpose of the Operations Control Plane</h2>
-            <p>The Operations Control Plane is your home screen after login. It shows a high-level overview of the program: key numbers, recent activity, and shortcuts so you can monitor the business without opening every section.</p>
-            <h2>What You See on the Operations Control Plane</h2>
+            'Dashboard – Full Explanation',
+            'What the Dashboard shows, how to read it, and how to use it for daily oversight.',
+            '<h2>Purpose of the Dashboard</h2>
+            <p>The Dashboard is your home screen after login. It shows a high-level overview of the program: key numbers, recent activity, and shortcuts so you can monitor the business without opening every section.</p>
+            <h2>What You See on the Dashboard</h2>
             <p>Typical elements include: <strong>Summary cards or stats</strong> (e.g. total agents, workers, cases, or financial totals), <strong>Charts or graphs</strong> (e.g. trends over time), and <strong>Quick links or lists</strong> (e.g. recent items or pending tasks). The exact layout depends on your role and how the system is configured.</p>
-            <h2>How to Use the Operations Control Plane</h2>
-            <ol><li>Open the program and land on the Operations Control Plane (or click <strong>Operations Control Plane</strong> in the left menu).</li><li>Review the summary numbers and charts to see current status and trends.</li><li>Use any filters or date ranges if the Operations Control Plane offers them.</li><li>Click through links or buttons to go to the detailed section (e.g. Agents, Workers, Accounting) when you need to take action or see more detail.</li></ol>
+            <h2>How to Use the Dashboard</h2>
+            <ol><li>Open the program and land on the Dashboard (or click <strong>Dashboard</strong> in the left menu).</li><li>Review the summary numbers and charts to see current status and trends.</li><li>Use any filters or date ranges if the Dashboard offers them.</li><li>Click through links or buttons to go to the detailed section (e.g. Agents, Workers, Accounting) when you need to take action or see more detail.</li></ol>
             <h2>Expert Tips</h2>
-            <ul><li>Refresh the page to get the latest data.</li><li>Use the Reports section for deeper analysis; the Operations Control Plane is for a quick overview.</li><li>If you do not see certain numbers, your role may not have permission—contact your administrator.</li></ul>'
+            <ul><li>Refresh the page to get the latest data.</li><li>Use the Reports section for deeper analysis; the Dashboard is for a quick overview.</li><li>If you do not see certain numbers, your role may not have permission—contact your administrator.</li></ul>'
         ],
         3 => [
             'User Management & Permissions – Full Explanation',
@@ -118,12 +118,12 @@ function help_center_seed_content() {
             <ul><li>Use date ranges to compare periods (e.g. this month vs last month).</li><li>Save or bookmark frequently used report settings if the system allows.</li><li>If you need a report you do not see, ask your administrator—it may be a permission or configuration.</li></ul>'
         ],
         9 => [
-            'Operational Signaling & Automation – Full Explanation',
+            'Notifications & Automation – Full Explanation',
             'How notifications and automation work in the program.',
-            '<h2>What Operational Signaling Does</h2>
-            <p>The program can send <strong>Operational Signaling</strong> to users (e.g. new case, payment received, document expiring). You see them in the <strong>Operational Signaling</strong> area (bell icon or menu item) and sometimes as on-screen alerts.</p>
-            <h2>How to Use Operational Signaling</h2>
-            <ol><li>Click <strong>Operational Signaling</strong> in the left menu (or the bell icon).</li><li>Read the list of notifications; mark as read or open the related record (e.g. a case or worker) to take action.</li><li>If there are notification settings, choose which events you want to be notified about and how (in-app, email, etc.).</li></ol>
+            '<h2>What Notifications Does</h2>
+            <p>The program can send <strong>Notifications</strong> to users (e.g. new case, payment received, document expiring). You see them in the <strong>Notifications</strong> area (bell icon or menu item) and sometimes as on-screen alerts.</p>
+            <h2>How to Use Notifications</h2>
+            <ol><li>Click <strong>Notifications</strong> in the left menu (or the bell icon).</li><li>Read the list of notifications; mark as read or open the related record (e.g. a case or worker) to take action.</li><li>If there are notification settings, choose which events you want to be notified about and how (in-app, email, etc.).</li></ol>
             <h2>Automation (If Available)</h2>
             <p>Some setups allow <strong>automation</strong> (e.g. auto-status change when a document is uploaded, or reminders). This is usually configured in System Settings or by an administrator. Users then benefit from fewer manual steps.</p>
             <h2>Expert Tips</h2>
@@ -184,15 +184,15 @@ if (!function_exists('help_center_seed_extra_tutorials')) {
 
 function help_center_seed_extra_tutorials() {
     return [
-        1 => ['getting-started-quick-tips', 'Quick Start Checklist', 'A short checklist to get going in the RATEB.', '<h2>Quick Checklist</h2><ol><li>Log in with your credentials.</li><li>Open the Operations Control Plane and check key numbers.</li><li>Use the left menu to open Agent, Workers, or other sections as needed.</li><li>Bookmark the Help &amp; Learning Center for guides.</li></ol><h2>Expert Tip</h2><p>Check Operational Signaling regularly for important alerts.</p>'],
-        2 => ['dashboard-quick-tips', 'Operations Control Plane at a Glance', 'Quick reference for what the Operations Control Plane shows and how to use it.', '<h2>What to Look At</h2><ul><li>Summary cards: totals and key metrics.</li><li>Charts: trends over time.</li><li>Quick links: jump to Agents, Workers, Reports.</li></ul><h2>Expert Tip</h2><p>Refresh the page to see the latest data.</p>'],
+        1 => ['getting-started-quick-tips', 'Quick Start Checklist', 'A short checklist to get going in the RATEB.', '<h2>Quick Checklist</h2><ol><li>Log in with your credentials.</li><li>Open the Dashboard and check key numbers.</li><li>Use the left menu to open Agent, Workers, or other sections as needed.</li><li>Bookmark the Help &amp; Learning Center for guides.</li></ol><h2>Expert Tip</h2><p>Check Notifications regularly for important alerts.</p>'],
+        2 => ['dashboard-quick-tips', 'Dashboard at a Glance', 'Quick reference for what the Dashboard shows and how to use it.', '<h2>What to Look At</h2><ul><li>Summary cards: totals and key metrics.</li><li>Charts: trends over time.</li><li>Quick links: jump to Agents, Workers, Reports.</li></ul><h2>Expert Tip</h2><p>Refresh the page to see the latest data.</p>'],
         3 => ['permissions-quick-tips', 'Permissions Quick Reference', 'Who can do what – a short guide to roles and permissions.', '<h2>Key Points</h2><ul><li>Each user has a role (e.g. Admin, Manager).</li><li>Roles define what menus and actions are visible.</li><li>User management is in System Settings (admin only).</li></ul><h2>Expert Tip</h2><p>Give each role only the permissions it needs.</p>'],
         4 => ['contracts-quick-tips', 'Contracts & Recruitment Checklist', 'Short checklist for contracts and recruitment steps.', '<h2>Checklist</h2><ol><li>Open the relevant section (Agent, Workers, or Contracts).</li><li>Create or edit the contract; link parties and dates.</li><li>Update status as the process moves (e.g. approved, visa issued).</li><li>Use filters to find items that need action.</li></ol>'],
         5 => ['client-quick-tips', 'Adding a New Client (Agent/SubAgent)', 'Short steps to add and manage a client.', '<h2>Steps</h2><ol><li>Go to Agent or SubAgent from the menu.</li><li>Click Add and fill name, contact, phone, email.</li><li>Save and link workers or cases to this client when needed.</li></ol><h2>Expert Tip</h2><p>Keep contact details up to date for smooth communication.</p>'],
         6 => ['worker-quick-tips', 'Adding a Worker – Short Guide', 'Quick steps to register a worker and upload documents.', '<h2>Steps</h2><ol><li>Open Workers and click Add Worker.</li><li>Fill personal data and required fields; select agent if needed.</li><li>Upload documents (ID, visa, contract) in the worker record.</li><li>Set status (e.g. active, suspended) when it changes.</li></ol>'],
         7 => ['accounting-quick-tips', 'Recording a Transaction', 'Quick steps to record income or expense in Accounting.', '<h2>Steps</h2><ol><li>Open Accounting from the menu.</li><li>Create a new transaction; enter date, amount, and accounts.</li><li>Add description and link to agent/case if required.</li><li>Save; balances update automatically.</li></ol><h2>Expert Tip</h2><p>Reconcile accounts regularly.</p>'],
         8 => ['reports-quick-tips', 'Running a Report', 'Quick steps to generate and export a report.', '<h2>Steps</h2><ol><li>Open Reports from the menu.</li><li>Choose report type and set date range or filters.</li><li>Run the report and view on screen.</li><li>Export to Excel or PDF if needed.</li></ol>'],
-        9 => ['notifications-quick-tips', 'Managing Operational Signaling', 'How to stay on top of system notifications.', '<h2>Steps</h2><ol><li>Click Notifications (or the bell icon) in the menu.</li><li>Read new alerts and open related records to take action.</li><li>Adjust notification settings if the system allows.</li></ol><h2>Expert Tip</h2><p>Do not ignore critical notifications.</p>'],
+        9 => ['notifications-quick-tips', 'Managing Notifications', 'How to stay on top of system notifications.', '<h2>Steps</h2><ol><li>Click Notifications (or the bell icon) in the menu.</li><li>Read new alerts and open related records to take action.</li><li>Adjust notification settings if the system allows.</li></ol><h2>Expert Tip</h2><p>Do not ignore critical notifications.</p>'],
         10 => ['troubleshooting-quick-tips', 'Quick Fixes for Common Issues', 'Short fixes for login, blank screen, and missing menus.', '<h2>Quick Fixes</h2><ul><li>Blank page: refresh (F5), clear cache, try another browser.</li><li>Cannot log in: check password, use Forgot password.</li><li>Missing menu: your role may not have permission – contact admin.</li></ul>'],
         11 => ['best-practices-quick-tips', 'Daily Best Practices', 'Short list of habits for consistent use.', '<h2>Habits</h2><ul><li>Use consistent names and data entry.</li><li>Review and update data on a schedule.</li><li>Do not share passwords; log out on shared devices.</li></ul>'],
         12 => ['compliance-quick-tips', 'Compliance Checklist', 'Short checklist for staying compliant.', '<h2>Checklist</h2><ul><li>Keep accurate records; do not delete audit-relevant data.</li><li>Track status and dates (visas, documents).</li><li>Report compliance concerns through the correct channel.</li></ul>'],

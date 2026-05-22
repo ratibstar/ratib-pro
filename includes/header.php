@@ -196,7 +196,7 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
         <div class="nav-items">
             <a href="<?php echo htmlspecialchars(ratib_nav_url('dashboard.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_dashboard">
                 <i class="nav-icon fas fa-home"></i>
-                <span>Operations Control Plane</span>
+                <span>Dashboard</span>
             </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('agent.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_agents">
                 <i class="nav-icon fas fa-users"></i>
@@ -236,7 +236,7 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
             </a>
             <a href="<?php echo htmlspecialchars(ratib_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_notifications">
                 <i class="nav-icon fas fa-bell"></i>
-                <span>Operational Signaling</span>
+                <span>Notifications</span>
                 <span class="notification-badge badge bg-danger ms-1 d-none" id="headerNotificationBadge">0</span>
             </a>
             <?php

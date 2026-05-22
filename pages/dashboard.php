@@ -46,7 +46,7 @@ if (!isset($conn) || $conn === null) {
         die("Database connection failed. Please contact administrator.");
     }
 }
-$pageTitle = "Operations Control Plane";
+$pageTitle = "Dashboard";
 $pageCss = [
     asset('css/dashboard.css'),
     asset('css/system-settings.css') . "?v=" . time()
@@ -979,8 +979,8 @@ include '../includes/header.php';
             <?php endif; ?>
 
             <!-- Notifications Card -->
-            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_notifications" tabindex="0" role="button" aria-label="Operational Signaling - New: <?php echo $notificationStats['new'] ?? 0; ?>">
-                <h2>🔔 Operational Signaling</h2>
+            <div class="system-card" data-href="<?php echo htmlspecialchars(ratib_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_notifications" tabindex="0" role="button" aria-label="Notifications - New: <?php echo $notificationStats['new'] ?? 0; ?>">
+                <h2>🔔 Notifications</h2>
                 <div class="status-info">
                     <p class="count">Total: <span id="totalNotifications"><?php echo $notificationStats['total'] ?? 0; ?></span></p>
                     <p class="count">New: <span id="newNotifications"><?php echo $notificationStats['new'] ?? 0; ?></span></p>

@@ -21,7 +21,7 @@ if (!hasPermission('view_notifications')) {
 }
 
 // Set page variables for header.php
-$pageTitle = "Operational Signaling";
+$pageTitle = "Notifications";
 $pageCss = [
     asset('css/contact.css'),
     asset('css/notifications.css')

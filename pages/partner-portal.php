@@ -84,7 +84,7 @@ include __DIR__ . '/../includes/partner-portal-header.php';
     <?php include __DIR__ . '/../includes/partner-portal-nav.php'; ?>
 
     <section id="partner-portal-dashboard" class="partner-portal-dashboard partner-portal-anchor-target" aria-labelledby="ppDashboardHeading">
-        <h2 id="ppDashboardHeading" class="partner-portal-dashboard-heading">Operations Control Plane</h2>
+        <h2 id="ppDashboardHeading" class="partner-portal-dashboard-heading">Dashboard</h2>
         <p class="partner-portal-dashboard-lead">Quick view of your activity with this office.</p>
         <div class="partner-portal-dashboard-grid">
             <a href="<?php echo htmlspecialchars(pageUrl('partner-portal-agency-contracts.php'), ENT_QUOTES, 'UTF-8'); ?>" class="partner-portal-dash-card glass-card partner-portal-dash-card--link">

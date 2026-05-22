@@ -107,7 +107,7 @@ if ($embeddedMode) {
                             System Settings
                         </h1>
                         <?php if (true): ?>
-                        <button type="button" class="reset-app-btn" data-action="reset-all-data" data-permission="manage_settings" title="Clear all data: Operations Control Plane, Agents, Workforce, Cases, Accounting, HR, Reports, Contact, Operational Signaling, Help &amp; System Settings history. Users kept.">
+                        <button type="button" class="reset-app-btn" data-action="reset-all-data" data-permission="manage_settings" title="Clear all data: Dashboard, Agents, Workforce, Cases, Accounting, HR, Reports, Contact, Notifications, Help &amp; System Settings history. Users kept.">
                             <i class="fas fa-eraser"></i> Reset App
                         </button>
                         <?php endif; ?>

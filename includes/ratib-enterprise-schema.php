@@ -28,7 +28,7 @@ if (!function_exists('ratib_enterprise_schema_organization')) {
                 'Enterprise Workforce Program Infrastructure',
                 'Workforce Telemetry',
                 'Recruitment Orchestration',
-                'Multi-tenant Operations Control Plane',
+                'Multi-tenant operations platform',
             ],
         ];
     }
@@ -53,11 +53,11 @@ if (!function_exists('ratib_enterprise_schema_software_application')) {
                 'name' => 'RATEB',
             ],
             'featureList' => [
-                'Operations Control Plane',
+                'Dashboard',
                 'Workforce Telemetry',
                 'Geospatial Workforce Telemetry',
                 'Reports',
-                'Operational Signaling',
+                'Notifications',
                 'System Settings',
                 'Immutable workflow history',
                 'RBAC and tenant isolation',

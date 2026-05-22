@@ -333,14 +333,14 @@ try {
             'name' => 'Control Panel - Core',
             'count' => 8,
             'permissions' => [
-                ['id' => 'control_dashboard', 'name' => 'View Operations Control Plane'],
+                ['id' => 'control_dashboard', 'name' => 'View Dashboard'],
                 ['id' => 'control_select_country', 'name' => 'Select Country (all countries)'],
-                ['id' => 'hide_dashboard_countries_card', 'name' => 'Show Operations Control Plane "Active Countries" card'],
-                ['id' => 'hide_dashboard_agencies_card', 'name' => 'Show Operations Control Plane "Total Agencies" card'],
-                ['id' => 'hide_dashboard_pending_requests_card', 'name' => 'Show Operations Control Plane "Pending Requests" card'],
-                ['id' => 'hide_dashboard_accounting_card', 'name' => 'Show Operations Control Plane "Accounting" card'],
-                ['id' => 'hide_dashboard_quick_actions', 'name' => 'Show Operations Control Plane "Quick Actions" section'],
-                ['id' => 'hide_dashboard_recent_requests', 'name' => 'Show Operations Control Plane "Recent Requests" section']
+                ['id' => 'hide_dashboard_countries_card', 'name' => 'Show Dashboard "Active Countries" card'],
+                ['id' => 'hide_dashboard_agencies_card', 'name' => 'Show Dashboard "Total Agencies" card'],
+                ['id' => 'hide_dashboard_pending_requests_card', 'name' => 'Show Dashboard "Pending Requests" card'],
+                ['id' => 'hide_dashboard_accounting_card', 'name' => 'Show Dashboard "Accounting" card'],
+                ['id' => 'hide_dashboard_quick_actions', 'name' => 'Show Dashboard "Quick Actions" section'],
+                ['id' => 'hide_dashboard_recent_requests', 'name' => 'Show Dashboard "Recent Requests" section']
             ]
         ],
         [
@@ -461,7 +461,7 @@ try {
         // Ratib Pro (agency/country app) - full permission set (includes Partner Agencies group; counts drift — do not rely on comment for exact totals)
         $permissionGroups = [
             ['id' => 'system_management', 'name' => 'System Management', 'count' => 11, 'permissions' => [
-                ['id' => 'view_dashboard', 'name' => 'View Operations Control Plane'],
+                ['id' => 'view_dashboard', 'name' => 'View Dashboard'],
                 ['id' => 'manage_branches', 'name' => 'Manage Branches'],
                 ['id' => 'view_operations_log', 'name' => 'View Operations Log'],
                 ['id' => 'manage_system_settings', 'name' => 'Manage System Settings'],
@@ -650,7 +650,7 @@ try {
                 ['id' => 'search_history', 'name' => 'Search History']
             ]],
             ['id' => 'hr_management', 'name' => 'HR Management', 'count' => 10, 'permissions' => [
-                ['id' => 'view_hr_dashboard', 'name' => 'View HR Operations Control Plane'],
+                ['id' => 'view_hr_dashboard', 'name' => 'View HR Dashboard'],
                 ['id' => 'view_employees', 'name' => 'View Employees'],
                 ['id' => 'add_employee', 'name' => 'Add Employee'],
                 ['id' => 'edit_employee', 'name' => 'Edit Employee'],
@@ -677,10 +677,10 @@ try {
                 ['id' => 'reply_to_message', 'name' => 'Reply to Message'],
                 ['id' => 'delete_message', 'name' => 'Delete Message']
             ]],
-            ['id' => 'notifications', 'name' => 'Operational Signaling', 'count' => 4, 'permissions' => [
-                ['id' => 'view_notifications', 'name' => 'View Operational Signaling'],
+            ['id' => 'notifications', 'name' => 'Notifications', 'count' => 4, 'permissions' => [
+                ['id' => 'view_notifications', 'name' => 'View Notifications'],
                 ['id' => 'create_notification', 'name' => 'Create Signal'],
-                ['id' => 'manage_notifications', 'name' => 'Manage Operational Signaling'],
+                ['id' => 'manage_notifications', 'name' => 'Manage Notifications'],
                 ['id' => 'delete_notification', 'name' => 'Delete Signal']
             ]],
             ['id' => 'visa_management', 'name' => 'Visa Management', 'count' => 5, 'permissions' => [

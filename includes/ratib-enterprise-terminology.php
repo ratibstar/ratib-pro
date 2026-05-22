@@ -8,12 +8,12 @@ if (!function_exists('ratib_enterprise_term')) {
     function ratib_enterprise_term(string $legacy): string
     {
         static $map = [
-            'Dashboard' => 'Operations Control Plane',
-            'dashboard' => 'operations control plane',
+            'Dashboard' => 'Dashboard',
+            'dashboard' => 'dashboard',
             'Reports' => 'Reports',
             'reports' => 'reports',
-            'Notifications' => 'Operational Signaling',
-            'notifications' => 'operational signaling',
+            'Notifications' => 'Notifications',
+            'notifications' => 'notifications',
             'Settings' => 'System Settings',
             'settings' => 'system settings',
             'Admin Panel' => 'Platform Control Plane',

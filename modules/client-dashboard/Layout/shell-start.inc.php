@@ -87,7 +87,7 @@ $ratibCpIsControlWrapper = function_exists('ratib_client_dashboard_is_control_wr
                 <i class="fa-solid fa-bars-staggered" aria-hidden="true"></i>
             </button>
             <div class="ratib-cp-topbar__title">
-                <h1 class="ratib-cp-page-title"><?php echo isset($ratibCpPageHeading) ? htmlspecialchars((string) $ratibCpPageHeading, ENT_QUOTES, 'UTF-8') : 'Operations Control Plane'; ?></h1>
+                <h1 class="ratib-cp-page-title"><?php echo isset($ratibCpPageHeading) ? htmlspecialchars((string) $ratibCpPageHeading, ENT_QUOTES, 'UTF-8') : 'Dashboard'; ?></h1>
                 <?php if (!empty($ratibCpPageSubheading)): ?>
                     <p class="ratib-cp-page-sub"><?php echo htmlspecialchars((string) $ratibCpPageSubheading, ENT_QUOTES, 'UTF-8'); ?></p>
                 <?php endif; ?>

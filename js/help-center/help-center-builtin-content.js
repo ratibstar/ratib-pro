@@ -20,11 +20,11 @@ window.HELP_CENTER_BUILTIN = {
             title: 'Getting Started – Complete Program Overview',
             overview: 'Full introduction to the RATEB: login, navigation, and how every section works together.',
             content: '<h2>What is the RATEB?</h2><p>RATEB is a complete business management system for managing agents, sub-agents, workers, cases, accounting, HR, reports, and communications. After you log in, the <strong>left sidebar</strong> is your main navigation. Only menu items you have permission to see will appear.</p>' +
-            '<h2>Logging In and Security</h2><p>Go to the login page, enter your <strong>username</strong> and <strong>password</strong>, and sign in. Use <strong>Forgot password</strong> if you need to reset. After login you are taken to the <strong>Operations Control Plane</strong>. For security, do not share your password and log out when leaving a shared computer.</p>' +
-            '<h2>Understanding the Left Menu</h2><p><strong>Operations Control Plane</strong> – Your home screen with key numbers and shortcuts.<br><strong>Agent</strong> – Main partners or clients who bring business or workers.<br><strong>SubAgent</strong> – Sub-partners linked to an agent.<br><strong>Workers</strong> – Register and manage workers, documents, and status.<br><strong>🌍 Partner Agencies</strong> – Overseas partner offices you work with; open an agency row and use <strong>View</strong> to see workers sent and deployment details (country, contract, job, salary, status) in one table.<br><strong>Cases</strong> – Track cases or files and their status.<br><strong>Accounting</strong> – Chart of accounts, transactions, income and expenses.<br><strong>HR</strong> – Employees, attendance, salaries, and HR settings.<br><strong>Reports</strong> – Generate and view reports by category.<br><strong>Contact</strong> – Contact management and communications.<br><strong>Operational Signaling</strong> – System alerts and messages.<br><strong>Help &amp; Learning Center</strong> – This guide; use it anytime.<br><strong>System Settings</strong> – Configuration and user management (admin).</p>' +
+            '<h2>Logging In and Security</h2><p>Go to the login page, enter your <strong>username</strong> and <strong>password</strong>, and sign in. Use <strong>Forgot password</strong> if you need to reset. After login you are taken to the <strong>Dashboard</strong>. For security, do not share your password and log out when leaving a shared computer.</p>' +
+            '<h2>Understanding the Left Menu</h2><p><strong>Dashboard</strong> – Your home screen with key numbers and shortcuts.<br><strong>Agent</strong> – Main partners or clients who bring business or workers.<br><strong>SubAgent</strong> – Sub-partners linked to an agent.<br><strong>Workers</strong> – Register and manage workers, documents, and status.<br><strong>🌍 Partner Agencies</strong> – Overseas partner offices you work with; open an agency row and use <strong>View</strong> to see workers sent and deployment details (country, contract, job, salary, status) in one table.<br><strong>Cases</strong> – Track cases or files and their status.<br><strong>Accounting</strong> – Chart of accounts, transactions, income and expenses.<br><strong>HR</strong> – Employees, attendance, salaries, and HR settings.<br><strong>Reports</strong> – Generate and view reports by category.<br><strong>Contact</strong> – Contact management and communications.<br><strong>Notifications</strong> – System alerts and messages.<br><strong>Help &amp; Learning Center</strong> – This guide; use it anytime.<br><strong>System Settings</strong> – Configuration and user management (admin).</p>' +
             '<h2>How the Sections Work Together</h2><p>Data flows across the program: you link <strong>workers</strong> to an <strong>agent</strong> or <strong>sub-agent</strong>; you link <strong>cases</strong> to workers or clients; <strong>accounting</strong> can track money per agent or case; <strong>reports</strong> pull from all sections. Use each module for its purpose and link records so reports and follow-up are accurate.</p>' +
             '<h2>Program Structure and Data Flow (Deep)</h2><p><strong>Core entities</strong> – <strong>Agents</strong> and <strong>SubAgents</strong> are your partners/clients. <strong>Workers</strong> are employees or labour. <strong>🌍 Partner Agencies</strong> are overseas recruitment partners; each deployment row ties a worker to an agency with contract dates and placement status. <strong>Cases</strong> are files or projects. <strong>HR Employees</strong> are your internal staff. <strong>Contacts</strong> are people you communicate with. <strong>Accounting</strong> tracks money (transactions, invoices, bills, customers, vendors).<br><strong>Linking</strong> – Workers link to Agent/SubAgent. Partner agency rows list workers sent to that office. Cases can link to workers or agents. Accounting transactions can link to agents, cases, or workers. Reports pull from all linked data.<br><strong>Workflow</strong> – Maintain Agents and Partner Agencies. Add Workers linked to agents. Record deployments from Partner Agencies → View when workers are sent abroad. Create Cases if needed. Record Accounting transactions. Use Reports to see summaries. Use Notifications to stay aware of alerts. Use HR for internal employees, attendance, payroll.<br><strong>Documents</strong> – Upload documents in Workers (ID, visa, contract), Cases (file attachments), or HR (employee documents). Keep document status and dates updated.<br><strong>Status</strong> – Every entity has a status (active/inactive, pending/completed, etc.). Use status filters to find what needs action. Update status as things change.</p>' +
-            '<h2>Expert Tips</h2><ul><li>Bookmark the Operations Control Plane for quick access.</li><li>Check Operational Signaling regularly so you do not miss important alerts.</li><li>Use this Help &amp; Learning Center for step-by-step guides on every section.</li><li>If you do not see a menu item, your role may not have permission—contact your administrator.</li></ul>',
+            '<h2>Expert Tips</h2><ul><li>Bookmark the Dashboard for quick access.</li><li>Check Notifications regularly so you do not miss important alerts.</li><li>Use this Help &amp; Learning Center for step-by-step guides on every section.</li><li>If you do not see a menu item, your role may not have permission—contact your administrator.</li></ul>',
             estimated_time: 15,
             difficulty_level: 'beginner',
             views_count: 0,
@@ -140,7 +140,7 @@ window.HELP_CENTER_BUILTIN = {
             '<h3>Step 9: Wait for System to Process</h3>' +
             '<p>Wait for the system to process your login. You may see a loading indicator (spinning circle or progress bar). Do NOT click the button multiple times. This can cause errors or multiple login attempts. Be patient and wait for the response.</p>' +
             '<h3>Step 10: If Login is Successful</h3>' +
-            '<p>If login is successful: You will be automatically redirected to the <strong>Operations Control Plane</strong>. You will see a welcome message or your name at the top. The left sidebar menu will appear. You are now logged in and ready to use the system.</p>' +
+            '<p>If login is successful: You will be automatically redirected to the <strong>Dashboard</strong>. You will see a welcome message or your name at the top. The left sidebar menu will appear. You are now logged in and ready to use the system.</p>' +
             '<h3>Step 11: If Login Fails</h3>' +
             '<p>If login fails: You will see an error message (usually in red). Common messages include: "Invalid username or password" – Check your credentials and try again. "Account is disabled" – Contact your administrator. "Please check your credentials" – Verify username and password are correct. Try again with correct credentials. If you forgot your password, click "Forgot Password?" link and follow the instructions.</p>' +
             '<h2>Expert Tips</h2>' +
@@ -157,20 +157,20 @@ window.HELP_CENTER_BUILTIN = {
             content:
             '<h2>Step 1: Logging In – Complete Process</h2>' +
             '<p><strong>Opening the Program:</strong> Open your web browser (Chrome, Firefox, or Edge recommended). Navigate to your RATEB URL (provided by your administrator). You will see the login page with a username field at the top, a password field below it, a "Login" button, and a "Forgot Password?" link (if available).</p>' +
-            '<p><strong>Entering Credentials:</strong> Type your username in the first field. Type your password in the second field. Make sure Caps Lock is off and your keyboard language is correct. Click the "Login" button. After successful login, you will be automatically redirected to the Operations Control Plane.</p>' +
+            '<p><strong>Entering Credentials:</strong> Type your username in the first field. Type your password in the second field. Make sure Caps Lock is off and your keyboard language is correct. Click the "Login" button. After successful login, you will be automatically redirected to the Dashboard.</p>' +
             '<p><strong>Password Recovery:</strong> If you forget your password, click "Forgot Password?" and follow the instructions sent to your email. If your account is locked or disabled, an administrator must enable it in System Settings.</p>' +
-            '<h2>Step 2: Understanding Your First Screen (Operations Control Plane)</h2>' +
-            '<p>When you first log in, you will see the <strong>Operations Control Plane</strong>. This is your main control center where you can see overview statistics for all modules, quick access cards to different sections, recent activities in the system, and notifications and alerts. The Operations Control Plane shows key numbers at a glance so you can monitor the business without opening every section.</p>' +
+            '<h2>Step 2: Understanding Your First Screen (Dashboard)</h2>' +
+            '<p>When you first log in, you will see the <strong>Dashboard</strong>. This is your main control center where you can see overview statistics for all modules, quick access cards to different sections, recent activities in the system, and notifications and alerts. The Dashboard shows key numbers at a glance so you can monitor the business without opening every section.</p>' +
             '<h2>Understanding the Interface – Complete Breakdown</h2>' +
             '<h3>The Navigation Menu (Left Sidebar)</h3>' +
-            '<p>On the left side of your screen, you will see a vertical menu with icons and text. This is your main navigation. Menu items you may see include: Operations Control Plane (takes you to the main overview page), Agent (manage your agents), SubAgent (manage your subagents), Workers (manage worker profiles and documents), 🌍 Partner Agencies (manage overseas partner offices and open <strong>View</strong> for workers sent / deployment rows), Cases (track and manage cases), Accounting (financial management and transactions), HR (human resources management), Reports (view and generate reports), Contact (manage contacts), Communications (view messages and communications), Operational Signaling (see system alerts), System Settings (system configuration, Admin only), Profile (your user profile), Logout (sign out of the system).</p>' +
+            '<p>On the left side of your screen, you will see a vertical menu with icons and text. This is your main navigation. Menu items you may see include: Dashboard (takes you to the main overview page), Agent (manage your agents), SubAgent (manage your subagents), Workers (manage worker profiles and documents), 🌍 Partner Agencies (manage overseas partner offices and open <strong>View</strong> for workers sent / deployment rows), Cases (track and manage cases), Accounting (financial management and transactions), HR (human resources management), Reports (view and generate reports), Contact (manage contacts), Communications (view messages and communications), Notifications (see system alerts), System Settings (system configuration, Admin only), Profile (your user profile), Logout (sign out of the system).</p>' +
             '<p><strong>Important:</strong> You will only see menu items that you have permission to access. If you do not see a module, ask your administrator for access.</p>' +
             '<h3>The Top Bar</h3>' +
             '<p>At the top of the screen, you will see your name (on the right), a notification bell icon (if you have notifications), and a profile icon (to access your profile). Click the notification bell to see unread alerts. Click your name or profile icon to access profile settings or logout.</p>' +
             '<h2>Color Coding in the System</h2>' +
             '<p>The system uses colors to help you understand status: Green = Active, Approved, Success; Red = Inactive, Rejected, Error; Yellow/Orange = Pending, Warning; Blue = Information, In Progress; Gray = Inactive, Disabled. Learn these colors so you can quickly identify status at a glance.</p>' +
             '<h2>Expert Tips</h2>' +
-            '<ul><li>Bookmark the Operations Control Plane for quick access.</li><li>Check Operational Signaling regularly so you do not miss important alerts.</li><li>If you do not see a menu item, your role may not have permission—contact your administrator.</li><li>Use the Help &amp; Learning Center (this section) for step-by-step guides on every section.</li></ul>',
+            '<ul><li>Bookmark the Dashboard for quick access.</li><li>Check Notifications regularly so you do not miss important alerts.</li><li>If you do not see a menu item, your role may not have permission—contact your administrator.</li><li>Use the Help &amp; Learning Center (this section) for step-by-step guides on every section.</li></ul>',
             estimated_time: 12,
             difficulty_level: 'beginner',
             views_count: 0,
@@ -180,7 +180,7 @@ window.HELP_CENTER_BUILTIN = {
             id: 'builtin-1-3',
             title: 'Quick Start Checklist',
             overview: 'A short checklist to get going in the program.',
-            content: '<h2>First-Time Checklist</h2><ol><li>Log in with your credentials.</li><li>Open the Operations Control Plane and note the main stats and links.</li><li>Use the left menu to open Agent, Workers, or Accounting and explore the list and add forms.</li><li>Bookmark the Help &amp; Learning Center and open a category to read a full guide.</li><li>Check Operational Signaling for any pending alerts.</li></ol><h2>Expert Tip</h2><p>Spend a few minutes each day in one section (e.g. Workers or Reports) to build familiarity.</p>',
+            content: '<h2>First-Time Checklist</h2><ol><li>Log in with your credentials.</li><li>Open the Dashboard and note the main stats and links.</li><li>Use the left menu to open Agent, Workers, or Accounting and explore the list and add forms.</li><li>Bookmark the Help &amp; Learning Center and open a category to read a full guide.</li><li>Check Notifications for any pending alerts.</li></ol><h2>Expert Tip</h2><p>Spend a few minutes each day in one section (e.g. Workers or Reports) to build familiarity.</p>',
             estimated_time: 5,
             difficulty_level: 'beginner',
             views_count: 0,
@@ -192,7 +192,7 @@ window.HELP_CENTER_BUILTIN = {
             overview: 'Detailed explanation of every menu item in the left sidebar: what each page does, when to use it, and how it connects to other sections.',
             content:
             '<h2>Left Sidebar Navigation – Complete Breakdown</h2><p>The <strong>left sidebar</strong> is your main navigation in the RATEB. It appears on every page and shows menu items based on your <strong>permissions</strong>. If you do not see a menu item, your role does not have permission to access it. Contact your administrator to have permissions added.</p>' +
-            '<h2>Operations Control Plane Menu Item</h2><p><strong>What it is</strong> – The Operations Control Plane is your home screen showing key statistics and shortcuts.<br><strong>When to use</strong> – Use it daily to monitor totals (agents, workers, cases, HR, accounting) and spot trends. Click stat cards to go to detailed sections.<br><strong>What you see</strong> – Stat cards (Agents total/active/inactive, Workers total/active/inactive, Cases by status, HR employees, Accounting invoices/bills/transactions, Reports activity, Contact counts, Visa counts, Notifications new/total), charts showing trends, recent activity list, last login time.<br><strong>Buttons and actions</strong> – Click any stat card to open that section. Use refresh (F5) to update numbers. Charts may have date range filters.<br><strong>How it connects</strong> – Operations Control Plane pulls data from all sections (Agents, Workers, Cases, HR, Accounting) and shows summaries. Click through to detailed pages.</p>' +
+            '<h2>Dashboard Menu Item</h2><p><strong>What it is</strong> – The Dashboard is your home screen showing key statistics and shortcuts.<br><strong>When to use</strong> – Use it daily to monitor totals (agents, workers, cases, HR, accounting) and spot trends. Click stat cards to go to detailed sections.<br><strong>What you see</strong> – Stat cards (Agents total/active/inactive, Workers total/active/inactive, Cases by status, HR employees, Accounting invoices/bills/transactions, Reports activity, Contact counts, Visa counts, Notifications new/total), charts showing trends, recent activity list, last login time.<br><strong>Buttons and actions</strong> – Click any stat card to open that section. Use refresh (F5) to update numbers. Charts may have date range filters.<br><strong>How it connects</strong> – Dashboard pulls data from all sections (Agents, Workers, Cases, HR, Accounting) and shows summaries. Click through to detailed pages.</p>' +
             '<h2>Agent Menu Item</h2><p><strong>What it is</strong> – Page to manage agents (main partners/clients).<br><strong>When to use</strong> – Add a new agent, edit agent details, view agent list, search or filter agents, link workers to agents.<br><strong>What you see</strong> – Table of agents (columns: name, contact, phone, email, address, status, code), search box, filter dropdowns (by status), pagination controls, Add Agent button, View/Edit/Delete buttons per row.<br><strong>Buttons and actions</strong> – <strong>Add Agent</strong> opens form to create new agent. <strong>Search</strong> filters table by name or contact. <strong>Filter</strong> shows only active/inactive agents. <strong>View</strong> opens agent in read-only mode. <strong>Edit</strong> opens form to change agent details. <strong>Delete</strong> removes agent (with confirmation). <strong>Export</strong> downloads agent list to Excel/CSV.<br><strong>How it connects</strong> – Agents link to Workers (each worker belongs to an agent), Cases (cases can link to agents), Accounting (transactions can link to agents), Reports (reports by agent).</p>' +
             '<h2>SubAgent Menu Item</h2><p><strong>What it is</strong> – Page to manage sub-agents (sub-partners linked to an agent).<br><strong>When to use</strong> – Add a sub-agent under an agent, edit sub-agent details, view sub-agent list, filter by parent agent.<br><strong>What you see</strong> – Table of sub-agents (columns: name, parent agent, contact, phone, email, address, status), search box, filters (by agent, by status), Add SubAgent button, View/Edit/Delete per row.<br><strong>Buttons and actions</strong> – <strong>Add SubAgent</strong> opens form; you must select parent Agent first, then fill name, contact, phone, email, address, status. <strong>Search</strong> finds by name. <strong>Filter by Agent</strong> shows sub-agents for one agent. <strong>Filter by Status</strong> shows active/inactive. <strong>Edit</strong> changes sub-agent details or parent agent link. <strong>Delete</strong> removes sub-agent.<br><strong>How it connects</strong> – SubAgents link to parent Agent (required), Workers (workers can link to sub-agent), Cases, Accounting, Reports.</p>' +
             '<h2>Workers Menu Item</h2><p><strong>What it is</strong> – Page to register and manage workers (employees or labour).<br><strong>When to use</strong> – Add a new worker, edit worker details, upload documents (ID, visa, passport, contract), update worker status, filter by status/agent/nationality, search by name or ID.<br><strong>What you see</strong> – Table of workers (columns: name, status, agent, subagent, nationality, ID number, passport, visa number, dates, etc.), search box, filter dropdowns (status, agent, nationality, date range), Add Worker button, View/Edit/Delete per row, Export button, Bulk actions (if checkboxes enabled).<br><strong>Buttons and actions</strong> – <strong>Add Worker</strong> opens form with many fields (name, identity number, passport, nationality, agent, subagent, contact, address, visa, police, medical, ticket numbers and dates, status, job title, emergency contact). <strong>Search</strong> finds by name, ID, passport, email. <strong>Filter by Status</strong> shows pending/active/inactive/suspended/completed. <strong>Filter by Agent</strong> shows workers for one agent. <strong>Edit</strong> opens worker form to change any field or upload documents. <strong>Documents</strong> section in worker record lets you upload files (ID, passport, visa, contract, police, medical) and set document status. <strong>Musaned Status</strong> fields track external system status if integrated. <strong>Export</strong> downloads worker list.<br><strong>How it connects</strong> – Workers link to Agent/SubAgent (required), Cases (cases can link to workers), Accounting (transactions can link to workers), Reports (worker reports by status, agent, nationality).</p>' +
@@ -201,10 +201,10 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>HR Menu Item</h2><p><strong>What it is</strong> – Human Resources: employees, attendance, salaries, advances, documents, cars.<br><strong>When to use</strong> – Manage internal employees, mark attendance, process payroll, track advances, manage employee documents, assign company cars.<br><strong>What you see</strong> – HR dashboard with stat cards (total employees, active, inactive, terminated, today attendance, pending salaries), module cards: <strong>Employees</strong> (employee list table with name, email, department, status, employee ID), <strong>Attendance</strong> (attendance records with date, employee, check-in, check-out, hours), <strong>Salaries</strong> (salary records with employee, amount, period, status), <strong>Advances</strong> (advance payments with employee, amount, date, status), <strong>Documents</strong> (employee document uploads), <strong>Cars</strong> (company car assignments).<br><strong>Buttons and actions</strong> – <strong>Add Employee</strong> opens form (name, email, department, position, employee ID, status, hire date). <strong>Mark Attendance</strong> records check-in/check-out for employees. <strong>Process Salaries</strong> generates payroll for period. <strong>Add Advance</strong> records advance payment. <strong>Upload Document</strong> attaches file to employee. <strong>Assign Car</strong> links car to employee. <strong>View</strong> opens employee record. <strong>Edit</strong> updates employee details. <strong>Filter</strong> by department, status, date range.<br><strong>How it connects</strong> – HR is separate from Workers (Workers are external labour; HR Employees are internal staff). HR data appears in Reports (attendance reports, payroll reports).</p>' +
             '<h2>Reports Menu Item</h2><p><strong>What it is</strong> – Generate reports and analytics from all sections.<br><strong>When to use</strong> – Create agent reports, worker reports, case reports, HR reports, financial reports, activity logs, export data for management or compliance.<br><strong>What you see</strong> – Report categories or list: <strong>Agent Reports</strong> (agent summary, counts, activity by agent), <strong>Worker Reports</strong> (worker list by status, agent, nationality, dates, document status), <strong>Case Reports</strong> (cases by status, date, agent, worker), <strong>HR Reports</strong> (employees, attendance, payroll, advances), <strong>Financial Reports</strong> (profit/loss, balance sheet, trial balance, by date range), <strong>Individual Reports</strong> (per-entity reports), <strong>Activity Logs</strong> (system history: who changed what and when).<br><strong>Buttons and actions</strong> – <strong>Select Report Type</strong> chooses report category. <strong>Set Filters</strong> (date range, agent, status, department, etc.) narrows results. <strong>Run Report</strong> generates and displays report (table or chart). <strong>Export</strong> downloads to Excel/CSV/PDF. <strong>Print</strong> prints report. <strong>Save Settings</strong> (if available) saves filter preferences for reuse.<br><strong>How it connects</strong> – Reports pull data from Agents, Workers, Cases, HR, Accounting, and show summaries, trends, or detailed lists based on filters.</p>' +
             '<h2>Contact Menu Item</h2><p><strong>What it is</strong> – Contact management: people you communicate with (not agents or workers, but other contacts).<br><strong>When to use</strong> – Add a contact, edit contact details, view contact list, link contacts to communications.<br><strong>What you see</strong> – Table of contacts (columns: name, email, phone, company, type, status), search box, filters (by type, by status), Add Contact button, View/Edit/Delete per row.<br><strong>Buttons and actions</strong> – <strong>Add Contact</strong> opens form (name, email, phone, company, address, type, status, notes). <strong>Search</strong> finds by name, email, phone. <strong>Filter</strong> by type or status. <strong>Edit</strong> updates contact details. <strong>Delete</strong> removes contact.<br><strong>How it connects</strong> – Contacts link to Communications (each communication links to a contact), Reports (contact activity reports).</p>' +
-            '<h2>Operational Signaling Menu Item</h2><p><strong>What it is</strong> – System alerts and messages (new case, payment received, document expiring, etc.).<br><strong>When to use</strong> – Read notifications, mark as read, open related records to take action, adjust notification settings.<br><strong>What you see</strong> – List of notifications (columns: title, message, date/time, read/unread status, related record link), Mark as read button, Mark all as read button, notification count badge in header.<br><strong>Buttons and actions</strong> – <strong>Click notification</strong> opens related record (case, worker, payment, etc.) or shows notification detail. <strong>Mark as read</strong> clears unread status. <strong>Mark all as read</strong> clears all unread. <strong>Settings</strong> (if available) lets you choose which events generate notifications and delivery method (in-app, email).<br><strong>How it connects</strong> – Notifications come from all sections (new worker added, case status changed, payment received, document expiring, etc.). Click notification to go to that record.</p>' +
-            '<h2>Help & Learning Center Menu Item</h2><p><strong>What it is</strong> – This guide system: tutorials, step-by-step guides, FAQs.<br><strong>When to use</strong> – Learn how to use any section, find answers to questions, get training materials.<br><strong>What you see</strong> – Categories sidebar (Getting Started, Operations Control Plane, User Management, Contracts, Client Management, Worker Management, Finance, Reports, Notifications, Troubleshooting, Best Practices, Compliance), tutorial list or grid view, search bar, tutorial detail view with content and rating.<br><strong>Buttons and actions</strong> – <strong>Click category</strong> shows tutorials in that category. <strong>Click tutorial</strong> opens detailed guide. <strong>Search</strong> finds tutorials by keyword. <strong>Rate tutorial</strong> (stars) provides feedback. <strong>Grid/List toggle</strong> changes view style.<br><strong>How it connects</strong> – Help Center explains how to use all other sections (Dashboard, Agents, Workers, Accounting, HR, Reports, etc.).</p>' +
+            '<h2>Notifications Menu Item</h2><p><strong>What it is</strong> – System alerts and messages (new case, payment received, document expiring, etc.).<br><strong>When to use</strong> – Read notifications, mark as read, open related records to take action, adjust notification settings.<br><strong>What you see</strong> – List of notifications (columns: title, message, date/time, read/unread status, related record link), Mark as read button, Mark all as read button, notification count badge in header.<br><strong>Buttons and actions</strong> – <strong>Click notification</strong> opens related record (case, worker, payment, etc.) or shows notification detail. <strong>Mark as read</strong> clears unread status. <strong>Mark all as read</strong> clears all unread. <strong>Settings</strong> (if available) lets you choose which events generate notifications and delivery method (in-app, email).<br><strong>How it connects</strong> – Notifications come from all sections (new worker added, case status changed, payment received, document expiring, etc.). Click notification to go to that record.</p>' +
+            '<h2>Help & Learning Center Menu Item</h2><p><strong>What it is</strong> – This guide system: tutorials, step-by-step guides, FAQs.<br><strong>When to use</strong> – Learn how to use any section, find answers to questions, get training materials.<br><strong>What you see</strong> – Categories sidebar (Getting Started, Dashboard, User Management, Contracts, Client Management, Worker Management, Finance, Reports, Notifications, Troubleshooting, Best Practices, Compliance), tutorial list or grid view, search bar, tutorial detail view with content and rating.<br><strong>Buttons and actions</strong> – <strong>Click category</strong> shows tutorials in that category. <strong>Click tutorial</strong> opens detailed guide. <strong>Search</strong> finds tutorials by keyword. <strong>Rate tutorial</strong> (stars) provides feedback. <strong>Grid/List toggle</strong> changes view style.<br><strong>How it connects</strong> – Help Center explains how to use all other sections (Dashboard, Agents, Workers, Accounting, HR, Reports, etc.).</p>' +
             '<h2>System Settings Menu Item</h2><p><strong>What it is</strong> – Configuration and user management (admin only).<br><strong>When to use</strong> – Add users, manage roles and permissions, configure system settings, view system logs.<br><strong>What you see</strong> – Users list (table with username, name, email, role, status), Roles list (table with role name, permissions count), Permissions matrix (per role: checkboxes for each permission), Add User button, Add Role button, Edit buttons, Delete buttons, Settings tabs (general, email, backup, etc.).<br><strong>Buttons and actions</strong> – <strong>Add User</strong> opens form (username, password, name, email, role selection). <strong>Add Role</strong> creates new role. <strong>Edit Role</strong> opens permissions matrix; enable/disable permissions (view_dashboard, view_agents, add_agents, edit_agents, delete_agents, view_workers, add_workers, edit_workers, delete_workers, view_cases, view_accounting, manage_accounting, view_hr_dashboard, manage_hr, view_reports, view_contact, manage_communications, manage_settings, etc.). <strong>Save</strong> applies changes. <strong>Delete User/Role</strong> removes (with confirmation).<br><strong>How it connects</strong> – System Settings controls access to all other sections. Permissions determine what menus and buttons users see.</p>' +
-            '<h2>Expert Tips</h2><ul><li>Bookmark frequently used pages (Operations Control Plane, Workers, Accounting) for quick access.</li><li>Use the left menu to navigate; it is always visible.</li><li>If a menu item is missing, your role does not have permission—contact administrator.</li><li>Use Help & Learning Center to learn any section in detail.</li></ul>',
+            '<h2>Expert Tips</h2><ul><li>Bookmark frequently used pages (Dashboard, Workers, Accounting) for quick access.</li><li>Use the left menu to navigate; it is always visible.</li><li>If a menu item is missing, your role does not have permission—contact administrator.</li><li>Use Help & Learning Center to learn any section in detail.</li></ul>',
             estimated_time: 45,
             difficulty_level: 'beginner',
             views_count: 0
@@ -213,25 +213,25 @@ window.HELP_CENTER_BUILTIN = {
     2: [
         {
             id: 'builtin-2-0',
-            title: 'Operations Control Plane – Your Home Base – Complete Guide',
-            overview: 'Complete guide to the Operations Control Plane: understanding dashboard cards, statistics, recent activities, and how to use it as your main control center.',
+            title: 'Dashboard – Your Home Base – Complete Guide',
+            overview: 'Complete guide to the Dashboard: understanding dashboard cards, statistics, recent activities, and how to use it as your main control center.',
             content:
-            '<h2>What is the Operations Control Plane?</h2>' +
-            '<p>The Operations Control Plane is your <strong>main overview page</strong>. It shows you a quick summary of everything in the system. When you first log in, you will be automatically redirected to the Operations Control Plane. This is your home base and control center.</p>' +
-            '<h2>Understanding Operations Control Plane Cards – Complete Breakdown</h2>' +
-            '<p>The Operations Control Plane displays <strong>cards</strong> for each module. Each card shows:</p>' +
+            '<h2>What is the Dashboard?</h2>' +
+            '<p>The Dashboard is your <strong>main overview page</strong>. It shows you a quick summary of everything in the system. When you first log in, you will be automatically redirected to the Dashboard. This is your home base and control center.</p>' +
+            '<h2>Understanding Dashboard Cards – Complete Breakdown</h2>' +
+            '<p>The Dashboard displays <strong>cards</strong> for each module. Each card shows:</p>' +
             '<ol><li><strong>Module Name</strong> (e.g., "Agents", "Workers", "Cases", "Accounting", "HR", "Reports", "Contact", "Notifications") – The name of the module.</li>' +
             '<li><strong>Statistics:</strong> Total count (total number of records in that module), Active count (number of active records), Inactive count (number of inactive records), Status indicator (visual indicator showing overall status).</li>' +
             '<li><strong>Icon</strong> – Visual icon representing the module (🔧 for Workers, 👥 for Agents, 💰 for Accounting, etc.).</li></ol>' +
-            '<h2>How to Use Operations Control Plane Cards</h2>' +
+            '<h2>How to Use Dashboard Cards</h2>' +
             '<ol><li><strong>Click any card</strong> to go directly to that module. Clicking a card is the fastest way to navigate to a section.</li>' +
-            '<li><strong>View statistics</strong> at a glance without opening the module. You can see totals, active counts, and inactive counts without leaving the Operations Control Plane.</li>' +
+            '<li><strong>View statistics</strong> at a glance without opening the module. You can see totals, active counts, and inactive counts without leaving the Dashboard.</li>' +
             '<li><strong>See status indicators</strong> – Green = active/good, Red = inactive/needs attention. Color coding helps you quickly identify which modules need attention.</li></ol>' +
             '<h2>Example: Workers Card</h2>' +
             '<p>The Workers card shows:</p>' +
             '<pre style="background:#f5f5f5; padding:15px; border:1px solid #ddd; border-radius:5px;">┌─────────────────────┐\n│   🔧 Workers        │\n│                     │\n│   Total: 150        │\n│   Active: 120       │\n│   Inactive: 30     │\n│   Status: 🟢 Active │\n└─────────────────────┘</pre>' +
             '<p><strong>Click this card</strong> → Takes you to the Workers page where you can manage all workers.</p>' +
-            '<h2>Understanding Each Operations Control Plane Card</h2>' +
+            '<h2>Understanding Each Dashboard Card</h2>' +
             '<h3>Agents Card</h3>' +
             '<p>Shows: Total Agents (all agents in system), Active Agents (currently active), Inactive Agents (disabled or inactive), Status indicator. Click to go to Agents page.</p>' +
             '<h3>SubAgents Card</h3>' +
@@ -258,30 +258,30 @@ window.HELP_CENTER_BUILTIN = {
             '<li><strong>Related record</strong> – Link to the record that was affected (click to view details).</li></ul>' +
             '<p>This helps you track what is happening in the system. Recent activities show the latest actions across all modules.</p>' +
             '<h2>Charts and Visualizations</h2>' +
-            '<p>Some Operations control planes may show charts:</p>' +
+            '<p>Some dashboards may show charts:</p>' +
             '<ul><li><strong>Trend charts</strong> – Show trends over time (e.g. workers added per month, revenue over time).</li>' +
             '<li><strong>Pie charts</strong> – Show distribution (e.g. workers by status, cases by priority).</li>' +
             '<li><strong>Bar charts</strong> – Show comparisons (e.g. agents by worker count, departments by employee count).</li></ul>' +
             '<p>Charts help you visualize data and spot trends quickly.</p>' +
             '<h2>Quick Actions</h2>' +
-            '<p>The Operations Control Plane may have quick action buttons:</p>' +
+            '<p>The Dashboard may have quick action buttons:</p>' +
             '<ul><li><strong>Add Worker</strong> – Quick button to add a new worker.</li>' +
             '<li><strong>Add Agent</strong> – Quick button to add a new agent.</li>' +
             '<li><strong>Create Invoice</strong> – Quick button to create an invoice.</li>' +
             '<li><strong>Generate Report</strong> – Quick button to generate a report.</li></ul>' +
             '<p>Quick actions let you perform common tasks without navigating to the module first.</p>' +
-            '<h2>Using Operations Control Plane for Daily Monitoring</h2>' +
-            '<p><strong>Start your day:</strong> Open Operations Control Plane to see overnight activity and current status.</p>' +
+            '<h2>Using Dashboard for Daily Monitoring</h2>' +
+            '<p><strong>Start your day:</strong> Open Dashboard to see overnight activity and current status.</p>' +
             '<p><strong>Monitor key numbers:</strong> Check stat cards to see if totals changed significantly.</p>' +
             '<p><strong>Review recent activities:</strong> See what happened recently to stay informed.</p>' +
             '<p><strong>Click through to details:</strong> Click any card to drill down into that module.</p>' +
             '<p><strong>Use quick actions:</strong> Use quick action buttons for common tasks.</p>' +
             '<h2>Expert Tips</h2>' +
-            '<ul><li>Bookmark the Operations Control Plane for quick access – it\'s your home base.</li>' +
-            '<li>Check operations control plane daily to monitor system activity.</li>' +
+            '<ul><li>Bookmark the Dashboard for quick access – it\'s your home base.</li>' +
+            '<li>Check dashboard daily to monitor system activity.</li>' +
             '<li>Click stat cards to navigate quickly to modules.</li>' +
             '<li>Review recent activities to stay aware of what\'s happening.</li>' +
-            '<li>Use the Operations Control Plane as your starting point for your daily work.</li></ul>',
+            '<li>Use the Dashboard as your starting point for your daily work.</li></ul>',
             estimated_time: 25,
             difficulty_level: 'beginner',
             views_count: 0,
@@ -289,28 +289,28 @@ window.HELP_CENTER_BUILTIN = {
         },
         {
             id: 'builtin-2-1',
-            title: 'Operations Control Plane – Detailed Step-by-Step Navigation Guide',
-            overview: 'Extremely detailed, step-by-step instructions for navigating the Operations Control Plane: identifying menu items, understanding cards, opening modules, and returning to the Operations Control Plane.',
+            title: 'Dashboard – Detailed Step-by-Step Navigation Guide',
+            overview: 'Extremely detailed, step-by-step instructions for navigating the Dashboard: identifying menu items, understanding cards, opening modules, and returning to the Dashboard.',
             content:
-            '<h2>Task: Navigating the Operations Control Plane</h2>' +
+            '<h2>Task: Navigating the Dashboard</h2>' +
             '<h3>Step 1: After Login</h3>' +
-            '<p>After logging in, you will automatically see the <strong>Operations Control Plane</strong>. The Operations Control Plane is your main overview page. It shows statistics for all modules.</p>' +
+            '<p>After logging in, you will automatically see the <strong>Dashboard</strong>. The Dashboard is your main overview page. It shows statistics for all modules.</p>' +
             '<h3>Step 2: Look at Left Side</h3>' +
             '<p>Look at the <strong>left side</strong> of your screen. You will see a vertical menu (sidebar). This menu contains all available modules. Each menu item has an icon and text.</p>' +
             '<h3>Step 3: Identify Menu Items</h3>' +
-            '<p>Identify the menu items: <strong>Operations Control Plane</strong> (🏠 icon) – You are here. <strong>Agent</strong> (👥 icon) – Manage agents. <strong>SubAgent</strong> (👤 icon) – Manage subagents. <strong>Workers</strong> (🔧 icon) – Manage workers. <strong>Cases</strong> (📋 icon) – Manage cases. <strong>Accounting</strong> (💰 icon) – Financial management. <strong>HR</strong> (👔 icon) – Human resources. <strong>Reports</strong> (📊 icon) – View reports. <strong>Contact</strong> (📞 icon) – Manage contacts. <strong>Operational Signaling</strong> (🔔 icon) – See alerts. <strong>Help &amp; Learning Center</strong> (📚 icon) – Get help. <strong>Logout</strong> (🚪 icon) – Sign out.</p>' +
+            '<p>Identify the menu items: <strong>Dashboard</strong> (🏠 icon) – You are here. <strong>Agent</strong> (👥 icon) – Manage agents. <strong>SubAgent</strong> (👤 icon) – Manage subagents. <strong>Workers</strong> (🔧 icon) – Manage workers. <strong>Cases</strong> (📋 icon) – Manage cases. <strong>Accounting</strong> (💰 icon) – Financial management. <strong>HR</strong> (👔 icon) – Human resources. <strong>Reports</strong> (📊 icon) – View reports. <strong>Contact</strong> (📞 icon) – Manage contacts. <strong>Notifications</strong> (🔔 icon) – See alerts. <strong>Help &amp; Learning Center</strong> (📚 icon) – Get help. <strong>Logout</strong> (🚪 icon) – Sign out.</p>' +
             '<h3>Step 4: Look at Center/Main Area</h3>' +
-            '<p>Look at the <strong>center/main area</strong> of the Operations Control Plane. You will see <strong>cards</strong> (boxes) for each module. Each card shows: Module name (e.g., "Agents", "Workers"), Statistics (Total, Active, Inactive counts), Status indicator (colored dot or text).</p>' +
+            '<p>Look at the <strong>center/main area</strong> of the Dashboard. You will see <strong>cards</strong> (boxes) for each module. Each card shows: Module name (e.g., "Agents", "Workers"), Statistics (Total, Active, Inactive counts), Status indicator (colored dot or text).</p>' +
             '<h3>Step 5: Understanding Statistics Cards</h3>' +
             '<p>Understanding the statistics cards: <strong>Total</strong> – Total number of records. <strong>Active</strong> – Number of active records (usually green). <strong>Inactive</strong> – Number of inactive records (usually red or gray).</p>' +
             '<h3>Step 6: To Open a Module</h3>' +
             '<p>To open a module: <strong>Click</strong> on any card (box) with your mouse. OR click the corresponding menu item in the left sidebar. The page will change to show that module\'s content.</p>' +
             '<h3>Step 7: Look at Top Right</h3>' +
             '<p>Look at the <strong>top right</strong> of the screen. You will see your name (if displayed). You may see a notification bell icon (🔔). You may see a profile icon (👤).</p>' +
-            '<h3>Step 8: To Return to the Operations Control Plane</h3>' +
-            '<p>To return to the Operations Control Plane: Click <strong>"Operations Control Plane"</strong> in the left menu. OR click the Operations Control Plane card. OR click the logo/company name at the top left.</p>' +
+            '<h3>Step 8: To Return to the Dashboard</h3>' +
+            '<p>To return to the Dashboard: Click <strong>"Dashboard"</strong> in the left menu. OR click the Dashboard card. OR click the logo/company name at the top left.</p>' +
             '<h2>Expert Tips</h2>' +
-            '<ul><li>Use operations control plane cards for quick navigation.</li><li>Check statistics regularly to monitor system activity.</li><li>Click cards instead of menu items for faster access.</li></ul>',
+            '<ul><li>Use dashboard cards for quick navigation.</li><li>Check statistics regularly to monitor system activity.</li><li>Click cards instead of menu items for faster access.</li></ul>',
             estimated_time: 10,
             difficulty_level: 'beginner',
             views_count: 0,
@@ -318,10 +318,10 @@ window.HELP_CENTER_BUILTIN = {
         },
         {
             id: 'builtin-2-2',
-            title: 'Operations Control Plane – Complete Deep Guide',
-            overview: 'Every element on the Operations Control Plane explained: stat cards, numbers, charts, and how to use them for daily oversight.',
+            title: 'Dashboard – Complete Deep Guide',
+            overview: 'Every element on the Dashboard explained: stat cards, numbers, charts, and how to use them for daily oversight.',
             content:
-            '<h2>What the Operations Control Plane Is</h2><p>The Operations Control Plane is your <strong>home screen</strong> after login. It shows key numbers and shortcuts so you can monitor the business at a glance without opening every section. What you see depends on your <strong>permissions</strong>—some cards or links may be hidden if your role does not have access.</p>' +
+            '<h2>What the Dashboard Is</h2><p>The Dashboard is your <strong>home screen</strong> after login. It shows key numbers and shortcuts so you can monitor the business at a glance without opening every section. What you see depends on your <strong>permissions</strong>—some cards or links may be hidden if your role does not have access.</p>' +
             '<h2>Stat Cards – What Each Number Means</h2>' +
             '<h3>Agents</h3><p><strong>Total</strong> – Total number of agents (main partners) in the system.<br><strong>Active</strong> – Agents with status Active; these are your current partners.<br><strong>Inactive</strong> – Agents marked Inactive (e.g. no longer working with you). Click the card or a link to open the <strong>Agent</strong> page and see the full table.</p>' +
             '<h3>SubAgents</h3><p><strong>Total / Active / Inactive</strong> – Same idea as Agents but for sub-agents (sub-partners linked to an agent). Use the <strong>SubAgent</strong> page to manage them.</p>' +
@@ -332,11 +332,11 @@ window.HELP_CENTER_BUILTIN = {
             '<h3>Reports / Activity</h3><p>May show <strong>total</strong> activity or log entries, <strong>today</strong> count, and <strong>this month</strong> count. These reflect system usage and history. Use the <strong>Reports</strong> section for real report types (agent, worker, financial, etc.).</p>' +
             '<h3>Contact</h3><p><strong>Total / Active / Inactive</strong> – Contacts in the Contact module. Open <strong>Contact</strong> or <strong>Communications</strong> to manage.</p>' +
             '<h3>Visa</h3><p>If shown: visa-related counts (e.g. total, active, inactive). Use the <strong>Visa</strong> page for visa applications and status.</p>' +
-            '<h3>Operational Signaling</h3><p><strong>New / Total</strong> – Unread and total notifications. Click to open <strong>Operational Signaling</strong> and read or act on alerts.</p>' +
-            '<h2>Charts and Graphs</h2><p>If the Operations Control Plane has <strong>charts</strong>, they usually show trends over time (e.g. workers added per month, revenue, activity). Use them to spot patterns. Hover or click for details if the chart supports it. Date range or filters may be available above the chart.</p>' +
+            '<h3>Notifications</h3><p><strong>New / Total</strong> – Unread and total notifications. Click to open <strong>Notifications</strong> and read or act on alerts.</p>' +
+            '<h2>Charts and Graphs</h2><p>If the Dashboard has <strong>charts</strong>, they usually show trends over time (e.g. workers added per month, revenue, activity). Use them to spot patterns. Hover or click for details if the chart supports it. Date range or filters may be available above the chart.</p>' +
             '<h2>Recent Activity / Last Login</h2><p>You may see <strong>Recent Activity</strong> (latest actions in the system) and <strong>Last Login</strong> (when you or the system last logged in). This helps you stay aware of recent changes.</p>' +
-            '<h2>How to Use the Operations Control Plane Day to Day</h2><ol><li>Open the program; you land on the Operations Control Plane (or click <strong>Operations Control Plane</strong> in the left menu).</li><li>Scan the stat cards: note totals and active/inactive splits for Agents, Workers, Cases, HR, Accounting.</li><li>Click a card or its link to go to that section when you need to add, edit, or review records.</li><li>Check Operational Signaling count; open Notifications to read and act on alerts.</li><li>Use charts to see trends; use Reports for detailed analysis.</li><li>Refresh the page (F5) to get the latest numbers.</li></ol>' +
-            '<h2>Expert Tips</h2><ul><li>Refresh the Operations Control Plane when you need up-to-date figures.</li><li>If a stat card is missing, your role may not have permission to that section—contact your administrator.</li><li>Use the Operations Control Plane for a quick overview; use each section (Workers, Accounting, etc.) for detailed work and data entry.</li></ul>',
+            '<h2>How to Use the Dashboard Day to Day</h2><ol><li>Open the program; you land on the Dashboard (or click <strong>Dashboard</strong> in the left menu).</li><li>Scan the stat cards: note totals and active/inactive splits for Agents, Workers, Cases, HR, Accounting.</li><li>Click a card or its link to go to that section when you need to add, edit, or review records.</li><li>Check Notifications count; open Notifications to read and act on alerts.</li><li>Use charts to see trends; use Reports for detailed analysis.</li><li>Refresh the page (F5) to get the latest numbers.</li></ol>' +
+            '<h2>Expert Tips</h2><ul><li>Refresh the Dashboard when you need up-to-date figures.</li><li>If a stat card is missing, your role may not have permission to that section—contact your administrator.</li><li>Use the Dashboard for a quick overview; use each section (Workers, Accounting, etc.) for detailed work and data entry.</li></ul>',
             estimated_time: 25,
             difficulty_level: 'beginner',
             views_count: 0
@@ -354,7 +354,7 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>Adding a New User (Step by Step)</h2><ol><li>Open <strong>System Settings</strong>.</li><li>Go to the Users section and click <strong>Add User</strong> (or similar).</li><li>In the form, enter <strong>username</strong> (required, unique) and <strong>password</strong> (required).</li><li>Enter name and email if the form has them.</li><li>Select the <strong>role</strong> for this user (e.g. Admin, Manager). The role determines all permissions.</li><li>Click <strong>Save</strong>. The user can now log in and will see only the menus and actions allowed by that role.</li></ol>' +
             '<h2>Editing a User</h2><p>Open the user from the list (Edit). You can change password, name, email, or <strong>role</strong>. Changing the role immediately changes what the user can see and do. Save to apply.</p>' +
             '<h2>Managing Roles and Permissions</h2><p>Open the Roles (or Permissions) section. Select a role. You will see a list of permissions (e.g. view_dashboard, view_agents, add_agents, edit_agents, delete_agents, view_workers, edit_workers, view_hr_dashboard, manage_hr, view_reports, manage_settings). Enable (tick) or disable (untick) each permission for that role. Save. All users with that role get the updated permissions.</p>' +
-            '<h2>Common Permissions (What They Control)</h2><p><strong>view_dashboard</strong> – Can see the Operations Control Plane.<br><strong>view_agents / add_agents / edit_agents / delete_agents</strong> – Agent page access and actions.<br><strong>view_subagents</strong> (or similar) – SubAgent page.<br><strong>view_workers / add_workers / edit_workers / delete_workers</strong> – Workers section.<br><strong>view_cases</strong> – Cases.<br><strong>view_accounting / manage_accounting</strong> – Accounting.<br><strong>view_hr_dashboard / manage_hr</strong> – HR module.<br><strong>view_reports</strong> – Reports.<br><strong>view_contact / manage_communications</strong> – Contact and Communications.<br><strong>manage_settings</strong> – System Settings (users, roles, permissions).</p>' +
+            '<h2>Common Permissions (What They Control)</h2><p><strong>view_dashboard</strong> – Can see the Dashboard.<br><strong>view_agents / add_agents / edit_agents / delete_agents</strong> – Agent page access and actions.<br><strong>view_subagents</strong> (or similar) – SubAgent page.<br><strong>view_workers / add_workers / edit_workers / delete_workers</strong> – Workers section.<br><strong>view_cases</strong> – Cases.<br><strong>view_accounting / manage_accounting</strong> – Accounting.<br><strong>view_hr_dashboard / manage_hr</strong> – HR module.<br><strong>view_reports</strong> – Reports.<br><strong>view_contact / manage_communications</strong> – Contact and Communications.<br><strong>manage_settings</strong> – System Settings (users, roles, permissions).</p>' +
             '<h2>Why a Menu or Button Is Missing</h2><p>If a user does not see a menu item or a button (e.g. Add Worker, Export), their <strong>role</strong> does not have the corresponding permission. The administrator must edit the role in System Settings and enable that permission, then the user will see it after refresh or next login.</p>' +
             '<h2>Expert Tips</h2><ul><li>Give each role only the permissions it needs (least privilege).</li><li>Review roles when job duties change.</li><li>Keep the number of full-admin users small; use separate roles for HR, Accounting, etc.</li><li>Use strong passwords and do not share accounts.</li></ul>',
             estimated_time: 22,
@@ -414,7 +414,7 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>What is Agents Management?</h2>' +
             '<p>Agents are your primary business partners. This module helps you manage agent profiles and relationships. Agents bring business or workers to your company. You store their contact details, business information, and status so you can link workers, cases, and accounting records correctly.</p>' +
             '<h2>Accessing Agents</h2>' +
-            '<p>There are two ways to access Agents: Click <strong>"Agent"</strong> in the left menu (👥 icon), or click the <strong>Agents card</strong> on the Operations Control Plane. Both methods take you to the Agents page.</p>' +
+            '<p>There are two ways to access Agents: Click <strong>"Agent"</strong> in the left menu (👥 icon), or click the <strong>Agents card</strong> on the Dashboard. Both methods take you to the Agents page.</p>' +
             '<h2>Understanding the Agents Page – Every Element</h2>' +
             '<p>When you open Agents, you will see: <strong>Search bar</strong> – Find agents quickly by typing name, contact, or company name. Results filter as you type. <strong>Add Agent button</strong> – Usually green, located top right. Click to create new agent. <strong>Agents table</strong> – List of all agents with columns: Name (agent name), Contact Person (main contact), Phone Number, Email Address, Address, Company Name (if applicable), License Number (if applicable), Status (Active/Inactive, color-coded), Actions (View, Edit, Delete buttons).</p>' +
             '<h2>Adding a New Agent – Complete Step-by-Step</h2>' +
@@ -461,8 +461,8 @@ window.HELP_CENTER_BUILTIN = {
             overview: 'Extremely detailed, step-by-step instructions for Agents Management: opening page, understanding layout, adding agents (12 steps), editing, viewing, changing status.',
             content:
             '<h2>Task 1: Opening the Agents Page</h2>' +
-            '<h3>Step 1: From the Operations Control Plane</h3>' +
-            '<p>From the Operations Control Plane, locate the <strong>Agents card</strong>. OR click <strong>"Agent"</strong> in the left sidebar menu (👥 icon).</p>' +
+            '<h3>Step 1: From the Dashboard</h3>' +
+            '<p>From the Dashboard, locate the <strong>Agents card</strong>. OR click <strong>"Agent"</strong> in the left sidebar menu (👥 icon).</p>' +
             '<h3>Step 2: Click to Open</h3>' +
             '<p><strong>Click</strong> to open Agents page. Page loads showing all agents.</p>' +
             '<h2>Task 2: Understanding Agents Page Layout</h2>' +
@@ -539,7 +539,7 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>What is Subagents Management?</h2>' +
             '<p>Subagents work under agents. This module manages subagent profiles and their relationships with agents. A subagent is a sub-partner linked to a main agent. Workers can be assigned to either agents or subagents, giving you flexibility in organizing partnerships.</p>' +
             '<h2>Accessing Subagents</h2>' +
-            '<p>There are two ways to access Subagents: Click <strong>"SubAgent"</strong> in the left menu (👤 icon), or click the <strong>SubAgents card</strong> on the Operations Control Plane. Both methods take you to the SubAgents page.</p>' +
+            '<p>There are two ways to access Subagents: Click <strong>"SubAgent"</strong> in the left menu (👤 icon), or click the <strong>SubAgents card</strong> on the Dashboard. Both methods take you to the SubAgents page.</p>' +
             '<h2>Understanding the SubAgents Page</h2>' +
             '<p>When you open SubAgents, you will see: <strong>Search bar</strong> – Find subagents quickly. <strong>Filter by Agent</strong> – Dropdown to show subagents for a specific agent. <strong>Status Filter</strong> – Filter by Active/Inactive. <strong>Add Subagent button</strong> – Create new subagent. <strong>SubAgents table</strong> – List showing: Name, Parent Agent (which agent this subagent belongs to), Contact, Phone, Email, Address, Status, Actions (View, Edit, Delete).</p>' +
             '<h2>Adding a New Subagent – Complete Step-by-Step</h2>' +
@@ -577,8 +577,8 @@ window.HELP_CENTER_BUILTIN = {
             overview: 'Extremely detailed, step-by-step instructions for Subagents Management: opening page, adding subagents (7 steps), understanding relationship.',
             content:
             '<h2>Task 1: Opening Subagents Page</h2>' +
-            '<h3>Step 1: From the Operations Control Plane</h3>' +
-            '<p>From the Operations Control Plane, <strong>Click</strong> <strong>"SubAgent"</strong> in left menu (👤 icon). OR click SubAgents card on the operations control plane.</p>' +
+            '<h3>Step 1: From the Dashboard</h3>' +
+            '<p>From the Dashboard, <strong>Click</strong> <strong>"SubAgent"</strong> in left menu (👤 icon). OR click SubAgents card on the dashboard.</p>' +
             '<h3>Step 2: Page Loads</h3>' +
             '<p>Page loads showing all subagents.</p>' +
             '<h2>Task 2: Adding a New Subagent – 7-Step Process</h2>' +
@@ -617,7 +617,7 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>What is Workers Management?</h2>' +
             '<p>The Workers module lets you manage all worker profiles, documents, and statuses. Workers are employees or labour that you register in the system. You store personal data, documents (e.g. ID, visa, contract), and status (e.g. active, suspended, completed). Workers are often linked to an agent or sub-agent and to cases or contracts.</p>' +
             '<h2>Accessing Workers</h2>' +
-            '<p>There are two ways to access Workers: Click <strong>"Workers"</strong> in the left menu (🔧 icon), or click the <strong>Workers card</strong> on the Operations Control Plane. Both methods take you to the same Workers page.</p>' +
+            '<p>There are two ways to access Workers: Click <strong>"Workers"</strong> in the left menu (🔧 icon), or click the <strong>Workers card</strong> on the Dashboard. Both methods take you to the same Workers page.</p>' +
             '<h2>Understanding the Workers Page – Every Element Explained</h2>' +
             '<h3>Top Section – Search and Filters</h3>' +
             '<p><strong>Search Box</strong> – Type to search by name, passport number, or nationality. The search filters the table as you type. Results filter automatically. Clear search by deleting text.</p>' +
@@ -686,7 +686,7 @@ window.HELP_CENTER_BUILTIN = {
             content:
             '<h2>Task 1: Opening the Workers Page</h2>' +
             '<h3>Step 1: Locate the Workers Card</h3>' +
-            '<p>From the Operations Control Plane, locate the <strong>Workers card</strong>. Look for a card with "Workers" text and a 🔧 icon. The card shows statistics: Total, Active, Inactive workers.</p>' +
+            '<p>From the Dashboard, locate the <strong>Workers card</strong>. Look for a card with "Workers" text and a 🔧 icon. The card shows statistics: Total, Active, Inactive workers.</p>' +
             '<h3>Step 2: Click to Open</h3>' +
             '<p><strong>Click</strong> on the Workers card with your mouse. OR click "Workers" in the left sidebar menu. Wait for the page to load (you may see a loading spinner).</p>' +
             '<h3>Step 3: Page Loaded</h3>' +
@@ -933,10 +933,10 @@ window.HELP_CENTER_BUILTIN = {
             overview: 'Extremely detailed, step-by-step instructions for every Accounting task: opening module, understanding tabs, chart of accounts, journal entries (9 steps), invoices (11 steps), bills (9 steps), bank accounts, transactions, and financial reports.',
             content:
             '<h2>Task 1: Opening Accounting Module</h2>' +
-            '<h3>Step 1: From the Operations Control Plane</h3>' +
-            '<p>From the Operations Control Plane, <strong>Click</strong> <strong>"Accounting"</strong> in left menu (💰 icon). OR click Accounting card.</p>' +
+            '<h3>Step 1: From the Dashboard</h3>' +
+            '<p>From the Dashboard, <strong>Click</strong> <strong>"Accounting"</strong> in left menu (💰 icon). OR click Accounting card.</p>' +
             '<h3>Step 2: Page Loads</h3>' +
-            '<p>Accounting page loads. You will see <strong>tabs</strong> at the top: Control Panel (Operations Control Plane), Chart of Accounts, Journal Entries, Invoices, Bills, Banking &amp; Cash, Financial Reports, And more...</p>' +
+            '<p>Accounting page loads. You will see <strong>tabs</strong> at the top: Control Panel (Dashboard), Chart of Accounts, Journal Entries, Invoices, Bills, Banking &amp; Cash, Financial Reports, And more...</p>' +
             '<h2>Task 2: Understanding Accounting Tabs</h2>' +
             '<h3>Step 1: Control Panel</h3>' +
             '<p><strong>Click</strong> on <strong>"Control Panel"</strong> tab (first tab). Shows overview dashboard. Displays: Total Invoices, Total Bills, Bank Balances, Accounts Receivable, Accounts Payable, Charts and graphs.</p>' +
@@ -1047,10 +1047,10 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>What is the Accounting System?</h2>' +
             '<p>The Accounting module is a complete financial management system for tracking money, transactions, invoices, bills, and generating financial reports. It handles all financial aspects of your business: what you own (assets), what you owe (liabilities), income, expenses, and cash flow.</p>' +
             '<h2>Accessing Accounting</h2>' +
-            '<p>There are two ways to access Accounting: Click <strong>"Accounting"</strong> in the left menu (💰 icon), or click the <strong>Accounting card</strong> on the Operations Control Plane. Both methods take you to the Accounting page.</p>' +
+            '<p>There are two ways to access Accounting: Click <strong>"Accounting"</strong> in the left menu (💰 icon), or click the <strong>Accounting card</strong> on the Dashboard. Both methods take you to the Accounting page.</p>' +
             '<h2>Understanding Accounting Tabs – Complete Breakdown</h2>' +
             '<p>When you open Accounting, you will see tabs at the top. Each tab represents a different area of financial management. Click a tab to switch between areas.</p>' +
-            '<h3>1. Control Panel (Operations Control Plane)</h3>' +
+            '<h3>1. Control Panel (Dashboard)</h3>' +
             '<p><strong>What it shows:</strong> Overview of financial status with quick statistics: Total Invoices (count of all invoices), Total Bills (count of all bills), Bank Balances (current balance in each bank account), Accounts Receivable (money customers owe you), Accounts Payable (money you owe vendors), Charts showing financial trends (income over time, expenses, cash flow).</p>' +
             '<p><strong>How to use:</strong> Review the overview to see financial health at a glance. Click any statistic to drill down to details. Use charts to spot trends. This is your financial command center.</p>' +
             '<h3>2. Chart of Accounts</h3>' +
@@ -1133,7 +1133,7 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>What is the Reports Module?</h2>' +
             '<p>The Reports module generates various reports from your data. Use it to monitor performance, prepare for management, meet compliance needs, and analyze business trends. Reports pull data from all sections: Agents, Workers, Cases, HR, Accounting, Contacts.</p>' +
             '<h2>Accessing Reports</h2>' +
-            '<p>There are two ways to access Reports: Click <strong>"Reports"</strong> in the left menu (📊 icon), or click the <strong>Reports card</strong> on the Operations Control Plane. Both methods take you to the Reports page.</p>' +
+            '<p>There are two ways to access Reports: Click <strong>"Reports"</strong> in the left menu (📊 icon), or click the <strong>Reports card</strong> on the Dashboard. Both methods take you to the Reports page.</p>' +
             '<h2>Types of Reports Available – Complete List</h2>' +
             '<h3>Worker Reports</h3>' +
             '<p><strong>Worker List</strong> – Complete list of all workers with details (name, passport, nationality, agent, status). Filter by status, agent, nationality, date range. Export to Excel or PDF.</p>' +
@@ -1194,8 +1194,8 @@ window.HELP_CENTER_BUILTIN = {
             overview: 'Extremely detailed, step-by-step instructions for Reports: opening page, generating reports (7 steps), exporting reports.',
             content:
             '<h2>Task 1: Opening Reports Page</h2>' +
-            '<h3>Step 1: From the Operations Control Plane</h3>' +
-            '<p>From the Operations Control Plane, <strong>Click</strong> <strong>"Reports"</strong> in left menu (📊 icon).</p>' +
+            '<h3>Step 1: From the Dashboard</h3>' +
+            '<p>From the Dashboard, <strong>Click</strong> <strong>"Reports"</strong> in left menu (📊 icon).</p>' +
             '<h3>Step 2: Page Loads</h3>' +
             '<p>Reports page loads. Shows available report types.</p>' +
             '<h2>Task 2: Generating a Report – 7-Step Process</h2>' +
@@ -1223,12 +1223,12 @@ window.HELP_CENTER_BUILTIN = {
     9: [
         {
             id: 'builtin-9-0',
-            title: 'Operational Signaling & Automation – Full Explanation',
+            title: 'Notifications & Automation – Full Explanation',
             overview: 'How notifications and automation work in the program.',
-            content: '<h2>What Operational Signaling Does</h2><p>The program can send <strong>Operational Signaling</strong> (e.g. new case, payment received, document expiring). You see them in the <strong>Operational Signaling</strong> area (bell icon or menu item) and sometimes as on-screen alerts.</p>' +
-            '<h2>How to Use Operational Signaling</h2><ol><li>Click <strong>Operational Signaling</strong> in the left menu (or the bell icon).</li><li>Read the list; mark as read or open the related record (e.g. a case or worker) to take action.</li><li>If there are notification settings, choose which events you want to be notified about and how (in-app, email).</li></ol>' +
+            content: '<h2>What Notifications Does</h2><p>The program can send <strong>Notifications</strong> (e.g. new case, payment received, document expiring). You see them in the <strong>Notifications</strong> area (bell icon or menu item) and sometimes as on-screen alerts.</p>' +
+            '<h2>How to Use Notifications</h2><ol><li>Click <strong>Notifications</strong> in the left menu (or the bell icon).</li><li>Read the list; mark as read or open the related record (e.g. a case or worker) to take action.</li><li>If there are notification settings, choose which events you want to be notified about and how (in-app, email).</li></ol>' +
             '<h2>Automation (If Available)</h2><p>Some setups allow <strong>automation</strong> (e.g. auto-status change when a document is uploaded, or reminders). This is usually configured in System Settings or by an administrator.</p>' +
-            '<h2>Notifications – Deep</h2><p>Open <strong>Operational Signaling</strong> from the left menu (or the bell icon in the header). You see a <strong>list</strong> of notifications: each row may show title, message, date/time, and whether it is read or unread. Click a notification to open it or to go to the related record (e.g. a case, worker, or payment). Use <strong>Mark as read</strong> (or similar) so you do not lose track of what you have handled. If there is a <strong>Mark all as read</strong> button, use it to clear the list. The Operations Control Plane may show a count of <strong>unread</strong> notifications—click it to open the Notifications page. If notification <strong>settings</strong> exist (e.g. in profile or System Settings), you can choose which events generate notifications and whether you receive them in-app or by email. Do not ignore critical alerts (e.g. document expiring, payment overdue); act on them and then mark as read.</p>' +
+            '<h2>Notifications – Deep</h2><p>Open <strong>Notifications</strong> from the left menu (or the bell icon in the header). You see a <strong>list</strong> of notifications: each row may show title, message, date/time, and whether it is read or unread. Click a notification to open it or to go to the related record (e.g. a case, worker, or payment). Use <strong>Mark as read</strong> (or similar) so you do not lose track of what you have handled. If there is a <strong>Mark all as read</strong> button, use it to clear the list. The Dashboard may show a count of <strong>unread</strong> notifications—click it to open the Notifications page. If notification <strong>settings</strong> exist (e.g. in profile or System Settings), you can choose which events generate notifications and whether you receive them in-app or by email. Do not ignore critical alerts (e.g. document expiring, payment overdue); act on them and then mark as read.</p>' +
             '<h2>Expert Tips</h2><ul><li>Do not ignore critical notifications (e.g. overdue or expiring items).</li><li>Review notification and automation rules periodically so they stay relevant.</li></ul>',
             estimated_time: 15,
             difficulty_level: 'beginner',
@@ -1243,7 +1243,7 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>What is HR Management?</h2>' +
             '<p>The HR module manages employees, attendance, salaries, advances, and other HR-related functions. HR Employees are your internal staff (different from Workers, which are external labour). The HR module helps you track who works for your company, their attendance, payroll, and other HR tasks.</p>' +
             '<h2>Accessing HR</h2>' +
-            '<p>There are two ways to access HR: Click <strong>"HR"</strong> in the left menu (👔 icon), or click the <strong>HR card</strong> on the Operations Control Plane. Both methods take you to the HR page.</p>' +
+            '<p>There are two ways to access HR: Click <strong>"HR"</strong> in the left menu (👔 icon), or click the <strong>HR card</strong> on the Dashboard. Both methods take you to the HR page.</p>' +
             '<h2>Understanding HR Dashboard</h2>' +
             '<p>When you open HR, you will see a dashboard with stat cards showing: Total Employees (count of all employees), Active Employees (currently active), Inactive Employees (no longer active), Terminated Employees (left the company), Today\'s Attendance (attendance records for today), Pending Salaries (salaries not yet processed). Below the stats, you will see module cards for different HR functions.</p>' +
             '<h2>HR Module Cards – Complete Breakdown</h2>' +
@@ -1315,8 +1315,8 @@ window.HELP_CENTER_BUILTIN = {
             overview: 'Extremely detailed, step-by-step instructions for HR Management: opening module, adding employees (12 steps), recording attendance (10 steps), processing salary (6 steps), recording advances (9 steps).',
             content:
             '<h2>Task 1: Opening HR Module</h2>' +
-            '<h3>Step 1: From the Operations Control Plane</h3>' +
-            '<p>From the Operations Control Plane, <strong>Click</strong> <strong>"HR"</strong> in left menu (👔 icon).</p>' +
+            '<h3>Step 1: From the Dashboard</h3>' +
+            '<p>From the Dashboard, <strong>Click</strong> <strong>"HR"</strong> in left menu (👔 icon).</p>' +
             '<h3>Step 2: Page Loads</h3>' +
             '<p>HR page loads. Shows tabs: Employees, Attendance, Salaries, Advances, Cars.</p>' +
             '<h2>Task 2: Adding an Employee – 12-Step Process</h2>' +
@@ -1412,7 +1412,7 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>What is Cases Management?</h2>' +
             '<p>Cases module helps you track and manage various cases, files, or projects. A case can represent a contract file, a recruitment case, a project file, a customer issue, or any other file you need to track. Cases help you organize work and track progress.</p>' +
             '<h2>Accessing Cases</h2>' +
-            '<p>There are two ways to access Cases: Click <strong>"Cases"</strong> in the left menu (📋 icon), or click the <strong>Cases card</strong> on the Operations Control Plane. Both methods take you to the Cases page.</p>' +
+            '<p>There are two ways to access Cases: Click <strong>"Cases"</strong> in the left menu (📋 icon), or click the <strong>Cases card</strong> on the Dashboard. Both methods take you to the Cases page.</p>' +
             '<h2>Understanding the Cases Page – Every Element</h2>' +
             '<p>When you open Cases, you will see: <strong>Search bar</strong> – Find cases quickly by typing case title, case number, or description. Results filter as you type. <strong>Status filters</strong> – Dropdown to filter by status (All, Open, In Progress, Pending, Resolved, Closed, Urgent). Select a status to show only cases with that status. <strong>Priority filter</strong> – Filter by priority (All, Low, Medium, High, Urgent). <strong>Agent filter</strong> – Filter cases linked to a specific agent. <strong>Worker filter</strong> – Filter cases linked to a specific worker. <strong>Date filter</strong> – Filter by date range (created date or due date). <strong>Add Case button</strong> – Usually green, top right. Click to create new case. <strong>Cases table</strong> – List of all cases with columns: Case Number (unique identifier), Case Title, Status (color-coded), Priority (color-coded), Assigned To (user assigned to case), Related Entity (Agent/Worker name if linked), Created Date, Due Date (if applicable), Actions (View, Edit, Delete buttons).</p>' +
             '<h2>Adding a New Case – Complete Step-by-Step</h2>' +
@@ -1466,8 +1466,8 @@ window.HELP_CENTER_BUILTIN = {
             overview: 'Extremely detailed, step-by-step instructions for Cases Management: opening page, adding cases (10 steps), adding notes (6 steps), updating status (5 steps).',
             content:
             '<h2>Task 1: Opening Cases Page</h2>' +
-            '<h3>Step 1: From the Operations Control Plane</h3>' +
-            '<p>From the Operations Control Plane, <strong>Click</strong> <strong>"Cases"</strong> in left menu (📋 icon).</p>' +
+            '<h3>Step 1: From the Dashboard</h3>' +
+            '<p>From the Dashboard, <strong>Click</strong> <strong>"Cases"</strong> in left menu (📋 icon).</p>' +
             '<h3>Step 2: Page Loads</h3>' +
             '<p>Cases page loads. Shows all cases in a table.</p>' +
             '<h2>Task 2: Adding a New Case – 10-Step Process</h2>' +
@@ -1530,7 +1530,7 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>What is Contacts Management?</h2>' +
             '<p>Contacts module stores contact information for clients, vendors, partners, and other important people. Contacts are different from Agents – contacts are general people you communicate with, while Agents are your business partners. Use Contacts to store information about customers, suppliers, partners, or any other people you need to contact.</p>' +
             '<h2>Accessing Contacts</h2>' +
-            '<p>There are two ways to access Contacts: Click <strong>"Contact"</strong> in the left menu (📞 icon), or click the <strong>Contact card</strong> on the Operations Control Plane. Both methods take you to the Contacts page.</p>' +
+            '<p>There are two ways to access Contacts: Click <strong>"Contact"</strong> in the left menu (📞 icon), or click the <strong>Contact card</strong> on the Dashboard. Both methods take you to the Contacts page.</p>' +
             '<h2>Understanding the Contacts Page</h2>' +
             '<p>When you open Contacts, you will see: <strong>Search bar</strong> – Find contacts quickly by name, email, phone, or company. <strong>Type filter</strong> – Filter by contact type (All, Client, Vendor, Partner, Other). <strong>Status filter</strong> – Filter by Active/Inactive. <strong>Add Contact button</strong> – Create new contact. <strong>Contacts table</strong> – List showing: Name, Company Name, Phone Number, Email Address, Contact Type, Status, Actions (View, Edit, Delete).</p>' +
             '<h2>Adding a New Contact – Complete Step-by-Step</h2>' +
@@ -1570,8 +1570,8 @@ window.HELP_CENTER_BUILTIN = {
             overview: 'Extremely detailed, step-by-step instructions for Contacts Management: opening page, adding contacts (10 steps), sending communications (8 steps).',
             content:
             '<h2>Task 1: Opening Contacts Page</h2>' +
-            '<h3>Step 1: From the Operations Control Plane</h3>' +
-            '<p>From the Operations Control Plane, <strong>Click</strong> <strong>"Contact"</strong> in left menu (📞 icon).</p>' +
+            '<h3>Step 1: From the Dashboard</h3>' +
+            '<p>From the Dashboard, <strong>Click</strong> <strong>"Contact"</strong> in left menu (📞 icon).</p>' +
             '<h3>Step 2: Page Loads</h3>' +
             '<p>Contacts page loads. Shows all contacts in a table.</p>' +
             '<h2>Task 2: Adding a New Contact – 10-Step Process</h2>' +
@@ -1756,7 +1756,7 @@ window.HELP_CENTER_BUILTIN = {
             '<li><strong>Upload Documents</strong> – Keep documents organized and named clearly. Use descriptive file names (e.g. "Passport_John_Smith_2024.pdf").</li>' +
             '<li><strong>Don\'t Leave Fields Blank</strong> – Fill optional fields when possible. Complete records are more useful than incomplete ones.</li></ol>' +
             '<h2>Navigation Tips</h2>' +
-            '<ol><li><strong>Use Dashboard</strong> – Start from Operations Control Plane to see overview. Operations Control Plane shows key numbers and shortcuts.</li>' +
+            '<ol><li><strong>Use Dashboard</strong> – Start from Dashboard to see overview. Dashboard shows key numbers and shortcuts.</li>' +
             '<li><strong>Breadcrumbs</strong> – Use breadcrumbs (if shown) to navigate back. Breadcrumbs show your current location.</li>' +
             '<li><strong>Menu Icons</strong> – Icons help identify modules quickly. Learn the icons for common modules.</li>' +
             '<li><strong>Keyboard Shortcuts</strong> – Some pages support keyboard shortcuts (Ctrl+S to save, Ctrl+F to search). Learn shortcuts to work faster.</li>' +
@@ -1795,7 +1795,7 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>Training Checklist</h2>' +
             '<p>Use this checklist to track your learning:</p>' +
             '<ul><li>☐ I can log in successfully</li>' +
-            '<li>☐ I understand the Operations Control Plane</li>' +
+            '<li>☐ I understand the Dashboard</li>' +
             '<li>☐ I can navigate the menu</li>' +
             '<li>☐ I can add a new worker</li>' +
             '<li>☐ I can edit worker information</li>' +
@@ -1912,7 +1912,7 @@ window.HELP_CENTER_BUILTIN = {
             '<p>Use this checklist to ensure you\'ve learned all essential tasks:</p>' +
             '<h3>Basic Navigation</h3>' +
             '<ul><li>☐ I can log in successfully</li>' +
-            '<li>☐ I understand the Operations Control Plane layout</li>' +
+            '<li>☐ I understand the Dashboard layout</li>' +
             '<li>☐ I can navigate between modules using the menu</li>' +
             '<li>☐ I know how to logout</li></ul>' +
             '<h3>Workers Management</h3>' +
@@ -1983,7 +1983,7 @@ window.HELP_CENTER_BUILTIN = {
             '<li><strong>Use keyboard shortcut</strong> (if configured) to open Help Center quickly.</li></ol>' +
             '<h2>Understanding the Help Center Interface</h2>' +
             '<p>When you open the Help Center, you will see:</p>' +
-            '<ul><li><strong>Categories sidebar</strong> – List of categories on the left side (Getting Started, Operations Control Plane, User Management, Contracts &amp; Recruitment, Client Management, Worker Management, 🌍 Partner Agencies, Finance &amp; Billing, Reports &amp; Analytics, Notifications &amp; Automation, Troubleshooting &amp; FAQ, Best Practices, Compliance &amp; Legal).</li>' +
+            '<ul><li><strong>Categories sidebar</strong> – List of categories on the left side (Getting Started, Dashboard, User Management, Contracts &amp; Recruitment, Client Management, Worker Management, 🌍 Partner Agencies, Finance &amp; Billing, Reports &amp; Analytics, Notifications &amp; Automation, Troubleshooting &amp; FAQ, Best Practices, Compliance &amp; Legal).</li>' +
             '<li><strong>Search bar</strong> – At the top, type keywords to search for specific tutorials.</li>' +
             '<li><strong>Tutorial list or grid view</strong> – Shows tutorials in the selected category. You can toggle between list and grid view.</li>' +
             '<li><strong>Tutorial detail view</strong> – When you click a tutorial, it opens showing full content, rating, and related tutorials.</li></ul>' +
@@ -1991,7 +1991,7 @@ window.HELP_CENTER_BUILTIN = {
             '<ol><li><strong>Categories are listed</strong> on the left sidebar. Each category groups related tutorials together.</li>' +
             '<li><strong>Click a category</strong> to see all tutorials in that category. For example:</li>' +
             '<ul><li><strong>Getting Started</strong> – Introduction tutorials, login guide, navigation guide, quick start checklist.</li>' +
-            '<li><strong>Operations Control Plane</strong> – Dashboard overview, understanding cards, using statistics.</li>' +
+            '<li><strong>Dashboard</strong> – Dashboard overview, understanding cards, using statistics.</li>' +
             '<li><strong>User Management</strong> – Managing users, roles, permissions.</li>' +
             '<li><strong>Worker Management</strong> – Adding workers, managing documents, changing status, bulk operations.</li>' +
             '<li><strong>🌍 Partner Agencies</strong> – Overseas partners; use View to open the deployment table (status, contracts, export).</li>' +
@@ -2060,7 +2060,7 @@ window.HELP_CENTER_BUILTIN = {
             '<p>Help Center page loads. Shows categories on left. Tutorials list in center.</p>' +
             '<h2>Task 2: Browsing Tutorials by Category – 5-Step Process</h2>' +
             '<h3>Step 1: Look at Categories</h3>' +
-            '<p>Look at <strong>Categories</strong> list on left side: Getting Started, Operations Control Plane, User Management, Worker Management, Accounting, HR Management, And more...</p>' +
+            '<p>Look at <strong>Categories</strong> list on left side: Getting Started, Dashboard, User Management, Worker Management, Accounting, HR Management, And more...</p>' +
             '<h3>Step 2: Click Category</h3>' +
             '<p><strong>Click</strong> on a category. Example: <strong>Click</strong> "Worker Management". Tutorials in that category appear.</p>' +
             '<h3>Step 3: Click Tutorial</h3>' +
@@ -2130,7 +2130,7 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>Training Checklist Completion</h2>' +
             '<p>Review your training checklist:</p>' +
             '<ul><li>☐ I can log in successfully</li>' +
-            '<li>☐ I understand the Operations Control Plane</li>' +
+            '<li>☐ I understand the Dashboard</li>' +
             '<li>☐ I can navigate the menu</li>' +
             '<li>☐ I can add a new worker</li>' +
             '<li>☐ I can edit worker information</li>' +
@@ -2201,7 +2201,7 @@ window.HELP_CENTER_BUILTIN = {
             '<h2>2. How to open it</h2>' +
             '<ol><li>Log in to the <strong>control panel</strong>.</li>' +
             '<li>In the sidebar, click <strong>Infrastructure</strong> (one menu item).</li>' +
-            '<li>Use the three tabs at the top: <strong>Control</strong>, <strong>Operations Control Plane</strong>, <strong>Providers</strong>. The page loads an embedded module screen for the active tab.</li></ol>' +
+            '<li>Use the three tabs at the top: <strong>Control</strong>, <strong>Dashboard</strong>, <strong>Providers</strong>. The page loads an embedded module screen for the active tab.</li></ol>' +
             '<p><strong>Deep links</strong> (share with another admin): <code>.../control/infrastructure.php?control=1&amp;view=control</code> — replace <code>view=</code> with <code>dashboard</code> or <code>providers</code>.</p>' +
             '<h2>3. Tab: Control</h2>' +
             '<p><strong>Purpose:</strong> Set <em>intended</em> behavior — module enabled, dry-run, execution kill-switch, queue driver and limits, default currency, <strong>tenant allowlist</strong> (comma-separated; empty often means all tenants), optional <strong>provider execution</strong> overrides (Live/Sandbox per provider; <strong>Inherit</strong> removes the panel override so environment variables apply), and <strong>Namecheap</strong> fields stored in the runtime overrides file (API key blank keeps existing).</p>' +
@@ -2219,9 +2219,9 @@ window.HELP_CENTER_BUILTIN = {
             '<p><strong>Purpose:</strong> Provider <strong>health</strong> and <strong>capability</strong> JSON (read-only snapshots) plus <strong>database activations</strong> for table <code>RATEB.infra_provider_activations</code> (which adapter classes are enabled). If everything is unavailable or capabilities are empty, check migrations, activation rows, and module enablement. The upsert form must use a real PHP <strong>provider_class</strong> name. Reload after save to refresh the panels.</p>' +
             '<h2>6. Which tab first?</h2>' +
             '<table class="help-table"><thead><tr><th>Situation</th><th>Start here</th></tr></thead><tbody>' +
-            '<tr><td>Rollout / policy / allowlist change</td><td><strong>Control</strong> → then <strong>Operations Control Plane</strong> to verify.</td></tr>' +
-            '<tr><td>Incident: nothing provisions</td><td><strong>Operations Control Plane</strong> → <strong>Providers</strong> if adapters look inactive → <strong>Control</strong> only if config must change.</td></tr>' +
-            '<tr><td>New registrar/adapter wiring</td><td><strong>Providers</strong> → <strong>Operations Control Plane</strong> → <strong>Control</strong> for execution flags if needed.</td></tr>' +
+            '<tr><td>Rollout / policy / allowlist change</td><td><strong>Control</strong> → then <strong>Dashboard</strong> to verify.</td></tr>' +
+            '<tr><td>Incident: nothing provisions</td><td><strong>Dashboard</strong> → <strong>Providers</strong> if adapters look inactive → <strong>Control</strong> only if config must change.</td></tr>' +
+            '<tr><td>New registrar/adapter wiring</td><td><strong>Providers</strong> → <strong>Dashboard</strong> → <strong>Control</strong> for execution flags if needed.</td></tr>' +
             '</tbody></table>' +
             '<h2>7. Permissions</h2>' +
             '<p>If <strong>Infrastructure</strong> is missing from the sidebar, your account lacks the required control-panel permission — ask a super admin.</p>' +

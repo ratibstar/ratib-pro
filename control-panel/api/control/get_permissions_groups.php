@@ -37,7 +37,7 @@ $roleId = isset($_GET['role_id']) ? (int)$_GET['role_id'] : null;
 
 $permissionGroups = [
     ['id' => 'control_core', 'name' => 'Control Panel - Core', 'count' => 8, 'permissions' => [
-        ['id' => 'control_dashboard', 'name' => 'View Operations Control Plane'],
+        ['id' => 'control_dashboard', 'name' => 'View Dashboard'],
         ['id' => 'control_select_country', 'name' => 'Select Country (all countries)'],
         ['id' => 'hide_dashboard_countries_card', 'name' => 'Show Dashboard "Active Countries" card'],
         ['id' => 'hide_dashboard_agencies_card', 'name' => 'Show Dashboard "Total Agencies" card'],
