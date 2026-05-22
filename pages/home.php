@@ -488,7 +488,12 @@ ratib_emit_profile_nav_guard($baseUrl);
             <div class="ratib-container ratib-hero__grid">
                 <div class="ratib-hero__copy">
                     <p class="ratib-eyebrow"><?php echo htmlspecialchars($ratibHome['home.hero.eyebrow'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
-                    <h1 class="ratib-hero__title"><?php echo htmlspecialchars($ratibHome['home.hero.title_before'] ?? '', ENT_QUOTES, 'UTF-8'); ?> <span class="ratib-text-gradient"><?php echo htmlspecialchars($ratibHome['home.hero.title_gradient'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></h1>
+                    <?php
+                    require_once __DIR__ . '/../includes/ratib-brand-full-title.php';
+                    ?>
+                    <h1 class="ratib-hero__title">
+                        <?php ratib_render_brand_full_title(['variant' => 'hero']); ?>
+                    </h1>
                     <p class="ratib-hero__lead"><?php echo htmlspecialchars($ratibHome['home.hero.lead'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                     <ul class="ratib-hero__bullets">
                         <li><i class="fas fa-diagram-project"></i> <?php echo htmlspecialchars($ratibHome['home.hero.bullet.1'] ?? '', ENT_QUOTES, 'UTF-8'); ?></li>

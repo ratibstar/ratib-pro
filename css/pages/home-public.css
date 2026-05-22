@@ -1202,6 +1202,177 @@ body.ratib-saas-home {
   color: transparent;
 }
 
+/* Full brand title — horizontal flex, animated mixed colors (hero + nav) */
+.ratib-brand-full {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 0.28em 0.42em;
+  max-width: 100%;
+  line-height: 1.15;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.ratib-brand-full--hero {
+  font-size: clamp(0.95rem, 2.4vw, 1.55rem);
+}
+
+.ratib-brand-full--nav {
+  font-size: clamp(0.5rem, 1.35vw, 0.68rem);
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  max-width: min(22rem, 100%);
+}
+
+.ratib-brand-full__rateb {
+  display: inline-flex;
+  gap: 0.02em;
+  flex-shrink: 0;
+}
+
+.ratib-brand-letter {
+  font-weight: 800;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ratibBrandLetterPulse 4.5s ease-in-out infinite;
+}
+
+.ratib-brand-letter--r {
+  background-image: linear-gradient(135deg, #ff6b6b, #ff9f43);
+  animation-delay: 0s;
+}
+
+.ratib-brand-letter--a {
+  background-image: linear-gradient(135deg, #feca57, #f1c40f);
+  animation-delay: 0.35s;
+}
+
+.ratib-brand-letter--t {
+  background-image: linear-gradient(135deg, #2ecc71, #1dd1a1);
+  animation-delay: 0.7s;
+}
+
+.ratib-brand-letter--e {
+  background-image: linear-gradient(135deg, #54a0ff, #5dade2);
+  animation-delay: 1.05s;
+}
+
+.ratib-brand-letter--b {
+  background-image: linear-gradient(135deg, #a29bfe, #9b59b6);
+  animation-delay: 1.4s;
+}
+
+.ratib-brand-full__word {
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 220% 220%;
+  animation: ratibBrandWordShift 7s ease-in-out infinite;
+}
+
+.ratib-brand-full__word--company {
+  background-image: linear-gradient(120deg, #f6d365, #fda085, #f6d365);
+  font-weight: 700;
+}
+
+.ratib-brand-full__word--w1 {
+  background-image: linear-gradient(120deg, #c4b5fd, #a78bfa, #818cf8, #c4b5fd);
+  animation-delay: 0s;
+}
+
+.ratib-brand-full__word--w2 {
+  background-image: linear-gradient(120deg, #93c5fd, #60a5fa, #38bdf8, #93c5fd);
+  animation-delay: 0.6s;
+}
+
+.ratib-brand-full__word--amp {
+  background-image: linear-gradient(120deg, #fcd34d, #fbbf24, #fcd34d);
+  animation-delay: 1.1s;
+  font-weight: 800;
+}
+
+.ratib-brand-full__word--w3 {
+  background-image: linear-gradient(120deg, #6ee7b7, #34d399, #2dd4bf, #6ee7b7);
+  animation-delay: 1.6s;
+}
+
+.ratib-brand-full__word--w4 {
+  background-image: linear-gradient(120deg, #fda4af, #fb7185, #f472b6, #fda4af);
+  animation-delay: 2.1s;
+}
+
+.ratib-brand-full__word--w5 {
+  background-image: linear-gradient(120deg, #e9d5ff, #d8b4fe, #c084fc, #e9d5ff);
+  animation-delay: 2.6s;
+}
+
+@keyframes ratibBrandLetterPulse {
+  0%,
+  100% {
+    filter: brightness(1) saturate(1);
+    transform: translateY(0);
+  }
+  50% {
+    filter: brightness(1.15) saturate(1.2);
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes ratibBrandWordShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.ratib-nav__brand--stacked {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  max-width: 100%;
+}
+
+.ratib-nav__brand--stacked .ratib-nav__brand-logo {
+  flex-shrink: 0;
+}
+
+@media (max-width: 1099px) {
+  .ratib-brand-full--nav {
+    max-width: 100%;
+    font-size: clamp(0.48rem, 2.8vw, 0.62rem);
+  }
+
+  .ratib-nav__brand--stacked {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 599px) {
+  .ratib-brand-full--hero {
+    font-size: clamp(0.82rem, 3.6vw, 1.05rem);
+    gap: 0.22em 0.32em;
+  }
+
+  .ratib-brand-full--nav {
+    font-size: clamp(0.44rem, 2.5vw, 0.56rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ratib-brand-letter,
+  .ratib-brand-full__word {
+    animation: none;
+  }
+}
+
 /* Hero */
 .ratib-hero {
   padding: clamp(2.5rem, 6vw, 5rem) 0 clamp(3rem, 8vw, 6rem);
@@ -1226,7 +1397,7 @@ body.ratib-saas-home {
   line-height: 1.18;
   letter-spacing: -0.025em;
   margin: 0 0 0.85rem;
-  max-width: 22rem;
+  max-width: 100%;
 }
 
 .ratib-hero__lead {
@@ -3762,7 +3933,7 @@ body.ratib-saas-home::before {
 }
 
 .ratib-hero__title {
-  max-width: min(24rem, 100%);
+  max-width: 100%;
   line-height: 1.16;
   font-weight: 750;
   color: #e8edf7;
