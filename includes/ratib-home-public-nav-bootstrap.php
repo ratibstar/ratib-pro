@@ -40,6 +40,13 @@ $ratibHomeAssetExtraQ = ($ratibHomeAssetExtraBustRaw !== false && trim((string) 
     ? '-' . preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeAssetExtraBustRaw))
     : '';
 $ratibHome = ratib_site_content_home_flat(false);
+$ratibRebrandSanitize = __DIR__ . '/ratib-site-content-rebrand-sanitize.php';
+if (is_file($ratibRebrandSanitize)) {
+    require_once $ratibRebrandSanitize;
+}
+if (function_exists('ratib_site_content_rebrand_sanitize_flat') && function_exists('ratib_site_content_defaults_home')) {
+    $ratibHome = ratib_site_content_rebrand_sanitize_flat($ratibHome, ratib_site_content_defaults_home());
+}
 if (function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
     ratib_site_content_home_ensure_header_nav_labels($ratibHome);
 }

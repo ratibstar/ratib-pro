@@ -49,6 +49,9 @@ if (function_exists('opcache_invalidate')) {
     $ratibOpcacheBust = [
         __DIR__ . '/../includes/ratib-home-public-chrome-top.php',
         __DIR__ . '/../includes/ratib-home-public-nav-sync.php',
+        __DIR__ . '/../includes/ratib-home-public-nav-bootstrap.php',
+        __DIR__ . '/../includes/ratib-site-content-rebrand-sanitize.php',
+        __DIR__ . '/../includes/site-content-home-data.php',
         __FILE__,
     ];
     foreach ($ratibOpcacheBust as $ratibOpcacheFile) {

@@ -48,9 +48,16 @@ if (!function_exists('ratib_public_build_marker_is_valid')) {
         $legacy = [
             'about-enterprise-20260518-nav-resolve-v7',
             'about-enterprise-20260518-profile-same-tab-v6',
+            'rateb-cms-rebrand-sanitize-20260521',
+            'rateb-public-brand-force-defaults-20260522',
+            'rateb-lscache-bust-20260522b',
         ];
 
-        return $req === $canonical || in_array($req, $legacy, true);
+        if ($req === $canonical || in_array($req, $legacy, true)) {
+            return true;
+        }
+
+        return str_starts_with($req, 'rateb-');
     }
 }
 
