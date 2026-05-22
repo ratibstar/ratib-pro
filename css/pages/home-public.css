@@ -1343,6 +1343,11 @@ body.ratib-saas-home {
   flex-shrink: 0;
 }
 
+/* Animated R+A+T+E+B title replaces logo SVG (SVG also spells "RATEB" — duplicate) */
+.ratib-nav__brand--animated-title .ratib-nav__brand-logo {
+  display: none !important;
+}
+
 @media (max-width: 1099px) {
   .ratib-brand-full--nav {
     max-width: 100%;

@@ -124,8 +124,10 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                     require_once __DIR__ . '/ratib-brand-full-title.php';
                 }
                 ?>
-                <a href="<?php echo htmlspecialchars($ratibMarketingHomeHref ?? (function_exists('ratib_public_marketing_home_url') ? ratib_public_marketing_home_url($baseUrl) : rtrim($baseUrl, '/') . (function_exists('ratib_marketing_home_path') ? ratib_marketing_home_path() : '/home')), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__brand ratib-nav__brand--stacked">
+                <a href="<?php echo htmlspecialchars($ratibMarketingHomeHref ?? (function_exists('ratib_public_marketing_home_url') ? ratib_public_marketing_home_url($baseUrl) : rtrim($baseUrl, '/') . (function_exists('ratib_marketing_home_path') ? ratib_marketing_home_path() : '/home')), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__brand ratib-nav__brand--stacked<?php echo $ratibHideBrandText ? ' ratib-nav__brand--animated-title' : ''; ?>">
+                    <?php if (!$ratibHideBrandText) { ?>
                     <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=6'); ?>" alt="<?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?>" width="120" height="36" class="ratib-nav__brand-logo">
+                    <?php } ?>
                     <?php if ($ratibHideBrandText) { ?>
                     <?php ratib_render_brand_full_title(['with_company' => true, 'variant' => 'nav']); ?>
                     <?php } else { ?>
