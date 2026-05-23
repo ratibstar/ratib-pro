@@ -5709,7 +5709,7 @@ class ModernForms {
         return this._loginBarcodeLibsLoading;
     }
 
-    renderLoginBarcodeInModal(barcode, username) {
+    renderLoginBarcodeInModal(legacyRef, username, qrPayload) {
         const qrHost = document.getElementById('login-barcode-qr-host');
         const codeEl = document.getElementById('login-barcode-code-text');
         const userEl = document.getElementById('login-barcode-user-label');
@@ -5717,30 +5717,38 @@ class ModernForms {
         if (!qrHost || !codeEl) {
             return;
         }
-        const code = String(barcode || '').trim();
+        const ref = String(legacyRef || '').trim();
+        const scanValue = String(qrPayload || '').trim() || ref;
         if (userEl) {
             userEl.textContent = username ? ('User: ' + username) : '';
         }
-        codeEl.textContent = code;
         qrHost.innerHTML = '';
         if (svgEl) {
             svgEl.innerHTML = '';
         }
-        if (!code) {
-            qrHost.innerHTML = '<p class="login-barcode-modal-hint text-danger mb-0">No barcode yet. Edit the user and set <strong>Barcode (mobile login)</strong>, or tap Generate below.</p>';
+        if (!scanValue) {
+            codeEl.textContent = '';
+            qrHost.innerHTML = '<p class="login-barcode-modal-hint text-danger mb-0">No barcode yet. Tap <strong>Generate</strong> or open in a new tab.</p>';
             return;
+        }
+        if (ref) {
+            codeEl.textContent = 'Reference ID: ' + ref + (qrPayload ? ' (scan the QR above — not this line)' : '');
+        } else if (/^RATIBLOGIN:/i.test(scanValue)) {
+            codeEl.textContent = 'Secure login badge (scan QR above)';
+        } else {
+            codeEl.textContent = scanValue;
         }
         if (typeof QRCode !== 'undefined') {
             new QRCode(qrHost, {
-                text: code,
+                text: scanValue,
                 width: 240,
                 height: 240,
                 correctLevel: QRCode.CorrectLevel.M
             });
         }
-        if (svgEl && typeof JsBarcode !== 'undefined') {
+        if (svgEl && typeof JsBarcode !== 'undefined' && ref) {
             try {
-                JsBarcode(svgEl, code, {
+                JsBarcode(svgEl, ref, {
                     format: 'CODE128',
                     width: 2,
                     height: 64,
@@ -5770,54 +5778,43 @@ class ModernForms {
         modal.classList.remove('modal-hidden');
         modal.classList.add('show');
 
-        let code = '';
-        if (barcodeAttr) {
-            try {
-                code = decodeURIComponent(barcodeAttr).trim();
-            } catch (e) {
-                code = String(barcodeAttr).trim();
-            }
-        }
         const usernameStr = String(username || '').trim();
-        this.renderLoginBarcodeInModal(code, usernameStr);
-
-        if (code) {
-            try {
-                await this.loadLoginBarcodeLibs();
-                this.renderLoginBarcodeInModal(code, usernameStr);
-            } catch (e) {
-                const qrHost = document.getElementById('login-barcode-qr-host');
-                if (qrHost) {
-                    qrHost.innerHTML = '<p class="text-danger mb-0">Could not load barcode viewer. Use Open in new tab.</p>';
-                }
-            }
-            return;
-        }
-
-        await this.ensureLoginBarcodeForUser(userId);
-    }
-
-    async ensureLoginBarcodeForUser(userId) {
         const qrHost = document.getElementById('login-barcode-qr-host');
         if (qrHost) {
-            qrHost.innerHTML = '<p class="login-barcode-modal-hint mb-0">Generating barcode…</p>';
+            qrHost.innerHTML = '<p class="login-barcode-modal-hint mb-0">Loading secure badge…</p>';
+        }
+        await this.ensureLoginBarcodeForUser(userId, usernameStr);
+    }
+
+    async ensureLoginBarcodeForUser(userId, usernameHint) {
+        const qrHost = document.getElementById('login-barcode-qr-host');
+        if (qrHost) {
+            qrHost.innerHTML = '<p class="login-barcode-modal-hint mb-0">Generating secure badge…</p>';
         }
         try {
             const res = await this.apiCall('ensure_login_barcode', 'users', { id: userId });
             const payload = res && res.data ? res.data : res;
-            const code = payload && (payload.barcode || payload.login_barcode) ? String(payload.barcode || payload.login_barcode).trim() : '';
-            const username = payload && payload.username ? String(payload.username) : '';
-            if (!code) {
-                this.renderLoginBarcodeInModal('', username);
+            const legacyRef = payload && (payload.barcode || payload.login_barcode)
+                ? String(payload.barcode || payload.login_barcode).trim()
+                : '';
+            const qrPayload = payload && payload.qr_payload ? String(payload.qr_payload).trim() : '';
+            const username = payload && payload.username
+                ? String(payload.username)
+                : String(usernameHint || '').trim();
+            if (!legacyRef && !qrPayload) {
+                this.renderLoginBarcodeInModal('', username, '');
                 this.showNotification((res && res.message) ? res.message : 'Could not create barcode.', 'error');
                 return;
             }
+            if (!qrPayload) {
+                this.showNotification('Secure QR unavailable — use Open in new tab or contact support.', 'warning');
+            }
             await this.loadLoginBarcodeLibs();
-            this.renderLoginBarcodeInModal(code, username);
+            this.renderLoginBarcodeInModal(legacyRef, username, qrPayload);
             this.refreshData().catch(() => {});
-            this.showNotification('Login barcode ready — scan the QR at login.', 'success');
+            this.showNotification('Secure login badge ready.', 'success');
         } catch (e) {
-            this.renderLoginBarcodeInModal('', '');
+            this.renderLoginBarcodeInModal('', '', '');
             this.showNotification('Failed to load barcode.', 'error');
         }
     }
