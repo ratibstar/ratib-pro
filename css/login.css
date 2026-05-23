@@ -59,13 +59,51 @@ body {
     pointer-events: auto;
 }
 
-.barcode-qr-reader {
-    max-width: 320px;
-    margin-left: auto;
-    margin-right: auto;
-    border-radius: 12px;
+/* Barcode scan-only capture (USB scanner → hidden field) */
+.barcode-scan-form {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
     overflow: hidden;
-    border: 1px solid rgba(148, 163, 184, 0.35);
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.barcode-scan-input {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0.01;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    z-index: 5;
+}
+
+.barcode-scan-pulse {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto;
+    border-radius: 50%;
+    border: 3px solid rgba(56, 189, 248, 0.45);
+    animation: ratibScanPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ratibScanPulse {
+    0%,
+    100% {
+        transform: scale(0.92);
+        opacity: 0.55;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
 }
 
 .barcode-status.info-message {

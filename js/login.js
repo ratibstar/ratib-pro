@@ -1,6 +1,5 @@
 /**
- * Login Page JavaScript
- * Method switching, barcode scanner (USB wedge + optional camera), dark mode
+ * Login Page JavaScript — method switching, USB barcode scan-only login, dark mode
  */
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -9,55 +8,35 @@ document.addEventListener('DOMContentLoaded', function () {
     const barcodeForm = document.getElementById('barcode-form');
     const barcodeInput = document.getElementById('barcode-input');
     const barcodeLoginForm = document.getElementById('barcode-login-form');
-    const barcodeCameraToggle = document.getElementById('barcode-camera-toggle');
-    const barcodeQrReader = document.getElementById('barcode-qr-reader');
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     const themeIcon = document.getElementById('theme-icon');
     const body = document.body;
     const animatedBackground = document.getElementById('animated-background');
 
-    let barcodeScanner = null;
+    let scanSubmitTimer = null;
 
     const adPhrases = [
         'RATEB', 'Manage Your Business', 'Streamline Operations', 'Boost Productivity',
-        'Smart Solutions', 'Efficient Management', 'Digital Transformation', 'Work Smarter',
-        'Innovation First', 'Your Success Partner', 'Simplify & Grow', 'Future Ready',
-        'Excellence Delivered', 'Trusted Platform', 'Secure & Reliable', 'Powerful Tools',
-        'Seamless Experience', 'Next Generation', 'Professional Grade', 'Transform Your Workflow'
+        'Smart Solutions', 'Efficient Management', 'Digital Transformation', 'Work Smarter'
     ];
-
     const professionalSymbols = [
         'fa-briefcase', 'fa-chart-line', 'fa-cog', 'fa-lightbulb', 'fa-rocket', 'fa-shield-alt',
-        'fa-star', 'fa-bullseye', 'fa-trophy', 'fa-network-wired', 'fa-database', 'fa-cloud',
-        'fa-lock', 'fa-chart-bar', 'fa-gem', 'fa-certificate', 'fa-award', 'fa-handshake',
-        'fa-users-cog', 'fa-microchip'
+        'fa-star', 'fa-bullseye', 'fa-trophy', 'fa-network-wired'
     ];
 
     if (animatedBackground) {
         for (let i = 0; i < 6; i++) {
-            const textElement = document.createElement('div');
-            textElement.className = 'animated-text';
-            textElement.textContent = adPhrases[Math.floor(Math.random() * adPhrases.length)];
-            animatedBackground.appendChild(textElement);
+            const el = document.createElement('div');
+            el.className = 'animated-text';
+            el.textContent = adPhrases[Math.floor(Math.random() * adPhrases.length)];
+            animatedBackground.appendChild(el);
         }
-        for (let i = 0; i < 10; i++) {
-            const symbolElement = document.createElement('div');
-            symbolElement.className = 'animated-symbol';
-            const randomSymbol = professionalSymbols[Math.floor(Math.random() * professionalSymbols.length)];
-            symbolElement.innerHTML = '<i class="fas ' + randomSymbol + '"></i>';
-            animatedBackground.appendChild(symbolElement);
+        for (let i = 0; i < 8; i++) {
+            const el = document.createElement('div');
+            el.className = 'animated-symbol';
+            el.innerHTML = '<i class="fas ' + professionalSymbols[Math.floor(Math.random() * professionalSymbols.length)] + '"></i>';
+            animatedBackground.appendChild(el);
         }
-        setInterval(function () {
-            animatedBackground.querySelectorAll('.animated-text').forEach(function (element) {
-                element.textContent = adPhrases[Math.floor(Math.random() * adPhrases.length)];
-            });
-        }, 30000);
-        setInterval(function () {
-            animatedBackground.querySelectorAll('.animated-symbol').forEach(function (element) {
-                const randomSymbol = professionalSymbols[Math.floor(Math.random() * professionalSymbols.length)];
-                element.innerHTML = '<i class="fas ' + randomSymbol + '"></i>';
-            });
-        }, 45000);
     }
 
     if (darkModeToggle) {
@@ -101,128 +80,82 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function focusBarcodeInput() {
-        if (barcodeInput) {
-            setTimeout(function () {
-                barcodeInput.focus();
-                barcodeInput.select();
-            }, 80);
+    function focusBarcodeCapture() {
+        if (!barcodeInput) {
+            return;
         }
+        barcodeInput.value = '';
+        setTimeout(function () {
+            barcodeInput.focus();
+        }, 60);
     }
 
-    async function stopBarcodeCamera() {
-        if (!barcodeScanner) {
-            return;
-        }
-        try {
-            await barcodeScanner.stop();
-            await barcodeScanner.clear();
-        } catch (e) {
-            /* ignore */
-        }
-        barcodeScanner = null;
-        if (barcodeQrReader) {
-            barcodeQrReader.classList.add('d-none');
-            barcodeQrReader.setAttribute('aria-hidden', 'true');
-        }
-        if (barcodeCameraToggle) {
-            barcodeCameraToggle.setAttribute('aria-expanded', 'false');
-            barcodeCameraToggle.innerHTML = '<i class="fas fa-camera" aria-hidden="true"></i> Use camera';
-        }
-    }
-
-    async function startBarcodeCamera() {
-        if (typeof Html5Qrcode === 'undefined') {
-            showBarcodeStatus('Camera scanner is not available. Use a USB barcode scanner or type the code.', 'error');
-            return;
-        }
-        if (barcodeScanner) {
-            await stopBarcodeCamera();
-            return;
-        }
-        if (!barcodeQrReader) {
-            return;
-        }
-        barcodeQrReader.classList.remove('d-none');
-        barcodeQrReader.setAttribute('aria-hidden', 'false');
-        barcodeScanner = new Html5Qrcode('barcode-qr-reader');
-        const config = { fps: 10, qrbox: { width: 240, height: 120 }, aspectRatio: 1.5 };
-        try {
-            await barcodeScanner.start(
-                { facingMode: 'environment' },
-                config,
-                function (decoded) {
-                    if (!decoded) {
-                        return;
-                    }
-                    if (barcodeInput) {
-                        barcodeInput.value = String(decoded).trim();
-                    }
-                    stopBarcodeCamera();
-                    if (barcodeLoginForm) {
-                        barcodeLoginForm.requestSubmit();
-                    }
-                },
-                function () {
-                    /* scan errors — ignore frame noise */
-                }
-            );
-            if (barcodeCameraToggle) {
-                barcodeCameraToggle.setAttribute('aria-expanded', 'true');
-                barcodeCameraToggle.innerHTML = '<i class="fas fa-times" aria-hidden="true"></i> Stop camera';
-            }
-            showBarcodeStatus('Point the camera at your barcode.', 'info');
-        } catch (err) {
-            showBarcodeStatus('Could not start camera. Use a USB scanner or enter the code manually.', 'error');
-            await stopBarcodeCamera();
-        }
-    }
-
-    function showBarcodeStatus(message, type) {
+    function showBarcodeStatus(message) {
         const statusDiv = document.getElementById('barcode-status');
         if (!statusDiv) {
             return;
         }
         statusDiv.classList.remove('d-none');
-        statusDiv.className = 'barcode-status ' + (type || 'info') + '-message d-block mt-3';
+        statusDiv.className = 'barcode-status info-message d-block mt-2';
         statusDiv.textContent = message;
+    }
+
+    function submitBarcodeScan() {
+        if (!barcodeLoginForm || !barcodeInput) {
+            return;
+        }
+        const code = String(barcodeInput.value || '').trim();
+        if (code.length < 2) {
+            return;
+        }
+        showBarcodeStatus('Signing in…');
+        barcodeLoginForm.requestSubmit();
+    }
+
+    function scheduleScanSubmit() {
+        if (scanSubmitTimer) {
+            clearTimeout(scanSubmitTimer);
+        }
+        scanSubmitTimer = setTimeout(submitBarcodeScan, 180);
     }
 
     if (loginMethodSelect) {
         hideAllForms();
         showForm(passwordForm);
 
-        loginMethodSelect.addEventListener('change', async function () {
-            const method = this.value;
-            await stopBarcodeCamera();
+        loginMethodSelect.addEventListener('change', function () {
             hideAllForms();
-            if (method === 'barcode') {
+            if (this.value === 'barcode') {
                 showForm(barcodeForm);
-                focusBarcodeInput();
+                focusBarcodeCapture();
             } else {
                 showForm(passwordForm);
             }
         });
     }
 
-    if (barcodeCameraToggle) {
-        barcodeCameraToggle.addEventListener('click', function () {
-            if (barcodeScanner) {
-                stopBarcodeCamera();
-            } else {
-                startBarcodeCamera();
-            }
-        });
-    }
-
-    if (barcodeLoginForm && barcodeInput) {
+    if (barcodeInput && barcodeLoginForm) {
         barcodeInput.addEventListener('keydown', function (ev) {
             if (ev.key === 'Enter') {
                 ev.preventDefault();
-                barcodeLoginForm.requestSubmit();
+                submitBarcodeScan();
             }
         });
+        barcodeInput.addEventListener('input', scheduleScanSubmit);
     }
+
+    document.addEventListener('click', function (ev) {
+        if (!barcodeForm || barcodeForm.classList.contains('d-none')) {
+            return;
+        }
+        if (ev.target.closest('#password-form')) {
+            return;
+        }
+        if (ev.target.closest('#login-method')) {
+            return;
+        }
+        focusBarcodeCapture();
+    });
 
     const successMessage = document.querySelector('.success-message');
     if (successMessage) {

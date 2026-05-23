@@ -403,6 +403,19 @@ class ModernForms {
                             return;
                         }
                         this.deleteItem(id);
+                    } else if (action === 'view-login-barcode') {
+                        const id = parseInt(btn.getAttribute('data-id'), 10);
+                        if (!id || Number.isNaN(id)) {
+                            return;
+                        }
+                        const base = (window.APP_CONFIG && window.APP_CONFIG.baseUrl)
+                            ? String(window.APP_CONFIG.baseUrl).replace(/\/$/, '')
+                            : '';
+                        const path = (typeof pageUrl === 'function')
+                            ? pageUrl('user-login-barcode.php')
+                            : (base + '/pages/user-login-barcode');
+                        const url = path + (path.indexOf('?') >= 0 ? '&' : '?') + 'user_id=' + encodeURIComponent(String(id));
+                        window.open(url, '_blank', 'noopener,noreferrer');
                     } else if (action === 'fingerprint-action') {
                         const id = parseInt(btn.getAttribute('data-id'));
                         const username = btn.getAttribute('data-username') || '';
@@ -1304,6 +1317,11 @@ class ModernForms {
                         <i class="fas fa-trash"></i>
                         <span class="btn-text">Delete</span>
                     </button>
+                    ${tableConfig.table === 'users' && itemId ? `
+                    <button type="button" class="modern-btn modern-btn-sm modern-btn-secondary" data-action="view-login-barcode" data-id="${itemId}" title="View login barcode" aria-label="View login barcode" data-permission="edit_user">
+                        <i class="fas fa-barcode"></i>
+                        <span class="btn-text">Barcode</span>
+                    </button>` : ''}
                 </td>
             </tr>
         `;
