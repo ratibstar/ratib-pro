@@ -133,17 +133,49 @@ document.addEventListener('DOMContentLoaded', function () {
         window.location.href = u.toString();
     }
 
+    function apiUrl(path) {
+        const p = String(path || '').trim();
+        if (p.indexOf('http') === 0) {
+            return p;
+        }
+        if (p.indexOf('/') === 0) {
+            return window.location.origin + p;
+        }
+        return window.location.origin + '/' + p.replace(/^\//, '');
+    }
+
+    async function apiPost(path, body) {
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            throw new Error('offline');
+        }
+        const url = apiUrl(path);
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            cache: 'no-store',
+            body: JSON.stringify(body)
+        });
+        const text = await res.text();
+        let json;
+        try {
+            json = JSON.parse(text);
+        } catch (e) {
+            throw new Error('bad_json');
+        }
+        if (!res.ok && json && json.success === false) {
+            const err = new Error(json.message || 'Request failed');
+            err.json = json;
+            throw err;
+        }
+        return json;
+    }
+
     async function pollPairToken(token) {
         const cfg = window.RATIB_LOGIN_PAIR || {};
         const apiPair = cfg.apiPair || '/api/login-barcode-pair.php';
         try {
-            const res = await fetch(apiPair, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({ action: 'poll', token: token })
-            });
-            const json = await res.json();
+            const json = await apiPost(apiPair, { action: 'poll', token: token });
             if (json.success && json.status === 'approved') {
                 completePairOnDesktop(token);
             } else if (json.status === 'expired') {
@@ -174,21 +206,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         try {
-            const res = await fetch(apiPair, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    action: 'create',
-                    country_id: cfg.countryId || 0,
-                    agency_id: cfg.agencyId || 0,
-                    country_slug: cfg.countrySlug || '',
-                    country_name: cfg.countryName || '',
-                    agency_name: cfg.agencyName || '',
-                    control: cfg.control ? 1 : 0
-                })
+            const json = await apiPost(apiPair, {
+                action: 'create',
+                country_id: cfg.countryId || 0,
+                agency_id: cfg.agencyId || 0,
+                country_slug: cfg.countrySlug || '',
+                country_name: cfg.countryName || '',
+                agency_name: cfg.agencyName || '',
+                control: cfg.control ? 1 : 0
             });
-            const json = await res.json();
             if (!json.success || !json.token) {
                 showBarcodeStatus(json.message || 'Could not start barcode login.', 'error');
                 return;
@@ -204,7 +230,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 1500);
             pollPairToken(activeToken);
         } catch (e) {
-            showBarcodeStatus('Network error. Refresh and try again.', 'error');
+            if (e && e.message === 'offline') {
+                showBarcodeStatus('No internet connection. Check Wi‑Fi or mobile data, then choose Barcode again.', 'error');
+            } else {
+                showBarcodeStatus('Could not reach the server. Refresh and try again.', 'error');
+            }
         }
     }
 

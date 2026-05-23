@@ -24,10 +24,14 @@ if ($hasPair) {
 $pageTitle = $hasPair ? 'Scan badge — RATEB' : 'QR check-in — RATEB';
 $cssV = (int) @filemtime(__DIR__ . '/../css/qr-scan.css');
 $jsScanV = (int) @filemtime(__DIR__ . '/../js/login-scan.js');
-$jsLibV = time();
+$jsLibV = (int) @filemtime(__DIR__ . '/../js/ratib-qr-scanner.js');
 
-$apiQr = function_exists('asset') ? asset('api/qr-login.php') : '/api/qr-login.php';
-$apiPair = function_exists('asset') ? asset('api/login-barcode-pair.php') : '/api/login-barcode-pair.php';
+$cssUrl = function_exists('asset') ? asset('css/qr-scan.css') : '/css/qr-scan.css';
+$jsScannerUrl = function_exists('asset') ? asset('js/ratib-qr-scanner.js') : '/js/ratib-qr-scanner.js';
+$jsScanUrl = function_exists('asset') ? asset('js/login-scan.js') : '/js/login-scan.js';
+
+$apiQr = '/api/qr-login.php';
+$apiPair = '/api/login-barcode-pair.php';
 
 $ctxCountryId = isset($_GET['country_id']) ? (int) $_GET['country_id'] : 0;
 $ctxAgencyId = isset($_GET['agency_id']) ? (int) $_GET['agency_id'] : 0;
@@ -49,7 +53,8 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
     <meta name="robots" content="noindex,nofollow">
     <title><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/qr-scan.css?v=<?php echo $cssV; ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($cssUrl, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo $cssV; ?>">
+    <meta name="theme-color" content="#0b1220">
 </head>
 <body class="qr-scan-page">
     <div class="qr-scan-shell">
@@ -86,8 +91,8 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
         'mode' => $mode,
     ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="../js/ratib-qr-scanner.js?v=<?php echo $jsLibV; ?>"></script>
-    <script src="../js/login-scan.js?v=<?php echo $jsScanV; ?>"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
+    <script src="<?php echo htmlspecialchars($jsScannerUrl, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo $jsLibV; ?>"></script>
+    <script src="<?php echo htmlspecialchars($jsScanUrl, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo $jsScanV; ?>"></script>
 </body>
 </html>

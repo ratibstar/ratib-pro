@@ -1,1 +1,1 @@
-rateb-enterprise-qr-login-20260522
+rateb-qr-scan-assets-fix-20260522

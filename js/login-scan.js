@@ -103,6 +103,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             scanner.start();
         });
+        // Mobile: one tap to open scanner (required for camera permission on iOS)
+        if (window.matchMedia('(max-width: 820px)').matches) {
+            setTimeout(function () {
+                if (startBtn && !startBtn.classList.contains('d-none')) {
+                    setStatus('Tap Start camera to scan your badge.', 'info');
+                }
+            }, 400);
+        }
     }
 
     if (stopBtn) {

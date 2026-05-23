@@ -1,4 +1,8 @@
 /* Enterprise QR scanner — mobile-first */
+.d-none {
+    display: none !important;
+}
+
 .qr-scan-page {
     min-height: 100vh;
     background: #0b1220;
@@ -38,7 +42,8 @@
     overflow: hidden;
     border: 1px solid rgba(56, 189, 248, 0.35);
     background: #020617;
-    min-height: 240px;
+    min-height: min(52vh, 360px);
+    width: 100%;
 }
 
 .qr-scan-viewport video {
@@ -54,12 +59,14 @@
 
 .qr-scan-btn {
     flex: 1;
-    min-height: 2.75rem;
-    border-radius: 8px;
+    min-height: 3rem;
+    border-radius: 10px;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 1rem;
     border: 1px solid transparent;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
 }
 
 .qr-scan-btn-primary {
