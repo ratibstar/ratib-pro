@@ -116,38 +116,262 @@
     color: #94a3b8;
 }
 
+/* —— Fullscreen workforce QR (phone-scan optimized) —— */
 .wf-qr-fullscreen {
     position: fixed;
     inset: 0;
     z-index: 10050;
-    background: #000;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 .wf-qr-fullscreen.d-none {
     display: none !important;
 }
 
-.wf-qr-fullscreen-inner {
+.wf-qr-fullscreen-backdrop {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59, 130, 246, 0.18) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 50% at 50% 100%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
+        linear-gradient(165deg, #020617 0%, #0f172a 45%, #1e1b4b 100%);
+}
+
+.wf-qr-fullscreen-panel {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 440px);
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
     text-align: center;
-    max-width: 420px;
+    animation: wfQrPanelIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes wfQrPanelIn {
+    from {
+        opacity: 0;
+        transform: scale(0.94) translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.wf-qr-fullscreen-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.85);
+    color: #e2e8f0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.wf-qr-fullscreen-close:hover {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(148, 163, 184, 0.45);
+    transform: scale(1.05);
+}
+
+.wf-qr-fullscreen-header {
+    margin-bottom: 1.25rem;
+    padding-right: 2.5rem;
+}
+
+.wf-qr-fullscreen-brand {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 0.35rem;
+}
+
+.wf-qr-fullscreen-step {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #a5b4fc;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(129, 140, 248, 0.35);
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    margin-bottom: 0.65rem;
 }
 
 .wf-qr-fullscreen-title {
-    color: #e2e8f0;
-    font-size: 1rem;
-    margin-bottom: 1rem;
+    margin: 0 0 0.35rem;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: #f8fafc;
+    line-height: 1.25;
 }
 
-.wf-qr-fullscreen #wf-qr-fullscreen-host {
-    background: #fff;
-    padding: 1rem;
-    border-radius: 8px;
+.wf-qr-fullscreen-user {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #94a3b8;
+}
+
+.wf-qr-fullscreen-user strong {
+    color: #e2e8f0;
+    font-weight: 600;
+}
+
+.wf-qr-fullscreen-stage {
+    margin-bottom: 1.25rem;
+}
+
+.wf-qr-scan-frame {
+    position: relative;
     display: inline-block;
-    margin-bottom: 1rem;
+    padding: 0.65rem;
+}
+
+.wf-qr-corner {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border-color: #38bdf8;
+    border-style: solid;
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+.wf-qr-corner--tl { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+.wf-qr-corner--tr { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+.wf-qr-corner--bl { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+.wf-qr-corner--br { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+.wf-qr-fullscreen-card {
+    background: #ffffff;
+    padding: 1.35rem;
+    border-radius: 16px;
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        0 25px 50px -12px rgba(0, 0, 0, 0.65),
+        0 0 80px rgba(56, 189, 248, 0.08);
+}
+
+.wf-qr-fullscreen-host {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: min(72vw, 300px);
+    min-height: min(72vw, 300px);
+}
+
+.wf-qr-fullscreen-host canvas,
+.wf-qr-fullscreen-host img {
+    display: block !important;
+    width: min(72vw, 300px) !important;
+    height: min(72vw, 300px) !important;
+    max-width: 300px;
+    max-height: 300px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.wf-qr-fullscreen-tips {
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 12px;
+}
+
+.wf-qr-fullscreen-tips li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    line-height: 1.45;
+    margin-bottom: 0.45rem;
+}
+
+.wf-qr-fullscreen-tips li:last-child {
+    margin-bottom: 0;
+}
+
+.wf-qr-fullscreen-tips i {
+    color: #38bdf8;
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+    width: 1rem;
+    text-align: center;
+}
+
+.wf-qr-fullscreen-tips strong {
+    color: #cbd5e1;
+    font-weight: 600;
+}
+
+.wf-qr-fullscreen-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.wf-qr-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 0.55rem 1.15rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+}
+
+.wf-qr-btn--ghost {
+    background: rgba(30, 41, 59, 0.9);
+    color: #e2e8f0;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.wf-qr-btn--ghost:hover {
+    background: rgba(51, 65, 85, 0.95);
+}
+
+.wf-qr-btn--primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+}
+
+.wf-qr-btn--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+}
+
+body.wf-qr-fs-open {
+    overflow: hidden;
+}
+
+@media (min-width: 480px) {
+    .wf-qr-fullscreen-host canvas,
+    .wf-qr-fullscreen-host img {
+        width: 300px !important;
+        height: 300px !important;
+    }
 }
 
 @media print {

@@ -70,18 +70,23 @@
         }
         qrHost.innerHTML = '';
         const scanValue = payloadToScanValue(payload);
+        const size = opts.fullscreen ? 300 : 220;
         if (typeof QRCode !== 'undefined' && scanValue) {
             new QRCode(qrHost, {
                 text: scanValue,
-                width: 220,
-                height: 220,
-                correctLevel: QRCode.CorrectLevel.H
+                width: size,
+                height: size,
+                correctLevel: QRCode.CorrectLevel.H,
+                colorDark: '#000000',
+                colorLight: '#ffffff'
             });
         }
-        var hint = document.createElement('p');
-        hint.className = 'wf-meta mb-0 mt-2';
-        hint.textContent = 'This QR stays visible while this panel is open. Print or download before closing if needed.';
-        qrHost.appendChild(hint);
+        if (!opts.fullscreen) {
+            var hint = document.createElement('p');
+            hint.className = 'wf-meta mb-0 mt-2';
+            hint.textContent = 'This QR stays visible while this panel is open. Print or download before closing if needed.';
+            qrHost.appendChild(hint);
+        }
     }
 
     async function loadLibs() {
@@ -347,17 +352,19 @@
             await loadLibs();
             const host = el('wf-qr-fullscreen-host');
             const overlay = el('wfQrFullscreen');
+            const userEl = el('wf-qr-fullscreen-user');
             if (!host || !overlay) {
                 return;
             }
-            host.innerHTML = '';
-            renderQr(host, payload);
-            var canvas = host.querySelector('canvas');
-            if (canvas) {
-                canvas.style.width = 'min(85vw, 320px)';
-                canvas.style.height = 'auto';
+            if (userEl) {
+                userEl.innerHTML = this.username
+                    ? 'Employee: <strong>' + this.username.replace(/</g, '&lt;') + '</strong>'
+                    : '';
             }
+            host.innerHTML = '';
+            renderQr(host, payload, { fullscreen: true });
             overlay.classList.remove('d-none');
+            document.body.classList.add('wf-qr-fs-open');
         },
 
         closeFullscreenQr() {
@@ -365,6 +372,19 @@
             if (overlay) {
                 overlay.classList.add('d-none');
             }
+            document.body.classList.remove('wf-qr-fs-open');
+        },
+
+        downloadFullscreenPng() {
+            const canvas = document.querySelector('#wf-qr-fullscreen-host canvas');
+            if (!canvas) {
+                global.alert('Generate QR first.');
+                return;
+            }
+            const a = document.createElement('a');
+            a.download = 'rateb-workforce-badge-' + this.userId + '.png';
+            a.href = canvas.toDataURL('image/png');
+            a.click();
         }
     };
 
@@ -403,6 +423,13 @@
             } else if (act === 'fullscreen-qr') {
                 WorkforceAccess.showFullscreenQr();
             } else if (act === 'close-fullscreen') {
+                WorkforceAccess.closeFullscreenQr();
+            } else if (act === 'download-png-fs') {
+                WorkforceAccess.downloadFullscreenPng();
+            }
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
                 WorkforceAccess.closeFullscreenQr();
             }
         });

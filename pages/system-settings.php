@@ -381,13 +381,39 @@ if ($embeddedMode) {
     </div>
 </div>
 
-<!-- Fullscreen workforce QR for phone camera -->
-<div id="wfQrFullscreen" class="wf-qr-fullscreen d-none" role="dialog" aria-label="Large workforce QR">
-    <div class="wf-qr-fullscreen-inner">
-        <p class="wf-qr-fullscreen-title">Scan this with your phone (Step 2)</p>
-        <div id="wf-qr-fullscreen-host"></div>
-        <p class="wf-meta">Lower laptop brightness if the QR looks too bright. Or use Print badge / Download PNG.</p>
-        <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="close-fullscreen">Close</button>
+<!-- Fullscreen workforce QR — optimized for phone camera scan -->
+<div id="wfQrFullscreen" class="wf-qr-fullscreen d-none" role="dialog" aria-modal="true" aria-labelledby="wfQrFullscreenTitle">
+    <div class="wf-qr-fullscreen-backdrop" data-wf-action="close-fullscreen" aria-hidden="true"></div>
+    <div class="wf-qr-fullscreen-panel">
+        <button type="button" class="wf-qr-fullscreen-close" data-wf-action="close-fullscreen" aria-label="Close">
+            <i class="fas fa-times"></i>
+        </button>
+        <header class="wf-qr-fullscreen-header">
+            <span class="wf-qr-fullscreen-brand">RATEB</span>
+            <span class="wf-qr-fullscreen-step">Step 2 · Workforce badge</span>
+            <h2 id="wfQrFullscreenTitle" class="wf-qr-fullscreen-title">Scan with your phone</h2>
+            <p id="wf-qr-fullscreen-user" class="wf-qr-fullscreen-user"></p>
+        </header>
+        <div class="wf-qr-fullscreen-stage">
+            <div class="wf-qr-scan-frame" aria-hidden="true">
+                <span class="wf-qr-corner wf-qr-corner--tl"></span>
+                <span class="wf-qr-corner wf-qr-corner--tr"></span>
+                <span class="wf-qr-corner wf-qr-corner--bl"></span>
+                <span class="wf-qr-corner wf-qr-corner--br"></span>
+                <div class="wf-qr-fullscreen-card">
+                    <div id="wf-qr-fullscreen-host" class="wf-qr-fullscreen-host"></div>
+                </div>
+            </div>
+        </div>
+        <ul class="wf-qr-fullscreen-tips">
+            <li><i class="fas fa-mobile-alt"></i> On phone: <strong>Start camera</strong> on the scan page</li>
+            <li><i class="fas fa-sun"></i> Lower screen brightness if the QR looks washed out</li>
+            <li><i class="fas fa-print"></i> Or use <strong>Print badge</strong> / <strong>Download PNG</strong></li>
+        </ul>
+        <div class="wf-qr-fullscreen-actions">
+            <button type="button" class="wf-qr-btn wf-qr-btn--ghost" data-wf-action="close-fullscreen">Close</button>
+            <button type="button" class="wf-qr-btn wf-qr-btn--primary" data-wf-action="download-png-fs">Download PNG</button>
+        </div>
     </div>
 </div>
 
