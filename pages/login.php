@@ -280,40 +280,16 @@ if ($urlAgencyIdPre > 0 && $formHiddenAgencyId > 0) {
     $agencySelectOptions = [];
 }
 
-// One line under "Login": branded intro from APP_NAME for path URLs, /pages/login.php + cookies, tenant, etc.
-$loginSubtitleName = null;
-if ($singleCountryFromPath && $loginCountryName) {
-    $loginSubtitleName = trim($loginCountryName);
-} elseif ($formHiddenAgencyId > 0 && !empty($loginAgencyPicklist)) {
+// Optional agency badge only (country name is never shown on the login screen).
+$loginAgencyBadgeName = null;
+if ($formHiddenAgencyId > 0 && !empty($loginAgencyPicklist)) {
     foreach ($loginAgencyPicklist as $ar) {
-        if ((int)$ar['agency_id'] === $formHiddenAgencyId) {
+        if ((int) $ar['agency_id'] === $formHiddenAgencyId) {
             $an = trim($ar['agency_name'] ?? '');
-            $cn = trim($ar['country_name'] ?? '');
-            $loginSubtitleName = $an !== '' ? $an : ($cn !== '' ? $cn : null);
-            break;
-        }
-    }
-}
-if ($loginSubtitleName === null && $loginCountryName) {
-    $loginSubtitleName = trim($loginCountryName);
-}
-if ($loginSubtitleName === null && $formHiddenCountryId > 0 && !empty($loginCountries)) {
-    foreach ($loginCountries as $c) {
-        if ((int)$c['id'] === $formHiddenCountryId && trim($c['name'] ?? '') !== '') {
-            $loginSubtitleName = trim($c['name']);
-            break;
-        }
-    }
-}
-if ($loginSubtitleName === null && $formHiddenCountryId > 0 && !empty($loginAgencyPicklist)) {
-    foreach ($loginAgencyPicklist as $ar) {
-        if ((int)$ar['country_id'] === $formHiddenCountryId) {
-            $cn = trim($ar['country_name'] ?? '');
-            $an = trim($ar['agency_name'] ?? '');
-            $loginSubtitleName = $cn !== '' ? $cn : ($an !== '' ? $an : null);
-            if ($loginSubtitleName !== null && $loginSubtitleName !== '') {
-                break;
+            if ($an !== '') {
+                $loginAgencyBadgeName = $an;
             }
+            break;
         }
     }
 }
@@ -1302,7 +1278,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php $loginBrandName = defined('APP_NAME') && (string) APP_NAME !== '' ? (string) APP_NAME : 'RATEB'; ?>
-    <title><?php echo $loginSubtitleName ? htmlspecialchars($loginSubtitleName) . ' - ' : ''; ?>Login - <?php echo htmlspecialchars($loginBrandName, ENT_QUOTES, 'UTF-8'); ?></title>
+    <title>Login - <?php echo htmlspecialchars($loginBrandName, ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236b21a8'/%3E%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
     
     <!-- Bootstrap CSS -->
@@ -1333,18 +1309,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         </div>
         
         <div class="portal-content active">
-            <?php if ($loginSubtitleName !== null && $loginSubtitleName !== ''): ?>
+            <?php if ($loginAgencyBadgeName !== null && $loginAgencyBadgeName !== ''): ?>
             <div class="mb-2 text-center">
-                <span class="badge bg-primary fs-6 px-3 py-2"><?php echo htmlspecialchars($loginSubtitleName); ?></span>
+                <span class="badge bg-primary fs-6 px-3 py-2"><?php echo htmlspecialchars($loginAgencyBadgeName); ?></span>
             </div>
             <?php endif; ?>
             <h2>Login</h2>
-            <?php
-            $loginIntroLine = $loginSubtitleName
-                ? htmlspecialchars($loginBrandName, ENT_QUOTES, 'UTF-8') . ' — ' . htmlspecialchars($loginSubtitleName) . ' — sign in with your username and password.'
-                : htmlspecialchars($loginBrandName, ENT_QUOTES, 'UTF-8') . ' — sign in with your username and password.';
-            ?>
-            <p class="text-muted small mb-2"><?php echo $loginIntroLine; ?></p>
+            <p class="text-muted small mb-2"><?php echo htmlspecialchars($loginBrandName, ENT_QUOTES, 'UTF-8'); ?> — sign in with your username and password.</p>
             <?php if ($error): ?>
                 <div class="error-message"><?php echo htmlspecialchars($error); ?></div>
             <?php endif; ?>
