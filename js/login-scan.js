@@ -24,6 +24,23 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!v) {
             return { kind: 'empty', payload: '' };
         }
+        if (/^https?:\/\//i.test(v)) {
+            try {
+                var u = new URL(v);
+                var d = u.searchParams.get('d') || u.searchParams.get('badge') || u.searchParams.get('p');
+                if (d) {
+                    return classifyScan(d);
+                }
+                if (/\/login\/badge/i.test(u.pathname)) {
+                    return { kind: 'empty', payload: '' };
+                }
+                if (u.searchParams.get('token') && /login[-/]scan|login-scan/i.test(v)) {
+                    return { kind: 'pairing', payload: v };
+                }
+            } catch (e) {
+                /* fall through */
+            }
+        }
         if (/^RATIBLOGIN:/i.test(v)) {
             return { kind: 'badge', payload: v };
         }
@@ -41,14 +58,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function mapErrorCode(code, fallback) {
         var map = {
-            invalid: 'Badge not recognized. Re-open Users → Barcode and scan the badge QR (not the computer screen).',
-            pairing_qr: 'That is the computer pairing QR. Scan the employee badge from Users → Barcode instead.',
-            expired: 'This badge has expired. Ask admin to refresh Barcode in Users.',
+            invalid: 'Badge not recognized. In Users → Barcode, tap the user again to refresh the QR.',
+            pairing_qr: 'That is the computer QR (step 1). Scan the employee badge from Users → Barcode.',
+            expired: 'This badge has expired. Refresh Barcode in Users.',
             revoked: 'This badge has been revoked.',
             replay: 'Please wait a moment, then scan again.',
             rate_limit: 'Too many attempts. Wait a moment.',
             inactive: 'Account is not active.',
-            pair_failed: 'Could not sign in on your computer. Try again.'
+            pair_failed: 'Could not sign in on your computer. On the PC, choose Barcode again.'
         };
         return map[code] || fallback || 'Scan failed.';
     }
@@ -63,8 +80,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 scanner.resetSubmit();
             }
             setStatus(
-                'That QR is only to open this page. In Users settings, tap Barcode on the user row and scan that badge QR here.',
-                'info'
+                'Stop — that is the computer QR (step 1). Point the camera at Users → Barcode on the admin screen instead.',
+                'error'
             );
             return;
         }
@@ -137,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (stopBtn) {
                 stopBtn.classList.remove('d-none');
             }
-            setStatus('Point at the badge QR from Users → Barcode (not the computer screen).', 'info');
+            setStatus('Point at Users → Barcode QR — not the computer login screen.', 'info');
             scanner.start();
         });
     }
@@ -165,4 +182,8 @@ document.addEventListener('DOMContentLoaded', function () {
             scanner.stop();
         }
     });
+
+    if (cfg.autoBadge && pairToken) {
+        submitPayload(cfg.autoBadge);
+    }
 });

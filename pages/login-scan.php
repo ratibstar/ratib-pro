@@ -19,6 +19,21 @@ if ($hasPair) {
         echo 'Session expired. On your computer, choose Barcode again.';
         exit;
     }
+    $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'
+        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])
+            && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+    setcookie('ratib_pair', $pairToken, [
+        'expires' => time() + 600,
+        'path' => '/',
+        'secure' => $secure,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+}
+
+$autoBadge = isset($_GET['d']) ? trim((string) $_GET['d']) : '';
+if ($autoBadge === '' && isset($_GET['badge'])) {
+    $autoBadge = trim((string) $_GET['badge']);
 }
 
 $pageTitle = $hasPair ? 'Scan badge — RATEB' : 'QR check-in — RATEB';
@@ -59,14 +74,19 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
 <body class="qr-scan-page">
     <div class="qr-scan-shell">
         <p class="qr-scan-brand">RATEB</p>
-        <h1 class="qr-scan-title"><?php echo $hasPair ? 'Scan your employee badge' : 'QR check-in'; ?></h1>
+        <h1 class="qr-scan-title"><?php echo $hasPair ? 'Step 2 — Scan employee badge' : 'QR check-in'; ?></h1>
+        <?php if ($hasPair): ?>
+        <ol class="qr-scan-steps">
+            <li class="qr-scan-steps-done">Open this page (you scanned the computer QR)</li>
+            <li class="qr-scan-steps-active"><strong>Now</strong> scan the badge from Users → Barcode</li>
+        </ol>
+        <?php endif; ?>
         <p class="qr-scan-sub">
             <?php if ($hasPair): ?>
-            <strong>Do not scan the QR on your computer.</strong><br>
-            On this phone (or another admin device): System Settings → Users → tap the user’s <strong>Barcode</strong> → scan <em>that</em> badge here.
-            Your workstation will then sign in.
+            <strong>Wrong QR:</strong> the big QR on the computer login screen is only for step 1.<br>
+            Point this camera at the <strong>Users → Barcode</strong> QR (on screen or printed). iPhone Camera on the badge also works after step 1.
             <?php else: ?>
-            Sign in with your secure <strong>RATIBLOGIN</strong> badge QR code.
+            Sign in with your secure login badge QR code.
             <?php endif; ?>
         </p>
         <div id="qr-scan-viewport" class="qr-scan-viewport" aria-label="Camera scanner"></div>
@@ -90,6 +110,7 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
         'countryId' => $ctxCountryId,
         'agencyId' => $ctxAgencyId,
         'mode' => $mode,
+        'autoBadge' => $autoBadge,
     ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>

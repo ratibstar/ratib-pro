@@ -5718,7 +5718,10 @@ class ModernForms {
             return;
         }
         const ref = String(legacyRef || '').trim();
-        const scanValue = String(qrPayload || '').trim() || ref;
+        const rawPayload = String(qrPayload || '').trim() || ref;
+        const scanValue = rawPayload && /^RATIBLOGIN:/i.test(rawPayload) && typeof window !== 'undefined' && window.location
+            ? (window.location.origin + '/login/badge?d=' + encodeURIComponent(rawPayload))
+            : rawPayload;
         if (userEl) {
             userEl.textContent = username ? ('User: ' + username) : '';
         }
@@ -5741,9 +5744,9 @@ class ModernForms {
         if (typeof QRCode !== 'undefined') {
             new QRCode(qrHost, {
                 text: scanValue,
-                width: 240,
-                height: 240,
-                correctLevel: QRCode.CorrectLevel.M
+                width: 260,
+                height: 260,
+                correctLevel: QRCode.CorrectLevel.H
             });
         }
         if (svgEl && typeof JsBarcode !== 'undefined' && ref) {

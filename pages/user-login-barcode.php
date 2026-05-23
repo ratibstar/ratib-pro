@@ -100,10 +100,15 @@ $pageTitle = $username !== '' ? ('Login badge — ' . $username) : 'Login badge'
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script>
     (function () {
-        var value = <?php echo json_encode($qrPayload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        var value = <?php echo json_encode(
+            $qrPayload !== '' && function_exists('ratib_qr_login_badge_url')
+                ? ratib_qr_login_badge_url($qrPayload)
+                : $qrPayload,
+            JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        ); ?>;
         var host = document.getElementById('badge-qr');
         if (host && typeof QRCode !== 'undefined') {
-            new QRCode(host, { text: value, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
+            new QRCode(host, { text: value, width: 260, height: 260, correctLevel: QRCode.CorrectLevel.H });
         }
     })();
     </script>

@@ -395,7 +395,7 @@ if ($embeddedMode) {
             <div id="login-barcode-qr-host" class="login-barcode-qr-host"></div>
             <svg id="login-barcode-svg" class="login-barcode-svg" aria-hidden="true"></svg>
             <p id="login-barcode-code-text" class="login-barcode-code-text"></p>
-            <p class="login-barcode-modal-hint">On the computer: <strong>Barcode</strong> login → scan the pairing QR with this phone. Then tap <strong>Start camera</strong> here and scan <em>this</em> QR (not the text <code>R000…</code> line).</p>
+            <p class="login-barcode-modal-hint">Computer: <strong>Barcode</strong> login → scan that QR with this phone (step 1). Then scan <em>this</em> badge QR (step 2). iPhone Camera on this QR opens a link — that is correct.</p>
             <div class="login-barcode-modal-actions">
                 <button type="button" class="modern-btn modern-btn-secondary d-none" id="login-barcode-generate" data-action="ensure-login-barcode" data-id="">
                     <i class="fas fa-sync"></i> Generate

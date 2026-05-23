@@ -12,6 +12,33 @@ if (!defined('RATIB_QR_LOGIN_PREFIX')) {
     define('RATIB_QR_LOGIN_PREFIX', 'RATIBLOGIN:');
 }
 
+if (!function_exists('ratib_qr_login_badge_url')) {
+    /**
+     * Public HTTPS URL for badge QR (iPhone Camera opens Safari; in-app scanner also accepts this).
+     */
+    function ratib_qr_login_badge_url(string $qrPayload): string
+    {
+        $payload = trim($qrPayload);
+        if ($payload === '') {
+            return '';
+        }
+        $base = function_exists('ratib_absolute_public_base') ? ratib_absolute_public_base() : '';
+        if ($base === '') {
+            $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+                || (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])
+                    && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+            $scheme = $https ? 'https' : 'http';
+            $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+            $base = $host !== '' ? $scheme . '://' . $host : '';
+        }
+        if ($base === '') {
+            return $payload;
+        }
+
+        return rtrim($base, '/') . '/login/badge?d=' . rawurlencode($payload);
+    }
+}
+
 if (!function_exists('ratib_qr_login_token_hash')) {
     function ratib_qr_login_token_hash(string $plainToken): string
     {
@@ -166,7 +193,26 @@ if (!function_exists('ratib_qr_login_normalize_payload')) {
             $token = preg_replace('/[^a-f0-9]/', '', strtolower(substr($raw, strlen(RATIB_QR_LOGIN_PREFIX))));
             return ['type' => 'secure', 'value' => $token];
         }
-        if (preg_match('#^https?://#i', $raw) || preg_match('#login[-/]scan|login-scan\.php#i', $raw)) {
+        if (preg_match('#^https?://#i', $raw)) {
+            $parts = parse_url($raw);
+            if (is_array($parts) && !empty($parts['query'])) {
+                parse_str((string) $parts['query'], $qs);
+                foreach (['d', 'badge', 'p'] as $qk) {
+                    if (!empty($qs[$qk]) && is_string($qs[$qk])) {
+                        return ratib_qr_login_normalize_payload((string) $qs[$qk]);
+                    }
+                }
+            }
+            $path = (string) ($parts['path'] ?? '');
+            if (preg_match('#/login/badge#i', $path)) {
+                return ['type' => 'empty', 'value' => ''];
+            }
+            if (preg_match('#login[-/]scan|login-scan\.php#i', $raw)) {
+                return ['type' => 'pairing_url', 'value' => $raw];
+            }
+            return ['type' => 'unknown_url', 'value' => $raw];
+        }
+        if (preg_match('#login[-/]scan|login-scan\.php#i', $raw)) {
             return ['type' => 'pairing_url', 'value' => $raw];
         }
         if (preg_match('/^[Rr]\d{5,}[A-Za-z0-9]{0,8}$/', $raw)) {
