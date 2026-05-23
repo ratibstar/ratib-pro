@@ -1,16 +1,24 @@
 /**
- * Login Page JavaScript — password / mobile camera barcode login, dark mode
+ * Login Page JavaScript — password / phone-only barcode camera login
  */
 
 document.addEventListener('DOMContentLoaded', function () {
     const loginMethodSelect = document.getElementById('login-method');
     const passwordForm = document.getElementById('password-form');
     const barcodeForm = document.getElementById('barcode-form');
+    const barcodeMobilePanel = document.getElementById('barcode-mobile-panel');
+    const barcodeDesktopPanel = document.getElementById('barcode-desktop-panel');
     const barcodeInput = document.getElementById('barcode-input');
     const barcodeLoginForm = document.getElementById('barcode-login-form');
     const barcodeReaderEl = document.getElementById('barcode-qr-reader');
     const barcodeCameraWrap = document.getElementById('barcode-camera-wrap');
     const barcodeStartBtn = document.getElementById('barcode-start-camera');
+    const barcodeManualInput = document.getElementById('barcode-manual-input');
+    const barcodeManualSubmit = document.getElementById('barcode-manual-submit');
+    const barcodeManualInputDesktop = document.getElementById('barcode-manual-input-desktop');
+    const barcodeManualSubmitDesktop = document.getElementById('barcode-manual-submit-desktop');
+    const barcodeLoginUrlQr = document.getElementById('barcode-login-url-qr');
+    const barcodeLoginUrlText = document.getElementById('barcode-login-url-text');
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     const themeIcon = document.getElementById('theme-icon');
     const body = document.body;
@@ -19,6 +27,15 @@ document.addEventListener('DOMContentLoaded', function () {
     let barcodeScanner = null;
     let barcodeCameraStarting = false;
     let lastScanAt = 0;
+    let desktopLoginQrRendered = false;
+
+    const isPhoneDevice = (function () {
+        const ua = navigator.userAgent || '';
+        const mobileUa = /Android|iPhone|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+        const narrow = window.matchMedia('(max-width: 820px)').matches;
+        const touch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        return mobileUa || (narrow && touch);
+    })();
 
     if (animatedBackground) {
         const adPhrases = ['RATEB', 'Manage Your Business', 'Streamline Operations', 'Smart Solutions'];
@@ -90,9 +107,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function resetBarcodeUi() {
         stopBarcodeCamera();
-        if (barcodeCameraWrap) {
-            barcodeCameraWrap.classList.add('d-none');
-        }
         if (barcodeStartBtn) {
             barcodeStartBtn.classList.remove('d-none');
             barcodeStartBtn.disabled = false;
@@ -105,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         const value = String(code || '').trim();
         if (value.length < 2) {
+            showBarcodeStatus('Barcode code is too short.', 'error');
             return;
         }
         const now = Date.now();
@@ -143,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         const back = cameras.find(function (c) {
             const label = (c.label || '').toLowerCase();
-            return /back|rear|environment|wide/.test(label);
+            return /back|rear|environment|wide|telephoto/.test(label);
         });
         if (back) {
             return back.id;
@@ -156,13 +171,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function buildScanConfig() {
         return {
-            fps: 10,
+            fps: 12,
             qrbox: function (viewWidth, viewHeight) {
-                const w = Math.min(viewWidth * 0.92, 360);
-                const h = Math.min(viewHeight * 0.55, 220);
+                const w = Math.min(viewWidth * 0.94, 400);
+                const h = Math.min(viewHeight * 0.62, 280);
                 return { width: Math.floor(w), height: Math.floor(h) };
             },
-            aspectRatio: 1.777778
+            aspectRatio: 1.333333
         };
     }
 
@@ -199,16 +214,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function startBarcodeCamera() {
+        if (!isPhoneDevice) {
+            showBarcodeStatus('Camera scan works on phones only. Use the QR below to open login on your mobile.', 'info');
+            return;
+        }
         if (barcodeScanner || barcodeCameraStarting || !barcodeReaderEl) {
             return;
         }
         if (typeof Html5Qrcode === 'undefined') {
-            showBarcodeStatus('Scanner library did not load. Check your connection and refresh.', 'error');
+            showBarcodeStatus('Scanner library did not load. Refresh the page.', 'error');
             return;
         }
 
         barcodeCameraStarting = true;
-        showBarcodeStatus('Requesting camera…', 'info');
+        showBarcodeStatus('Starting phone camera…', 'info');
 
         if (barcodeCameraWrap) {
             barcodeCameraWrap.classList.remove('d-none');
@@ -231,15 +250,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (cameraId) {
                 await tryStartWithCameraId(cameraId);
             } else {
-                try {
-                    await tryStartWithFacingMode('environment');
-                } catch (envErr) {
-                    await tryStartWithFacingMode('user');
-                }
+                await tryStartWithFacingMode('environment');
             }
 
             barcodeCameraStarting = false;
-            showBarcodeStatus('Align the barcode inside the frame.', 'info');
+            showBarcodeStatus('Point at the QR code from Users settings.', 'info');
         } catch (err) {
             barcodeCameraStarting = false;
             await stopBarcodeCamera();
@@ -248,15 +263,77 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             console.error('Barcode camera error:', err);
             showBarcodeStatus(
-                'Camera blocked or unavailable. On mobile: tap Open camera, allow permission, use Chrome/Safari on HTTPS.',
+                'Allow camera access, then tap Start phone camera again. Use Chrome or Safari on HTTPS.',
                 'error'
             );
+        }
+    }
+
+    function renderDesktopLoginQr() {
+        if (!barcodeLoginUrlQr || desktopLoginQrRendered) {
+            return;
+        }
+        const loginUrl = window.location.href.split('#')[0];
+        if (barcodeLoginUrlText) {
+            barcodeLoginUrlText.textContent = loginUrl;
+        }
+        const img = document.createElement('img');
+        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(loginUrl);
+        img.alt = 'Open login on your phone';
+        img.width = 220;
+        img.height = 220;
+        img.className = 'barcode-login-url-qr-img';
+        barcodeLoginUrlQr.appendChild(img);
+        desktopLoginQrRendered = true;
+    }
+
+    function showBarcodeLoginPanel() {
+        if (barcodeMobilePanel) {
+            barcodeMobilePanel.classList.toggle('d-none', !isPhoneDevice);
+            barcodeMobilePanel.classList.toggle('d-block', isPhoneDevice);
+        }
+        if (barcodeDesktopPanel) {
+            barcodeDesktopPanel.classList.toggle('d-none', isPhoneDevice);
+            barcodeDesktopPanel.classList.toggle('d-block', !isPhoneDevice);
+        }
+        if (barcodeCameraWrap && isPhoneDevice) {
+            barcodeCameraWrap.classList.remove('d-none');
+        }
+        if (!isPhoneDevice) {
+            renderDesktopLoginQr();
+            showBarcodeStatus('Open login on your phone, or type your barcode code below.', 'info');
+        } else {
+            showBarcodeStatus('Tap Start phone camera, allow access, then scan the QR from Users.', 'info');
         }
     }
 
     if (barcodeStartBtn) {
         barcodeStartBtn.addEventListener('click', function () {
             startBarcodeCamera();
+        });
+    }
+
+    if (barcodeManualSubmit && barcodeManualInput) {
+        barcodeManualSubmit.addEventListener('click', function () {
+            submitBarcodeValue(barcodeManualInput.value);
+        });
+        barcodeManualInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitBarcodeValue(barcodeManualInput.value);
+            }
+        });
+    }
+
+    if (barcodeManualSubmitDesktop && barcodeManualInputDesktop) {
+        barcodeManualSubmitDesktop.addEventListener('click', function () {
+            submitBarcodeValue(barcodeManualInputDesktop.value);
+        });
+        barcodeManualInputDesktop.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitBarcodeValue(barcodeManualInputDesktop.value);
+            }
         });
     }
 
@@ -269,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function () {
             hideAllForms();
             if (this.value === 'barcode') {
                 showForm(barcodeForm);
-                showBarcodeStatus('Tap Open camera, then allow access when asked.', 'info');
+                showBarcodeLoginPanel();
             } else {
                 showForm(passwordForm);
             }

@@ -1426,19 +1426,47 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     </div>
                 </div>
                 
-                <!-- Barcode Form — mobile camera scan -->
+                <!-- Barcode login — phone camera scan only; full panel when selected -->
                 <div id="barcode-form" class="text-center d-none">
-                    <div class="barcode-scan-panel mb-2">
-                        <i class="fas fa-mobile-alt text-info icon-3em mb-2" aria-hidden="true"></i>
-                        <h3 class="mb-2">Scan barcode</h3>
-                        <p class="text-muted mb-0 small">Use your phone camera. Point at the barcode from System Settings → Users.</p>
+                    <!-- Phone / tablet: rear camera scanner (full view) -->
+                    <div id="barcode-mobile-panel" class="barcode-login-panel d-none">
+                        <div class="barcode-scan-panel mb-2">
+                            <i class="fas fa-mobile-alt text-info icon-3em mb-2" aria-hidden="true"></i>
+                            <h3 class="mb-2">Scan barcode</h3>
+                            <p class="text-muted mb-0 small">Use your <strong>phone camera</strong>. Point at the QR from System Settings → Users (tap the barcode there).</p>
+                        </div>
+                        <div id="barcode-camera-wrap" class="barcode-camera-wrap barcode-camera-wrap--full">
+                            <div id="barcode-qr-reader" class="barcode-qr-reader" aria-label="Phone barcode scanner"></div>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-lg w-100 mt-3" id="barcode-start-camera">
+                            <i class="fas fa-camera" aria-hidden="true"></i> Start phone camera
+                        </button>
+                        <details class="barcode-manual-details mt-3 text-start">
+                            <summary class="small text-muted">Enter barcode code instead</summary>
+                            <div class="mt-2">
+                                <input type="text" id="barcode-manual-input" class="form-control" placeholder="e.g. R000012USR" autocomplete="off" inputmode="text">
+                                <button type="button" class="btn btn-outline-light btn-sm w-100 mt-2" id="barcode-manual-submit">Sign in with code</button>
+                            </div>
+                        </details>
                     </div>
-                    <button type="button" class="btn btn-primary btn-lg w-100 mb-3" id="barcode-start-camera">
-                        <i class="fas fa-camera" aria-hidden="true"></i> Open camera
-                    </button>
-                    <div id="barcode-camera-wrap" class="barcode-camera-wrap d-none">
-                        <div id="barcode-qr-reader" class="barcode-qr-reader" aria-label="Barcode camera scanner"></div>
+
+                    <!-- Laptop / PC: no webcam — open on phone or type code -->
+                    <div id="barcode-desktop-panel" class="barcode-login-panel d-none">
+                        <div class="barcode-scan-panel mb-3">
+                            <i class="fas fa-mobile-alt text-info icon-3em mb-2" aria-hidden="true"></i>
+                            <h3 class="mb-2">Barcode login — phone only</h3>
+                            <p class="text-muted mb-0 small">This computer cannot scan. Open the login page on your <strong>phone</strong>, choose <strong>Barcode</strong>, then scan the QR from Users settings.</p>
+                        </div>
+                        <div class="barcode-open-phone-box mb-3">
+                            <p class="small text-muted mb-2">Scan to open login on your phone:</p>
+                            <div id="barcode-login-url-qr" class="barcode-login-url-qr" aria-label="QR code for login URL on phone"></div>
+                            <p class="barcode-login-url-text small mt-2 mb-0" id="barcode-login-url-text"></p>
+                        </div>
+                        <label for="barcode-manual-input-desktop" class="form-label small text-muted text-start w-100">Or type your barcode code here:</label>
+                        <input type="text" id="barcode-manual-input-desktop" class="form-control mb-2" placeholder="e.g. R000012USR" autocomplete="off">
+                        <button type="button" class="btn btn-primary w-100" id="barcode-manual-submit-desktop">Sign in with code</button>
                     </div>
+
                     <form method="post" action="" id="barcode-login-form" class="d-none" aria-hidden="true">
                         <?php if (!empty($_GET['control']) && (string)$_GET['control'] === '1'): ?>
                         <input type="hidden" name="control" value="1">
