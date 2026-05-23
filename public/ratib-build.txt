@@ -1,1 +1,1 @@
-rateb-ui-close-tooltip-fix-20260522
+rateb-global-ai-split-fix-20260522

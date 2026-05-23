@@ -15,3 +15,4 @@ $chatCssV = file_exists(__DIR__ . '/../css/chat-widget.css')
     : time();
 ?>
 <link rel="stylesheet" href="<?php echo htmlspecialchars(asset('css/chat-widget.css')); ?>?v=<?php echo (int) $chatCssV; ?>">
+<?php require_once __DIR__ . '/ratib-overlay-dismiss-guard.php'; ?>

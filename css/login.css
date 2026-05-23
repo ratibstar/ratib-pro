@@ -1101,11 +1101,13 @@ body.dark-mode .text-muted {
     color: var(--text-secondary-dark) !important;
 }
 
-/* Modern Dark Mode Toggle */
+/* Modern Dark Mode Toggle — bottom-left so it never overlaps top-bar / stray dismiss tooltips */
 .dark-mode-toggle {
     position: fixed;
-    top: 24px;
-    right: 24px;
+    top: auto;
+    bottom: 24px;
+    left: 24px;
+    right: auto;
     z-index: 1000;
     background: rgba(255, 255, 255, 0.25);
     border: 2px solid rgba(255, 255, 255, 0.4);
@@ -1289,8 +1291,10 @@ body.dark-mode .portal-content a:hover {
         width: 48px;
         height: 48px;
         font-size: 1.3rem;
-        top: 16px;
-        right: 16px;
+        bottom: 16px;
+        left: 16px;
+        top: auto;
+        right: auto;
     }
     
     .portal-content .btn,

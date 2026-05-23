@@ -63,6 +63,7 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
     <link rel="stylesheet" href="<?php echo asset('css/chat-widget.css'); ?>?v=<?php echo (int) $chatWidgetCssV; ?>">
     <?php $globalAiCssPath = __DIR__ . '/../css/global-ai-action.css'; $globalAiCssV = is_file($globalAiCssPath) ? filemtime($globalAiCssPath) : time(); ?>
     <link rel="stylesheet" href="<?php echo asset('css/global-ai-action.css'); ?>?v=<?php echo (int) $globalAiCssV; ?>">
+    <?php require_once __DIR__ . '/ratib-overlay-dismiss-guard.php'; ?>
     
     <!-- Page specific CSS -->
     <?php if (isset($pageCss)): ?>

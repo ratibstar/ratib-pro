@@ -13,6 +13,31 @@
  */
 require_once __DIR__ . '/../../../app/UI/GlobalAIButton.php';
 
+if (!function_exists('control_render_global_ai_header_button')) {
+    function control_render_global_ai_header_button(string $baseUrl): string
+    {
+        if (method_exists(\App\UI\GlobalAIButton::class, 'renderButton')) {
+            return \App\UI\GlobalAIButton::renderButton($baseUrl, 'header');
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('control_render_global_ai_modal')) {
+    function control_render_global_ai_modal(string $baseUrl): string
+    {
+        if (method_exists(\App\UI\GlobalAIButton::class, 'renderModalAndScript')) {
+            return \App\UI\GlobalAIButton::renderModalAndScript($baseUrl);
+        }
+        if (method_exists(\App\UI\GlobalAIButton::class, 'render')) {
+            return \App\UI\GlobalAIButton::render($baseUrl);
+        }
+
+        return '';
+    }
+}
+
 function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $additionalJS = [], array $layoutOptions = []) {
     global $apiBase, $ctrl;
     $standalone = !empty($layoutOptions['standalone']);
@@ -98,7 +123,7 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
                     <i class="fas fa-robot" aria-hidden="true"></i>
                     <span>CoreAI</span>
                 </a>
-                <?php echo \App\UI\GlobalAIButton::renderButton($fullBase, 'header'); ?>
+                <?php echo control_render_global_ai_header_button($fullBase); ?>
                 </div>
                 <div class="header-alerts" id="headerAlerts" data-permission="control_support_chats,view_control_support">
                     <button type="button" class="header-alert-btn" id="supportAlertsBtn" aria-label="Support alerts" title="Support alerts">
@@ -114,7 +139,7 @@ function startControlLayout($pageTitle = 'Control Panel', $additionalCSS = [], $
                     </div>
                 </div>
             </div>
-            <?php echo \App\UI\GlobalAIButton::renderModalAndScript($fullBase); ?>
+            <?php echo control_render_global_ai_modal($fullBase); ?>
         <?php else: ?>
         <main class="control-content control-content-standalone-full">
         <?php endif; ?>

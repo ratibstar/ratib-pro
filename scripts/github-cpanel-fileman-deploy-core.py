@@ -267,6 +267,9 @@ FAST_FILES = [
     "control-panel/pages/control-support-chats.php",
     "control-panel/pages/control-agencies.php",
     "control-panel/includes/control/layout-wrapper.php",
+    "app/UI/GlobalAIButton.php",
+    "css/global-ai-action.css",
+    "css/chat-widget.css",
     "control-panel/includes/control/client-platform-nav.php",
     "pages/partner-portal-login.php",
     "pages/architecture.php",
@@ -320,6 +323,10 @@ CRITICAL = [
     "control-panel/pages/control/control-hub.php",
     "control-panel/pages/control-support-chats.php",
     "control-panel/pages/control-agencies.php",
+    "control-panel/includes/control/layout-wrapper.php",
+    "app/UI/GlobalAIButton.php",
+    "css/global-ai-action.css",
+    "css/chat-widget.css",
 ]
 
 CRITICAL_SET = set(CRITICAL) | set(FAST_FILES)
