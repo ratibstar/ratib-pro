@@ -190,7 +190,20 @@ if (!function_exists('ratib_qr_login_normalize_payload')) {
             return ['type' => 'empty', 'value' => ''];
         }
         if (stripos($raw, RATIB_QR_LOGIN_PREFIX) === 0) {
-            $token = preg_replace('/[^a-f0-9]/', '', strtolower(substr($raw, strlen(RATIB_QR_LOGIN_PREFIX))));
+            $body = substr($raw, strlen(RATIB_QR_LOGIN_PREFIX));
+            if (strpos($body, '.') !== false) {
+                [$plainPart, $sigPart] = explode('.', $body, 2);
+                $plain = preg_replace('/[^a-f0-9]/', '', strtolower($plainPart));
+                $sig = preg_replace('/[^a-f0-9]/', '', strtolower($sigPart));
+                if ($plain !== '' && function_exists('ratib_qr_login_verify_signed_plain')) {
+                    require_once __DIR__ . '/ratib-qr-workforce-identity.php';
+                    if (!ratib_qr_login_verify_signed_plain($plain, $sig)) {
+                        return ['type' => 'invalid_sig', 'value' => ''];
+                    }
+                }
+                return ['type' => 'secure', 'value' => $plain];
+            }
+            $token = preg_replace('/[^a-f0-9]/', '', strtolower($body));
             return ['type' => 'secure', 'value' => $token];
         }
         if (preg_match('#^https?://#i', $raw)) {
@@ -224,16 +237,21 @@ if (!function_exists('ratib_qr_login_normalize_payload')) {
 
 if (!function_exists('ratib_qr_login_issue_token')) {
     /**
-     * Issue a new secure QR token for a user (invalidates previous by overwrite).
+     * Issue a new secure QR token (regenerate). Plain payload returned once.
      *
-     * @return array{ok:bool, qr_payload?:string, expires_at?:string, message?:string}
+     * @return array{ok:bool, qr_payload?:string, expires_at?:string|null, message?:string, regenerated?:bool}
      */
-    function ratib_qr_login_issue_token(mysqli $db, int $userId, int $ttlSeconds = 31536000): array
+    function ratib_qr_login_issue_token(mysqli $db, int $userId, int $ttlSeconds = 0, bool $isRegenerate = false): array
     {
         if ($userId <= 0) {
             return ['ok' => false, 'message' => 'Invalid user.'];
         }
-        ratib_qr_login_ensure_schema($db);
+        if (is_file(__DIR__ . '/ratib-qr-workforce-identity.php')) {
+            require_once __DIR__ . '/ratib-qr-workforce-identity.php';
+            ratib_qr_workforce_ensure_schema($db);
+        } else {
+            ratib_qr_login_ensure_schema($db);
+        }
         $pk = ratib_users_primary_key_for_barcode($db);
         try {
             $plain = bin2hex(random_bytes(32));
@@ -241,21 +259,37 @@ if (!function_exists('ratib_qr_login_issue_token')) {
             return ['ok' => false, 'message' => 'Could not generate token.'];
         }
         $hash = ratib_qr_login_token_hash($plain);
-        $expires = date('Y-m-d H:i:s', time() + max(300, $ttlSeconds));
+        $expires = null;
+        $expiresDb = '2099-12-31 23:59:59';
+        if ($ttlSeconds > 0) {
+            $expiresDb = date('Y-m-d H:i:s', time() + max(300, $ttlSeconds));
+            $expires = $expiresDb;
+        } elseif ($ttlSeconds < 0) {
+            $expiresDb = date('Y-m-d H:i:s', time() + 31536000);
+            $expires = $expiresDb;
+        }
         $stmt = $db->prepare(
-            "UPDATE users SET qr_login_token = ?, qr_token_expires_at = ?, qr_token_revoked_at = NULL WHERE `{$pk}` = ? LIMIT 1"
+            "UPDATE users SET qr_login_token = ?, qr_token_expires_at = ?, qr_token_revoked_at = NULL,
+             qr_login_enabled = 1 WHERE `{$pk}` = ? LIMIT 1"
         );
         if (!$stmt) {
             return ['ok' => false, 'message' => 'Database error.'];
         }
-        $stmt->bind_param('ssi', $hash, $expires, $userId);
+        $stmt->bind_param('ssi', $hash, $expiresDb, $userId);
         $stmt->execute();
         $stmt->close();
-        ratib_qr_login_audit($db, 'token_issued', 'ok', $userId, null, ['expires' => $expires]);
+        $payload = function_exists('ratib_qr_login_build_signed_payload')
+            ? ratib_qr_login_build_signed_payload($plain)
+            : (RATIB_QR_LOGIN_PREFIX . $plain);
+        ratib_qr_login_audit($db, $isRegenerate ? 'token_regenerated' : 'token_issued', 'ok', $userId, null, [
+            'expires' => $expires,
+            'persistent' => $expires === null,
+        ]);
         return [
             'ok' => true,
-            'qr_payload' => RATIB_QR_LOGIN_PREFIX . $plain,
+            'qr_payload' => $payload,
             'expires_at' => $expires,
+            'regenerated' => $isRegenerate,
         ];
     }
 }
@@ -309,6 +343,9 @@ if (!function_exists('ratib_qr_login_find_user_by_secure_token')) {
         if (!$user) {
             return ['ok' => false, 'message' => 'QR not recognized.', 'code' => 'invalid'];
         }
+        if (isset($user['qr_login_enabled']) && (int) $user['qr_login_enabled'] === 0) {
+            return ['ok' => false, 'message' => 'Workforce QR access is disabled.', 'code' => 'disabled'];
+        }
         if (!empty($user['qr_token_revoked_at'])) {
             return ['ok' => false, 'message' => 'This badge has been revoked.', 'code' => 'revoked'];
         }
@@ -335,6 +372,19 @@ if (!function_exists('ratib_qr_login_mark_scan')) {
     {
         $pk = ratib_users_primary_key_for_barcode($db);
         $now = date('Y-m-d H:i:s');
+        if (is_file(__DIR__ . '/ratib-qr-workforce-identity.php')) {
+            require_once __DIR__ . '/ratib-qr-workforce-identity.php';
+            ratib_qr_workforce_ensure_schema($db);
+            $stmt = $db->prepare(
+                "UPDATE users SET last_qr_scan_at = ?, qr_last_used_at = ? WHERE `{$pk}` = ? LIMIT 1"
+            );
+            if ($stmt) {
+                $stmt->bind_param('ssi', $now, $now, $userId);
+                $stmt->execute();
+                $stmt->close();
+                return;
+            }
+        }
         $stmt = $db->prepare("UPDATE users SET last_qr_scan_at = ? WHERE `{$pk}` = ? LIMIT 1");
         if ($stmt) {
             $stmt->bind_param('si', $now, $userId);
@@ -361,8 +411,8 @@ if (!function_exists('ratib_qr_login_authenticate_payload')) {
             return ['ok' => false, 'message' => 'Database unavailable.', 'code' => 'error'];
         }
         $parsed = ratib_qr_login_normalize_payload($payload);
-        if ($parsed['type'] === 'empty') {
-            return ['ok' => false, 'message' => 'Empty scan.', 'code' => 'invalid'];
+        if ($parsed['type'] === 'empty' || $parsed['type'] === 'invalid_sig') {
+            return ['ok' => false, 'message' => $parsed['type'] === 'invalid_sig' ? 'Invalid badge signature.' : 'Empty scan.', 'code' => 'invalid'];
         }
         if ($parsed['type'] === 'pairing_url') {
             return [
@@ -372,6 +422,8 @@ if (!function_exists('ratib_qr_login_authenticate_payload')) {
             ];
         }
         $user = null;
+        $skipPin = !empty($ctx['skip_pin']);
+        $trustDevice = !empty($ctx['trust_device']);
         if ($parsed['type'] === 'secure') {
             $found = ratib_qr_login_find_user_by_secure_token($loginConn, $parsed['value']);
             if (empty($found['ok'])) {
@@ -397,14 +449,102 @@ if (!function_exists('ratib_qr_login_authenticate_payload')) {
             }
             return $legacy;
         }
+        $uid = (int) ($user['user_id'] ?? 0);
+        if ($uid > 0 && is_file(__DIR__ . '/ratib-qr-workforce-identity.php')) {
+            require_once __DIR__ . '/ratib-qr-workforce-identity.php';
+            if (!$skipPin && function_exists('ratib_qr_pin_required_for_user') && ratib_qr_pin_required_for_user($user)) {
+                $challenge = ratib_qr_challenge_create($loginConn, $uid, $pairToken, $ctx);
+                if ($challenge === null) {
+                    return ['ok' => false, 'message' => 'Could not start PIN challenge.', 'code' => 'error'];
+                }
+                ratib_qr_login_audit($loginConn, 'pin_challenge', 'ok', $uid, $pairToken);
+                return [
+                    'ok' => false,
+                    'needs_pin' => true,
+                    'challenge_token' => $challenge,
+                    'message' => 'Enter your 4-digit PIN.',
+                    'code' => 'needs_pin',
+                ];
+            }
+        }
         $session = ratib_barcode_login_build_session($loginConn, $user, $ctx);
         if ($session === null) {
-            ratib_qr_login_audit($loginConn, 'scan_validate', 'fail', (int) ($user['user_id'] ?? 0), $pairToken, ['reason' => 'inactive']);
+            ratib_qr_login_audit($loginConn, 'scan_validate', 'fail', $uid, $pairToken, ['reason' => 'inactive']);
             return ['ok' => false, 'message' => 'Account inactive or not allowed.', 'code' => 'inactive'];
         }
-        $uid = (int) ($session['user_id'] ?? 0);
         ratib_qr_login_mark_scan($loginConn, $uid);
-        ratib_qr_login_audit($loginConn, 'scan_validate', 'ok', $uid, $pairToken, ['secure' => $parsed['type'] === 'secure']);
+        ratib_qr_login_audit($loginConn, 'scan_validate', 'ok', $uid, $pairToken, ['secure' => true]);
+        if ($trustDevice && is_file(__DIR__ . '/ratib-qr-workforce-identity.php')) {
+            require_once __DIR__ . '/ratib-qr-workforce-identity.php';
+            try {
+                $devTok = bin2hex(random_bytes(32));
+                if (ratib_qr_trusted_device_register($loginConn, $uid, $devTok, (string) ($ctx['device_label'] ?? 'Mobile'))) {
+                    $session['_trusted_device_token'] = $devTok;
+                }
+            } catch (Throwable $e) {
+                /* ignore */
+            }
+        }
         return ['ok' => true, 'session' => $session];
+    }
+}
+
+if (!function_exists('ratib_qr_login_complete_with_pin')) {
+    /**
+     * @param array<string, mixed> $ctx
+     * @return array{ok:bool, session?:array, message?:string, code?:string}
+     */
+    function ratib_qr_login_complete_with_pin(string $challengeToken, string $pin, array $ctx): array
+    {
+        if (!ratib_qr_login_rate_limit_ok('pin_validate', 30)) {
+            return ['ok' => false, 'message' => 'Too many attempts.', 'code' => 'rate_limit'];
+        }
+        if (!is_file(__DIR__ . '/ratib-qr-workforce-identity.php')) {
+            return ['ok' => false, 'message' => 'PIN not available.', 'code' => 'error'];
+        }
+        require_once __DIR__ . '/ratib-qr-workforce-identity.php';
+        $loginConn = ratib_barcode_login_resolve_connection($ctx);
+        if (!($loginConn instanceof mysqli)) {
+            return ['ok' => false, 'message' => 'Database unavailable.', 'code' => 'error'];
+        }
+        $ch = ratib_qr_challenge_consume($loginConn, $challengeToken);
+        if (empty($ch['ok'])) {
+            return ['ok' => false, 'message' => $ch['message'] ?? 'Invalid challenge.', 'code' => 'invalid'];
+        }
+        $uid = (int) ($ch['user_id'] ?? 0);
+        if (!ratib_qr_pin_verify($loginConn, $uid, $pin)) {
+            return ['ok' => false, 'message' => 'Incorrect PIN.', 'code' => 'pin_invalid'];
+        }
+        $row = ratib_qr_workforce_user_row($loginConn, $uid);
+        if (!$row) {
+            return ['ok' => false, 'message' => 'User not found.', 'code' => 'invalid'];
+        }
+        if (!isset($row['user_id'])) {
+            $pk = ratib_users_primary_key_for_barcode($loginConn);
+            $row['user_id'] = (int) ($row[$pk] ?? $uid);
+        }
+        $mergedCtx = array_merge($ch['context'] ?? [], $ctx, ['skip_pin' => true]);
+        $session = ratib_barcode_login_build_session($loginConn, $row, $mergedCtx);
+        if ($session === null) {
+            return ['ok' => false, 'message' => 'Account inactive.', 'code' => 'inactive'];
+        }
+        ratib_qr_login_mark_scan($loginConn, $uid);
+        ratib_qr_login_audit($loginConn, 'pin_login', 'ok', $uid, $ch['pair_token'] ?? null);
+        $pairTok = trim((string) ($ch['pair_token'] ?? ''));
+        if (!empty($ctx['trust_device'])) {
+            try {
+                $devTok = bin2hex(random_bytes(32));
+                if (ratib_qr_trusted_device_register($loginConn, $uid, $devTok, (string) ($ctx['device_label'] ?? 'Mobile'))) {
+                    $session['_trusted_device_token'] = $devTok;
+                }
+            } catch (Throwable $e) {
+                /* ignore */
+            }
+        }
+        $result = ['ok' => true, 'session' => $session];
+        if ($pairTok !== '' && strlen($pairTok) === 32) {
+            $result['pair_token'] = $pairTok;
+        }
+        return $result;
     }
 }

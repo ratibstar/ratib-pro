@@ -1472,7 +1472,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     </div>
 
                     <div id="barcode-mobile-hint" class="barcode-login-panel d-none">
-                        <p class="text-muted small mb-0">To sign in on a <strong>computer</strong>, open login there, choose <strong>Barcode</strong>, and scan the QR shown on that screen with this phone.</p>
+                        <p class="text-muted small mb-2">Scan your <strong>workforce badge</strong> to sign in on this device.</p>
+                        <a id="barcode-mobile-scan-link" class="btn btn-primary btn-sm mb-2" href="#">Open camera scanner</a>
+                        <div id="barcode-trusted-panel" class="d-none mt-2">
+                            <p class="small text-muted mb-1">Trusted device</p>
+                            <button type="button" id="barcode-trusted-login" class="btn btn-outline-light btn-sm">Continue as <span id="barcode-trusted-user"></span></button>
+                        </div>
+                        <p class="text-muted small mb-0 mt-2">To sign in on a <strong>computer</strong>, open login there, choose <strong>Barcode</strong>, and scan the QR on that screen.</p>
                     </div>
 
                     <form method="post" action="" id="barcode-login-form" class="d-none" aria-hidden="true">

@@ -76,6 +76,7 @@ RewriteRule ^([a-z0-9_-]+)/login/scan/?$ /pages/login-scan.php?country_slug=$1 [
 RewriteRule ^([a-z0-9_-]+)/workforce/scan/?$ /pages/login-scan.php?country_slug=$1&mode=checkin [L,QSA]
 RewriteRule ^login/scan/?$ /pages/login-scan.php [L,QSA]
 RewriteRule ^login/badge/?$ /pages/login-badge.php [L,QSA]
+RewriteRule ^workforce/badge/?$ /pages/workforce-badge.php [L,QSA]
 RewriteRule ^([a-z0-9_-]+)/login/badge/?$ /pages/login-badge.php?country_slug=$1 [L,QSA]
 
 # Country root: /bangladesh, /kenya, etc. → country dashboard route (not /home, /profile, or marketing paths)

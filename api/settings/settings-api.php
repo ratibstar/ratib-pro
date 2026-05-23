@@ -2374,13 +2374,22 @@ class SettingsAPI {
         $qrPayload = '';
         $qrExpires = '';
         require_once __DIR__ . '/../../includes/ratib-qr-login.php';
-        if (function_exists('ratib_qr_login_issue_token')) {
-            $issued = ratib_qr_login_issue_token($mysqli, $userId);
+        require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
+        if (function_exists('ratib_qr_login_ensure_persistent_token')) {
+            $issued = ratib_qr_login_ensure_persistent_token($mysqli, $userId, false);
             if (!empty($issued['ok'])) {
-                $qrPayload = (string) ($issued['qr_payload'] ?? '');
+                if (!empty($issued['qr_payload'])) {
+                    $qrPayload = (string) $issued['qr_payload'];
+                }
                 $qrExpires = (string) ($issued['expires_at'] ?? '');
+            } elseif (empty($issued['ok']) && ($issued['status'] ?? '') !== 'active') {
+                sendResponse(['success' => false, 'message' => $issued['message'] ?? 'QR issue failed'], 500);
+                return;
             }
         }
+        $wfStatus = function_exists('ratib_qr_workforce_status')
+            ? ratib_qr_workforce_status($mysqli, $userId)
+            : [];
         sendResponse([
             'success' => true,
             'data' => [
@@ -2388,6 +2397,133 @@ class SettingsAPI {
                 'username' => (string) ($result['username'] ?? ''),
                 'qr_payload' => $qrPayload,
                 'qr_expires_at' => $qrExpires,
+                'badge_url' => ($qrPayload !== '' && function_exists('ratib_qr_login_badge_url'))
+                    ? ratib_qr_login_badge_url($qrPayload)
+                    : '',
+                'workforce' => $wfStatus,
+            ],
+        ]);
+    }
+
+    public function workforceQrStatus($id) {
+        if (strtolower(trim($this->table)) !== 'users') {
+            sendResponse(['success' => false, 'message' => 'Invalid table'], 400);
+            return;
+        }
+        $userId = (int) $id;
+        require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
+        $mysqli = $GLOBALS['conn'] ?? null;
+        if (!($mysqli instanceof mysqli)) {
+            sendResponse(['success' => false, 'message' => 'Database unavailable'], 500);
+            return;
+        }
+        sendResponse(['success' => true, 'data' => ratib_qr_workforce_status($mysqli, $userId)]);
+    }
+
+    public function workforceQrGenerate($id, $input = []) {
+        return $this->workforceQrMutate($id, 'ensure', $input);
+    }
+
+    public function workforceQrRegenerate($id, $input = []) {
+        return $this->workforceQrMutate($id, 'regenerate', $input);
+    }
+
+    public function workforceQrRevoke($id) {
+        return $this->workforceQrMutate($id, 'revoke', []);
+    }
+
+    public function workforceQrSetPin($id, $input = []) {
+        if (strtolower(trim($this->table)) !== 'users') {
+            sendResponse(['success' => false, 'message' => 'Invalid table'], 400);
+            return;
+        }
+        $userId = (int) $id;
+        require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
+        $mysqli = $GLOBALS['conn'] ?? null;
+        if (!($mysqli instanceof mysqli)) {
+            sendResponse(['success' => false, 'message' => 'Database unavailable'], 500);
+            return;
+        }
+        $enabled = !empty($input['enabled']);
+        $pin = isset($input['pin']) ? (string) $input['pin'] : null;
+        $res = ratib_qr_pin_set($mysqli, $userId, $pin, $enabled);
+        sendResponse(['success' => !empty($res['ok']), 'message' => $res['message'] ?? ''], !empty($res['ok']) ? 200 : 400);
+    }
+
+    public function workforceQrSetEnabled($id, $input = []) {
+        if (strtolower(trim($this->table)) !== 'users') {
+            sendResponse(['success' => false, 'message' => 'Invalid table'], 400);
+            return;
+        }
+        $userId = (int) $id;
+        require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
+        $mysqli = $GLOBALS['conn'] ?? null;
+        if (!($mysqli instanceof mysqli)) {
+            sendResponse(['success' => false, 'message' => 'Database unavailable'], 500);
+            return;
+        }
+        $ok = ratib_qr_login_set_enabled($mysqli, $userId, !empty($input['enabled']));
+        sendResponse(['success' => $ok, 'message' => $ok ? 'Saved.' : 'Failed.'], $ok ? 200 : 500);
+    }
+
+    public function workforceRevokeDevice($id, $input = []) {
+        if (strtolower(trim($this->table)) !== 'users') {
+            sendResponse(['success' => false, 'message' => 'Invalid table'], 400);
+            return;
+        }
+        $userId = (int) $id;
+        $deviceId = (int) ($input['device_id'] ?? 0);
+        require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
+        $mysqli = $GLOBALS['conn'] ?? null;
+        if (!($mysqli instanceof mysqli)) {
+            sendResponse(['success' => false, 'message' => 'Database unavailable'], 500);
+            return;
+        }
+        $ok = ratib_qr_trusted_device_revoke($mysqli, $userId, $deviceId);
+        sendResponse(['success' => $ok, 'message' => $ok ? 'Device revoked.' : 'Not found.'], $ok ? 200 : 404);
+    }
+
+    private function workforceQrMutate($id, $mode, $input = []) {
+        if (strtolower(trim($this->table)) !== 'users') {
+            sendResponse(['success' => false, 'message' => 'Invalid table'], 400);
+            return;
+        }
+        $userId = (int) $id;
+        if ($userId <= 0) {
+            sendResponse(['success' => false, 'message' => 'Invalid user id'], 400);
+            return;
+        }
+        $this->ensureColumnsExist();
+        require_once __DIR__ . '/../../includes/ratib-user-login-barcode.php';
+        require_once __DIR__ . '/../../includes/ratib-qr-workforce-identity.php';
+        $mysqli = $GLOBALS['conn'] ?? null;
+        if (!($mysqli instanceof mysqli)) {
+            sendResponse(['success' => false, 'message' => 'Database unavailable'], 500);
+            return;
+        }
+        ratib_user_ensure_login_barcode($mysqli, $userId);
+        if ($mode === 'revoke') {
+            $ok = ratib_qr_login_revoke_token($mysqli, $userId);
+            sendResponse(['success' => $ok, 'data' => ratib_qr_workforce_status($mysqli, $userId)], $ok ? 200 : 500);
+            return;
+        }
+        if ($mode === 'regenerate') {
+            $issued = ratib_qr_login_issue_token($mysqli, $userId, 0, true);
+        } else {
+            $issued = ratib_qr_login_ensure_persistent_token($mysqli, $userId, false);
+        }
+        if (empty($issued['ok'])) {
+            sendResponse(['success' => false, 'message' => $issued['message'] ?? 'Failed'], 500);
+            return;
+        }
+        $payload = (string) ($issued['qr_payload'] ?? '');
+        sendResponse([
+            'success' => true,
+            'data' => [
+                'qr_payload' => $payload ?: null,
+                'expires_at' => $issued['expires_at'] ?? null,
+                'badge_url' => $payload !== '' ? ratib_qr_login_badge_url($payload) : null,
+                'workforce' => ratib_qr_workforce_status($mysqli, $userId),
             ],
         ]);
     }
@@ -2476,6 +2612,21 @@ class SettingsAPI {
         }
         if ($table === 'users' && !in_array('last_qr_scan_at', $existingColsLower, true)) {
             $columnsToAdd[] = 'ADD COLUMN `last_qr_scan_at` DATETIME NULL DEFAULT NULL';
+        }
+        if ($table === 'users' && !in_array('qr_login_enabled', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `qr_login_enabled` TINYINT(1) NOT NULL DEFAULT 1';
+        }
+        if ($table === 'users' && !in_array('qr_last_used_at', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `qr_last_used_at` DATETIME NULL DEFAULT NULL';
+        }
+        if ($table === 'users' && !in_array('qr_pin_enabled', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `qr_pin_enabled` TINYINT(1) NOT NULL DEFAULT 0';
+        }
+        if ($table === 'users' && !in_array('qr_pin_hash', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `qr_pin_hash` VARCHAR(255) NULL DEFAULT NULL';
+        }
+        if ($table === 'users' && !in_array('trusted_device_limit', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `trusted_device_limit` INT UNSIGNED NOT NULL DEFAULT 5';
         }
         
         // Common: add country_id, city, position, created_at, updated_at where missing (for settings tables)
@@ -2633,6 +2784,13 @@ try {
             'update' => 'edit',
             'delete' => 'delete',
             'ensure_login_barcode' => 'edit',
+            'workforce_qr_status' => 'edit',
+            'workforce_qr_generate' => 'edit',
+            'workforce_qr_regenerate' => 'edit',
+            'workforce_qr_revoke' => 'edit',
+            'workforce_qr_set_pin' => 'edit',
+            'workforce_qr_set_enabled' => 'edit',
+            'workforce_revoke_device' => 'edit',
         ];
         $requiredPermission = null;
         $permKey = $actionMap[$action] ?? null;
@@ -2724,6 +2882,20 @@ try {
                 $api->getStats();
             } elseif ($actionClean === 'ensure_login_barcode') {
                 $api->ensureLoginBarcode(isset($input['id']) ? $input['id'] : 0);
+            } elseif ($actionClean === 'workforce_qr_status') {
+                $api->workforceQrStatus(isset($input['id']) ? $input['id'] : 0);
+            } elseif ($actionClean === 'workforce_qr_generate') {
+                $api->workforceQrGenerate(isset($input['id']) ? $input['id'] : 0, $input);
+            } elseif ($actionClean === 'workforce_qr_regenerate') {
+                $api->workforceQrRegenerate(isset($input['id']) ? $input['id'] : 0, $input);
+            } elseif ($actionClean === 'workforce_qr_revoke') {
+                $api->workforceQrRevoke(isset($input['id']) ? $input['id'] : 0);
+            } elseif ($actionClean === 'workforce_qr_set_pin') {
+                $api->workforceQrSetPin(isset($input['id']) ? $input['id'] : 0, $input);
+            } elseif ($actionClean === 'workforce_qr_set_enabled') {
+                $api->workforceQrSetEnabled(isset($input['id']) ? $input['id'] : 0, $input);
+            } elseif ($actionClean === 'workforce_revoke_device') {
+                $api->workforceRevokeDevice(isset($input['id']) ? $input['id'] : 0, $input);
             } else {
                 // Unknown action - provide detailed error
                 $actionHex = bin2hex($action);

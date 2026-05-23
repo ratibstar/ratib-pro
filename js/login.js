@@ -187,6 +187,46 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    async function checkTrustedDevice() {
+        const panel = document.getElementById('barcode-trusted-panel');
+        const btn = document.getElementById('barcode-trusted-login');
+        const userEl = document.getElementById('barcode-trusted-user');
+        if (!panel) {
+            return;
+        }
+        try {
+            const res = await apiPost('/api/qr-login.php', { action: 'trusted_check' });
+            if (res.success && res.trusted && res.username) {
+                panel.classList.remove('d-none');
+                if (userEl) {
+                    userEl.textContent = res.username;
+                }
+            } else {
+                panel.classList.add('d-none');
+            }
+        } catch (e) {
+            panel.classList.add('d-none');
+        }
+        if (btn && !btn._bound) {
+            btn._bound = true;
+            btn.addEventListener('click', async function () {
+                const cfg = window.RATIB_LOGIN_PAIR || {};
+                try {
+                    const json = await apiPost('/api/qr-login.php', {
+                        action: 'trusted_login',
+                        country_id: cfg.countryId || 0,
+                        agency_id: cfg.agencyId || 0
+                    });
+                    if (json.success && json.redirect) {
+                        window.location.href = json.redirect;
+                    }
+                } catch (e) {
+                    showBarcodeStatus('Trusted login failed. Scan your badge instead.', 'error');
+                }
+            });
+        }
+    }
+
     async function startDesktopBarcodePair() {
         const cfg = window.RATIB_LOGIN_PAIR || {};
         const apiPair = cfg.apiPair || '/api/login-barcode-pair.php';
@@ -247,7 +287,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 barcodeMobileHint.classList.remove('d-none');
                 barcodeMobileHint.classList.add('d-block');
             }
-            showBarcodeStatus('Open login on your computer and scan the QR shown there.', 'info');
+            const cfg = window.RATIB_LOGIN_PAIR || {};
+            const scanLink = document.getElementById('barcode-mobile-scan-link');
+            if (scanLink) {
+                let scanBase = cfg.scanPage || '/login/scan';
+                if (scanBase.indexOf('http') !== 0) {
+                    scanBase = window.location.origin + (scanBase.indexOf('/') === 0 ? scanBase : '/' + scanBase);
+                }
+                scanLink.href = scanBase;
+            }
+            checkTrustedDevice();
             clearPairSession();
             return;
         }

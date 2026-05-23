@@ -1,0 +1,121 @@
+/* Workforce QR identity — enterprise admin panel */
+.wf-access-modal-content {
+    max-width: 520px;
+}
+
+.wf-access-body {
+    padding: 0 1.25rem 1.25rem;
+}
+
+.wf-access-section {
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 0.75rem;
+    background: rgba(15, 23, 42, 0.35);
+}
+
+.wf-access-section h3 {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin: 0 0 0.5rem;
+    font-weight: 600;
+}
+
+.wf-status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    margin-bottom: 0.35rem;
+    color: #cbd5e1;
+}
+
+.wf-status-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+}
+
+.wf-status-badge--active { background: #064e3b; color: #6ee7b7; }
+.wf-status-badge--revoked { background: #450a0a; color: #fca5a5; }
+.wf-status-badge--expired { background: #422006; color: #fcd34d; }
+.wf-status-badge--none { background: #1e293b; color: #94a3b8; }
+
+.wf-qr-host {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0.5rem 0;
+}
+
+.wf-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.wf-actions .modern-btn {
+    font-size: 0.78rem;
+    padding: 0.35rem 0.65rem;
+}
+
+.wf-meta {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.35rem;
+}
+
+.wf-device-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 0.78rem;
+}
+
+.wf-device-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    color: #94a3b8;
+}
+
+.wf-audit-list {
+    font-size: 0.72rem;
+    color: #64748b;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.wf-pin-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.wf-pin-row input[type="password"] {
+    width: 5rem;
+    letter-spacing: 0.2em;
+    text-align: center;
+}
+
+.wf-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+@media print {
+    .wf-actions, .wf-pin-row, .wf-device-list button { display: none !important; }
+}

@@ -1,5 +1,5 @@
 /**
- * Login / workforce QR scan page — RatibQrScanner + qr-login API.
+ * Login / workforce QR scan page — RatibQrScanner + qr-login API + PIN.
  */
 document.addEventListener('DOMContentLoaded', function () {
     var cfg = window.RATIB_QR_SCAN || {};
@@ -8,7 +8,12 @@ document.addEventListener('DOMContentLoaded', function () {
     var statusEl = document.getElementById('qr-scan-status');
     var startBtn = document.getElementById('qr-scan-start');
     var stopBtn = document.getElementById('qr-scan-stop');
+    var pinPanel = document.getElementById('qr-scan-pin-panel');
+    var pinInput = document.getElementById('qr-scan-pin');
+    var pinSubmit = document.getElementById('qr-scan-pin-submit');
+    var trustCb = document.getElementById('qr-scan-trust');
     var scanner = null;
+    var pendingChallenge = '';
 
     function setStatus(message, type) {
         if (!statusEl) {
@@ -17,6 +22,19 @@ document.addEventListener('DOMContentLoaded', function () {
         statusEl.className = 'qr-scan-status qr-scan-status--' + (type || 'info');
         statusEl.textContent = message;
         statusEl.classList.remove('d-none');
+    }
+
+    function showPinPanel(show) {
+        if (pinPanel) {
+            pinPanel.classList.toggle('d-none', !show);
+        }
+    }
+
+    function trustPayload() {
+        return {
+            trust_device: !!(trustCb && trustCb.checked),
+            device_label: 'Mobile scanner'
+        };
     }
 
     function classifyScan(raw) {
@@ -58,16 +76,66 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function mapErrorCode(code, fallback) {
         var map = {
-            invalid: 'Badge not recognized. In Users → Barcode, tap the user again to refresh the QR.',
-            pairing_qr: 'That is the computer QR (step 1). Scan the employee badge from Users → Barcode.',
-            expired: 'This badge has expired. Refresh Barcode in Users.',
+            invalid: 'Badge not recognized. Ask admin to refresh workforce access.',
+            pairing_qr: 'That is the computer QR (step 1). Scan your workforce badge instead.',
+            expired: 'This badge has expired. Ask admin to regenerate.',
             revoked: 'This badge has been revoked.',
+            disabled: 'Workforce QR access is disabled for this user.',
             replay: 'Please wait a moment, then scan again.',
             rate_limit: 'Too many attempts. Wait a moment.',
             inactive: 'Account is not active.',
-            pair_failed: 'Could not sign in on your computer. On the PC, choose Barcode again.'
+            pair_failed: 'Could not sign in on your computer. On the PC, choose Barcode again.',
+            pin_invalid: 'Incorrect PIN. Try again.',
+            needs_pin: 'Enter your PIN.'
         };
         return map[code] || fallback || 'Scan failed.';
+    }
+
+    function handleSuccess(json) {
+        if (scanner) {
+            scanner.stop();
+        }
+        if (pairToken) {
+            setStatus('Success! RATEB is opening on your computer. You can close this page.', 'success');
+            showPinPanel(false);
+            return;
+        }
+        setStatus('Signed in. Redirecting…', 'success');
+        showPinPanel(false);
+        window.location.href = json.redirect || '/pages/dashboard.php';
+    }
+
+    async function submitPin() {
+        if (!pendingChallenge) {
+            return;
+        }
+        var pin = pinInput ? pinInput.value : '';
+        setStatus('Verifying PIN…', 'loading');
+        try {
+            var body = Object.assign({
+                action: 'validate_pin',
+                challenge_token: pendingChallenge,
+                pin: pin,
+                pair_token: pairToken,
+                country_id: cfg.countryId || 0,
+                agency_id: cfg.agencyId || 0
+            }, trustPayload());
+            var res = await fetch(apiQr, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                cache: 'no-store',
+                body: JSON.stringify(body)
+            });
+            var json = await res.json();
+            if (json.success) {
+                handleSuccess(json);
+                return;
+            }
+            setStatus(mapErrorCode(json.code, json.message), 'error');
+        } catch (e) {
+            setStatus('Network error.', 'error');
+        }
     }
 
     async function submitPayload(raw) {
@@ -79,40 +147,41 @@ document.addEventListener('DOMContentLoaded', function () {
             if (scanner) {
                 scanner.resetSubmit();
             }
-            setStatus(
-                'Stop — that is the computer QR (step 1). Point the camera at Users → Barcode on the admin screen instead.',
-                'error'
-            );
+            setStatus('That is the computer pairing QR. Scan your workforce badge instead.', 'error');
             return;
         }
 
         setStatus('Validating badge…', 'loading');
+        pendingChallenge = '';
 
         try {
+            var body = Object.assign({
+                action: 'validate',
+                qr_payload: classified.payload,
+                pair_token: pairToken,
+                country_id: cfg.countryId || 0,
+                agency_id: cfg.agencyId || 0
+            }, trustPayload());
             var res = await fetch(apiQr, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
                 cache: 'no-store',
-                body: JSON.stringify({
-                    action: 'validate',
-                    qr_payload: classified.payload,
-                    pair_token: pairToken,
-                    country_id: cfg.countryId || 0,
-                    agency_id: cfg.agencyId || 0
-                })
+                body: JSON.stringify(body)
             });
             var json = await res.json();
+            if (json.needs_pin && json.challenge_token) {
+                pendingChallenge = json.challenge_token;
+                showPinPanel(true);
+                if (pinInput) {
+                    pinInput.value = '';
+                    pinInput.focus();
+                }
+                setStatus('Enter your 4-digit PIN.', 'info');
+                return;
+            }
             if (json.success) {
-                if (scanner) {
-                    await scanner.stop();
-                }
-                if (pairToken) {
-                    setStatus('Success! RATEB is opening on your computer. You can close this page.', 'success');
-                } else {
-                    setStatus('Signed in. Redirecting…', 'success');
-                    window.location.href = '/pages/dashboard.php';
-                }
+                handleSuccess(json);
                 return;
             }
             if (scanner) {
@@ -154,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (stopBtn) {
                 stopBtn.classList.remove('d-none');
             }
-            setStatus('Point at Users → Barcode QR — not the computer login screen.', 'info');
+            setStatus('Point at your workforce badge QR.', 'info');
             scanner.start();
         });
     }
@@ -171,6 +240,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    if (pinSubmit) {
+        pinSubmit.addEventListener('click', submitPin);
+    }
+    if (pinInput) {
+        pinInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                submitPin();
+            }
+        });
+    }
+
     document.addEventListener('visibilitychange', function () {
         if (document.hidden && scanner) {
             scanner.stop();
@@ -183,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    if (cfg.autoBadge && pairToken) {
+    if (cfg.autoBadge && (pairToken || !pairToken)) {
         submitPayload(cfg.autoBadge);
     }
 });

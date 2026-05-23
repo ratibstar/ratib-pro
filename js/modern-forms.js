@@ -1352,9 +1352,9 @@ class ModernForms {
                         <span class="btn-text">Delete</span>
                     </button>
                     ${tableConfig.table === 'users' && itemId ? `
-                    <button type="button" class="modern-btn modern-btn-sm modern-btn-secondary" data-action="view-login-barcode" data-id="${itemId}" title="View login barcode" aria-label="View login barcode" data-permission="edit_user">
-                        <i class="fas fa-barcode"></i>
-                        <span class="btn-text">Barcode</span>
+                    <button type="button" class="modern-btn modern-btn-sm modern-btn-secondary" data-action="view-login-barcode" data-id="${itemId}" title="Workforce QR access" aria-label="Workforce QR access" data-permission="edit_user">
+                        <i class="fas fa-id-badge"></i>
+                        <span class="btn-text">Access</span>
                     </button>` : ''}
                 </td>
             </tr>
@@ -5765,6 +5765,10 @@ class ModernForms {
     }
 
     async openLoginBarcodeModal(userId, barcodeAttr, username) {
+        if (typeof window.WorkforceAccess !== 'undefined' && window.WorkforceAccess.open) {
+            await window.WorkforceAccess.open(userId, String(username || '').trim());
+            return;
+        }
         const modal = document.getElementById('loginBarcodeModal');
         if (!modal) {
             this.openLoginBarcodeInNewTab(userId);

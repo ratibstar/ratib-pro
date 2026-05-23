@@ -55,6 +55,7 @@ if ($directInclude) {
 <script src="<?php echo asset('js/countries-cities.js'); ?>?v=<?php echo $countriesCitiesVersion; ?>"></script>
 <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
 <script src="<?php echo asset('js/system-settings-alerts.js'); ?>?v=<?php echo $systemSettingsAlertsVersion; ?>"></script>
+<script src="<?php echo asset('js/workforce-access.js'); ?>?v=<?php echo file_exists(__DIR__ . '/../js/workforce-access.js') ? filemtime(__DIR__ . '/../js/workforce-access.js') : time(); ?>"></script>
 <script src="<?php echo asset('js/modern-forms.js'); ?>?v=<?php echo $modernFormsVersion; ?>"></script>
 <script src="<?php echo asset('js/system-settings.js'); ?>?v=<?php echo $systemSettingsJsVersion; ?>"></script>
 <script src="<?php echo asset('js/unified-history.js'); ?>?v=<?php echo $unifiedHistoryVersion; ?>"></script>
@@ -78,6 +79,7 @@ if ($embeddedMode) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo asset('css/nav.css'); ?>?v=<?php echo $cssVer; ?>">
     <link rel="stylesheet" href="<?php echo asset('css/system-settings.css'); ?>?v=<?php echo $cssVer; ?>">
+    <link rel="stylesheet" href="<?php echo asset('css/workforce-access.css'); ?>?v=<?php echo $cssVer; ?>">
     <script src="<?php echo asset('js/utils/header-config.js'); ?>"></script>
 </head>
 <body class="system-settings-embedded">
@@ -86,7 +88,7 @@ if ($embeddedMode) {
 <?php
 } else {
     $pageTitle = "System Settings";
-    $pageCss = ["../css/system-settings.css?v=" . time()];
+    $pageCss = ["../css/system-settings.css?v=" . time(), "../css/workforce-access.css?v=" . time()];
     include '../includes/header.php';
 }
 ?>
@@ -379,7 +381,75 @@ if ($embeddedMode) {
     </div>
 </div>
 
-<!-- Login barcode (scan at login) -->
+<!-- Workforce QR identity -->
+<div id="workforceAccessModal" class="modern-modal modal-hidden" aria-labelledby="workforceAccessModalTitle">
+    <div class="modern-modal-content wf-access-modal-content">
+        <div class="modern-modal-header">
+            <h2 class="modern-modal-title" id="workforceAccessModalTitle">
+                <i class="fas fa-id-badge"></i> Workforce access
+            </h2>
+            <button type="button" class="modal-close" data-wf-action="close" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="wf-access-body">
+            <p id="wf-access-user-label" class="login-barcode-user-label"></p>
+
+            <div class="wf-access-section">
+                <h3>Credential status</h3>
+                <div class="wf-status-row">
+                    <span>QR status</span>
+                    <span id="wf-qr-status-badge" class="wf-status-badge wf-status-badge--none">—</span>
+                </div>
+                <div class="wf-status-row"><span>Last scan</span><span id="wf-qr-last-used">—</span></div>
+                <div class="wf-status-row"><span>Expiry</span><span id="wf-qr-expires">—</span></div>
+                <label class="wf-toggle mt-2"><input type="checkbox" id="wf-qr-enabled" checked> QR login enabled</label>
+                <div class="wf-actions mt-2">
+                    <button type="button" class="modern-btn modern-btn-primary" data-wf-action="generate">Generate QR</button>
+                    <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="regenerate">Regenerate</button>
+                    <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="revoke">Revoke</button>
+                    <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="save-enabled">Save access</button>
+                </div>
+            </div>
+
+            <div class="wf-access-section">
+                <h3>Workforce badge</h3>
+                <div id="wf-qr-host" class="wf-qr-host"></div>
+                <p class="wf-meta">Token is not shown as text. Scan the QR only.</p>
+                <div class="wf-actions">
+                    <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="open-badge">Print badge</button>
+                    <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="download-png">Download PNG</button>
+                </div>
+            </div>
+
+            <div class="wf-access-section">
+                <h3>PIN security (optional)</h3>
+                <label class="wf-toggle"><input type="checkbox" id="wf-pin-enabled"> Require 4-digit PIN after scan</label>
+                <div class="wf-pin-row mt-2">
+                    <input type="password" id="wf-pin-value" class="form-control form-control-sm" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="••••" autocomplete="off">
+                    <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="save-pin">Save PIN</button>
+                </div>
+                <p class="wf-meta">Recommended for managers and admins.</p>
+            </div>
+
+            <div class="wf-access-section">
+                <h3>Trusted devices</h3>
+                <ul id="wf-device-list" class="wf-device-list"></ul>
+            </div>
+
+            <div class="wf-access-section">
+                <h3>Recent audit</h3>
+                <div id="wf-audit-list" class="wf-audit-list"></div>
+            </div>
+
+            <div class="wf-actions mt-2">
+                <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="close">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Login barcode (legacy quick view — opens workforce panel) -->
 <div id="loginBarcodeModal" class="modern-modal modal-hidden" aria-labelledby="loginBarcodeModalTitle">
     <div class="modern-modal-content login-barcode-modal-content">
         <div class="modern-modal-header">
@@ -543,6 +613,7 @@ if ($embeddedMode) {
 <script src="<?php echo asset('js/countries-cities.js'); ?>?v=<?php echo $countriesCitiesVersion; ?>"></script>
 <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
 <script src="<?php echo asset('js/system-settings-alerts.js'); ?>?v=<?php echo $systemSettingsAlertsVersion; ?>"></script>
+<script src="<?php echo asset('js/workforce-access.js'); ?>?v=<?php echo file_exists(__DIR__ . '/../js/workforce-access.js') ? filemtime(__DIR__ . '/../js/workforce-access.js') : time(); ?>"></script>
 <script src="<?php echo asset('js/modern-forms.js'); ?>?v=<?php echo $modernFormsVersion; ?>"></script>
 <script src="<?php echo asset('js/system-settings.js'); ?>?v=<?php echo $systemSettingsJsVersion; ?>"></script>
 <script src="<?php echo asset('js/unified-history.js'); ?>?v=<?php echo $unifiedHistoryVersion; ?>"></script>
