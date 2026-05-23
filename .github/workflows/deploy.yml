@@ -102,7 +102,12 @@ jobs:
           echo "$HOME_RAW" | grep -q 'Software Foundation for Information Technology' && { echo "::error::home still shows Software Foundation legal line"; BRAND_FAIL=1; }
           echo "$HOME_RAW" | grep -qE 'Telemetry Enterprise Base|ratib-brand-full__word--w3' && echo "hero_expansion=ok" || { echo "::error::home hero missing Telemetry Enterprise Base expansion"; BRAND_FAIL=1; }
           echo "$HOME_RAW" | grep -qi 'country_slug=home\|Country not found' && { echo "::error::/home wrongly routed as country slug (check .htaccess home rule order)"; BRAND_FAIL=1; }
-          echo "$LIVE_BUILD" | grep -q 'rateb-' && echo "rebrand_build_marker=ok" || echo "::warning::ratib-build.txt CDN cache may lag; brand HTML is the source of truth"
+          echo "$HOME_RAW" | grep -q 'ratib-public-header-pin' && echo "header_pin_markup=ok" || { echo "::error::home missing ratib-public-header-pin (sticky header chrome)"; BRAND_FAIL=1; }
+          if [ -n "$LIVE_BUILD" ]; then
+            echo "rebrand_build_marker=ok"
+          else
+            echo "::warning::ratib-build.txt empty or unreachable; verify HTML rebrand= comment matches git"
+          fi
           [ "$BRAND_FAIL" -eq 1 ] && exit 1
           if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ] && [ "$HR" = "200" ]; then
             HOMECSS="$(code "${SITE}/css/pages/home-public.css")"

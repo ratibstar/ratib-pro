@@ -1,6 +1,6 @@
 <?php
 /**
- * Public marketing chrome: decorative bg + top bar + sticky nav (same markup as pages/home.php).
+ * Public marketing chrome: decorative bg + top bar + sticky header stack (same markup as pages/home.php).
  *
  * Optional URL prefix for hash links (e.g. partner-portal-login.php → home.php#section):
  *   $ratibHomeNavHrefPrefix = $baseUrl . '/pages/home.php';
@@ -199,5 +199,4 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
         </div>
     </header>
     </div>
-    <div class="ratib-public-header-spacer" id="ratib-public-header-spacer" aria-hidden="true"></div>
 

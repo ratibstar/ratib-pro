@@ -6,7 +6,6 @@
     var toggle = document.getElementById('ratibNavToggle');
     var menu = document.getElementById('ratibNavMenu');
     var headerPin = document.getElementById('ratib-public-header-pin');
-    var headerSpacer = document.getElementById('ratib-public-header-spacer');
 
     function syncPublicHeaderHeight() {
         if (!headerPin) {
@@ -14,9 +13,6 @@
         }
         var pinHeight = headerPin.offsetHeight;
         document.documentElement.style.setProperty('--ratib-public-header-h', pinHeight + 'px');
-        if (headerSpacer) {
-            headerSpacer.style.height = pinHeight + 'px';
-        }
         var profileBanner = document.querySelector('[data-ratib-profile-distinct="1"]');
         var bannerHeight = profileBanner ? profileBanner.offsetHeight : 0;
         document.documentElement.style.setProperty('--ratib-profile-banner-h', bannerHeight + 'px');
