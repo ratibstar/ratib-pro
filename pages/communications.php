@@ -10,105 +10,24 @@ if (!checkPermission("communication_view")) {
     showWarning("communication_view");
     exit();
 }
+
+$pageTitle = 'Communications Management';
+$pageCss = [
+    asset('css/contact.css'),
+    asset('css/help-center-notification.css') . '?v=' . time(),
+    'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css',
+    'https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css',
+];
+$pageJsFooter = [
+    'https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js',
+    asset('js/utils/english-date-picker.js'),
+    asset('js/countries-cities.js'),
+    asset('js/communications.js'),
+];
+
+require_once '../includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Communications Management</title>
-    <!-- Global Animations CSS - Loaded after contact.css to ensure overrides -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="<?php echo asset('css/nav.css'); ?>">
-    <link rel="stylesheet" href="<?php echo asset('css/contact.css'); ?>">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="<?php echo asset('css/help-center-notification.css'); ?>?v=<?php echo time(); ?>">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
-    
-    <div id="app-config" 
-         data-base-path="<?php echo htmlspecialchars(getBaseUrl(), ENT_QUOTES, 'UTF-8'); ?>"
-         data-base-url="<?php echo htmlspecialchars(getBaseUrl(), ENT_QUOTES, 'UTF-8'); ?>"
-         data-api-base="<?php echo htmlspecialchars(getBaseUrl() . '/api', ENT_QUOTES, 'UTF-8'); ?>"
-         data-site-url="<?php echo htmlspecialchars(SITE_URL, ENT_QUOTES, 'UTF-8'); ?>"
-         data-control-pro-bridge="<?php echo ratib_control_pro_bridge() ? '1' : '0'; ?>"
-         class="hidden"></div>
-    <script src="<?php echo asset('js/utils/header-config.js'); ?>"></script>
-    <!-- Navigation JavaScript - MUST be loaded early -->
-    <script src="<?php echo asset('js/navigation.js'); ?>?v=<?php echo time(); ?>"></script>
-</head>
 
-<body>
-    <div class="nav-trigger-area"></div>
-
-    <!-- Mobile Navigation Toggle -->
-    <button class="nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation Menu">
-        <i class="fas fa-bars"></i>
-    </button>
-    
-    <!-- Mobile Navigation Overlay -->
-    <div class="nav-overlay" id="mobileNavOverlay"></div>
-
-    <nav class="main-nav" id="mainNav">
-        <div class="nav-brand">
-            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23ddd'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23666' font-size='12'%3ELogo%3C/text%3E%3C/svg%3E" 
-                 alt="Logo" class="nav-logo">
-        </div>
-        <div class="nav-items">
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('dashboard.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
-                <i class="nav-icon fas fa-home"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('agent.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
-                <i class="nav-icon fas fa-users"></i>
-                <span>Agent</span>
-            </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('subagent.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
-                <i class="nav-icon fas fa-user-friends"></i>
-                <span>SubAgent</span>
-            </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('Worker.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
-                <i class="nav-icon fas fa-tools"></i>
-                <span>Workforce</span>
-            </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('cases/cases-table.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
-                <i class="nav-icon fas fa-clipboard-list"></i>
-                <span>Cases</span>
-            </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('hr.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
-                <i class="nav-icon fas fa-user-tie"></i>
-                <span>HR</span>
-            </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('reports.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
-                <i class="nav-icon fas fa-chart-bar"></i>
-                <span>Reports</span>
-            </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('contact.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
-                <i class="nav-icon fas fa-phone"></i>
-                <span>Contact</span>
-            </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('communications.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link active">
-                <i class="nav-icon fas fa-comments"></i>
-                <span>Communications</span>
-            </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
-                <i class="nav-icon fas fa-bell"></i>
-                <span>Notifications</span>
-            </a>
-            <a href="<?php echo htmlspecialchars(ratib_logout_url(), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
-                <i class="nav-icon fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
-            <?php if (false): ?>
-            <a href="<?php echo pageUrl('system-settings.php'); ?>" class="nav-item nav-link">
-                <i class="nav-icon fas fa-cog"></i>
-                <span>System Settings</span>
-            </a>
-            <?php endif; ?>
-        </div>
-    </nav>
-    
-    <div class="content-wrapper">
         <div class="container-fluid">
             <!-- Header Section -->
             <div class="row mb-1">
@@ -361,7 +280,6 @@ if (!checkPermission("communication_view")) {
             </div>
 
         </div>
-    </div>
 
     <!-- Communication Modal -->
     <div class="modal fade" id="communicationModal" tabindex="-1" aria-labelledby="communicationModalLabel" aria-hidden="true" dir="ltr" lang="en">
@@ -769,20 +687,6 @@ if (!checkPermission("communication_view")) {
         </div>
     </div>
 
-    <!-- JavaScript Configuration - Passed via data attributes -->
-    <div id="app-config" 
-         data-base-path="<?php echo htmlspecialchars(getBaseUrl(), ENT_QUOTES, 'UTF-8'); ?>"
-         data-base-url="<?php echo htmlspecialchars(getBaseUrl(), ENT_QUOTES, 'UTF-8'); ?>"
-         data-api-base="<?php echo htmlspecialchars(getBaseUrl() . '/api', ENT_QUOTES, 'UTF-8'); ?>"
-         data-site-url="<?php echo htmlspecialchars(SITE_URL, ENT_QUOTES, 'UTF-8'); ?>"
-         class="hidden"></div>
-    <script src="<?php echo asset('js/utils/header-config.js'); ?>"></script>
-    
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js" data-fallback="https://unpkg.com/flatpickr/dist/flatpickr.min.js"></script>
-    <script src="<?php echo asset('js/utils/english-date-picker.js'); ?>"></script>
-    <script src="<?php echo asset('js/countries-cities.js'); ?>"></script>
     <!-- Help Center Notification - Inline script for consistency -->
     <script>
     (function() {
@@ -895,9 +799,6 @@ if (!checkPermission("communication_view")) {
         }, { once: true });
     })();
     </script>
-    <script src="<?php echo asset('js/communications.js'); ?>"></script>
-    
-    <!-- Navigation handled by global navigation.js (already loaded in header.php) -->
-</body>
-</html>
+
+<?php require_once '../includes/footer.php'; ?>
 
