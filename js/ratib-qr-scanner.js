@@ -32,6 +32,9 @@
     }
 
     RatibQrScanner.prototype.setStatus = function (message, type) {
+        if (this.submitted) {
+            return;
+        }
         this.onStatus(message, type || 'info');
     };
 

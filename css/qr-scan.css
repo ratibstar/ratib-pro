@@ -139,6 +139,17 @@
     border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
+.qr-scan-status--final {
+    font-size: 0.9rem;
+    padding: 0.85rem 1rem;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.35);
+}
+
+.qr-scan-viewport--done {
+    min-height: 80px;
+    opacity: 0.35;
+}
+
 .qr-scan-status--loading {
     background: rgba(148, 163, 184, 0.08);
     color: #cbd5e1;

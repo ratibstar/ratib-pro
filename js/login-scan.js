@@ -14,14 +14,46 @@ document.addEventListener('DOMContentLoaded', function () {
     var trustCb = document.getElementById('qr-scan-trust');
     var scanner = null;
     var pendingChallenge = '';
+    var scanComplete = false;
+    var hintTimer = null;
+
+    function clearHintTimer() {
+        if (hintTimer) {
+            clearTimeout(hintTimer);
+            hintTimer = null;
+        }
+    }
 
     function setStatus(message, type) {
-        if (!statusEl) {
+        if (!statusEl || scanComplete) {
             return;
         }
         statusEl.className = 'qr-scan-status qr-scan-status--' + (type || 'info');
         statusEl.textContent = message;
         statusEl.classList.remove('d-none');
+    }
+
+    function lockSuccessUi(message) {
+        scanComplete = true;
+        clearHintTimer();
+        if (scanner) {
+            scanner.stop();
+        }
+        var viewport = document.getElementById('qr-scan-viewport');
+        if (viewport) {
+            viewport.classList.add('qr-scan-viewport--done');
+        }
+        if (startBtn) {
+            startBtn.classList.add('d-none');
+        }
+        if (stopBtn) {
+            stopBtn.classList.add('d-none');
+        }
+        if (statusEl) {
+            statusEl.className = 'qr-scan-status qr-scan-status--success qr-scan-status--final';
+            statusEl.textContent = message;
+            statusEl.classList.remove('d-none');
+        }
     }
 
     function showPinPanel(show) {
@@ -130,16 +162,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function handleSuccess(json) {
-        if (scanner) {
-            scanner.stop();
-        }
+        showPinPanel(false);
         if (pairToken) {
-            setStatus('Success! RATEB is opening on your computer. You can close this page.', 'success');
-            showPinPanel(false);
+            lockSuccessUi(
+                'Success! RATEB is opening on your computer. You can close this page. '
+                + 'If the laptop is still waiting, switch back to it — login should finish in a few seconds.'
+            );
             return;
         }
-        setStatus('Signed in. Redirecting…', 'success');
-        showPinPanel(false);
+        lockSuccessUi('Signed in. Redirecting…');
         window.location.href = json.redirect || '/pages/dashboard.php';
     }
 
@@ -206,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         hideWrongBanner();
+        clearHintTimer();
         if (scanner) {
             scanner.lock();
         }
@@ -268,8 +300,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    var hintTimer = null;
-
     scanner = new RatibQrScanner({
         elementId: 'qr-scan-viewport',
         throttleMs: 1200,
@@ -279,6 +309,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (startBtn) {
         startBtn.addEventListener('click', function () {
+            if (scanComplete) {
+                return;
+            }
+            clearHintTimer();
             startBtn.classList.add('d-none');
             if (stopBtn) {
                 stopBtn.classList.remove('d-none');
@@ -287,6 +321,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (banner) {
                 banner.classList.add('d-none');
             }
+            var viewport = document.getElementById('qr-scan-viewport');
+            if (viewport) {
+                viewport.classList.remove('qr-scan-viewport--done');
+            }
             setStatus(
                 'Point at Users → Barcode on the admin screen — NOT the computer login QR.',
                 'info'
@@ -294,14 +332,13 @@ document.addEventListener('DOMContentLoaded', function () {
             scanner.throttleMs = 1200;
             scanner.resetSubmit();
             scanner.start();
-            if (hintTimer) {
-                clearTimeout(hintTimer);
-            }
             hintTimer = setTimeout(function () {
-                setStatus(
-                    'No QR detected yet? Use the badge from System Settings → Users → Workforce access. Laptop screens are hard to scan — try Print badge or hold phone closer.',
-                    'info'
-                );
+                if (!scanComplete) {
+                    setStatus(
+                        'No QR detected yet? Use the badge from System Settings → Users → Workforce access. Laptop screens are hard to scan — try Print badge or hold phone closer.',
+                        'info'
+                    );
+                }
             }, 14000);
         });
     }
