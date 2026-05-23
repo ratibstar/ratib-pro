@@ -381,6 +381,16 @@ if ($embeddedMode) {
     </div>
 </div>
 
+<!-- Fullscreen workforce QR for phone camera -->
+<div id="wfQrFullscreen" class="wf-qr-fullscreen d-none" role="dialog" aria-label="Large workforce QR">
+    <div class="wf-qr-fullscreen-inner">
+        <p class="wf-qr-fullscreen-title">Scan this with your phone (Step 2)</p>
+        <div id="wf-qr-fullscreen-host"></div>
+        <p class="wf-meta">Lower laptop brightness if the QR looks too bright. Or use Print badge / Download PNG.</p>
+        <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="close-fullscreen">Close</button>
+    </div>
+</div>
+
 <!-- Workforce QR identity -->
 <div id="workforceAccessModal" class="modern-modal modal-hidden" aria-labelledby="workforceAccessModalTitle">
     <div class="modern-modal-content wf-access-modal-content">
@@ -417,6 +427,7 @@ if ($embeddedMode) {
                 <div id="wf-qr-host" class="wf-qr-host"></div>
                 <p class="wf-meta">QR stays on screen after Save access. Token text is never shown — scan the image only.</p>
                 <div class="wf-actions">
+                    <button type="button" class="modern-btn modern-btn-primary" data-wf-action="fullscreen-qr">Large QR (for phone scan)</button>
                     <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="open-badge">Print badge</button>
                     <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="download-png">Download PNG</button>
                 </div>

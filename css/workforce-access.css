@@ -116,6 +116,40 @@
     color: #94a3b8;
 }
 
+.wf-qr-fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.wf-qr-fullscreen.d-none {
+    display: none !important;
+}
+
+.wf-qr-fullscreen-inner {
+    text-align: center;
+    max-width: 420px;
+}
+
+.wf-qr-fullscreen-title {
+    color: #e2e8f0;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.wf-qr-fullscreen #wf-qr-fullscreen-host {
+    background: #fff;
+    padding: 1rem;
+    border-radius: 8px;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
 @media print {
     .wf-actions, .wf-pin-row, .wf-device-list button { display: none !important; }
 }

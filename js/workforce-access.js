@@ -336,6 +336,35 @@
 
         printBadge() {
             this.openBadge();
+        },
+
+        async showFullscreenQr() {
+            const payload = this.loadStoredPayload();
+            if (!payload) {
+                global.alert('Generate or Regenerate QR first.');
+                return;
+            }
+            await loadLibs();
+            const host = el('wf-qr-fullscreen-host');
+            const overlay = el('wfQrFullscreen');
+            if (!host || !overlay) {
+                return;
+            }
+            host.innerHTML = '';
+            renderQr(host, payload);
+            var canvas = host.querySelector('canvas');
+            if (canvas) {
+                canvas.style.width = 'min(85vw, 320px)';
+                canvas.style.height = 'auto';
+            }
+            overlay.classList.remove('d-none');
+        },
+
+        closeFullscreenQr() {
+            const overlay = el('wfQrFullscreen');
+            if (overlay) {
+                overlay.classList.add('d-none');
+            }
         }
     };
 
@@ -371,6 +400,10 @@
                 WorkforceAccess.downloadPng();
             } else if (act === 'print') {
                 WorkforceAccess.printBadge();
+            } else if (act === 'fullscreen-qr') {
+                WorkforceAccess.showFullscreenQr();
+            } else if (act === 'close-fullscreen') {
+                WorkforceAccess.closeFullscreenQr();
             }
         });
         const devList = el('wf-device-list');
