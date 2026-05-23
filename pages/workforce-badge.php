@@ -7,6 +7,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/ratib-user-login-barcode.php';
 require_once __DIR__ . '/../includes/ratib-qr-workforce-identity.php';
+require_once __DIR__ . '/../includes/ratib-qr-login.php';
 
 if (!isset($_SESSION['user_id'], $_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header('Location: ' . pageUrl('login.php'));
@@ -34,7 +35,7 @@ $username = (string) ($wf['username'] ?? '');
 $legacyRef = (string) ($wf['legacy_ref'] ?? '');
 $qrPayload = (string) ($issued['qr_payload'] ?? '');
 $showQrOnce = $qrPayload !== '';
-$badgeUrl = $showQrOnce ? ratib_qr_login_badge_url($qrPayload) : '';
+$badgeUrl = $showQrOnce ? ratib_qr_login_badge_url($qrPayload, ratib_qr_login_badge_tenant_context()) : '';
 
 if (!$showQrOnce && ($wf['qr_status'] ?? '') === 'active') {
     $badgeUrl = '';

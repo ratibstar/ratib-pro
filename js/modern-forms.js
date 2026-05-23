@@ -5730,9 +5730,26 @@ class ModernForms {
         }
         const ref = String(legacyRef || '').trim();
         const rawPayload = String(qrPayload || '').trim() || ref;
-        const scanValue = rawPayload && /^RATIBLOGIN:/i.test(rawPayload) && typeof window !== 'undefined' && window.location
-            ? (window.location.origin + '/login/badge?d=' + encodeURIComponent(rawPayload))
-            : rawPayload;
+        let scanValue = rawPayload;
+        if (rawPayload && /^RATIBLOGIN:/i.test(rawPayload) && typeof window !== 'undefined' && window.location) {
+            const q = new URLSearchParams();
+            q.set('d', rawPayload);
+            const wf = window.RATIB_WORKFORCE_CTX || {};
+            const params = new URLSearchParams(window.location.search || '');
+            const agencyId = parseInt(wf.agencyId, 10) || parseInt(params.get('agency_id'), 10) || 0;
+            const countryId = parseInt(wf.countryId, 10) || parseInt(params.get('country_id'), 10) || 0;
+            const countrySlug = (wf.countrySlug || params.get('country_slug') || '').trim();
+            if (agencyId > 0) {
+                q.set('agency_id', String(agencyId));
+            }
+            if (countryId > 0) {
+                q.set('country_id', String(countryId));
+            }
+            if (countrySlug) {
+                q.set('country_slug', countrySlug);
+            }
+            scanValue = window.location.origin + '/login/badge?' + q.toString();
+        }
         if (userEl) {
             userEl.textContent = username ? ('User: ' + username) : '';
         }

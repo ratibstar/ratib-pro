@@ -2398,7 +2398,7 @@ class SettingsAPI {
                 'qr_payload' => $qrPayload,
                 'qr_expires_at' => $qrExpires,
                 'badge_url' => ($qrPayload !== '' && function_exists('ratib_qr_login_badge_url'))
-                    ? ratib_qr_login_badge_url($qrPayload)
+                    ? ratib_qr_login_badge_url($qrPayload, ratib_qr_login_badge_tenant_context())
                     : '',
                 'workforce' => $wfStatus,
             ],
@@ -2522,7 +2522,7 @@ class SettingsAPI {
             'data' => [
                 'qr_payload' => $payload ?: null,
                 'expires_at' => $issued['expires_at'] ?? null,
-                'badge_url' => $payload !== '' ? ratib_qr_login_badge_url($payload) : null,
+                'badge_url' => $payload !== '' ? ratib_qr_login_badge_url($payload, ratib_qr_login_badge_tenant_context()) : null,
                 'workforce' => ratib_qr_workforce_status($mysqli, $userId),
             ],
         ]);

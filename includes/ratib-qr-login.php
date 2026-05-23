@@ -12,11 +12,138 @@ if (!defined('RATIB_QR_LOGIN_PREFIX')) {
     define('RATIB_QR_LOGIN_PREFIX', 'RATIBLOGIN:');
 }
 
+if (!function_exists('ratib_qr_login_country_id_from_slug')) {
+    function ratib_qr_login_country_id_from_slug(string $slug): int
+    {
+        $slug = preg_replace('/[^a-z0-9_-]/', '', strtolower(trim($slug)));
+        if ($slug === '') {
+            return 0;
+        }
+        $lookup = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
+        if (!($lookup instanceof mysqli)) {
+            $lookup = $GLOBALS['conn'] ?? null;
+        }
+        if (!($lookup instanceof mysqli)) {
+            return 0;
+        }
+        $chk = @$lookup->query("SHOW TABLES LIKE 'control_countries'");
+        if (!$chk || $chk->num_rows === 0) {
+            return 0;
+        }
+        $stmt = $lookup->prepare('SELECT id FROM control_countries WHERE slug = ? LIMIT 1');
+        if (!$stmt) {
+            return 0;
+        }
+        $stmt->bind_param('s', $slug);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+        $stmt->close();
+
+        return (int) ($row['id'] ?? 0);
+    }
+}
+
+if (!function_exists('ratib_qr_login_badge_tenant_context')) {
+    /**
+     * Tenant ids for badge URLs / validation (session, cookies, GET).
+     *
+     * @return array{agency_id:int,country_id:int,country_slug:string}
+     */
+    function ratib_qr_login_badge_tenant_context(): array
+    {
+        $agencyId = (int) ($_SESSION['agency_id'] ?? $_SESSION['control_agency_id'] ?? 0);
+        $countryId = (int) ($_SESSION['country_id'] ?? $_SESSION['control_country_id'] ?? 0);
+        if ($agencyId <= 0 && !empty($_COOKIE['ratib_last_agency_id']) && ctype_digit((string) $_COOKIE['ratib_last_agency_id'])) {
+            $agencyId = (int) $_COOKIE['ratib_last_agency_id'];
+        }
+        if ($countryId <= 0 && !empty($_COOKIE['ratib_last_country_id']) && ctype_digit((string) $_COOKIE['ratib_last_country_id'])) {
+            $countryId = (int) $_COOKIE['ratib_last_country_id'];
+        }
+        if (isset($_GET['agency_id']) && ctype_digit((string) $_GET['agency_id'])) {
+            $agencyId = (int) $_GET['agency_id'];
+        }
+        if (isset($_GET['country_id']) && ctype_digit((string) $_GET['country_id'])) {
+            $countryId = (int) $_GET['country_id'];
+        }
+        $slug = '';
+        if (!empty($_GET['country_slug'])) {
+            $slug = preg_replace('/[^a-z0-9_-]/', '', strtolower(trim((string) $_GET['country_slug'])));
+        }
+        if ($countryId <= 0 && $slug !== '') {
+            $countryId = ratib_qr_login_country_id_from_slug($slug);
+        }
+
+        return [
+            'agency_id' => $agencyId,
+            'country_id' => $countryId,
+            'country_slug' => $slug,
+        ];
+    }
+}
+
+if (!function_exists('ratib_qr_login_enrich_context')) {
+    /**
+     * Fill agency/country from pairing session, URL, or cookies.
+     *
+     * @param array<string, mixed> $ctx
+     */
+    function ratib_qr_login_enrich_context(array $ctx, ?string $pairToken = null): array
+    {
+        $agencyId = (int) ($ctx['agency_id'] ?? 0);
+        $countryId = (int) ($ctx['country_id'] ?? 0);
+        $slug = trim((string) ($ctx['country_slug'] ?? ''));
+
+        if (($agencyId <= 0 || $countryId <= 0) && $pairToken !== null && $pairToken !== '' && strlen($pairToken) === 32) {
+            if (!function_exists('ratib_barcode_pair_read')) {
+                require_once __DIR__ . '/ratib-barcode-login-pair.php';
+            }
+            $pair = ratib_barcode_pair_read($pairToken);
+            $pctx = is_array($pair['context'] ?? null) ? $pair['context'] : [];
+            if ($agencyId <= 0) {
+                $agencyId = (int) ($pctx['agency_id'] ?? 0);
+            }
+            if ($countryId <= 0) {
+                $countryId = (int) ($pctx['country_id'] ?? 0);
+            }
+            if ($slug === '' && !empty($pctx['country_slug'])) {
+                $slug = (string) $pctx['country_slug'];
+            }
+        }
+
+        if ($countryId <= 0 && $slug !== '') {
+            $countryId = ratib_qr_login_country_id_from_slug($slug);
+        }
+        if ($agencyId <= 0) {
+            $tenant = ratib_qr_login_badge_tenant_context();
+            if ($agencyId <= 0) {
+                $agencyId = (int) ($tenant['agency_id'] ?? 0);
+            }
+            if ($countryId <= 0) {
+                $countryId = (int) ($tenant['country_id'] ?? 0);
+            }
+            if ($slug === '' && !empty($tenant['country_slug'])) {
+                $slug = (string) $tenant['country_slug'];
+            }
+        }
+
+        $ctx['agency_id'] = $agencyId;
+        $ctx['country_id'] = $countryId;
+        if ($slug !== '') {
+            $ctx['country_slug'] = $slug;
+        }
+
+        return $ctx;
+    }
+}
+
 if (!function_exists('ratib_qr_login_badge_url')) {
     /**
      * Public HTTPS URL for badge QR (iPhone Camera opens Safari; in-app scanner also accepts this).
+     *
+     * @param array<string, mixed>|null $ctx agency_id, country_id, country_slug
      */
-    function ratib_qr_login_badge_url(string $qrPayload): string
+    function ratib_qr_login_badge_url(string $qrPayload, ?array $ctx = null): string
     {
         $payload = trim($qrPayload);
         if ($payload === '') {
@@ -35,7 +162,22 @@ if (!function_exists('ratib_qr_login_badge_url')) {
             return $payload;
         }
 
-        return rtrim($base, '/') . '/login/badge?d=' . rawurlencode($payload);
+        $tenant = $ctx ?? ratib_qr_login_badge_tenant_context();
+        $query = ['d' => $payload];
+        $agencyId = (int) ($tenant['agency_id'] ?? 0);
+        $countryId = (int) ($tenant['country_id'] ?? 0);
+        if ($agencyId > 0) {
+            $query['agency_id'] = $agencyId;
+        }
+        if ($countryId > 0) {
+            $query['country_id'] = $countryId;
+        }
+        $slug = trim((string) ($tenant['country_slug'] ?? ''));
+        if ($slug !== '') {
+            $query['country_slug'] = $slug;
+        }
+
+        return rtrim($base, '/') . '/login/badge?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
     }
 }
 
@@ -341,7 +483,11 @@ if (!function_exists('ratib_qr_login_find_user_by_secure_token')) {
         $user = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
         $stmt->close();
         if (!$user) {
-            return ['ok' => false, 'message' => 'QR not recognized.', 'code' => 'invalid'];
+            return [
+                'ok' => false,
+                'message' => 'QR not recognized for this office. Regenerate the badge in Users → Access, then use Copy badge link.',
+                'code' => 'invalid',
+            ];
         }
         if (isset($user['qr_login_enabled']) && (int) $user['qr_login_enabled'] === 0) {
             return ['ok' => false, 'message' => 'Workforce QR access is disabled.', 'code' => 'disabled'];
@@ -403,6 +549,7 @@ if (!function_exists('ratib_qr_login_authenticate_payload')) {
      */
     function ratib_qr_login_authenticate_payload(string $payload, array $ctx, ?string $pairToken = null): array
     {
+        $ctx = ratib_qr_login_enrich_context($ctx, $pairToken);
         if (!ratib_qr_login_rate_limit_ok('validate', 40)) {
             return ['ok' => false, 'message' => 'Too many attempts. Try again shortly.', 'code' => 'rate_limit'];
         }

@@ -103,7 +103,7 @@ $pageTitle = $username !== '' ? ('Login badge — ' . $username) : 'Login badge'
     (function () {
         var value = <?php echo json_encode(
             $qrPayload !== '' && function_exists('ratib_qr_login_badge_url')
-                ? ratib_qr_login_badge_url($qrPayload)
+                ? ratib_qr_login_badge_url($qrPayload, ratib_qr_login_badge_tenant_context())
                 : $qrPayload,
             JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
         ); ?>;

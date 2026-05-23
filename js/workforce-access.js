@@ -42,6 +42,16 @@
         return STORAGE_PREFIX + String(userId);
     }
 
+    function tenantContext() {
+        const cfg = global.RATIB_WORKFORCE_CTX || {};
+        const params = new URLSearchParams(global.location.search || '');
+        return {
+            agencyId: parseInt(cfg.agencyId, 10) || parseInt(params.get('agency_id'), 10) || 0,
+            countryId: parseInt(cfg.countryId, 10) || parseInt(params.get('country_id'), 10) || 0,
+            countrySlug: (cfg.countrySlug || params.get('country_slug') || '').trim()
+        };
+    }
+
     function payloadToScanValue(payload) {
         if (!payload) {
             return '';
@@ -50,7 +60,19 @@
             return payload;
         }
         if (/^RATIBLOGIN:/i.test(payload) && global.location && global.location.origin) {
-            return global.location.origin + '/login/badge?d=' + encodeURIComponent(payload);
+            const q = new URLSearchParams();
+            q.set('d', payload);
+            const tenant = tenantContext();
+            if (tenant.agencyId > 0) {
+                q.set('agency_id', String(tenant.agencyId));
+            }
+            if (tenant.countryId > 0) {
+                q.set('country_id', String(tenant.countryId));
+            }
+            if (tenant.countrySlug) {
+                q.set('country_slug', tenant.countrySlug);
+            }
+            return global.location.origin + '/login/badge?' + q.toString();
         }
         return payload;
     }

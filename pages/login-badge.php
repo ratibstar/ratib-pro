@@ -6,6 +6,7 @@ declare(strict_types=1);
  */
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/ratib-qr-workforce-identity.php';
+require_once __DIR__ . '/../includes/ratib-qr-login.php';
 
 $payload = isset($_GET['d']) ? trim((string) $_GET['d']) : '';
 $pairToken = isset($_COOKIE['ratib_pair']) ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $_COOKIE['ratib_pair'])) : '';
@@ -13,8 +14,11 @@ if (strlen($pairToken) !== 32) {
     $pairToken = '';
 }
 
-$ctxCountryId = isset($_GET['country_id']) ? (int) $_GET['country_id'] : 0;
-$ctxAgencyId = isset($_GET['agency_id']) ? (int) $_GET['agency_id'] : 0;
+$badgeCtx = ratib_qr_login_badge_tenant_context();
+$badgeCtx = ratib_qr_login_enrich_context($badgeCtx, $pairToken !== '' ? $pairToken : null);
+$ctxCountryId = (int) ($badgeCtx['country_id'] ?? 0);
+$ctxAgencyId = (int) ($badgeCtx['agency_id'] ?? 0);
+$ctxCountrySlug = trim((string) ($badgeCtx['country_slug'] ?? ''));
 $directLogin = ($pairToken === '');
 
 $pageTitle = 'Workforce badge — RATEB';
@@ -50,6 +54,7 @@ $pageTitle = 'Workforce badge — RATEB';
         var directLogin = <?php echo $directLogin ? 'true' : 'false'; ?>;
         var countryId = <?php echo (int) $ctxCountryId; ?>;
         var agencyId = <?php echo (int) $ctxAgencyId; ?>;
+        var countrySlug = <?php echo json_encode($ctxCountrySlug, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         var msg = document.getElementById('badge-msg');
         var pinPanel = document.getElementById('badge-pin-panel');
         var challenge = '';
@@ -77,7 +82,7 @@ $pageTitle = 'Workforce badge — RATEB';
 
         function validate() {
             if (!payload) {
-                show('Invalid badge link.', 'error');
+                show('Invalid badge link — open Users → Access → Copy badge link (or Regenerate first).', 'error');
                 return;
             }
             if (!pairToken && !directLogin) {
@@ -95,7 +100,8 @@ $pageTitle = 'Workforce badge — RATEB';
                     qr_payload: payload,
                     pair_token: pairToken,
                     country_id: countryId,
-                    agency_id: agencyId
+                    agency_id: agencyId,
+                    country_slug: countrySlug
                 }, trustBody()))
             })
                 .then(function (r) { return r.json(); })

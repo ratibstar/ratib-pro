@@ -18,8 +18,12 @@ if (!function_exists('ratib_barcode_login_resolve_connection')) {
         }
         $agencyId = (int) ($ctx['agency_id'] ?? 0);
         $countryId = (int) ($ctx['country_id'] ?? 0);
+        $countrySlug = trim((string) ($ctx['country_slug'] ?? ''));
+        if ($countryId <= 0 && $countrySlug !== '' && function_exists('ratib_qr_login_country_id_from_slug')) {
+            $countryId = ratib_qr_login_country_id_from_slug($countrySlug);
+        }
         $singleUrlMode = defined('SINGLE_URL_MODE') && SINGLE_URL_MODE;
-        if (!$singleUrlMode || $agencyId <= 0 && $countryId <= 0) {
+        if (!$singleUrlMode || ($agencyId <= 0 && $countryId <= 0)) {
             return $conn;
         }
         $lookupConn = (function_exists('get_control_lookup_conn') && get_control_lookup_conn())

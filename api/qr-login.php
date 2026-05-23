@@ -231,7 +231,7 @@ try {
             }
             $badgeUrl = '';
             if (!empty($issued['qr_payload']) && function_exists('ratib_qr_login_badge_url')) {
-                $badgeUrl = ratib_qr_login_badge_url((string) $issued['qr_payload']);
+                $badgeUrl = ratib_qr_login_badge_url((string) $issued['qr_payload'], ratib_qr_login_badge_tenant_context());
             }
             qr_json([
                 'success' => true,
@@ -252,7 +252,7 @@ try {
                 'success' => true,
                 'qr_payload' => $issued['qr_payload'],
                 'expires_at' => $issued['expires_at'],
-                'badge_url' => ratib_qr_login_badge_url((string) $issued['qr_payload']),
+                'badge_url' => ratib_qr_login_badge_url((string) $issued['qr_payload'], ratib_qr_login_badge_tenant_context()),
             ]);
         }
     }
