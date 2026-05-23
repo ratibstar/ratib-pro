@@ -154,6 +154,7 @@ if (!defined('TENANT_CONTEXT_GUARD_EXCEPTIONS')) {
         '/api/ngenius-health',
         '/api/support-chat-health',
         '/api/login-barcode-pair',
+        '/api/qr-login',
     ]);
 }
 

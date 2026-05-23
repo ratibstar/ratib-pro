@@ -2,10 +2,11 @@
 declare(strict_types=1);
 
 /**
- * View / print a user's login barcode (System Settings → Users → Barcode).
+ * Employee login badge — secure RATIBLOGIN QR + legacy reference code.
  */
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/ratib-user-login-barcode.php';
+require_once __DIR__ . '/../includes/ratib-qr-login.php';
 
 if (!isset($_SESSION['user_id'], $_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     header('Location: ' . pageUrl('login.php'));
@@ -25,10 +26,23 @@ if (!($conn instanceof mysqli)) {
 }
 
 $result = ratib_user_ensure_login_barcode($conn, $targetUserId);
-$barcode = $result['ok'] ? (string) ($result['barcode'] ?? '') : '';
+$legacyCode = $result['ok'] ? (string) ($result['barcode'] ?? '') : '';
 $username = (string) ($result['username'] ?? '');
 $error = $result['ok'] ? '' : (string) ($result['message'] ?? 'Barcode unavailable.');
-$pageTitle = $username !== '' ? ('Login barcode — ' . $username) : 'Login barcode';
+
+$qrPayload = '';
+$qrExpires = '';
+if ($error === '' && $targetUserId > 0) {
+    $issued = ratib_qr_login_issue_token($conn, $targetUserId);
+    if (!empty($issued['ok'])) {
+        $qrPayload = (string) ($issued['qr_payload'] ?? '');
+        $qrExpires = (string) ($issued['expires_at'] ?? '');
+    } else {
+        $error = (string) ($issued['message'] ?? 'Could not issue secure QR token.');
+    }
+}
+
+$pageTitle = $username !== '' ? ('Login badge — ' . $username) : 'Login badge';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -46,11 +60,8 @@ $pageTitle = $username !== '' ? ('Login barcode — ' . $username) : 'Login barc
         }
         .barcode-card h1 { font-size: 1.15rem; margin-bottom: 0.25rem; }
         .barcode-card .sub { color: #64748b; font-size: 0.9rem; margin-bottom: 1.25rem; }
-        #barcode-svg { max-width: 100%; min-height: 72px; }
-        .code-text {
-            font-family: ui-monospace, monospace; font-size: 1.1rem; letter-spacing: 0.08em;
-            margin-top: 0.75rem; word-break: break-all;
-        }
+        .badge-qr { min-height: 220px; display: flex; align-items: center; justify-content: center; }
+        .meta { font-size: 0.8rem; color: #64748b; }
         .actions { margin-top: 1.25rem; display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
         @media print {
             body { background: #fff; padding: 0; }
@@ -61,7 +72,7 @@ $pageTitle = $username !== '' ? ('Login barcode — ' . $username) : 'Login barc
 </head>
 <body>
     <div class="barcode-card">
-        <h1>RATEB login barcode</h1>
+        <h1>RATEB secure login badge</h1>
         <?php if ($username !== ''): ?>
         <p class="sub">User: <strong><?php echo htmlspecialchars($username, ENT_QUOTES, 'UTF-8'); ?></strong></p>
         <?php endif; ?>
@@ -69,38 +80,30 @@ $pageTitle = $username !== '' ? ('Login barcode — ' . $username) : 'Login barc
         <?php if ($error !== ''): ?>
         <p class="text-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></p>
         <?php else: ?>
-        <div id="qrcode-mobile" class="mb-3" aria-label="QR code for mobile scan"></div>
-        <svg id="barcode-svg" aria-label="1D barcode"></svg>
-        <div class="code-text" id="barcode-plain"><?php echo htmlspecialchars($barcode, ENT_QUOTES, 'UTF-8'); ?></div>
-        <p class="small text-muted mt-3 mb-0">Open this page on a phone and show the QR code. At login, choose <strong>Barcode</strong> → <strong>Open camera</strong> and scan it.</p>
+        <div id="badge-qr" class="badge-qr mb-2" aria-label="Secure login QR"></div>
+        <?php if ($qrExpires !== ''): ?>
+        <p class="meta mb-2">Valid until <?php echo htmlspecialchars($qrExpires, ENT_QUOTES, 'UTF-8'); ?></p>
+        <?php endif; ?>
+        <?php if ($legacyCode !== ''): ?>
+        <p class="meta mb-0">Reference ID: <?php echo htmlspecialchars($legacyCode, ENT_QUOTES, 'UTF-8'); ?> (not for scanning)</p>
+        <?php endif; ?>
+        <p class="small text-muted mt-3 mb-0">At login choose <strong>Barcode</strong>, scan the pairing QR on the computer, then scan this badge with your phone camera.</p>
         <?php endif; ?>
 
         <div class="actions no-print">
-            <button type="button" class="btn btn-primary" onclick="window.print()">Print</button>
+            <button type="button" class="btn btn-primary" onclick="window.print()">Print badge</button>
             <a href="<?php echo htmlspecialchars(pageUrl('system-settings.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary">Back to users</a>
         </div>
     </div>
 
-    <?php if ($barcode !== ''): ?>
+    <?php if ($qrPayload !== ''): ?>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script>
     (function () {
-        var value = <?php echo json_encode($barcode, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-        var qrHost = document.getElementById('qrcode-mobile');
-        if (qrHost && typeof QRCode !== 'undefined') {
-            new QRCode(qrHost, { text: value, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
-        }
-        try {
-            JsBarcode('#barcode-svg', value, {
-                format: 'CODE128',
-                width: 2,
-                height: 72,
-                displayValue: false,
-                margin: 8
-            });
-        } catch (e) {
-            /* 1D optional */
+        var value = <?php echo json_encode($qrPayload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        var host = document.getElementById('badge-qr');
+        if (host && typeof QRCode !== 'undefined') {
+            new QRCode(host, { text: value, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
         }
     })();
     </script>

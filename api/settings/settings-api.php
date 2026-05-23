@@ -2371,11 +2371,23 @@ class SettingsAPI {
             ], 500);
             return;
         }
+        $qrPayload = '';
+        $qrExpires = '';
+        require_once __DIR__ . '/../../includes/ratib-qr-login.php';
+        if (function_exists('ratib_qr_login_issue_token')) {
+            $issued = ratib_qr_login_issue_token($mysqli, $userId);
+            if (!empty($issued['ok'])) {
+                $qrPayload = (string) ($issued['qr_payload'] ?? '');
+                $qrExpires = (string) ($issued['expires_at'] ?? '');
+            }
+        }
         sendResponse([
             'success' => true,
             'data' => [
                 'barcode' => (string) ($result['barcode'] ?? ''),
                 'username' => (string) ($result['username'] ?? ''),
+                'qr_payload' => $qrPayload,
+                'qr_expires_at' => $qrExpires,
             ],
         ]);
     }
@@ -2452,6 +2464,18 @@ class SettingsAPI {
 
         if ($table === 'users' && !in_array('login_barcode', $existingColsLower, true)) {
             $columnsToAdd[] = 'ADD COLUMN `login_barcode` VARCHAR(64) NULL DEFAULT NULL';
+        }
+        if ($table === 'users' && !in_array('qr_login_token', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `qr_login_token` VARCHAR(64) NULL DEFAULT NULL';
+        }
+        if ($table === 'users' && !in_array('qr_token_expires_at', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `qr_token_expires_at` DATETIME NULL DEFAULT NULL';
+        }
+        if ($table === 'users' && !in_array('qr_token_revoked_at', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `qr_token_revoked_at` DATETIME NULL DEFAULT NULL';
+        }
+        if ($table === 'users' && !in_array('last_qr_scan_at', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `last_qr_scan_at` DATETIME NULL DEFAULT NULL';
         }
         
         // Common: add country_id, city, position, created_at, updated_at where missing (for settings tables)

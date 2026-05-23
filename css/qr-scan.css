@@ -1,0 +1,113 @@
+/* Enterprise QR scanner — mobile-first */
+.qr-scan-page {
+    min-height: 100vh;
+    background: #0b1220;
+    color: #e2e8f0;
+    padding: 1rem 1rem 2rem;
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.qr-scan-shell {
+    max-width: 440px;
+    margin: 0 auto;
+}
+
+.qr-scan-brand {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 0.35rem;
+}
+
+.qr-scan-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem;
+}
+
+.qr-scan-sub {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    margin-bottom: 1rem;
+    line-height: 1.45;
+}
+
+.qr-scan-viewport {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    background: #020617;
+    min-height: 240px;
+}
+
+.qr-scan-viewport video {
+    object-fit: cover;
+    width: 100% !important;
+}
+
+.qr-scan-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.qr-scan-btn {
+    flex: 1;
+    min-height: 2.75rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.qr-scan-btn-primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+.qr-scan-btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.qr-scan-btn-ghost {
+    background: transparent;
+    color: #94a3b8;
+    border-color: #334155;
+}
+
+.qr-scan-status {
+    margin-top: 1rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.qr-scan-status--info {
+    background: rgba(37, 99, 235, 0.12);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.qr-scan-status--error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.qr-scan-status--success {
+    background: rgba(16, 185, 129, 0.1);
+    color: #6ee7b7;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.qr-scan-status--loading {
+    background: rgba(148, 163, 184, 0.08);
+    color: #cbd5e1;
+}
+
+.qr-scan-status.d-none {
+    display: none !important;
+}

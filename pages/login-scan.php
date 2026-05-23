@@ -2,65 +2,92 @@
 declare(strict_types=1);
 
 /**
- * Phone-only scanner: completes barcode login on the PC that showed the pairing QR.
+ * Enterprise QR camera scanner — pairs with desktop login or direct mobile sign-in.
+ * Routes: /{country}/login/scan, /login/scan, /{country}/workforce/scan
  */
 require_once __DIR__ . '/../includes/config.php';
 
-$token = isset($_GET['token']) ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $_GET['token'])) : '';
-if (strlen($token) !== 32) {
-    http_response_code(400);
-    echo 'Invalid or missing login session. Scan the QR code on your computer again.';
-    exit;
+$pairToken = isset($_GET['token']) ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $_GET['token'])) : '';
+$hasPair = strlen($pairToken) === 32;
+$mode = isset($_GET['mode']) ? trim((string) $_GET['mode']) : '';
+
+if ($hasPair) {
+    require_once __DIR__ . '/../includes/ratib-barcode-login-pair.php';
+    $pair = ratib_barcode_pair_read($pairToken);
+    if ($pair === null || ($pair['status'] ?? '') !== 'pending') {
+        http_response_code(410);
+        echo 'Session expired. On your computer, choose Barcode again.';
+        exit;
+    }
 }
 
-require_once __DIR__ . '/../includes/ratib-barcode-login-pair.php';
-$pair = ratib_barcode_pair_read($token);
-if ($pair === null || ($pair['status'] ?? '') !== 'pending') {
-    http_response_code(410);
-    echo 'This login session expired. On your computer, choose Barcode again.';
-    exit;
-}
+$pageTitle = $hasPair ? 'Scan badge — RATEB' : 'QR check-in — RATEB';
+$cssV = (int) @filemtime(__DIR__ . '/../css/qr-scan.css');
+$jsScanV = (int) @filemtime(__DIR__ . '/../js/login-scan.js');
+$jsLibV = time();
 
-$pageTitle = 'Scan barcode — RATEB';
-$pairApi = '../api/login-barcode-pair.php';
+$apiQr = function_exists('asset') ? asset('api/qr-login.php') : '/api/qr-login.php';
+$apiPair = function_exists('asset') ? asset('api/login-barcode-pair.php') : '/api/login-barcode-pair.php';
+
+$ctxCountryId = isset($_GET['country_id']) ? (int) $_GET['country_id'] : 0;
+$ctxAgencyId = isset($_GET['agency_id']) ? (int) $_GET['agency_id'] : 0;
+if ($hasPair && is_array($pair['context'] ?? null)) {
+    $pctx = $pair['context'];
+    if ($ctxCountryId <= 0) {
+        $ctxCountryId = (int) ($pctx['country_id'] ?? 0);
+    }
+    if ($ctxAgencyId <= 0) {
+        $ctxAgencyId = (int) ($pctx['agency_id'] ?? 0);
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="robots" content="noindex,nofollow">
     <title><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/login.css?v=<?php echo (int) @filemtime(__DIR__ . '/../css/login.css'); ?>">
-    <style>
-        body { background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 1rem; }
-        .scan-card {
-            max-width: 420px; margin: 0 auto; background: rgba(15, 23, 42, 0.95);
-            border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 1.25rem;
-        }
-        .scan-done { color: #34d399; }
-    </style>
+    <link rel="stylesheet" href="../css/qr-scan.css?v=<?php echo $cssV; ?>">
 </head>
-<body>
-    <div class="scan-card text-center">
-        <h1 class="h4 mb-2"><i class="fas fa-qrcode text-info"></i> Scan your badge</h1>
-        <p class="small text-muted mb-3">Point your phone at the <strong>QR code</strong> from System Settings → Users. Your computer will sign in — not this phone.</p>
-        <div id="barcode-camera-wrap" class="barcode-camera-wrap barcode-camera-wrap--full">
-            <div id="barcode-qr-reader" class="barcode-qr-reader" aria-label="Barcode scanner"></div>
+<body class="qr-scan-page">
+    <div class="qr-scan-shell">
+        <p class="qr-scan-brand">RATEB</p>
+        <h1 class="qr-scan-title"><?php echo $hasPair ? 'Scan your employee badge' : 'QR check-in'; ?></h1>
+        <p class="qr-scan-sub">
+            <?php if ($hasPair): ?>
+            Point your camera at the <strong>QR badge</strong> from System Settings → Users.
+            Your workstation will sign in — this phone stays on the scan screen.
+            <?php else: ?>
+            Sign in with your secure <strong>RATIBLOGIN</strong> badge QR code.
+            <?php endif; ?>
+        </p>
+        <div id="qr-scan-viewport" class="qr-scan-viewport" aria-label="Camera scanner"></div>
+        <div class="qr-scan-actions">
+            <button type="button" class="qr-scan-btn qr-scan-btn-primary" id="qr-scan-start">
+                <i class="fas fa-camera"></i> Start camera
+            </button>
+            <button type="button" class="qr-scan-btn qr-scan-btn-ghost d-none" id="qr-scan-stop">
+                Stop
+            </button>
         </div>
-        <button type="button" class="btn btn-primary btn-lg w-100 mt-3" id="barcode-start-camera">
-            <i class="fas fa-camera"></i> Start camera
-        </button>
-        <div id="barcode-status" class="barcode-status info-message d-block mt-3" role="status">Tap Start camera and allow access.</div>
+        <div id="qr-scan-status" class="qr-scan-status qr-scan-status--info" role="status">
+            Tap Start camera and allow access when prompted.
+        </div>
     </div>
     <script>
-    window.RATIB_LOGIN_SCAN = {
-        token: <?php echo json_encode($token, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
-        apiPair: <?php echo json_encode($pairApi, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
-    };
+    window.RATIB_QR_SCAN = <?php echo json_encode([
+        'pairToken' => $hasPair ? $pairToken : '',
+        'apiQr' => $apiQr,
+        'apiPair' => $apiPair,
+        'countryId' => $ctxCountryId,
+        'agencyId' => $ctxAgencyId,
+        'mode' => $mode,
+    ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
-    <script src="../js/login-scan.js?v=<?php echo (int) @filemtime(__DIR__ . '/../js/login-scan.js'); ?>"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="../js/ratib-qr-scanner.js?v=<?php echo $jsLibV; ?>"></script>
+    <script src="../js/login-scan.js?v=<?php echo $jsScanV; ?>"></script>
 </body>
 </html>

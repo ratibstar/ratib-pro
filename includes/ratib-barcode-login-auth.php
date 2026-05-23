@@ -178,12 +178,14 @@ if (!function_exists('ratib_barcode_login_build_session')) {
     }
 }
 
-if (!function_exists('ratib_barcode_login_authenticate')) {
+if (!function_exists('ratib_barcode_login_authenticate_legacy')) {
     /**
+     * Legacy static barcode column lookup (login_barcode value).
+     *
      * @param array<string, mixed> $ctx
      * @return array{ok:bool, session?:array<string,mixed>, message?:string}
      */
-    function ratib_barcode_login_authenticate(string $barcode, array $ctx): array
+    function ratib_barcode_login_authenticate_legacy(string $barcode, array $ctx): array
     {
         $barcode = trim($barcode);
         if ($barcode === '') {
@@ -218,5 +220,23 @@ if (!function_exists('ratib_barcode_login_authenticate')) {
             return ['ok' => false, 'message' => 'Account inactive or not allowed.'];
         }
         return ['ok' => true, 'session' => $session];
+    }
+}
+
+if (!function_exists('ratib_barcode_login_authenticate')) {
+    /**
+     * @param array<string, mixed> $ctx
+     * @return array{ok:bool, session?:array<string,mixed>, message?:string, code?:string}
+     */
+    function ratib_barcode_login_authenticate(string $barcode, array $ctx, ?string $pairToken = null): array
+    {
+        $qrHelper = __DIR__ . '/ratib-qr-login.php';
+        if (is_file($qrHelper)) {
+            require_once $qrHelper;
+            if (function_exists('ratib_qr_login_authenticate_payload')) {
+                return ratib_qr_login_authenticate_payload($barcode, $ctx, $pairToken);
+            }
+        }
+        return ratib_barcode_login_authenticate_legacy($barcode, $ctx);
     }
 }

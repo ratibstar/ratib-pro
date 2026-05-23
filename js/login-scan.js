@@ -1,159 +1,131 @@
 /**
- * Phone scanner for cross-device barcode login (pairs with PC session).
+ * Login / workforce QR scan page — uses RatibQrScanner + qr-login API.
  */
 document.addEventListener('DOMContentLoaded', function () {
-    const cfg = window.RATIB_LOGIN_SCAN || {};
-    const token = cfg.token || '';
-    const apiPair = cfg.apiPair || '../api/login-barcode-pair.php';
-    const barcodeReaderEl = document.getElementById('barcode-qr-reader');
-    const barcodeStartBtn = document.getElementById('barcode-start-camera');
-    const statusDiv = document.getElementById('barcode-status');
-
-    let barcodeScanner = null;
-    let barcodeCameraStarting = false;
-    let submitted = false;
+    var cfg = window.RATIB_QR_SCAN || {};
+    var pairToken = cfg.pairToken || '';
+    var apiQr = cfg.apiQr || '/api/qr-login.php';
+    var statusEl = document.getElementById('qr-scan-status');
+    var startBtn = document.getElementById('qr-scan-start');
+    var stopBtn = document.getElementById('qr-scan-stop');
+    var scanner = null;
 
     function setStatus(message, type) {
-        if (!statusDiv) {
+        if (!statusEl) {
             return;
         }
-        statusDiv.className = 'barcode-status ' + (type || 'info') + '-message d-block mt-3';
-        statusDiv.textContent = message;
+        statusEl.className = 'qr-scan-status qr-scan-status--' + (type || 'info');
+        statusEl.textContent = message;
+        statusEl.classList.remove('d-none');
     }
 
-    async function stopBarcodeCamera() {
-        barcodeCameraStarting = false;
-        if (!barcodeScanner) {
-            return;
-        }
-        const scanner = barcodeScanner;
-        barcodeScanner = null;
-        try {
+    function mapErrorCode(code, fallback) {
+        var map = {
+            invalid: 'Invalid QR code.',
+            expired: 'This QR code has expired.',
+            revoked: 'This badge has been revoked.',
+            replay: 'Duplicate scan — please wait.',
+            rate_limit: 'Too many attempts. Wait a moment.',
+            inactive: 'Account is not active.',
+            pair_failed: 'Could not sign in on your computer. Try again.'
+        };
+        return map[code] || fallback || 'Scan failed.';
+    }
+
+    async function submitPayload(payload) {
+        setStatus('Validating…', 'loading');
+        if (scanner) {
             await scanner.stop();
-        } catch (e) {
-            /* ignore */
+        }
+        if (startBtn) {
+            startBtn.classList.add('d-none');
         }
         try {
-            await scanner.clear();
-        } catch (e2) {
-            /* ignore */
-        }
-    }
-
-    function pickCameraId(cameras) {
-        if (!cameras || !cameras.length) {
-            return null;
-        }
-        const back = cameras.find(function (c) {
-            const label = (c.label || '').toLowerCase();
-            return /back|rear|environment|wide/.test(label);
-        });
-        return back ? back.id : cameras[cameras.length - 1].id;
-    }
-
-    async function submitBarcode(code) {
-        if (submitted || !token) {
-            return;
-        }
-        const value = String(code || '').trim();
-        if (value.length < 2) {
-            return;
-        }
-        submitted = true;
-        setStatus('Signing in on your computer…', 'info');
-        await stopBarcodeCamera();
-        try {
-            const res = await fetch(apiPair, {
+            var res = await fetch(apiQr, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
-                body: JSON.stringify({ action: 'submit', token: token, barcode: value })
+                body: JSON.stringify({
+                    action: 'validate',
+                    qr_payload: payload,
+                    pair_token: pairToken,
+                    country_id: cfg.countryId || 0,
+                    agency_id: cfg.agencyId || 0
+                })
             });
-            const json = await res.json();
+            var json = await res.json();
             if (json.success) {
-                setStatus('Success! You can close this page. RATEB is opening on your computer.', 'info');
-                if (statusDiv) {
-                    statusDiv.classList.add('scan-done');
+                if (pairToken) {
+                    setStatus('Success. You can close this page — RATEB is opening on your computer.', 'success');
+                } else {
+                    setStatus('Signed in. Redirecting…', 'success');
+                    window.location.href = (typeof pageUrl === 'function')
+                        ? pageUrl('dashboard.php')
+                        : '/pages/dashboard.php';
                 }
-                if (barcodeStartBtn) {
-                    barcodeStartBtn.classList.add('d-none');
-                }
-            } else {
-                submitted = false;
-                setStatus(json.message || 'Barcode not recognized. Try again.', 'error');
-                if (barcodeStartBtn) {
-                    barcodeStartBtn.classList.remove('d-none');
-                }
+                return;
             }
+            if (scanner) {
+                scanner.resetSubmit();
+            }
+            if (startBtn) {
+                startBtn.classList.remove('d-none');
+            }
+            setStatus(mapErrorCode(json.code, json.message), 'error');
         } catch (e) {
-            submitted = false;
-            setStatus('Network error. Try again.', 'error');
-            if (barcodeStartBtn) {
-                barcodeStartBtn.classList.remove('d-none');
+            if (scanner) {
+                scanner.resetSubmit();
             }
+            if (startBtn) {
+                startBtn.classList.remove('d-none');
+            }
+            setStatus('Network error. Check connection and try again.', 'error');
         }
     }
 
-    async function startBarcodeCamera() {
-        if (barcodeScanner || barcodeCameraStarting || !barcodeReaderEl) {
-            return;
-        }
-        if (typeof Html5Qrcode === 'undefined') {
-            setStatus('Scanner failed to load. Refresh the page.', 'error');
-            return;
-        }
-        barcodeCameraStarting = true;
-        setStatus('Starting camera…', 'info');
-        if (barcodeStartBtn) {
-            barcodeStartBtn.classList.add('d-none');
-        }
-        barcodeScanner = new Html5Qrcode('barcode-qr-reader');
-        try {
-            let cameras = [];
-            try {
-                cameras = await Html5Qrcode.getCameras();
-            } catch (e) {
-                cameras = [];
-            }
-            const cameraId = pickCameraId(cameras);
-            const config = {
-                fps: 12,
-                qrbox: function (vw, vh) {
-                    return {
-                        width: Math.floor(Math.min(vw * 0.94, 400)),
-                        height: Math.floor(Math.min(vh * 0.62, 280))
-                    };
-                }
-            };
-            const onScan = function (text) {
-                if (text) {
-                    submitBarcode(text);
-                }
-            };
-            if (cameraId) {
-                await barcodeScanner.start(cameraId, config, onScan, function () {});
-            } else {
-                await barcodeScanner.start({ facingMode: 'environment' }, config, onScan, function () {});
-            }
-            barcodeCameraStarting = false;
-            setStatus('Scan the QR from Users settings.', 'info');
-        } catch (err) {
-            barcodeCameraStarting = false;
-            await stopBarcodeCamera();
-            if (barcodeStartBtn) {
-                barcodeStartBtn.classList.remove('d-none');
-            }
-            setStatus('Allow camera access, then tap Start camera again.', 'error');
-        }
+    if (typeof RatibQrScanner === 'undefined') {
+        setStatus('Scanner failed to load. Refresh the page.', 'error');
+        return;
     }
 
-    if (barcodeStartBtn) {
-        barcodeStartBtn.addEventListener('click', startBarcodeCamera);
+    scanner = new RatibQrScanner({
+        elementId: 'qr-scan-viewport',
+        throttleMs: 2800,
+        onScan: submitPayload,
+        onStatus: setStatus
+    });
+
+    if (startBtn) {
+        startBtn.addEventListener('click', function () {
+            startBtn.classList.add('d-none');
+            if (stopBtn) {
+                stopBtn.classList.remove('d-none');
+            }
+            scanner.start();
+        });
+    }
+
+    if (stopBtn) {
+        stopBtn.addEventListener('click', async function () {
+            await scanner.stop();
+            stopBtn.classList.add('d-none');
+            if (startBtn) {
+                startBtn.classList.remove('d-none');
+            }
+            scanner.resetSubmit();
+            setStatus('Camera stopped. Tap Start camera to scan again.', 'info');
+        });
     }
 
     document.addEventListener('visibilitychange', function () {
-        if (document.hidden) {
-            stopBarcodeCamera();
+        if (document.hidden && scanner) {
+            scanner.stop();
+        }
+    });
+
+    window.addEventListener('pagehide', function () {
+        if (scanner) {
+            scanner.stop();
         }
     });
 });

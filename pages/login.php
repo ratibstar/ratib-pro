@@ -306,6 +306,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $conn !== null) {
             if (function_exists('ratib_partner_portal_clear')) {
                 ratib_partner_portal_clear();
             }
+            if (function_exists('session_regenerate_id')) {
+                session_regenerate_id(true);
+            }
             foreach ($pairSession as $k => $v) {
                 $_SESSION[$k] = $v;
             }
@@ -1510,6 +1513,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     ?>
     <?php
     $loginScanUrl = function_exists('pageUrl') ? pageUrl('login-scan.php') : '../pages/login-scan.php';
+    if (!empty($singleCountryFromPath) && !empty($loginCountries[0]['slug'])) {
+        $slug = preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $loginCountries[0]['slug']));
+        if ($slug !== '') {
+            $base = rtrim((string) (defined('BASE_URL') ? BASE_URL : ''), '/');
+            $loginScanUrl = ($base !== '' ? $base : '') . '/' . $slug . '/login/scan';
+        }
+    }
     $loginPairApi = (function_exists('asset') ? asset('api/login-barcode-pair.php') : '/api/login-barcode-pair.php');
     $loginPairCountrySlug = '';
     if (!empty($singleCountryFromPath) && !empty($loginCountries[0]['slug'])) {

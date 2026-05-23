@@ -80,7 +80,8 @@ try {
             pair_json(['success' => false, 'message' => 'This session is no longer waiting.'], 409);
         }
         $ctx = is_array($pair['context'] ?? null) ? $pair['context'] : [];
-        $auth = ratib_barcode_login_authenticate($barcode, $ctx);
+        require_once __DIR__ . '/../includes/ratib-qr-login.php';
+        $auth = ratib_qr_login_authenticate_payload($barcode, $ctx, $token);
         if (empty($auth['ok']) || !is_array($auth['session'] ?? null)) {
             pair_json(['success' => false, 'message' => $auth['message'] ?? 'Login failed'], 401);
         }

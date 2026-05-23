@@ -1,1 +1,1 @@
-rateb-barcode-poll-token-fix-20260522
+rateb-enterprise-qr-login-20260522
