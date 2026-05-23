@@ -199,6 +199,21 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
                 <?php endif; ?>
             </div>
         </div>
+        <?php
+        $ratibNavScriptBase = basename((string) ($_SERVER['SCRIPT_NAME'] ?? ''), '.php');
+        $ratibNavActivePage = isset($ratibNavActive) ? (string) $ratibNavActive : '';
+        if ($ratibNavActivePage === '' && $ratibNavScriptBase !== '') {
+            $ratibNavActivePage = $ratibNavScriptBase;
+        }
+        $ratibNavLinkClass = static function (string $pageKey) use ($ratibNavActivePage): string {
+            $class = 'nav-item nav-link';
+            if ($ratibNavActivePage !== '' && $ratibNavActivePage === $pageKey) {
+                $class .= ' active';
+            }
+
+            return $class;
+        };
+        ?>
         <div class="nav-items">
             <a href="<?php echo htmlspecialchars(ratib_nav_url('dashboard.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_dashboard">
                 <i class="nav-icon fas fa-home"></i>
@@ -236,11 +251,15 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
                 <i class="nav-icon fas fa-chart-bar"></i>
                 <span>Reports</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('contact.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_contacts">
+            <a href="<?php echo htmlspecialchars(ratib_nav_url('contact.php'), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo htmlspecialchars($ratibNavLinkClass('contact'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_contacts">
                 <i class="nav-icon fas fa-phone"></i>
                 <span>Contact</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link" data-permission="view_notifications">
+            <a href="<?php echo htmlspecialchars(ratib_nav_url('communications.php'), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo htmlspecialchars($ratibNavLinkClass('communications'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="communication_view">
+                <i class="nav-icon fas fa-comments"></i>
+                <span>Communications</span>
+            </a>
+            <a href="<?php echo htmlspecialchars(ratib_nav_url('notifications.php'), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo htmlspecialchars($ratibNavLinkClass('notifications'), ENT_QUOTES, 'UTF-8'); ?>" data-permission="view_notifications">
                 <i class="nav-icon fas fa-bell"></i>
                 <span>Notifications</span>
                 <span class="notification-badge badge bg-danger ms-1 d-none" id="headerNotificationBadge">0</span>
