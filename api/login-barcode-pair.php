@@ -51,7 +51,7 @@ try {
     if ($action === 'poll') {
         $token = preg_replace('/[^a-f0-9]/', '', strtolower((string) ($input['token'] ?? '')));
         if (strlen($token) !== 32) {
-            pair_json(['success' => false, 'message' => 'Invalid token'], 400);
+            pair_json(['success' => true, 'status' => 'pending']);
         }
         $poll = ratib_barcode_pair_poll($token);
         if (empty($poll['ok'])) {

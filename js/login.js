@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 form.classList.remove('d-block');
             }
         });
-        stopPairPolling();
+        clearPairSession();
     }
 
     function showForm(form) {
@@ -100,6 +100,10 @@ document.addEventListener('DOMContentLoaded', function () {
             clearInterval(pairPollTimer);
             pairPollTimer = null;
         }
+    }
+
+    function clearPairSession() {
+        stopPairPolling();
         pairToken = null;
     }
 
@@ -194,10 +198,11 @@ document.addEventListener('DOMContentLoaded', function () {
             renderPairQr(scanUrl);
             showBarcodeStatus('Scan the QR with your phone, then scan your user badge.', 'info');
             stopPairPolling();
+            const activeToken = pairToken;
             pairPollTimer = setInterval(function () {
-                pollPairToken(pairToken);
+                pollPairToken(activeToken);
             }, 1500);
-            pollPairToken(pairToken);
+            pollPairToken(activeToken);
         } catch (e) {
             showBarcodeStatus('Network error. Refresh and try again.', 'error');
         }
@@ -213,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 barcodeMobileHint.classList.add('d-block');
             }
             showBarcodeStatus('Open login on your computer and scan the QR shown there.', 'info');
-            stopPairPolling();
+            clearPairSession();
             return;
         }
         if (barcodeMobileHint) {
