@@ -105,6 +105,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function hideWrongBanner() {
+        var banner = document.getElementById('qr-scan-wrong-banner');
+        if (banner) {
+            banner.classList.add('d-none');
+        }
+    }
+
     function mapErrorCode(code, fallback) {
         var map = {
             invalid: 'Badge not recognized. Ask admin to refresh workforce access.',
@@ -198,10 +205,11 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        hideWrongBanner();
         if (scanner) {
             scanner.lock();
         }
-        setStatus('Validating badge…', 'loading');
+        setStatus('Workforce badge recognized — signing in…', 'loading');
         pendingChallenge = '';
 
         try {
