@@ -24,17 +24,19 @@ body.ratib-about-page {
 }
 
 [id] {
-  scroll-margin-top: 180px;
+  scroll-margin-top: calc(var(--ratib-public-header-h, 148px) + var(--ratib-profile-banner-h, 52px) + 3rem);
 }
 
 .ratib-profile-distinct-banner {
-  position: relative;
-  z-index: 50;
+  position: sticky;
+  top: var(--ratib-public-header-h, 148px);
+  z-index: 90;
   margin: 0;
   padding: 0.85rem 0;
-  background: rgba(30, 41, 59, 0.92);
+  background: rgba(30, 41, 59, 0.96);
   border-bottom: 1px solid rgba(148, 163, 184, 0.22);
-  box-shadow: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(14px);
 }
 
 .ratib-profile-distinct-banner__inner {
@@ -308,8 +310,8 @@ body.ratib-about-page {
 /* Jump nav */
 .ratib-about-jump {
   position: sticky;
-  top: 72px;
-  z-index: 40;
+  top: calc(var(--ratib-public-header-h, 148px) + var(--ratib-profile-banner-h, 0px));
+  z-index: 80;
   padding: 0.65rem 0;
   background: rgba(10, 14, 26, 0.82);
   backdrop-filter: blur(14px);

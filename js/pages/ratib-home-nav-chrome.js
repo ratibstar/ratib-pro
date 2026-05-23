@@ -5,6 +5,35 @@
     var header = document.getElementById('ratib-main-header');
     var toggle = document.getElementById('ratibNavToggle');
     var menu = document.getElementById('ratibNavMenu');
+    var headerPin = document.getElementById('ratib-public-header-pin');
+    var headerSpacer = document.getElementById('ratib-public-header-spacer');
+
+    function syncPublicHeaderHeight() {
+        if (!headerPin) {
+            return;
+        }
+        var pinHeight = headerPin.offsetHeight;
+        document.documentElement.style.setProperty('--ratib-public-header-h', pinHeight + 'px');
+        if (headerSpacer) {
+            headerSpacer.style.height = pinHeight + 'px';
+        }
+        var profileBanner = document.querySelector('[data-ratib-profile-distinct="1"]');
+        var bannerHeight = profileBanner ? profileBanner.offsetHeight : 0;
+        document.documentElement.style.setProperty('--ratib-profile-banner-h', bannerHeight + 'px');
+    }
+
+    syncPublicHeaderHeight();
+    window.addEventListener('resize', syncPublicHeaderHeight);
+    window.addEventListener('load', syncPublicHeaderHeight);
+    if (typeof ResizeObserver !== 'undefined' && headerPin) {
+        var ro = new ResizeObserver(syncPublicHeaderHeight);
+        ro.observe(headerPin);
+        var profileBanner = document.querySelector('[data-ratib-profile-distinct="1"]');
+        if (profileBanner) {
+            ro.observe(profileBanner);
+        }
+    }
+
     if (!header) {
         return;
     }

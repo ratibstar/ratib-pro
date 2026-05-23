@@ -42,6 +42,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
         <div class="ratib-saas-bg__orb ratib-saas-bg__orb--b"></div>
     </div>
 
+    <div class="ratib-public-header-pin" id="ratib-public-header-pin">
     <div class="ratib-topbar">
         <div class="ratib-topbar__inner ratib-container">
             <div class="ratib-topbar__left">
@@ -197,4 +198,6 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
             </div>
         </div>
     </header>
+    </div>
+    <div class="ratib-public-header-spacer" id="ratib-public-header-spacer" aria-hidden="true"></div>
 
