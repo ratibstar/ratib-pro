@@ -666,6 +666,13 @@ class SettingsAPI {
                 }
             }
             
+            if ($this->table === 'users' && $id) {
+                $barcodeVal = $this->ensureUserLoginBarcodeValue((int) $id);
+                if ($barcodeVal !== null && is_array($created)) {
+                    $created['login_barcode'] = $barcodeVal;
+                }
+            }
+
             // Prepare response data first
             $responseData = array(
                 "success"=>true,
@@ -843,6 +850,13 @@ class SettingsAPI {
                 }
             }
             
+            if ($this->table === 'users' && $id) {
+                $barcodeVal = $this->ensureUserLoginBarcodeValue((int) $id);
+                if ($barcodeVal !== null && is_array($updated)) {
+                    $updated['login_barcode'] = $barcodeVal;
+                }
+            }
+
             // Log history BEFORE sending response (to ensure it completes)
             $this->logHistory('update', (string)$id, $oldData, $updated);
             
@@ -2267,7 +2281,8 @@ class SettingsAPI {
                 'city' => array('city'),
                 'position' => array('position', 'job_title'),
                 'status' => array('status', 'is_active'),
-                'fingerprint_status' => array('fingerprint_status', 'has_fingerprint')
+                'fingerprint_status' => array('fingerprint_status', 'has_fingerprint'),
+                'login_barcode' => array('login_barcode', 'barcode', 'user_barcode', 'card_number')
             ),
             'control_admins' => array(
                 'name' => array('username', 'name', 'user_name', 'full_name'),
@@ -2323,6 +2338,30 @@ class SettingsAPI {
         return $maps;
     }
     
+    /**
+     * Create login_barcode when missing (for badge print + camera login).
+     */
+    private function ensureUserLoginBarcodeValue(int $userId): ?string
+    {
+        if ($this->table !== 'users' || $userId <= 0) {
+            return null;
+        }
+        $mysqli = $GLOBALS['conn'] ?? null;
+        if (!($mysqli instanceof mysqli)) {
+            return null;
+        }
+        $helper = __DIR__ . '/../../includes/ratib-user-login-barcode.php';
+        if (!is_file($helper)) {
+            return null;
+        }
+        require_once $helper;
+        if (!function_exists('ratib_user_ensure_login_barcode')) {
+            return null;
+        }
+        $result = ratib_user_ensure_login_barcode($mysqli, $userId);
+        return !empty($result['ok']) ? (string) ($result['barcode'] ?? '') : null;
+    }
+
     // Automatically add missing columns to tables that need them
     private function ensureColumnsExist() {
         // Don't try to add columns if table doesn't exist
@@ -2368,6 +2407,10 @@ class SettingsAPI {
         
         // For users table, ensure password_plain column exists
         // Security: do NOT add password_plain - passwords must be hashed only, never stored in plain
+
+        if ($table === 'users' && !in_array('login_barcode', $existingColsLower, true)) {
+            $columnsToAdd[] = 'ADD COLUMN `login_barcode` VARCHAR(64) NULL DEFAULT NULL';
+        }
         
         // Common: add country_id, city, position, created_at, updated_at where missing (for settings tables)
         $tablesNeedingLocation = array(

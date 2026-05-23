@@ -1190,6 +1190,7 @@ class ModernForms {
                 'phone': ['phone', 'contact_number', 'phone_number'],
                 'position': ['position', 'job_title'],
                 'status': ['status', 'is_active'],
+                'login_barcode': ['login_barcode', 'barcode', 'user_barcode', 'card_number'],
                 'fingerprint_status': ['fingerprint_status', 'has_fingerprint']
             },
             'appearance_specifications': {
@@ -1478,6 +1479,14 @@ class ModernForms {
                     return `<span class="status-toggle-cell" data-action="toggle-status" data-id="${itemId}" data-current="${isActive ? 'active' : 'inactive'}" title="Click to toggle">${badge}</span>`;
                 }
                 return badge;
+            }
+            case 'login_barcode': {
+                const code = String(value || '').trim();
+                const userId = (item && (item.user_id || item.id)) ? (item.user_id || item.id) : '';
+                if (!code) {
+                    return '<span class="text-muted">—</span>';
+                }
+                return `<code class="login-barcode-code" title="Login barcode">${this.escapeHtml(code)}</code>`;
             }
             case 'fingerprint': {
                 const val = String(value).toLowerCase();
@@ -5934,6 +5943,7 @@ class ModernForms {
                     if (isControl) {
                         return [
                             { key: 'name', label: 'Username', type: 'text', maxLen: 16, maxWidth: 100 },
+                            { key: 'login_barcode', label: 'Barcode', type: 'login_barcode', maxWidth: 130 },
                             { key: 'password', label: 'Password', type: 'password', maxWidth: 100 },
                             { key: 'permissions', label: 'Permissions', type: 'permissions', maxWidth: 130 },
                             { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
@@ -5941,13 +5951,13 @@ class ModernForms {
                     }
                     const cols = [
                         { key: 'name', label: 'Username', type: 'text', maxLen: 16, maxWidth: 100 },
+                        { key: 'login_barcode', label: 'Barcode', type: 'login_barcode', maxWidth: 130 },
                         { key: 'password', label: 'Password', type: 'password', maxWidth: 100 },
                         { key: 'email', label: 'Email', type: 'text', maxLen: 20, maxWidth: 140 },
                         { key: 'phone', label: 'Phone', type: 'text', maxLen: 14, maxWidth: 90 },
                         { key: 'permissions', label: 'Permissions', type: 'permissions', maxWidth: 130 },
                         { key: 'status', label: 'Status', type: 'status', maxWidth: 80 }
                     ];
-                    cols.splice(4, 0, { key: 'fingerprint_status', label: 'Fingerprint', type: 'fingerprint', maxWidth: 120 });
                     return cols;
                 })()
             },
@@ -6209,6 +6219,7 @@ class ModernForms {
                     if (isControl) {
                         return [
                             { name: 'name', label: 'Username', type: 'text', required: true, placeholder: 'Enter username' },
+                            { name: 'login_barcode', label: 'Login barcode', type: 'text', required: false, placeholder: 'Leave blank to auto-generate' },
                             { name: 'password', label: 'Password', type: 'password', required: true, placeholder: 'Enter password (required for new user)' },
                             { name: 'status', label: 'Status', type: 'select', options: [
                                 { value: 'active', label: 'Active' },
@@ -6218,6 +6229,7 @@ class ModernForms {
                     }
                     return [
                         { name: 'name', label: 'Username', type: 'text', required: true, placeholder: 'Enter username' },
+                        { name: 'login_barcode', label: 'Login barcode', type: 'text', required: false, placeholder: 'Leave blank to auto-generate for badge scan' },
                         { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'Enter email address' },
                         { name: 'password', label: 'Password', type: 'password', required: false, placeholder: 'Enter password (leave blank to keep current)' },
                         { name: 'phone', label: 'Phone', type: 'tel', placeholder: 'Enter phone number' },

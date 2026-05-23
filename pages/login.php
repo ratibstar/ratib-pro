@@ -1425,15 +1425,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     </div>
                 </div>
                 
-                <!-- Barcode Form — scan only (USB scanner types into hidden field) -->
+                <!-- Barcode Form — camera scan only -->
                 <div id="barcode-form" class="text-center d-none">
-                    <div class="barcode-scan-panel mb-3" aria-hidden="true">
-                        <i class="fas fa-barcode text-info icon-3em mb-2"></i>
-                        <h3 class="mb-2">Scan your badge</h3>
-                        <p class="text-muted mb-0 small">Point your USB barcode scanner at the badge and scan once.</p>
-                        <div class="barcode-scan-pulse mt-3" aria-hidden="true"></div>
+                    <div class="barcode-scan-panel mb-2">
+                        <i class="fas fa-camera text-info icon-3em mb-2" aria-hidden="true"></i>
+                        <h3 class="mb-2">Scan badge</h3>
+                        <p class="text-muted mb-0 small">Allow camera access, then hold the printed barcode in the frame.</p>
                     </div>
-                    <form method="post" action="" id="barcode-login-form" class="barcode-scan-form">
+                    <div id="barcode-camera-wrap" class="barcode-camera-wrap">
+                        <div id="barcode-qr-reader" class="barcode-qr-reader" aria-label="Barcode camera scanner"></div>
+                    </div>
+                    <form method="post" action="" id="barcode-login-form" class="d-none" aria-hidden="true">
                         <?php if (!empty($_GET['control']) && (string)$_GET['control'] === '1'): ?>
                         <input type="hidden" name="control" value="1">
                         <?php endif; ?>
@@ -1447,11 +1449,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                         <?php if ($formHiddenAgencyId > 0): ?>
                         <input type="hidden" name="agency_id" value="<?php echo (int)$formHiddenAgencyId; ?>">
                         <?php endif; ?>
-                        <label for="barcode-input" class="visually-hidden">Barcode scanner input</label>
-                        <input type="text" name="barcode" id="barcode-input" class="barcode-scan-input"
-                               autocomplete="off" autocapitalize="off" spellcheck="false" required
-                               aria-label="Barcode scanner input">
-                        <button type="submit" class="visually-hidden" tabindex="-1" aria-hidden="true">Submit</button>
+                        <input type="hidden" name="barcode" id="barcode-input" value="">
                     </form>
                     <div id="barcode-status" class="barcode-status d-none mt-2" role="status"></div>
                 </div>
@@ -1473,6 +1471,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         ? filemtime(__DIR__ . '/../js/login.js')
         : time();
     ?>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
     <script src="../js/login.js?v=<?php echo $loginJsVersion; ?>"></script>
 </body>
 </html>
