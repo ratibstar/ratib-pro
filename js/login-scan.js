@@ -1,5 +1,5 @@
 /**
- * Login / workforce QR scan page — uses RatibQrScanner + qr-login API.
+ * Login / workforce QR scan page — RatibQrScanner + qr-login API.
  */
 document.addEventListener('DOMContentLoaded', function () {
     var cfg = window.RATIB_QR_SCAN || {};
@@ -19,12 +19,33 @@ document.addEventListener('DOMContentLoaded', function () {
         statusEl.classList.remove('d-none');
     }
 
+    function classifyScan(raw) {
+        var v = String(raw || '').trim();
+        if (!v) {
+            return { kind: 'empty', payload: '' };
+        }
+        if (/^RATIBLOGIN:/i.test(v)) {
+            return { kind: 'badge', payload: v };
+        }
+        if (/^https?:\/\//i.test(v) || /login[-/]scan|login-scan\.php/i.test(v)) {
+            return { kind: 'pairing', payload: v };
+        }
+        if (/^R\d{5,}/i.test(v) && v.length <= 32) {
+            return { kind: 'badge', payload: v };
+        }
+        if (v.indexOf('RATIBLOGIN') >= 0) {
+            return { kind: 'badge', payload: v };
+        }
+        return { kind: 'unknown', payload: v };
+    }
+
     function mapErrorCode(code, fallback) {
         var map = {
-            invalid: 'Invalid QR code.',
-            expired: 'This QR code has expired.',
+            invalid: 'Badge not recognized. Re-open Users → Barcode and scan the badge QR (not the computer screen).',
+            pairing_qr: 'That is the computer pairing QR. Scan the employee badge from Users → Barcode instead.',
+            expired: 'This badge has expired. Ask admin to refresh Barcode in Users.',
             revoked: 'This badge has been revoked.',
-            replay: 'Duplicate scan — please wait.',
+            replay: 'Please wait a moment, then scan again.',
             rate_limit: 'Too many attempts. Wait a moment.',
             inactive: 'Account is not active.',
             pair_failed: 'Could not sign in on your computer. Try again.'
@@ -32,22 +53,33 @@ document.addEventListener('DOMContentLoaded', function () {
         return map[code] || fallback || 'Scan failed.';
     }
 
-    async function submitPayload(payload) {
-        setStatus('Validating…', 'loading');
-        if (scanner) {
-            await scanner.stop();
+    async function submitPayload(raw) {
+        var classified = classifyScan(raw);
+        if (classified.kind === 'empty') {
+            return;
         }
-        if (startBtn) {
-            startBtn.classList.add('d-none');
+        if (classified.kind === 'pairing') {
+            if (scanner) {
+                scanner.resetSubmit();
+            }
+            setStatus(
+                'That QR is only to open this page. In Users settings, tap Barcode on the user row and scan that badge QR here.',
+                'info'
+            );
+            return;
         }
+
+        setStatus('Validating badge…', 'loading');
+
         try {
             var res = await fetch(apiQr, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
+                cache: 'no-store',
                 body: JSON.stringify({
                     action: 'validate',
-                    qr_payload: payload,
+                    qr_payload: classified.payload,
                     pair_token: pairToken,
                     country_id: cfg.countryId || 0,
                     agency_id: cfg.agencyId || 0
@@ -55,13 +87,14 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             var json = await res.json();
             if (json.success) {
+                if (scanner) {
+                    await scanner.stop();
+                }
                 if (pairToken) {
-                    setStatus('Success. You can close this page — RATEB is opening on your computer.', 'success');
+                    setStatus('Success! RATEB is opening on your computer. You can close this page.', 'success');
                 } else {
                     setStatus('Signed in. Redirecting…', 'success');
-                    window.location.href = (typeof pageUrl === 'function')
-                        ? pageUrl('dashboard.php')
-                        : '/pages/dashboard.php';
+                    window.location.href = '/pages/dashboard.php';
                 }
                 return;
             }
@@ -70,6 +103,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             if (startBtn) {
                 startBtn.classList.remove('d-none');
+            }
+            if (stopBtn) {
+                stopBtn.classList.add('d-none');
             }
             setStatus(mapErrorCode(json.code, json.message), 'error');
         } catch (e) {
@@ -90,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     scanner = new RatibQrScanner({
         elementId: 'qr-scan-viewport',
-        throttleMs: 2800,
+        throttleMs: 3000,
         onScan: submitPayload,
         onStatus: setStatus
     });
@@ -101,16 +137,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (stopBtn) {
                 stopBtn.classList.remove('d-none');
             }
+            setStatus('Point at the badge QR from Users → Barcode (not the computer screen).', 'info');
             scanner.start();
         });
-        // Mobile: one tap to open scanner (required for camera permission on iOS)
-        if (window.matchMedia('(max-width: 820px)').matches) {
-            setTimeout(function () {
-                if (startBtn && !startBtn.classList.contains('d-none')) {
-                    setStatus('Tap Start camera to scan your badge.', 'info');
-                }
-            }, 400);
-        }
     }
 
     if (stopBtn) {
@@ -121,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 startBtn.classList.remove('d-none');
             }
             scanner.resetSubmit();
-            setStatus('Camera stopped. Tap Start camera to scan again.', 'info');
+            setStatus('Camera stopped. Tap Start camera when ready.', 'info');
         });
     }
 

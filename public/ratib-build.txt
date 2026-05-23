@@ -1,1 +1,1 @@
-rateb-qr-scan-assets-fix-20260522
+rateb-scan-badge-not-pairing-qr-20260522

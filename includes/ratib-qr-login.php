@@ -166,6 +166,12 @@ if (!function_exists('ratib_qr_login_normalize_payload')) {
             $token = preg_replace('/[^a-f0-9]/', '', strtolower(substr($raw, strlen(RATIB_QR_LOGIN_PREFIX))));
             return ['type' => 'secure', 'value' => $token];
         }
+        if (preg_match('#^https?://#i', $raw) || preg_match('#login[-/]scan|login-scan\.php#i', $raw)) {
+            return ['type' => 'pairing_url', 'value' => $raw];
+        }
+        if (preg_match('/^[Rr]\d{5,}[A-Za-z0-9]{0,8}$/', $raw)) {
+            return ['type' => 'legacy', 'value' => $raw];
+        }
         return ['type' => 'legacy', 'value' => $raw];
     }
 }
@@ -311,6 +317,13 @@ if (!function_exists('ratib_qr_login_authenticate_payload')) {
         $parsed = ratib_qr_login_normalize_payload($payload);
         if ($parsed['type'] === 'empty') {
             return ['ok' => false, 'message' => 'Empty scan.', 'code' => 'invalid'];
+        }
+        if ($parsed['type'] === 'pairing_url') {
+            return [
+                'ok' => false,
+                'message' => 'That is the computer pairing QR. Scan the employee badge from Users → Barcode instead.',
+                'code' => 'pairing_qr',
+            ];
         }
         $user = null;
         if ($parsed['type'] === 'secure') {

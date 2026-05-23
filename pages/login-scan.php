@@ -62,8 +62,9 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
         <h1 class="qr-scan-title"><?php echo $hasPair ? 'Scan your employee badge' : 'QR check-in'; ?></h1>
         <p class="qr-scan-sub">
             <?php if ($hasPair): ?>
-            Point your camera at the <strong>QR badge</strong> from System Settings → Users.
-            Your workstation will sign in — this phone stays on the scan screen.
+            <strong>Do not scan the QR on your computer.</strong><br>
+            On this phone (or another admin device): System Settings → Users → tap the user’s <strong>Barcode</strong> → scan <em>that</em> badge here.
+            Your workstation will then sign in.
             <?php else: ?>
             Sign in with your secure <strong>RATIBLOGIN</strong> badge QR code.
             <?php endif; ?>
