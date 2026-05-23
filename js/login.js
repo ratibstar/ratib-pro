@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function pollPairToken(token) {
         const cfg = window.RATIB_LOGIN_PAIR || {};
-        const apiPair = cfg.apiPair || '../api/login-barcode-pair.php';
+        const apiPair = cfg.apiPair || '/api/login-barcode-pair.php';
         try {
             const res = await fetch(apiPair, {
                 method: 'POST',
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function startDesktopBarcodePair() {
         const cfg = window.RATIB_LOGIN_PAIR || {};
-        const apiPair = cfg.apiPair || '../api/login-barcode-pair.php';
+        const apiPair = cfg.apiPair || '/api/login-barcode-pair.php';
         let scanBase = cfg.scanPage || 'login-scan.php';
         if (scanBase.indexOf('http') !== 0) {
             if (scanBase.indexOf('/') === 0) {

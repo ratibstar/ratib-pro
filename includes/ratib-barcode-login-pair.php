@@ -3,15 +3,109 @@ declare(strict_types=1);
 
 /**
  * Temporary tokens for cross-device barcode login (PC waits, phone scans badge).
+ * Uses MySQL when available; falls back to writable temp/cache directory.
  */
-if (!function_exists('ratib_barcode_pair_dir')) {
-    function ratib_barcode_pair_dir(): string
+if (!function_exists('ratib_barcode_pair_db')) {
+    function ratib_barcode_pair_db(): ?mysqli
     {
-        $dir = dirname(__DIR__) . '/cache/barcode_login_pairs';
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0750, true);
+        static $resolved = null;
+        if ($resolved instanceof mysqli) {
+            return $resolved;
         }
-        return $dir;
+        $candidates = [];
+        if (function_exists('get_control_lookup_conn')) {
+            $lookup = get_control_lookup_conn();
+            if ($lookup instanceof mysqli) {
+                $candidates[] = $lookup;
+            }
+        }
+        $conn = $GLOBALS['conn'] ?? null;
+        if ($conn instanceof mysqli) {
+            $candidates[] = $conn;
+        }
+        foreach ($candidates as $db) {
+            if (ratib_barcode_pair_ensure_table($db)) {
+                return $resolved = $db;
+            }
+        }
+        return null;
+    }
+}
+
+if (!function_exists('ratib_barcode_pair_ensure_table')) {
+    function ratib_barcode_pair_ensure_table(mysqli $db): bool
+    {
+        static $readyIds = [];
+        $id = spl_object_id($db);
+        if (isset($readyIds[$id])) {
+            return true;
+        }
+        $probe = @$db->query('SELECT 1 FROM login_barcode_pairs LIMIT 1');
+        if ($probe !== false) {
+            $readyIds[$id] = true;
+            return true;
+        }
+        $sql = 'CREATE TABLE IF NOT EXISTS login_barcode_pairs (
+            token VARCHAR(32) NOT NULL PRIMARY KEY,
+            status VARCHAR(20) NOT NULL DEFAULT \'pending\',
+            context_json MEDIUMTEXT NULL,
+            session_json MEDIUMTEXT NULL,
+            expires_at INT UNSIGNED NOT NULL,
+            created_at INT UNSIGNED NOT NULL,
+            KEY idx_login_barcode_pairs_expires (expires_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
+        if (@$db->query($sql)) {
+            $readyIds[$id] = true;
+            return true;
+        }
+        return false;
+    }
+}
+
+if (!function_exists('ratib_barcode_pair_storage_mode')) {
+  /**
+   * @return 'db'|'file'|null
+   */
+    function ratib_barcode_pair_storage_mode(): ?string
+    {
+        static $mode = null;
+        if ($mode !== null) {
+            return $mode === '' ? null : $mode;
+        }
+        $db = ratib_barcode_pair_db();
+        if ($db instanceof mysqli && ratib_barcode_pair_ensure_table($db)) {
+            $mode = 'db';
+            return 'db';
+        }
+        $dir = ratib_barcode_pair_file_dir();
+        if ($dir !== null && is_writable($dir)) {
+            $mode = 'file';
+            return 'file';
+        }
+        $mode = '';
+        return null;
+    }
+}
+
+if (!function_exists('ratib_barcode_pair_file_dir')) {
+    function ratib_barcode_pair_file_dir(): ?string
+    {
+        $candidates = [
+            dirname(__DIR__) . '/cache/barcode_login_pairs',
+            sys_get_temp_dir() . '/ratib_barcode_login_pairs',
+        ];
+        foreach ($candidates as $dir) {
+            if ($dir === '' || $dir === false) {
+                continue;
+            }
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0775, true);
+            }
+            if (is_dir($dir) && is_writable($dir)) {
+                return $dir;
+            }
+        }
+        return null;
     }
 }
 
@@ -21,7 +115,90 @@ if (!function_exists('ratib_barcode_pair_path')) {
         if (!preg_match('/^[a-f0-9]{32}$/', $token)) {
             return null;
         }
-        return ratib_barcode_pair_dir() . '/' . $token . '.json';
+        $dir = ratib_barcode_pair_file_dir();
+        if ($dir === null) {
+            return null;
+        }
+        return $dir . '/' . $token . '.json';
+    }
+}
+
+if (!function_exists('ratib_barcode_pair_db_read')) {
+    /**
+     * @return array<string, mixed>|null
+     */
+    function ratib_barcode_pair_db_read(mysqli $db, string $token): ?array
+    {
+        $stmt = $db->prepare(
+            'SELECT status, context_json, session_json, expires_at FROM login_barcode_pairs WHERE token = ? LIMIT 1'
+        );
+        if (!$stmt) {
+            return null;
+        }
+        $stmt->bind_param('s', $token);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+        $stmt->close();
+        if (!$row) {
+            return null;
+        }
+        $expires = (int) ($row['expires_at'] ?? 0);
+        if ($expires > 0 && time() > $expires) {
+            $del = $db->prepare('DELETE FROM login_barcode_pairs WHERE token = ? LIMIT 1');
+            if ($del) {
+                $del->bind_param('s', $token);
+                $del->execute();
+                $del->close();
+            }
+            return null;
+        }
+        $ctx = json_decode((string) ($row['context_json'] ?? ''), true);
+        $session = json_decode((string) ($row['session_json'] ?? ''), true);
+        return [
+            'status' => (string) ($row['status'] ?? 'pending'),
+            'created' => 0,
+            'expires' => $expires,
+            'context' => is_array($ctx) ? $ctx : [],
+            'session' => is_array($session) ? $session : null,
+        ];
+    }
+}
+
+if (!function_exists('ratib_barcode_pair_db_write')) {
+    /**
+     * @param array<string, mixed> $data
+     */
+    function ratib_barcode_pair_db_write(mysqli $db, string $token, array $data): bool
+    {
+        $status = (string) ($data['status'] ?? 'pending');
+        $contextJson = json_encode($data['context'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $sessionJson = '';
+        if (isset($data['session']) && is_array($data['session'])) {
+            $encoded = json_encode($data['session'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $sessionJson = $encoded !== false ? $encoded : '';
+        }
+        $expires = (int) ($data['expires'] ?? (time() + 300));
+        $created = (int) ($data['created'] ?? time());
+        if ($contextJson === false) {
+            return false;
+        }
+        $stmt = $db->prepare(
+            'INSERT INTO login_barcode_pairs (token, status, context_json, session_json, expires_at, created_at)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+             status = VALUES(status),
+             context_json = VALUES(context_json),
+             session_json = VALUES(session_json),
+             expires_at = VALUES(expires_at)'
+        );
+        if (!$stmt) {
+            return false;
+        }
+        $stmt->bind_param('ssssii', $token, $status, $contextJson, $sessionJson, $expires, $created);
+        $ok = $stmt->execute();
+        $stmt->close();
+        return (bool) $ok;
     }
 }
 
@@ -31,6 +208,13 @@ if (!function_exists('ratib_barcode_pair_read')) {
      */
     function ratib_barcode_pair_read(string $token): ?array
     {
+        $mode = ratib_barcode_pair_storage_mode();
+        if ($mode === 'db') {
+            $db = ratib_barcode_pair_db();
+            if ($db instanceof mysqli) {
+                return ratib_barcode_pair_db_read($db, $token);
+            }
+        }
         $path = ratib_barcode_pair_path($token);
         if ($path === null || !is_file($path)) {
             return null;
@@ -58,6 +242,13 @@ if (!function_exists('ratib_barcode_pair_write')) {
      */
     function ratib_barcode_pair_write(string $token, array $data): bool
     {
+        $mode = ratib_barcode_pair_storage_mode();
+        if ($mode === 'db') {
+            $db = ratib_barcode_pair_db();
+            if ($db instanceof mysqli) {
+                return ratib_barcode_pair_db_write($db, $token, $data);
+            }
+        }
         $path = ratib_barcode_pair_path($token);
         if ($path === null) {
             return false;
@@ -77,6 +268,9 @@ if (!function_exists('ratib_barcode_pair_create')) {
      */
     function ratib_barcode_pair_create(array $context): array
     {
+        if (ratib_barcode_pair_storage_mode() === null) {
+            return ['ok' => false, 'message' => 'Login session storage is not available on the server.'];
+        }
         try {
             $token = bin2hex(random_bytes(16));
         } catch (Throwable $e) {
@@ -144,9 +338,22 @@ if (!function_exists('ratib_barcode_pair_consume_session')) {
             return null;
         }
         $session = $data['session'];
-        $path = ratib_barcode_pair_path($token);
-        if ($path !== null) {
-            @unlink($path);
+        $mode = ratib_barcode_pair_storage_mode();
+        if ($mode === 'db') {
+            $db = ratib_barcode_pair_db();
+            if ($db instanceof mysqli) {
+                $del = $db->prepare('DELETE FROM login_barcode_pairs WHERE token = ? LIMIT 1');
+                if ($del) {
+                    $del->bind_param('s', $token);
+                    $del->execute();
+                    $del->close();
+                }
+            }
+        } else {
+            $path = ratib_barcode_pair_path($token);
+            if ($path !== null) {
+                @unlink($path);
+            }
         }
         return $session;
     }

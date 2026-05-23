@@ -1510,7 +1510,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     ?>
     <?php
     $loginScanUrl = function_exists('pageUrl') ? pageUrl('login-scan.php') : '../pages/login-scan.php';
-    $loginPairApi = '../api/login-barcode-pair.php';
+    $loginPairApi = (function_exists('asset') ? asset('api/login-barcode-pair.php') : '/api/login-barcode-pair.php');
     $loginPairCountrySlug = '';
     if (!empty($singleCountryFromPath) && !empty($loginCountries[0]['slug'])) {
         $loginPairCountrySlug = (string) $loginCountries[0]['slug'];
