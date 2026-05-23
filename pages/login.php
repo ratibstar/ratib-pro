@@ -379,8 +379,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         return $matched;
     };
 
-    $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
+    require_once __DIR__ . '/../includes/ratib-user-login-barcode.php';
+    $barcodeLogin = (($_POST['login_method'] ?? '') === 'barcode');
+    $barcodeValue = $barcodeLogin ? trim((string) ($_POST['barcode'] ?? '')) : '';
+    $username = $barcodeLogin ? '' : trim($_POST['username'] ?? '');
+    $password = $barcodeLogin ? '' : (string) ($_POST['password'] ?? '');
+
+    if ($barcodeLogin && $barcodeValue === '') {
+        $error = 'Please scan or enter your barcode.';
+    }
 
     // Single URL mode: connect to selected country's DB before validating (use control panel for lookup)
     $loginConn = $conn;
@@ -868,12 +875,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         error_log("Login error: users table not found in current connection for username {$username}");
     }
     $userCols = empty($error) ? $buildUserSelectCols($loginConn) : '';
-    $stmt = empty($error) ? $loginConn->prepare("SELECT {$userCols} FROM users WHERE username = ?") : null;
+    $barcodeCol = null;
+    if (empty($error) && $barcodeLogin) {
+        $barcodeCol = ratib_users_login_barcode_column($loginConn);
+        if ($barcodeCol === null || $barcodeCol === '') {
+            $error = 'Barcode login is not configured for this workspace. Ask your administrator to assign login barcodes to users.';
+        }
+    }
+    $stmt = null;
+    if (empty($error)) {
+        if ($barcodeLogin && $barcodeCol !== null && $barcodeCol !== '') {
+            $stmt = $loginConn->prepare("SELECT {$userCols} FROM users WHERE `{$barcodeCol}` = ? LIMIT 1");
+        } elseif (!$barcodeLogin) {
+            $stmt = $loginConn->prepare("SELECT {$userCols} FROM users WHERE username = ?");
+        }
+    }
     if (empty($error) && !$stmt) {
         $error = 'Database error: ' . $loginConn->error;
-        error_log("Database prepare error: " . $loginConn->error);
+        error_log('Database prepare error: ' . $loginConn->error);
     } elseif (empty($error)) {
-        $stmt->bind_param("s", $username);
+        if ($barcodeLogin) {
+            $stmt->bind_param('s', $barcodeValue);
+        } else {
+            $stmt->bind_param('s', $username);
+        }
         $stmt->execute();
         $result = $stmt->get_result();
 
@@ -881,7 +906,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
             $user = $result->fetch_assoc();
             error_log("User found: " . $user['username'] . ", Status: " . ($user['status'] ?? ''));
             if (!$ratibLoginRequireRealUserRow($user)) {
-                $error = 'Invalid username or password.';
+                $error = $barcodeLogin ? 'Barcode not recognized.' : 'Invalid username or password.';
                 error_log('Login denied: non-user-table session row blocked in strict tenant context (user_id=' . (int)($user['user_id'] ?? 0) . ')');
             } else {
                 // Country isolation (same rules as sibling-agency and "user not in first DB" paths).
@@ -896,7 +921,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
 
                 $passwordVerified = false;
                 if (empty($error)) {
-                    $passwordVerified = $verifyUserPassword($loginConn, $user, $password);
+                    $passwordVerified = $barcodeLogin ? true : $verifyUserPassword($loginConn, $user, $password);
                 }
                 // If the same username exists in another DB with a different password,
                 // try main DB before rejecting the login.
@@ -955,11 +980,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                     }
                                     $tryConn = $acctTry['conn'];
                                     $tryCols = $buildUserSelectCols($tryConn);
-                                    $stTryUser = $tryConn->prepare("SELECT {$tryCols} FROM users WHERE username = ? LIMIT 1");
+                                    $tryBarcodeCol = ($barcodeLogin && $barcodeCol) ? ratib_users_login_barcode_column($tryConn) : null;
+                                    if ($barcodeLogin && ($tryBarcodeCol === null || $tryBarcodeCol === '')) {
+                                        continue;
+                                    }
+                                    if ($barcodeLogin && $tryBarcodeCol) {
+                                        $stTryUser = $tryConn->prepare("SELECT {$tryCols} FROM users WHERE `{$tryBarcodeCol}` = ? LIMIT 1");
+                                    } else {
+                                        $stTryUser = $tryConn->prepare("SELECT {$tryCols} FROM users WHERE username = ? LIMIT 1");
+                                    }
                                     if (!$stTryUser) {
                                         continue;
                                     }
-                                    $stTryUser->bind_param('s', $username);
+                                    if ($barcodeLogin && $tryBarcodeCol) {
+                                        $stTryUser->bind_param('s', $barcodeValue);
+                                    } else {
+                                        $stTryUser->bind_param('s', $username);
+                                    }
                                     $stTryUser->execute();
                                     $rsTryUser = $stTryUser->get_result();
                                     if ($rsTryUser && $rsTryUser->num_rows === 1) {
@@ -968,7 +1005,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                             $stTryUser->close();
                                             continue;
                                         }
-                                        if ($verifyUserPassword($tryConn, $tryUser, $password) && $ratibLoginRequireRealUserRow($tryUser)) {
+                                        $tryAuthOk = $barcodeLogin ? true : $verifyUserPassword($tryConn, $tryUser, $password);
+                                        if ($tryAuthOk && $ratibLoginRequireRealUserRow($tryUser)) {
                                             $passwordVerified = true;
                                             $user = $tryUser;
                                             $loginConn = $tryConn;
@@ -989,7 +1027,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     error_log("Password verified successfully");
                     if ($strictTenantAuth && !$ratibLoginRequireRealUserRow($user)) {
                         $passwordVerified = false;
-                        $error = 'Invalid username or password.';
+                        $error = $barcodeLogin ? 'Barcode not recognized.' : 'Invalid username or password.';
                         error_log('Login denied after verify: blocked non-user row in strict tenant context');
                     }
                 }
@@ -1077,8 +1115,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     $error = 'Account is inactive.';
                     error_log("Login failed: Account inactive for user: " . $username);
                 } else {
-                    $error = 'Invalid username or password.';
-                    error_log("Login failed: Invalid password for user: " . $username);
+                    $error = $barcodeLogin ? 'Barcode not recognized.' : 'Invalid username or password.';
+                    error_log('Login failed: ' . ($barcodeLogin ? 'invalid barcode' : 'invalid password for user ' . $username));
                 }
             }
         } else {
@@ -1107,11 +1145,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                 }
                                 $tryConn = $acctTry['conn'];
                                 $tryCols = $buildUserSelectCols($tryConn);
-                                $stTryUser = $tryConn->prepare("SELECT {$tryCols} FROM users WHERE username = ? LIMIT 1");
+                                $tryBarcodeCol2 = ($barcodeLogin && $barcodeCol) ? ratib_users_login_barcode_column($tryConn) : null;
+                                if ($barcodeLogin && ($tryBarcodeCol2 === null || $tryBarcodeCol2 === '')) {
+                                    continue;
+                                }
+                                if ($barcodeLogin && $tryBarcodeCol2) {
+                                    $stTryUser = $tryConn->prepare("SELECT {$tryCols} FROM users WHERE `{$tryBarcodeCol2}` = ? LIMIT 1");
+                                } else {
+                                    $stTryUser = $tryConn->prepare("SELECT {$tryCols} FROM users WHERE username = ? LIMIT 1");
+                                }
                                 if (!$stTryUser) {
                                     continue;
                                 }
-                                $stTryUser->bind_param('s', $username);
+                                if ($barcodeLogin && $tryBarcodeCol2) {
+                                    $stTryUser->bind_param('s', $barcodeValue);
+                                } else {
+                                    $stTryUser->bind_param('s', $username);
+                                }
                                 $stTryUser->execute();
                                 $rsTryUser = $stTryUser->get_result();
                                 if ($rsTryUser && $rsTryUser->num_rows === 1) {
@@ -1120,7 +1170,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                         $stTryUser->close();
                                         continue;
                                     }
-                                    if ($verifyUserPassword($tryConn, $tryUser, $password) && $ratibLoginRequireRealUserRow($tryUser)) {
+                                    $tryAuthOk2 = $barcodeLogin ? true : $verifyUserPassword($tryConn, $tryUser, $password);
+                                    if ($tryAuthOk2 && $ratibLoginRequireRealUserRow($tryUser)) {
                                         $tryRoleId = (int)($tryUser['role_id'] ?? 1);
                                         $_SESSION['user_id'] = (int)($tryUser['user_id'] ?? 0);
                                         $_SESSION['username'] = (string)($tryUser['username'] ?? '');
@@ -1236,23 +1287,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                 $error = 'Account is inactive.';
                             }
                         } else {
-                            $error = 'Invalid username or password.';
+                            $error = $barcodeLogin ? 'Barcode not recognized.' : 'Invalid username or password.';
                         }
                     } else {
-                        $error = 'Invalid username or password.';
-                        error_log("Login failed: User not found in any users table: " . $username);
+                        $error = $barcodeLogin ? 'Barcode not recognized.' : 'Invalid username or password.';
+                        error_log('Login failed: User not found in any users table: ' . ($barcodeLogin ? $barcodeValue : $username));
                     }
                     $stmt2->close();
                 } else {
-                    $error = 'Invalid username or password.';
-                    error_log("Login fallback prepare failed for username: " . $username . ' error: ' . $loginConn->error);
+                    $error = $barcodeLogin ? 'Barcode not recognized.' : 'Invalid username or password.';
+                    error_log('Login fallback prepare failed for: ' . ($barcodeLogin ? $barcodeValue : $username) . ' error: ' . $loginConn->error);
                 }
             } else {
-                $error = 'Invalid username or password.';
+                $error = $barcodeLogin ? 'Barcode not recognized.' : 'Invalid username or password.';
                 if ($singleUrlMode && $postedCountryId > 0) {
-                    error_log("Login failed: User not found in country DB (country_id={$postedCountryId}) and no main DB fallback connection: " . $username);
+                    error_log('Login failed: User not found in country DB (country_id=' . $postedCountryId . '): ' . ($barcodeLogin ? $barcodeValue : $username));
                 } else {
-                    error_log("Login failed: User not found in country users: " . $username);
+                    error_log('Login failed: User not found in country users: ' . ($barcodeLogin ? $barcodeValue : $username));
                 }
             }
         }
@@ -1328,7 +1379,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     <label for="login-method" class="text-muted me-2 small">Choose Login Method:</label>
                     <select id="login-method" class="form-select form-select-sm d-inline-block w-auto">
                         <option value="password">Username & Password</option>
-                        <option value="fingerprint">Fingerprint</option>
+                        <option value="barcode">Barcode</option>
                     </select>
                 </div>
                 
@@ -1374,17 +1425,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     </div>
                 </div>
                 
-                <!-- Fingerprint Form -->
-                <div id="fingerprint-form" class="text-center d-none">
-                    <div class="mb-4">
-                        <i class="fas fa-fingerprint text-success icon-3em mb-2"></i>
-                        <h3 class="mb-2">Fingerprint Login</h3>
-                        <p class="text-muted mb-4">Place your finger on the scanner to login</p>
+                <!-- Barcode Form -->
+                <div id="barcode-form" class="text-center d-none">
+                    <div class="mb-3">
+                        <i class="fas fa-barcode text-info icon-3em mb-2" aria-hidden="true"></i>
+                        <h3 class="mb-2">Barcode Login</h3>
+                        <p class="text-muted mb-3 small">Scan your ID badge with a USB scanner, or type the code and press Enter.</p>
                     </div>
-                    <div id="fingerprint-status" class="mb-3 d-none"></div>
-                    <div class="spinner-border text-success d-none" role="status" id="fingerprint-spinner">
-                        <span class="visually-hidden">Loading...</span>
+                    <form method="post" action="" id="barcode-login-form" class="text-center">
+                        <?php if (!empty($_GET['control']) && (string)$_GET['control'] === '1'): ?>
+                        <input type="hidden" name="control" value="1">
+                        <?php endif; ?>
+                        <input type="hidden" name="login_method" value="barcode">
+                        <?php if ($formHiddenCountryId > 0): ?>
+                        <input type="hidden" name="country_id" value="<?php echo (int)$formHiddenCountryId; ?>">
+                        <?php if ($singleCountryFromPath && !empty($loginCountries[0]['slug'])): ?>
+                        <input type="hidden" name="country_slug" value="<?php echo htmlspecialchars((string)$loginCountries[0]['slug'], ENT_QUOTES, 'UTF-8'); ?>">
+                        <?php endif; ?>
+                        <?php endif; ?>
+                        <?php if ($formHiddenAgencyId > 0): ?>
+                        <input type="hidden" name="agency_id" value="<?php echo (int)$formHiddenAgencyId; ?>">
+                        <?php endif; ?>
+                        <div class="mb-3">
+                            <input type="text" name="barcode" id="barcode-input" class="form-control text-center"
+                                   placeholder="Scan or enter barcode" autocomplete="off" inputmode="numeric"
+                                   aria-label="Barcode" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" id="barcode-submit-btn">
+                            <i class="fas fa-sign-in-alt" aria-hidden="true"></i> Login with barcode
+                        </button>
+                    </form>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" id="barcode-camera-toggle" aria-expanded="false">
+                            <i class="fas fa-camera" aria-hidden="true"></i> Use camera
+                        </button>
                     </div>
+                    <div id="barcode-qr-reader" class="barcode-qr-reader d-none mt-3" aria-hidden="true"></div>
+                    <div id="barcode-status" class="barcode-status d-none mt-3" role="status"></div>
                 </div>
             </div>
         </div>
@@ -1404,6 +1481,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         ? filemtime(__DIR__ . '/../js/login.js')
         : time();
     ?>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
     <script src="../js/login.js?v=<?php echo $loginJsVersion; ?>"></script>
 </body>
 </html>
