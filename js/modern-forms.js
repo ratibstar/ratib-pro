@@ -6219,7 +6219,7 @@ class ModernForms {
                     if (isControl) {
                         return [
                             { name: 'name', label: 'Username', type: 'text', required: true, placeholder: 'Enter username' },
-                            { name: 'login_barcode', label: 'Login barcode', type: 'text', required: false, placeholder: 'Leave blank to auto-generate' },
+                            { name: 'login_barcode', label: 'Barcode (mobile login)', type: 'text', required: false, placeholder: 'Type or paste barcode value' },
                             { name: 'password', label: 'Password', type: 'password', required: true, placeholder: 'Enter password (required for new user)' },
                             { name: 'status', label: 'Status', type: 'select', options: [
                                 { value: 'active', label: 'Active' },
@@ -6229,7 +6229,7 @@ class ModernForms {
                     }
                     return [
                         { name: 'name', label: 'Username', type: 'text', required: true, placeholder: 'Enter username' },
-                        { name: 'login_barcode', label: 'Login barcode', type: 'text', required: false, placeholder: 'Leave blank to auto-generate for badge scan' },
+                        { name: 'login_barcode', label: 'Barcode (mobile login)', type: 'text', required: false, placeholder: 'Set barcode for this user (scan at login)' },
                         { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'Enter email address' },
                         { name: 'password', label: 'Password', type: 'password', required: false, placeholder: 'Enter password (leave blank to keep current)' },
                         { name: 'phone', label: 'Phone', type: 'tel', placeholder: 'Enter phone number' },

@@ -72,11 +72,28 @@ body {
 
 .barcode-qr-reader {
     width: 100%;
-    min-height: 220px;
+    min-height: 240px;
 }
 
 .barcode-qr-reader video {
     object-fit: cover;
+    width: 100% !important;
+    height: auto !important;
+}
+
+#barcode-start-camera {
+    min-height: 3rem;
+    font-weight: 600;
+}
+
+@media (max-width: 576px) {
+    .barcode-camera-wrap {
+        max-width: 100%;
+    }
+
+    .barcode-qr-reader {
+        min-height: 52vw;
+    }
 }
 
 .barcode-status.info-message {

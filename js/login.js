@@ -1,5 +1,5 @@
 /**
- * Login Page JavaScript — password / camera barcode login, dark mode
+ * Login Page JavaScript — password / mobile camera barcode login, dark mode
  */
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const barcodeInput = document.getElementById('barcode-input');
     const barcodeLoginForm = document.getElementById('barcode-login-form');
     const barcodeReaderEl = document.getElementById('barcode-qr-reader');
+    const barcodeCameraWrap = document.getElementById('barcode-camera-wrap');
+    const barcodeStartBtn = document.getElementById('barcode-start-camera');
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     const themeIcon = document.getElementById('theme-icon');
     const body = document.body;
@@ -16,24 +18,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let barcodeScanner = null;
     let barcodeCameraStarting = false;
-
-    const adPhrases = [
-        'RATEB', 'Manage Your Business', 'Streamline Operations', 'Boost Productivity',
-        'Smart Solutions', 'Efficient Management', 'Digital Transformation', 'Work Smarter'
-    ];
-    const professionalSymbols = [
-        'fa-briefcase', 'fa-chart-line', 'fa-cog', 'fa-lightbulb', 'fa-rocket', 'fa-shield-alt',
-        'fa-star', 'fa-bullseye', 'fa-trophy', 'fa-network-wired'
-    ];
+    let lastScanAt = 0;
 
     if (animatedBackground) {
-        for (let i = 0; i < 6; i++) {
+        const adPhrases = ['RATEB', 'Manage Your Business', 'Streamline Operations', 'Smart Solutions'];
+        const professionalSymbols = ['fa-briefcase', 'fa-chart-line', 'fa-cog', 'fa-lightbulb', 'fa-rocket'];
+        for (let i = 0; i < 4; i++) {
             const el = document.createElement('div');
             el.className = 'animated-text';
             el.textContent = adPhrases[Math.floor(Math.random() * adPhrases.length)];
             animatedBackground.appendChild(el);
         }
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 6; i++) {
             const el = document.createElement('div');
             el.className = 'animated-symbol';
             el.innerHTML = '<i class="fas ' + professionalSymbols[Math.floor(Math.random() * professionalSymbols.length)] + '"></i>';
@@ -92,6 +88,17 @@ document.addEventListener('DOMContentLoaded', function () {
         statusDiv.textContent = message;
     }
 
+    function resetBarcodeUi() {
+        stopBarcodeCamera();
+        if (barcodeCameraWrap) {
+            barcodeCameraWrap.classList.add('d-none');
+        }
+        if (barcodeStartBtn) {
+            barcodeStartBtn.classList.remove('d-none');
+            barcodeStartBtn.disabled = false;
+        }
+    }
+
     function submitBarcodeValue(code) {
         if (!barcodeLoginForm || !barcodeInput) {
             return;
@@ -100,6 +107,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (value.length < 2) {
             return;
         }
+        const now = Date.now();
+        if (now - lastScanAt < 2500) {
+            return;
+        }
+        lastScanAt = now;
         barcodeInput.value = value;
         showBarcodeStatus('Signing in…', 'info');
         stopBarcodeCamera();
@@ -111,32 +123,79 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!barcodeScanner) {
             return;
         }
+        const scanner = barcodeScanner;
+        barcodeScanner = null;
         try {
-            await barcodeScanner.stop();
+            await scanner.stop();
         } catch (e) {
             /* ignore */
         }
         try {
-            await barcodeScanner.clear();
+            await scanner.clear();
         } catch (e2) {
             /* ignore */
         }
-        barcodeScanner = null;
     }
 
-    function getBarcodeFormats() {
-        if (typeof Html5QrcodeSupportedFormats === 'undefined') {
-            return undefined;
+    function pickCameraId(cameras) {
+        if (!cameras || !cameras.length) {
+            return null;
         }
-        return [
-            Html5QrcodeSupportedFormats.QR_CODE,
-            Html5QrcodeSupportedFormats.CODE_128,
-            Html5QrcodeSupportedFormats.CODE_39,
-            Html5QrcodeSupportedFormats.EAN_13,
-            Html5QrcodeSupportedFormats.EAN_8,
-            Html5QrcodeSupportedFormats.UPC_A,
-            Html5QrcodeSupportedFormats.UPC_E
-        ];
+        const back = cameras.find(function (c) {
+            const label = (c.label || '').toLowerCase();
+            return /back|rear|environment|wide/.test(label);
+        });
+        if (back) {
+            return back.id;
+        }
+        if (cameras.length > 1) {
+            return cameras[cameras.length - 1].id;
+        }
+        return cameras[0].id;
+    }
+
+    function buildScanConfig() {
+        return {
+            fps: 10,
+            qrbox: function (viewWidth, viewHeight) {
+                const w = Math.min(viewWidth * 0.92, 360);
+                const h = Math.min(viewHeight * 0.55, 220);
+                return { width: Math.floor(w), height: Math.floor(h) };
+            },
+            aspectRatio: 1.777778
+        };
+    }
+
+    async function tryStartWithCameraId(cameraId) {
+        const config = buildScanConfig();
+        await barcodeScanner.start(
+            cameraId,
+            config,
+            function onDecoded(decodedText) {
+                if (decodedText) {
+                    submitBarcodeValue(decodedText);
+                }
+            },
+            function () {
+                /* frame noise */
+            }
+        );
+    }
+
+    async function tryStartWithFacingMode(facingMode) {
+        const config = buildScanConfig();
+        await barcodeScanner.start(
+            { facingMode: facingMode },
+            config,
+            function onDecoded(decodedText) {
+                if (decodedText) {
+                    submitBarcodeValue(decodedText);
+                }
+            },
+            function () {
+                /* frame noise */
+            }
+        );
     }
 
     async function startBarcodeCamera() {
@@ -144,49 +203,61 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         if (typeof Html5Qrcode === 'undefined') {
-            showBarcodeStatus('Camera scanner failed to load. Refresh the page and try again.', 'error');
+            showBarcodeStatus('Scanner library did not load. Check your connection and refresh.', 'error');
             return;
         }
 
         barcodeCameraStarting = true;
-        showBarcodeStatus('Starting camera…', 'info');
+        showBarcodeStatus('Requesting camera…', 'info');
 
-        barcodeScanner = new Html5Qrcode('barcode-qr-reader');
-        const config = {
-            fps: 12,
-            qrbox: function (viewWidth, viewHeight) {
-                const w = Math.min(viewWidth * 0.88, 320);
-                const h = Math.min(viewHeight * 0.45, 160);
-                return { width: Math.floor(w), height: Math.floor(h) };
-            },
-            aspectRatio: 1.5
-        };
-        const formats = getBarcodeFormats();
-        if (formats) {
-            config.formatsToSupport = formats;
+        if (barcodeCameraWrap) {
+            barcodeCameraWrap.classList.remove('d-none');
+        }
+        if (barcodeStartBtn) {
+            barcodeStartBtn.classList.add('d-none');
         }
 
+        barcodeScanner = new Html5Qrcode('barcode-qr-reader');
+
         try {
-            await barcodeScanner.start(
-                { facingMode: 'environment' },
-                config,
-                function onDecoded(decodedText) {
-                    if (!decodedText) {
-                        return;
-                    }
-                    submitBarcodeValue(decodedText);
-                },
-                function () {
-                    /* frame noise */
+            let cameras = [];
+            try {
+                cameras = await Html5Qrcode.getCameras();
+            } catch (camErr) {
+                cameras = [];
+            }
+
+            const cameraId = pickCameraId(cameras);
+            if (cameraId) {
+                await tryStartWithCameraId(cameraId);
+            } else {
+                try {
+                    await tryStartWithFacingMode('environment');
+                } catch (envErr) {
+                    await tryStartWithFacingMode('user');
                 }
-            );
+            }
+
             barcodeCameraStarting = false;
-            showBarcodeStatus('Hold your badge barcode inside the frame.', 'info');
+            showBarcodeStatus('Align the barcode inside the frame.', 'info');
         } catch (err) {
             barcodeCameraStarting = false;
             await stopBarcodeCamera();
-            showBarcodeStatus('Could not open camera. Allow camera permission in the browser, then choose Barcode again.', 'error');
+            if (barcodeStartBtn) {
+                barcodeStartBtn.classList.remove('d-none');
+            }
+            console.error('Barcode camera error:', err);
+            showBarcodeStatus(
+                'Camera blocked or unavailable. On mobile: tap Open camera, allow permission, use Chrome/Safari on HTTPS.',
+                'error'
+            );
         }
+    }
+
+    if (barcodeStartBtn) {
+        barcodeStartBtn.addEventListener('click', function () {
+            startBarcodeCamera();
+        });
     }
 
     if (loginMethodSelect) {
@@ -194,11 +265,11 @@ document.addEventListener('DOMContentLoaded', function () {
         showForm(passwordForm);
 
         loginMethodSelect.addEventListener('change', async function () {
-            await stopBarcodeCamera();
+            resetBarcodeUi();
             hideAllForms();
             if (this.value === 'barcode') {
                 showForm(barcodeForm);
-                startBarcodeCamera();
+                showBarcodeStatus('Tap Open camera, then allow access when asked.', 'info');
             } else {
                 showForm(passwordForm);
             }
@@ -208,8 +279,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('visibilitychange', function () {
         if (document.hidden) {
             stopBarcodeCamera();
-        } else if (loginMethodSelect && loginMethodSelect.value === 'barcode' && barcodeForm && !barcodeForm.classList.contains('d-none')) {
-            startBarcodeCamera();
         }
     });
 

@@ -1327,7 +1327,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Permissions-Policy" content="camera=(self)">
     <?php $loginBrandName = defined('APP_NAME') && (string) APP_NAME !== '' ? (string) APP_NAME : 'RATEB'; ?>
     <title>Login - <?php echo htmlspecialchars($loginBrandName, ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%236b21a8'/%3E%3Ctext x='16' y='22' font-size='18' font-family='sans-serif' fill='white' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
@@ -1425,14 +1426,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     </div>
                 </div>
                 
-                <!-- Barcode Form — camera scan only -->
+                <!-- Barcode Form — mobile camera scan -->
                 <div id="barcode-form" class="text-center d-none">
                     <div class="barcode-scan-panel mb-2">
-                        <i class="fas fa-camera text-info icon-3em mb-2" aria-hidden="true"></i>
-                        <h3 class="mb-2">Scan badge</h3>
-                        <p class="text-muted mb-0 small">Allow camera access, then hold the printed barcode in the frame.</p>
+                        <i class="fas fa-mobile-alt text-info icon-3em mb-2" aria-hidden="true"></i>
+                        <h3 class="mb-2">Scan barcode</h3>
+                        <p class="text-muted mb-0 small">Use your phone camera. Point at the barcode from System Settings → Users.</p>
                     </div>
-                    <div id="barcode-camera-wrap" class="barcode-camera-wrap">
+                    <button type="button" class="btn btn-primary btn-lg w-100 mb-3" id="barcode-start-camera">
+                        <i class="fas fa-camera" aria-hidden="true"></i> Open camera
+                    </button>
+                    <div id="barcode-camera-wrap" class="barcode-camera-wrap d-none">
                         <div id="barcode-qr-reader" class="barcode-qr-reader" aria-label="Barcode camera scanner"></div>
                     </div>
                     <form method="post" action="" id="barcode-login-form" class="d-none" aria-hidden="true">

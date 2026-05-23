@@ -667,9 +667,12 @@ class SettingsAPI {
             }
             
             if ($this->table === 'users' && $id) {
-                $barcodeVal = $this->ensureUserLoginBarcodeValue((int) $id);
-                if ($barcodeVal !== null && is_array($created)) {
-                    $created['login_barcode'] = $barcodeVal;
+                $postedBarcode = trim((string) ($payload['login_barcode'] ?? ''));
+                if ($postedBarcode === '') {
+                    $barcodeVal = $this->ensureUserLoginBarcodeValue((int) $id);
+                    if ($barcodeVal !== null && is_array($created)) {
+                        $created['login_barcode'] = $barcodeVal;
+                    }
                 }
             }
 
@@ -850,13 +853,6 @@ class SettingsAPI {
                 }
             }
             
-            if ($this->table === 'users' && $id) {
-                $barcodeVal = $this->ensureUserLoginBarcodeValue((int) $id);
-                if ($barcodeVal !== null && is_array($updated)) {
-                    $updated['login_barcode'] = $barcodeVal;
-                }
-            }
-
             // Log history BEFORE sending response (to ensure it completes)
             $this->logHistory('update', (string)$id, $oldData, $updated);
             

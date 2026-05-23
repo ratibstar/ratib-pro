@@ -69,9 +69,10 @@ $pageTitle = $username !== '' ? ('Login barcode — ' . $username) : 'Login barc
         <?php if ($error !== ''): ?>
         <p class="text-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></p>
         <?php else: ?>
-        <svg id="barcode-svg" aria-label="Login barcode"></svg>
+        <div id="qrcode-mobile" class="mb-3" aria-label="QR code for mobile scan"></div>
+        <svg id="barcode-svg" aria-label="1D barcode"></svg>
         <div class="code-text" id="barcode-plain"><?php echo htmlspecialchars($barcode, ENT_QUOTES, 'UTF-8'); ?></div>
-        <p class="small text-muted mt-3 mb-0">Print this card and scan it at the login page (Barcode method).</p>
+        <p class="small text-muted mt-3 mb-0">Open this page on a phone and show the QR code. At login, choose <strong>Barcode</strong> → <strong>Open camera</strong> and scan it.</p>
         <?php endif; ?>
 
         <div class="actions no-print">
@@ -81,10 +82,15 @@ $pageTitle = $username !== '' ? ('Login barcode — ' . $username) : 'Login barc
     </div>
 
     <?php if ($barcode !== ''): ?>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <script>
     (function () {
         var value = <?php echo json_encode($barcode, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        var qrHost = document.getElementById('qrcode-mobile');
+        if (qrHost && typeof QRCode !== 'undefined') {
+            new QRCode(qrHost, { text: value, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+        }
         try {
             JsBarcode('#barcode-svg', value, {
                 format: 'CODE128',
@@ -94,7 +100,7 @@ $pageTitle = $username !== '' ? ('Login barcode — ' . $username) : 'Login barc
                 margin: 8
             });
         } catch (e) {
-            document.getElementById('barcode-plain').textContent = value + ' (render failed — use printed code text)';
+            /* 1D optional */
         }
     })();
     </script>
