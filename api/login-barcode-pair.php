@@ -1,26 +1,36 @@
 <?php
 declare(strict_types=1);
 
+ob_start();
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 
+if (!defined('SYSTEM_ENDPOINT')) {
+    define('SYSTEM_ENDPOINT', true);
+}
+
 function pair_json(array $data, int $code = 200): void
 {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
     http_response_code($code);
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
+$input = json_decode((string) file_get_contents('php://input'), true);
+if (!is_array($input)) {
+    $input = $_POST;
+}
+
+$action = isset($input['action']) ? strtolower(trim((string) $input['action'])) : '';
+
 try {
-    require_once __DIR__ . '/../includes/config.php';
     require_once __DIR__ . '/../includes/ratib-barcode-login-pair.php';
-
-    $input = json_decode((string) file_get_contents('php://input'), true);
-    if (!is_array($input)) {
-        $input = $_POST;
-    }
-
-    $action = isset($input['action']) ? strtolower(trim((string) $input['action'])) : '';
 
     if ($action === 'create') {
         $context = [
@@ -51,6 +61,7 @@ try {
     }
 
     if ($action === 'submit') {
+        require_once __DIR__ . '/../includes/config.php';
         require_once __DIR__ . '/../includes/ratib-barcode-login-auth.php';
 
         $token = preg_replace('/[^a-f0-9]/', '', strtolower((string) ($input['token'] ?? '')));
