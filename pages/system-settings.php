@@ -415,7 +415,7 @@ if ($embeddedMode) {
             <div class="wf-access-section">
                 <h3>Workforce badge</h3>
                 <div id="wf-qr-host" class="wf-qr-host"></div>
-                <p class="wf-meta">Token is not shown as text. Scan the QR only.</p>
+                <p class="wf-meta">QR stays on screen after Save access. Token text is never shown — scan the image only.</p>
                 <div class="wf-actions">
                     <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="open-badge">Print badge</button>
                     <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="download-png">Download PNG</button>

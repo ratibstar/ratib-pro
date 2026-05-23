@@ -4,6 +4,8 @@
 (function (global) {
     'use strict';
 
+    var STORAGE_PREFIX = 'ratib_wf_qr_';
+
     function apiPath() {
         if (typeof getSettingsApiPathModernForms === 'function') {
             return getSettingsApiPathModernForms();
@@ -36,20 +38,39 @@
         return 'wf-status-badge wf-status-badge--' + (map[s] || 'none');
     }
 
-    function renderQr(qrHost, payload) {
+    function storageKey(userId) {
+        return STORAGE_PREFIX + String(userId);
+    }
+
+    function payloadToScanValue(payload) {
+        if (!payload) {
+            return '';
+        }
+        if (/^https?:\/\//i.test(payload)) {
+            return payload;
+        }
+        if (/^RATIBLOGIN:/i.test(payload) && global.location && global.location.origin) {
+            return global.location.origin + '/login/badge?d=' + encodeURIComponent(payload);
+        }
+        return payload;
+    }
+
+    function renderQr(qrHost, payload, options) {
         if (!qrHost) {
             return;
         }
-        qrHost.innerHTML = '';
+        const opts = options || {};
         if (!payload) {
-            qrHost.innerHTML = '<p class="wf-meta mb-0">No QR displayed. Generate or regenerate to show credential once.</p>';
+            if (opts.activeCredential) {
+                qrHost.innerHTML = '<p class="wf-meta mb-0">Credential is active. Click <strong>Regenerate</strong> to display a new QR, or use <strong>Print badge</strong>.</p>';
+            } else {
+                qrHost.innerHTML = '<p class="wf-meta mb-0">No QR yet. Click <strong>Generate QR</strong>.</p>';
+            }
             return;
         }
-        let scanValue = payload;
-        if (/^RATIBLOGIN:/i.test(payload) && global.location && global.location.origin) {
-            scanValue = global.location.origin + '/login/badge?d=' + encodeURIComponent(payload);
-        }
-        if (typeof QRCode !== 'undefined') {
+        qrHost.innerHTML = '';
+        const scanValue = payloadToScanValue(payload);
+        if (typeof QRCode !== 'undefined' && scanValue) {
             new QRCode(qrHost, {
                 text: scanValue,
                 width: 220,
@@ -57,6 +78,10 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
         }
+        var hint = document.createElement('p');
+        hint.className = 'wf-meta mb-0 mt-2';
+        hint.textContent = 'This QR stays visible while this panel is open. Print or download before closing if needed.';
+        qrHost.appendChild(hint);
     }
 
     async function loadLibs() {
@@ -120,15 +145,66 @@
                 }).join('')
                 : '<div class="wf-meta">No recent events</div>';
         }
+        return wf;
     }
 
     const WorkforceAccess = {
         userId: 0,
         username: '',
+        displayedPayload: '',
+
+        rememberPayload(payload) {
+            if (!payload || !this.userId) {
+                return;
+            }
+            this.displayedPayload = payload;
+            try {
+                sessionStorage.setItem(storageKey(this.userId), payload);
+            } catch (e) {
+                /* ignore */
+            }
+        },
+
+        loadStoredPayload() {
+            if (this.displayedPayload) {
+                return this.displayedPayload;
+            }
+            try {
+                return sessionStorage.getItem(storageKey(this.userId)) || '';
+            } catch (e) {
+                return '';
+            }
+        },
+
+        clearStoredPayload() {
+            this.displayedPayload = '';
+            try {
+                sessionStorage.removeItem(storageKey(this.userId));
+            } catch (e) {
+                /* ignore */
+            }
+        },
+
+        applyQrDisplay(wf) {
+            const qrHost = el('wf-qr-host');
+            const status = (wf && wf.qr_status) ? wf.qr_status : 'none';
+            const stored = this.loadStoredPayload();
+            if (status === 'revoked' || status === 'none') {
+                this.clearStoredPayload();
+                renderQr(qrHost, null, { activeCredential: false });
+                return;
+            }
+            if (stored) {
+                renderQr(qrHost, stored, { activeCredential: status === 'active' });
+                return;
+            }
+            renderQr(qrHost, null, { activeCredential: status === 'active' });
+        },
 
         async open(userId, username) {
             this.userId = userId;
             this.username = username || '';
+            this.displayedPayload = this.loadStoredPayload();
             const modal = el('workforceAccessModal');
             if (!modal) {
                 return;
@@ -139,7 +215,7 @@
             }
             modal.classList.remove('modal-hidden');
             modal.classList.add('show');
-            await this.refresh();
+            await this.refresh(false);
         },
 
         close() {
@@ -150,16 +226,20 @@
             }
         },
 
-        async refresh() {
+        async refresh(clearQr) {
             const qrHost = el('wf-qr-host');
-            if (qrHost) {
+            const keepQr = clearQr !== true;
+            if (qrHost && !keepQr) {
                 qrHost.innerHTML = '<p class="wf-meta">Loading…</p>';
             }
             try {
                 const res = await apiCall('workforce_qr_status', this.userId);
                 const data = res.data || {};
-                renderStatus(data);
-                renderQr(qrHost, null);
+                const wf = renderStatus(data);
+                if (!keepQr && qrHost) {
+                    qrHost.innerHTML = '<p class="wf-meta">Loading…</p>';
+                }
+                this.applyQrDisplay(wf);
             } catch (e) {
                 if (qrHost) {
                     qrHost.innerHTML = '<p class="text-danger">' + (e.message || 'Load failed') + '</p>';
@@ -171,8 +251,14 @@
             await loadLibs();
             const res = await apiCall('workforce_qr_generate', this.userId);
             const data = res.data || {};
-            renderStatus(data.workforce || {});
-            renderQr(el('wf-qr-host'), data.qr_payload || null);
+            const wf = renderStatus(data.workforce || data);
+            const payload = data.qr_payload || null;
+            if (payload) {
+                this.rememberPayload(payload);
+                renderQr(el('wf-qr-host'), payload);
+            } else {
+                this.applyQrDisplay(wf);
+            }
         },
 
         async regenerate() {
@@ -182,8 +268,14 @@
             await loadLibs();
             const res = await apiCall('workforce_qr_regenerate', this.userId);
             const data = res.data || {};
-            renderStatus(data.workforce || {});
-            renderQr(el('wf-qr-host'), data.qr_payload || null);
+            const wf = renderStatus(data.workforce || {});
+            const payload = data.qr_payload || null;
+            if (payload) {
+                this.rememberPayload(payload);
+                renderQr(el('wf-qr-host'), payload);
+            } else {
+                this.applyQrDisplay(wf);
+            }
         },
 
         async revoke() {
@@ -191,6 +283,7 @@
                 return;
             }
             const res = await apiCall('workforce_qr_revoke', this.userId);
+            this.clearStoredPayload();
             renderStatus(res.data || {});
             renderQr(el('wf-qr-host'), null);
         },
@@ -203,13 +296,23 @@
             if (pinInput) {
                 pinInput.value = '';
             }
-            await this.refresh();
+            await this.refreshStatusOnly();
         },
 
         async saveEnabled() {
             const enabled = el('wf-qr-enabled') && el('wf-qr-enabled').checked;
             await apiCall('workforce_qr_set_enabled', this.userId, { enabled: enabled });
-            await this.refresh();
+            await this.refreshStatusOnly();
+        },
+
+        async refreshStatusOnly() {
+            try {
+                const res = await apiCall('workforce_qr_status', this.userId);
+                const wf = renderStatus(res.data || {});
+                this.applyQrDisplay(wf);
+            } catch (e) {
+                /* keep QR visible */
+            }
         },
 
         openBadge() {
@@ -280,7 +383,7 @@
                 apiCall('workforce_revoke_device', WorkforceAccess.userId, {
                     device_id: parseInt(btn.getAttribute('data-device-id'), 10)
                 }).then(function () {
-                    return WorkforceAccess.refresh();
+                    return WorkforceAccess.refreshStatusOnly();
                 }).catch(function (err) {
                     global.alert(err.message || 'Failed');
                 });
