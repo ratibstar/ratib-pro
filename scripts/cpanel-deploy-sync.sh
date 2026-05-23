@@ -38,6 +38,7 @@ CRITICAL_FILES=(
   "app/UI/GlobalAIButton.php"
   "css/global-ai-action.css"
   "css/chat-widget.css"
+  "includes/ratib-overlay-dismiss-guard.php"
   "includes/ratib-home-public-nav-sync.php"
   "includes/ratib-profile-nav-guard.php"
   "includes/ratib-public-base-url.php"

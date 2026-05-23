@@ -158,7 +158,12 @@ if (!empty($_SESSION['control_logged_in'])) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="<?php echo asset('css/login.css'); ?>?v=<?php echo time(); ?>">
     <link rel="stylesheet" href="<?php echo asset('css/control/login-control.css'); ?>?v=<?php echo time(); ?>">
-    <?php require_once __DIR__ . '/../../includes/ratib-overlay-dismiss-guard.php'; ?>
+    <?php
+    $ratibOverlayGuardPath = __DIR__ . '/../../includes/ratib-overlay-dismiss-guard.php';
+    if (is_file($ratibOverlayGuardPath)) {
+        require_once $ratibOverlayGuardPath;
+    }
+    ?>
 </head>
 <body class="cp-login-page dark-mode">
     <div class="hyperdimensional-container">
