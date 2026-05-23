@@ -408,14 +408,16 @@ class ModernForms {
                         if (!id || Number.isNaN(id)) {
                             return;
                         }
-                        const base = (window.APP_CONFIG && window.APP_CONFIG.baseUrl)
-                            ? String(window.APP_CONFIG.baseUrl).replace(/\/$/, '')
-                            : '';
-                        const path = (typeof pageUrl === 'function')
-                            ? pageUrl('user-login-barcode.php')
-                            : (base + '/pages/user-login-barcode');
-                        const url = path + (path.indexOf('?') >= 0 ? '&' : '?') + 'user_id=' + encodeURIComponent(String(id));
-                        window.open(url, '_blank', 'noopener,noreferrer');
+                        const barcodeAttr = btn.getAttribute('data-barcode') || '';
+                        const usernameAttr = btn.getAttribute('data-username') || '';
+                        this.openLoginBarcodeModal(id, barcodeAttr, usernameAttr);
+                    } else if (action === 'open-login-barcode-tab') {
+                        const id = parseInt(btn.getAttribute('data-id'), 10);
+                        if (id && !Number.isNaN(id)) {
+                            this.openLoginBarcodeInNewTab(id);
+                        }
+                    } else if (action === 'close-login-barcode-modal') {
+                        this.closeLoginBarcodeModal();
                     } else if (action === 'fingerprint-action') {
                         const id = parseInt(btn.getAttribute('data-id'));
                         const username = btn.getAttribute('data-username') || '';
@@ -495,6 +497,37 @@ class ModernForms {
                         this.closeHistoryModal();
                     } else if (e.target === historyModal) {
                         this.closeHistoryModal();
+                    }
+                });
+            }
+
+            const loginBarcodeModal = document.getElementById('loginBarcodeModal');
+            if (loginBarcodeModal) {
+                loginBarcodeModal.addEventListener('click', (e) => {
+                    const btn = e.target.closest('button');
+                    if (btn && btn.hasAttribute('data-action')) {
+                        const action = btn.getAttribute('data-action');
+                        if (action === 'close-login-barcode-modal') {
+                            this.closeLoginBarcodeModal();
+                            return;
+                        }
+                        if (action === 'open-login-barcode-tab') {
+                            const id = parseInt(btn.getAttribute('data-id'), 10);
+                            if (id && !Number.isNaN(id)) {
+                                this.openLoginBarcodeInNewTab(id);
+                            }
+                            return;
+                        }
+                        if (action === 'ensure-login-barcode') {
+                            const id = parseInt(btn.getAttribute('data-id'), 10);
+                            if (id && !Number.isNaN(id)) {
+                                this.ensureLoginBarcodeForUser(id);
+                            }
+                            return;
+                        }
+                    }
+                    if (e.target === loginBarcodeModal) {
+                        this.closeLoginBarcodeModal();
                     }
                 });
             }
@@ -1483,10 +1516,22 @@ class ModernForms {
             case 'login_barcode': {
                 const code = String(value || '').trim();
                 const userId = (item && (item.user_id || item.id)) ? (item.user_id || item.id) : '';
-                if (!code) {
+                const username = item ? (item.username || item.name || this.getFieldValue(item, 'name') || '') : '';
+                if (!userId) {
                     return '<span class="text-muted">—</span>';
                 }
-                return `<code class="login-barcode-code" title="Login barcode">${this.escapeHtml(code)}</code>`;
+                const safeUser = this.escapeHtml(String(username));
+                if (!code) {
+                    return `<button type="button" class="login-barcode-link login-barcode-link--empty" data-action="view-login-barcode" data-id="${userId}" data-barcode="" data-username="${safeUser}" title="Create and show login barcode">
+                        <i class="fas fa-qrcode" aria-hidden="true"></i>
+                        <span class="login-barcode-link-text">Show barcode</span>
+                    </button>`;
+                }
+                const safeCode = encodeURIComponent(code);
+                return `<button type="button" class="login-barcode-link" data-action="view-login-barcode" data-id="${userId}" data-barcode="${safeCode}" data-username="${safeUser}" title="Tap to show scannable barcode for login">
+                    <i class="fas fa-qrcode" aria-hidden="true"></i>
+                    <span class="login-barcode-link-text">${this.escapeHtml(code)}</span>
+                </button>`;
             }
             case 'fingerprint': {
                 const val = String(value).toLowerCase();
@@ -5598,10 +5643,183 @@ class ModernForms {
     
     // Close all modals
     closeAllModals() {
+        this.closeLoginBarcodeModal();
         document.querySelectorAll('.modern-modal').forEach(modal => {
             modal.classList.add('modal-hidden');
             modal.classList.remove('show');
         });
+    }
+
+    loginBarcodePagePath() {
+        const base = (window.APP_CONFIG && window.APP_CONFIG.baseUrl)
+            ? String(window.APP_CONFIG.baseUrl).replace(/\/$/, '')
+            : '';
+        return (typeof pageUrl === 'function')
+            ? pageUrl('user-login-barcode.php')
+            : (base + '/pages/user-login-barcode');
+    }
+
+    openLoginBarcodeInNewTab(userId) {
+        const path = this.loginBarcodePagePath();
+        const url = path + (path.indexOf('?') >= 0 ? '&' : '?') + 'user_id=' + encodeURIComponent(String(userId));
+        window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    closeLoginBarcodeModal() {
+        const modal = document.getElementById('loginBarcodeModal');
+        if (!modal) {
+            return;
+        }
+        modal.classList.add('modal-hidden');
+        modal.classList.remove('show');
+        const qrHost = document.getElementById('login-barcode-qr-host');
+        if (qrHost) {
+            qrHost.innerHTML = '';
+        }
+    }
+
+    loadLoginBarcodeLibs() {
+        if (this._loginBarcodeLibsReady) {
+            return Promise.resolve();
+        }
+        if (this._loginBarcodeLibsLoading) {
+            return this._loginBarcodeLibsLoading;
+        }
+        const loadScript = (src) => new Promise((resolve, reject) => {
+            if (document.querySelector('script[src="' + src + '"]')) {
+                resolve();
+                return;
+            }
+            const s = document.createElement('script');
+            s.src = src;
+            s.async = true;
+            s.onload = () => resolve();
+            s.onerror = () => reject(new Error('Failed to load ' + src));
+            document.head.appendChild(s);
+        });
+        this._loginBarcodeLibsLoading = Promise.all([
+            loadScript('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js'),
+            loadScript('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js')
+        ]).then(() => {
+            this._loginBarcodeLibsReady = true;
+        }).catch((err) => {
+            this._loginBarcodeLibsLoading = null;
+            throw err;
+        });
+        return this._loginBarcodeLibsLoading;
+    }
+
+    renderLoginBarcodeInModal(barcode, username) {
+        const qrHost = document.getElementById('login-barcode-qr-host');
+        const codeEl = document.getElementById('login-barcode-code-text');
+        const userEl = document.getElementById('login-barcode-user-label');
+        const svgEl = document.getElementById('login-barcode-svg');
+        if (!qrHost || !codeEl) {
+            return;
+        }
+        const code = String(barcode || '').trim();
+        if (userEl) {
+            userEl.textContent = username ? ('User: ' + username) : '';
+        }
+        codeEl.textContent = code;
+        qrHost.innerHTML = '';
+        if (svgEl) {
+            svgEl.innerHTML = '';
+        }
+        if (!code) {
+            qrHost.innerHTML = '<p class="login-barcode-modal-hint text-danger mb-0">No barcode yet. Edit the user and set <strong>Barcode (mobile login)</strong>, or tap Generate below.</p>';
+            return;
+        }
+        if (typeof QRCode !== 'undefined') {
+            new QRCode(qrHost, {
+                text: code,
+                width: 240,
+                height: 240,
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+        if (svgEl && typeof JsBarcode !== 'undefined') {
+            try {
+                JsBarcode(svgEl, code, {
+                    format: 'CODE128',
+                    width: 2,
+                    height: 64,
+                    displayValue: false,
+                    margin: 6
+                });
+            } catch (e) {
+                /* optional 1D */
+            }
+        }
+    }
+
+    async openLoginBarcodeModal(userId, barcodeAttr, username) {
+        const modal = document.getElementById('loginBarcodeModal');
+        if (!modal) {
+            this.openLoginBarcodeInNewTab(userId);
+            return;
+        }
+        const openTabBtn = document.getElementById('login-barcode-open-tab');
+        if (openTabBtn) {
+            openTabBtn.setAttribute('data-id', String(userId));
+        }
+        const genBtn = document.getElementById('login-barcode-generate');
+        if (genBtn) {
+            genBtn.setAttribute('data-id', String(userId));
+        }
+        modal.classList.remove('modal-hidden');
+        modal.classList.add('show');
+
+        let code = '';
+        if (barcodeAttr) {
+            try {
+                code = decodeURIComponent(barcodeAttr).trim();
+            } catch (e) {
+                code = String(barcodeAttr).trim();
+            }
+        }
+        const usernameStr = String(username || '').trim();
+        this.renderLoginBarcodeInModal(code, usernameStr);
+
+        if (code) {
+            try {
+                await this.loadLoginBarcodeLibs();
+                this.renderLoginBarcodeInModal(code, usernameStr);
+            } catch (e) {
+                const qrHost = document.getElementById('login-barcode-qr-host');
+                if (qrHost) {
+                    qrHost.innerHTML = '<p class="text-danger mb-0">Could not load barcode viewer. Use Open in new tab.</p>';
+                }
+            }
+            return;
+        }
+
+        await this.ensureLoginBarcodeForUser(userId);
+    }
+
+    async ensureLoginBarcodeForUser(userId) {
+        const qrHost = document.getElementById('login-barcode-qr-host');
+        if (qrHost) {
+            qrHost.innerHTML = '<p class="login-barcode-modal-hint mb-0">Generating barcode…</p>';
+        }
+        try {
+            const res = await this.apiCall('ensure_login_barcode', 'users', { id: userId });
+            const payload = res && res.data ? res.data : res;
+            const code = payload && (payload.barcode || payload.login_barcode) ? String(payload.barcode || payload.login_barcode).trim() : '';
+            const username = payload && payload.username ? String(payload.username) : '';
+            if (!code) {
+                this.renderLoginBarcodeInModal('', username);
+                this.showNotification((res && res.message) ? res.message : 'Could not create barcode.', 'error');
+                return;
+            }
+            await this.loadLoginBarcodeLibs();
+            this.renderLoginBarcodeInModal(code, username);
+            this.refreshData().catch(() => {});
+            this.showNotification('Login barcode ready — scan the QR at login.', 'success');
+        } catch (e) {
+            this.renderLoginBarcodeInModal('', '');
+            this.showNotification('Failed to load barcode.', 'error');
+        }
     }
     
     // API call

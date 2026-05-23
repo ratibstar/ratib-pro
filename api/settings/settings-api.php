@@ -2335,6 +2335,52 @@ class SettingsAPI {
     }
     
     /**
+     * Ensure login barcode exists and return it (users table only).
+     */
+    public function ensureLoginBarcode($id) {
+        if (strtolower(trim($this->table)) !== 'users') {
+            sendResponse(['success' => false, 'message' => 'Invalid table'], 400);
+            return;
+        }
+        $userId = (int) $id;
+        if ($userId <= 0) {
+            sendResponse(['success' => false, 'message' => 'Invalid user id'], 400);
+            return;
+        }
+        $this->ensureColumnsExist();
+        $helper = __DIR__ . '/../../includes/ratib-user-login-barcode.php';
+        if (!is_file($helper)) {
+            sendResponse(['success' => false, 'message' => 'Barcode helper missing'], 500);
+            return;
+        }
+        require_once $helper;
+        $mysqli = $GLOBALS['conn'] ?? null;
+        if (!($mysqli instanceof mysqli)) {
+            sendResponse(['success' => false, 'message' => 'Database unavailable'], 500);
+            return;
+        }
+        if (!function_exists('ratib_user_ensure_login_barcode')) {
+            sendResponse(['success' => false, 'message' => 'Barcode helper unavailable'], 500);
+            return;
+        }
+        $result = ratib_user_ensure_login_barcode($mysqli, $userId);
+        if (empty($result['ok'])) {
+            sendResponse([
+                'success' => false,
+                'message' => (string) ($result['message'] ?? 'Could not create barcode'),
+            ], 500);
+            return;
+        }
+        sendResponse([
+            'success' => true,
+            'data' => [
+                'barcode' => (string) ($result['barcode'] ?? ''),
+                'username' => (string) ($result['username'] ?? ''),
+            ],
+        ]);
+    }
+
+    /**
      * Create login_barcode when missing (for badge print + camera login).
      */
     private function ensureUserLoginBarcodeValue(int $userId): ?string
@@ -2561,7 +2607,8 @@ try {
             'get_stats' => 'view',
             'create' => 'add',
             'update' => 'edit',
-            'delete' => 'delete'
+            'delete' => 'delete',
+            'ensure_login_barcode' => 'edit',
         ];
         $requiredPermission = null;
         $permKey = $actionMap[$action] ?? null;
@@ -2651,6 +2698,8 @@ try {
                 $api->delete(isset($input['id']) ? $input['id'] : 0);
             } elseif ($actionClean === 'get_stats') {
                 $api->getStats();
+            } elseif ($actionClean === 'ensure_login_barcode') {
+                $api->ensureLoginBarcode(isset($input['id']) ? $input['id'] : 0);
             } else {
                 // Unknown action - provide detailed error
                 $actionHex = bin2hex($action);

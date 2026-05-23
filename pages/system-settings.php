@@ -379,6 +379,36 @@ if ($embeddedMode) {
     </div>
 </div>
 
+<!-- Login barcode (scan at login) -->
+<div id="loginBarcodeModal" class="modern-modal modal-hidden" aria-labelledby="loginBarcodeModalTitle">
+    <div class="modern-modal-content login-barcode-modal-content">
+        <div class="modern-modal-header">
+            <h2 class="modern-modal-title" id="loginBarcodeModalTitle">
+                <i class="fas fa-qrcode"></i> Login barcode
+            </h2>
+            <button type="button" class="modal-close" data-action="close-login-barcode-modal" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="login-barcode-modal-body">
+            <p id="login-barcode-user-label" class="login-barcode-user-label"></p>
+            <div id="login-barcode-qr-host" class="login-barcode-qr-host"></div>
+            <svg id="login-barcode-svg" class="login-barcode-svg" aria-hidden="true"></svg>
+            <p id="login-barcode-code-text" class="login-barcode-code-text"></p>
+            <p class="login-barcode-modal-hint">At login: choose <strong>Barcode</strong> → <strong>Open camera</strong> → scan this QR code.</p>
+            <div class="login-barcode-modal-actions">
+                <button type="button" class="modern-btn modern-btn-secondary d-none" id="login-barcode-generate" data-action="ensure-login-barcode" data-id="">
+                    <i class="fas fa-sync"></i> Generate
+                </button>
+                <button type="button" class="modern-btn modern-btn-primary" id="login-barcode-open-tab" data-action="open-login-barcode-tab" data-id="">
+                    <i class="fas fa-external-link-alt"></i> Open in new tab
+                </button>
+                <button type="button" class="modern-btn modern-btn-secondary" data-action="close-login-barcode-modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- History Modal -->
 <div id="historyModal" class="modern-modal modal-hidden">
     <div class="modern-modal-content history-modal-content">

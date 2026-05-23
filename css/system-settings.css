@@ -495,6 +495,27 @@ body:not(.agent-page) .pagination-controls{display:flex;align-items:center;gap:8
 .fingerprint-badge.registered{background:rgba(16,185,129,.15);color:#34d399;border-color:rgba(16,185,129,.4)}
 .fingerprint-badge.missing{background:rgba(248,113,113,.15);color:#f87171;border-color:rgba(248,113,113,.35)}
 
+/* Login barcode column + modal */
+.login-barcode-link{
+    display:inline-flex;align-items:center;gap:.35rem;max-width:100%;
+    padding:.2rem .45rem;border-radius:6px;border:1px solid rgba(236,72,153,.35);
+    background:rgba(236,72,153,.08);color:#f9a8d4;font-family:ui-monospace,monospace;
+    font-size:.78rem;cursor:pointer;text-align:left;line-height:1.2;
+}
+.login-barcode-link:hover{background:rgba(236,72,153,.18);border-color:rgba(236,72,153,.55);color:#fbcfe8}
+.login-barcode-link--empty{border-style:dashed;color:#94a3b8;background:transparent}
+.login-barcode-link--empty:hover{color:#e2e8f0;border-color:rgba(148,163,184,.5)}
+.login-barcode-link-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:7rem}
+.login-barcode-modal-content{max-width:min(92vw,400px);text-align:center}
+.login-barcode-modal-body{padding:.5rem 1rem 1.25rem}
+.login-barcode-user-label{color:var(--muted);font-size:.9rem;margin-bottom:.75rem}
+.login-barcode-qr-host{display:flex;justify-content:center;align-items:center;min-height:120px;margin:0 auto .5rem}
+.login-barcode-qr-host img{display:block;margin:0 auto}
+.login-barcode-svg{max-width:100%;min-height:48px;margin:.25rem auto}
+.login-barcode-code-text{font-family:ui-monospace,monospace;font-size:1rem;letter-spacing:.06em;word-break:break-all;margin:.5rem 0;color:#e2e8f0}
+.login-barcode-modal-hint{font-size:.85rem;color:var(--muted);margin:.75rem 0 1rem;line-height:1.45}
+.login-barcode-modal-actions{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center}
+
 /* Confirm dialog (modern alert) */
 .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:2000}
 .confirm-box{width:min(92vw,480px);background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
