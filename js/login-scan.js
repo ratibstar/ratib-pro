@@ -37,6 +37,27 @@ document.addEventListener('DOMContentLoaded', function () {
         };
     }
 
+    function isPairingQr(v) {
+        if (/login[-/]scan|login-scan\.php/i.test(v)) {
+            return true;
+        }
+        if (!/^https?:\/\//i.test(v)) {
+            return false;
+        }
+        try {
+            var u = new URL(v);
+            if (u.searchParams.get('token') && /login/i.test(u.pathname || '')) {
+                return true;
+            }
+            if (/login[-/]scan/i.test(u.pathname || '')) {
+                return true;
+            }
+        } catch (e) {
+            /* ignore */
+        }
+        return false;
+    }
+
     function classifyScan(raw) {
         var v = String(raw || '').trim();
         if (!v) {
@@ -49,21 +70,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (d) {
                     return classifyScan(d);
                 }
-                if (/\/login\/badge/i.test(u.pathname)) {
-                    return { kind: 'empty', payload: '' };
+                if (/\/login\/badge/i.test(u.pathname || '')) {
+                    return { kind: 'badge_url_empty', payload: v };
                 }
-                if (u.searchParams.get('token') && /login[-/]scan|login-scan/i.test(v)) {
+                if (isPairingQr(v)) {
                     return { kind: 'pairing', payload: v };
                 }
             } catch (e) {
                 /* fall through */
             }
         }
+        if (isPairingQr(v)) {
+            return { kind: 'pairing', payload: v };
+        }
         if (/^RATIBLOGIN:/i.test(v)) {
             return { kind: 'badge', payload: v };
-        }
-        if (/^https?:\/\//i.test(v) || /login[-/]scan|login-scan\.php/i.test(v)) {
-            return { kind: 'pairing', payload: v };
         }
         if (/^R\d{5,}/i.test(v) && v.length <= 32) {
             return { kind: 'badge', payload: v };
@@ -71,7 +92,17 @@ document.addEventListener('DOMContentLoaded', function () {
         if (v.indexOf('RATIBLOGIN') >= 0) {
             return { kind: 'badge', payload: v };
         }
-        return { kind: 'unknown', payload: v };
+        return { kind: 'badge', payload: v };
+    }
+
+    function alertWrongQr() {
+        if (navigator.vibrate) {
+            navigator.vibrate([120, 60, 120]);
+        }
+        var banner = document.getElementById('qr-scan-wrong-banner');
+        if (banner) {
+            banner.classList.remove('d-none');
+        }
     }
 
     function mapErrorCode(code, fallback) {
@@ -139,18 +170,37 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function submitPayload(raw) {
+        setStatus('QR detected — checking…', 'loading');
+
         var classified = classifyScan(raw);
         if (classified.kind === 'empty') {
+            setStatus('Could not read that QR. Try again.', 'error');
             return;
         }
         if (classified.kind === 'pairing') {
+            alertWrongQr();
+            setStatus(
+                'WRONG QR — That is the computer screen (step 1). Turn to System Settings → Users → Barcode and scan THAT QR instead.',
+                'error'
+            );
+            if (scanner) {
+                scanner.resetSubmit();
+                scanner.lastScan = 0;
+                scanner.throttleMs = 800;
+            }
+            return;
+        }
+        if (classified.kind === 'badge_url_empty') {
+            setStatus('Badge link empty. In admin: Users → Workforce access → Regenerate, then scan the new QR.', 'error');
             if (scanner) {
                 scanner.resetSubmit();
             }
-            setStatus('That is the computer pairing QR. Scan your workforce badge instead.', 'error');
             return;
         }
 
+        if (scanner) {
+            scanner.lock();
+        }
         setStatus('Validating badge…', 'loading');
         pendingChallenge = '';
 
@@ -210,9 +260,11 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
+    var hintTimer = null;
+
     scanner = new RatibQrScanner({
         elementId: 'qr-scan-viewport',
-        throttleMs: 3000,
+        throttleMs: 1200,
         onScan: submitPayload,
         onStatus: setStatus
     });
@@ -223,8 +275,26 @@ document.addEventListener('DOMContentLoaded', function () {
             if (stopBtn) {
                 stopBtn.classList.remove('d-none');
             }
-            setStatus('Point at your workforce badge QR.', 'info');
+            var banner = document.getElementById('qr-scan-wrong-banner');
+            if (banner) {
+                banner.classList.add('d-none');
+            }
+            setStatus(
+                'Point at Users → Barcode on the admin screen — NOT the computer login QR.',
+                'info'
+            );
+            scanner.throttleMs = 1200;
+            scanner.resetSubmit();
             scanner.start();
+            if (hintTimer) {
+                clearTimeout(hintTimer);
+            }
+            hintTimer = setTimeout(function () {
+                setStatus(
+                    'No QR detected yet? Use the badge from System Settings → Users → Workforce access. Laptop screens are hard to scan — try Print badge or hold phone closer.',
+                    'info'
+                );
+            }, 14000);
         });
     }
 

@@ -83,12 +83,15 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
         <?php endif; ?>
         <p class="qr-scan-sub">
             <?php if ($hasPair): ?>
-            <strong>Wrong QR:</strong> the big QR on the computer login screen is only for step 1.<br>
-            Point this camera at the <strong>Users → Barcode</strong> QR (on screen or printed). iPhone Camera on the badge also works after step 1.
+            <strong>Do not point at the computer login screen.</strong><br>
+            On the laptop: open <strong>System Settings → Users</strong> → click <strong>Access</strong> on your user → scan the QR in that panel (or print it).
             <?php else: ?>
-            Sign in with your secure login badge QR code.
+            Sign in with your workforce badge from System Settings → Users.
             <?php endif; ?>
         </p>
+        <div id="qr-scan-wrong-banner" class="qr-scan-wrong-banner d-none" role="alert">
+            Wrong QR — you scanned the computer login screen. Open <strong>Users → Access</strong> and scan that badge instead.
+        </div>
         <div id="qr-scan-viewport" class="qr-scan-viewport" aria-label="Camera scanner"></div>
         <div class="qr-scan-actions">
             <button type="button" class="qr-scan-btn qr-scan-btn-primary" id="qr-scan-start">

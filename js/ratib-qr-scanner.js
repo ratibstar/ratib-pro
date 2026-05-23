@@ -55,20 +55,23 @@
     };
 
     RatibQrScanner.prototype.handleDecode = function (text) {
-        if (this.submitted) {
-            return;
-        }
         var value = String(text || '').trim();
         if (value.length < 4) {
             return;
         }
         var now = Date.now();
+        if (this.submitted) {
+            return;
+        }
         if (now - this.lastScan < this.throttleMs) {
             return;
         }
         this.lastScan = now;
-        this.submitted = true;
         this.onScan(value);
+    };
+
+    RatibQrScanner.prototype.lock = function () {
+        this.submitted = true;
     };
 
     RatibQrScanner.prototype.start = async function () {
@@ -84,12 +87,15 @@
         this.scanner = new Html5Qrcode(this.elementId);
         var self = this;
         var config = {
-            fps: 12,
+            fps: 15,
+            disableFlip: false,
             qrbox: function (vw, vh) {
-                return {
-                    width: Math.floor(Math.min(vw * 0.92, 380)),
-                    height: Math.floor(Math.min(vh * 0.58, 260))
-                };
+                var w = Math.floor(Math.min(vw * 0.95, 400));
+                var h = Math.floor(Math.min(vh * 0.72, 320));
+                return { width: w, height: h };
+            },
+            experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true
             }
         };
         try {
