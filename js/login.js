@@ -1,33 +1,22 @@
 /**
- * Login Page JavaScript — password / phone-only barcode camera login
+ * Login Page JavaScript — password / cross-device barcode (phone scans, PC opens)
  */
 
 document.addEventListener('DOMContentLoaded', function () {
     const loginMethodSelect = document.getElementById('login-method');
     const passwordForm = document.getElementById('password-form');
     const barcodeForm = document.getElementById('barcode-form');
-    const barcodeMobilePanel = document.getElementById('barcode-mobile-panel');
     const barcodeDesktopPanel = document.getElementById('barcode-desktop-panel');
-    const barcodeInput = document.getElementById('barcode-input');
-    const barcodeLoginForm = document.getElementById('barcode-login-form');
-    const barcodeReaderEl = document.getElementById('barcode-qr-reader');
-    const barcodeCameraWrap = document.getElementById('barcode-camera-wrap');
-    const barcodeStartBtn = document.getElementById('barcode-start-camera');
-    const barcodeManualInput = document.getElementById('barcode-manual-input');
-    const barcodeManualSubmit = document.getElementById('barcode-manual-submit');
-    const barcodeManualInputDesktop = document.getElementById('barcode-manual-input-desktop');
-    const barcodeManualSubmitDesktop = document.getElementById('barcode-manual-submit-desktop');
-    const barcodeLoginUrlQr = document.getElementById('barcode-login-url-qr');
-    const barcodeLoginUrlText = document.getElementById('barcode-login-url-text');
+    const barcodeMobileHint = document.getElementById('barcode-mobile-hint');
+    const barcodePairQr = document.getElementById('barcode-pair-qr');
+    const barcodePairWaiting = document.getElementById('barcode-pair-waiting');
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     const themeIcon = document.getElementById('theme-icon');
     const body = document.body;
     const animatedBackground = document.getElementById('animated-background');
 
-    let barcodeScanner = null;
-    let barcodeCameraStarting = false;
-    let lastScanAt = 0;
-    let desktopLoginQrRendered = false;
+    let pairPollTimer = null;
+    let pairToken = null;
 
     const isPhoneDevice = (function () {
         const ua = navigator.userAgent || '';
@@ -86,6 +75,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 form.classList.remove('d-block');
             }
         });
+        stopPairPolling();
     }
 
     function showForm(form) {
@@ -105,244 +95,142 @@ document.addEventListener('DOMContentLoaded', function () {
         statusDiv.textContent = message;
     }
 
-    function resetBarcodeUi() {
-        stopBarcodeCamera();
-        if (barcodeStartBtn) {
-            barcodeStartBtn.classList.remove('d-none');
-            barcodeStartBtn.disabled = false;
+    function stopPairPolling() {
+        if (pairPollTimer) {
+            clearInterval(pairPollTimer);
+            pairPollTimer = null;
         }
+        pairToken = null;
     }
 
-    function submitBarcodeValue(code) {
-        if (!barcodeLoginForm || !barcodeInput) {
+    function renderPairQr(scanUrl) {
+        if (!barcodePairQr) {
             return;
         }
-        const value = String(code || '').trim();
-        if (value.length < 2) {
-            showBarcodeStatus('Barcode code is too short.', 'error');
-            return;
-        }
-        const now = Date.now();
-        if (now - lastScanAt < 2500) {
-            return;
-        }
-        lastScanAt = now;
-        barcodeInput.value = value;
-        showBarcodeStatus('Signing in…', 'info');
-        stopBarcodeCamera();
-        barcodeLoginForm.requestSubmit();
-    }
-
-    async function stopBarcodeCamera() {
-        barcodeCameraStarting = false;
-        if (!barcodeScanner) {
-            return;
-        }
-        const scanner = barcodeScanner;
-        barcodeScanner = null;
-        try {
-            await scanner.stop();
-        } catch (e) {
-            /* ignore */
-        }
-        try {
-            await scanner.clear();
-        } catch (e2) {
-            /* ignore */
-        }
-    }
-
-    function pickCameraId(cameras) {
-        if (!cameras || !cameras.length) {
-            return null;
-        }
-        const back = cameras.find(function (c) {
-            const label = (c.label || '').toLowerCase();
-            return /back|rear|environment|wide|telephoto/.test(label);
-        });
-        if (back) {
-            return back.id;
-        }
-        if (cameras.length > 1) {
-            return cameras[cameras.length - 1].id;
-        }
-        return cameras[0].id;
-    }
-
-    function buildScanConfig() {
-        return {
-            fps: 12,
-            qrbox: function (viewWidth, viewHeight) {
-                const w = Math.min(viewWidth * 0.94, 400);
-                const h = Math.min(viewHeight * 0.62, 280);
-                return { width: Math.floor(w), height: Math.floor(h) };
-            },
-            aspectRatio: 1.333333
-        };
-    }
-
-    async function tryStartWithCameraId(cameraId) {
-        const config = buildScanConfig();
-        await barcodeScanner.start(
-            cameraId,
-            config,
-            function onDecoded(decodedText) {
-                if (decodedText) {
-                    submitBarcodeValue(decodedText);
-                }
-            },
-            function () {
-                /* frame noise */
-            }
-        );
-    }
-
-    async function tryStartWithFacingMode(facingMode) {
-        const config = buildScanConfig();
-        await barcodeScanner.start(
-            { facingMode: facingMode },
-            config,
-            function onDecoded(decodedText) {
-                if (decodedText) {
-                    submitBarcodeValue(decodedText);
-                }
-            },
-            function () {
-                /* frame noise */
-            }
-        );
-    }
-
-    async function startBarcodeCamera() {
-        if (!isPhoneDevice) {
-            showBarcodeStatus('Camera scan works on phones only. Use the QR below to open login on your mobile.', 'info');
-            return;
-        }
-        if (barcodeScanner || barcodeCameraStarting || !barcodeReaderEl) {
-            return;
-        }
-        if (typeof Html5Qrcode === 'undefined') {
-            showBarcodeStatus('Scanner library did not load. Refresh the page.', 'error');
-            return;
-        }
-
-        barcodeCameraStarting = true;
-        showBarcodeStatus('Starting phone camera…', 'info');
-
-        if (barcodeCameraWrap) {
-            barcodeCameraWrap.classList.remove('d-none');
-        }
-        if (barcodeStartBtn) {
-            barcodeStartBtn.classList.add('d-none');
-        }
-
-        barcodeScanner = new Html5Qrcode('barcode-qr-reader');
-
-        try {
-            let cameras = [];
-            try {
-                cameras = await Html5Qrcode.getCameras();
-            } catch (camErr) {
-                cameras = [];
-            }
-
-            const cameraId = pickCameraId(cameras);
-            if (cameraId) {
-                await tryStartWithCameraId(cameraId);
-            } else {
-                await tryStartWithFacingMode('environment');
-            }
-
-            barcodeCameraStarting = false;
-            showBarcodeStatus('Point at the QR code from Users settings.', 'info');
-        } catch (err) {
-            barcodeCameraStarting = false;
-            await stopBarcodeCamera();
-            if (barcodeStartBtn) {
-                barcodeStartBtn.classList.remove('d-none');
-            }
-            console.error('Barcode camera error:', err);
-            showBarcodeStatus(
-                'Allow camera access, then tap Start phone camera again. Use Chrome or Safari on HTTPS.',
-                'error'
-            );
-        }
-    }
-
-    function renderDesktopLoginQr() {
-        if (!barcodeLoginUrlQr || desktopLoginQrRendered) {
-            return;
-        }
-        const loginUrl = window.location.href.split('#')[0];
-        if (barcodeLoginUrlText) {
-            barcodeLoginUrlText.textContent = loginUrl;
-        }
+        barcodePairQr.innerHTML = '';
         const img = document.createElement('img');
-        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(loginUrl);
-        img.alt = 'Open login on your phone';
-        img.width = 220;
-        img.height = 220;
+        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(scanUrl);
+        img.alt = 'Open phone scanner';
+        img.width = 240;
+        img.height = 240;
         img.className = 'barcode-login-url-qr-img';
-        barcodeLoginUrlQr.appendChild(img);
-        desktopLoginQrRendered = true;
+        barcodePairQr.appendChild(img);
+    }
+
+    function completePairOnDesktop(token) {
+        stopPairPolling();
+        if (barcodePairWaiting) {
+            barcodePairWaiting.innerHTML = '<i class="fas fa-check-circle text-success"></i> Signed in — opening RATEB…';
+        }
+        showBarcodeStatus('Login successful. Opening your workspace…', 'info');
+        const u = new URL(window.location.href);
+        u.searchParams.set('barcode_pair', token);
+        u.searchParams.delete('message');
+        window.location.href = u.toString();
+    }
+
+    async function pollPairToken(token) {
+        const cfg = window.RATIB_LOGIN_PAIR || {};
+        const apiPair = cfg.apiPair || '../api/login-barcode-pair.php';
+        try {
+            const res = await fetch(apiPair, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ action: 'poll', token: token })
+            });
+            const json = await res.json();
+            if (json.success && json.status === 'approved') {
+                completePairOnDesktop(token);
+            } else if (json.status === 'expired') {
+                stopPairPolling();
+                showBarcodeStatus('Session expired. Choose Barcode again.', 'error');
+            }
+        } catch (e) {
+            /* keep polling */
+        }
+    }
+
+    async function startDesktopBarcodePair() {
+        const cfg = window.RATIB_LOGIN_PAIR || {};
+        const apiPair = cfg.apiPair || '../api/login-barcode-pair.php';
+        let scanBase = cfg.scanPage || 'login-scan.php';
+        if (scanBase.indexOf('http') !== 0) {
+            if (scanBase.indexOf('/') === 0) {
+                scanBase = window.location.origin + scanBase;
+            } else {
+                const pathDir = window.location.pathname.replace(/\/[^/]*$/, '/');
+                scanBase = window.location.origin + pathDir + scanBase.replace(/^\.\.\//, '').replace(/^\.\//, '');
+            }
+        }
+
+        showBarcodeStatus('Preparing phone scanner…', 'info');
+        if (barcodePairWaiting) {
+            barcodePairWaiting.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Waiting for phone scan…';
+        }
+
+        try {
+            const res = await fetch(apiPair, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    action: 'create',
+                    country_id: cfg.countryId || 0,
+                    agency_id: cfg.agencyId || 0,
+                    country_slug: cfg.countrySlug || '',
+                    country_name: cfg.countryName || '',
+                    agency_name: cfg.agencyName || '',
+                    control: cfg.control ? 1 : 0
+                })
+            });
+            const json = await res.json();
+            if (!json.success || !json.token) {
+                showBarcodeStatus(json.message || 'Could not start barcode login.', 'error');
+                return;
+            }
+            pairToken = json.token;
+            const scanUrl = scanBase + (scanBase.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(pairToken);
+            renderPairQr(scanUrl);
+            showBarcodeStatus('Scan the QR with your phone, then scan your user badge.', 'info');
+            stopPairPolling();
+            pairPollTimer = setInterval(function () {
+                pollPairToken(pairToken);
+            }, 1500);
+            pollPairToken(pairToken);
+        } catch (e) {
+            showBarcodeStatus('Network error. Refresh and try again.', 'error');
+        }
     }
 
     function showBarcodeLoginPanel() {
-        if (barcodeMobilePanel) {
-            barcodeMobilePanel.classList.toggle('d-none', !isPhoneDevice);
-            barcodeMobilePanel.classList.toggle('d-block', isPhoneDevice);
+        if (isPhoneDevice) {
+            if (barcodeDesktopPanel) {
+                barcodeDesktopPanel.classList.add('d-none');
+            }
+            if (barcodeMobileHint) {
+                barcodeMobileHint.classList.remove('d-none');
+                barcodeMobileHint.classList.add('d-block');
+            }
+            showBarcodeStatus('Open login on your computer and scan the QR shown there.', 'info');
+            stopPairPolling();
+            return;
+        }
+        if (barcodeMobileHint) {
+            barcodeMobileHint.classList.add('d-none');
         }
         if (barcodeDesktopPanel) {
-            barcodeDesktopPanel.classList.toggle('d-none', isPhoneDevice);
-            barcodeDesktopPanel.classList.toggle('d-block', !isPhoneDevice);
+            barcodeDesktopPanel.classList.remove('d-none');
+            barcodeDesktopPanel.classList.add('d-block');
         }
-        if (barcodeCameraWrap && isPhoneDevice) {
-            barcodeCameraWrap.classList.remove('d-none');
-        }
-        if (!isPhoneDevice) {
-            renderDesktopLoginQr();
-            showBarcodeStatus('Open login on your phone, or type your barcode code below.', 'info');
-        } else {
-            showBarcodeStatus('Tap Start phone camera, allow access, then scan the QR from Users.', 'info');
-        }
-    }
-
-    if (barcodeStartBtn) {
-        barcodeStartBtn.addEventListener('click', function () {
-            startBarcodeCamera();
-        });
-    }
-
-    if (barcodeManualSubmit && barcodeManualInput) {
-        barcodeManualSubmit.addEventListener('click', function () {
-            submitBarcodeValue(barcodeManualInput.value);
-        });
-        barcodeManualInput.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                submitBarcodeValue(barcodeManualInput.value);
-            }
-        });
-    }
-
-    if (barcodeManualSubmitDesktop && barcodeManualInputDesktop) {
-        barcodeManualSubmitDesktop.addEventListener('click', function () {
-            submitBarcodeValue(barcodeManualInputDesktop.value);
-        });
-        barcodeManualInputDesktop.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                submitBarcodeValue(barcodeManualInputDesktop.value);
-            }
-        });
+        startDesktopBarcodePair();
     }
 
     if (loginMethodSelect) {
         hideAllForms();
         showForm(passwordForm);
 
-        loginMethodSelect.addEventListener('change', async function () {
-            resetBarcodeUi();
+        loginMethodSelect.addEventListener('change', function () {
             hideAllForms();
             if (this.value === 'barcode') {
                 showForm(barcodeForm);
@@ -352,12 +240,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-
-    document.addEventListener('visibilitychange', function () {
-        if (document.hidden) {
-            stopBarcodeCamera();
-        }
-    });
 
     const successMessage = document.querySelector('.success-message');
     if (successMessage) {

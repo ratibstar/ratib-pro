@@ -96,13 +96,8 @@ body {
     font-weight: 600;
 }
 
-.barcode-manual-details summary {
-    cursor: pointer;
-    list-style: none;
-}
-
-.barcode-manual-details summary::-webkit-details-marker {
-    display: none;
+.barcode-pair-waiting {
+    color: #38bdf8;
 }
 
 .barcode-open-phone-box {
@@ -131,29 +126,9 @@ body {
     font-size: 0.75rem;
 }
 
-/* Hide PC webcam UI on large screens without touch */
-@media (min-width: 821px) {
-    #barcode-mobile-panel {
-        display: none !important;
-    }
-
-    #barcode-camera-wrap,
-    #barcode-start-camera {
-        display: none !important;
-    }
-}
-
 @media (max-width: 820px) {
     #barcode-desktop-panel {
         display: none !important;
-    }
-
-    .barcode-camera-wrap--full {
-        min-height: 52vw;
-    }
-
-    .barcode-qr-reader {
-        min-height: 52vw;
     }
 }
 

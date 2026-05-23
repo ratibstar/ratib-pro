@@ -294,6 +294,31 @@ if ($formHiddenAgencyId > 0 && !empty($loginAgencyPicklist)) {
     }
 }
 
+// Cross-device barcode login: phone scanned badge → open session on this computer
+if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $conn !== null) {
+    $barcodePairToken = isset($_GET['barcode_pair'])
+        ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $_GET['barcode_pair']))
+        : '';
+    if (strlen($barcodePairToken) === 32) {
+        require_once __DIR__ . '/../includes/ratib-barcode-login-pair.php';
+        $pairSession = ratib_barcode_pair_consume_session($barcodePairToken);
+        if (is_array($pairSession)) {
+            if (function_exists('ratib_partner_portal_clear')) {
+                ratib_partner_portal_clear();
+            }
+            foreach ($pairSession as $k => $v) {
+                $_SESSION[$k] = $v;
+            }
+            if (function_exists('ratib_set_login_context_cookies')) {
+                ratib_set_login_context_cookies((int) ($_SESSION['country_id'] ?? 0), (int) ($_SESSION['agency_id'] ?? 0));
+            }
+            header('Location: ' . ratib_country_dashboard_url((int) ($_SESSION['agency_id'] ?? 0)));
+            exit;
+        }
+        $error = 'Login link expired. Choose Barcode again and scan with your phone.';
+    }
+}
+
 // Main platform login
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     try {
@@ -386,7 +411,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     $password = $barcodeLogin ? '' : (string) ($_POST['password'] ?? '');
 
     if ($barcodeLogin && $barcodeValue === '') {
-        $error = 'Please scan or enter your barcode.';
+        $error = 'Please scan your barcode with your phone.';
     }
 
     // Single URL mode: connect to selected country's DB before validating (use control panel for lookup)
@@ -1426,45 +1451,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                     </div>
                 </div>
                 
-                <!-- Barcode login — phone camera scan only; full panel when selected -->
+                <!-- Barcode login — phone scans badge; program opens on this computer -->
                 <div id="barcode-form" class="text-center d-none">
-                    <!-- Phone / tablet: rear camera scanner (full view) -->
-                    <div id="barcode-mobile-panel" class="barcode-login-panel d-none">
-                        <div class="barcode-scan-panel mb-2">
-                            <i class="fas fa-mobile-alt text-info icon-3em mb-2" aria-hidden="true"></i>
-                            <h3 class="mb-2">Scan barcode</h3>
-                            <p class="text-muted mb-0 small">Use your <strong>phone camera</strong>. Point at the QR from System Settings → Users (tap the barcode there).</p>
-                        </div>
-                        <div id="barcode-camera-wrap" class="barcode-camera-wrap barcode-camera-wrap--full">
-                            <div id="barcode-qr-reader" class="barcode-qr-reader" aria-label="Phone barcode scanner"></div>
-                        </div>
-                        <button type="button" class="btn btn-primary btn-lg w-100 mt-3" id="barcode-start-camera">
-                            <i class="fas fa-camera" aria-hidden="true"></i> Start phone camera
-                        </button>
-                        <details class="barcode-manual-details mt-3 text-start">
-                            <summary class="small text-muted">Enter barcode code instead</summary>
-                            <div class="mt-2">
-                                <input type="text" id="barcode-manual-input" class="form-control" placeholder="e.g. R000012USR" autocomplete="off" inputmode="text">
-                                <button type="button" class="btn btn-outline-light btn-sm w-100 mt-2" id="barcode-manual-submit">Sign in with code</button>
-                            </div>
-                        </details>
-                    </div>
-
-                    <!-- Laptop / PC: no webcam — open on phone or type code -->
-                    <div id="barcode-desktop-panel" class="barcode-login-panel d-none">
+                    <div id="barcode-desktop-panel" class="barcode-login-panel">
                         <div class="barcode-scan-panel mb-3">
                             <i class="fas fa-mobile-alt text-info icon-3em mb-2" aria-hidden="true"></i>
-                            <h3 class="mb-2">Barcode login — phone only</h3>
-                            <p class="text-muted mb-0 small">This computer cannot scan. Open the login page on your <strong>phone</strong>, choose <strong>Barcode</strong>, then scan the QR from Users settings.</p>
+                            <h3 class="mb-2">Scan with your phone</h3>
+                            <p class="text-muted mb-0 small">1. Scan the QR below with your phone.<br>2. On your phone, scan your badge from <strong>Users</strong> settings.<br>3. RATEB opens here on this computer.</p>
                         </div>
-                        <div class="barcode-open-phone-box mb-3">
-                            <p class="small text-muted mb-2">Scan to open login on your phone:</p>
-                            <div id="barcode-login-url-qr" class="barcode-login-url-qr" aria-label="QR code for login URL on phone"></div>
-                            <p class="barcode-login-url-text small mt-2 mb-0" id="barcode-login-url-text"></p>
+                        <div class="barcode-open-phone-box mb-2">
+                            <p class="small text-muted mb-2">Scan this with your phone camera:</p>
+                            <div id="barcode-pair-qr" class="barcode-login-url-qr" aria-label="QR code to open phone scanner"></div>
+                            <p class="barcode-pair-waiting small mt-2 mb-0" id="barcode-pair-waiting">
+                                <i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Waiting for phone scan…
+                            </p>
                         </div>
-                        <label for="barcode-manual-input-desktop" class="form-label small text-muted text-start w-100">Or type your barcode code here:</label>
-                        <input type="text" id="barcode-manual-input-desktop" class="form-control mb-2" placeholder="e.g. R000012USR" autocomplete="off">
-                        <button type="button" class="btn btn-primary w-100" id="barcode-manual-submit-desktop">Sign in with code</button>
+                    </div>
+
+                    <div id="barcode-mobile-hint" class="barcode-login-panel d-none">
+                        <p class="text-muted small mb-0">To sign in on a <strong>computer</strong>, open login there, choose <strong>Barcode</strong>, and scan the QR shown on that screen with this phone.</p>
                     </div>
 
                     <form method="post" action="" id="barcode-login-form" class="d-none" aria-hidden="true">
@@ -1503,7 +1508,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         ? filemtime(__DIR__ . '/../js/login.js')
         : time();
     ?>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
+    <?php
+    $loginScanUrl = function_exists('pageUrl') ? pageUrl('login-scan.php') : '../pages/login-scan.php';
+    $loginPairApi = '../api/login-barcode-pair.php';
+    $loginPairCountrySlug = '';
+    if (!empty($singleCountryFromPath) && !empty($loginCountries[0]['slug'])) {
+        $loginPairCountrySlug = (string) $loginCountries[0]['slug'];
+    }
+    ?>
+    <script>
+    window.RATIB_LOGIN_PAIR = <?php echo json_encode([
+        'apiPair' => $loginPairApi,
+        'scanPage' => $loginScanUrl,
+        'countryId' => (int) $formHiddenCountryId,
+        'agencyId' => (int) $formHiddenAgencyId,
+        'countrySlug' => $loginPairCountrySlug,
+        'countryName' => (string) ($loginCountryName ?? ''),
+        'agencyName' => (string) ($loginAgencyBadgeName ?? ''),
+        'control' => !empty($_GET['control']) && (string) $_GET['control'] === '1',
+    ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    </script>
     <script src="../js/login.js?v=<?php echo $loginJsVersion; ?>"></script>
 </body>
 </html>
