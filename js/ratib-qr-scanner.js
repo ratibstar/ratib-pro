@@ -87,15 +87,19 @@
         this.scanner = new Html5Qrcode(this.elementId);
         var self = this;
         var config = {
-            fps: 15,
+            fps: 20,
             disableFlip: false,
             qrbox: function (vw, vh) {
-                var w = Math.floor(Math.min(vw * 0.95, 400));
-                var h = Math.floor(Math.min(vh * 0.72, 320));
-                return { width: w, height: h };
+                var side = Math.floor(Math.min(vw, vh) * 0.78);
+                return { width: side, height: side };
             },
             experimentalFeatures: {
                 useBarCodeDetectorIfSupported: true
+            },
+            videoConstraints: {
+                facingMode: 'environment',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
             }
         };
         try {

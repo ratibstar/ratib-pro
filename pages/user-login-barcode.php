@@ -96,8 +96,9 @@ $pageTitle = $username !== '' ? ('Login badge — ' . $username) : 'Login badge'
         </div>
     </div>
 
+    <link rel="stylesheet" href="<?php echo function_exists('asset') ? asset('css/ratib-qr-image.css') : '/css/ratib-qr-image.css'; ?>">
     <?php if ($qrPayload !== ''): ?>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="<?php echo function_exists('asset') ? asset('js/ratib-qr-image.js') : '/js/ratib-qr-image.js'; ?>"></script>
     <script>
     (function () {
         var value = <?php echo json_encode(
@@ -107,8 +108,8 @@ $pageTitle = $username !== '' ? ('Login badge — ' . $username) : 'Login badge'
             JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
         ); ?>;
         var host = document.getElementById('badge-qr');
-        if (host && typeof QRCode !== 'undefined') {
-            new QRCode(host, { text: value, width: 260, height: 260, correctLevel: QRCode.CorrectLevel.H });
+        if (host && typeof ratibRenderQrImage === 'function') {
+            ratibRenderQrImage(host, value, 300);
         }
     })();
     </script>

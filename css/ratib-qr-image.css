@@ -1,0 +1,37 @@
+/* Shared high-contrast QR (matches login pairing QR style) */
+.ratib-qr-image-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    background: #ffffff;
+    border-radius: 10px;
+    line-height: 0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.ratib-qr-image {
+    display: block;
+    border-radius: 4px;
+    max-width: 100%;
+    height: auto;
+}
+
+.wf-qr-host.ratib-qr-host--readable,
+#wf-qr-host.wf-qr-host--readable {
+    min-height: auto;
+    width: auto;
+    height: auto;
+    overflow: visible;
+}
+
+.wf-qr-fullscreen-host.ratib-qr-host--readable {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+}
+
+.wf-qr-fullscreen-host.ratib-qr-host--readable .ratib-qr-image {
+    width: var(--wf-qr-size, 260px);
+    height: var(--wf-qr-size, 260px);
+}

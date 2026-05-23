@@ -113,10 +113,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         barcodePairQr.innerHTML = '';
         const img = document.createElement('img');
-        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(scanUrl);
+        var pairSize = 280;
+        if (typeof ratibQrImageUrl === 'function') {
+            img.src = ratibQrImageUrl(scanUrl, pairSize);
+        } else {
+            img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=' + pairSize + 'x' + pairSize
+                + '&margin=18&ecc=H&color=000000&bgcolor=ffffff&data=' + encodeURIComponent(scanUrl);
+        }
         img.alt = 'Open phone scanner';
-        img.width = 240;
-        img.height = 240;
+        img.width = pairSize;
+        img.height = pairSize;
         img.className = 'barcode-login-url-qr-img';
         barcodePairQr.appendChild(img);
     }

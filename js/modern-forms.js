@@ -5697,8 +5697,19 @@ class ModernForms {
             s.onerror = () => reject(new Error('Failed to load ' + src));
             document.head.appendChild(s);
         });
+        const qrImgSrc = (() => {
+            const existing = document.querySelector('script[src*="ratib-qr-image.js"]');
+            if (existing && existing.src) {
+                return existing.src.split('?')[0];
+            }
+            const base = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
+            return base + '/js/ratib-qr-image.js';
+        })();
+        const qrImgReady = (typeof ratibRenderQrImage === 'function')
+            ? Promise.resolve()
+            : loadScript(qrImgSrc);
         this._loginBarcodeLibsLoading = Promise.all([
-            loadScript('https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js'),
+            qrImgReady,
             loadScript('https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js')
         ]).then(() => {
             this._loginBarcodeLibsReady = true;
@@ -5741,13 +5752,16 @@ class ModernForms {
         } else {
             codeEl.textContent = scanValue;
         }
-        if (typeof QRCode !== 'undefined') {
-            new QRCode(qrHost, {
-                text: scanValue,
-                width: 260,
-                height: 260,
-                correctLevel: QRCode.CorrectLevel.H
-            });
+        if (typeof ratibRenderQrImage === 'function') {
+            ratibRenderQrImage(qrHost, scanValue, 280);
+        } else if (typeof ratibQrImageUrl === 'function') {
+            const img = document.createElement('img');
+            img.className = 'ratib-qr-image';
+            img.src = ratibQrImageUrl(scanValue, 280);
+            img.width = 280;
+            img.height = 280;
+            img.alt = 'Login badge QR';
+            qrHost.appendChild(img);
         }
         if (svgEl && typeof JsBarcode !== 'undefined' && ref) {
             try {

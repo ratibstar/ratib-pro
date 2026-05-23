@@ -110,6 +110,17 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
         <div id="qr-scan-status" class="qr-scan-status qr-scan-status--info" role="status">
             Tap Start camera and allow access when prompted.
         </div>
+        <?php if ($hasPair): ?>
+        <div class="qr-scan-alt-help">
+            <p class="qr-scan-alt-title"><i class="fas fa-lightbulb"></i> Camera not reading the screen?</p>
+            <ol>
+                <li>On laptop: <strong>Workforce access</strong> → <strong>Copy badge link</strong></li>
+                <li>Paste the link in this phone’s browser (or Notes), tap it</li>
+                <li>That signs in the computer — no camera scan needed</li>
+            </ol>
+            <p class="qr-scan-alt-note">Or use <strong>Download PNG</strong> / <strong>Print badge</strong> and scan the paper.</p>
+        </div>
+        <?php endif; ?>
     </div>
     <script>
     window.RATIB_QR_SCAN = <?php echo json_encode([

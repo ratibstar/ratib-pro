@@ -50,6 +50,7 @@
 .wf-qr-host {
     min-height: 200px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     margin: 0.5rem 0;
@@ -301,10 +302,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: var(--wf-qr-size, 240px);
-    height: var(--wf-qr-size, 240px);
+    width: auto;
+    height: auto;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
     line-height: 0;
 }
 
@@ -313,15 +314,16 @@
     max-height: 100% !important;
 }
 
-.wf-qr-fullscreen-host canvas,
-.wf-qr-fullscreen-host img {
+.wf-qr-fullscreen-host .ratib-qr-image-wrap {
+    padding: 10px;
+}
+
+.wf-qr-fullscreen-host .ratib-qr-image {
     display: block !important;
-    width: var(--wf-qr-size, 240px) !important;
-    height: var(--wf-qr-size, 240px) !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
+    width: var(--wf-qr-size, 260px) !important;
+    height: var(--wf-qr-size, 260px) !important;
+    max-width: min(100%, var(--wf-qr-size, 260px)) !important;
+    max-height: min(100%, var(--wf-qr-size, 260px)) !important;
 }
 
 .wf-qr-fullscreen-tips {

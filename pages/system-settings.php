@@ -55,6 +55,7 @@ if ($directInclude) {
 <script src="<?php echo asset('js/countries-cities.js'); ?>?v=<?php echo $countriesCitiesVersion; ?>"></script>
 <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
 <script src="<?php echo asset('js/system-settings-alerts.js'); ?>?v=<?php echo $systemSettingsAlertsVersion; ?>"></script>
+<script src="<?php echo asset('js/ratib-qr-image.js'); ?>?v=<?php echo file_exists(__DIR__ . '/../js/ratib-qr-image.js') ? filemtime(__DIR__ . '/../js/ratib-qr-image.js') : time(); ?>"></script>
 <script src="<?php echo asset('js/workforce-access.js'); ?>?v=<?php echo file_exists(__DIR__ . '/../js/workforce-access.js') ? filemtime(__DIR__ . '/../js/workforce-access.js') : time(); ?>"></script>
 <script src="<?php echo asset('js/modern-forms.js'); ?>?v=<?php echo $modernFormsVersion; ?>"></script>
 <script src="<?php echo asset('js/system-settings.js'); ?>?v=<?php echo $systemSettingsJsVersion; ?>"></script>
@@ -80,6 +81,7 @@ if ($embeddedMode) {
     <link rel="stylesheet" href="<?php echo asset('css/nav.css'); ?>?v=<?php echo $cssVer; ?>">
     <link rel="stylesheet" href="<?php echo asset('css/system-settings.css'); ?>?v=<?php echo $cssVer; ?>">
     <link rel="stylesheet" href="<?php echo asset('css/workforce-access.css'); ?>?v=<?php echo $cssVer; ?>">
+    <link rel="stylesheet" href="<?php echo asset('css/ratib-qr-image.css'); ?>?v=<?php echo $cssVer; ?>">
     <script src="<?php echo asset('js/utils/header-config.js'); ?>"></script>
 </head>
 <body class="system-settings-embedded">
@@ -88,7 +90,7 @@ if ($embeddedMode) {
 <?php
 } else {
     $pageTitle = "System Settings";
-    $pageCss = ["../css/system-settings.css?v=" . time(), "../css/workforce-access.css?v=" . time()];
+    $pageCss = ["../css/system-settings.css?v=" . time(), "../css/workforce-access.css?v=" . time(), "../css/ratib-qr-image.css?v=" . time()];
     include '../includes/header.php';
 }
 ?>
@@ -454,6 +456,7 @@ if ($embeddedMode) {
                 <p class="wf-meta">QR stays on screen after Save access. Token text is never shown — scan the image only.</p>
                 <div class="wf-actions">
                     <button type="button" class="modern-btn modern-btn-primary" data-wf-action="fullscreen-qr">Large QR (for phone scan)</button>
+                    <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="copy-badge-link">Copy badge link</button>
                     <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="open-badge">Print badge</button>
                     <button type="button" class="modern-btn modern-btn-secondary" data-wf-action="download-png">Download PNG</button>
                 </div>
@@ -650,6 +653,7 @@ if ($embeddedMode) {
 <script src="<?php echo asset('js/countries-cities.js'); ?>?v=<?php echo $countriesCitiesVersion; ?>"></script>
 <script src="<?php echo asset('js/permissions.js'); ?>?v=<?php echo time(); ?>"></script>
 <script src="<?php echo asset('js/system-settings-alerts.js'); ?>?v=<?php echo $systemSettingsAlertsVersion; ?>"></script>
+<script src="<?php echo asset('js/ratib-qr-image.js'); ?>?v=<?php echo file_exists(__DIR__ . '/../js/ratib-qr-image.js') ? filemtime(__DIR__ . '/../js/ratib-qr-image.js') : time(); ?>"></script>
 <script src="<?php echo asset('js/workforce-access.js'); ?>?v=<?php echo file_exists(__DIR__ . '/../js/workforce-access.js') ? filemtime(__DIR__ . '/../js/workforce-access.js') : time(); ?>"></script>
 <script src="<?php echo asset('js/modern-forms.js'); ?>?v=<?php echo $modernFormsVersion; ?>"></script>
 <script src="<?php echo asset('js/system-settings.js'); ?>?v=<?php echo $systemSettingsJsVersion; ?>"></script>

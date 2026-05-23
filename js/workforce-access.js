@@ -60,7 +60,9 @@
             return;
         }
         const opts = options || {};
+        qrHost.classList.add('ratib-qr-host--readable');
         if (!payload) {
+            qrHost.classList.remove('ratib-qr-host--readable');
             if (opts.activeCredential) {
                 qrHost.innerHTML = '<p class="wf-meta mb-0">Credential is active. Click <strong>Regenerate</strong> to display a new QR, or use <strong>Print badge</strong>.</p>';
             } else {
@@ -68,41 +70,28 @@
             }
             return;
         }
-        qrHost.innerHTML = '';
         const scanValue = payloadToScanValue(payload);
-        let size = opts.fullscreen ? 240 : 220;
+        let size = opts.fullscreen ? 260 : 280;
         if (opts.fullscreen && opts.qrSize) {
             size = opts.qrSize;
         }
-        if (typeof QRCode !== 'undefined' && scanValue) {
-            new QRCode(qrHost, {
-                text: scanValue,
-                width: size,
-                height: size,
-                correctLevel: QRCode.CorrectLevel.H,
-                colorDark: '#000000',
-                colorLight: '#ffffff'
-            });
+        if (typeof global.ratibRenderQrImage === 'function') {
+            global.ratibRenderQrImage(qrHost, scanValue, size);
+        } else {
+            qrHost.innerHTML = '<img class="ratib-qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size='
+                + size + 'x' + size + '&margin=18&ecc=H&color=000000&bgcolor=ffffff&data='
+                + encodeURIComponent(scanValue) + '" width="' + size + '" height="' + size + '" alt="QR">';
         }
         if (!opts.fullscreen) {
             var hint = document.createElement('p');
             hint.className = 'wf-meta mb-0 mt-2';
-            hint.textContent = 'This QR stays visible while this panel is open. Print or download before closing if needed.';
+            hint.textContent = 'Same style as login QR — scan with phone camera or copy badge link.';
             qrHost.appendChild(hint);
         }
     }
 
     async function loadLibs() {
-        if (typeof QRCode !== 'undefined') {
-            return;
-        }
-        await new Promise(function (resolve, reject) {
-            const s = document.createElement('script');
-            s.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
-            s.onload = resolve;
-            s.onerror = reject;
-            document.head.appendChild(s);
-        });
+        return Promise.resolve();
     }
 
     function renderStatus(data) {
@@ -331,14 +320,16 @@
         },
 
         downloadPng() {
-            const canvas = document.querySelector('#wf-qr-host canvas');
-            if (!canvas) {
+            const img = document.querySelector('#wf-qr-host .ratib-qr-image');
+            if (!img || !img.src) {
                 global.alert('Generate QR first.');
                 return;
             }
             const a = document.createElement('a');
             a.download = 'rateb-workforce-badge-' + this.userId + '.png';
-            a.href = canvas.toDataURL('image/png');
+            a.href = img.src;
+            a.target = '_blank';
+            a.rel = 'noopener';
             a.click();
         },
 
@@ -352,7 +343,7 @@
             const reserved = vh < 720 ? 200 : 280;
             const byHeight = vh - reserved;
             const byWidth = vw - 48;
-            return Math.max(160, Math.min(280, Math.floor(Math.min(byHeight, byWidth))));
+            return Math.max(200, Math.min(320, Math.floor(Math.min(byHeight, byWidth))));
         },
 
         async showFullscreenQr() {
@@ -393,15 +384,35 @@
         },
 
         downloadFullscreenPng() {
-            const canvas = document.querySelector('#wf-qr-fullscreen-host canvas');
-            if (!canvas) {
+            const img = document.querySelector('#wf-qr-fullscreen-host .ratib-qr-image');
+            if (!img || !img.src) {
                 global.alert('Generate QR first.');
                 return;
             }
             const a = document.createElement('a');
             a.download = 'rateb-workforce-badge-' + this.userId + '.png';
-            a.href = canvas.toDataURL('image/png');
+            a.href = img.src;
+            a.target = '_blank';
+            a.rel = 'noopener';
             a.click();
+        },
+
+        copyBadgeLink() {
+            const payload = this.loadStoredPayload();
+            if (!payload) {
+                global.alert('Generate or Regenerate QR first.');
+                return;
+            }
+            const url = payloadToScanValue(payload);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(function () {
+                    global.alert('Badge link copied. On your phone: paste in Safari (after you opened the scan page from the login QR).');
+                }).catch(function () {
+                    global.prompt('Copy this link and open on your phone:', url);
+                });
+            } else {
+                global.prompt('Copy this link and open on your phone:', url);
+            }
         }
     };
 
@@ -443,6 +454,8 @@
                 WorkforceAccess.closeFullscreenQr();
             } else if (act === 'download-png-fs') {
                 WorkforceAccess.downloadFullscreenPng();
+            } else if (act === 'copy-badge-link') {
+                WorkforceAccess.copyBadgeLink();
             }
         });
         document.addEventListener('keydown', function (e) {

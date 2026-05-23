@@ -185,3 +185,30 @@
     gap: 0.4rem;
     margin-bottom: 0.75rem;
 }
+
+.qr-scan-alt-help {
+    margin-top: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    font-size: 0.8rem;
+    color: #94a3b8;
+    line-height: 1.45;
+}
+
+.qr-scan-alt-title {
+    margin: 0 0 0.5rem;
+    color: #e2e8f0;
+    font-weight: 600;
+}
+
+.qr-scan-alt-help ol {
+    margin: 0 0 0.5rem 1.1rem;
+    padding: 0;
+}
+
+.qr-scan-alt-note {
+    margin: 0;
+    font-size: 0.75rem;
+}

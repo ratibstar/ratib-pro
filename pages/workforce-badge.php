@@ -98,21 +98,22 @@ $pageTitle = 'Workforce badge — ' . ($username !== '' ? $username : 'User');
         <button type="button" class="btn btn-primary" onclick="window.print()">Print / PDF</button>
         <button type="button" class="btn" id="btn-png">Download PNG</button>
     </div>
+    <link rel="stylesheet" href="<?php echo function_exists('asset') ? asset('css/ratib-qr-image.css') : '/css/ratib-qr-image.css'; ?>">
     <?php if ($showQrOnce && $badgeUrl !== ''): ?>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="<?php echo function_exists('asset') ? asset('js/ratib-qr-image.js') : '/js/ratib-qr-image.js'; ?>"></script>
     <script>
     (function () {
         var url = <?php echo json_encode($badgeUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         var host = document.getElementById('badge-qr');
-        if (host && typeof QRCode !== 'undefined') {
-            new QRCode(host, { text: url, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.H });
+        if (host && typeof ratibRenderQrImage === 'function') {
+            ratibRenderQrImage(host, url, 300);
         }
         document.getElementById('btn-png').addEventListener('click', function () {
-            var c = host && host.querySelector('canvas');
-            if (!c) return;
+            var img = host && host.querySelector('.ratib-qr-image');
+            if (!img || !img.src) return;
             var a = document.createElement('a');
             a.download = 'rateb-workforce-badge.png';
-            a.href = c.toDataURL('image/png');
+            a.href = img.src;
             a.click();
         });
     })();
