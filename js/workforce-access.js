@@ -70,7 +70,10 @@
         }
         qrHost.innerHTML = '';
         const scanValue = payloadToScanValue(payload);
-        const size = opts.fullscreen ? 300 : 220;
+        let size = opts.fullscreen ? 240 : 220;
+        if (opts.fullscreen && opts.qrSize) {
+            size = opts.qrSize;
+        }
         if (typeof QRCode !== 'undefined' && scanValue) {
             new QRCode(qrHost, {
                 text: scanValue,
@@ -343,6 +346,15 @@
             this.openBadge();
         },
 
+        computeFullscreenQrSize() {
+            const vh = global.innerHeight || 700;
+            const vw = global.innerWidth || 400;
+            const reserved = vh < 720 ? 200 : 280;
+            const byHeight = vh - reserved;
+            const byWidth = vw - 48;
+            return Math.max(160, Math.min(280, Math.floor(Math.min(byHeight, byWidth))));
+        },
+
         async showFullscreenQr() {
             const payload = this.loadStoredPayload();
             if (!payload) {
@@ -352,9 +364,14 @@
             await loadLibs();
             const host = el('wf-qr-fullscreen-host');
             const overlay = el('wfQrFullscreen');
+            const panel = overlay ? overlay.querySelector('.wf-qr-fullscreen-panel') : null;
             const userEl = el('wf-qr-fullscreen-user');
             if (!host || !overlay) {
                 return;
+            }
+            const qrSize = this.computeFullscreenQrSize();
+            if (panel) {
+                panel.style.setProperty('--wf-qr-size', qrSize + 'px');
             }
             if (userEl) {
                 userEl.innerHTML = this.username
@@ -362,7 +379,7 @@
                     : '';
             }
             host.innerHTML = '';
-            renderQr(host, payload, { fullscreen: true });
+            renderQr(host, payload, { fullscreen: true, qrSize: qrSize });
             overlay.classList.remove('d-none');
             document.body.classList.add('wf-qr-fs-open');
         },
