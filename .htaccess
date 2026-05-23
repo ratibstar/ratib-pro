@@ -76,7 +76,7 @@ RewriteRule ^([a-z0-9_-]+)/?$ /pages/dashboard.php?country_slug=$1 [L,QSA]
 # Must NOT match /control-panel/pages/... or /css/pages/... (css was mistaken for country_slug).
 RewriteCond %{REQUEST_URI} !^/control-panel/ [NC]
 RewriteCond %{REQUEST_URI} !^/(css|js|assets|modules|public|api|Designed|tap-payments|admin)/ [NC]
-RewriteRule ^([a-z0-9_-]+)/pages/(.+)$ /pages/$2?country_slug=$1 [L,QSA]
+RewriteRule ^([a-z0-9_-]+)/pages/(.+?)/?$ /pages/$2?country_slug=$1 [L,QSA]
 
 # Old control panel URLs → new control-panel folder (so bookmarks/links still work)
 RewriteCond %{REQUEST_URI} ^/pages/control/ [NC]
@@ -122,23 +122,23 @@ RewriteRule ^([a-z0-9_-]+)/pages/(.+)\.php$ /$1/pages/$2 [R=301,L,QSA]
 RewriteCond %{THE_REQUEST} \s/+admin/([^\s?/]+)\.php[\s?] [NC]
 RewriteRule ^admin/(.+)\.php$ /admin/$1 [R=301,L,QSA]
 
-# Internal: extensionless /pages/* → *.php when file exists
-RewriteCond %{REQUEST_URI} ^/pages/(.+)$ [NC]
+# Internal: extensionless /pages/* → *.php when file exists (optional trailing slash)
+RewriteCond %{REQUEST_URI} ^/pages/(.+?)/?$ [NC]
 RewriteCond %{REQUEST_URI} !\.php$ [NC]
 RewriteCond %{DOCUMENT_ROOT}/pages/%1.php -f
-RewriteRule ^pages/(.+)$ pages/$1.php [L,QSA]
+RewriteRule ^pages/(.+?)/?$ pages/$1.php [L,QSA]
 
-# Internal: extensionless /control-panel/pages/* → *.php
-RewriteCond %{REQUEST_URI} ^/control-panel/pages/(.+)$ [NC]
+# Internal: extensionless /control-panel/pages/* → *.php (optional trailing slash)
+RewriteCond %{REQUEST_URI} ^/control-panel/pages/(.+?)/?$ [NC]
 RewriteCond %{REQUEST_URI} !\.php$ [NC]
 RewriteCond %{DOCUMENT_ROOT}/control-panel/pages/%1.php -f
-RewriteRule ^control-panel/pages/(.+)$ control-panel/pages/$1.php [L,QSA]
+RewriteRule ^control-panel/pages/(.+?)/?$ control-panel/pages/$1.php [L,QSA]
 
-# Internal: extensionless /admin/* → *.php
-RewriteCond %{REQUEST_URI} ^/admin/(.+)$ [NC]
+# Internal: extensionless /admin/* → *.php (optional trailing slash)
+RewriteCond %{REQUEST_URI} ^/admin/(.+?)/?$ [NC]
 RewriteCond %{REQUEST_URI} !\.php$ [NC]
 RewriteCond %{DOCUMENT_ROOT}/admin/%1.php -f
-RewriteRule ^admin/(.+)$ admin/$1.php [L,QSA]
+RewriteRule ^admin/(.+?)/?$ admin/$1.php [L,QSA]
 
 # Directory index - tells Apache which file to serve
 DirectoryIndex public/index.php index.php
