@@ -1,1 +1,1 @@
-rateb-mobile-save-badge-auto-reuse-20260523
+rateb-fix-scan-camera-global-and-ui-20260523

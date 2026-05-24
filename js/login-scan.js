@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var pendingChallenge = '';
     var scanComplete = false;
     var hintTimer = null;
-    var mobileStore = global.RatibMobileBadgeStore || null;
+    var mobileStore = (typeof window !== 'undefined' && window.RatibMobileBadgeStore) || null;
     var savedBadgeUsed = false;
     var skipAutoSaved = false;
 
@@ -61,16 +61,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function hideCameraForSaved() {
+    function restoreCameraUi() {
         var viewport = document.getElementById('qr-scan-viewport');
         if (viewport) {
-            viewport.classList.add('d-none');
+            viewport.classList.remove('d-none');
+            viewport.classList.remove('qr-scan-viewport--done');
         }
         if (startBtn) {
-            startBtn.classList.add('d-none');
+            startBtn.classList.remove('d-none');
         }
         if (stopBtn) {
             stopBtn.classList.add('d-none');
+        }
+        if (scanner) {
+            scanner.resetSubmit();
         }
     }
 
@@ -345,25 +349,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             if (json.code === 'invalid' || json.code === 'revoked' || json.code === 'expired') {
                 clearSavedBadge();
+                hideSavedPanel();
             }
-            if (scanner) {
-                scanner.resetSubmit();
-            }
-            if (startBtn) {
-                startBtn.classList.remove('d-none');
-            }
-            if (stopBtn) {
-                stopBtn.classList.add('d-none');
-            }
-            hideSavedPanel();
+            restoreCameraUi();
             setStatus(mapErrorCode(json.code, json.message), 'error');
         } catch (e) {
-            if (scanner) {
-                scanner.resetSubmit();
-            }
-            if (startBtn) {
-                startBtn.classList.remove('d-none');
-            }
+            restoreCameraUi();
             setStatus('Network error. Check connection and try again.', 'error');
         }
     }
@@ -386,6 +377,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
             clearHintTimer();
+            restoreCameraUi();
             startBtn.classList.add('d-none');
             if (stopBtn) {
                 stopBtn.classList.remove('d-none');
@@ -394,17 +386,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (banner) {
                 banner.classList.add('d-none');
             }
-            var viewport = document.getElementById('qr-scan-viewport');
-            if (viewport) {
-                viewport.classList.remove('qr-scan-viewport--done');
-            }
-            setStatus(
-                'Point at Users → Barcode on the admin screen — NOT the computer login QR.',
-                'info'
-            );
+            setStatus('Requesting camera…', 'loading');
             scanner.throttleMs = 1200;
             scanner.resetSubmit();
-            scanner.start();
+            scanner.start().catch(function () {
+                restoreCameraUi();
+                setStatus('Could not start camera. Allow permission and tap Start again.', 'error');
+            });
             hintTimer = setTimeout(function () {
                 if (!scanComplete) {
                     setStatus(
@@ -461,7 +449,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         savedBadgeUsed = true;
         showSavedPanel(saved);
-        hideCameraForSaved();
         setStatus('Using access badge saved on this phone…', 'loading');
         submitPayload(saved.scanValue || saved.badgeUrl || saved.payload);
     }
@@ -488,14 +475,8 @@ document.addEventListener('DOMContentLoaded', function () {
             skipAutoSaved = true;
             savedBadgeUsed = false;
             hideSavedPanel();
-            var viewport = document.getElementById('qr-scan-viewport');
-            if (viewport) {
-                viewport.classList.remove('d-none');
-            }
-            if (startBtn) {
-                startBtn.classList.remove('d-none');
-            }
-            setStatus('Scan your badge from Users → Access on the laptop.', 'info');
+            restoreCameraUi();
+            setStatus('Tap Start camera, then scan your badge from Users → Access.', 'info');
         });
     }
 

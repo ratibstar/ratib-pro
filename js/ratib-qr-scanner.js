@@ -126,7 +126,12 @@
         } catch (err) {
             this.starting = false;
             await this.stop();
-            this.setStatus('Camera blocked. Allow permission and try again.', 'error');
+            var msg = 'Camera blocked. Allow permission and try again.';
+            if (err && err.message) {
+                msg += ' (' + String(err.message).substring(0, 80) + ')';
+            }
+            this.setStatus(msg, 'error');
+            throw err;
         }
     };
 
