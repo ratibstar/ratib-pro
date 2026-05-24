@@ -44,6 +44,13 @@
         return d.innerHTML;
     }
 
+    /** Bootstrap .d-none uses !important — inline display styles cannot override it. */
+    function setVisible(el, show) {
+        if (!el) return;
+        if (show) el.classList.remove('d-none');
+        else el.classList.add('d-none');
+    }
+
     function countryQs() {
         if (countryId === 0) return '';
         return '&country_id=' + encodeURIComponent(countryId);
@@ -157,7 +164,7 @@
                 lastUnreadCount = unread;
 
                 if (items.length === 0) {
-                    empty.style.display = 'block';
+                    setVisible(empty, true);
                     var hintExtra = '';
                     if (data.support_scope_hint) {
                         hintExtra = '<p class="small text-warning mt-2">' + escapeHtml(data.support_scope_hint) + '</p>';
@@ -168,12 +175,12 @@
                         (countryId !== 0 ? ' for this filter' : '') + '.</p>' +
                         '<p class="small text-muted">Only <strong>live support</strong> chats appear here (visitor must click &quot;Talk to support&quot; or type e.g. &quot;I need to talk to support&quot;). Normal AI replies in the widget are <strong>not</strong> sent to this list.</p>' +
                         hintExtra;
-                    list.style.display = 'none';
-                    pag.style.display = 'none';
+                    setVisible(list, false);
+                    setVisible(pag, false);
                     updateBulkButtons();
                 } else {
-                    empty.style.display = 'none';
-                    list.style.display = 'block';
+                    setVisible(empty, false);
+                    setVisible(list, true);
                     list.innerHTML = items.map(function(c) {
                         var cId = Math.max(1, parseInt(c.id, 10) || 0);
                         var unreadCnt = Math.max(0, parseInt(c.unread_count || 0));
@@ -216,7 +223,7 @@
 
                     var pg = data.pagination || {};
                     if (pg.pages > 1) {
-                        pag.style.display = 'block';
+                        setVisible(pag, true);
                         var html = 'Page ' + pg.page + ' of ' + pg.pages + ' ';
                         var baseQs = 'control=1&embedded=1&status=' + encodeURIComponent(status) + '&limit=' + limit;
                         if (countryId !== 0) baseQs += '&country_id=' + encodeURIComponent(countryId);
@@ -224,7 +231,7 @@
                         if (pg.page < pg.pages) html += '<a href="?' + baseQs + '&page=' + (pg.page + 1) + '" class="btn btn-sm btn-outline-secondary">Next</a>';
                         pag.innerHTML = html;
                     } else {
-                        pag.style.display = 'none';
+                        setVisible(pag, false);
                     }
                 }
             })
