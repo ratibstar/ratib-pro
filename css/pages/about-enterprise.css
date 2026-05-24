@@ -1053,7 +1053,9 @@ body.ratib-about-page .ratib-nav-shell__inner {
 }
 
 body.ratib-about-page .ratib-nav__brand-block--animated {
-  max-width: min(14.5rem, 34vw);
+  flex-direction: row;
+  align-items: center;
+  max-width: min(17.5rem, 42vw);
   min-width: 0;
 }
 

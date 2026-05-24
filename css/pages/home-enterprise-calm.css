@@ -149,11 +149,15 @@ body.ratib-about-page {
 
 /* Brand box — compact; acronym stays in hero, not header */
 .ratib-nav__brand-block--animated {
-  max-width: min(14.5rem, 34vw);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.45rem;
+  max-width: min(17.5rem, 42vw);
   min-width: 0;
   flex: 0 1 auto;
-  gap: 0.28rem;
-  padding: 0.36rem 0.5rem 0.34rem 0.46rem;
+  padding: 0.36rem 0.5rem 0.36rem 0.46rem;
   border-color: rgba(167, 139, 250, 0.22);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
@@ -180,7 +184,15 @@ body.ratib-about-page {
   -webkit-text-fill-color: currentColor;
 }
 
+.ratib-nav__brand-block--animated .ratib-nav__brand--animated-title {
+  width: auto;
+  flex: 0 1 auto;
+}
+
 .ratib-nav__brand-block--animated .ratib-nav__brand-profile {
+  flex-shrink: 0;
+  align-self: center;
+  margin: 0;
   font-size: 0.64rem;
   padding: 0.2rem 0.52rem;
   background: var(--r-accent-soft);
