@@ -852,6 +852,16 @@ class SettingsAPI {
                     $updated['user_id'] = $updated['id'];
                 }
             }
+
+            if ($this->table === 'users' && $id && is_array($updated)) {
+                $existingBarcode = trim((string) ($updated['login_barcode'] ?? ''));
+                if ($existingBarcode === '') {
+                    $barcodeVal = $this->ensureUserLoginBarcodeValue((int) $id);
+                    if ($barcodeVal !== null && $barcodeVal !== '') {
+                        $updated['login_barcode'] = $barcodeVal;
+                    }
+                }
+            }
             
             // Log history BEFORE sending response (to ensure it completes)
             $this->logHistory('update', (string)$id, $oldData, $updated);

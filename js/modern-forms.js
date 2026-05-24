@@ -4350,6 +4350,30 @@ class ModernForms {
                         this.renderTable();
                     }
                 }
+
+                if (this.currentTable === 'users' && this.currentId) {
+                    const uid = parseInt(this.currentId, 10);
+                    const hasBarcode = response.updated?.login_barcode || response.created?.login_barcode;
+                    if (uid > 0 && !hasBarcode) {
+                        try {
+                            const bcRes = await this.apiCall('ensure_login_barcode', 'users', { id: uid });
+                            const barcode = bcRes?.data?.barcode ? String(bcRes.data.barcode).trim() : '';
+                            if (barcode) {
+                                const patch = { login_barcode: barcode };
+                                const idx = this.data.findIndex(item => (item.id || item.user_id) == uid);
+                                if (idx >= 0) {
+                                    this.data[idx] = { ...this.data[idx], ...patch };
+                                    this.renderTable();
+                                }
+                                if (response.updated) {
+                                    response.updated.login_barcode = barcode;
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('ensure_login_barcode after save:', e);
+                        }
+                    }
+                }
                 
                 // Show notification
                 this.showNotification(response.message || 'Saved successfully', 'success');
@@ -6472,7 +6496,7 @@ class ModernForms {
                     if (isControl) {
                         return [
                             { name: 'name', label: 'Username', type: 'text', required: true, placeholder: 'Enter username' },
-                            { name: 'login_barcode', label: 'Barcode (mobile login)', type: 'text', required: false, placeholder: 'Type or paste barcode value' },
+                            { name: 'login_barcode', label: 'Barcode (mobile login)', type: 'text', required: false, placeholder: 'Auto-generated on save if empty', help: 'Leave blank to create R… reference code on save. Use Access for the scannable workforce QR.' },
                             { name: 'password', label: 'Password', type: 'password', required: true, placeholder: 'Enter password (required for new user)' },
                             { name: 'status', label: 'Status', type: 'select', options: [
                                 { value: 'active', label: 'Active' },
@@ -6482,7 +6506,7 @@ class ModernForms {
                     }
                     return [
                         { name: 'name', label: 'Username', type: 'text', required: true, placeholder: 'Enter username' },
-                        { name: 'login_barcode', label: 'Barcode (mobile login)', type: 'text', required: false, placeholder: 'Set barcode for this user (scan at login)' },
+                        { name: 'login_barcode', label: 'Barcode (mobile login)', type: 'text', required: false, placeholder: 'Auto-generated on save if empty', help: 'Leave blank to create R… reference code on save. Use Access for the scannable workforce QR.' },
                         { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'Enter email address' },
                         { name: 'password', label: 'Password', type: 'password', required: false, placeholder: 'Enter password (leave blank to keep current)' },
                         { name: 'phone', label: 'Phone', type: 'tel', placeholder: 'Enter phone number' },
