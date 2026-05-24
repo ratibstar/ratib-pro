@@ -130,9 +130,13 @@
 }
 
 .ratib-nav__brand-block--animated {
-  max-width: min(20.5rem, 40vw);
+  max-width: min(14.5rem, 34vw);
   min-width: 0;
   flex: 0 1 auto;
+}
+
+.ratib-brand-full--nav-stack .ratib-brand-full__tagline {
+  display: none;
 }
 
 .ratib-brand-full--nav-stack .ratib-brand-letter {
@@ -591,7 +595,7 @@ body.ratib-about-page .ratib-about-jump {
 @media (max-width: 1099px) {
   .ratib-nav__brand-block--animated {
     min-width: 0;
-    max-width: min(18.5rem, 56vw);
+    max-width: min(13.5rem, 52vw);
   }
 
   .ratib-mega-nav__trigger-label,

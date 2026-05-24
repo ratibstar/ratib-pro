@@ -136,7 +136,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                     <img src="<?php echo htmlspecialchars($baseUrl . '/assets/ratib-logo.svg?v=6'); ?>" alt="<?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?>" width="120" height="36" class="ratib-nav__brand-logo">
                     <?php } ?>
                     <?php if ($ratibHideBrandText) { ?>
-                    <?php ratib_render_brand_full_title(['with_company' => true, 'variant' => 'nav']); ?>
+                    <?php ratib_render_brand_full_title(['with_company' => true, 'variant' => 'nav', 'show_tagline' => false]); ?>
                     <?php } else { ?>
                     <span class="ratib-nav__brand-text"><?php echo htmlspecialchars($ratibBrandName, ENT_QUOTES, 'UTF-8'); ?></span>
                     <?php } ?>
