@@ -97,6 +97,7 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
     $ratibMarketingFocusedCssQuery = (int) (@filemtime($ratibMarketingFocusedCssPath) ?: time()) . '-' . $ratibHomeUiRev;
     ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-marketing-focused.css?v=<?php echo htmlspecialchars($ratibMarketingFocusedCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/chat-widget.css">
     <?php if (function_exists('ratib_marketing_emit_focused_rescue_css')) {
         ratib_marketing_emit_focused_rescue_css();
     } ?>
@@ -180,8 +181,8 @@ $ratibProfileGuardQAbout = (string) (int) (@filemtime($ratibProfileGuardJsAbout)
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/about-enterprise.js?v=<?php echo htmlspecialchars($ratibAboutJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-marketing-focused.js?v=<?php echo htmlspecialchars($ratibMarketingFocusedJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <?php
-require_once __DIR__ . '/../includes/ratib-page-stamp.php';
-ratib_emit_page_stamp('profile');
+$ratibPublicChatSkipCss = true;
+require_once __DIR__ . '/../includes/chat-widget-public-footer.php';
 ?>
 </body>
 </html>

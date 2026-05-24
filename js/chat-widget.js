@@ -28,10 +28,13 @@
     /** Persists across tab close so escalate can merge into one agency board in control panel */
     const SUPPORT_BOARD_TOKEN_KEY = 'ratibSupportBoardToken';
     /** Bump when a forced storage wipe is needed for all users */
-    const CHAT_PURGE_KEY = 'chatWidgetHistoryPurgeV4';
-    /** Live-support transcript on this browser: drop if idle longer than this (ms). */
-    const LIVE_CHAT_HISTORY_MAX_MS = 7 * 24 * 60 * 60 * 1000;
-    const LIVE_CHAT_MAX_STORED = 25;
+    const CHAT_PURGE_KEY = 'chatWidgetHistoryPurgeV5';
+    /** General + live transcript on this browser (ms). */
+    const CHAT_HISTORY_MAX_MS = 7 * 24 * 60 * 60 * 1000;
+    const CHAT_GENERAL_MAX_STORED = 50;
+    /** Live-support transcript cap (same store as general). */
+    const LIVE_CHAT_HISTORY_MAX_MS = CHAT_HISTORY_MAX_MS;
+    const LIVE_CHAT_MAX_STORED = CHAT_GENERAL_MAX_STORED;
     /** Shown right after visitor starts live support (chip or typed phrase). */
     const LIVE_SUPPORT_ACK_MESSAGE = 'Thank you for reaching out — our team will contact you soon.\n\nStay on this chat; when we reply, it will show up here. You can add more details below anytime.';
     /** After another tap on Talk to support while already connected (message was sent to control panel). */
@@ -234,12 +237,26 @@
 
     function getWelcomeMessageText() {
         const hc = absoluteChatPageHref('pages/help-center.php');
-        var msg = 'Hi 👋 Ask me here in chat anytime — quick topics give fast tips, or type your own question.\n' +
-            'Help Center is optional if you want long tutorials: [Help Center →](' + hc + ') · Live agent: `Talk to support`';
+        var msg;
+        if (isPublicSiteChat()) {
+            msg = 'Hi 👋 Ask about **register**, **domains**, **pricing**, **demo/tour**, or **sign in**.\n' +
+                'Your chat history is saved on this browser. Live agent: `Talk to support` (our control panel team).\n' +
+                'Optional long guides: [Help Center →](' + hc + ')';
+        } else {
+            msg = 'Hi 👋 Ask me here in chat anytime — quick topics give fast tips, or type your own question.\n' +
+                'Help Center is optional if you want long tutorials: [Help Center →](' + hc + ') · Live agent: `Talk to support`';
+        }
         if (chatWidget.escalated && chatWidget.chatId && chatWidget.chatToken) {
             msg += '\n\nLive support is on — type below; new agent messages still show up here.';
         }
         return msg;
+    }
+
+    function isPublicSiteChat() {
+        if (window.RATIB_CHAT_CONTEXT === 'public') return true;
+        var p = String(window.location.pathname || '').toLowerCase();
+        return /\/(home|profile|architecture|security-compliance|procurement-legal|enterprise-trust|government-workforce-operations)(\/|$)/.test(p)
+            || /\/pages\/(home|about)\.php$/i.test(p);
     }
 
     function hasOpenEscalationSession() {
@@ -382,7 +399,25 @@
     ];
 
     function getKnowledgeBase() {
-        return knowledgeBaseEN;
+        var base = knowledgeBaseEN.slice();
+        if (isPublicSiteChat() && Array.isArray(window.RATIB_PUBLIC_CHAT_KB) && window.RATIB_PUBLIC_CHAT_KB.length) {
+            return window.RATIB_PUBLIC_CHAT_KB.concat(base);
+        }
+        return base;
+    }
+
+    /** Quick topics on public marketing pages (register, domains, …). */
+    const PUBLIC_QUICK_TOPICS = [
+        { id: 'public_register', label: 'Register', publicTopic: 'register' },
+        { id: 'public_domains', label: 'Domains', publicTopic: 'domains' },
+        { id: 'public_pricing', label: 'Pricing', publicTopic: 'pricing' },
+        { id: 'public_demo', label: 'Demo & tour', publicTopic: 'demo' },
+        { id: 'public_login', label: 'Sign in', publicTopic: 'login' },
+        { id: 'live_support', label: 'Talk to support', escalate: true }
+    ];
+
+    function getActiveQuickTopics() {
+        return isPublicSiteChat() ? PUBLIC_QUICK_TOPICS : QUICK_TOPICS;
     }
 
     /**
@@ -440,17 +475,35 @@
         return null;
     }
 
+    function knowledgeAnswerByPublicTopic(publicTopic) {
+        var map = {
+            register: 'public_register',
+            domains: 'public_domains',
+            pricing: 'public_pricing',
+            demo: 'public_demo',
+            login: 'public_login'
+        };
+        var cat = map[String(publicTopic || '').toLowerCase()];
+        if (!cat) return null;
+        var kb = getKnowledgeBase();
+        for (var i = 0; i < kb.length; i++) {
+            if (kb[i].category === cat) return kb[i].answer;
+        }
+        return null;
+    }
+
     /** Typed message equals a chip label (e.g. "Workers") — treat like a chip tap. */
     function matchQuickTopicFromText(raw) {
         var t = String(raw || '').trim().toLowerCase();
         if (!t) return null;
+        var active = getActiveQuickTopics();
         if (t === 'partner agencies' || t === 'partner-agencies' || t === 'partner_agencies' || (t.indexOf('partner') !== -1 && t.indexOf('agenc') !== -1)) {
-            for (var p = 0; p < QUICK_TOPICS.length; p++) {
-                if (QUICK_TOPICS[p].id === 'partner_agencies') return QUICK_TOPICS[p];
+            for (var p = 0; p < active.length; p++) {
+                if (active[p].id === 'partner_agencies') return active[p];
             }
         }
-        for (var i = 0; i < QUICK_TOPICS.length; i++) {
-            var q = QUICK_TOPICS[i];
+        for (var i = 0; i < active.length; i++) {
+            var q = active[i];
             if (q.escalate) continue;
             if (String(q.label).trim().toLowerCase() === t) return q;
             if (String(q.id).replace(/_/g, ' ') === t) return q;
@@ -574,7 +627,7 @@
         var row = document.createElement('div');
         row.className = 'chat-widget-quick-picks-row';
         var rowPrimary = null;
-        QUICK_TOPICS.forEach(function(topic) {
+        getActiveQuickTopics().forEach(function(topic) {
             var btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'chat-widget-quick-pick';
@@ -667,8 +720,16 @@
         return body + footer;
     }
 
-    /** Quick topic taps: always short in-chat text; no long HC paste. */
+    /** Quick topic taps: short in-chat text; public chips use CMS-backed KB. */
     function deliverQuickTopicHelpResponse(topic) {
+        if (topic && topic.publicTopic) {
+            var pubAns = knowledgeAnswerByPublicTopic(topic.publicTopic);
+            if (pubAns) {
+                addMessage('support', pubAns);
+                updateQuickPicksVisibility();
+                return;
+            }
+        }
         var msg = buildQuickTopicShortMessage(topic);
         if (msg) {
             addMessage('support', msg);
@@ -823,6 +884,17 @@
         if (text.indexOf('individual report') !== -1) return 'individual_reports';
         if (text.indexOf('help center') !== -1 || text.indexOf('learning center') !== -1) return 'help_center';
 
+        if (isPublicSiteChat()) {
+            if (/\b(domain|domains|hostname|subdomain)\b/.test(text)) return 'public_domains';
+            if (/\b(register|registration|sign up|signup|onboard)\b/.test(text)) return 'public_register';
+            if (/\b(price|pricing|plan|gold|platinum|cost|fee)\b/.test(text)) return 'public_pricing';
+            if (/\b(demo|walkthrough|tour|video)\b/.test(text)) return 'public_demo';
+            if (/\b(partner login|partner portal)\b/.test(text)) return 'public_partner';
+            if (/\b(architecture|infrastructure|multi-tenant)\b/.test(text)) return 'public_architecture';
+            if (/\b(security|compliance|audit)\b/.test(text)) return 'public_security';
+            if (/\b(procurement|legal|rfp)\b/.test(text)) return 'public_procurement';
+        }
+
         return null;
     }
 
@@ -972,16 +1044,15 @@
     function toggleChat() {
         chatWidget.isOpen = !chatWidget.isOpen;
         if (chatWidget.isOpen) {
-            hardResetAssistantThreadToWelcome();
             chatContainer.classList.add('active');
             if (chatInput && !chatInput.disabled) {
                 chatInput.focus();
             }
             chatWidget.unreadCount = 0;
             updateUnreadBadge();
+            positionQuickPicksInThread();
         } else {
             chatContainer.classList.remove('active');
-            hardResetAssistantThreadToWelcome();
         }
     }
 
@@ -989,7 +1060,6 @@
     function closeChat() {
         chatWidget.isOpen = false;
         chatContainer.classList.remove('active');
-        hardResetAssistantThreadToWelcome();
     }
 
     // Get API base URL (must match server base path, e.g. '' or '/ratib')
@@ -1068,6 +1138,20 @@
                 return line('Open Reports', 'reports.php');
             case 'partner_agencies':
                 return line('Open Partner Agencies', 'partner-agencies.php');
+            case 'public_domains':
+            case 'public_register':
+            case 'public_pricing':
+            case 'public_demo':
+            case 'public_login':
+            case 'public_partner':
+            case 'public_architecture':
+            case 'public_security':
+            case 'public_procurement':
+            case 'public_about':
+            case 'public_contact':
+            case 'public_hosting':
+            case 'public_payment':
+                return '';
             default:
                 return '';
         }
@@ -1608,8 +1692,21 @@
 
         const guidedId = resolveGuidedIntent(qn);
         if (guidedId) {
+            if (String(guidedId).indexOf('public_') === 0) {
+                var pubKb = matchKnowledgeBaseItem(qn);
+                if (pubKb && String(pubKb.category || '').indexOf('public_') === 0) {
+                    return pubKb.answer;
+                }
+            }
             const g = intentReply(guidedId);
             if (g) return g;
+        }
+
+        if (isPublicSiteChat()) {
+            const pubItem = matchKnowledgeBaseItem(qn);
+            if (pubItem && String(pubItem.category || '').indexOf('public_') === 0) {
+                return pubItem.answer;
+            }
         }
 
         const intentId = detectIntent(qn);
@@ -1619,6 +1716,9 @@
         }
 
         return 'I\'m right here in chat — try a quick topic above or ask again in your own words.\n' +
+            (isPublicSiteChat()
+                ? 'Try: register, domains, pricing, demo, or sign in.\n'
+                : '') +
             'Optional longer guides: [Help Center →](' + absoluteChatPageHref('pages/help-center.php') + ')';
     }
 
@@ -1782,6 +1882,9 @@
 
     // Update Chat Header based on language
     function updateChatHeader() {
+        var headerRoot = document.querySelector('.chat-widget-header[data-chat-header-lock="1"]');
+        if (headerRoot) return;
+
         const lang = getCurrentLanguage();
         const headerText = document.querySelector('.chat-widget-header-text h3');
         const onlineText = document.querySelector('.chat-widget-header-text p.online');
@@ -1814,11 +1917,10 @@
         return `${hours}:${minutes}`;
     }
 
-    // Save Messages to LocalStorage (live support only — AI replies are not persisted)
+    // Save Messages to LocalStorage (general + live support — persists across visits)
     function saveMessages() {
-        if (!chatWidget.escalated) return;
         try {
-            localStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify(chatWidget.messages.slice(-LIVE_CHAT_MAX_STORED)));
+            localStorage.setItem(CHAT_MESSAGES_KEY, JSON.stringify(chatWidget.messages.slice(-CHAT_GENERAL_MAX_STORED)));
         } catch (e) {
             // Silent fail: localStorage may be disabled or full
         }
@@ -1827,14 +1929,11 @@
     // Load Messages from LocalStorage
     function loadSavedMessages() {
         if (!chatMessages) return;
-        if (!hasOpenEscalationSession()) {
-            try { localStorage.removeItem(CHAT_MESSAGES_KEY); } catch (e) {}
-            return;
-        }
         try {
             const saved = localStorage.getItem(CHAT_MESSAGES_KEY);
-            if (saved) {
+            if (!saved) return;
                 const messages = JSON.parse(saved);
+            if (!Array.isArray(messages) || messages.length === 0) return;
                 var newestTs = 0;
                 for (var mi = 0; mi < messages.length; mi++) {
                     if (messages[mi].timestamp) {
@@ -1842,11 +1941,11 @@
                         if (!isNaN(tms)) newestTs = Math.max(newestTs, tms);
                     }
                 }
-                if (newestTs > 0 && (Date.now() - newestTs) > LIVE_CHAT_HISTORY_MAX_MS) {
+                if (newestTs > 0 && (Date.now() - newestTs) > CHAT_HISTORY_MAX_MS) {
                     try { localStorage.removeItem(CHAT_MESSAGES_KEY); } catch (e2) {}
                     return;
                 }
-                chatWidget.messages = messages.slice(-LIVE_CHAT_MAX_STORED);
+            chatWidget.messages = messages.slice(-CHAT_GENERAL_MAX_STORED);
                 
                 // Render messages (clears any prior nodes, including stale quick-picks ref)
                 chatMessages.innerHTML = '';
@@ -1874,7 +1973,6 @@
                 });
 
                 chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
         } catch (e) {
             // Silent fail: localStorage may be disabled or corrupted
         }

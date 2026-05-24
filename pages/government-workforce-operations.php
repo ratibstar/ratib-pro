@@ -73,6 +73,6 @@ $ratibTokensCssQuery = (int) (@filemtime(__DIR__ . '/../css/rateb-enterprise-tok
     </section>
 </main>
 <?php include __DIR__ . '/../includes/ratib-home-public-footer.php'; ?>
-<?php require_once __DIR__ . '/../includes/ratib-page-stamp.php'; ratib_emit_page_stamp('government-workforce-operations'); ?>
+<?php require_once __DIR__ . '/../includes/chat-widget-public-footer.php'; ?>
 </body>
 </html>

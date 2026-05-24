@@ -1279,7 +1279,7 @@ ratib_emit_profile_nav_guard($baseUrl);
     <!-- Chat Widget - Auto-answer support -->
     <button class="chat-widget-button" id="chatWidgetButton" aria-label="Open Chat"><i class="fas fa-comments"></i></button>
     <div class="chat-widget-container" id="chatWidgetContainer">
-        <div class="chat-widget-header">
+        <div class="chat-widget-header" data-chat-header-lock="1">
             <div class="chat-widget-header-info">
                 <div class="chat-widget-header-avatar" aria-hidden="true"><i class="fas fa-wand-magic-sparkles"></i></div>
                 <div class="chat-widget-header-text"><h3><?php echo htmlspecialchars($ratibHome['home.chat.title'] ?? '', ENT_QUOTES, 'UTF-8'); ?></h3><p class="online"><?php echo htmlspecialchars($ratibHome['home.chat.subtitle'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p></div>
@@ -1292,7 +1292,7 @@ ratib_emit_profile_nav_guard($baseUrl);
         <div class="chat-widget-messages" id="chatWidgetMessages"></div>
         <div class="chat-widget-input-area">
             <div class="chat-widget-input-wrapper">
-                <textarea class="chat-widget-input" id="chatWidgetInput" placeholder="Type your message..." rows="1"></textarea>
+                <textarea class="chat-widget-input" id="chatWidgetInput" placeholder="Ask about register, domains, pricing… or: I need to talk to support" rows="1" data-chat-widget-placeholder="Ask about register, domains, pricing… or: I need to talk to support"></textarea>
                 <button class="chat-widget-send" id="chatWidgetSend" aria-label="Send Message"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
@@ -1301,11 +1301,21 @@ ratib_emit_profile_nav_guard($baseUrl);
     <?php $ratibPaymentJsVer = (int) (@filemtime(dirname(__DIR__) . DIRECTORY_SEPARATOR . 'js' . DIRECTORY_SEPARATOR . 'payment.js') ?: time()); ?>
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/payment.js?v=<?php echo $ratibPaymentJsVer; ?>"></script>
     <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/help-center/help-center-builtin-content.js"></script>
-    <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/chat-widget.js"></script>
-<?php
-require_once __DIR__ . '/../includes/ratib-page-stamp.php';
-ratib_emit_page_stamp('home');
-?>
+    <?php
+    $ratibChatWidgetJsPath = dirname(__DIR__) . '/js/chat-widget.js';
+    clearstatcache(true, $ratibChatWidgetJsPath);
+    $ratibChatWidgetJsQ = (string) (int) (@filemtime($ratibChatWidgetJsPath) ?: time());
+    ?>
+    <script>window.RATIB_CHAT_CONTEXT = 'public';</script>
+    <?php
+    require_once __DIR__ . '/../includes/ratib-public-chat-kb.php';
+    $ratibPublicChatKbJson = json_encode(
+        ratib_public_chat_kb_entries($baseUrl, is_array($ratibHome ?? null) ? $ratibHome : []),
+        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
+    );
+    ?>
+    <script>window.RATIB_PUBLIC_CHAT_KB = <?php echo $ratibPublicChatKbJson; ?>;</script>
+    <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/chat-widget.js?v=<?php echo htmlspecialchars($ratibChatWidgetJsQ, ENT_QUOTES, 'UTF-8'); ?>"></script>
 </body>
 </html>
 
