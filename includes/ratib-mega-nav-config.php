@@ -3,8 +3,8 @@
  * Mega navigation structure for public home chrome (RATEB enterprise infrastructure).
  * URLs use $baseUrl and $navPrefix (home hash prefix) — resolved at render time.
  *
- * Top row: Platform · Solutions · Pricing · Partners · Demo · Contact (+ Sign In).
- * Secondary concepts (domains, hosting, security detail) live inside mega panels.
+ * Top row: Platform · Solutions · Domains · Pricing · Partners · Company · Demo · Contact (+ Sign In).
+ * Profile pages add a second row (banner + on-page jump) below this header only.
  *
  * @return list<array<string,mixed>>
  */
@@ -57,6 +57,30 @@ function ratib_mega_nav_config(): array
                         ['icon' => 'fa-globe', 'title' => 'Domains & edges', 'desc' => 'Per-agency domain edges and marketplace catalog.', 'href_key' => 'marketplace_domains'],
                         ['icon' => 'fa-landmark', 'title' => 'Government programs', 'desc' => 'Ministries, labor programs, and regulated corridors.', 'href_key' => 'government_workforce'],
                         ['icon' => 'fa-circle-question', 'title' => 'Help center', 'desc' => 'Support, documentation, and contact.', 'href_key' => 'help_center'],
+                    ],
+                ],
+            ],
+        ],
+        [
+            'type' => 'mega',
+            'id' => 'domains',
+            'label' => 'Domains',
+            'panel_id' => 'ratib-mega-panel-domains',
+            'columns' => [
+                [
+                    'heading' => 'Find & manage',
+                    'items' => [
+                        ['icon' => 'fa-magnifying-glass', 'title' => 'Search domain names', 'desc' => 'Availability search and catalog.', 'href_key' => 'marketplace_domains'],
+                        ['icon' => 'fa-right-left', 'title' => 'Transfer domains', 'desc' => 'Move domains to RATEB.', 'href_key' => 'contact'],
+                        ['icon' => 'fa-layer-group', 'title' => 'Domain extensions', 'desc' => 'Explore TLD options.', 'href_key' => 'marketplace_domains'],
+                        ['icon' => 'fa-id-card', 'title' => 'Availability check', 'desc' => 'Live registrar-backed lookup.', 'href_key' => 'domain_search'],
+                    ],
+                ],
+                [
+                    'heading' => 'Investing & tools',
+                    'items' => [
+                        ['icon' => 'fa-gem', 'title' => 'Premium domains', 'desc' => 'Curated marketplace inventory.', 'href_key' => 'marketplace_domains'],
+                        ['icon' => 'fa-wand-magic-sparkles', 'title' => 'Domain generator', 'desc' => 'AI-assisted naming ideas.', 'href_key' => 'features'],
                     ],
                 ],
             ],

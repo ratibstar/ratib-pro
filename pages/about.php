@@ -129,9 +129,39 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
 include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
 require_once __DIR__ . '/../includes/ratib-profile-nav-guard.php';
 ratib_emit_profile_nav_guard($baseUrl);
+$ratibMarketingHomeUrl = ratib_public_marketing_home_url($baseUrl);
 ?>
 
+<div class="ratib-profile-distinct-banner" role="status" data-ratib-profile-distinct="1">
+    <div class="ratib-about-container ratib-profile-distinct-banner__inner">
+        <span class="ratib-profile-distinct-banner__badge" aria-hidden="true">Company profile</span>
+        <p class="ratib-profile-distinct-banner__text">Full <strong>RATEB Company</strong> profile — platform identity, contact, mission, and services below.</p>
+        <a class="ratib-profile-distinct-banner__link" href="<?php echo htmlspecialchars($ratibMarketingHomeUrl, ENT_QUOTES, 'UTF-8'); ?>">Marketing home →</a>
+    </div>
+</div>
+
 <main class="ratib-about-main" id="main">
+    <nav class="ratib-about-jump" aria-label="On this page">
+        <div class="ratib-about-container ratib-about-jump__inner">
+            <a href="#company-profile">Company</a>
+            <?php if (!ratib_public_marketing_is_focused()) { ?>
+            <a href="#platform-overview">Platform</a>
+            <a href="#what-is-ratib">Capabilities</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#government-oversight">Government</a>
+            <a href="#operational-proof">Operational proof</a>
+            <a href="#operations">Operations</a>
+            <a href="#telemetry">Telemetry</a>
+            <a href="#governance">Governance</a>
+            <a href="#finance">Finance</a>
+            <a href="#corridors">Corridors</a>
+            <?php } else { ?>
+            <a href="<?php echo htmlspecialchars(ratib_public_marketing_home_url($baseUrl, [], '#programs'), ENT_QUOTES, 'UTF-8'); ?>">Pricing</a>
+            <a href="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/architecture/', ENT_QUOTES, 'UTF-8'); ?>">Architecture</a>
+            <?php } ?>
+            <a href="#contact-cta">Contact</a>
+        </div>
+    </nav>
     <?php ratib_about_render_sections($about, $baseUrl); ?>
 
     <?php require __DIR__ . '/../includes/ratib-gallery-lightbox-markup.php'; ?>

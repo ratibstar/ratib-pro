@@ -19,13 +19,16 @@ function ratib_emit_nav_brand_critical_css(): void
         return;
     }
     $done = true;
-    echo '<style id="ratib-nav-brand-critical-v4-calm">';
+    echo '<style id="ratib-nav-brand-critical-v5-brand-colors">';
     echo '.ratib-nav__brand--animated-title img,.ratib-nav__brand--animated-title .ratib-nav__brand-logo,';
     echo '.ratib-nav__brand--animated-title .ratib-nav__brand-text,';
     echo '.ratib-nav__brand:has(.ratib-brand-full) img,.ratib-nav__brand:has(.ratib-brand-full) .ratib-nav__brand-text{display:none!important;width:0!important;height:0!important}';
     echo '.ratib-nav__brand-block--animated{display:flex!important;flex-direction:column!important;align-items:flex-start!important;';
-    echo 'gap:.35rem!important;max-width:min(22rem,48vw)!important;padding:0!important;';
-    echo 'border:none!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}';
+    echo 'gap:.4rem!important;max-width:min(24rem,52vw)!important;padding:.5rem .75rem .45rem .65rem!important;';
+    echo 'border-radius:14px!important;border:1px solid rgba(167,139,250,.38)!important;';
+    echo 'border-left:4px solid rgba(236,72,153,.75)!important;';
+    echo 'background:linear-gradient(145deg,rgba(15,23,42,.92),rgba(76,29,149,.3))!important;';
+    echo 'box-shadow:0 8px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.06)!important}';
     echo '.ratib-nav__brand--animated-title{display:block!important;width:100%!important}';
     echo '.ratib-brand-full--nav-stack{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:.3rem!important;width:100%!important}';
     echo '.ratib-brand-full--nav-stack .ratib-brand-full__head{display:inline-flex!important;flex-wrap:nowrap!important;align-items:baseline!important;gap:.45em!important}';
@@ -34,11 +37,7 @@ function ratib_emit_nav_brand_critical_css(): void
     echo '.ratib-brand-full--nav-stack .ratib-brand-full__tagline{display:flex!important;flex-direction:column!important;gap:.14rem!important;width:100%!important}';
     echo '.ratib-brand-full--nav-stack .ratib-brand-full__tagline-row{display:inline-flex!important;flex-wrap:wrap!important;gap:.22em .34em!important;';
     echo 'font-size:clamp(.64rem,1.2vw,.8rem)!important;font-weight:600!important;line-height:1.32!important}';
-    echo '.ratib-brand-letter,.ratib-brand-letter--r,.ratib-brand-letter--a,.ratib-brand-letter--t,.ratib-brand-letter--e,.ratib-brand-letter--b{';
-    echo 'color:#f0f2f5!important;background:none!important;-webkit-background-clip:unset!important;background-clip:unset!important;animation:none!important}';
-    echo '.ratib-brand-full__word,.ratib-brand-full__word--company,.ratib-brand-full__word--w1,.ratib-brand-full__word--w2,.ratib-brand-full__word--w3,.ratib-brand-full__word--w4,.ratib-brand-full__word--w5,.ratib-brand-full__word--amp{';
-    echo 'color:#b8c2d0!important;background:none!important;-webkit-background-clip:unset!important;animation:none!important}';
-    echo '.ratib-nav__brand-profile{display:none!important}';
+    echo '.ratib-nav__brand-block--animated .ratib-nav__brand-profile{margin-left:0!important;font-size:.7rem!important;padding:.24rem .65rem!important}';
     echo '.ratib-nav__brand:has(.ratib-brand-full--nav):not(.ratib-nav__brand--animated-title) img{display:none!important}';
     echo '.ratib-nav__brand-block:has(.ratib-brand-full){display:flex!important;flex-direction:column!important;align-items:flex-start!important}';
     echo '.ratib-public-header-pin{position:sticky!important;top:0!important;left:0!important;right:0!important;z-index:200!important;width:100%!important;max-width:100vw!important}';
