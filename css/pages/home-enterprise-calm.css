@@ -147,76 +147,7 @@ body.ratib-about-page {
   }
 }
 
-/* Brand box — compact; acronym stays in hero, not header */
-.ratib-nav__brand-block--animated,
-.ratib-nav__brand-block--row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  flex-wrap: nowrap;
-  gap: 0.45rem;
-  max-width: min(17.5rem, 42vw);
-  min-width: 0;
-  flex: 0 1 auto;
-  padding: 0.36rem 0.5rem 0.36rem 0.46rem;
-  border-color: rgba(167, 139, 250, 0.22);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.ratib-nav__brand-block--animated .ratib-brand-full__tagline,
-.ratib-nav__brand-block--animated .ratib-brand-full__word--w1,
-.ratib-nav__brand-block--animated .ratib-brand-full__word--w2,
-.ratib-nav__brand-block--animated .ratib-brand-full__word--w3,
-.ratib-nav__brand-block--animated .ratib-brand-full__word--w4,
-.ratib-nav__brand-block--animated .ratib-brand-full__word--w5,
-.ratib-nav__brand-block--animated .ratib-brand-full__word--amp {
-  display: none !important;
-}
-
-.ratib-nav__brand-block--animated .ratib-brand-letter {
-  animation: none;
-  filter: saturate(0.92);
-}
-
-.ratib-nav__brand-block--animated .ratib-brand-full__word--company {
-  animation: none;
-  color: var(--r-text-soft);
-  background: none;
-  -webkit-text-fill-color: currentColor;
-}
-
-.ratib-nav__brand-block--animated .ratib-nav__brand--animated-title {
-  width: auto;
-  flex: 0 1 auto;
-}
-
-.ratib-nav__brand-block--animated .ratib-nav__brand-profile {
-  flex-shrink: 0;
-  align-self: center;
-  margin: 0;
-  font-size: 0.62rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  padding: 0.16rem 0.44rem;
-  color: var(--r-muted);
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: none;
-}
-
-.ratib-nav__brand-block--animated .ratib-nav__brand-profile:hover,
-.ratib-nav__brand-block--animated .ratib-nav__brand-profile:focus-visible {
-  color: var(--r-text-soft);
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.14);
-}
-
-.ratib-nav__brand-block--animated .ratib-nav__brand-profile.is-current {
-  color: var(--r-text-soft);
-  background: rgba(139, 126, 200, 0.12);
-  border-color: rgba(139, 126, 200, 0.28);
-  box-shadow: none;
-}
+/* Brand row: see css/pages/ratib-public-nav-brand.css (single source of truth) */
 
 /* ── Navigation: one color system, one accent when open ── */
 .ratib-mega-nav__trigger,
@@ -683,10 +614,6 @@ body.ratib-about-page .ratib-about-gradient {
 }
 
 @media (max-width: 1099px) {
-  .ratib-nav__brand-block--animated {
-    max-width: min(13.5rem, 52vw);
-  }
-
   .ratib-nav-shell .ratib-nav__menu.is-open {
     background: rgba(8, 12, 20, 0.98);
     border: 1px solid var(--r-border);

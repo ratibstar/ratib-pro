@@ -187,6 +187,12 @@ clearstatcache(true, $ratibMegaNavCssPath);
 $ratibMegaNavCssTs = (int) (@filemtime($ratibMegaNavCssPath) ?: time());
 $ratibMegaNavCssQuery = $ratibMegaNavCssTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
 
+$ratibPublicNavBrandCssPath = __DIR__ . '/../css/pages/ratib-public-nav-brand.css';
+clearstatcache(true, $ratibPublicNavBrandCssPath);
+$ratibPublicNavBrandCssTs = (int) (@filemtime($ratibPublicNavBrandCssPath) ?: time());
+$ratibPublicNavBrandCssQuery = $ratibPublicNavBrandCssTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
+$GLOBALS['ratibPublicNavBrandCssQuery'] = $ratibPublicNavBrandCssQuery;
+
 $ratibEnterpriseCalmCssPath = __DIR__ . '/../css/pages/home-enterprise-calm.css';
 clearstatcache(true, $ratibEnterpriseCalmCssPath);
 $ratibEnterpriseCalmCssTs = (int) (@filemtime($ratibEnterpriseCalmCssPath) ?: time());
@@ -207,6 +213,7 @@ $ratibChromeNavPathsForBundle = [
     __DIR__ . '/ratib-home-public-chrome-top.php',
     __DIR__ . '/ratib-brand-full-title.php',
     __DIR__ . '/../css/pages/home-public.css',
+    __DIR__ . '/../css/pages/ratib-public-nav-brand.css',
     __DIR__ . '/../css/pages/home-enterprise-calm.css',
     __DIR__ . '/../js/pages/home-page.js',
     __DIR__ . '/../js/pages/ratib-public-nav-ia-fix.js',
@@ -227,6 +234,7 @@ $ratibBrandNavCssPath = __DIR__ . '/ratib-brand-full-title.php';
 clearstatcache(true, $ratibBrandNavCssPath);
 $ratibHomePublicCssQuery .= '-bn' . (int) (@filemtime($ratibBrandNavCssPath) ?: time());
 $ratibMegaNavCssQuery .= '-c' . $ratibChromeBundleHash;
+$ratibPublicNavBrandCssQuery .= '-c' . $ratibChromeBundleHash;
 $ratibEnterpriseCalmCssQuery .= '-c' . $ratibChromeBundleHash;
 $ratibMegaNavJsQuery .= '-c' . $ratibChromeBundleHash;
 

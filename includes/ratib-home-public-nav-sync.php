@@ -24,6 +24,8 @@ function ratib_emit_nav_brand_critical_css(): void
     echo '.ratib-nav__brand--animated-title .ratib-nav__brand-text,';
     echo '.ratib-nav__brand:has(.ratib-brand-full) img,.ratib-nav__brand:has(.ratib-brand-full) .ratib-nav__brand-text{display:none!important;width:0!important;height:0!important}';
     echo '.ratib-nav__brand-block--animated{display:flex!important;flex-direction:row!important;align-items:center!important;flex-wrap:nowrap!important;';
+    echo '.ratib-nav__brand-block--animated>a.ratib-nav__brand{order:1!important;width:auto!important;flex:0 1 auto!important}';
+    echo '.ratib-nav__brand-block--animated>.ratib-nav__brand-profile{order:2!important;flex-shrink:0!important}';
     echo 'gap:.45rem!important;max-width:min(17.5rem,42vw)!important;min-width:0!important;padding:.36rem .5rem .36rem .46rem!important;';
     echo 'border-radius:14px!important;border:1px solid rgba(167,139,250,.38)!important;';
     echo 'border-left:4px solid rgba(236,72,153,.75)!important;';

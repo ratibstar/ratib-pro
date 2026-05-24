@@ -271,8 +271,16 @@
             brand.classList.add('ratib-nav__brand--animated-title');
             var blk = brand.closest('.ratib-nav__brand-block');
             if (blk) {
-                blk.classList.add('ratib-nav__brand-block--animated');
-                blk.setAttribute('data-ratib-brand-nav', 'stack-v3');
+                blk.classList.add('ratib-nav__brand-block--animated', 'ratib-nav__brand-block--row');
+                blk.setAttribute('data-ratib-brand-nav', 'row-v1');
+                blk.style.display = 'flex';
+                blk.style.flexDirection = 'row';
+                blk.style.alignItems = 'center';
+                blk.style.flexWrap = 'nowrap';
+                var prof = blk.querySelector('.ratib-nav__brand-profile');
+                if (prof && brand && prof.previousElementSibling !== brand) {
+                    brand.insertAdjacentElement('afterend', prof);
+                }
             }
             brand.querySelectorAll('img, .ratib-nav__brand-logo, .ratib-nav__brand-text').forEach(function (el) {
                 el.remove();

@@ -485,6 +485,7 @@ $ratibWalkthroughHref = $ratibArchSectionsOk
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/operational-proof.css?v=<?php echo htmlspecialchars($ratibOpCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <?php } ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/ratib-mega-nav.css?v=<?php echo htmlspecialchars($ratibMegaNavCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/ratib-public-nav-brand.css?v=<?php echo htmlspecialchars($ratibPublicNavBrandCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-marketing-focused.css?v=<?php echo htmlspecialchars($ratibMarketingFocusedCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-enterprise-calm.css?v=<?php echo htmlspecialchars($ratibEnterpriseCalmCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <?php if (function_exists('ratib_marketing_emit_focused_rescue_css')) {
