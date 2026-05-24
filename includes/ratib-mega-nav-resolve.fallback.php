@@ -99,6 +99,13 @@ if (!function_exists('ratib_mega_nav_resolve_href')) {
         if ($hrefKey === 'register') {
             return ratib_mega_nav_register_href($baseUrl, $navPrefix);
         }
+        if ($hrefKey === 'enterprise_demo') {
+            if (function_exists('ratib_enterprise_mailto')) {
+                return ratib_enterprise_mailto('RATEB — Request Enterprise Demo');
+            }
+
+            return 'mailto:solutions@ratib.sa?subject=' . rawurlencode('RATEB — Request Enterprise Demo');
+        }
 
         if (ratib_mega_nav_is_profile_context($navPrefix)) {
             $root = rtrim($navPrefix, '/') . '/';

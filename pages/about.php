@@ -97,6 +97,7 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
     $ratibMarketingFocusedCssQuery = (int) (@filemtime($ratibMarketingFocusedCssPath) ?: time()) . '-' . $ratibHomeUiRev;
     ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-marketing-focused.css?v=<?php echo htmlspecialchars($ratibMarketingFocusedCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-enterprise-calm.css?v=<?php echo htmlspecialchars($ratibEnterpriseCalmCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/chat-widget.css">
     <?php if (function_exists('ratib_marketing_emit_focused_rescue_css')) {
         ratib_marketing_emit_focused_rescue_css();

@@ -186,6 +186,11 @@ clearstatcache(true, $ratibMegaNavCssPath);
 $ratibMegaNavCssTs = (int) (@filemtime($ratibMegaNavCssPath) ?: time());
 $ratibMegaNavCssQuery = $ratibMegaNavCssTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
 
+$ratibEnterpriseCalmCssPath = __DIR__ . '/../css/pages/home-enterprise-calm.css';
+clearstatcache(true, $ratibEnterpriseCalmCssPath);
+$ratibEnterpriseCalmCssTs = (int) (@filemtime($ratibEnterpriseCalmCssPath) ?: time());
+$ratibEnterpriseCalmCssQuery = $ratibEnterpriseCalmCssTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
+
 $ratibMegaNavJsPath = __DIR__ . '/../js/pages/ratib-mega-nav.js';
 clearstatcache(true, $ratibMegaNavJsPath);
 $ratibMegaNavJsTs = (int) (@filemtime($ratibMegaNavJsPath) ?: time());
@@ -201,6 +206,7 @@ $ratibChromeNavPathsForBundle = [
     __DIR__ . '/ratib-home-public-chrome-top.php',
     __DIR__ . '/ratib-brand-full-title.php',
     __DIR__ . '/../css/pages/home-public.css',
+    __DIR__ . '/../css/pages/home-enterprise-calm.css',
     __DIR__ . '/../js/pages/home-page.js',
 ];
 $ratibChromeBundleKey = '';
@@ -219,6 +225,7 @@ $ratibBrandNavCssPath = __DIR__ . '/ratib-brand-full-title.php';
 clearstatcache(true, $ratibBrandNavCssPath);
 $ratibHomePublicCssQuery .= '-bn' . (int) (@filemtime($ratibBrandNavCssPath) ?: time());
 $ratibMegaNavCssQuery .= '-c' . $ratibChromeBundleHash;
+$ratibEnterpriseCalmCssQuery .= '-c' . $ratibChromeBundleHash;
 $ratibMegaNavJsQuery .= '-c' . $ratibChromeBundleHash;
 
 // Keep home working when deploy copies home.php before new includes (partial FTP/git sync).

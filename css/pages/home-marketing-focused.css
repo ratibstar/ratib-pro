@@ -69,6 +69,11 @@ body.ratib-marketing--focused .ratib-nav__platform-links .ratib-nav__link--about
   display: none;
 }
 
+/* Legacy: platform pill row removed from chrome — keep rule harmless if cached HTML still has it */
+.ratib-nav__platform-links:empty {
+  display: none;
+}
+
 body.ratib-about-page.ratib-marketing--focused:not(.ratib-marketing--expanded) .ratib-about-jump a:not([href="#company-profile"]):not([href="#contact-cta"]) {
   display: none;
 }

@@ -64,7 +64,7 @@ if (!function_exists('ratib_brand_footer_legal_line')) {
 if (!function_exists('ratib_brand_hero_lead')) {
     function ratib_brand_hero_lead(): string
     {
-        return 'Enterprise infrastructure for cross-border workforce programs.';
+        return 'Operational visibility, provider coordination, and enterprise workforce management — on one platform for cross-border programs.';
     }
 }
 

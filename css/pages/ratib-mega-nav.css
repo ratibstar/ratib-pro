@@ -35,12 +35,12 @@
 @media (min-width: 1100px) {
   .ratib-nav-shell .ratib-nav__menu {
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     align-content: center;
     justify-content: center;
-    column-gap: 0.5rem;
-    row-gap: 0.3rem;
+    column-gap: 0.35rem;
+    row-gap: 0;
   }
 
   .ratib-nav-shell .ratib-nav__menu > .ratib-mega-nav {
@@ -48,32 +48,24 @@
     min-width: 0;
   }
 
-  .ratib-nav-shell .ratib-nav__menu > .ratib-nav__platform-links {
-    flex: 1 1 100%;
+  .ratib-nav-shell .ratib-mega-nav__list {
+    gap: 0.15rem 0.25rem;
     justify-content: center;
-    padding-top: 0.5rem;
-    margin-top: 0.15rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.07);
-    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.018));
-    border-radius: 0 0 14px 14px;
   }
 
-  .ratib-nav-shell .ratib-mega-nav__list {
-    gap: 0.2rem 0.35rem;
+  .ratib-nav-shell .ratib-mega-nav__trigger {
+    padding: 0.34rem 0.62rem;
+    font-size: 0.8125rem;
   }
 
   .ratib-nav-shell .ratib-mega-nav__flat {
     padding: 0.34rem 0.58rem;
-  }
-
-  .ratib-nav-shell .ratib-mega-nav__trigger {
-    padding: 0.38rem 0.65rem;
-    font-size: 0.83rem;
+    font-size: 0.8125rem;
   }
 
   .ratib-nav-shell .ratib-mega-nav__signin {
-    padding: 0.38rem 0.75rem;
-    font-size: 0.81rem;
+    padding: 0.34rem 0.68rem;
+    font-size: 0.8125rem;
   }
 }
 

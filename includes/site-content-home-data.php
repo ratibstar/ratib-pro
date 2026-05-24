@@ -32,16 +32,18 @@ if (!function_exists('ratib_site_content_defaults_home')) {
      */
     function ratib_site_content_defaults_home(): array
     {
-        /* Header platform strip (mega menu holds Domains / Sites / Grow / …). Short labels; legacy keys kept below for CMS rows still in DB. */
+        /* Header platform strip — six primary links; legacy keys kept for CMS rows still in DB. */
         $nav = [
-            'about' => 'Profile',
             'platform' => 'Platform',
+            'solutions' => 'Solutions',
+            'pricing' => 'Pricing',
+            'partners' => 'Partners',
+            'demo' => 'Demo',
+            'contact' => 'Contact',
+            'about' => 'Profile',
             'domains' => 'Domains',
             'tour' => 'Tour',
             'product' => 'Capabilities',
-            'pricing' => 'Pricing',
-            'partners' => 'Partners',
-            'contact' => 'Contact',
         ];
         $d = [];
         $d['home.meta.page_title'] = 'RATEB — Recruitment Automation & Telemetry Enterprise Base';
@@ -73,23 +75,23 @@ if (!function_exists('ratib_site_content_defaults_home')) {
 
         $d['home.nav.cta_partner'] = 'Partner Login';
 
-        $d['home.hero.eyebrow'] = 'Enterprise Workforce Program Infrastructure';
+        $d['home.hero.eyebrow'] = 'Enterprise Workforce Operations Platform';
         $d['home.hero.lead'] = function_exists('ratib_brand_hero_lead')
             ? ratib_brand_hero_lead()
-            : 'Enterprise infrastructure for cross-border workforce programs.';
+            : 'Operational visibility, provider coordination, and enterprise workforce management — on one platform for cross-border programs.';
         $d['home.hero.title_before'] = 'RATEB';
         $d['home.hero.title_gradient'] = 'Recruitment Automation & Telemetry Enterprise Base';
         $bullets = [
-            'Recruitment orchestration & corridor sync across sending and host markets',
-            'Tenant isolation, RBAC, and per-agency domain edges',
-            'GPS tracking with SLA visibility',
-            'Notifications, escalations, and reports',
+            'Workforce visibility across corridors, stages, and SLA clocks',
+            'Provider and agency coordination with tenant-scoped RBAC',
+            'QR workforce identity and field verification workflows',
+            'Enterprise workflows from recruitment through deployment',
         ];
         foreach ($bullets as $i => $text) {
             $d['home.hero.bullet.' . ($i + 1)] = $text;
         }
         $d['home.hero.cta_primary'] = 'Request Enterprise Demo';
-        $d['home.hero.cta_secondary'] = 'Review Architecture';
+        $d['home.hero.cta_secondary'] = 'Platform walkthrough';
         $d['home.ent.hero_strip.1'] = 'Tenant-isolated datastores';
         $d['home.ent.hero_strip.2'] = 'RBAC · country scope';
         $d['home.ent.hero_strip.3'] = 'Audit-ready stage history';
@@ -467,6 +469,8 @@ if (!function_exists('ratib_site_content_home_ensure_header_nav_labels')) {
         $navKeys = [
             'home.nav.about',
             'home.nav.platform',
+            'home.nav.solutions',
+            'home.nav.demo',
             'home.nav.domains',
             'home.nav.tour',
             'home.nav.product',
