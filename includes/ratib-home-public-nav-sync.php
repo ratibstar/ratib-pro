@@ -42,7 +42,11 @@ function ratib_emit_nav_brand_critical_css(): void
     echo '.ratib-nav__brand-block--animated .ratib-brand-full__word--w4,';
     echo '.ratib-nav__brand-block--animated .ratib-brand-full__word--w5,';
     echo '.ratib-nav__brand-block--animated .ratib-brand-full__word--amp{display:none!important}';
-    echo '.ratib-nav__brand-block--animated .ratib-nav__brand-profile{margin:0!important;flex-shrink:0!important;align-self:center!important;font-size:.64rem!important;padding:.2rem .56rem!important}';
+    echo '.ratib-nav__brand-block--animated .ratib-nav__brand-profile{margin:0!important;flex-shrink:0!important;align-self:center!important;';
+    echo 'font-size:.62rem!important;font-weight:500!important;padding:.16rem .44rem!important;letter-spacing:.02em!important;';
+    echo 'color:rgba(148,163,184,.9)!important;background:transparent!important;border:1px solid rgba(255,255,255,.1)!important;box-shadow:none!important}';
+    echo '.ratib-nav__brand-block--animated .ratib-nav__brand-profile:hover{color:rgba(226,232,240,.92)!important;background:rgba(255,255,255,.04)!important;border-color:rgba(255,255,255,.14)!important}';
+    echo '.ratib-nav__brand-block--animated .ratib-nav__brand-profile.is-current{color:rgba(226,232,240,.95)!important;background:rgba(139,126,200,.12)!important;border-color:rgba(139,126,200,.28)!important;box-shadow:none!important}';
     echo '.ratib-nav__brand:has(.ratib-brand-full--nav):not(.ratib-nav__brand--animated-title) img{display:none!important}';
     echo '.ratib-nav__brand-block--animated.ratib-nav__brand-block--row,.ratib-nav__brand-block--animated:has(.ratib-brand-full){display:flex!important;flex-direction:row!important;align-items:center!important;flex-wrap:nowrap!important}';
     echo '.ratib-public-header-pin{position:sticky!important;top:0!important;left:0!important;right:0!important;z-index:200!important;width:100%!important;max-width:100vw!important}';

@@ -194,10 +194,27 @@ body.ratib-about-page {
   flex-shrink: 0;
   align-self: center;
   margin: 0;
-  font-size: 0.64rem;
-  padding: 0.2rem 0.52rem;
-  background: var(--r-accent-soft);
-  border-color: var(--r-accent-border);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 0.16rem 0.44rem;
+  color: var(--r-muted);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
+.ratib-nav__brand-block--animated .ratib-nav__brand-profile:hover,
+.ratib-nav__brand-block--animated .ratib-nav__brand-profile:focus-visible {
+  color: var(--r-text-soft);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.ratib-nav__brand-block--animated .ratib-nav__brand-profile.is-current {
+  color: var(--r-text-soft);
+  background: rgba(139, 126, 200, 0.12);
+  border-color: rgba(139, 126, 200, 0.28);
   box-shadow: none;
 }
 

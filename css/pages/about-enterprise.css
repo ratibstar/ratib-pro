@@ -1062,17 +1062,17 @@ body.ratib-about-page .ratib-nav__brand-block--animated {
 /* Nav highlight on about page — Profile pills, not Platform */
 body.ratib-about-page .ratib-nav__brand-profile.is-current,
 body.ratib-about-page .ratib-nav__link--about.is-current {
-  color: #fff;
-  background: rgba(51, 65, 85, 0.85);
-  border: 1px solid rgba(100, 116, 139, 0.5);
+  color: rgba(226, 232, 240, 0.95);
+  background: rgba(139, 126, 200, 0.12);
+  border: 1px solid rgba(139, 126, 200, 0.28);
   border-radius: 999px;
   box-shadow: none;
 }
 
 body.ratib-about-page .ratib-nav__link--about {
-  color: #fff;
-  background: rgba(139, 92, 246, 0.14);
-  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: rgba(226, 232, 240, 0.92);
+  background: rgba(139, 126, 200, 0.1);
+  border: 1px solid rgba(139, 126, 200, 0.22);
   border-radius: 999px;
 }
 

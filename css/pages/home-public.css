@@ -446,30 +446,31 @@ body.ratib-saas-home {
   align-self: center;
   flex-shrink: 0;
   margin-left: 0;
-  padding: 0.2rem 0.56rem;
+  padding: 0.16rem 0.44rem;
   border-radius: 999px;
-  font-size: 0.64rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   text-decoration: none;
-  color: rgba(226, 232, 240, 0.9);
-  background: rgba(139, 92, 246, 0.16);
-  border: 1px solid rgba(139, 92, 246, 0.38);
+  color: rgba(148, 163, 184, 0.9);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .ratib-nav__brand-profile:hover,
 .ratib-nav__brand-profile:focus-visible {
-  color: #fff;
-  background: rgba(139, 92, 246, 0.28);
-  border-color: rgba(167, 139, 250, 0.55);
+  color: rgba(226, 232, 240, 0.92);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .ratib-nav__brand-profile.is-current {
-  color: #fff;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.45), rgba(236, 72, 153, 0.25));
-  border-color: rgba(167, 139, 250, 0.65);
-  box-shadow: 0 0 18px rgba(139, 92, 246, 0.35);
+  color: rgba(226, 232, 240, 0.95);
+  background: rgba(139, 126, 200, 0.12);
+  border-color: rgba(139, 126, 200, 0.28);
+  box-shadow: none;
 }
 
 .ratib-nav__brand img {

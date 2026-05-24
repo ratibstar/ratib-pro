@@ -154,8 +154,8 @@
         prof.textContent = 'Profile';
         brand.parentNode.insertBefore(blk, brand);
         blk.classList.add('ratib-nav__brand-block--animated', 'ratib-nav__brand-block--row');
-        blk.appendChild(prof);
         blk.appendChild(brand);
+        blk.appendChild(prof);
         if (brand.querySelector('.ratib-brand-full')) {
             brand.querySelectorAll('img, .ratib-nav__brand-logo, .ratib-nav__brand-text').forEach(function (el) {
                 el.remove();

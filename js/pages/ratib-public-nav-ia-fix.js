@@ -62,8 +62,8 @@
         blk.style.flexWrap = 'nowrap';
         var prof = blk.querySelector('.ratib-nav__brand-profile');
         var brand = blk.querySelector('a.ratib-nav__brand');
-        if (prof && brand) {
-            blk.insertBefore(prof, brand);
+        if (prof && brand && prof.previousElementSibling !== brand) {
+            brand.insertAdjacentElement('afterend', prof);
         }
     }
 
