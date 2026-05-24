@@ -193,44 +193,114 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function trustedApiPayload() {
+        const cfg = window.RATIB_LOGIN_PAIR || {};
+        return {
+            action: 'trusted_check',
+            country_id: cfg.countryId || 0,
+            agency_id: cfg.agencyId || 0,
+            country_slug: cfg.countrySlug || '',
+            control: cfg.control ? 1 : 0
+        };
+    }
+
+    function trustedLoginPayload() {
+        const p = trustedApiPayload();
+        p.action = 'trusted_login';
+        return p;
+    }
+
+    async function runTrustedLogin() {
+        try {
+            const json = await apiPost('/api/qr-login.php', trustedLoginPayload());
+            if (json.success && json.redirect) {
+                window.location.href = json.redirect;
+                return true;
+            }
+        } catch (e) {
+            showBarcodeStatus('Quick sign-in failed. Use phone scan instead.', 'error');
+        }
+        return false;
+    }
+
+    function bindTrustedButton(btn) {
+        if (!btn || btn._bound) {
+            return;
+        }
+        btn._bound = true;
+        btn.addEventListener('click', function () {
+            runTrustedLogin();
+        });
+    }
+
     async function checkTrustedDevice() {
         const panel = document.getElementById('barcode-trusted-panel');
         const btn = document.getElementById('barcode-trusted-login');
         const userEl = document.getElementById('barcode-trusted-user');
         if (!panel) {
-            return;
+            return false;
         }
         try {
-            const res = await apiPost('/api/qr-login.php', { action: 'trusted_check' });
+            const res = await apiPost('/api/qr-login.php', trustedApiPayload());
             if (res.success && res.trusted && res.username) {
                 panel.classList.remove('d-none');
                 if (userEl) {
                     userEl.textContent = res.username;
                 }
-            } else {
-                panel.classList.add('d-none');
+                bindTrustedButton(btn);
+                return true;
             }
+            panel.classList.add('d-none');
         } catch (e) {
             panel.classList.add('d-none');
         }
-        if (btn && !btn._bound) {
-            btn._bound = true;
-            btn.addEventListener('click', async function () {
-                const cfg = window.RATIB_LOGIN_PAIR || {};
-                try {
-                    const json = await apiPost('/api/qr-login.php', {
-                        action: 'trusted_login',
-                        country_id: cfg.countryId || 0,
-                        agency_id: cfg.agencyId || 0
-                    });
-                    if (json.success && json.redirect) {
-                        window.location.href = json.redirect;
-                    }
-                } catch (e) {
-                    showBarcodeStatus('Trusted login failed. Scan your badge instead.', 'error');
-                }
-            });
+        return false;
+    }
+
+    async function checkDesktopTrustedLogin() {
+        const panel = document.getElementById('barcode-desktop-trusted');
+        const phoneBox = document.getElementById('barcode-pair-phone-box');
+        const userEl = document.getElementById('barcode-desktop-trusted-user');
+        const btn = document.getElementById('barcode-desktop-trusted-btn');
+        const usePhone = document.getElementById('barcode-desktop-use-phone');
+        if (!panel) {
+            return false;
         }
+        try {
+            const res = await apiPost('/api/qr-login.php', trustedApiPayload());
+            if (res.success && res.trusted && res.username) {
+                panel.classList.remove('d-none');
+                if (phoneBox) {
+                    phoneBox.classList.add('d-none');
+                }
+                if (userEl) {
+                    userEl.textContent = res.username;
+                }
+                bindTrustedButton(btn);
+                if (usePhone && !usePhone._bound) {
+                    usePhone._bound = true;
+                    usePhone.addEventListener('click', function () {
+                        panel.classList.add('d-none');
+                        if (phoneBox) {
+                            phoneBox.classList.remove('d-none');
+                        }
+                        startDesktopBarcodePair();
+                    });
+                }
+                showBarcodeStatus('Tap Continue — no phone scan needed.', 'info');
+                return true;
+            }
+            panel.classList.add('d-none');
+            if (phoneBox) {
+                phoneBox.classList.remove('d-none');
+            }
+        } catch (e) {
+            panel.classList.add('d-none');
+            if (phoneBox) {
+                phoneBox.classList.remove('d-none');
+            }
+        }
+        return false;
     }
 
     async function startDesktopBarcodePair() {
@@ -313,7 +383,11 @@ document.addEventListener('DOMContentLoaded', function () {
             barcodeDesktopPanel.classList.remove('d-none');
             barcodeDesktopPanel.classList.add('d-block');
         }
-        startDesktopBarcodePair();
+        checkDesktopTrustedLogin().then(function (trusted) {
+            if (!trusted) {
+                startDesktopBarcodePair();
+            }
+        });
     }
 
     if (loginMethodSelect) {

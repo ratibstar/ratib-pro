@@ -23,7 +23,7 @@ function qr_json(array $data, int $code = 200): void
 
 function qr_ctx_from_input(array $input): array
 {
-    return [
+    $ctx = [
         'country_id' => (int) ($input['country_id'] ?? 0),
         'agency_id' => (int) ($input['agency_id'] ?? 0),
         'country_slug' => trim((string) ($input['country_slug'] ?? '')),
@@ -33,6 +33,44 @@ function qr_ctx_from_input(array $input): array
         'trust_device' => !empty($input['trust_device']),
         'device_label' => trim((string) ($input['device_label'] ?? 'Mobile')),
         'skip_pin' => !empty($input['skip_pin']),
+    ];
+    if (function_exists('ratib_qr_login_enrich_context')) {
+        $pair = isset($input['pair_token']) ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $input['pair_token'])) : '';
+        $ctx = ratib_qr_login_enrich_context($ctx, strlen($pair) === 32 ? $pair : null);
+    }
+    return $ctx;
+}
+
+/**
+ * @return array{ok:bool, conn?:mysqli, user_id?:int, username?:string, message?:string}
+ */
+function qr_trusted_resolve(string $deviceToken, array $input): array
+{
+    $dev = preg_replace('/[^a-f0-9]/', '', strtolower($deviceToken));
+    if (strlen($dev) < 32) {
+        return ['ok' => false, 'message' => 'No device token.'];
+    }
+    $ctx = qr_ctx_from_input($input);
+    $conn = ratib_barcode_login_resolve_connection($ctx);
+    if (!($conn instanceof mysqli)) {
+        return ['ok' => false, 'message' => 'Database unavailable.'];
+    }
+    $v = ratib_qr_trusted_device_validate_cookie($conn, $dev);
+    if (empty($v['ok'])) {
+        return ['ok' => false, 'message' => 'Device not trusted.'];
+    }
+    $uid = (int) ($v['user_id'] ?? 0);
+    $row = ratib_qr_workforce_user_row($conn, $uid);
+    if (!$row) {
+        return ['ok' => false, 'message' => 'User not found.'];
+    }
+
+    return [
+        'ok' => true,
+        'conn' => $conn,
+        'user_id' => $uid,
+        'username' => (string) ($row['username'] ?? ''),
+        'user_row' => $row,
     ];
 }
 
@@ -142,44 +180,33 @@ try {
     }
 
     if ($action === 'trusted_check') {
-        $conn = $GLOBALS['conn'] ?? null;
-        if (!($conn instanceof mysqli)) {
-            qr_json(['success' => false, 'trusted' => false], 200);
-        }
         $dev = (string) ($_COOKIE['ratib_device'] ?? '');
         if ($dev === '') {
             qr_json(['success' => true, 'trusted' => false]);
         }
-        $v = ratib_qr_trusted_device_validate_cookie($conn, $dev);
-        if (empty($v['ok'])) {
+        $resolved = qr_trusted_resolve($dev, $input);
+        if (empty($resolved['ok'])) {
             qr_json(['success' => true, 'trusted' => false]);
         }
-        $row = ratib_qr_workforce_user_row($conn, (int) $v['user_id']);
         qr_json([
             'success' => true,
             'trusted' => true,
-            'user_id' => (int) $v['user_id'],
-            'username' => $row ? (string) ($row['username'] ?? '') : '',
+            'user_id' => (int) ($resolved['user_id'] ?? 0),
+            'username' => (string) ($resolved['username'] ?? ''),
         ]);
     }
 
     if ($action === 'trusted_login') {
-        $conn = $GLOBALS['conn'] ?? null;
-        if (!($conn instanceof mysqli)) {
-            qr_json(['success' => false, 'message' => 'Database unavailable.'], 500);
-        }
         $dev = (string) ($_COOKIE['ratib_device'] ?? $input['device_token'] ?? '');
-        $v = ratib_qr_trusted_device_validate_cookie($conn, $dev);
-        if (empty($v['ok'])) {
-            qr_json(['success' => false, 'message' => 'Device not trusted.', 'code' => 'untrusted'], 403);
+        $resolved = qr_trusted_resolve($dev, $input);
+        if (empty($resolved['ok'])) {
+            qr_json(['success' => false, 'message' => $resolved['message'] ?? 'Device not trusted.', 'code' => 'untrusted'], 403);
         }
-        $row = ratib_qr_workforce_user_row($conn, (int) $v['user_id']);
-        if (!$row) {
-            qr_json(['success' => false, 'message' => 'User not found.'], 404);
-        }
+        $conn = $resolved['conn'];
+        $row = $resolved['user_row'];
         if (!isset($row['user_id'])) {
             $pk = ratib_users_primary_key_for_barcode($conn);
-            $row['user_id'] = (int) ($row[$pk] ?? $v['user_id']);
+            $row['user_id'] = (int) ($row[$pk] ?? $resolved['user_id']);
         }
         $ctx = qr_ctx_from_input($input);
         $session = ratib_barcode_login_build_session($conn, $row, $ctx);
@@ -187,8 +214,12 @@ try {
             qr_json(['success' => false, 'message' => 'Account inactive.'], 403);
         }
         ratib_qr_login_apply_session($session);
-        ratib_qr_login_audit($conn, 'trusted_login', 'ok', (int) $v['user_id']);
-        qr_json(['success' => true, 'redirect' => '/pages/dashboard.php']);
+        ratib_qr_login_audit($conn, 'trusted_login', 'ok', (int) $resolved['user_id']);
+        $redirect = '/pages/dashboard.php';
+        if (function_exists('ratib_country_dashboard_url')) {
+            $redirect = ratib_country_dashboard_url((int) ($_SESSION['agency_id'] ?? $ctx['agency_id'] ?? 0));
+        }
+        qr_json(['success' => true, 'redirect' => $redirect]);
     }
 
     if ($action === 'metrics') {

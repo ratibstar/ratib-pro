@@ -306,10 +306,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $conn !== null) {
             if (function_exists('ratib_partner_portal_clear')) {
                 ratib_partner_portal_clear();
             }
+            if (!empty($pairSession['_trusted_device_token']) && function_exists('ratib_qr_set_device_cookie')) {
+                require_once __DIR__ . '/../includes/ratib-qr-workforce-identity.php';
+                ratib_qr_set_device_cookie((string) $pairSession['_trusted_device_token']);
+            }
             if (function_exists('session_regenerate_id')) {
                 session_regenerate_id(true);
             }
             foreach ($pairSession as $k => $v) {
+                if ($k === '_trusted_device_token') {
+                    continue;
+                }
                 $_SESSION[$k] = $v;
             }
             if (function_exists('ratib_set_login_context_cookies')) {
@@ -1460,9 +1467,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                         <div class="barcode-scan-panel mb-3">
                             <i class="fas fa-mobile-alt text-info icon-3em mb-2" aria-hidden="true"></i>
                             <h3 class="mb-2">Scan with your phone</h3>
-                            <p class="text-muted mb-0 small">1. Scan the QR below with your phone.<br>2. On your phone, scan your badge from <strong>Users</strong> settings.<br>3. RATEB opens here on this computer.</p>
+                            <p class="text-muted mb-0 small">First time: scan the QR with your phone, then scan your badge.<br>Next times on this computer: tap <strong>Continue</strong> (no phone needed).</p>
                         </div>
-                        <div class="barcode-open-phone-box mb-2">
+                        <div id="barcode-desktop-trusted" class="barcode-desktop-trusted d-none mb-3">
+                            <p class="small text-success mb-2"><i class="fas fa-check-circle"></i> This computer is remembered</p>
+                            <button type="button" id="barcode-desktop-trusted-btn" class="btn btn-success w-100 mb-2">
+                                Continue as <span id="barcode-desktop-trusted-user">user</span>
+                            </button>
+                            <button type="button" id="barcode-desktop-use-phone" class="btn btn-outline-light btn-sm w-100">Use phone scan instead</button>
+                        </div>
+                        <div class="barcode-open-phone-box mb-2" id="barcode-pair-phone-box">
                             <p class="small text-muted mb-2">Scan this with your phone camera:</p>
                             <div id="barcode-pair-qr" class="barcode-login-url-qr" aria-label="QR code to open phone scanner"></div>
                             <p class="barcode-pair-waiting small mt-2 mb-0" id="barcode-pair-waiting">

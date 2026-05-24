@@ -60,6 +60,13 @@ body {
 }
 
 /* Barcode login — phone camera only; full panel when selected */
+.barcode-desktop-trusted {
+    padding: 1rem;
+    border-radius: 12px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
 .barcode-login-panel {
     width: 100%;
     max-width: 420px;

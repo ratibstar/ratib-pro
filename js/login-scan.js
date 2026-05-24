@@ -63,9 +63,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function trustPayload() {
+        var mainTrust = document.getElementById('qr-scan-trust');
+        var pinTrust = document.getElementById('qr-scan-trust-pin');
+        var trusted = (mainTrust && mainTrust.checked) || (pinTrust && pinTrust.checked);
         return {
-            trust_device: !!(trustCb && trustCb.checked),
-            device_label: 'Mobile scanner'
+            trust_device: !!trusted,
+            device_label: pairToken ? 'Desktop workstation' : 'Mobile scanner'
         };
     }
 

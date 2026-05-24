@@ -68,7 +68,8 @@ $pageTitle = 'Workforce badge — RATEB';
 
         function trustBody() {
             var cb = document.getElementById('badge-trust');
-            return { trust_device: !!(cb && cb.checked), device_label: 'Mobile camera' };
+            var trusted = !cb || cb.checked;
+            return { trust_device: trusted, device_label: pairToken ? 'Desktop workstation' : 'Mobile camera' };
         }
 
         function finish(json) {

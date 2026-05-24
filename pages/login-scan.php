@@ -101,10 +101,15 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
                 Stop
             </button>
         </div>
+        <?php if ($hasPair): ?>
+        <label class="qr-scan-trust-label qr-scan-trust-label--main">
+            <input type="checkbox" id="qr-scan-trust" checked> Remember this computer for 30 days (skip phone next time)
+        </label>
+        <?php endif; ?>
         <div id="qr-scan-pin-panel" class="qr-scan-pin-panel d-none">
             <label for="qr-scan-pin">Enter 4-digit PIN</label>
             <input type="password" id="qr-scan-pin" class="qr-scan-pin-input" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
-            <label class="qr-scan-trust-label"><input type="checkbox" id="qr-scan-trust"> Trust this device (30 days)</label>
+            <label class="qr-scan-trust-label"><input type="checkbox" id="qr-scan-trust-pin" checked> Trust this device (30 days)</label>
             <button type="button" class="qr-scan-btn qr-scan-btn-primary" id="qr-scan-pin-submit">Continue</button>
         </div>
         <div id="qr-scan-status" class="qr-scan-status qr-scan-status--info" role="status">

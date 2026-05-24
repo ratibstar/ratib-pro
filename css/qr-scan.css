@@ -159,6 +159,18 @@
     display: none !important;
 }
 
+.qr-scan-trust-label--main {
+    display: block;
+    margin: 0.75rem 0 0;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-align: left;
+}
+
+.qr-scan-trust-label--main input {
+    margin-right: 0.35rem;
+}
+
 .qr-scan-pin-panel {
     margin-top: 1rem;
     padding: 1rem;
