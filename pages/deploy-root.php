@@ -13,6 +13,7 @@ $root = dirname(__DIR__);
 $homePath = $root . '/pages/home.php';
 $aboutPath = $root . '/pages/about.php';
 $chromePath = $root . '/includes/ratib-home-public-chrome-top.php';
+$bootstrapPath = $root . '/includes/ratib-home-public-nav-bootstrap.php';
 $buildPath = $root . '/public/ratib-build.txt';
 
 $homeSample = is_file($homePath) ? (string) file_get_contents($homePath, false, null, 0, 12000) : '';
@@ -29,6 +30,10 @@ echo 'about_php=' . (is_file($aboutPath) ? 'yes bytes=' . filesize($aboutPath) :
 echo 'home_open_about=' . (str_contains($homeSample, "=== 'about'") ? 'yes' : 'no') . "\n";
 echo 'chrome_about_link=' . (str_contains($chromeSample, 'ratib-nav__link--about') ? 'yes' : 'no') . "\n";
 echo 'chrome_primary_links_8=' . (str_contains($chromeSample, 'primary-links=8') ? 'yes' : 'no') . "\n";
+$bootstrapSample = is_file($bootstrapPath) ? (string) file_get_contents($bootstrapPath, false, null, 0, 12000) : '';
+echo 'bootstrap_mtime=' . (is_file($bootstrapPath) ? (string) (int) filemtime($bootstrapPath) : '0') . "\n";
+echo 'bootstrap_nav_asset_init=' . (str_contains($bootstrapSample, 'Initialize before any $GLOBALS') ? 'yes' : 'no') . "\n";
+echo 'bootstrap_early_globals_bug=' . (preg_match('/\\$GLOBALS\\[\'ratibEnterpriseCalmCssQuery\'\\][^;]+;\\s*\\$ratibEnterpriseCalmCssPath/s', $bootstrapSample) === 1 ? 'yes' : 'no') . "\n";
 echo 'chrome_profile_same_tab=' . (str_contains($chromeSample, 'ratib-profile-nav=same-tab-v2') ? 'yes' : 'no') . "\n";
 echo 'home_mtime=' . (is_file($homePath) ? (string) (int) filemtime($homePath) : '0') . "\n";
 echo 'about_mtime=' . (is_file($aboutPath) ? (string) (int) filemtime($aboutPath) : '0') . "\n";

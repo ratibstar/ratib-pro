@@ -1,1 +1,1 @@
-rateb-nav-bootstrap-fix-20260524b
+rateb-nav-bootstrap-guard-20260524c

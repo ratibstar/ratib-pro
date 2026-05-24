@@ -17,14 +17,16 @@ function ratib_home_public_nav_emit_stylesheets(string $baseUrl): void
     $q = static fn(string $v): string => $h($v);
     $root = rtrim($baseUrl, '/');
 
-    $homeQ = (string) ($GLOBALS['ratibHomePublicCssQuery'] ?? '');
+    global $ratibHomePublicCssQuery, $ratibMegaNavCssQuery, $ratibPublicNavBrandCssQuery, $ratibEnterpriseCalmCssQuery;
+
+    $homeQ = (string) ($ratibHomePublicCssQuery ?? $GLOBALS['ratibHomePublicCssQuery'] ?? '');
     if ($homeQ === '') {
         return;
     }
 
-    $megaQ = (string) ($GLOBALS['ratibMegaNavCssQuery'] ?? '');
-    $brandQ = (string) ($GLOBALS['ratibPublicNavBrandCssQuery'] ?? '');
-    $calmQ = (string) ($GLOBALS['ratibEnterpriseCalmCssQuery'] ?? '');
+    $megaQ = (string) ($ratibMegaNavCssQuery ?? $GLOBALS['ratibMegaNavCssQuery'] ?? '');
+    $brandQ = (string) ($ratibPublicNavBrandCssQuery ?? $GLOBALS['ratibPublicNavBrandCssQuery'] ?? '');
+    $calmQ = (string) ($ratibEnterpriseCalmCssQuery ?? $GLOBALS['ratibEnterpriseCalmCssQuery'] ?? '');
 
     echo '<link rel="stylesheet" href="' . $q($root . '/css/pages/home-public.css?v=' . $homeQ) . '">' . "\n";
     if ($megaQ !== '') {

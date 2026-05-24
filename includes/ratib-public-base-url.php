@@ -136,3 +136,20 @@ if (!function_exists('ratib_public_marketing_home_register_url')) {
         return ratib_public_marketing_home_url($baseUrl, $query, '#register');
     }
 }
+
+// Guard: stale ratib-home-public-nav-bootstrap.php assigned $GLOBALS before these were set.
+if (!isset($ratibEnterpriseCalmCssQuery)) {
+    $ratibEnterpriseCalmCssQuery = '';
+}
+if (!isset($ratibMegaNavJsQuery)) {
+    $ratibMegaNavJsQuery = '';
+}
+if (!isset($ratibHomePublicCssQuery)) {
+    $ratibHomePublicCssQuery = '';
+}
+if (!isset($ratibMegaNavCssQuery)) {
+    $ratibMegaNavCssQuery = '';
+}
+if (!isset($ratibPublicNavBrandCssQuery)) {
+    $ratibPublicNavBrandCssQuery = '';
+}

@@ -45,6 +45,7 @@ function ratib_home_nav_emit_sync_script(string $profileUrl = ''): void
     ?>
 <script>window.ratibProfileNavUrl=<?php echo $profileJson; ?>;</script>
 <script src="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/js/pages/ratib-public-nav-ia-fix.js?v=' . $iaFixQ, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/js/pages/ratib-mega-nav.js?v=' . (string) ($GLOBALS['ratibMegaNavJsQuery'] ?? $iaFixQ), ENT_QUOTES, 'UTF-8'); ?>"></script>
+<?php global $ratibMegaNavJsQuery; ?>
+<script src="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/js/pages/ratib-mega-nav.js?v=' . (string) (($ratibMegaNavJsQuery ?? '') !== '' ? $ratibMegaNavJsQuery : $iaFixQ), ENT_QUOTES, 'UTF-8'); ?>"></script>
     <?php
 }
