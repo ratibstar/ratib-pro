@@ -2,29 +2,38 @@
 declare(strict_types=1);
 
 /**
- * Public marketing nav stylesheets — single include for all pages using home chrome.
+ * One nav stylesheet stack for every page that uses ratib-home-public-chrome-top.php.
  * Requires ratib-home-public-nav-bootstrap.php first.
  */
 function ratib_home_public_nav_emit_stylesheets(string $baseUrl): void
 {
+    static $done = false;
+    if ($done) {
+        return;
+    }
+    $done = true;
+
     $h = static fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
     $q = static fn(string $v): string => $h($v);
+    $root = rtrim($baseUrl, '/');
 
-    if (!isset($GLOBALS['ratibHomePublicCssQuery'])) {
+    $homeQ = (string) ($GLOBALS['ratibHomePublicCssQuery'] ?? '');
+    if ($homeQ === '') {
         return;
     }
 
-    echo '<link rel="stylesheet" href="' . $q(rtrim($baseUrl, '/') . '/css/pages/home-public.css?v=' . (string) $GLOBALS['ratibHomePublicCssQuery']) . '">' . "\n";
+    $megaQ = (string) ($GLOBALS['ratibMegaNavCssQuery'] ?? '');
+    $brandQ = (string) ($GLOBALS['ratibPublicNavBrandCssQuery'] ?? '');
+    $calmQ = (string) ($GLOBALS['ratibEnterpriseCalmCssQuery'] ?? '');
 
-    if (isset($GLOBALS['ratibMegaNavCssQuery'])) {
-        echo '<link rel="stylesheet" href="' . $q(rtrim($baseUrl, '/') . '/css/pages/ratib-mega-nav.css?v=' . (string) $GLOBALS['ratibMegaNavCssQuery']) . '">' . "\n";
+    echo '<link rel="stylesheet" href="' . $q($root . '/css/pages/home-public.css?v=' . $homeQ) . '">' . "\n";
+    if ($megaQ !== '') {
+        echo '<link rel="stylesheet" href="' . $q($root . '/css/pages/ratib-mega-nav.css?v=' . $megaQ) . '">' . "\n";
     }
-
-    if (isset($GLOBALS['ratibPublicNavBrandCssQuery'])) {
-        echo '<link rel="stylesheet" href="' . $q(rtrim($baseUrl, '/') . '/css/pages/ratib-public-nav-brand.css?v=' . (string) $GLOBALS['ratibPublicNavBrandCssQuery']) . '">' . "\n";
+    if ($brandQ !== '') {
+        echo '<link rel="stylesheet" href="' . $q($root . '/css/pages/ratib-public-nav-brand.css?v=' . $brandQ) . '">' . "\n";
     }
-
-    if (isset($GLOBALS['ratibEnterpriseCalmCssQuery'])) {
-        echo '<link rel="stylesheet" href="' . $q(rtrim($baseUrl, '/') . '/css/pages/home-enterprise-calm.css?v=' . (string) $GLOBALS['ratibEnterpriseCalmCssQuery']) . '">' . "\n";
+    if ($calmQ !== '') {
+        echo '<link rel="stylesheet" href="' . $q($root . '/css/pages/home-enterprise-calm.css?v=' . $calmQ) . '">' . "\n";
     }
 }

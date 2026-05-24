@@ -78,15 +78,13 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo htmlspecialchars($ratibHomePublicCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php ratib_home_public_nav_emit_stylesheets($baseUrl); ?>
     <?php
     $ratibOverlayGuardPath = __DIR__ . '/../includes/ratib-overlay-dismiss-guard.php';
     if (is_file($ratibOverlayGuardPath)) {
         require_once $ratibOverlayGuardPath;
     }
     ?>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/ratib-mega-nav.css?v=<?php echo htmlspecialchars($ratibMegaNavCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/ratib-public-nav-brand.css?v=<?php echo htmlspecialchars($ratibPublicNavBrandCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo htmlspecialchars($ratibAboutCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <?php
     $ratibOpCssPath = __DIR__ . '/../css/pages/operational-proof.css';
@@ -98,7 +96,6 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
     $ratibMarketingFocusedCssQuery = (int) (@filemtime($ratibMarketingFocusedCssPath) ?: time()) . '-' . $ratibHomeUiRev;
     ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-marketing-focused.css?v=<?php echo htmlspecialchars($ratibMarketingFocusedCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-enterprise-calm.css?v=<?php echo htmlspecialchars($ratibEnterpriseCalmCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/chat-widget.css">
     <?php if (function_exists('ratib_marketing_emit_focused_rescue_css')) {
         ratib_marketing_emit_focused_rescue_css();
@@ -128,8 +125,6 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
 
 <?php
 include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
-require_once __DIR__ . '/../includes/ratib-profile-nav-guard.php';
-ratib_emit_profile_nav_guard($baseUrl);
 $ratibMarketingHomeUrl = ratib_public_marketing_home_url($baseUrl);
 ?>
 
@@ -177,7 +172,6 @@ $ratibProfileGuardQAbout = (string) (int) (@filemtime($ratibProfileGuardJsAbout)
 ?>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-profile-nav-guard.js?v=<?php echo htmlspecialchars($ratibProfileGuardQAbout, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-home-nav-chrome.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
-<script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-mega-nav.js?v=<?php echo htmlspecialchars($ratibMegaNavJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-gallery-lightbox.js?v=<?php echo htmlspecialchars($ratibGalleryLbJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/ratib-op-proof-compact.js?v=<?php echo htmlspecialchars($ratibOpCompactJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>
 <script src="<?php echo htmlspecialchars($baseUrl); ?>/js/pages/about-enterprise.js?v=<?php echo htmlspecialchars($ratibAboutJsQuery, ENT_QUOTES, 'UTF-8'); ?>"></script>

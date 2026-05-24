@@ -1,6 +1,6 @@
 /**
  * Mega navigation: click/tap to toggle panels, Escape and outside-click to close.
- * No dependencies. Works with includes/ratib-mega-nav-render.php markup.
+ * Profile links + legacy pill row: js/pages/ratib-public-nav-ia-fix.js (loaded from chrome).
  */
 (function ratibMegaNavInit() {
     var root =
@@ -92,94 +92,4 @@
             closeAll();
         }
     });
-})();
-
-/** Profile tab + platform pill → /profile (single-file deploy: ratib-mega-nav.js). */
-(function ratibProfileNavPatch() {
-    'use strict';
-
-    function profileHref() {
-        var o = window.location.origin || '';
-        return o ? o + '/profile/#company-profile' : '/profile/#company-profile';
-    }
-
-    function fixProfileHrefs() {
-        var PROFILE = profileHref();
-        document
-            .querySelectorAll(
-                '.ratib-nav__brand-profile, .ratib-nav__link--about, [data-ratib-profile-nav], .ratib-footer-link--about'
-            )
-            .forEach(function (a) {
-                a.setAttribute('href', PROFILE);
-                a.setAttribute('data-ratib-profile-nav', '1');
-                a.removeAttribute('target');
-                a.removeAttribute('rel');
-            });
-        document.querySelectorAll('a.ratib-mega-nav__card').forEach(function (card) {
-            var t = card.querySelector('.ratib-mega-nav__card-title');
-            if (t && /company profile/i.test(t.textContent || '')) {
-                card.setAttribute('href', PROFILE);
-                card.removeAttribute('target');
-                card.removeAttribute('rel');
-            }
-        });
-    }
-
-    function removeLegacyPlatformRow() {
-        var wrap = document.querySelector('.ratib-nav__platform-links');
-        if (wrap) {
-            wrap.remove();
-        }
-    }
-
-    function injectBrand() {
-        var shell = document.querySelector('.ratib-nav-shell__inner');
-        if (!shell) {
-            return;
-        }
-        if (shell.querySelector('.ratib-nav__brand-profile')) {
-            fixProfileHrefs();
-            return;
-        }
-        var brand = shell.querySelector('a.ratib-nav__brand');
-        if (!brand) {
-            return;
-        }
-        var blk = document.createElement('div');
-        blk.className = 'ratib-nav__brand-block';
-        var prof = document.createElement('a');
-        prof.href = profileHref();
-        prof.setAttribute('data-ratib-profile-nav', '1');
-        prof.className = 'ratib-nav__brand-profile';
-        prof.textContent = 'Profile';
-        brand.parentNode.insertBefore(blk, brand);
-        blk.classList.add('ratib-nav__brand-block--animated', 'ratib-nav__brand-block--row');
-        blk.appendChild(brand);
-        blk.appendChild(prof);
-        if (brand.querySelector('.ratib-brand-full')) {
-            brand.querySelectorAll('img, .ratib-nav__brand-logo, .ratib-nav__brand-text').forEach(function (el) {
-                el.remove();
-            });
-        } else {
-            var bt = brand.querySelector('.ratib-nav__brand-text');
-            if (bt) {
-                bt.textContent = 'RATEB';
-            }
-        }
-    }
-
-    function run() {
-        fixProfileHrefs();
-        removeLegacyPlatformRow();
-        injectBrand();
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', run);
-    } else {
-        run();
-    }
-    setTimeout(run, 0);
-    setTimeout(run, 200);
-    setTimeout(run, 800);
 })();

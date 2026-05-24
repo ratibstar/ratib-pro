@@ -34,6 +34,7 @@ $pageCss = [
     $baseUrl . '/css/chat-widget.css',
     $baseUrl . '/css/pages/home-public.css?v=' . $ratibHomePublicCssQuery,
     $baseUrl . '/css/pages/ratib-mega-nav.css?v=' . $ratibMegaNavCssQuery,
+    $baseUrl . '/css/pages/ratib-public-nav-brand.css?v=' . $ratibPublicNavBrandCssQuery,
     $baseUrl . '/css/pages/home-enterprise-calm.css?v=' . $ratibEnterpriseCalmCssQuery,
     asset('css/partnerships.css') . '?v=' . $v,
     asset('css/partnerships-agency-detail.css') . '?v=' . $v,
@@ -41,7 +42,6 @@ $pageCss = [
 ];
 $pageJs = [
     asset('js/pages/ratib-home-nav-chrome.js') . '?v=' . $ratibHomePublicCssQuery,
-    $baseUrl . '/js/pages/ratib-mega-nav.js?v=' . $ratibMegaNavJsQuery,
     asset('js/partnerships/partner-portal-login.js') . '?v=' . $v,
 ];
 include __DIR__ . '/../includes/partner-portal-header.php';

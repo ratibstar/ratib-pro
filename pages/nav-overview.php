@@ -44,8 +44,7 @@ $platformPills = [
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="<?php echo $h($baseUrl); ?>/css/pages/home-public.css?v=<?php echo $h($ratibHomePublicCssQuery); ?>">
-    <link rel="stylesheet" href="<?php echo $h($baseUrl); ?>/css/pages/ratib-mega-nav.css?v=<?php echo $h($ratibMegaNavCssQuery); ?>">
+    <?php ratib_home_public_nav_emit_stylesheets($baseUrl); ?>
     <style>
       .ratib-nav-map-wrap { max-width: min(1160px, 96vw); margin: 0 auto; padding: 1.25rem 1rem 3rem; }
       .ratib-nav-map-wrap h1 { font-size: 1.5rem; margin: 0 0 0.5rem; color: var(--r-text); }
@@ -184,6 +183,5 @@ $platformPills = [
         </div>
     </main>
 
-    <script src="<?php echo $h($baseUrl); ?>/js/pages/ratib-mega-nav.js?v=<?php echo $h($ratibMegaNavJsQuery); ?>"></script>
 </body>
 </html>

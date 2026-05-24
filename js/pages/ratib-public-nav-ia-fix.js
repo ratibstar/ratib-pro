@@ -248,6 +248,8 @@
                         applyFreshMegaNav(html);
                         wireAllProfileLinks();
                         removeLegacyPlatformRow();
+                        layoutNavBrandRow();
+                        stripNavBrandTagline();
                     }
                     finishNavSync(nav);
                 })

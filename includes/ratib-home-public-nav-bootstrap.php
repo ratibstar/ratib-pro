@@ -191,7 +191,11 @@ $ratibPublicNavBrandCssPath = __DIR__ . '/../css/pages/ratib-public-nav-brand.cs
 clearstatcache(true, $ratibPublicNavBrandCssPath);
 $ratibPublicNavBrandCssTs = (int) (@filemtime($ratibPublicNavBrandCssPath) ?: time());
 $ratibPublicNavBrandCssQuery = $ratibPublicNavBrandCssTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
+$GLOBALS['ratibHomePublicCssQuery'] = $ratibHomePublicCssQuery;
+$GLOBALS['ratibMegaNavCssQuery'] = $ratibMegaNavCssQuery;
 $GLOBALS['ratibPublicNavBrandCssQuery'] = $ratibPublicNavBrandCssQuery;
+$GLOBALS['ratibEnterpriseCalmCssQuery'] = $ratibEnterpriseCalmCssQuery;
+$GLOBALS['ratibMegaNavJsQuery'] = $ratibMegaNavJsQuery;
 
 $ratibEnterpriseCalmCssPath = __DIR__ . '/../css/pages/home-enterprise-calm.css';
 clearstatcache(true, $ratibEnterpriseCalmCssPath);
@@ -330,5 +334,6 @@ if (!function_exists('ratib_public_load_operational_proof_render')) {
 ratib_public_load_operational_proof_render();
 
 require_once __DIR__ . '/ratib-home-public-nav-sync.php';
+require_once __DIR__ . '/ratib-home-public-nav-styles.php';
 require_once __DIR__ . '/ratib-public-marketing-density.php';
 require_once __DIR__ . '/ratib-marketing-expand-bar.php';

@@ -40,7 +40,7 @@ $ratibTokensCssQuery = (int) (@filemtime(__DIR__ . '/../css/rateb-enterprise-tok
     <meta name="description" content="<?php echo htmlspecialchars($metaDesc, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="canonical" href="<?php echo htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8'); ?>">
     <title><?php echo htmlspecialchars($metaTitle, ENT_QUOTES, 'UTF-8'); ?></title>
-    <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/home-public.css?v=<?php echo htmlspecialchars($ratibHomePublicCssQuery, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php ratib_home_public_nav_emit_stylesheets($baseUrl); ?>
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/rateb-enterprise-tokens.css?v=<?php echo $ratibTokensCssQuery; ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/about-enterprise.css?v=<?php echo $ratibAboutCssQuery; ?>">
     <link rel="stylesheet" href="<?php echo htmlspecialchars($baseUrl); ?>/css/pages/enterprise-trust-hub.css?v=<?php echo $ratibAboutCssQuery; ?>">

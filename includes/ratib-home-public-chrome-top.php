@@ -120,12 +120,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
                     $ratibNavProductTourHref
                 );
                 ?>
-            <div class="ratib-nav__brand-block<?php echo $ratibHideBrandText ? ' ratib-nav__brand-block--animated ratib-nav__brand-block--row' : ''; ?>"<?php echo $ratibHideBrandText ? ' data-ratib-brand-nav="row-v1" style="display:flex;flex-direction:row;align-items:center;flex-wrap:nowrap;gap:.45rem"' : ''; ?>>
-                <?php
-                if ($ratibHideBrandText && function_exists('ratib_emit_nav_brand_critical_css')) {
-                    ratib_emit_nav_brand_critical_css();
-                }
-                ?>
+            <div class="ratib-nav__brand-block<?php echo $ratibHideBrandText ? ' ratib-nav__brand-block--animated ratib-nav__brand-block--row' : ''; ?>"<?php echo $ratibHideBrandText ? ' data-ratib-brand-nav="row-v1"' : ''; ?>>
                 <?php
                 if (!function_exists('ratib_render_brand_full_title')) {
                     require_once __DIR__ . '/ratib-brand-full-title.php';
