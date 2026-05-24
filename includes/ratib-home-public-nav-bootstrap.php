@@ -191,11 +191,6 @@ $ratibPublicNavBrandCssPath = __DIR__ . '/../css/pages/ratib-public-nav-brand.cs
 clearstatcache(true, $ratibPublicNavBrandCssPath);
 $ratibPublicNavBrandCssTs = (int) (@filemtime($ratibPublicNavBrandCssPath) ?: time());
 $ratibPublicNavBrandCssQuery = $ratibPublicNavBrandCssTs . '-' . $ratibHomeUiRev . '-' . $ratibHomePhpMtime . $ratibHomeAssetExtraQ;
-$GLOBALS['ratibHomePublicCssQuery'] = $ratibHomePublicCssQuery;
-$GLOBALS['ratibMegaNavCssQuery'] = $ratibMegaNavCssQuery;
-$GLOBALS['ratibPublicNavBrandCssQuery'] = $ratibPublicNavBrandCssQuery;
-$GLOBALS['ratibEnterpriseCalmCssQuery'] = $ratibEnterpriseCalmCssQuery;
-$GLOBALS['ratibMegaNavJsQuery'] = $ratibMegaNavJsQuery;
 
 $ratibEnterpriseCalmCssPath = __DIR__ . '/../css/pages/home-enterprise-calm.css';
 clearstatcache(true, $ratibEnterpriseCalmCssPath);
@@ -241,6 +236,12 @@ $ratibMegaNavCssQuery .= '-c' . $ratibChromeBundleHash;
 $ratibPublicNavBrandCssQuery .= '-c' . $ratibChromeBundleHash;
 $ratibEnterpriseCalmCssQuery .= '-c' . $ratibChromeBundleHash;
 $ratibMegaNavJsQuery .= '-c' . $ratibChromeBundleHash;
+
+$GLOBALS['ratibHomePublicCssQuery'] = $ratibHomePublicCssQuery;
+$GLOBALS['ratibMegaNavCssQuery'] = $ratibMegaNavCssQuery;
+$GLOBALS['ratibPublicNavBrandCssQuery'] = $ratibPublicNavBrandCssQuery;
+$GLOBALS['ratibEnterpriseCalmCssQuery'] = $ratibEnterpriseCalmCssQuery;
+$GLOBALS['ratibMegaNavJsQuery'] = $ratibMegaNavJsQuery;
 
 // Keep home working when deploy copies home.php before new includes (partial FTP/git sync).
 if (!function_exists('ratib_public_materialize_include')) {
