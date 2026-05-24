@@ -177,6 +177,13 @@ if ($ratibNavProductTourLabel === '') {
     $ratibNavProductTourLabel = 'Tour';
 }
 
+// Initialize before any $GLOBALS writes (prevents "Undefined variable" if order changes).
+$ratibHomePublicCssQuery = '';
+$ratibMegaNavCssQuery = '';
+$ratibPublicNavBrandCssQuery = '';
+$ratibEnterpriseCalmCssQuery = '';
+$ratibMegaNavJsQuery = '';
+
 $ratibHomeCssPath = __DIR__ . '/../css/pages/home-public.css';
 clearstatcache(true, $ratibHomeCssPath);
 $ratibHomeCssTs = (int) (@filemtime($ratibHomeCssPath) ?: time());
