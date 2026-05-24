@@ -34,13 +34,28 @@ if (!function_exists('ratib_qr_login_country_id_from_slug')) {
         if (!$stmt) {
             return 0;
         }
-        $stmt->bind_param('s', $slug);
-        $stmt->execute();
-        $res = $stmt->get_result();
-        $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+        $variants = [$slug];
+        $alt1 = str_replace('-', '_', $slug);
+        $alt2 = str_replace('_', '-', $slug);
+        if ($alt1 !== $slug) {
+            $variants[] = $alt1;
+        }
+        if ($alt2 !== $slug && $alt2 !== $alt1) {
+            $variants[] = $alt2;
+        }
+        foreach ($variants as $trySlug) {
+            $stmt->bind_param('s', $trySlug);
+            $stmt->execute();
+            $res = $stmt->get_result();
+            $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+            if ($row) {
+                $stmt->close();
+                return (int) ($row['id'] ?? 0);
+            }
+        }
         $stmt->close();
 
-        return (int) ($row['id'] ?? 0);
+        return 0;
     }
 }
 

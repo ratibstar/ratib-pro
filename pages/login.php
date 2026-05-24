@@ -1563,6 +1563,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     $loginPairCountrySlug = '';
     if (!empty($singleCountryFromPath) && !empty($loginCountries[0]['slug'])) {
         $loginPairCountrySlug = (string) $loginCountries[0]['slug'];
+    } elseif ($formHiddenCountryId > 0 && !empty($loginCountries)) {
+        foreach ($loginCountries as $c) {
+            if ((int) ($c['id'] ?? 0) === $formHiddenCountryId && !empty($c['slug'])) {
+                $loginPairCountrySlug = (string) $c['slug'];
+                break;
+            }
+        }
+    }
+    if ($loginPairCountrySlug === '' && $formHiddenCountryId > 0 && !empty($loginAgencyPicklist)) {
+        foreach ($loginAgencyPicklist as $ar) {
+            if ((int) ($ar['country_id'] ?? 0) === $formHiddenCountryId && !empty($ar['country_slug'])) {
+                $loginPairCountrySlug = (string) $ar['country_slug'];
+                break;
+            }
+        }
+    }
+    if ($loginPairCountrySlug === '' && $formHiddenAgencyId > 0 && !empty($loginAgencyPicklist)) {
+        foreach ($loginAgencyPicklist as $ar) {
+            if ((int) ($ar['agency_id'] ?? 0) === $formHiddenAgencyId && !empty($ar['country_slug'])) {
+                $loginPairCountrySlug = (string) $ar['country_slug'];
+                if ($formHiddenCountryId <= 0) {
+                    $formHiddenCountryId = (int) ($ar['country_id'] ?? 0);
+                }
+                break;
+            }
+        }
+    }
+    if ($loginPairCountrySlug !== '' && (strpos($loginScanUrl, '/login/scan') === false || strpos($loginScanUrl, '/' . $loginPairCountrySlug . '/') === false)) {
+        $slugForScan = preg_replace('/[^a-z0-9_-]/', '', strtolower($loginPairCountrySlug));
+        if ($slugForScan !== '') {
+            $base = rtrim((string) (defined('BASE_URL') ? BASE_URL : ''), '/');
+            $loginScanUrl = ($base !== '' ? $base : '') . '/' . $slugForScan . '/login/scan';
+        }
     }
     ?>
     <script>

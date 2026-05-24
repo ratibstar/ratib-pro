@@ -94,12 +94,20 @@ function qr_finish_login(array $auth, ?string $pairToken, bool $applySession): v
         ratib_qr_set_device_cookie($trustedDev);
     }
     $username = (string) ($auth['session']['username'] ?? '');
+    $redirect = '/pages/dashboard.php';
+    $agencyForUrl = (int) ($auth['session']['agency_id'] ?? 0);
+    if ($applySession && $agencyForUrl <= 0 && !empty($_SESSION['agency_id'])) {
+        $agencyForUrl = (int) $_SESSION['agency_id'];
+    }
+    if (function_exists('ratib_country_dashboard_url')) {
+        $redirect = ratib_country_dashboard_url($agencyForUrl);
+    }
     qr_json([
         'success' => true,
         'message' => 'OK',
         'paired' => $pairToken !== '',
         'username' => $username,
-        'redirect' => '/pages/dashboard.php',
+        'redirect' => $redirect,
     ]);
 }
 
