@@ -8,16 +8,20 @@
 }
 
 :root {
+  /* Slate-navy enterprise palette — one blue accent, no rainbow */
   --r-bg-deep: #060a12;
-  --r-bg: #0b1019;
-  --r-surface: rgba(255, 255, 255, 0.028);
-  --r-border: rgba(255, 255, 255, 0.07);
-  --r-text: #e8ecf2;
-  --r-muted: #94a0b2;
-  --r-accent: #6b7fd4;
-  --r-accent-purple: #7c6bb8;
-  --r-accent-soft: rgba(107, 127, 212, 0.14);
-  --r-cyan: #6b9fd4;
+  --r-bg: #0c1118;
+  --r-surface: #121820;
+  --r-border: rgba(255, 255, 255, 0.08);
+  --r-text: #e8eaed;
+  --r-muted: #8b95a8;
+  --r-accent: #5a6fa8;
+  --r-accent-hover: #6a7fb8;
+  --r-accent-purple: #7a8498;
+  --r-accent-soft: rgba(90, 111, 168, 0.12);
+  --r-link: #a8b4cc;
+  --r-link-hover: #dce2ee;
+  --r-cyan: #7a94b8;
   --r-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -168,47 +172,56 @@
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Brand title — calm typography, preserve acronym meaning */
-.ratib-brand-letter {
-  animation: none;
+/* Brand title — single neutral type color (no rainbow letters) */
+.ratib-brand-letter,
+.ratib-brand-letter--r,
+.ratib-brand-letter--a,
+.ratib-brand-letter--t,
+.ratib-brand-letter--e,
+.ratib-brand-letter--b {
+  animation: none !important;
+  filter: none !important;
   font-weight: 700;
-  background-image: linear-gradient(135deg, #e8ecf2 0%, #b8c4e8 50%, #9aa8d4 100%);
-  filter: none;
+  color: #f0f2f5 !important;
+  background: none !important;
+  background-image: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
 }
 
-.ratib-brand-full__word {
-  animation: none;
-  background-size: 100% 100%;
-  color: rgba(232, 236, 242, 0.88);
-  background-image: none;
-  -webkit-background-clip: unset;
-  background-clip: unset;
-}
-
-.ratib-brand-full__word--company {
-  color: rgba(232, 236, 242, 0.72);
-  font-weight: 600;
-}
-
+.ratib-brand-full__word,
+.ratib-brand-full__word--company,
 .ratib-brand-full__word--w1,
 .ratib-brand-full__word--w2,
 .ratib-brand-full__word--w3,
 .ratib-brand-full__word--w4,
-.ratib-brand-full__word--w5 {
-  color: rgba(232, 236, 242, 0.82);
-}
-
+.ratib-brand-full__word--w5,
 .ratib-brand-full__word--amp {
-  color: rgba(148, 160, 178, 0.75);
+  animation: none !important;
+  background: none !important;
+  background-image: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  color: #c8d0dc !important;
   font-weight: 600;
 }
 
-.ratib-brand-full--hero .ratib-brand-full__word--w1 {
-  color: #e8ecf2;
+.ratib-brand-full__word--company {
+  color: #9aa6b8 !important;
+  font-weight: 500;
 }
 
-.ratib-brand-full--hero .ratib-brand-full__word--w4 {
-  color: #c4b8e8;
+.ratib-brand-full__word--amp {
+  color: #7a8498 !important;
+  font-weight: 500;
+}
+
+.ratib-brand-full--hero .ratib-brand-full__rateb .ratib-brand-letter {
+  color: #f0f2f5 !important;
+}
+
+.ratib-brand-full--hero .ratib-brand-full__word {
+  color: #b8c2d0 !important;
 }
 
 /* Mega nav — unified calm triggers */
@@ -372,10 +385,10 @@
 
 /* Buttons — one primary, one secondary */
 .ratib-btn--primary {
-  background: #5b6fd4;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--r-accent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: none;
 }
 
 .ratib-btn--primary::after {
@@ -383,9 +396,9 @@
 }
 
 .ratib-btn--primary:hover {
-  background: #6678dc;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(91, 111, 212, 0.22);
+  background: var(--r-accent-hover);
+  transform: none;
+  box-shadow: none;
   color: #fff;
 }
 
@@ -577,4 +590,121 @@ body.ratib-saas-home {
 .ratib-about-page .ratib-marketing-expand-bar__btn {
   border-radius: 8px;
   box-shadow: none;
+}
+
+/* Profile / about — slate surfaces, muted links */
+body.ratib-about-page {
+  --about-bg: var(--r-bg-deep);
+  --about-panel: var(--r-surface);
+  --about-border: var(--r-border);
+  --about-text: var(--r-text);
+  --about-muted: var(--r-muted);
+  --about-blue: var(--r-accent);
+  --about-violet: var(--r-accent-purple);
+  background: var(--r-bg-deep) !important;
+  color: var(--r-text);
+}
+
+.ratib-about-page .ratib-company-dossier__title {
+  color: var(--r-text);
+  font-weight: 700;
+}
+
+.ratib-about-page .ratib-company-dossier__legal,
+.ratib-about-page .ratib-company-dossier__tagline {
+  color: var(--r-muted);
+}
+
+.ratib-about-page .ratib-company-dossier__card {
+  background: var(--r-surface) !important;
+  border: 1px solid var(--r-border) !important;
+  border-radius: 12px;
+  box-shadow: none !important;
+}
+
+.ratib-about-page .ratib-company-dossier__card-title {
+  color: var(--r-muted) !important;
+  letter-spacing: 0.08em;
+}
+
+.ratib-about-page .ratib-company-dossier__dl dt {
+  color: var(--r-muted);
+}
+
+.ratib-about-page .ratib-company-dossier__dl dd,
+.ratib-about-page .ratib-company-dossier__dl dd a {
+  color: var(--r-text);
+}
+
+.ratib-about-page .ratib-company-dossier__dl a {
+  color: var(--r-link) !important;
+}
+
+.ratib-about-page .ratib-company-dossier__dl a:hover {
+  color: var(--r-link-hover) !important;
+}
+
+.ratib-about-page .ratib-company-dossier__logo {
+  background: rgba(90, 111, 168, 0.18) !important;
+  border: 1px solid var(--r-border);
+  color: var(--r-text);
+}
+
+.ratib-about-page .ratib-about-btn--primary {
+  background: var(--r-accent) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none !important;
+}
+
+.ratib-about-page .ratib-about-btn--primary:hover {
+  background: var(--r-accent-hover) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+.ratib-about-page .ratib-about-btn--outline {
+  border-color: var(--r-border) !important;
+  color: var(--r-text) !important;
+}
+
+.ratib-about-page .ratib-about-page-label {
+  color: var(--r-muted);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--r-border);
+}
+
+.ratib-about-page .ratib-about-eyebrow {
+  color: var(--r-cyan);
+}
+
+/* Chat widget — calm on public marketing pages */
+body.ratib-saas-home .chat-widget-button {
+  background: var(--r-accent) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+  animation: none !important;
+}
+
+body.ratib-saas-home .chat-widget-button:hover {
+  background: var(--r-accent-hover) !important;
+  transform: none;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+body.ratib-saas-home .chat-widget-button i {
+  animation: none !important;
+}
+
+/* Kill remaining home-public premium glow blocks */
+.ratib-hero__bullets li:nth-child(n),
+.ratib-text-gradient {
+  animation: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+.ratib-text-gradient {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  color: #b8c2d0 !important;
 }

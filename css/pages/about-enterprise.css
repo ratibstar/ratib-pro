@@ -3,15 +3,15 @@
  */
 
 :root {
-  --about-bg: #0a0e1a;
-  --about-panel: #111827;
-  --about-border: rgba(255, 255, 255, 0.09);
-  --about-blue: #3b82f6;
-  --about-violet: #8b5cf6;
-  --about-green: #10b981;
-  --about-warn: #f97316;
-  --about-text: #e8edf5;
-  --about-muted: #94a3b8;
+  --about-bg: #060a12;
+  --about-panel: #0f141c;
+  --about-border: rgba(255, 255, 255, 0.08);
+  --about-blue: #6b8fc4;
+  --about-violet: #7a8aa8;
+  --about-green: #6b9a82;
+  --about-warn: #c4a06a;
+  --about-text: #e8ecf2;
+  --about-muted: #94a0b2;
   --about-mono: "JetBrains Mono", ui-monospace, monospace;
   --about-font: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   --about-max: 1280px;
@@ -130,8 +130,8 @@ body.ratib-about-page {
 .ratib-company-dossier__card {
   grid-column: span 12;
   padding: 1.15rem 1.25rem;
-  border-radius: var(--about-radius);
-  background: rgba(17, 24, 39, 0.72);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--about-border);
 }
 
@@ -202,11 +202,12 @@ body.ratib-about-page {
 }
 
 .ratib-company-dossier__dl a {
-  color: #93c5fd;
+  color: #a8b8d0;
   text-decoration: none;
 }
 
 .ratib-company-dossier__dl a:hover {
+  color: #dce4f0;
   text-decoration: underline;
 }
 
@@ -609,15 +610,16 @@ body.ratib-about-page {
 }
 
 .ratib-about-btn--primary {
-  background: #5b6fd4;
+  background: var(--about-blue);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
 }
 
 .ratib-about-btn--primary:hover {
-  background: #6678dc;
-  box-shadow: 0 4px 12px rgba(91, 111, 212, 0.22);
+  background: #6a7fb8;
+  box-shadow: none;
+  transform: none;
 }
 
 .ratib-about-btn--outline {
