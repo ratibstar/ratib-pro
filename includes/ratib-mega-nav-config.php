@@ -73,6 +73,11 @@ function ratib_mega_nav_config(): array
         ],
         [
             'type' => 'link',
+            'label' => 'Company',
+            'href_key' => 'company_profile',
+        ],
+        [
+            'type' => 'link',
             'label' => 'Demo',
             'href_key' => 'enterprise_demo',
         ],
