@@ -92,6 +92,16 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
         <div id="qr-scan-wrong-banner" class="qr-scan-wrong-banner d-none" role="alert">
             Wrong QR — you scanned the computer login screen. Open <strong>Users → Access</strong> and scan that badge instead.
         </div>
+        <div id="qr-scan-saved-panel" class="qr-scan-saved-panel d-none" role="region" aria-label="Badge saved on this phone">
+            <p class="qr-scan-saved-title"><i class="fas fa-id-badge"></i> Access badge saved on this phone</p>
+            <p class="qr-scan-saved-meta mb-2" id="qr-scan-saved-meta"></p>
+            <button type="button" class="qr-scan-btn qr-scan-btn-primary w-100 mb-2" id="qr-scan-use-saved">
+                Sign in computer now
+            </button>
+            <button type="button" class="qr-scan-btn qr-scan-btn-ghost w-100" id="qr-scan-scan-new">
+                Scan a different badge
+            </button>
+        </div>
         <div id="qr-scan-viewport" class="qr-scan-viewport" aria-label="Camera scanner"></div>
         <div class="qr-scan-actions">
             <button type="button" class="qr-scan-btn qr-scan-btn-primary" id="qr-scan-start">
@@ -134,11 +144,17 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
         'apiPair' => $apiPair,
         'countryId' => $ctxCountryId,
         'agencyId' => $ctxAgencyId,
+        'countrySlug' => isset($_GET['country_slug']) ? preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $_GET['country_slug'])) : '',
         'mode' => $mode,
         'autoBadge' => $autoBadge,
     ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
+    <?php
+    $jsMobileBadgeV = (int) @filemtime(__DIR__ . '/../js/ratib-mobile-badge-store.js');
+    $jsMobileBadgeUrl = function_exists('asset') ? asset('js/ratib-mobile-badge-store.js') : '/js/ratib-mobile-badge-store.js';
+    ?>
+    <script src="<?php echo htmlspecialchars($jsMobileBadgeUrl, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo $jsMobileBadgeV; ?>"></script>
     <script src="<?php echo htmlspecialchars($jsScannerUrl, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo $jsLibV; ?>"></script>
     <script src="<?php echo htmlspecialchars($jsScanUrl, ENT_QUOTES, 'UTF-8'); ?>?v=<?php echo $jsScanV; ?>"></script>
 </body>

@@ -159,6 +159,28 @@
     display: none !important;
 }
 
+.qr-scan-saved-panel {
+    margin: 0.75rem 0;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    text-align: left;
+}
+
+.qr-scan-saved-title {
+    margin: 0 0 0.35rem;
+    font-size: 0.9rem;
+    color: #6ee7b7;
+    font-weight: 600;
+}
+
+.qr-scan-saved-meta {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin: 0;
+}
+
 .qr-scan-trust-label--main {
     display: block;
     margin: 0.75rem 0 0;

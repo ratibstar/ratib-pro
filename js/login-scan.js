@@ -16,6 +16,63 @@ document.addEventListener('DOMContentLoaded', function () {
     var pendingChallenge = '';
     var scanComplete = false;
     var hintTimer = null;
+    var mobileStore = global.RatibMobileBadgeStore || null;
+    var savedBadgeUsed = false;
+    var skipAutoSaved = false;
+
+    function storeCtx() {
+        return {
+            agencyId: cfg.agencyId || 0,
+            countryId: cfg.countryId || 0,
+            countrySlug: cfg.countrySlug || ''
+        };
+    }
+
+    function saveBadgeOnPhone(payload, scanValue, extra) {
+        if (!mobileStore || !payload) {
+            return;
+        }
+        mobileStore.save(storeCtx(), payload, scanValue, extra || {});
+    }
+
+    function clearSavedBadge() {
+        if (mobileStore) {
+            mobileStore.clear(storeCtx());
+        }
+    }
+
+    function showSavedPanel(entry) {
+        var panel = document.getElementById('qr-scan-saved-panel');
+        var meta = document.getElementById('qr-scan-saved-meta');
+        if (!panel) {
+            return;
+        }
+        panel.classList.remove('d-none');
+        if (meta) {
+            var label = entry.username ? ('User: ' + entry.username) : 'Your workforce badge';
+            meta.textContent = label + ' is stored on this phone for this office.';
+        }
+    }
+
+    function hideSavedPanel() {
+        var panel = document.getElementById('qr-scan-saved-panel');
+        if (panel) {
+            panel.classList.add('d-none');
+        }
+    }
+
+    function hideCameraForSaved() {
+        var viewport = document.getElementById('qr-scan-viewport');
+        if (viewport) {
+            viewport.classList.add('d-none');
+        }
+        if (startBtn) {
+            startBtn.classList.add('d-none');
+        }
+        if (stopBtn) {
+            stopBtn.classList.add('d-none');
+        }
+    }
 
     function clearHintTimer() {
         if (hintTimer) {
@@ -164,11 +221,14 @@ document.addEventListener('DOMContentLoaded', function () {
         return map[code] || fallback || 'Scan failed.';
     }
 
-    function handleSuccess(json) {
+    function handleSuccess(json, payload, scanValue) {
+        if (payload && /^RATIBLOGIN:/i.test(String(payload))) {
+            saveBadgeOnPhone(payload, scanValue, { username: json && json.username ? json.username : '' });
+        }
         showPinPanel(false);
         if (pairToken) {
             lockSuccessUi(
-                'Success! RATEB is opening on your computer. You can close this page. '
+                'Success! RATEB is opening on your computer. Badge saved on this phone for next time. '
                 + 'If the laptop is still waiting, switch back to it — login should finish in a few seconds.'
             );
             return;
@@ -201,7 +261,8 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             var json = await res.json();
             if (json.success) {
-                handleSuccess(json);
+                var pinPayload = pendingChallenge ? '' : '';
+                handleSuccess(json, pinPayload, pinPayload);
                 return;
             }
             setStatus(mapErrorCode(json.code, json.message), 'error');
@@ -209,6 +270,9 @@ document.addEventListener('DOMContentLoaded', function () {
             setStatus('Network error.', 'error');
         }
     }
+
+    var lastBadgePayload = '';
+    var lastBadgeScanValue = '';
 
     async function submitPayload(raw) {
         setStatus('QR detected — checking…', 'loading');
@@ -244,6 +308,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (scanner) {
             scanner.lock();
         }
+        lastBadgePayload = classified.payload;
+        lastBadgeScanValue = raw;
         setStatus('Workforce badge recognized — signing in…', 'loading');
         pendingChallenge = '';
 
@@ -253,7 +319,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 qr_payload: classified.payload,
                 pair_token: pairToken,
                 country_id: cfg.countryId || 0,
-                agency_id: cfg.agencyId || 0
+                agency_id: cfg.agencyId || 0,
+                country_slug: cfg.countrySlug || ''
             }, trustPayload());
             var res = await fetch(apiQr, {
                 method: 'POST',
@@ -274,8 +341,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
             if (json.success) {
-                handleSuccess(json);
+                handleSuccess(json, lastBadgePayload, lastBadgeScanValue);
                 return;
+            }
+            if (json.code === 'invalid' || json.code === 'revoked' || json.code === 'expired') {
+                clearSavedBadge();
             }
             if (scanner) {
                 scanner.resetSubmit();
@@ -286,6 +356,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (stopBtn) {
                 stopBtn.classList.add('d-none');
             }
+            hideSavedPanel();
             setStatus(mapErrorCode(json.code, json.message), 'error');
         } catch (e) {
             if (scanner) {
@@ -381,7 +452,61 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    function tryAutoUseSavedBadge() {
+        if (!pairToken || !mobileStore || skipAutoSaved || savedBadgeUsed) {
+            return;
+        }
+        var saved = mobileStore.load(storeCtx());
+        if (!saved || !saved.payload) {
+            return;
+        }
+        savedBadgeUsed = true;
+        showSavedPanel(saved);
+        hideCameraForSaved();
+        setStatus('Using access badge saved on this phone…', 'loading');
+        submitPayload(saved.scanValue || saved.badgeUrl || saved.payload);
+    }
+
+    var useSavedBtn = document.getElementById('qr-scan-use-saved');
+    var scanNewBtn = document.getElementById('qr-scan-scan-new');
+    if (useSavedBtn) {
+        useSavedBtn.addEventListener('click', function () {
+            if (!mobileStore) {
+                return;
+            }
+            var saved = mobileStore.load(storeCtx());
+            if (!saved) {
+                setStatus('No saved badge. Scan your badge from Users → Access once.', 'error');
+                return;
+            }
+            savedBadgeUsed = true;
+            setStatus('Signing in computer with saved badge…', 'loading');
+            submitPayload(saved.scanValue || saved.badgeUrl || saved.payload);
+        });
+    }
+    if (scanNewBtn) {
+        scanNewBtn.addEventListener('click', function () {
+            skipAutoSaved = true;
+            savedBadgeUsed = false;
+            hideSavedPanel();
+            var viewport = document.getElementById('qr-scan-viewport');
+            if (viewport) {
+                viewport.classList.remove('d-none');
+            }
+            if (startBtn) {
+                startBtn.classList.remove('d-none');
+            }
+            setStatus('Scan your badge from Users → Access on the laptop.', 'info');
+        });
+    }
+
     if (cfg.autoBadge && (pairToken || !pairToken)) {
         submitPayload(cfg.autoBadge);
+    } else if (pairToken && mobileStore) {
+        var existing = mobileStore.load(storeCtx());
+        if (existing && existing.payload) {
+            showSavedPanel(existing);
+            tryAutoUseSavedBadge();
+        }
     }
 });
