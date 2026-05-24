@@ -80,4 +80,8 @@ include __DIR__ . '/../includes/partner-portal-header.php';
 
 <?php include __DIR__ . '/../includes/ratib-home-public-footer.php'; ?>
 
+<?php
+$ratibPublicChatSkipCss = true;
+require_once __DIR__ . '/../includes/chat-widget-public-footer.php';
+?>
 <?php include __DIR__ . '/../includes/partner-portal-footer.php'; ?>

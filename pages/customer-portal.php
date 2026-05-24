@@ -303,5 +303,12 @@ $baseUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : '
         </div>
         <?php endif; ?>
     </div>
+<?php
+$ratibPublicChatSkipCss = false;
+if (!isset($ratibHome) || !is_array($ratibHome)) {
+    $ratibHome = [];
+}
+require_once __DIR__ . '/../includes/chat-widget-public-footer.php';
+?>
 </body>
 </html>

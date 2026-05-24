@@ -255,8 +255,9 @@
     function isPublicSiteChat() {
         if (window.RATIB_CHAT_CONTEXT === 'public') return true;
         var p = String(window.location.pathname || '').toLowerCase();
-        return /\/(home|profile|architecture|security-compliance|procurement-legal|enterprise-trust|government-workforce-operations)(\/|$)/.test(p)
-            || /\/pages\/(home|about)\.php$/i.test(p);
+        return /\/(home|profile|architecture|security-compliance|procurement-legal|enterprise-trust|government-workforce-operations|enterprise-pack|customer-portal)(\/|$)/.test(p)
+            || /\/pages\/(home|about|customer-portal|partner-portal-login)\.php$/i.test(p)
+            || /\/partner-portal-login\/?$/i.test(p);
     }
 
     function hasOpenEscalationSession() {
@@ -1711,8 +1712,15 @@
 
         const intentId = detectIntent(qn);
         if (intentId) {
-            const quick = intentReply(intentId);
-            if (quick) return quick;
+            var appOnlyOnPublic = isPublicSiteChat() && [
+                'workers', 'agents', 'cases', 'accounting', 'reports', 'visa', 'hr',
+                'notifications', 'communications', 'contacts', 'individual_reports',
+                'settings', 'dashboard', 'workers_delete', 'contacts_delete', 'agents_delete'
+            ].indexOf(intentId) !== -1;
+            if (!appOnlyOnPublic) {
+                const quick = intentReply(intentId);
+                if (quick) return quick;
+            }
         }
 
         return 'I\'m right here in chat — try a quick topic above or ask again in your own words.\n' +
