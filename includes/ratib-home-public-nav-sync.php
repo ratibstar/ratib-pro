@@ -24,7 +24,7 @@ function ratib_emit_nav_brand_critical_css(): void
     echo '.ratib-nav__brand--animated-title .ratib-nav__brand-text,';
     echo '.ratib-nav__brand:has(.ratib-brand-full) img,.ratib-nav__brand:has(.ratib-brand-full) .ratib-nav__brand-text{display:none!important;width:0!important;height:0!important}';
     echo '.ratib-nav__brand-block--animated{display:flex!important;flex-direction:column!important;align-items:flex-start!important;';
-    echo 'gap:.4rem!important;max-width:min(24rem,52vw)!important;padding:.5rem .75rem .45rem .65rem!important;';
+    echo 'gap:.42rem!important;max-width:min(30rem,58vw)!important;min-width:min(26rem,54vw)!important;padding:.55rem .85rem .5rem .72rem!important;';
     echo 'border-radius:14px!important;border:1px solid rgba(167,139,250,.38)!important;';
     echo 'border-left:4px solid rgba(236,72,153,.75)!important;';
     echo 'background:linear-gradient(145deg,rgba(15,23,42,.92),rgba(76,29,149,.3))!important;';
@@ -32,12 +32,12 @@ function ratib_emit_nav_brand_critical_css(): void
     echo '.ratib-nav__brand--animated-title{display:block!important;width:100%!important}';
     echo '.ratib-brand-full--nav-stack{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:.3rem!important;width:100%!important}';
     echo '.ratib-brand-full--nav-stack .ratib-brand-full__head{display:inline-flex!important;flex-wrap:nowrap!important;align-items:baseline!important;gap:.45em!important}';
-    echo '.ratib-brand-full--nav-stack .ratib-brand-letter{font-size:clamp(1.15rem,2.6vw,1.45rem)!important;font-weight:800!important}';
-    echo '.ratib-brand-full--nav-stack .ratib-brand-full__word--company{font-size:clamp(.85rem,1.7vw,1.05rem)!important;font-weight:700!important}';
+    echo '.ratib-brand-full--nav-stack .ratib-brand-letter{font-size:clamp(1.2rem,2.8vw,1.55rem)!important;font-weight:800!important}';
+    echo '.ratib-brand-full--nav-stack .ratib-brand-full__word--company{font-size:clamp(.92rem,1.9vw,1.12rem)!important;font-weight:700!important}';
     echo '.ratib-brand-full--nav-stack .ratib-brand-full__tagline{display:flex!important;flex-direction:column!important;gap:.14rem!important;width:100%!important}';
-    echo '.ratib-brand-full--nav-stack .ratib-brand-full__tagline-row{display:inline-flex!important;flex-wrap:wrap!important;gap:.22em .34em!important;';
-    echo 'font-size:clamp(.64rem,1.2vw,.8rem)!important;font-weight:600!important;line-height:1.32!important}';
-    echo '.ratib-nav__brand-block--animated .ratib-nav__brand-profile{margin-left:0!important;font-size:.7rem!important;padding:.24rem .65rem!important}';
+    echo '.ratib-brand-full--nav-stack .ratib-brand-full__tagline-row{display:inline-flex!important;flex-wrap:wrap!important;gap:.26em .38em!important;';
+    echo 'font-size:clamp(.7rem,1.35vw,.88rem)!important;font-weight:600!important;line-height:1.32!important}';
+    echo '.ratib-nav__brand-block--animated .ratib-nav__brand-profile{margin-left:0!important;font-size:.76rem!important;padding:.28rem .75rem!important}';
     echo '.ratib-nav__brand:has(.ratib-brand-full--nav):not(.ratib-nav__brand--animated-title) img{display:none!important}';
     echo '.ratib-nav__brand-block:has(.ratib-brand-full){display:flex!important;flex-direction:column!important;align-items:flex-start!important}';
     echo '.ratib-public-header-pin{position:sticky!important;top:0!important;left:0!important;right:0!important;z-index:200!important;width:100%!important;max-width:100vw!important}';
