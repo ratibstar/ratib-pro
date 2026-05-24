@@ -240,9 +240,24 @@ if ($useOwnProgram && isset($GLOBALS['control_conn'])) {
             || (stripos($req, 'support-chats') !== false)
             || (stripos($req, 'infrastructure-marketplace') !== false)
             || (stripos($req, 'control/infrastructure') !== false)
+            || (stripos($req, 'client-hub') !== false)
+            || (stripos($req, 'client-services') !== false)
+            || (stripos($req, 'client-domains') !== false)
+            || (stripos($req, 'client-orders') !== false)
+            || (stripos($req, 'client-billing') !== false)
+            || (stripos($req, 'client-security') !== false)
+            || (stripos($req, 'client-support') !== false)
+            || (stripos($req, 'client-notifications') !== false)
+            || (stripos($req, 'client-subscriptions') !== false)
+            || (stripos($req, 'client-settings') !== false)
             || (strpos($script, '/api/') !== false)
             || (stripos($script, 'infrastructure-marketplace') !== false)
-            || (stripos($script, 'control/infrastructure.php') !== false);
+            || (stripos($script, 'control/infrastructure.php') !== false)
+            || (stripos($script, 'client-hub') !== false)
+            || (stripos($script, 'client-services') !== false)
+            || (stripos($script, 'client-domains') !== false)
+            || (stripos($script, 'client-orders') !== false)
+            || (stripos($script, 'client-billing') !== false);
         $isLogout = (strpos($req, 'logout.php') !== false);
         $isSystemSettings = (strpos($req, 'system-settings') !== false) || (strpos($req, 'control-panel-settings.php') !== false) || (strpos($req, 'panel-settings.php') !== false) || (strpos($req, 'panel-users.php') !== false) || (strpos($req, 'control-panel-users.php') !== false);
         if (!$isLogin && !$isSelect && !$isLogout && !$isSystemSettings) {

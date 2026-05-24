@@ -119,6 +119,11 @@ if (!function_exists('ratib_client_dashboard_context_url')) {
 if (!function_exists('ratib_client_dashboard_can_access')) {
     function ratib_client_dashboard_can_access(): bool
     {
+        // Control-panel wrappers (client-hub.php, client-services.php, …) already gate
+        // access via requireControlPermission; do not require program login or agency_id.
+        if (ratib_client_dashboard_is_control_wrapper_active() && !empty($_SESSION['control_logged_in'])) {
+            return true;
+        }
         if (ratib_client_dashboard_has_control_context()) {
             return true;
         }

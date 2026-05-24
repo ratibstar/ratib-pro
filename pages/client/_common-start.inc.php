@@ -34,16 +34,9 @@ $pageJs = array_merge([
 
 if (function_exists('ratib_client_dashboard_is_control_wrapper_active') && ratib_client_dashboard_is_control_wrapper_active()) {
     require_once dirname(__DIR__, 2) . '/control-panel/includes/control/layout-wrapper.php';
-    require_once dirname(__DIR__, 2) . '/control-panel/includes/control/client-platform-nav.php';
     startControlLayout($pageTitle, $pageCss);
     echo '<div class="ratib-client-dashboard-surface">';
     require dirname(__DIR__, 2) . '/modules/client-dashboard/Layout/shell-start.inc.php';
-    $clientPlatformTabKey = function_exists('control_client_platform_section_to_key')
-        ? control_client_platform_section_to_key((string) $RCP_SECTION)
-        : null;
-    echo '<div class="client-platform-tabs-bar">';
-    echo control_render_client_platform_tabs($clientPlatformTabKey);
-    echo '</div>';
     return;
 }
 
