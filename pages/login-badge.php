@@ -47,6 +47,7 @@ $pageTitle = 'Workforce badge — RATEB';
             <button type="button" class="qr-scan-btn qr-scan-btn-primary" id="badge-pin-submit">Continue</button>
         </div>
     </div>
+    <script src="<?php echo function_exists('asset') ? asset('js/ratib-mobile-badge-store.js') : '/js/ratib-mobile-badge-store.js'; ?>"></script>
     <script>
     (function () {
         var payload = <?php echo json_encode($payload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
@@ -114,6 +115,14 @@ $pageTitle = 'Workforce badge — RATEB';
                         return;
                     }
                     if (json && json.success) {
+                        if (window.RatibMobileBadgeStore && payload) {
+                            RatibMobileBadgeStore.save(
+                                { agencyId: agencyId, countryId: countryId, countrySlug: countrySlug },
+                                payload,
+                                window.location.href || payload,
+                                { username: json.username || '' }
+                            );
+                        }
                         finish(json);
                         return;
                     }
@@ -141,6 +150,14 @@ $pageTitle = 'Workforce badge — RATEB';
                 .then(function (r) { return r.json(); })
                 .then(function (json) {
                     if (json && json.success) {
+                        if (window.RatibMobileBadgeStore && payload) {
+                            RatibMobileBadgeStore.save(
+                                { agencyId: agencyId, countryId: countryId, countrySlug: countrySlug },
+                                payload,
+                                window.location.href || payload,
+                                { username: json.username || '' }
+                            );
+                        }
                         finish(json);
                         return;
                     }

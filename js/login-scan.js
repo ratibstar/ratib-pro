@@ -261,8 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             var json = await res.json();
             if (json.success) {
-                var pinPayload = pendingChallenge ? '' : '';
-                handleSuccess(json, pinPayload, pinPayload);
+                handleSuccess(json, lastBadgePayload, lastBadgeScanValue);
                 return;
             }
             setStatus(mapErrorCode(json.code, json.message), 'error');

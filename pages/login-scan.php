@@ -50,6 +50,7 @@ $apiPair = '/api/login-barcode-pair.php';
 
 $ctxCountryId = isset($_GET['country_id']) ? (int) $_GET['country_id'] : 0;
 $ctxAgencyId = isset($_GET['agency_id']) ? (int) $_GET['agency_id'] : 0;
+$ctxCountrySlug = isset($_GET['country_slug']) ? preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $_GET['country_slug'])) : '';
 if ($hasPair && is_array($pair['context'] ?? null)) {
     $pctx = $pair['context'];
     if ($ctxCountryId <= 0) {
@@ -57,6 +58,9 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
     }
     if ($ctxAgencyId <= 0) {
         $ctxAgencyId = (int) ($pctx['agency_id'] ?? 0);
+    }
+    if ($ctxCountrySlug === '' && !empty($pctx['country_slug'])) {
+        $ctxCountrySlug = preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $pctx['country_slug']));
     }
 }
 ?>
@@ -78,7 +82,7 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
         <?php if ($hasPair): ?>
         <ol class="qr-scan-steps">
             <li class="qr-scan-steps-done">Open this page (you scanned the computer QR)</li>
-            <li class="qr-scan-steps-active"><strong>Now</strong> scan the badge from Users → Barcode</li>
+            <li class="qr-scan-steps-active"><strong>Now</strong> scan your badge once — it will be <strong>saved on this phone</strong> for next time</li>
         </ol>
         <?php endif; ?>
         <p class="qr-scan-sub">
@@ -144,7 +148,7 @@ if ($hasPair && is_array($pair['context'] ?? null)) {
         'apiPair' => $apiPair,
         'countryId' => $ctxCountryId,
         'agencyId' => $ctxAgencyId,
-        'countrySlug' => isset($_GET['country_slug']) ? preg_replace('/[^a-z0-9_-]/', '', strtolower((string) $_GET['country_slug'])) : '',
+        'countrySlug' => $ctxCountrySlug,
         'mode' => $mode,
         'autoBadge' => $autoBadge,
     ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;

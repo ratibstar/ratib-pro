@@ -93,10 +93,12 @@ function qr_finish_login(array $auth, ?string $pairToken, bool $applySession): v
     if ($trustedDev !== null && function_exists('ratib_qr_set_device_cookie')) {
         ratib_qr_set_device_cookie($trustedDev);
     }
+    $username = (string) ($auth['session']['username'] ?? '');
     qr_json([
         'success' => true,
         'message' => 'OK',
         'paired' => $pairToken !== '',
+        'username' => $username,
         'redirect' => '/pages/dashboard.php',
     ]);
 }
