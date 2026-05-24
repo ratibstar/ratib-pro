@@ -133,6 +133,118 @@ if (!function_exists('ratib_qr_login_enrich_context')) {
             $ctx['country_slug'] = $slug;
         }
 
+        return ratib_qr_login_resolve_tenant_names($ctx);
+    }
+}
+
+if (!function_exists('ratib_qr_login_resolve_tenant_names')) {
+    /**
+     * Fill country_name / agency_name from control DB when ids are known.
+     *
+     * @param array<string, mixed> $ctx
+     * @return array<string, mixed>
+     */
+    function ratib_qr_login_resolve_tenant_names(array $ctx): array
+    {
+        $agencyId = (int) ($ctx['agency_id'] ?? 0);
+        $countryId = (int) ($ctx['country_id'] ?? 0);
+        $countryName = trim((string) ($ctx['country_name'] ?? ''));
+        $agencyName = trim((string) ($ctx['agency_name'] ?? ''));
+
+        if ($agencyName !== '' && $countryName !== '') {
+            return $ctx;
+        }
+
+        $lookup = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
+        if (!($lookup instanceof mysqli)) {
+            $lookup = $GLOBALS['conn'] ?? null;
+        }
+        if (!($lookup instanceof mysqli)) {
+            return $ctx;
+        }
+
+        $chk = @$lookup->query("SHOW TABLES LIKE 'control_agencies'");
+        if (!$chk || $chk->num_rows === 0) {
+            return $ctx;
+        }
+
+        if ($agencyId > 0) {
+            $susp = function_exists('ratib_control_agency_active_fragment')
+                ? ratib_control_agency_active_fragment($lookup, 'a')
+                : '1=1';
+            $stmt = $lookup->prepare(
+                "SELECT a.name AS agency_name, a.country_id, c.name AS country_name
+                 FROM control_agencies a
+                 LEFT JOIN control_countries c ON c.id = a.country_id
+                 WHERE a.id = ? AND a.is_active = 1 AND {$susp} LIMIT 1"
+            );
+            if ($stmt) {
+                $stmt->bind_param('i', $agencyId);
+                $stmt->execute();
+                $res = $stmt->get_result();
+                $row = ($res && $res->num_rows > 0) ? $res->fetch_assoc() : null;
+                $stmt->close();
+                if ($row) {
+                    if ($agencyName === '') {
+                        $agencyName = trim((string) ($row['agency_name'] ?? ''));
+                    }
+                    if ($countryId <= 0) {
+                        $countryId = (int) ($row['country_id'] ?? 0);
+                    }
+                    if ($countryName === '') {
+                        $countryName = trim((string) ($row['country_name'] ?? ''));
+                    }
+                }
+            }
+        }
+
+        if ($countryName === '' && $countryId > 0) {
+            $chkC = @$lookup->query("SHOW TABLES LIKE 'control_countries'");
+            if ($chkC && $chkC->num_rows > 0) {
+                $stmtC = $lookup->prepare('SELECT name FROM control_countries WHERE id = ? LIMIT 1');
+                if ($stmtC) {
+                    $stmtC->bind_param('i', $countryId);
+                    $stmtC->execute();
+                    $resC = $stmtC->get_result();
+                    $rowC = ($resC && $resC->num_rows > 0) ? $resC->fetch_assoc() : null;
+                    $stmtC->close();
+                    if ($rowC) {
+                        $countryName = trim((string) ($rowC['name'] ?? ''));
+                    }
+                }
+            }
+        }
+
+        if ($countryName === '' && $countryId <= 0) {
+            $slug = trim((string) ($ctx['country_slug'] ?? ''));
+            if ($slug !== '') {
+                $countryId = ratib_qr_login_country_id_from_slug($slug);
+                if ($countryId > 0) {
+                    $stmtC = $lookup->prepare('SELECT name FROM control_countries WHERE id = ? LIMIT 1');
+                    if ($stmtC) {
+                        $stmtC->bind_param('i', $countryId);
+                        $stmtC->execute();
+                        $resC = $stmtC->get_result();
+                        $rowC = ($resC && $resC->num_rows > 0) ? $resC->fetch_assoc() : null;
+                        $stmtC->close();
+                        if ($rowC) {
+                            $countryName = trim((string) ($rowC['name'] ?? ''));
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($countryName !== '') {
+            $ctx['country_name'] = $countryName;
+        }
+        if ($agencyName !== '') {
+            $ctx['agency_name'] = $agencyName;
+        }
+        if ($countryId > 0) {
+            $ctx['country_id'] = $countryId;
+        }
+
         return $ctx;
     }
 }

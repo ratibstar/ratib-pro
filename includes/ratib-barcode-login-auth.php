@@ -95,6 +95,9 @@ if (!function_exists('ratib_barcode_login_build_session')) {
      */
     function ratib_barcode_login_build_session(mysqli $loginConn, array $user, array $ctx): ?array
     {
+        if (function_exists('ratib_qr_login_resolve_tenant_names')) {
+            $ctx = ratib_qr_login_resolve_tenant_names($ctx);
+        }
         $st = strtolower(trim((string) ($user['status'] ?? '')));
         $statusOk = ($st === 'active' || $st === '1' || $st === 'enabled');
         if (!$statusOk && array_key_exists('is_active', $user)) {

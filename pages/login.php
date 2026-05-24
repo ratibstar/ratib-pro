@@ -319,6 +319,25 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $conn !== null) {
                 }
                 $_SESSION[$k] = $v;
             }
+            if (function_exists('ratib_qr_login_resolve_tenant_names')) {
+                require_once __DIR__ . '/../includes/ratib-qr-login.php';
+                $resolved = ratib_qr_login_resolve_tenant_names([
+                    'country_id' => (int) ($_SESSION['country_id'] ?? 0),
+                    'agency_id' => (int) ($_SESSION['agency_id'] ?? 0),
+                    'country_name' => (string) ($_SESSION['country_name'] ?? ''),
+                    'agency_name' => (string) ($_SESSION['agency_name'] ?? ''),
+                    'country_slug' => (string) ($_SESSION['country_slug'] ?? ''),
+                ]);
+                if (!empty($resolved['country_name'])) {
+                    $_SESSION['country_name'] = (string) $resolved['country_name'];
+                }
+                if (!empty($resolved['agency_name'])) {
+                    $_SESSION['agency_name'] = (string) $resolved['agency_name'];
+                }
+                if (!empty($resolved['country_id'])) {
+                    $_SESSION['country_id'] = (int) $resolved['country_id'];
+                }
+            }
             if (function_exists('ratib_set_login_context_cookies')) {
                 ratib_set_login_context_cookies((int) ($_SESSION['country_id'] ?? 0), (int) ($_SESSION['agency_id'] ?? 0));
             }

@@ -98,17 +98,46 @@ if (($sessionCountryId > 0 || $sessionAgencyId > 0) && isset($conn) && $conn ins
             // Prefer specific agency_id from session so we show the exact agency user logged into
             if ($sessionAgencyId > 0) {
                 $susp = ratib_control_agency_active_fragment($tryConn, null);
-                $stmt = $tryConn->prepare("SELECT name, country_id FROM control_agencies WHERE id = ? AND is_active = 1 AND {$susp} LIMIT 1");
+                $stmt = $tryConn->prepare(
+                    "SELECT a.name, a.country_id, c.name AS country_name
+                     FROM control_agencies a
+                     LEFT JOIN control_countries c ON c.id = a.country_id
+                     WHERE a.id = ? AND a.is_active = 1 AND {$susp} LIMIT 1"
+                );
                 if ($stmt) {
                     $stmt->bind_param("i", $sessionAgencyId);
                     $stmt->execute();
                     $res = $stmt->get_result();
                     if ($res && $res->num_rows > 0 && ($row = $res->fetch_assoc())) {
                         $currentAgencyName = trim($row['name'] ?? '') ?: null;
+                        if (!$currentCountryName && !empty($row['country_name'])) {
+                            $currentCountryName = trim((string) $row['country_name']);
+                        }
+                        if ($sessionCountryId <= 0 && !empty($row['country_id'])) {
+                            $sessionCountryId = (int) $row['country_id'];
+                        }
                         $stmt->close();
                         break;
                     }
                     $stmt->close();
+                }
+            }
+            if (!$currentCountryName && $sessionCountryId > 0) {
+                $chkC = @$tryConn->query("SHOW TABLES LIKE 'control_countries'");
+                if ($chkC && $chkC->num_rows > 0) {
+                    $stmtC = $tryConn->prepare('SELECT name FROM control_countries WHERE id = ? LIMIT 1');
+                    if ($stmtC) {
+                        $stmtC->bind_param('i', $sessionCountryId);
+                        $stmtC->execute();
+                        $resC = $stmtC->get_result();
+                        if ($resC && $resC->num_rows > 0 && ($rowC = $resC->fetch_assoc())) {
+                            $cn = trim((string) ($rowC['name'] ?? ''));
+                            if ($cn !== '') {
+                                $currentCountryName = $cn;
+                            }
+                        }
+                        $stmtC->close();
+                    }
                 }
             }
             if ($currentAgencyName !== null && $currentAgencyName !== '') break;
