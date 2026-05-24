@@ -1053,8 +1053,8 @@ body.ratib-about-page .ratib-nav-shell__inner {
 }
 
 body.ratib-about-page .ratib-nav__brand-block--animated {
-  max-width: min(30rem, 58vw);
-  min-width: min(26rem, 54vw);
+  max-width: min(20.5rem, 40vw);
+  min-width: 0;
 }
 
 /* Nav highlight on about page — Profile pills, not Platform */
