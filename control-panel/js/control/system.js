@@ -172,6 +172,7 @@
     function normalizePath(path) {
         if (!path) return '/';
         let normalized = path.toLowerCase();
+        normalized = normalized.replace(/\.php$/i, '');
         normalized = normalized.replace(/\/+$/, '');
         if (normalized === '') normalized = '/';
         return normalized;

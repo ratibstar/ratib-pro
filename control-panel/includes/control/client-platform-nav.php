@@ -103,9 +103,61 @@ if (!function_exists('control_client_platform_links')) {
     }
 }
 
-if (!function_exists('control_render_client_platform_tabs')) {
-    function control_render_client_platform_tabs(): string
+if (!function_exists('control_client_platform_active_key')) {
+    /**
+     * Resolve the active Client Platform section from the current control-panel wrapper script.
+     */
+    function control_client_platform_active_key(): ?string
     {
+        $script = strtolower(basename((string) ($_SERVER['PHP_SELF'] ?? ''), '.php'));
+        $map = [
+            'client-hub' => 'hub',
+            'client-services' => 'services',
+            'client-domains' => 'domains',
+            'client-orders' => 'orders',
+            'client-billing' => 'billing',
+            'client-security' => 'security',
+            'client-support' => 'support',
+            'client-notifications' => 'notifications',
+            'client-subscriptions' => 'subscriptions',
+            'client-settings' => 'settings',
+        ];
+
+        return $map[$script] ?? null;
+    }
+}
+
+if (!function_exists('control_client_platform_section_to_key')) {
+    function control_client_platform_section_to_key(string $section): ?string
+    {
+        $section = strtolower(trim($section));
+        $map = [
+            'home' => 'hub',
+            'dashboard' => 'hub',
+            'hub' => 'hub',
+            'services' => 'services',
+            'domains' => 'domains',
+            'orders' => 'orders',
+            'billing' => 'billing',
+            'security' => 'security',
+            'support' => 'support',
+            'notifications' => 'notifications',
+            'subs' => 'subscriptions',
+            'subscriptions' => 'subscriptions',
+            'settings' => 'settings',
+        ];
+
+        return $map[$section] ?? null;
+    }
+}
+
+if (!function_exists('control_render_client_platform_tabs')) {
+    function control_render_client_platform_tabs(?string $activeKey = null): string
+    {
+        if ($activeKey === null || $activeKey === '') {
+            $activeKey = control_client_platform_active_key();
+        }
+
         $links = control_client_platform_links();
 
         ob_start();
@@ -115,8 +167,12 @@ if (!function_exists('control_render_client_platform_tabs')) {
                 <i class="fas fa-table-cells-large" aria-hidden="true"></i>
                 <span>Client Platform</span>
             </span>
-            <?php foreach ($links as $item): ?>
-                <a class="client-platform-tabs__link" href="<?php echo htmlspecialchars($item['href'], ENT_QUOTES, 'UTF-8'); ?>">
+            <?php foreach ($links as $key => $item): ?>
+                <?php
+                $isActive = ($activeKey !== null && $activeKey === $key);
+                $linkClass = 'client-platform-tabs__link' . ($isActive ? ' is-active' : '');
+                ?>
+                <a class="<?php echo htmlspecialchars($linkClass, ENT_QUOTES, 'UTF-8'); ?>" href="<?php echo htmlspecialchars($item['href'], ENT_QUOTES, 'UTF-8'); ?>"<?php echo $isActive ? ' aria-current="page"' : ''; ?>>
                     <?php echo htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8'); ?>
                 </a>
             <?php endforeach; ?>

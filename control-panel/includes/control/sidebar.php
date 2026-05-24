@@ -10,6 +10,7 @@ $base = getBaseUrl();
 $fullBaseUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . $base;
 $controlCenterUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . '/admin/control-center.php';
 $clientPlatformLinks = control_client_platform_links();
+$clientPlatformActiveKey = control_client_platform_active_key();
 ?>
 <aside class="control-sidebar" id="control-sidebar">
     <div class="sidebar-header">
@@ -39,20 +40,12 @@ $clientPlatformLinks = control_client_platform_links();
             <?php if ($ratibPublicProfileUrl !== '') { ?>
             <li><a href="<?php echo htmlspecialchars($ratibPublicProfileUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_system_settings,view_control_system_settings"><i class="fas fa-building"></i><span>Company profile (live)</span></a></li>
             <?php } ?>
-            <li class="sidebar-collapsible" data-sidebar-group="client-platform">
-                <button type="button" class="sidebar-item sidebar-item-toggle" data-sidebar-toggle="client-platform" aria-expanded="false" data-permission="control_dashboard">
-                    <i class="fas fa-table-cells-large"></i>
-                    <span>Client Platform</span>
-                    <span class="sidebar-toggle-icon" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
-                </button>
-                <ul class="sidebar-submenu" data-sidebar-panel="client-platform" hidden>
-                    <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['hub']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem" data-permission="control_dashboard">Client Hub</a></li>
-                    <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['services']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem" data-permission="control_dashboard">Services</a></li>
-                    <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['domains']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem" data-permission="control_dashboard">Domains</a></li>
-                    <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['orders']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem" data-permission="control_dashboard">Orders</a></li>
-                    <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['billing']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-subitem" data-permission="control_dashboard">Billing</a></li>
-                </ul>
-            </li>
+            <li class="sidebar-section"><span class="section-label">Client Platform</span></li>
+            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['hub']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'hub') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-chart-pie"></i><span>Client Hub</span></a></li>
+            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['services']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'services') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-server"></i><span>Services</span></a></li>
+            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['domains']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'domains') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-globe"></i><span>Domains</span></a></li>
+            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['orders']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'orders') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-bag-shopping"></i><span>Orders</span></a></li>
+            <li><a href="<?php echo htmlspecialchars($clientPlatformLinks['billing']['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($clientPlatformActiveKey === 'billing') ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-file-invoice-dollar"></i><span>Billing</span></a></li>
             <li class="sidebar-section"><span class="section-label">Core Management</span></li>
             <?php
             $selectCountryPerms = 'control_select_country';

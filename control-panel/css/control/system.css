@@ -602,6 +602,13 @@ body.control-layout-no-header .control-content {
     flex: 1;
 }
 
+.client-platform-tabs-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0 0 1rem;
+    padding: 0 0 0.25rem;
+}
+
 .client-platform-tabs {
     display: inline-flex;
     align-items: center;
@@ -640,12 +647,17 @@ body.control-layout-no-header .control-content {
     font-weight: 600;
 }
 
-.client-platform-tabs__link:hover {
+.client-platform-tabs__link:hover,
+.client-platform-tabs__link.is-active {
     color: #ffffff;
     border-color: var(--control-accent);
     background: rgba(102, 126, 234, 0.22);
     box-shadow: 0 8px 18px rgba(102, 126, 234, 0.18);
     transform: translateY(-1px);
+}
+
+.client-platform-tabs__link.is-active {
+    font-weight: 700;
 }
 
 .sidebar-toggle {
