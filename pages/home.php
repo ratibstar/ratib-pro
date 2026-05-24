@@ -9,8 +9,26 @@ require_once __DIR__ . '/../includes/ratib-public-base-url.php';
 /** Platform pills on this page use in-page #anchors (no full reload). */
 $GLOBALS['ratib_public_nav_on_marketing_home'] = true;
 
+// Fresh mega-nav HTML for JS when LiteSpeed serves cached home chrome (IA v3).
+if (isset($_GET['ratib_mega_nav_fragment']) && (string) $_GET['ratib_mega_nav_fragment'] === '1') {
+    if (!headers_sent()) {
+        header('Content-Type: text/html; charset=utf-8');
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private');
+        header('Pragma: no-cache');
+        header('X-LiteSpeed-Cache-Control: no-cache', false);
+    }
+    require_once __DIR__ . '/../includes/ratib-mega-nav-render.php';
+    $ratibNavResolve = __DIR__ . '/../includes/ratib-mega-nav-resolve.php';
+    if (is_file($ratibNavResolve)) {
+        require_once $ratibNavResolve;
+    }
+    ratib_mega_nav_render(ratib_public_site_base_url(), '');
+    exit;
+}
+
 // LiteSpeed caches bare /pages/home.php with old Profile → new-tab HTML. Require ?v= build marker.
 $ratibHomeSkipBuildBust = isset($_GET['ratib_deploy_probe'])
+    || (isset($_GET['ratib_mega_nav_fragment']) && (string) $_GET['ratib_mega_nav_fragment'] === '1')
     || (
         isset($_GET['ratib_purge_lscache'], $_GET['key'])
         && (string) $_GET['ratib_purge_lscache'] === '1'

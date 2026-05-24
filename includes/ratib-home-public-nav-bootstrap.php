@@ -29,7 +29,8 @@ if (!isset($baseUrl) || !is_string($baseUrl) || $baseUrl === '') {
 $ratibHomeUiRevRaw = getenv('RATIB_HOME_UI_REV');
 $ratibHomeUiRev = ($ratibHomeUiRevRaw !== false && trim((string) $ratibHomeUiRevRaw) !== '')
     ? preg_replace('/[^a-zA-Z0-9._-]/', '', trim((string) $ratibHomeUiRevRaw))
-    : '20260524-enterprise-calm-v3';
+    : '20260524-nav-ia-v4';
+$GLOBALS['ratibHomeUiRev'] = $ratibHomeUiRev;
 /** Proof token: ties asset URLs to pages/home.php deploy */
 $ratibHomePhpPath = __DIR__ . '/../pages/home.php';
 clearstatcache(true, $ratibHomePhpPath);
@@ -208,6 +209,7 @@ $ratibChromeNavPathsForBundle = [
     __DIR__ . '/../css/pages/home-public.css',
     __DIR__ . '/../css/pages/home-enterprise-calm.css',
     __DIR__ . '/../js/pages/home-page.js',
+    __DIR__ . '/../js/pages/ratib-public-nav-ia-fix.js',
 ];
 $ratibChromeBundleKey = '';
 foreach ($ratibChromeNavPathsForBundle as $ratibChromeNavPath) {

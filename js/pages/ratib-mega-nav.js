@@ -125,26 +125,11 @@
         });
     }
 
-    function injectPill() {
+    function removeLegacyPlatformRow() {
         var wrap = document.querySelector('.ratib-nav__platform-links');
-        if (!wrap) {
-            return;
+        if (wrap) {
+            wrap.remove();
         }
-        if (
-            wrap.querySelector('.ratib-nav__link--about') ||
-            wrap.querySelector('.ratib-nav__link--about-injected')
-        ) {
-            fixProfileHrefs();
-            return;
-        }
-        var a = document.createElement('a');
-        a.href = profileHref();
-        a.setAttribute('data-ratib-profile-nav', '1');
-        a.className =
-            'ratib-nav__link ratib-nav__link--about ratib-nav__link--about-injected';
-        a.innerHTML =
-            '<span class="ratib-nav__icon" aria-hidden="true"><svg class="ratib-nav__glyph" viewBox="0 0 24 24" focusable="false"><use href="#ratib-ng-solutions"/></svg></span><span class="ratib-nav__label">Profile</span>';
-        wrap.insertBefore(a, wrap.firstChild);
     }
 
     function injectBrand() {
@@ -184,7 +169,7 @@
 
     function run() {
         fixProfileHrefs();
-        injectPill();
+        removeLegacyPlatformRow();
         injectBrand();
     }
 
