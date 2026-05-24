@@ -35,6 +35,13 @@ function ratib_emit_nav_brand_critical_css(): void
     echo '.ratib-brand-full--nav-stack .ratib-brand-letter{font-size:clamp(1.02rem,2.35vw,1.28rem)!important;font-weight:800!important}';
     echo '.ratib-brand-full--nav-stack .ratib-brand-full__word--company{font-size:clamp(.76rem,1.5vw,.92rem)!important;font-weight:700!important}';
     echo '.ratib-brand-full--nav-stack .ratib-brand-full__tagline{display:none!important}';
+    echo '.ratib-nav__brand-block--animated .ratib-brand-full__tagline,';
+    echo '.ratib-nav__brand-block--animated .ratib-brand-full__word--w1,';
+    echo '.ratib-nav__brand-block--animated .ratib-brand-full__word--w2,';
+    echo '.ratib-nav__brand-block--animated .ratib-brand-full__word--w3,';
+    echo '.ratib-nav__brand-block--animated .ratib-brand-full__word--w4,';
+    echo '.ratib-nav__brand-block--animated .ratib-brand-full__word--w5,';
+    echo '.ratib-nav__brand-block--animated .ratib-brand-full__word--amp{display:none!important}';
     echo '.ratib-nav__brand-block--animated .ratib-nav__brand-profile{margin-left:0!important;font-size:.64rem!important;padding:.2rem .56rem!important}';
     echo '.ratib-nav__brand:has(.ratib-brand-full--nav):not(.ratib-nav__brand--animated-title) img{display:none!important}';
     echo '.ratib-nav__brand-block:has(.ratib-brand-full){display:flex!important;flex-direction:column!important;align-items:flex-start!important}';

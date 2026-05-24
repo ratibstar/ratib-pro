@@ -1539,8 +1539,14 @@ body.ratib-saas-home {
   }
 }
 
-.ratib-brand-full--nav-stack .ratib-brand-full__tagline {
-  display: none;
+.ratib-nav__brand-block--animated .ratib-brand-full__tagline,
+.ratib-nav__brand-block--animated .ratib-brand-full__word--w1,
+.ratib-nav__brand-block--animated .ratib-brand-full__word--w2,
+.ratib-nav__brand-block--animated .ratib-brand-full__word--w3,
+.ratib-nav__brand-block--animated .ratib-brand-full__word--w4,
+.ratib-nav__brand-block--animated .ratib-brand-full__word--w5,
+.ratib-nav__brand-block--animated .ratib-brand-full__word--amp {
+  display: none !important;
 }
 
 @media (min-width: 1100px) {
