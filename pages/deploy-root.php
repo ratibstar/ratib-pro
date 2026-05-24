@@ -34,6 +34,8 @@ $bootstrapSample = is_file($bootstrapPath) ? (string) file_get_contents($bootstr
 echo 'bootstrap_mtime=' . (is_file($bootstrapPath) ? (string) (int) filemtime($bootstrapPath) : '0') . "\n";
 echo 'bootstrap_nav_asset_init=' . (str_contains($bootstrapSample, 'Initialize before any $GLOBALS') ? 'yes' : 'no') . "\n";
 echo 'bootstrap_early_globals_bug=' . (preg_match('/\\$GLOBALS\\[\'ratibEnterpriseCalmCssQuery\'\\][^;]+;\\s*\\$ratibEnterpriseCalmCssPath/s', $bootstrapSample) === 1 ? 'yes' : 'no') . "\n";
+echo 'bootstrap_preflight=' . (str_contains($bootstrapSample, 'ratib-nav-asset-preflight.php') ? 'yes' : 'no') . "\n";
+echo 'nav_health_url=/pages/ratib-nav-health.php' . "\n";
 echo 'chrome_profile_same_tab=' . (str_contains($chromeSample, 'ratib-profile-nav=same-tab-v2') ? 'yes' : 'no') . "\n";
 echo 'home_mtime=' . (is_file($homePath) ? (string) (int) filemtime($homePath) : '0') . "\n";
 echo 'about_mtime=' . (is_file($aboutPath) ? (string) (int) filemtime($aboutPath) : '0') . "\n";

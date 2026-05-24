@@ -25,6 +25,11 @@ $ppBodyClass = $ppUseHomeChrome ? 'partner-portal-body ratib-saas-home' : 'partn
     <meta name="ratib-home-ui-rev" content="<?php echo htmlspecialchars((string) $ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <?php
+    if (function_exists('ratib_home_public_nav_emit_stylesheets') && isset($baseUrl) && is_string($baseUrl) && $baseUrl !== '') {
+        ratib_home_public_nav_emit_stylesheets($baseUrl);
+    }
+    ?>
     <?php endif; ?>
     <?php if (!$ppUseHomeChrome): ?>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">

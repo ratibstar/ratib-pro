@@ -1,4 +1,8 @@
 <?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/ratib-nav-asset-preflight.php';
+
 /**
  * Shared prep for the public home chrome (top bar + sticky SVG nav): CMS flat keys, nav targets, asset bust tokens.
  * Requires $baseUrl (same computation as pages/home.php) before include when used outside home.php.
