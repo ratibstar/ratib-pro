@@ -50,6 +50,23 @@
         }
     }
 
+    function layoutNavBrandRow() {
+        var blk = document.querySelector('.ratib-nav__brand-block--animated');
+        if (!blk) {
+            return;
+        }
+        blk.classList.add('ratib-nav__brand-block--row');
+        blk.style.display = 'flex';
+        blk.style.flexDirection = 'row';
+        blk.style.alignItems = 'center';
+        blk.style.flexWrap = 'nowrap';
+        var prof = blk.querySelector('.ratib-nav__brand-profile');
+        var brand = blk.querySelector('a.ratib-nav__brand');
+        if (prof && brand) {
+            blk.insertBefore(prof, brand);
+        }
+    }
+
     function stripNavBrandTagline() {
         var blk = document.querySelector('.ratib-nav__brand-block--animated');
         if (!blk) {
@@ -214,6 +231,7 @@
 
         wireAllProfileLinks();
         removeLegacyPlatformRow();
+        layoutNavBrandRow();
         stripNavBrandTagline();
 
         var root = document.getElementById('ratibMegaNavRoot');

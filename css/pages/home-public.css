@@ -398,6 +398,12 @@ body.ratib-saas-home {
   max-width: min(20rem, 44vw);
 }
 
+.ratib-nav__brand-block--row {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
 .ratib-nav__brand-block--animated {
   flex-direction: row;
   align-items: center;

@@ -44,7 +44,7 @@ function ratib_emit_nav_brand_critical_css(): void
     echo '.ratib-nav__brand-block--animated .ratib-brand-full__word--amp{display:none!important}';
     echo '.ratib-nav__brand-block--animated .ratib-nav__brand-profile{margin:0!important;flex-shrink:0!important;align-self:center!important;font-size:.64rem!important;padding:.2rem .56rem!important}';
     echo '.ratib-nav__brand:has(.ratib-brand-full--nav):not(.ratib-nav__brand--animated-title) img{display:none!important}';
-    echo '.ratib-nav__brand-block:has(.ratib-brand-full){display:flex!important;flex-direction:column!important;align-items:flex-start!important}';
+    echo '.ratib-nav__brand-block--animated.ratib-nav__brand-block--row,.ratib-nav__brand-block--animated:has(.ratib-brand-full){display:flex!important;flex-direction:row!important;align-items:center!important;flex-wrap:nowrap!important}';
     echo '.ratib-public-header-pin{position:sticky!important;top:0!important;left:0!important;right:0!important;z-index:200!important;width:100%!important;max-width:100vw!important}';
     echo '.ratib-public-header-pin .ratib-nav-shell{position:relative!important;top:auto!important}';
     echo '</style>';

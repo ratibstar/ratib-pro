@@ -148,7 +148,8 @@ body.ratib-about-page {
 }
 
 /* Brand box — compact; acronym stays in hero, not header */
-.ratib-nav__brand-block--animated {
+.ratib-nav__brand-block--animated,
+.ratib-nav__brand-block--row {
   display: flex;
   flex-direction: row;
   align-items: center;

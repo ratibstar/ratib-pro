@@ -153,6 +153,8 @@
         prof.className = 'ratib-nav__brand-profile';
         prof.textContent = 'Profile';
         brand.parentNode.insertBefore(blk, brand);
+        blk.classList.add('ratib-nav__brand-block--animated', 'ratib-nav__brand-block--row');
+        blk.appendChild(prof);
         blk.appendChild(brand);
         if (brand.querySelector('.ratib-brand-full')) {
             brand.querySelectorAll('img, .ratib-nav__brand-logo, .ratib-nav__brand-text').forEach(function (el) {
@@ -164,7 +166,6 @@
                 bt.textContent = 'RATEB';
             }
         }
-        blk.appendChild(prof);
     }
 
     function run() {
