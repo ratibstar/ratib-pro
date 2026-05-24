@@ -148,7 +148,7 @@ if (!function_exists('ratib_home_nav_emit_sync_guard_style')) {
             </button>
             <!-- ratib-home-nav-build: chrome=<?php echo htmlspecialchars($ratibChromeBundleHash ?? '', ENT_QUOTES, 'UTF-8'); ?> ui-rev=<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?> home.php-mtime=<?php echo htmlspecialchars($ratibHomePhpMtime, ENT_QUOTES, 'UTF-8'); ?> primary-links=8 brand-profile=plain-href-v6 mega-nav-root=#ratibMegaNavRoot -->
             <!-- ratib-profile-nav=plain-href-v5 -->
-            <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary" data-ratib-nav-sync="1" data-ratib-primary-nav-links="8" data-ratib-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-nav-visual="svg-glyphs-semantic-<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
+            <nav class="ratib-nav__menu" id="ratibNavMenu" aria-label="Primary" data-ratib-primary-nav-links="8" data-ratib-ui-rev="<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>" data-ratib-nav-visual="svg-glyphs-semantic-<?php echo htmlspecialchars($ratibHomeUiRev, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php ratib_mega_nav_render($baseUrl, $ratibNavPrefix); ?>
             </nav>
             <?php ratib_home_nav_emit_sync_script($ratibProfileUrl); ?>

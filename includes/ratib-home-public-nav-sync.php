@@ -76,8 +76,12 @@ function ratib_home_nav_emit_sync_script(string $profileUrl = ''): void
     if (isset($GLOBALS['ratibHomeUiRev']) && (string) $GLOBALS['ratibHomeUiRev'] !== '') {
         $iaFixQ .= '-' . preg_replace('/[^a-zA-Z0-9._-]/', '', (string) $GLOBALS['ratibHomeUiRev']);
     }
+    $iaFixInline = is_readable($iaFixPath) ? (string) file_get_contents($iaFixPath) : '';
     ?>
 <script>window.ratibProfileNavUrl=<?php echo $profileJson; ?>;</script>
+<?php if ($iaFixInline !== '') { ?>
+<script id="ratib-nav-ia-fix-inline"><?php echo $iaFixInline; ?></script>
+<?php } ?>
 <script src="<?php echo htmlspecialchars(rtrim($baseUrl, '/') . '/js/pages/ratib-public-nav-ia-fix.js?v=' . $iaFixQ, ENT_QUOTES, 'UTF-8'); ?>"></script>
     <?php
 }

@@ -4,6 +4,10 @@
  */
 (function ratibPublicNavIaFix() {
     'use strict';
+    if (window.__ratibNavIaFixLoaded) {
+        return;
+    }
+    window.__ratibNavIaFixLoaded = true;
 
     var PROFILE =
         typeof window.ratibProfileNavUrl === 'string' && window.ratibProfileNavUrl
@@ -46,6 +50,17 @@
         }
     }
 
+    function megaNavTriggerLabels(root) {
+        var labels = [];
+        if (!root) {
+            return labels;
+        }
+        root.querySelectorAll('.ratib-mega-nav__trigger-label').forEach(function (el) {
+            labels.push((el.textContent || '').trim().toLowerCase());
+        });
+        return labels;
+    }
+
     function isLegacyMegaNav(root) {
         if (document.querySelector('.ratib-nav__platform-links')) {
             return true;
@@ -53,23 +68,52 @@
         if (!root) {
             return false;
         }
-        return !!root.querySelector(
-            '[data-ratib-mega-id="company"],[data-ratib-mega-id="sites"],[data-ratib-mega-id="grow"],' +
-                '[data-ratib-mega-id="websites"],[data-ratib-mega-id="marketing"],[data-ratib-mega-id="security"]'
-        );
+        if (
+            root.querySelector(
+                '[data-ratib-mega-id="company"],[data-ratib-mega-id="sites"],[data-ratib-mega-id="grow"],' +
+                    '[data-ratib-mega-id="websites"],[data-ratib-mega-id="marketing"],[data-ratib-mega-id="security"]'
+            )
+        ) {
+            return true;
+        }
+        var labels = megaNavTriggerLabels(root);
+        if (labels.indexOf('sites') >= 0 || labels.indexOf('grow') >= 0) {
+            return true;
+        }
+        if (labels.indexOf('company') >= 0 && labels.indexOf('solutions') < 0) {
+            return true;
+        }
+        if (labels.length >= 4 && labels.indexOf('domains') < 0) {
+            return true;
+        }
+        return false;
     }
 
-    function fragmentUrl() {
-        var path = window.location.pathname || '/home';
-        if (!/\/home(\.php)?$/i.test(path) && !/\/pages\/home\.php$/i.test(path)) {
-            path = '/home';
-        }
+    function fragmentUrls() {
         var qs = 'ratib_mega_nav_fragment=1';
         var rev = document.body && document.body.getAttribute('data-ratib-home-ui-rev');
         if (rev) {
             qs += '&ui=' + encodeURIComponent(rev);
         }
-        return path + (path.indexOf('?') >= 0 ? '&' : '?') + qs;
+        return ['/home?' + qs, '/pages/home.php?' + qs];
+    }
+
+    function fetchMegaNavFragment() {
+        var urls = fragmentUrls();
+        var i = 0;
+        function tryNext() {
+            if (i >= urls.length) {
+                return Promise.reject(new Error('nav fragment unavailable'));
+            }
+            var url = urls[i++];
+            return fetch(url, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) {
+                if (!r.ok) {
+                    return tryNext();
+                }
+                return r.text();
+            });
+        }
+        return tryNext();
     }
 
     function initMegaNavPanels(root) {
@@ -164,10 +208,8 @@
                 document.body.getAttribute('data-ratib-about') === '1');
 
         if (!onProfile && isLegacyMegaNav(root)) {
-            fetch(fragmentUrl(), { credentials: 'same-origin', cache: 'no-store' })
-                .then(function (r) {
-                    return r.text();
-                })
+            nav.removeAttribute('data-ratib-nav-sync');
+            fetchMegaNavFragment()
                 .then(function (html) {
                     if (html && html.indexOf('ratibMegaNavRoot') !== -1) {
                         applyFreshMegaNav(html);
