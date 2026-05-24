@@ -144,6 +144,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if (!empty($_SESSION['control_logged_in'])) {
+    $returnTo = trim((string) ($_GET['return_to'] ?? ''));
+    if ($returnTo !== '' && str_starts_with($returnTo, '/control-panel/')) {
+        header('Location: ' . $returnTo);
+        exit;
+    }
     header('Location: ' . pageUrl('control/dashboard.php'));
     exit;
 }

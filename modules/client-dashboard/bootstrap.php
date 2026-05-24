@@ -146,6 +146,10 @@ if (!function_exists('ratib_client_dashboard_require_access')) {
         if (ratib_client_dashboard_can_access()) {
             return;
         }
+        if (!empty($_SESSION['control_logged_in'])) {
+            http_response_code(403);
+            exit('Client platform access denied for this control session.');
+        }
         if (!function_exists('ratib_program_session_is_valid_user') || !ratib_program_session_is_valid_user()) {
             $qs = [];
             if (!empty($_GET['country_slug'])) {

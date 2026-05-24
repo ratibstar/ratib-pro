@@ -25,7 +25,36 @@ if (!function_exists('control_client_platform_public_root')) {
     }
 }
 
-if (!function_exists('control_client_platform_links')) {
+if (!function_exists('control_panel_resolved_base_path')) {
+    function control_panel_resolved_base_path(): string
+    {
+        if (function_exists('getBaseUrl')) {
+            $base = rtrim((string) getBaseUrl(), '/');
+            if ($base !== '' && $base !== '/') {
+                return $base;
+            }
+        }
+        if (!empty($_SERVER['SCRIPT_NAME']) && strpos((string) $_SERVER['SCRIPT_NAME'], '/control-panel/') !== false) {
+            return '/control-panel';
+        }
+
+        return '/control-panel';
+    }
+}
+
+if (!function_exists('control_panel_client_wrapper_href')) {
+    function control_panel_client_wrapper_href(string $pagePath, array $query = []): string
+    {
+        $page = function_exists('ratib_clean_page_segment')
+            ? ratib_clean_page_segment($pagePath)
+            : ltrim(str_replace('\\', '/', $pagePath), '/');
+        $query['control'] = '1';
+
+        return control_panel_resolved_base_path() . '/pages/' . $page . '?' . http_build_query($query);
+    }
+}
+
+if (!function_exists('control_client_platform_wrapper_url')) {
     function control_client_platform_wrapper_url(string $section, string $extraQuery = ''): string
     {
         $section = strtolower(trim($section));
@@ -44,10 +73,6 @@ if (!function_exists('control_client_platform_links')) {
         ];
         $targetPath = $map[$section] ?? 'control/client-hub.php';
 
-        $baseUrl = function_exists('control_panel_page_with_control')
-            ? control_panel_page_with_control($targetPath)
-            : (pageUrl($targetPath) . '?control=1');
-
         $query = [];
         $agencyId = (int) ($_GET['agency_id'] ?? ($_SESSION['control_agency_id'] ?? 0));
         if ($agencyId > 0) {
@@ -56,9 +81,9 @@ if (!function_exists('control_client_platform_links')) {
 
         $extraQuery = ltrim(trim($extraQuery), '?&');
         if ($extraQuery !== '') {
-            $extra = [];
-            parse_str($extraQuery, $extra);
-            foreach ($extra as $key => $value) {
+            $parsedExtra = [];
+            parse_str($extraQuery, $parsedExtra);
+            foreach ($parsedExtra as $key => $value) {
                 if ($value === null || $value === '') {
                     continue;
                 }
@@ -66,13 +91,11 @@ if (!function_exists('control_client_platform_links')) {
             }
         }
 
-        if ($query === []) {
-            return $baseUrl;
-        }
-
-        return $baseUrl . '&' . http_build_query($query);
+        return control_panel_client_wrapper_href($targetPath, $query);
     }
+}
 
+if (!function_exists('control_client_platform_links')) {
     /**
      * @return array<string,array{label:string,href:string}>
      */

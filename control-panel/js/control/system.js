@@ -112,7 +112,7 @@
             }
 
             if (!targetPath) return;
-            if (!(current === targetPath || current.endsWith(targetPath) || targetPath.endsWith(current))) {
+            if (current !== targetPath) {
                 return;
             }
 
