@@ -66,6 +66,7 @@ class ApiClient {
 
   static bool _isPublicPath(String path) {
     return path.contains('login.php') ||
+        path.contains('qr-login.php') ||
         path.contains('health.php') ||
         path.contains('logout.php');
   }

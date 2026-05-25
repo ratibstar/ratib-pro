@@ -3,9 +3,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/api/api_exception.dart';
-import '../../../core/services/screen_cache.dart';
 import '../../../core/auth/auth_repository.dart';
+import '../../../core/models/auth_response.dart';
 import '../../../core/models/user_role.dart';
+import '../../../core/services/screen_cache.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
@@ -33,7 +34,7 @@ class AuthProvider extends ChangeNotifier {
     try {
       final session = await _repository
           .restoreSession()
-          .timeout(const Duration(seconds: 3));
+          .timeout(const Duration(seconds: 5));
       if (session != null) {
         _role = session.role;
         _username = session.username;
@@ -59,10 +60,7 @@ class AuthProvider extends ChangeNotifier {
       final response = await _repository
           .login(email: email, password: password)
           .timeout(const Duration(seconds: 25));
-      _role = response.role;
-      _username = response.username ?? response.email ?? email;
-      _status = AuthStatus.authenticated;
-      notifyListeners();
+      _applyAuthResponse(response, fallbackUsername: email);
       return true;
     } on TimeoutException {
       _errorMessage = 'Login timed out. Check your connection and try again.';
@@ -86,6 +84,69 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<bool> loginWithQr(String qrPayload) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final response = await _repository
+          .loginWithQr(qrPayload)
+          .timeout(const Duration(seconds: 25));
+      _applyAuthResponse(response);
+      return true;
+    } on TimeoutException {
+      _errorMessage = 'QR login timed out. Check your connection and try again.';
+      _status = AuthStatus.unauthenticated;
+      return false;
+    } on ApiException catch (e) {
+      _errorMessage = e.message;
+      _status = AuthStatus.unauthenticated;
+      return false;
+    } catch (e) {
+      _errorMessage = kDebugMode
+          ? 'QR login failed: $e'
+          : 'QR login failed. Please try again.';
+      _status = AuthStatus.unauthenticated;
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Called when [QrLoginController] already received a valid auth response.
+  Future<bool> completeQrLogin(AuthResponse response) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      await _repository.persistAuthResponse(response);
+      _applyAuthResponse(response);
+      return true;
+    } catch (e) {
+      _errorMessage = kDebugMode
+          ? 'Could not save session: $e'
+          : 'Could not save session.';
+      _status = AuthStatus.unauthenticated;
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void _applyAuthResponse(AuthResponse response, {String? fallbackUsername}) {
+    _role = response.role;
+    _username = response.username ??
+        response.displayName ??
+        response.email ??
+        fallbackUsername;
+    _status = AuthStatus.authenticated;
+    _sessionMessage = null;
+    notifyListeners();
   }
 
   Future<void> logout() async {

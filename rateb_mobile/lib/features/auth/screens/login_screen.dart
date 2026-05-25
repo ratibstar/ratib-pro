@@ -7,6 +7,7 @@ import '../../../core/models/user_role.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/auth_provider.dart';
+import '../../qr/qr_scanner_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -196,12 +197,28 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : const Text('Sign in'),
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: auth.isLoading
+                              ? null
+                              : () {
+                                  auth.clearError();
+                                  auth.clearSessionMessage();
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => const QrScannerScreen(),
+                                    ),
+                                  );
+                                },
+                          icon: const Icon(Icons.qr_code_scanner_rounded),
+                          label: const Text('Login with QR'),
+                        ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   Text(
-                    'QR login, push notifications, and offline mode are planned.',
+                    'Workforce identity QR login is available for workers with a RATEB badge.',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),

@@ -1,19 +1,4 @@
 /// Placeholder contracts for upcoming mobile features.
-/// Implement these services when backend endpoints are ready.
-
-abstract class QrLoginService {
-  /// Scan QR payload and complete login without password.
-  Future<void> loginWithQrPayload(String qrPayload);
-}
-
-class QrLoginServiceStub implements QrLoginService {
-  @override
-  Future<void> loginWithQrPayload(String qrPayload) async {
-    throw UnimplementedError(
-      'QR login will integrate with /api/qr-login.php',
-    );
-  }
-}
 
 abstract class PushNotificationService {
   Future<void> initialize();

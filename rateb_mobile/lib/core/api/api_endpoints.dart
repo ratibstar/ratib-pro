@@ -4,6 +4,8 @@ class ApiEndpoints {
   static const authLogin = '/mobile/login.php';
   static const authProfile = '/mobile/profile.php';
   static const authLogout = '/mobile/logout.php';
+  static const authQrLogin = '/mobile/qr-login.php';
+  static const authQrGenerate = '/mobile/qr-generate.php';
 
   static const workerDashboard = '/mobile/worker-dashboard.php';
   static const workerTasks = '/mobile/worker-tasks.php';
