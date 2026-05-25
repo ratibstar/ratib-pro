@@ -22,6 +22,9 @@ if (!defined('SYSTEM_ENDPOINT')) {
     define('SYSTEM_ENDPOINT', true);
 }
 
+require_once __DIR__ . '/env.inc.php';
+rateb_mobile_bootstrap_env();
+
 function rateb_mobile_json(array $payload, int $status = 200): void
 {
     while (ob_get_level() > 0) {
