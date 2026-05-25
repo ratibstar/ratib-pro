@@ -1,89 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/models/company_models.dart';
+import '../../../core/routing/app_router.dart';
 import '../../../core/services/resilient_loader.dart';
 import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
-import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/dashboard_card.dart';
 import '../../../shared/widgets/data_state_view.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
-import '../../auth/providers/auth_provider.dart';
-import 'requests.dart';
-import 'workers_management.dart';
 
-class CompanyDashboard extends StatefulWidget {
-  const CompanyDashboard({super.key, this.initialIndex = 0});
-
-  final int initialIndex;
-
-  @override
-  State<CompanyDashboard> createState() => _CompanyDashboardState();
-}
-
-class _CompanyDashboardState extends State<CompanyDashboard> {
-  late int _index;
-
-  @override
-  void initState() {
-    super.initState();
-    _index = widget.initialIndex;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    final pages = [
-      _CompanyHomeTab(username: auth.username ?? 'Company'),
-      const WorkersManagement(),
-      const Requests(),
-    ];
-
-    return AppScaffold(
-      title: 'Company Portal',
-      showLogout: true,
-      onLogout: () async {
-        await auth.logout();
-        if (context.mounted) context.go('/login');
-      },
-      body: pages[_index],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.groups_outlined),
-            selectedIcon: Icon(Icons.groups),
-            label: 'Workers',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.inbox_outlined),
-            selectedIcon: Icon(Icons.inbox),
-            label: 'Requests',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CompanyHomeTab extends StatefulWidget {
-  const _CompanyHomeTab({required this.username});
+class CompanyHomeTab extends StatefulWidget {
+  const CompanyHomeTab({super.key, required this.username});
 
   final String username;
 
   @override
-  State<_CompanyHomeTab> createState() => _CompanyHomeTabState();
+  State<CompanyHomeTab> createState() => _CompanyHomeTabState();
 }
 
-class _CompanyHomeTabState extends State<_CompanyHomeTab> {
+class _CompanyHomeTabState extends State<CompanyHomeTab> {
   ScreenLoadResult<CompanyDashboardData>? _result;
 
   @override
@@ -160,7 +96,7 @@ class _CompanyHomeTabState extends State<_CompanyHomeTab> {
                 ? '—'
                 : '${data.activeWorkers} on assignment · ${data.pendingWorkers} pending approval',
             icon: Icons.groups_outlined,
-            onTap: () {},
+            onTap: () => context.go('${AppRouter.companyHome}/workers'),
           ),
           const SizedBox(height: 12),
           DashboardCard(
@@ -169,7 +105,7 @@ class _CompanyHomeTabState extends State<_CompanyHomeTab> {
                 ? '—'
                 : '${data.openRequests} recruitment request${data.openRequests == 1 ? '' : 's'} in progress',
             icon: Icons.request_quote_outlined,
-            onTap: () {},
+            onTap: () => context.go('${AppRouter.companyHome}/requests'),
           ),
           const SizedBox(height: 12),
           DashboardCard(
@@ -178,7 +114,7 @@ class _CompanyHomeTabState extends State<_CompanyHomeTab> {
                 ? '—'
                 : '${data.totalWorkers} worker${data.totalWorkers == 1 ? '' : 's'} in your workforce',
             icon: Icons.verified_user_outlined,
-            onTap: () {},
+            onTap: () => context.go('${AppRouter.companyHome}/workers'),
           ),
         ],
       ),

@@ -1,89 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/models/worker_models.dart';
+import '../../../core/routing/app_router.dart';
 import '../../../core/services/resilient_loader.dart';
 import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
-import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/dashboard_card.dart';
 import '../../../shared/widgets/data_state_view.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
-import '../../auth/providers/auth_provider.dart';
-import 'worker_profile.dart';
-import 'worker_tasks.dart';
 
-class WorkerDashboard extends StatefulWidget {
-  const WorkerDashboard({super.key, this.initialIndex = 0});
-
-  final int initialIndex;
-
-  @override
-  State<WorkerDashboard> createState() => _WorkerDashboardState();
-}
-
-class _WorkerDashboardState extends State<WorkerDashboard> {
-  late int _index;
-
-  @override
-  void initState() {
-    super.initState();
-    _index = widget.initialIndex;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    final pages = [
-      _WorkerHomeTab(username: auth.username ?? 'Worker'),
-      const WorkerProfile(),
-      const WorkerTasks(),
-    ];
-
-    return AppScaffold(
-      title: 'Worker Portal',
-      showLogout: true,
-      onLogout: () async {
-        await auth.logout();
-        if (context.mounted) context.go('/login');
-      },
-      body: pages[_index],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.task_alt_outlined),
-            selectedIcon: Icon(Icons.task_alt),
-            label: 'Tasks',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WorkerHomeTab extends StatefulWidget {
-  const _WorkerHomeTab({required this.username});
+class WorkerHomeTab extends StatefulWidget {
+  const WorkerHomeTab({super.key, required this.username});
 
   final String username;
 
   @override
-  State<_WorkerHomeTab> createState() => _WorkerHomeTabState();
+  State<WorkerHomeTab> createState() => _WorkerHomeTabState();
 }
 
-class _WorkerHomeTabState extends State<_WorkerHomeTab> {
+class _WorkerHomeTabState extends State<WorkerHomeTab> {
   ScreenLoadResult<WorkerDashboardData>? _result;
 
   @override
@@ -162,7 +98,7 @@ class _WorkerHomeTabState extends State<_WorkerHomeTab> {
                 ? '—'
                 : '${data.stats.dueToday} task${data.stats.dueToday == 1 ? '' : 's'} need attention today',
             icon: Icons.today_outlined,
-            onTap: () {},
+            onTap: () => context.go('${AppRouter.workerHome}/tasks'),
           ),
           const SizedBox(height: 12),
           DashboardCard(
@@ -171,7 +107,7 @@ class _WorkerHomeTabState extends State<_WorkerHomeTab> {
                 ? '—'
                 : '${data.stats.pendingTasks} open item${data.stats.pendingTasks == 1 ? '' : 's'} in your queue',
             icon: Icons.assignment_outlined,
-            onTap: () {},
+            onTap: () => context.go('${AppRouter.workerHome}/tasks'),
           ),
           const SizedBox(height: 12),
           DashboardCard(
@@ -180,7 +116,7 @@ class _WorkerHomeTabState extends State<_WorkerHomeTab> {
                 ? '${data!.worker!.name} · ${data.worker!.status}'
                 : data?.profile.status ?? 'Active account',
             icon: Icons.badge_outlined,
-            onTap: () {},
+            onTap: () => context.go('${AppRouter.workerHome}/profile'),
           ),
         ],
       ),

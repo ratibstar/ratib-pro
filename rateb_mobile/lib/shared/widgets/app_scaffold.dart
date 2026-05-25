@@ -35,9 +35,17 @@ class AppScaffold extends StatelessWidget {
             ),
         ],
       ),
-      body: SafeArea(child: body),
+      body: SafeArea(
+        bottom: false,
+        child: SizedBox.expand(child: body),
+      ),
       floatingActionButton: floatingActionButton,
-      bottomNavigationBar: bottomNavigationBar,
+      bottomNavigationBar: bottomNavigationBar == null
+          ? null
+          : SafeArea(
+              top: false,
+              child: bottomNavigationBar!,
+            ),
     );
   }
 }

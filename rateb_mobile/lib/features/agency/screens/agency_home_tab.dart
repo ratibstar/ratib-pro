@@ -1,89 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
 import '../../../core/models/agency_models.dart';
+import '../../../core/routing/app_router.dart';
 import '../../../core/services/resilient_loader.dart';
 import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
-import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/dashboard_card.dart';
 import '../../../shared/widgets/data_state_view.dart';
 import '../../../shared/widgets/skeleton_loader.dart';
-import '../../auth/providers/auth_provider.dart';
-import 'assignments.dart';
-import 'recruitment_pipeline.dart';
 
-class AgencyDashboard extends StatefulWidget {
-  const AgencyDashboard({super.key, this.initialIndex = 0});
-
-  final int initialIndex;
-
-  @override
-  State<AgencyDashboard> createState() => _AgencyDashboardState();
-}
-
-class _AgencyDashboardState extends State<AgencyDashboard> {
-  late int _index;
-
-  @override
-  void initState() {
-    super.initState();
-    _index = widget.initialIndex;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    final pages = [
-      _AgencyHomeTab(username: auth.username ?? 'Agency'),
-      const RecruitmentPipeline(),
-      const Assignments(),
-    ];
-
-    return AppScaffold(
-      title: 'Agency Portal',
-      showLogout: true,
-      onLogout: () async {
-        await auth.logout();
-        if (context.mounted) context.go('/login');
-      },
-      body: pages[_index],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.timeline_outlined),
-            selectedIcon: Icon(Icons.timeline),
-            label: 'Pipeline',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.assignment_ind_outlined),
-            selectedIcon: Icon(Icons.assignment_ind),
-            label: 'Assignments',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AgencyHomeTab extends StatefulWidget {
-  const _AgencyHomeTab({required this.username});
+class AgencyHomeTab extends StatefulWidget {
+  const AgencyHomeTab({super.key, required this.username});
 
   final String username;
 
   @override
-  State<_AgencyHomeTab> createState() => _AgencyHomeTabState();
+  State<AgencyHomeTab> createState() => _AgencyHomeTabState();
 }
 
-class _AgencyHomeTabState extends State<_AgencyHomeTab> {
+class _AgencyHomeTabState extends State<AgencyHomeTab> {
   ScreenLoadResult<AgencyDashboardData>? _result;
 
   @override
@@ -160,7 +96,7 @@ class _AgencyHomeTabState extends State<_AgencyHomeTab> {
                 ? '—'
                 : '${data.totalCandidates} total · ${data.deployed} deployed',
             icon: Icons.timeline_outlined,
-            onTap: () {},
+            onTap: () => context.go('${AppRouter.agencyHome}/pipeline'),
           ),
           const SizedBox(height: 12),
           DashboardCard(
@@ -169,7 +105,7 @@ class _AgencyHomeTabState extends State<_AgencyHomeTab> {
                 ? '—'
                 : '${data.activeAssignments} client destination${data.activeAssignments == 1 ? '' : 's'} with workers',
             icon: Icons.assignment_ind_outlined,
-            onTap: () {},
+            onTap: () => context.go('${AppRouter.agencyHome}/assignments'),
           ),
           const SizedBox(height: 12),
           DashboardCard(
@@ -178,7 +114,7 @@ class _AgencyHomeTabState extends State<_AgencyHomeTab> {
                 ? '—'
                 : '${data.cvs} shared CV${data.cvs == 1 ? '' : 's'} ready for clients',
             icon: Icons.folder_shared_outlined,
-            onTap: () {},
+            onTap: () => context.go('${AppRouter.agencyHome}/pipeline'),
           ),
         ],
       ),

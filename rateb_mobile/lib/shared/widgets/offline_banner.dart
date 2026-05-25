@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/services/network_monitor.dart';
 
+/// Offline indicator overlay — uses [Stack] so it never blocks bottom nav taps.
 class OfflineBannerHost extends StatelessWidget {
   const OfflineBannerHost({
     super.key,
@@ -16,53 +17,54 @@ class OfflineBannerHost extends StatelessWidget {
       listenable: NetworkMonitor.instance,
       builder: (context, _) {
         final offline = !NetworkMonitor.instance.isOnline;
-        return Column(
+        return Stack(
+          fit: StackFit.expand,
           children: [
-            AnimatedCrossFade(
-              firstChild: Material(
-                color: Theme.of(context).colorScheme.errorContainer,
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.cloud_off_outlined,
-                          size: 18,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onErrorContainer,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'You are offline. Showing saved data where available.',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onErrorContainer,
-                                ),
+            child,
+            if (offline)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Material(
+                  elevation: 2,
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.cloud_off_outlined,
+                            size: 18,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onErrorContainer,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'You are offline. Showing saved data where available.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onErrorContainer,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-              secondChild: const SizedBox(width: double.infinity),
-              crossFadeState: offline
-                  ? CrossFadeState.showFirst
-                  : CrossFadeState.showSecond,
-              duration: const Duration(milliseconds: 220),
-            ),
-            Expanded(child: child),
           ],
         );
       },

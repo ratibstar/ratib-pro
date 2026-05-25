@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import '../../features/agency/screens/agency_dashboard.dart';
+import '../../features/agency/screens/agency_home_tab.dart';
+import '../../features/agency/screens/assignments.dart';
+import '../../features/agency/screens/recruitment_pipeline.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
-import '../../features/company/screens/company_dashboard.dart';
-import '../../features/worker/screens/worker_dashboard.dart';
+import '../../features/company/screens/company_home_tab.dart';
+import '../../features/company/screens/requests.dart';
+import '../../features/company/screens/workers_management.dart';
+import '../../features/worker/screens/worker_home_tab.dart';
+import '../../features/worker/screens/worker_profile.dart';
+import '../../features/worker/screens/worker_tasks.dart';
 import '../models/user_role.dart';
+import '../../shared/widgets/portal_shell.dart';
 
 class AppRouter {
   AppRouter(this.authProvider);
@@ -64,51 +72,165 @@ class AppRouter {
         path: login,
         builder: (context, state) => const LoginScreen(),
       ),
-      GoRoute(
-        path: workerHome,
-        builder: (context, state) => const WorkerDashboard(),
-        routes: [
-          GoRoute(
-            path: 'profile',
-            builder: (context, state) =>
-                const WorkerDashboard(initialIndex: 1),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return PortalShell(
+            title: 'Worker Portal',
+            navigationShell: navigationShell,
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.dashboard_outlined),
+                selectedIcon: Icon(Icons.dashboard),
+                label: 'Dashboard',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.task_alt_outlined),
+                selectedIcon: Icon(Icons.task_alt),
+                label: 'Tasks',
+              ),
+            ],
+          );
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: workerHome,
+                builder: (context, state) {
+                  final auth = context.watch<AuthProvider>();
+                  return WorkerHomeTab(username: auth.username ?? 'Worker');
+                },
+              ),
+            ],
           ),
-          GoRoute(
-            path: 'tasks',
-            builder: (context, state) =>
-                const WorkerDashboard(initialIndex: 2),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '$workerHome/profile',
+                builder: (context, state) => const WorkerProfile(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '$workerHome/tasks',
+                builder: (context, state) => const WorkerTasks(),
+              ),
+            ],
           ),
         ],
       ),
-      GoRoute(
-        path: companyHome,
-        builder: (context, state) => const CompanyDashboard(),
-        routes: [
-          GoRoute(
-            path: 'workers',
-            builder: (context, state) =>
-                const CompanyDashboard(initialIndex: 1),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return PortalShell(
+            title: 'Company Portal',
+            navigationShell: navigationShell,
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.dashboard_outlined),
+                selectedIcon: Icon(Icons.dashboard),
+                label: 'Dashboard',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.groups_outlined),
+                selectedIcon: Icon(Icons.groups),
+                label: 'Workers',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.inbox_outlined),
+                selectedIcon: Icon(Icons.inbox),
+                label: 'Requests',
+              ),
+            ],
+          );
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: companyHome,
+                builder: (context, state) {
+                  final auth = context.watch<AuthProvider>();
+                  return CompanyHomeTab(username: auth.username ?? 'Company');
+                },
+              ),
+            ],
           ),
-          GoRoute(
-            path: 'requests',
-            builder: (context, state) =>
-                const CompanyDashboard(initialIndex: 2),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '$companyHome/workers',
+                builder: (context, state) => const WorkersManagement(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '$companyHome/requests',
+                builder: (context, state) => const Requests(),
+              ),
+            ],
           ),
         ],
       ),
-      GoRoute(
-        path: agencyHome,
-        builder: (context, state) => const AgencyDashboard(),
-        routes: [
-          GoRoute(
-            path: 'pipeline',
-            builder: (context, state) =>
-                const AgencyDashboard(initialIndex: 1),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return PortalShell(
+            title: 'Agency Portal',
+            navigationShell: navigationShell,
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.dashboard_outlined),
+                selectedIcon: Icon(Icons.dashboard),
+                label: 'Dashboard',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.timeline_outlined),
+                selectedIcon: Icon(Icons.timeline),
+                label: 'Pipeline',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.assignment_ind_outlined),
+                selectedIcon: Icon(Icons.assignment_ind),
+                label: 'Assignments',
+              ),
+            ],
+          );
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: agencyHome,
+                builder: (context, state) {
+                  final auth = context.watch<AuthProvider>();
+                  return AgencyHomeTab(username: auth.username ?? 'Agency');
+                },
+              ),
+            ],
           ),
-          GoRoute(
-            path: 'assignments',
-            builder: (context, state) =>
-                const AgencyDashboard(initialIndex: 2),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '$agencyHome/pipeline',
+                builder: (context, state) => const RecruitmentPipeline(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '$agencyHome/assignments',
+                builder: (context, state) => const Assignments(),
+              ),
+            ],
           ),
         ],
       ),
