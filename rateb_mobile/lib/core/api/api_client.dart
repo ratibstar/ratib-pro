@@ -6,10 +6,14 @@ import '../config/app_config.dart';
 import 'api_exception.dart';
 
 typedef TokenProvider = Future<String?> Function();
+typedef UnauthorizedHandler = Future<void> Function();
 
 class ApiClient {
-  ApiClient({TokenProvider? tokenProvider})
-      : _tokenProvider = tokenProvider,
+  ApiClient({
+    TokenProvider? tokenProvider,
+    UnauthorizedHandler? onUnauthorized,
+  })  : _tokenProvider = tokenProvider,
+        _onUnauthorized = onUnauthorized,
         _dio = Dio(
           BaseOptions(
             baseUrl: AppConfig.apiBaseUrl,
@@ -34,12 +38,21 @@ class ApiClient {
           }
           handler.next(options);
         },
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 401 &&
+              _onUnauthorized != null &&
+              !_isPublicPath('${error.requestOptions.uri}')) {
+            await _onUnauthorized!.call();
+          }
+          handler.next(error);
+        },
       ),
     );
   }
 
   final Dio _dio;
   final TokenProvider? _tokenProvider;
+  final UnauthorizedHandler? _onUnauthorized;
 
   static bool _isPublicPath(String path) {
     return path.contains('login.php') ||

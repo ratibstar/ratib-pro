@@ -96,6 +96,15 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> handleUnauthorized() async {
+    if (_status == AuthStatus.unauthenticated) return;
+    await _repository.clearSession();
+    _role = null;
+    _username = null;
+    _status = AuthStatus.unauthenticated;
+    notifyListeners();
+  }
+
   void clearError() {
     _errorMessage = null;
     notifyListeners();

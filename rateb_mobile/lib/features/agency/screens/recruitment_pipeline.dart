@@ -1,56 +1,121 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/empty_state.dart';
+import '../../../core/api/api_exception.dart';
+import '../../../core/models/agency_models.dart';
+import '../../../core/services/rateb_api_service.dart';
+import '../../../shared/widgets/data_state_view.dart';
 
-class RecruitmentPipeline extends StatelessWidget {
+class RecruitmentPipeline extends StatefulWidget {
   const RecruitmentPipeline({super.key});
 
-  static const _stages = [
-    ('Sourcing', 12, Colors.blue),
-    ('Screening', 8, Colors.indigo),
-    ('Interview', 6, Colors.deepPurple),
-    ('Deployment', 4, Colors.teal),
-  ];
+  @override
+  State<RecruitmentPipeline> createState() => _RecruitmentPipelineState();
+}
+
+class _RecruitmentPipelineState extends State<RecruitmentPipeline> {
+  bool _isLoading = true;
+  String? _error;
+  List<PipelineStage> _stages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final data = await RatebApiService.instance.getAgencyPipeline();
+      if (!mounted) return;
+      setState(() {
+        _stages = data.stages;
+        _isLoading = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Color _colorFor(String statusKey) {
+    switch (statusKey) {
+      case 'cvs':
+        return Colors.blue;
+      case 'processing':
+        return Colors.indigo;
+      case 'deployed':
+        return Colors.teal;
+      case 'issue':
+        return Colors.orange;
+      case 'returned':
+        return Colors.brown;
+      default:
+        return Colors.deepPurple;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'Recruitment pipeline',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const SizedBox(height: 16),
-        ..._stages.map(
-          (stage) => Card(
-            margin: const EdgeInsets.only(bottom: 10),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: (stage.$3 as Color).withValues(alpha: 0.15),
-                child: Text(
-                  '${stage.$2}',
-                  style: TextStyle(
-                    color: stage.$3 as Color,
-                    fontWeight: FontWeight.w700,
-                  ),
+    final hasOnlyEmptyStages =
+        _stages.isNotEmpty && _stages.every((s) => s.count == 0);
+
+    return DataStateView(
+      isLoading: _isLoading,
+      errorMessage: _error,
+      onRetry: _load,
+      isEmpty: _stages.isEmpty || hasOnlyEmptyStages,
+      emptyTitle: 'Pipeline empty',
+      emptyMessage: 'No candidates in the recruitment pipeline yet.',
+      emptyIcon: Icons.timeline_outlined,
+      loadingMessage: 'Loading pipeline…',
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            'Recruitment pipeline',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
-              ),
-              title: Text(stage.$1 as String),
-              subtitle: Text('${stage.$2} candidates'),
-              trailing: const Icon(Icons.chevron_right),
-            ),
           ),
-        ),
-        const EmptyState(
-          title: 'Live pipeline',
-          message:
-              'Pipeline stages will sync from /api/mobile/agency/pipeline.php.',
-          icon: Icons.timeline_outlined,
-        ),
-      ],
+          const SizedBox(height: 16),
+          ..._stages.where((s) => s.count > 0).map(
+                (stage) {
+                  final color = _colorFor(stage.statusKey);
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: color.withValues(alpha: 0.15),
+                        child: Text(
+                          '${stage.count}',
+                          style: TextStyle(
+                            color: color,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      title: Text(stage.name),
+                      subtitle: Text('${stage.count} candidates'),
+                      trailing: const Icon(Icons.chevron_right),
+                    ),
+                  );
+                },
+              ),
+        ],
+      ),
     );
   }
 }

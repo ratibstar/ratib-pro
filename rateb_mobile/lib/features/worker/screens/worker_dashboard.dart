@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/api/api_exception.dart';
+import '../../../core/models/worker_models.dart';
+import '../../../core/services/rateb_api_service.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/dashboard_card.dart';
+import '../../../shared/widgets/data_state_view.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'worker_profile.dart';
 import 'worker_tasks.dart';
@@ -68,54 +72,109 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
   }
 }
 
-class _WorkerHomeTab extends StatelessWidget {
+class _WorkerHomeTab extends StatefulWidget {
   const _WorkerHomeTab({required this.username});
 
   final String username;
 
   @override
+  State<_WorkerHomeTab> createState() => _WorkerHomeTabState();
+}
+
+class _WorkerHomeTabState extends State<_WorkerHomeTab> {
+  bool _isLoading = true;
+  String? _error;
+  WorkerDashboardData? _data;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final data = await RatebApiService.instance.getWorkerDashboard();
+      if (!mounted) return;
+      setState(() {
+        _data = data;
+        _isLoading = false;
+      });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'Welcome, $username',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Your workforce assignments and profile at a glance.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.65),
-              ),
-        ),
-        const SizedBox(height: 20),
-        DashboardCard(
-          title: 'Active tasks',
-          subtitle: '3 pending · 1 due today',
-          icon: Icons.assignment_outlined,
-          onTap: () {},
-        ),
-        const SizedBox(height: 12),
-        DashboardCard(
-          title: 'Profile & documents',
-          subtitle: 'View contact info and status',
-          icon: Icons.badge_outlined,
-          onTap: () {},
-        ),
-        const SizedBox(height: 12),
-        DashboardCard(
-          title: 'QR check-in',
-          subtitle: 'Coming soon — scan to authenticate',
-          icon: Icons.qr_code_scanner_rounded,
-          onTap: () {},
-        ),
-      ],
+    return DataStateView(
+      isLoading: _isLoading,
+      errorMessage: _error,
+      onRetry: _load,
+      isEmpty: false,
+      emptyTitle: '',
+      emptyMessage: '',
+      loadingMessage: 'Loading dashboard…',
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            'Welcome, ${_data?.profile.username ?? widget.username}',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Your workforce assignments and profile at a glance.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.65),
+                ),
+          ),
+          const SizedBox(height: 20),
+          DashboardCard(
+            title: 'Active tasks',
+            subtitle: _data == null
+                ? '—'
+                : '${_data!.stats.pendingTasks} pending · ${_data!.stats.dueToday} due today',
+            icon: Icons.assignment_outlined,
+            onTap: () {},
+          ),
+          const SizedBox(height: 12),
+          DashboardCard(
+            title: 'Profile & documents',
+            subtitle: _data?.worker != null
+                ? '${_data!.worker!.name} · ${_data!.worker!.status}'
+                : 'View contact info and status',
+            icon: Icons.badge_outlined,
+            onTap: () {},
+          ),
+          const SizedBox(height: 12),
+          DashboardCard(
+            title: 'QR check-in',
+            subtitle: 'Coming soon — scan to authenticate',
+            icon: Icons.qr_code_scanner_rounded,
+            onTap: () {},
+          ),
+        ],
+      ),
     );
   }
 }

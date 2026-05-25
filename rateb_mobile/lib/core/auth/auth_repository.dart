@@ -1,6 +1,5 @@
 import '../api/api_client.dart';
-import '../api/api_endpoints.dart';
-import '../api/api_exception.dart';
+import '../api/api_endpoints.dart';import '../api/api_exception.dart';
 import '../models/auth_response.dart';
 import '../models/user_role.dart';
 import 'token_storage.dart';
@@ -10,10 +9,14 @@ class AuthRepository {
     TokenStorage? tokenStorage,
     ApiClient? apiClient,
     ApiClient? loginClient,
+    UnauthorizedHandler? onUnauthorized,
   }) : _tokenStorage = tokenStorage ?? TokenStorage() {
     _loginClient = loginClient ?? ApiClient();
     _apiClient = apiClient ??
-        ApiClient(tokenProvider: _tokenStorage.readToken);
+        ApiClient(
+          tokenProvider: _tokenStorage.readToken,
+          onUnauthorized: onUnauthorized,
+        );
   }
 
   final TokenStorage _tokenStorage;
@@ -58,6 +61,10 @@ class AuthRepository {
     } catch (_) {
       // Best-effort server logout; always clear local session.
     }
+    await clearSession();
+  }
+
+  Future<void> clearSession() async {
     await _tokenStorage.clear();
   }
 
