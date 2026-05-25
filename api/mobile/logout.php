@@ -4,15 +4,17 @@
  */
 declare(strict_types=1);
 
+require_once __DIR__ . '/cors.php';
 require_once __DIR__ . '/bootstrap.php';
 
 require_once __DIR__ . '/../core/ratib_api_session.inc.php';
+
+require_once __DIR__ . '/../../includes/config.php';
+
 ratib_api_pick_session_name();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-
-require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../core/Auth.php';
 
 try {
