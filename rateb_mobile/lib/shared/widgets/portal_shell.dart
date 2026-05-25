@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/routing/app_router.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import 'app_scaffold.dart';
 
@@ -27,7 +28,7 @@ class PortalShell extends StatelessWidget {
       showLogout: true,
       onLogout: () async {
         await auth.logout();
-        if (context.mounted) context.go('/login');
+        if (context.mounted) context.go(AppRouter.login);
       },
       body: navigationShell,
       bottomNavigationBar: NavigationBar(

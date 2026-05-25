@@ -1,0 +1,7 @@
+# Copy to key.properties (never commit key.properties).
+# Used by android/app/build.gradle.kts for release signing.
+
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=rateb
+storeFile=../keystore/rateb-upload.jks

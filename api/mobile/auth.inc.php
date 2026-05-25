@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/cors.php';
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/tenant.inc.php';
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/ensure-global-partnerships-schema.php';
 require_once __DIR__ . '/../../includes/config.php';
@@ -65,15 +66,20 @@ function rateb_mobile_resolve_worker(PDO $pdo, array $claims): ?array
 
     $email = trim((string) ($user['email'] ?? ''));
     if ($email !== '') {
+        $scopeWhere = ["w.status != 'deleted'"];
+        $scopeParams = [];
+        rateb_mobile_apply_worker_tenant_scope($pdo, $claims, 'w', $scopeWhere, $scopeParams);
+        $scopeSql = implode(' AND ', $scopeWhere);
+
         $stmt = $pdo->prepare(
-            "SELECT id, worker_name, email, status, passport_number, contact_number
-             FROM workers
-             WHERE LOWER(TRIM(email)) = LOWER(?)
-             AND status != 'deleted'
-             ORDER BY id DESC
+            "SELECT w.id, w.worker_name, w.email, w.status, w.passport_number, w.contact_number
+             FROM workers w
+             WHERE LOWER(TRIM(w.email)) = LOWER(?)
+             AND {$scopeSql}
+             ORDER BY w.id DESC
              LIMIT 1"
         );
-        $stmt->execute([$email]);
+        $stmt->execute(array_merge([$email], $scopeParams));
         $worker = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($worker) {
             return $worker;
@@ -82,15 +88,20 @@ function rateb_mobile_resolve_worker(PDO $pdo, array $claims): ?array
 
     $username = trim((string) ($user['username'] ?? ''));
     if ($username !== '') {
+        $scopeWhere = ["w.status != 'deleted'"];
+        $scopeParams = [];
+        rateb_mobile_apply_worker_tenant_scope($pdo, $claims, 'w', $scopeWhere, $scopeParams);
+        $scopeSql = implode(' AND ', $scopeWhere);
+
         $stmt = $pdo->prepare(
-            "SELECT id, worker_name, email, status, passport_number, contact_number
-             FROM workers
-             WHERE worker_name LIKE ?
-             AND status != 'deleted'
-             ORDER BY id DESC
+            "SELECT w.id, w.worker_name, w.email, w.status, w.passport_number, w.contact_number
+             FROM workers w
+             WHERE w.worker_name LIKE ?
+             AND {$scopeSql}
+             ORDER BY w.id DESC
              LIMIT 1"
         );
-        $stmt->execute(['%' . $username . '%']);
+        $stmt->execute(array_merge(['%' . $username . '%'], $scopeParams));
         $worker = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($worker) {
             return $worker;

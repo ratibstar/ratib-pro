@@ -19,12 +19,21 @@ try {
     $openCount = 0;
 
     try {
-        $countStmt = $pdo->query('SELECT COUNT(*) FROM cases');
+        $caseWhere = ['1=1'];
+        $caseParams = [];
+        rateb_mobile_apply_cases_tenant_scope($pdo, $claims, 'c', $caseWhere, $caseParams);
+        $caseWhereSql = implode(' AND ', $caseWhere);
+
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM cases c WHERE {$caseWhereSql}");
+        $countStmt->execute($caseParams);
         $total = (int) ($countStmt->fetchColumn() ?: 0);
 
-        $openStmt = $pdo->query(
-            "SELECT COUNT(*) FROM cases WHERE status IN ('open', 'pending', 'in_progress', 'new')"
+        $openStmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM cases c
+             WHERE {$caseWhereSql}
+             AND c.status IN ('open', 'pending', 'in_progress', 'new')"
         );
+        $openStmt->execute($caseParams);
         $openCount = (int) ($openStmt->fetchColumn() ?: 0);
 
         $stmt = $pdo->prepare(
@@ -32,12 +41,12 @@ try {
                     c.updated_at, c.created_at, w.worker_name
              FROM cases c
              LEFT JOIN workers w ON c.worker_id = w.id
+             WHERE {$caseWhereSql}
              ORDER BY c.updated_at DESC, c.id DESC
              LIMIT ? OFFSET ?"
         );
-        $stmt->bindValue(1, $limit, PDO::PARAM_INT);
-        $stmt->bindValue(2, $offset, PDO::PARAM_INT);
-        $stmt->execute();
+        $listParams = array_merge($caseParams, [$limit, $offset]);
+        $stmt->execute($listParams);
 
         foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $status = rateb_mobile_humanize_status((string) ($row['status'] ?? 'open'));

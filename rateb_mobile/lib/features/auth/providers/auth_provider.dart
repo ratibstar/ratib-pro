@@ -180,6 +180,7 @@ class AuthProvider extends ChangeNotifier {
     _username = null;
     _status = AuthStatus.unauthenticated;
     _sessionMessage = 'Session expired. Please sign in again.';
+    _errorMessage = null;
     notifyListeners();
   }
 

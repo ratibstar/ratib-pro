@@ -15,11 +15,12 @@ try {
         rateb_mobile_json(['success' => false, 'message' => 'Partner agency account required'], 403);
     }
 
-    $agencyId = (int) ($claims['sub'] ?? 0);
-    if ($agencyId <= 0) {
-        rateb_mobile_json(['success' => false, 'message' => 'Unauthorized'], 401);
+    $agencyId = rateb_mobile_resolve_agency_id($claims);
+    if ($agencyId === null) {
+        rateb_mobile_json(['success' => false, 'message' => 'Partner agency account required'], 403);
     }
 
+    // Tenant scope: assignments grouped only from this agency's deployments.
     $deployments = (new PartnerAgencyController($pdo))->workersByAgency($agencyId);
 
     $byCountry = [];

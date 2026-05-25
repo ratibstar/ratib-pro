@@ -18,6 +18,9 @@ try {
     $where = ["w.status != 'deleted'"];
     $params = [];
 
+    // Tenant scope: staff company reads only workers in JWT/user country (via workers.country_id or agents.tenant_id).
+    rateb_mobile_apply_worker_tenant_scope($pdo, $claims, 'w', $where, $params);
+
     if ($search !== '') {
         $where[] = '(w.worker_name LIKE ? OR w.email LIKE ? OR w.passport_number LIKE ?)';
         $like = '%' . $search . '%';

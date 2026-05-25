@@ -29,6 +29,19 @@ define('APP_NAME', 'RATEB');
 define('APP_VERSION', '1.0.0');
 define('BASE_URL', '');
 define('NO_BANGLA', true);
+
+/*
+ * Mobile portal JWT/QR signing — REQUIRED on production (api/mobile/).
+ * Set in project-root .env: MOBILE_AUTH_SECRET=<long-random-string>
+ * Never commit the secret. Without it, mobile login returns 503 config_error on out.ratib.sa.
+ */
+if (!defined('MOBILE_AUTH_SECRET')) {
+    $_mobSecret = getenv('MOBILE_AUTH_SECRET');
+    if ($_mobSecret !== false && trim((string) $_mobSecret) !== '') {
+        define('MOBILE_AUTH_SECRET', (string) $_mobSecret);
+    }
+}
+
 // Internal observability dashboard gate for this host.
 define('OBSERVABILITY_DASHBOARD_ENABLED', true);
 define('ADMIN_CONTROL_CENTER_ENABLED', true);

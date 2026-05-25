@@ -44,7 +44,8 @@ class ApiClient {
           handler.next(response);
         },
         onError: (error, handler) async {
-          if (error.response?.statusCode == 401 &&
+          final status = error.response?.statusCode;
+          if (status == 401 &&
               _onUnauthorized != null &&
               !_isPublicPath('${error.requestOptions.uri}')) {
             await _onUnauthorized!.call();

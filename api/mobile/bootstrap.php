@@ -32,16 +32,58 @@ function rateb_mobile_json(array $payload, int $status = 200): void
     exit;
 }
 
+/**
+ * True when serving production host (out.ratib.sa) — not local/dev.
+ */
+function rateb_mobile_is_production(): bool
+{
+    if (defined('RATIB_ENV') && strtolower((string) RATIB_ENV) === 'production') {
+        return true;
+    }
+    if (defined('APP_ENV') && strtolower((string) APP_ENV) === 'production') {
+        return true;
+    }
+
+    $host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    if ($host === '') {
+        return false;
+    }
+
+    if (str_contains($host, 'localhost') || str_contains($host, '127.0.0.1')) {
+        return false;
+    }
+
+    return str_contains($host, 'ratib.sa');
+}
+
+/**
+ * Fail safely when mobile auth secret is missing in production.
+ */
+function rateb_mobile_config_error(): never
+{
+    error_log('CRITICAL: MOBILE_AUTH_SECRET is not configured for RATEB mobile API');
+    rateb_mobile_json([
+        'success' => false,
+        'message' => 'Server configuration error',
+        'code' => 'config_error',
+    ], 503);
+}
+
 function rateb_mobile_token_secret(): string
 {
     $secret = getenv('MOBILE_AUTH_SECRET');
-    if ($secret !== false && $secret !== '') {
+    if ($secret !== false && trim((string) $secret) !== '') {
         return (string) $secret;
     }
-    if (defined('MOBILE_AUTH_SECRET') && MOBILE_AUTH_SECRET !== '') {
+    if (defined('MOBILE_AUTH_SECRET') && trim((string) MOBILE_AUTH_SECRET) !== '') {
         return (string) MOBILE_AUTH_SECRET;
     }
-    return 'rateb-mobile-change-me-in-production';
+
+    if (!rateb_mobile_is_production()) {
+        return 'rateb-mobile-dev-only-not-for-production';
+    }
+
+    rateb_mobile_config_error();
 }
 
 function rateb_mobile_b64url_encode(string $data): string
