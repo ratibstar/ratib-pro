@@ -35,12 +35,22 @@ class AuthProvider extends ChangeNotifier {
       final session = await _repository
           .restoreSession()
           .timeout(const Duration(seconds: 5));
-      if (session != null) {
-        _role = session.role;
-        _username = session.username;
-        _status = AuthStatus.authenticated;
-        notifyListeners();
+      if (session == null) return;
+
+      final profile = await _repository
+          .fetchProfile(session.role)
+          .timeout(const Duration(seconds: 8));
+      if (profile == null) {
+        await _repository.clearSession();
+        return;
       }
+
+      _role = session.role;
+      _username = profile.username.isNotEmpty
+          ? profile.username
+          : session.username;
+      _status = AuthStatus.authenticated;
+      notifyListeners();
     } on TimeoutException {
       // Stay on login screen.
     } catch (_) {

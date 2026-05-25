@@ -32,6 +32,20 @@ try {
     $countStmt->execute($params);
     $total = (int) ($countStmt->fetchColumn() ?: 0);
 
+    $activeStmt = $pdo->prepare(
+        "SELECT COUNT(*) FROM workers w
+         WHERE $whereSql AND LOWER(w.status) IN ('approved', 'deployed', 'active')"
+    );
+    $activeStmt->execute($params);
+    $active = (int) ($activeStmt->fetchColumn() ?: 0);
+
+    $pendingStmt = $pdo->prepare(
+        "SELECT COUNT(*) FROM workers w
+         WHERE $whereSql AND LOWER(w.status) = 'pending'"
+    );
+    $pendingStmt->execute($params);
+    $pending = (int) ($pendingStmt->fetchColumn() ?: 0);
+
     $sql = "SELECT w.id, w.worker_name, w.email, w.status, w.passport_number,
                    w.contact_number, w.updated_at,
                    a.agent_name
@@ -66,17 +80,6 @@ try {
             'agent_name' => $agent,
             'updated_at' => (string) ($row['updated_at'] ?? ''),
         ];
-    }
-
-    $active = 0;
-    $pending = 0;
-    foreach ($workers as $w) {
-        $st = strtolower((string) ($w['status'] ?? ''));
-        if (in_array($st, ['approved', 'deployed', 'active'], true)) {
-            $active++;
-        } elseif (in_array($st, ['pending'], true)) {
-            $pending++;
-        }
     }
 
     rateb_mobile_json([

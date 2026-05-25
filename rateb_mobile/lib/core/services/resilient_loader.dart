@@ -106,26 +106,26 @@ class ResilientLoader {
           NetworkMonitor.instance.markOffline();
         }
 
-        if (autoRetryAttempt < maxAutoRetries) {
-          autoRetryAttempt++;
-          continue;
-        }
+        if (_shouldNotRetry(e) || autoRetryAttempt >= maxAutoRetries) {
+          if (cached != null && _isNetworkFailure(e)) {
+            return ScreenLoadResult(
+              data: cached,
+              isLoading: false,
+              isFromCache: true,
+              error: _offlineMessage(e.message),
+              autoRetryAttempt: autoRetryAttempt,
+            );
+          }
 
-        if (cached != null) {
           return ScreenLoadResult(
-            data: cached,
             isLoading: false,
-            isFromCache: true,
-            error: _offlineMessage(e.message),
+            error: e.message,
             autoRetryAttempt: autoRetryAttempt,
           );
         }
 
-        return ScreenLoadResult(
-          isLoading: false,
-          error: e.message,
-          autoRetryAttempt: autoRetryAttempt,
-        );
+        autoRetryAttempt++;
+        continue;
       } catch (e) {
         NetworkMonitor.instance.markOffline();
 
@@ -172,6 +172,9 @@ class ResilientLoader {
         NetworkMonitor.instance.markOnline();
         return;
       } on ApiException catch (e) {
+        if (_shouldNotRetry(e)) {
+          return;
+        }
         if (_isNetworkFailure(e)) {
           NetworkMonitor.instance.markOffline();
         }
@@ -197,6 +200,11 @@ class ResilientLoader {
         e.statusCode == 408 ||
         e.message.toLowerCase().contains('reach server') ||
         e.message.toLowerCase().contains('timed out');
+  }
+
+  static bool _shouldNotRetry(ApiException e) {
+    final code = e.statusCode;
+    return code == 401 || code == 403 || code == 400 || code == 404;
   }
 
   static String _offlineMessage(String detail) {
