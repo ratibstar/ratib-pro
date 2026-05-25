@@ -549,11 +549,25 @@ def upload_text_one(rel: str, remote_base: str) -> tuple[str, bool, str]:
             {"dir": dir_path, "file": name, "content": content},
         )
     except Exception as e:
-        return rel, False, str(e)
-    if uapi_ok(payload):
+        payload = None
+        first_err = str(e)
+    else:
+        first_err = ""
+    if payload is not None and uapi_ok(payload):
         return rel, True, ""
-    rblock = payload.get("result", payload) or {}
-    return rel, False, json.dumps(rblock)[:200]
+    # Fallback: multipart upload when save_file_content fails (e.g. new nested dirs on Fileman).
+    if shutil.which("curl"):
+        dest_dir = fileman_upload_dir(dir_path)
+        api2_fileop_unlink(fileman_home_rel(dir_path, name))
+        rel_path, ok, err = upload_binary_via_curl(rel, os.path.abspath(rel), name, dest_dir)
+        if ok:
+            return rel_path, True, ""
+        if first_err and not err:
+            err = first_err
+        return rel, False, err or json.dumps(payload or {})[:200]
+    rblock = (payload or {}).get("result", payload or {}) or {}
+    err = first_err or json.dumps(rblock)[:200]
+    return rel, False, err
 
 
 def upload_one(rel: str, remote_base: str) -> tuple[str, bool, str]:

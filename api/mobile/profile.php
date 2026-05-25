@@ -4,7 +4,7 @@
  */
 declare(strict_types=1);
 
-require_once __DIR__ . '/../bootstrap.php';
+require_once __DIR__ . '/bootstrap.php';
 
 require_once __DIR__ . '/../core/ratib_api_session.inc.php';
 ratib_api_pick_session_name();

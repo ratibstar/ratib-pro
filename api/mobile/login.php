@@ -7,7 +7,7 @@
  */
 declare(strict_types=1);
 
-require_once __DIR__ . '/../bootstrap.php';
+require_once __DIR__ . '/bootstrap.php';
 
 require_once __DIR__ . '/../core/ratib_api_session.inc.php';
 ratib_api_pick_session_name();
@@ -35,7 +35,6 @@ try {
         rateb_mobile_json(['success' => false, 'message' => 'Email and password are required'], 400);
     }
 
-    // Optional tenant hint for SINGLE_URL_MODE before staff credential check.
     if ($countryId > 0) {
         $_SESSION['country_id'] = $countryId;
     }
@@ -43,7 +42,6 @@ try {
         $_SESSION['agency_id'] = $agencyId;
     }
 
-    // 1) Partner portal (recruitment agency accounts)
     $pdo = Database::getInstance()->getConnection();
     ratibEnsureGlobalPartnershipsSchema($pdo);
 
@@ -100,7 +98,6 @@ try {
         }
     }
 
-    // 2) Staff / employer accounts (users table)
     $authResult = Auth::login($login, $password);
     if (!$authResult['success']) {
         rateb_mobile_json([

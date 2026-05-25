@@ -48,7 +48,7 @@ lib/
 
 ## Authentication
 
-`POST /api/mobile/auth/login.php`
+`POST /api/mobile/login.php`
 
 ```json
 { "email": "user@example.com", "password": "secret" }
@@ -74,4 +74,4 @@ Token is stored in **flutter_secure_storage** and sent as `Authorization: Bearer
 
 ## Backend endpoints
 
-Mobile auth lives in the main RATEB repo under `api/mobile/auth/`. Deploy with the rest of `api/` when ready for production.
+Mobile auth lives in the main RATEB repo under `api/mobile/`. Deploy with the rest of `api/` when ready for production.

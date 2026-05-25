@@ -9,7 +9,7 @@ class ProfileService {
   final ApiClient _client;
 
   Future<UserProfile> getProfile(UserRole role) async {
-    final payload = await _client.get('/mobile/auth/profile.php');
+    final payload = await _client.get('/mobile/profile.php');
     final data = payload['data'] as Map<String, dynamic>? ?? payload;
     return UserProfile.fromJson(data, role);
   }

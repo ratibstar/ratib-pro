@@ -1,9 +1,9 @@
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const authLogin = '/mobile/auth/login.php';
-  static const authProfile = '/mobile/auth/profile.php';
-  static const authLogout = '/mobile/auth/logout.php';
+  static const authLogin = '/mobile/login.php';
+  static const authProfile = '/mobile/profile.php';
+  static const authLogout = '/mobile/logout.php';
 
   // Role-based placeholders (wire to real endpoints as backend grows)
   static const workerTasks = '/mobile/worker/tasks.php';

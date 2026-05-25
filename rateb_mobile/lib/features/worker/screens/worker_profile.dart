@@ -68,7 +68,7 @@ class WorkerProfile extends StatelessWidget {
         const EmptyState(
           title: 'Extended profile',
           message:
-              'Connect to /api/mobile/auth/profile.php for full worker details from RATEB.',
+              'Connect to /api/mobile/profile.php for full worker details from RATEB.',
           icon: Icons.info_outline,
         ),
       ],
