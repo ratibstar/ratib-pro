@@ -1,0 +1,19 @@
+# RATEB Mobile — ignore Flutter/Dart build artifacts
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.metadata
+*.iml
+*.log
+
+# Platform folders are generated via `flutter create .`
+android/.gradle/
+android/local.properties
+ios/Pods/
+ios/.symlinks/
