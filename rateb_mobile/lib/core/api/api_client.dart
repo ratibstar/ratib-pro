@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
@@ -17,19 +19,19 @@ class ApiClient {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
             },
+            responseType: ResponseType.json,
           ),
         ) {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await _tokenProvider?.call();
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
+          if (!_isPublicPath(options.path)) {
+            final token = await _tokenProvider?.call();
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+            }
           }
           handler.next(options);
-        },
-        onError: (error, handler) {
-          handler.next(error);
         },
       ),
     );
@@ -38,14 +40,18 @@ class ApiClient {
   final Dio _dio;
   final TokenProvider? _tokenProvider;
 
-  Dio get dio => _dio;
+  static bool _isPublicPath(String path) {
+    return path.contains('login.php') ||
+        path.contains('health.php') ||
+        path.contains('logout.php');
+  }
 
   Future<Map<String, dynamic>> get(
     String path, {
     Map<String, dynamic>? queryParameters,
   }) async {
     try {
-      final response = await _dio.get<Map<String, dynamic>>(
+      final response = await _dio.get<dynamic>(
         path,
         queryParameters: queryParameters,
       );
@@ -60,7 +66,7 @@ class ApiClient {
     Map<String, dynamic>? body,
   }) async {
     try {
-      final response = await _dio.post<Map<String, dynamic>>(
+      final response = await _dio.post<dynamic>(
         path,
         data: body,
       );
@@ -70,27 +76,43 @@ class ApiClient {
     }
   }
 
-  Map<String, dynamic> _unwrap(Map<String, dynamic>? data) {
-    if (data == null) {
+  Map<String, dynamic> _unwrap(dynamic data) {
+    final map = _asJsonMap(data);
+    if (map == null) {
       throw ApiException('Empty response from server');
     }
-    if (data['success'] == false) {
+    if (map['success'] == false) {
       throw ApiException(
-        data['message'] as String? ?? 'Request failed',
-        code: data['code'] as String?,
+        map['message'] as String? ?? 'Request failed',
+        code: map['code'] as String?,
       );
     }
-    return data;
+    return map;
+  }
+
+  Map<String, dynamic>? _asJsonMap(dynamic data) {
+    if (data == null) return null;
+    if (data is Map<String, dynamic>) return data;
+    if (data is Map) return Map<String, dynamic>.from(data);
+    if (data is String && data.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(data);
+        if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 
   ApiException _mapDioError(DioException error) {
     final response = error.response;
-    if (response?.data is Map<String, dynamic>) {
-      final data = response!.data as Map<String, dynamic>;
+    final fromBody = _asJsonMap(response?.data);
+    if (fromBody != null) {
       return ApiException(
-        data['message'] as String? ?? error.message ?? 'Network error',
-        statusCode: response.statusCode,
-        code: data['code'] as String?,
+        fromBody['message'] as String? ?? error.message ?? 'Network error',
+        statusCode: response?.statusCode,
+        code: fromBody['code'] as String?,
       );
     }
     switch (error.type) {

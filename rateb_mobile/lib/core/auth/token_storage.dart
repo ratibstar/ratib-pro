@@ -1,17 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user_role.dart';
 
-/// Persists auth session. Web uses SharedPreferences (secure storage throws
-/// OperationError in many browsers on localhost); native uses secure storage.
+/// Session storage with an in-memory cache so login never blocks on I/O.
 class TokenStorage {
   TokenStorage({FlutterSecureStorage? secureStorage})
       : _secureStorage = secureStorage ??
             const FlutterSecureStorage(
               aOptions: AndroidOptions(encryptedSharedPreferences: true),
-              webOptions: WebOptions(useSessionStorage: true),
             );
 
   static const _tokenKey = 'rateb_auth_token';
@@ -19,69 +16,86 @@ class TokenStorage {
   static const _usernameKey = 'rateb_username';
 
   final FlutterSecureStorage _secureStorage;
-  SharedPreferences? _webPrefs;
 
-  Future<SharedPreferences> _webPreferences() async {
-    return _webPrefs ??= await SharedPreferences.getInstance();
-  }
+  String? _cachedToken;
+  UserRole? _cachedRole;
+  String? _cachedUsername;
 
   Future<void> saveSession({
     required String token,
     required UserRole role,
     String? username,
   }) async {
-    if (kIsWeb) {
-      final prefs = await _webPreferences();
-      await prefs.setString(_tokenKey, token);
-      await prefs.setString(_roleKey, role.apiValue);
-      if (username != null) {
-        await prefs.setString(_usernameKey, username);
-      }
-      return;
-    }
+    _cachedToken = token;
+    _cachedRole = role;
+    _cachedUsername = username;
 
-    await Future.wait([
-      _secureStorage.write(key: _tokenKey, value: token),
-      _secureStorage.write(key: _roleKey, value: role.apiValue),
-      if (username != null)
-        _secureStorage.write(key: _usernameKey, value: username),
-    ]);
+    // Web: memory-only (secure storage / shared_preferences hang or throw on localhost).
+    if (kIsWeb) return;
+
+    try {
+      await Future.wait([
+        _secureStorage.write(key: _tokenKey, value: token),
+        _secureStorage.write(key: _roleKey, value: role.apiValue),
+        if (username != null)
+          _secureStorage.write(key: _usernameKey, value: username),
+      ]);
+    } catch (_) {
+      // Memory cache still holds the active session.
+    }
   }
 
   Future<String?> readToken() async {
-    if (kIsWeb) {
-      return (await _webPreferences()).getString(_tokenKey);
+    if (_cachedToken != null && _cachedToken!.isNotEmpty) {
+      return _cachedToken;
     }
-    return _secureStorage.read(key: _tokenKey);
+    if (kIsWeb) return null;
+
+    try {
+      _cachedToken = await _secureStorage.read(key: _tokenKey);
+    } catch (_) {
+      return null;
+    }
+    return _cachedToken;
   }
 
   Future<UserRole?> readRole() async {
-    final value = kIsWeb
-        ? (await _webPreferences()).getString(_roleKey)
-        : await _secureStorage.read(key: _roleKey);
-    return UserRole.fromString(value);
+    if (_cachedRole != null) return _cachedRole;
+    if (kIsWeb) return null;
+
+    try {
+      final value = await _secureStorage.read(key: _roleKey);
+      _cachedRole = UserRole.fromString(value);
+    } catch (_) {
+      return null;
+    }
+    return _cachedRole;
   }
 
   Future<String?> readUsername() async {
-    if (kIsWeb) {
-      return (await _webPreferences()).getString(_usernameKey);
+    if (_cachedUsername != null) return _cachedUsername;
+    if (kIsWeb) return null;
+
+    try {
+      _cachedUsername = await _secureStorage.read(key: _usernameKey);
+    } catch (_) {
+      return null;
     }
-    return _secureStorage.read(key: _usernameKey);
+    return _cachedUsername;
   }
 
   Future<void> clear() async {
-    if (kIsWeb) {
-      final prefs = await _webPreferences();
-      await prefs.remove(_tokenKey);
-      await prefs.remove(_roleKey);
-      await prefs.remove(_usernameKey);
-      return;
-    }
+    _cachedToken = null;
+    _cachedRole = null;
+    _cachedUsername = null;
+    if (kIsWeb) return;
 
-    await Future.wait([
-      _secureStorage.delete(key: _tokenKey),
-      _secureStorage.delete(key: _roleKey),
-      _secureStorage.delete(key: _usernameKey),
-    ]);
+    try {
+      await Future.wait([
+        _secureStorage.delete(key: _tokenKey),
+        _secureStorage.delete(key: _roleKey),
+        _secureStorage.delete(key: _usernameKey),
+      ]);
+    } catch (_) {}
   }
 }

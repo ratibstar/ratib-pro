@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/config/app_config.dart';
+import '../../../core/models/user_role.dart';
+import '../../../core/routing/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/auth_provider.dart';
 
@@ -29,10 +32,22 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     final auth = context.read<AuthProvider>();
     auth.clearError();
-    await auth.login(
+    final ok = await auth.login(
       email: _emailController.text,
       password: _passwordController.text,
     );
+    if (!mounted || !ok) return;
+
+    final role = auth.role;
+    final destination = switch (role) {
+      UserRole.worker => AppRouter.workerHome,
+      UserRole.company => AppRouter.companyHome,
+      UserRole.agency => AppRouter.agencyHome,
+      null => AppRouter.login,
+    };
+    if (destination != AppRouter.login) {
+      context.go(destination);
+    }
   }
 
   @override

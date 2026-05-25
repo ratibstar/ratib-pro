@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../../core/api/api_exception.dart';
@@ -28,7 +30,9 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      final session = await _repository.restoreSession();
+      final session = await _repository
+          .restoreSession()
+          .timeout(const Duration(seconds: 5));
       if (session != null) {
         _role = session.role;
         _username = session.username;
@@ -36,6 +40,8 @@ class AuthProvider extends ChangeNotifier {
       } else {
         _status = AuthStatus.unauthenticated;
       }
+    } on TimeoutException {
+      _status = AuthStatus.unauthenticated;
     } catch (_) {
       _status = AuthStatus.unauthenticated;
     } finally {
@@ -53,17 +59,30 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _repository.login(email: email, password: password);
+      final response = await _repository
+          .login(email: email, password: password)
+          .timeout(const Duration(seconds: 25));
       _role = response.role;
       _username = response.username ?? response.email ?? email;
       _status = AuthStatus.authenticated;
+      notifyListeners();
       return true;
+    } on TimeoutException {
+      _errorMessage = 'Login timed out. Check your connection and try again.';
+      _status = AuthStatus.unauthenticated;
+      return false;
     } on ApiException catch (e) {
       _errorMessage = e.message;
       _status = AuthStatus.unauthenticated;
       return false;
-    } catch (_) {
-      _errorMessage = 'Login failed. Please try again.';
+    } on FormatException catch (e) {
+      _errorMessage = 'Unexpected server response: ${e.message}';
+      _status = AuthStatus.unauthenticated;
+      return false;
+    } catch (e) {
+      _errorMessage = kDebugMode
+          ? 'Login failed: $e'
+          : 'Login failed. Please try again.';
       _status = AuthStatus.unauthenticated;
       return false;
     } finally {

@@ -29,15 +29,11 @@ class AuthRepository {
     );
 
     final auth = AuthResponse.fromJson(payload);
-    try {
-      await _tokenStorage.saveSession(
-        token: auth.token,
-        role: auth.role,
-        username: auth.username ?? auth.email,
-      );
-    } catch (_) {
-      // Allow login to complete even if local persistence fails (e.g. web crypto).
-    }
+    await _tokenStorage.saveSession(
+      token: auth.token,
+      role: auth.role,
+      username: auth.username ?? auth.email,
+    );
     return auth;
   }
 
