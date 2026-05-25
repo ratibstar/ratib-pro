@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 
-import '../api/api_exception.dart';
-import '../auth/auth_repository.dart';
-import '../models/user_role.dart';
+import '../../../core/api/api_exception.dart';
+import '../../../core/auth/auth_repository.dart';
+import '../../../core/models/user_role.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
