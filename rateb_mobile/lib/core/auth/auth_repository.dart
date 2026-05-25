@@ -9,18 +9,22 @@ class AuthRepository {
   AuthRepository({
     TokenStorage? tokenStorage,
     ApiClient? apiClient,
+    ApiClient? loginClient,
   }) : _tokenStorage = tokenStorage ?? TokenStorage() {
-    _apiClient = apiClient ?? ApiClient(tokenProvider: _tokenStorage.readToken);
+    _loginClient = loginClient ?? ApiClient();
+    _apiClient = apiClient ??
+        ApiClient(tokenProvider: _tokenStorage.readToken);
   }
 
   final TokenStorage _tokenStorage;
+  late final ApiClient _loginClient;
   late final ApiClient _apiClient;
 
   Future<AuthResponse> login({
     required String email,
     required String password,
   }) async {
-    final payload = await _apiClient.post(
+    final payload = await _loginClient.post(
       ApiEndpoints.authLogin,
       body: {
         'email': email.trim(),

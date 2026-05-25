@@ -25,7 +25,8 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          if (!_isPublicPath(options.path)) {
+          final target = '${options.uri}';
+          if (!_isPublicPath(target)) {
             final token = await _tokenProvider?.call();
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
