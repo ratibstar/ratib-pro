@@ -1,10 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user_role.dart';
 
-/// Session storage — memory cache first; SharedPreferences for persistence.
-/// (No flutter_secure_storage on web — it throws OperationError in Chrome.)
+/// Session storage — memory cache + SharedPreferences (all platforms).
 class TokenStorage {
   static const _tokenKey = 'rateb_auth_token';
   static const _roleKey = 'rateb_user_role';
@@ -16,10 +14,6 @@ class TokenStorage {
   SharedPreferences? _prefs;
 
   Future<SharedPreferences?> _preferences() async {
-    if (kIsWeb) {
-      // Web: skip SharedPreferences during login hot path; memory is enough for dev.
-      return null;
-    }
     try {
       return _prefs ??= await SharedPreferences.getInstance();
     } catch (_) {

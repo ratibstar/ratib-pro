@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/api/api_exception.dart';
 import '../../../core/models/company_models.dart';
+import '../../../core/services/resilient_loader.dart';
+import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/dashboard_card.dart';
 import '../../../shared/widgets/data_state_view.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'requests.dart';
 import 'workers_management.dart';
@@ -82,9 +84,7 @@ class _CompanyHomeTab extends StatefulWidget {
 }
 
 class _CompanyHomeTabState extends State<_CompanyHomeTab> {
-  bool _isLoading = true;
-  String? _error;
-  CompanyDashboardData? _data;
+  ScreenLoadResult<CompanyDashboardData>? _result;
 
   @override
   void initState() {
@@ -92,55 +92,60 @@ class _CompanyHomeTabState extends State<_CompanyHomeTab> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final data = await RatebApiService.instance.getCompanyDashboard();
-      if (!mounted) return;
+  Future<void> _load({bool manualRetry = false}) async {
+    if (manualRetry || _result == null) {
       setState(() {
-        _data = data;
-        _isLoading = false;
-      });
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
+        _result = (_result ?? const ScreenLoadResult<CompanyDashboardData>())
+            .copyWith(isLoading: true, clearError: true);
       });
     }
+
+    final next = await ResilientLoader.execute(
+      cacheKey: CacheKeys.companyDashboard,
+      fetch: RatebApiService.instance.getCompanyDashboard,
+      manualRetry: manualRetry,
+    );
+    if (!mounted) return;
+    setState(() => _result = next);
   }
 
   @override
   Widget build(BuildContext context) {
+    final result = _result;
+    final data = result?.data;
+
     return DataStateView(
-      isLoading: _isLoading,
-      errorMessage: _error,
-      onRetry: _load,
+      isLoading: result?.isLoading ?? true,
+      isFromCache: result?.isFromCache ?? false,
+      errorMessage: result?.showError == true ? result!.error : null,
+      staleMessage: result?.showStaleData == true ? result!.error : null,
+      onRetry: () => _load(manualRetry: true),
       isEmpty: false,
       emptyTitle: '',
       emptyMessage: '',
-      loadingMessage: 'Loading dashboard…',
+      skeletonType: SkeletonType.dashboard,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Welcome, ${widget.username}',
+            'Workforce status',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            'Welcome, ${widget.username}',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.75),
+                ),
+          ),
           const SizedBox(height: 6),
           Text(
-            'Manage your workforce and hiring requests.',
+            'Live view of your roster, approvals, and open requests.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -150,28 +155,28 @@ class _CompanyHomeTabState extends State<_CompanyHomeTab> {
           ),
           const SizedBox(height: 20),
           DashboardCard(
-            title: 'Workers on assignment',
-            subtitle: _data == null
+            title: 'Active workers',
+            subtitle: data == null
                 ? '—'
-                : '${_data!.activeWorkers} active · ${_data!.pendingWorkers} pending approval',
+                : '${data.activeWorkers} on assignment · ${data.pendingWorkers} pending approval',
             icon: Icons.groups_outlined,
             onTap: () {},
           ),
           const SizedBox(height: 12),
           DashboardCard(
             title: 'Open requests',
-            subtitle: _data == null
+            subtitle: data == null
                 ? '—'
-                : '${_data!.openRequests} recruitment requests in progress',
+                : '${data.openRequests} recruitment request${data.openRequests == 1 ? '' : 's'} in progress',
             icon: Icons.request_quote_outlined,
             onTap: () {},
           ),
           const SizedBox(height: 12),
           DashboardCard(
-            title: 'Compliance overview',
-            subtitle: _data == null
+            title: 'Total roster',
+            subtitle: data == null
                 ? '—'
-                : '${_data!.totalWorkers} workers in roster',
+                : '${data.totalWorkers} worker${data.totalWorkers == 1 ? '' : 's'} in your workforce',
             icon: Icons.verified_user_outlined,
             onTap: () {},
           ),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/api/api_exception.dart';
 import '../../../core/models/company_models.dart';
+import '../../../core/services/resilient_loader.dart';
+import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
 import '../../../shared/widgets/data_state_view.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 
 class WorkersManagement extends StatefulWidget {
   const WorkersManagement({super.key});
@@ -13,9 +15,7 @@ class WorkersManagement extends StatefulWidget {
 }
 
 class _WorkersManagementState extends State<WorkersManagement> {
-  bool _isLoading = true;
-  String? _error;
-  List<CompanyWorker> _workers = [];
+  ScreenLoadResult<CompanyWorkersData>? _result;
 
   @override
   void initState() {
@@ -23,44 +23,39 @@ class _WorkersManagementState extends State<WorkersManagement> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final data = await RatebApiService.instance.getCompanyWorkers();
-      if (!mounted) return;
+  Future<void> _load({bool manualRetry = false}) async {
+    if (manualRetry || _result == null) {
       setState(() {
-        _workers = data.workers;
-        _isLoading = false;
-      });
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
+        _result = (_result ?? const ScreenLoadResult<CompanyWorkersData>())
+            .copyWith(isLoading: true, clearError: true);
       });
     }
+
+    final next = await ResilientLoader.execute(
+      cacheKey: CacheKeys.companyWorkers,
+      fetch: RatebApiService.instance.getCompanyWorkers,
+      manualRetry: manualRetry,
+    );
+    if (!mounted) return;
+    setState(() => _result = next);
   }
 
   @override
   Widget build(BuildContext context) {
+    final result = _result;
+    final workers = result?.data?.workers ?? const <CompanyWorker>[];
+
     return DataStateView(
-      isLoading: _isLoading,
-      errorMessage: _error,
-      onRetry: _load,
-      isEmpty: _workers.isEmpty,
-      emptyTitle: 'No workers',
-      emptyMessage: 'No workers found in your roster.',
+      isLoading: result?.isLoading ?? true,
+      isFromCache: result?.isFromCache ?? false,
+      errorMessage: result?.showError == true ? result!.error : null,
+      staleMessage: result?.showStaleData == true ? result!.error : null,
+      onRetry: () => _load(manualRetry: true),
+      isEmpty: workers.isEmpty && result?.isLoading != true,
+      emptyTitle: EmptyStateCopy.companyWorkersTitle,
+      emptyMessage: EmptyStateCopy.companyWorkersMessage,
       emptyIcon: Icons.groups_outlined,
-      loadingMessage: 'Loading workers…',
+      skeletonType: SkeletonType.list,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -71,7 +66,7 @@ class _WorkersManagementState extends State<WorkersManagement> {
                 ),
           ),
           const SizedBox(height: 12),
-          ..._workers.map(
+          ...workers.map(
             (worker) => Card(
               margin: const EdgeInsets.only(bottom: 10),
               child: ListTile(

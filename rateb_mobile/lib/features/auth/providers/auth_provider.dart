@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../../core/api/api_exception.dart';
+import '../../../core/services/screen_cache.dart';
 import '../../../core/auth/auth_repository.dart';
 import '../../../core/models/user_role.dart';
 
@@ -18,12 +19,14 @@ class AuthProvider extends ChangeNotifier {
   UserRole? _role;
   String? _username;
   String? _errorMessage;
+  String? _sessionMessage;
   bool _isLoading = false;
 
   AuthStatus get status => _status;
   UserRole? get role => _role;
   String? get username => _username;
   String? get errorMessage => _errorMessage;
+  String? get sessionMessage => _sessionMessage;
   bool get isLoading => _isLoading;
 
   Future<void> bootstrap() async {
@@ -89,9 +92,11 @@ class AuthProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     await _repository.logout();
+    ScreenCache.instance.clear();
     _role = null;
     _username = null;
     _status = AuthStatus.unauthenticated;
+    _sessionMessage = null;
     _isLoading = false;
     notifyListeners();
   }
@@ -99,9 +104,16 @@ class AuthProvider extends ChangeNotifier {
   Future<void> handleUnauthorized() async {
     if (_status == AuthStatus.unauthenticated) return;
     await _repository.clearSession();
+    ScreenCache.instance.clear();
     _role = null;
     _username = null;
     _status = AuthStatus.unauthenticated;
+    _sessionMessage = 'Session expired. Please sign in again.';
+    notifyListeners();
+  }
+
+  void clearSessionMessage() {
+    _sessionMessage = null;
     notifyListeners();
   }
 

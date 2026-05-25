@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/api/api_exception.dart';
 import '../../../core/models/worker_models.dart';
+import '../../../core/services/resilient_loader.dart';
+import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/dashboard_card.dart';
 import '../../../shared/widgets/data_state_view.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'worker_profile.dart';
 import 'worker_tasks.dart';
@@ -82,9 +84,7 @@ class _WorkerHomeTab extends StatefulWidget {
 }
 
 class _WorkerHomeTabState extends State<_WorkerHomeTab> {
-  bool _isLoading = true;
-  String? _error;
-  WorkerDashboardData? _data;
+  ScreenLoadResult<WorkerDashboardData>? _result;
 
   @override
   void initState() {
@@ -92,55 +92,62 @@ class _WorkerHomeTabState extends State<_WorkerHomeTab> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final data = await RatebApiService.instance.getWorkerDashboard();
-      if (!mounted) return;
+  Future<void> _load({bool manualRetry = false}) async {
+    if (manualRetry || _result == null) {
       setState(() {
-        _data = data;
-        _isLoading = false;
-      });
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
+        _result = (_result ?? const ScreenLoadResult<WorkerDashboardData>())
+            .copyWith(isLoading: true, clearError: true);
       });
     }
+
+    final next = await ResilientLoader.execute(
+      cacheKey: CacheKeys.workerDashboard,
+      fetch: RatebApiService.instance.getWorkerDashboard,
+      manualRetry: manualRetry,
+    );
+    if (!mounted) return;
+    setState(() => _result = next);
   }
 
   @override
   Widget build(BuildContext context) {
+    final result = _result;
+    final data = result?.data;
+
     return DataStateView(
-      isLoading: _isLoading,
-      errorMessage: _error,
-      onRetry: _load,
+      isLoading: result?.isLoading ?? true,
+      isFromCache: result?.isFromCache ?? false,
+      isAutoRetrying: result?.isAutoRetrying ?? false,
+      autoRetryAttempt: result?.autoRetryAttempt ?? 0,
+      errorMessage: result?.showError == true ? result!.error : null,
+      staleMessage: result?.showStaleData == true ? result!.error : null,
+      onRetry: () => _load(manualRetry: true),
       isEmpty: false,
       emptyTitle: '',
       emptyMessage: '',
-      loadingMessage: 'Loading dashboard…',
+      skeletonType: SkeletonType.dashboard,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Welcome, ${_data?.profile.username ?? widget.username}',
+            "Today's overview",
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            'Welcome, ${data?.profile.username ?? widget.username}',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.75),
+                ),
+          ),
           const SizedBox(height: 6),
           Text(
-            'Your workforce assignments and profile at a glance.',
+            'Tasks due today and your current workforce status.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -150,27 +157,29 @@ class _WorkerHomeTabState extends State<_WorkerHomeTab> {
           ),
           const SizedBox(height: 20),
           DashboardCard(
-            title: 'Active tasks',
-            subtitle: _data == null
+            title: 'Due today',
+            subtitle: data == null
                 ? '—'
-                : '${_data!.stats.pendingTasks} pending · ${_data!.stats.dueToday} due today',
+                : '${data.stats.dueToday} task${data.stats.dueToday == 1 ? '' : 's'} need attention today',
+            icon: Icons.today_outlined,
+            onTap: () {},
+          ),
+          const SizedBox(height: 12),
+          DashboardCard(
+            title: 'Pending tasks',
+            subtitle: data == null
+                ? '—'
+                : '${data.stats.pendingTasks} open item${data.stats.pendingTasks == 1 ? '' : 's'} in your queue',
             icon: Icons.assignment_outlined,
             onTap: () {},
           ),
           const SizedBox(height: 12),
           DashboardCard(
-            title: 'Profile & documents',
-            subtitle: _data?.worker != null
-                ? '${_data!.worker!.name} · ${_data!.worker!.status}'
-                : 'View contact info and status',
+            title: 'Your status',
+            subtitle: data?.worker != null
+                ? '${data!.worker!.name} · ${data.worker!.status}'
+                : data?.profile.status ?? 'Active account',
             icon: Icons.badge_outlined,
-            onTap: () {},
-          ),
-          const SizedBox(height: 12),
-          DashboardCard(
-            title: 'QR check-in',
-            subtitle: 'Coming soon — scan to authenticate',
-            icon: Icons.qr_code_scanner_rounded,
             onTap: () {},
           ),
         ],

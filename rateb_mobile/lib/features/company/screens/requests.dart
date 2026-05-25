@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/api/api_exception.dart';
 import '../../../core/models/company_models.dart';
+import '../../../core/services/resilient_loader.dart';
+import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
 import '../../../shared/widgets/data_state_view.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 
 class Requests extends StatefulWidget {
   const Requests({super.key});
@@ -13,9 +15,7 @@ class Requests extends StatefulWidget {
 }
 
 class _RequestsState extends State<Requests> {
-  bool _isLoading = true;
-  String? _error;
-  List<CompanyRequest> _requests = [];
+  ScreenLoadResult<CompanyRequestsData>? _result;
 
   @override
   void initState() {
@@ -23,44 +23,39 @@ class _RequestsState extends State<Requests> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final data = await RatebApiService.instance.getCompanyRequests();
-      if (!mounted) return;
+  Future<void> _load({bool manualRetry = false}) async {
+    if (manualRetry || _result == null) {
       setState(() {
-        _requests = data.requests;
-        _isLoading = false;
-      });
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
+        _result = (_result ?? const ScreenLoadResult<CompanyRequestsData>())
+            .copyWith(isLoading: true, clearError: true);
       });
     }
+
+    final next = await ResilientLoader.execute(
+      cacheKey: CacheKeys.companyRequests,
+      fetch: RatebApiService.instance.getCompanyRequests,
+      manualRetry: manualRetry,
+    );
+    if (!mounted) return;
+    setState(() => _result = next);
   }
 
   @override
   Widget build(BuildContext context) {
+    final result = _result;
+    final requests = result?.data?.requests ?? const <CompanyRequest>[];
+
     return DataStateView(
-      isLoading: _isLoading,
-      errorMessage: _error,
-      onRetry: _load,
-      isEmpty: _requests.isEmpty,
-      emptyTitle: 'No requests',
-      emptyMessage: 'No recruitment requests found.',
+      isLoading: result?.isLoading ?? true,
+      isFromCache: result?.isFromCache ?? false,
+      errorMessage: result?.showError == true ? result!.error : null,
+      staleMessage: result?.showStaleData == true ? result!.error : null,
+      onRetry: () => _load(manualRetry: true),
+      isEmpty: requests.isEmpty && result?.isLoading != true,
+      emptyTitle: EmptyStateCopy.companyRequestsTitle,
+      emptyMessage: EmptyStateCopy.companyRequestsMessage,
       emptyIcon: Icons.inbox_outlined,
-      loadingMessage: 'Loading requests…',
+      skeletonType: SkeletonType.list,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -82,7 +77,7 @@ class _RequestsState extends State<Requests> {
             ],
           ),
           const SizedBox(height: 12),
-          ..._requests.map(
+          ...requests.map(
             (request) => Card(
               margin: const EdgeInsets.only(bottom: 10),
               child: ListTile(

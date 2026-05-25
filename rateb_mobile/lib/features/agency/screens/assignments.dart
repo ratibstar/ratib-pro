@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/api/api_exception.dart';
 import '../../../core/models/agency_models.dart';
+import '../../../core/services/resilient_loader.dart';
+import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
 import '../../../shared/widgets/data_state_view.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 
 class Assignments extends StatefulWidget {
   const Assignments({super.key});
@@ -13,9 +15,7 @@ class Assignments extends StatefulWidget {
 }
 
 class _AssignmentsState extends State<Assignments> {
-  bool _isLoading = true;
-  String? _error;
-  List<AgencyAssignment> _assignments = [];
+  ScreenLoadResult<AgencyAssignmentsData>? _result;
 
   @override
   void initState() {
@@ -23,44 +23,40 @@ class _AssignmentsState extends State<Assignments> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final data = await RatebApiService.instance.getAgencyAssignments();
-      if (!mounted) return;
+  Future<void> _load({bool manualRetry = false}) async {
+    if (manualRetry || _result == null) {
       setState(() {
-        _assignments = data.assignments;
-        _isLoading = false;
-      });
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
+        _result = (_result ?? const ScreenLoadResult<AgencyAssignmentsData>())
+            .copyWith(isLoading: true, clearError: true);
       });
     }
+
+    final next = await ResilientLoader.execute(
+      cacheKey: CacheKeys.agencyAssignments,
+      fetch: RatebApiService.instance.getAgencyAssignments,
+      manualRetry: manualRetry,
+    );
+    if (!mounted) return;
+    setState(() => _result = next);
   }
 
   @override
   Widget build(BuildContext context) {
+    final result = _result;
+    final assignments =
+        result?.data?.assignments ?? const <AgencyAssignment>[];
+
     return DataStateView(
-      isLoading: _isLoading,
-      errorMessage: _error,
-      onRetry: _load,
-      isEmpty: _assignments.isEmpty,
-      emptyTitle: 'No assignments',
-      emptyMessage: 'No client assignments found yet.',
+      isLoading: result?.isLoading ?? true,
+      isFromCache: result?.isFromCache ?? false,
+      errorMessage: result?.showError == true ? result!.error : null,
+      staleMessage: result?.showStaleData == true ? result!.error : null,
+      onRetry: () => _load(manualRetry: true),
+      isEmpty: assignments.isEmpty && result?.isLoading != true,
+      emptyTitle: EmptyStateCopy.agencyAssignmentsTitle,
+      emptyMessage: EmptyStateCopy.agencyAssignmentsMessage,
       emptyIcon: Icons.assignment_ind_outlined,
-      loadingMessage: 'Loading assignments…',
+      skeletonType: SkeletonType.list,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -71,7 +67,7 @@ class _AssignmentsState extends State<Assignments> {
                 ),
           ),
           const SizedBox(height: 12),
-          ..._assignments.map(
+          ...assignments.map(
             (item) => Card(
               margin: const EdgeInsets.only(bottom: 10),
               child: ListTile(

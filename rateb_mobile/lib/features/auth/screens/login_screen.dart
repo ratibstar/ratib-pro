@@ -32,6 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     final auth = context.read<AuthProvider>();
     auth.clearError();
+    auth.clearSessionMessage();
     final ok = await auth.login(
       email: _emailController.text,
       password: _passwordController.text,
@@ -97,6 +98,33 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                   ),
+                  if (auth.sessionMessage != null) ...[
+                    const SizedBox(height: 16),
+                    Material(
+                      color: theme.colorScheme.errorContainer,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.lock_clock_outlined,
+                              color: theme.colorScheme.onErrorContainer,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                auth.sessionMessage!,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onErrorContainer,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 28),
                   Form(
                     key: _formKey,

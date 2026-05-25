@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/api/api_exception.dart';
 import '../../../core/models/agency_models.dart';
+import '../../../core/services/resilient_loader.dart';
+import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/dashboard_card.dart';
 import '../../../shared/widgets/data_state_view.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../../auth/providers/auth_provider.dart';
 import 'assignments.dart';
 import 'recruitment_pipeline.dart';
@@ -82,9 +84,7 @@ class _AgencyHomeTab extends StatefulWidget {
 }
 
 class _AgencyHomeTabState extends State<_AgencyHomeTab> {
-  bool _isLoading = true;
-  String? _error;
-  AgencyDashboardData? _data;
+  ScreenLoadResult<AgencyDashboardData>? _result;
 
   @override
   void initState() {
@@ -92,55 +92,60 @@ class _AgencyHomeTabState extends State<_AgencyHomeTab> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final data = await RatebApiService.instance.getAgencyDashboard();
-      if (!mounted) return;
+  Future<void> _load({bool manualRetry = false}) async {
+    if (manualRetry || _result == null) {
       setState(() {
-        _data = data;
-        _isLoading = false;
-      });
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
+        _result = (_result ?? const ScreenLoadResult<AgencyDashboardData>())
+            .copyWith(isLoading: true, clearError: true);
       });
     }
+
+    final next = await ResilientLoader.execute(
+      cacheKey: CacheKeys.agencyDashboard,
+      fetch: RatebApiService.instance.getAgencyDashboard,
+      manualRetry: manualRetry,
+    );
+    if (!mounted) return;
+    setState(() => _result = next);
   }
 
   @override
   Widget build(BuildContext context) {
+    final result = _result;
+    final data = result?.data;
+
     return DataStateView(
-      isLoading: _isLoading,
-      errorMessage: _error,
-      onRetry: _load,
+      isLoading: result?.isLoading ?? true,
+      isFromCache: result?.isFromCache ?? false,
+      errorMessage: result?.showError == true ? result!.error : null,
+      staleMessage: result?.showStaleData == true ? result!.error : null,
+      onRetry: () => _load(manualRetry: true),
       isEmpty: false,
       emptyTitle: '',
       emptyMessage: '',
-      loadingMessage: 'Loading dashboard…',
+      skeletonType: SkeletonType.dashboard,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Welcome, ${widget.username}',
+            'Pipeline flow',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            'Welcome, ${widget.username}',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.75),
+                ),
+          ),
           const SizedBox(height: 6),
           Text(
-            'Recruitment pipeline and client assignments.',
+            'Track candidates, deployments, and client assignments.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context)
                       .colorScheme
@@ -150,28 +155,28 @@ class _AgencyHomeTabState extends State<_AgencyHomeTab> {
           ),
           const SizedBox(height: 20),
           DashboardCard(
-            title: 'Pipeline',
-            subtitle: _data == null
+            title: 'Candidates in pipeline',
+            subtitle: data == null
                 ? '—'
-                : '${_data!.totalCandidates} candidates · ${_data!.deployed} deployed',
+                : '${data.totalCandidates} total · ${data.deployed} deployed',
             icon: Icons.timeline_outlined,
             onTap: () {},
           ),
           const SizedBox(height: 12),
           DashboardCard(
             title: 'Active assignments',
-            subtitle: _data == null
+            subtitle: data == null
                 ? '—'
-                : '${_data!.activeAssignments} client destinations · ${_data!.deployed} workers deployed',
+                : '${data.activeAssignments} client destination${data.activeAssignments == 1 ? '' : 's'} with workers',
             icon: Icons.assignment_ind_outlined,
             onTap: () {},
           ),
           const SizedBox(height: 12),
           DashboardCard(
-            title: 'Partner documents',
-            subtitle: _data == null
+            title: 'CV pool',
+            subtitle: data == null
                 ? '—'
-                : '${_data!.cvs} shared CVs and compliance files',
+                : '${data.cvs} shared CV${data.cvs == 1 ? '' : 's'} ready for clients',
             icon: Icons.folder_shared_outlined,
             onTap: () {},
           ),

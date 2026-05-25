@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/api/api_exception.dart';
 import '../../../core/models/auth_response.dart';
+import '../../../core/services/resilient_loader.dart';
+import '../../../core/services/screen_cache.dart';
 import '../../../core/services/rateb_api_service.dart';
 import '../../../shared/widgets/data_state_view.dart';
+import '../../../shared/widgets/skeleton_loader.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class WorkerProfile extends StatefulWidget {
@@ -15,9 +17,7 @@ class WorkerProfile extends StatefulWidget {
 }
 
 class _WorkerProfileState extends State<WorkerProfile> {
-  bool _isLoading = true;
-  String? _error;
-  UserProfile? _profile;
+  ScreenLoadResult<UserProfile>? _result;
 
   @override
   void initState() {
@@ -25,51 +25,44 @@ class _WorkerProfileState extends State<WorkerProfile> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final auth = context.read<AuthProvider>();
-      final role = auth.role;
-      if (role == null) throw ApiException('Not authenticated');
-      final profile = await RatebApiService.instance.getProfile(role);
-      if (!mounted) return;
+  Future<void> _load({bool manualRetry = false}) async {
+    final role = context.read<AuthProvider>().role;
+    if (role == null) return;
+
+    if (manualRetry || _result == null) {
       setState(() {
-        _profile = profile;
-        _isLoading = false;
-      });
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
+        _result = (_result ?? const ScreenLoadResult<UserProfile>())
+            .copyWith(isLoading: true, clearError: true);
       });
     }
+
+    final next = await ResilientLoader.execute(
+      cacheKey: CacheKeys.workerProfile,
+      fetch: () => RatebApiService.instance.getProfile(role),
+      manualRetry: manualRetry,
+    );
+    if (!mounted) return;
+    setState(() => _result = next);
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final theme = Theme.of(context);
-    final profile = _profile;
+    final result = _result;
+    final profile = result?.data;
 
     return DataStateView(
-      isLoading: _isLoading,
-      errorMessage: _error,
-      onRetry: _load,
-      isEmpty: profile == null && !_isLoading && _error == null,
-      emptyTitle: 'No profile data',
-      emptyMessage: 'Your profile could not be loaded.',
+      isLoading: result?.isLoading ?? true,
+      isFromCache: result?.isFromCache ?? false,
+      errorMessage: result?.showError == true ? result!.error : null,
+      staleMessage: result?.showStaleData == true ? result!.error : null,
+      onRetry: () => _load(manualRetry: true),
+      isEmpty: result?.hasData == false && result?.isLoading == false,
+      emptyTitle: EmptyStateCopy.workerProfileTitle,
+      emptyMessage: EmptyStateCopy.workerProfileMessage,
       emptyIcon: Icons.person_outline,
-      loadingMessage: 'Loading profile…',
+      skeletonType: SkeletonType.profile,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [

@@ -9,6 +9,7 @@ import 'core/services/rateb_api_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/api/api_client.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'shared/widgets/offline_banner.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -70,6 +71,11 @@ class _RatebMobileAppState extends State<RatebMobileApp> {
         darkTheme: AppTheme.dark(),
         themeMode: ThemeMode.system,
         routerConfig: _appRouter.router,
+        builder: (context, child) {
+          return OfflineBannerHost(
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
       ),
     );
   }
