@@ -14,7 +14,7 @@ class AuthProvider extends ChangeNotifier {
 
   final AuthRepository _repository;
 
-  AuthStatus _status = AuthStatus.unknown;
+  AuthStatus _status = AuthStatus.unauthenticated;
   UserRole? _role;
   String? _username;
   String? _errorMessage;
@@ -27,26 +27,20 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   Future<void> bootstrap() async {
-    _isLoading = true;
-    notifyListeners();
     try {
       final session = await _repository
           .restoreSession()
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 3));
       if (session != null) {
         _role = session.role;
         _username = session.username;
         _status = AuthStatus.authenticated;
-      } else {
-        _status = AuthStatus.unauthenticated;
+        notifyListeners();
       }
     } on TimeoutException {
-      _status = AuthStatus.unauthenticated;
+      // Stay on login screen.
     } catch (_) {
-      _status = AuthStatus.unauthenticated;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      // Stay on login screen.
     }
   }
 

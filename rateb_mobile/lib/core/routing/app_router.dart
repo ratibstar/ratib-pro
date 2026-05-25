@@ -21,12 +21,21 @@ class AppRouter {
   late final GoRouter router = GoRouter(
     initialLocation: login,
     refreshListenable: authProvider,
+    errorBuilder: (context, state) => Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            state.error?.toString() ?? 'Something went wrong',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    ),
     redirect: (context, state) {
       final status = authProvider.status;
       final location = state.matchedLocation;
       final isLogin = location == login;
-
-      if (status == AuthStatus.unknown) return null;
 
       if (status == AuthStatus.unauthenticated && !isLogin) {
         return login;
