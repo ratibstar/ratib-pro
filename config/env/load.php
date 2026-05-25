@@ -113,6 +113,7 @@ if (!function_exists('ratib_env_load_bridge_dotenv')) {
             'RATIB_INFRA_NAMECHEAP_CLIENT_IP',
             'RATIB_INFRA_CLOUDFLARE_API_TOKEN',
             'RATIB_INFRA_MARKETPLACE_ENABLED',
+            'MOBILE_AUTH_SECRET',
         ];
         $lines = @file($path, FILE_IGNORE_NEW_LINES);
         if (!is_array($lines)) {
