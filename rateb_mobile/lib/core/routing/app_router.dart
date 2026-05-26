@@ -45,6 +45,11 @@ class AppRouter {
       final location = state.matchedLocation;
       final isLogin = location == login;
 
+      if (status == AuthStatus.unknown) {
+        if (!isLogin) return login;
+        return null;
+      }
+
       if (status == AuthStatus.unauthenticated && !isLogin) {
         return login;
       }

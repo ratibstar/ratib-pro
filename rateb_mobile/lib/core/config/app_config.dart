@@ -12,4 +12,7 @@ class AppConfig {
 
   static const String appName = 'RATEB';
   static const String appTagline = 'Workforce Management Portal';
+
+  /// Keep aligned with pubspec.yaml version.
+  static const String appVersion = '1.0.0+1';
 }

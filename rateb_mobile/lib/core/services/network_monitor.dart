@@ -7,8 +7,20 @@ class NetworkMonitor extends ChangeNotifier {
   static final NetworkMonitor instance = NetworkMonitor._();
 
   bool _isOnline = true;
+  bool _simulateOffline = false;
 
   bool get isOnline => _isOnline;
+
+  bool get simulateOffline => _simulateOffline && kDebugMode;
+
+  bool get isEffectivelyOnline => !_simulateOffline && _isOnline;
+
+  void setSimulateOffline(bool value) {
+    if (!kDebugMode) return;
+    if (_simulateOffline == value) return;
+    _simulateOffline = value;
+    notifyListeners();
+  }
 
   void markOnline() {
     if (!_isOnline) {

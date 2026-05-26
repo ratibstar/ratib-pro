@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/debug/qr_scanner_telemetry.dart';
 import '../../core/models/user_role.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
@@ -33,6 +33,8 @@ class _QrScannerScreenState extends State<QrScannerScreen>
   bool _scanLocked = false;
   bool _showSuccess = false;
   bool _torchOn = false;
+  bool _torchBusy = false;
+  bool _hasNavigated = false;
   String? _cameraError;
 
   @override
@@ -40,24 +42,52 @@ class _QrScannerScreenState extends State<QrScannerScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _controller = QrLoginController()..startScanning();
+    QrScannerTelemetry.setState('initializing');
     _scanLineController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
     )..repeat(reverse: true);
 
     if (qrUsesNativeCamera) {
+      QrScannerTelemetry.setCameraAvailable(true);
       _scannerController = MobileScannerController(
         detectionSpeed: DetectionSpeed.noDuplicates,
         facing: CameraFacing.back,
         autoStart: true,
       );
+      QrScannerTelemetry.setState('camera_starting');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _cameraError == null) {
+          QrScannerTelemetry.setCameraPermission('granted');
+          QrScannerTelemetry.setState('scanning');
+        }
+      });
+    } else {
+      QrScannerTelemetry.setCameraPermission('not_applicable');
+      QrScannerTelemetry.setState('fallback');
     }
+  }
+
+  Future<void> _stopScannerSafely() async {
+    final scanner = _scannerController;
+    if (scanner == null) return;
+    if (_torchOn) {
+      try {
+        await scanner.toggleTorch();
+      } catch (_) {}
+      _torchOn = false;
+    }
+    try {
+      await scanner.stop();
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    QrScannerTelemetry.setState('disposed');
     _scanLineController.dispose();
+    unawaited(_stopScannerSafely());
     _scannerController?.dispose();
     _manualController.dispose();
     _controller.dispose();
@@ -71,12 +101,14 @@ class _QrScannerScreenState extends State<QrScannerScreen>
     switch (state) {
       case AppLifecycleState.resumed:
         if (!_scanLocked && !_controller.isBusy && _cameraError == null) {
-          unawaited(scanner.start());
+          QrScannerTelemetry.setState('resumed');
+          unawaited(_scannerController?.start());
         }
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
-        unawaited(scanner.stop());
+        QrScannerTelemetry.setState('paused');
+        unawaited(_stopScannerSafely());
       case AppLifecycleState.hidden:
         break;
     }
@@ -84,19 +116,28 @@ class _QrScannerScreenState extends State<QrScannerScreen>
 
   Future<void> _toggleTorch() async {
     final scanner = _scannerController;
-    if (scanner == null) return;
-    await scanner.toggleTorch();
-    if (mounted) {
-      setState(() => _torchOn = !_torchOn);
+    if (scanner == null || _torchBusy) return;
+    _torchBusy = true;
+    try {
+      await scanner.toggleTorch();
+      if (mounted) {
+        setState(() => _torchOn = !_torchOn);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _torchOn = false);
+    } finally {
+      _torchBusy = false;
     }
   }
 
   Future<void> _resumeScanning() async {
+    if (_hasNavigated) return;
     _scanLocked = false;
     _showSuccess = false;
     _cameraError = null;
     _controller.reset();
     _controller.startScanning();
+    QrScannerTelemetry.setState('scanning');
     if (qrUsesNativeCamera) {
       await _scannerController?.start();
     }
@@ -104,51 +145,68 @@ class _QrScannerScreenState extends State<QrScannerScreen>
   }
 
   Future<void> _handlePayload(String payload) async {
-    if (_scanLocked || _controller.isBusy) return;
+    if (_scanLocked || _controller.isBusy || _hasNavigated) return;
 
+    QrScannerTelemetry.recordScanAttempt();
+    QrScannerTelemetry.setState('processing');
     _scanLocked = true;
-    await _scannerController?.stop();
 
     final auth = context.read<AuthProvider>();
     auth.clearError();
     auth.clearSessionMessage();
+
+    await _stopScannerSafely();
 
     final response = await _controller.submitPayload(payload);
     if (!mounted) return;
 
     if (response == null) {
       _scanLocked = false;
+      QrScannerTelemetry.setState('error');
       if (qrUsesNativeCamera) {
         await _scannerController?.start();
+        QrScannerTelemetry.setState('scanning');
       }
-      setState(() {});
+      if (mounted) setState(() {});
       return;
     }
 
     await HapticFeedback.mediumImpact();
+    QrScannerTelemetry.setState('success');
 
     final ok = await auth.completeQrLogin(response);
     if (!mounted) return;
 
     if (!ok) {
       _scanLocked = false;
+      QrScannerTelemetry.setState('error');
       if (qrUsesNativeCamera) {
         await _scannerController?.start();
+        QrScannerTelemetry.setState('scanning');
       }
-      setState(() {});
+      if (mounted) setState(() {});
       return;
     }
 
     setState(() => _showSuccess = true);
     await HapticFeedback.heavyImpact();
     await Future<void>.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
+    if (!mounted || _hasNavigated) return;
 
+    _hasNavigated = true;
+    QrScannerTelemetry.setState('navigating');
     final destination = _destinationForRole(auth.role);
     if (destination != AppRouter.login) {
       Navigator.of(context).pop();
       context.go(destination);
     }
+  }
+
+  void _onDetect(BarcodeCapture capture) {
+    if (_scanLocked || _controller.isBusy || _hasNavigated) return;
+    final raw = capture.barcodes.firstOrNull?.rawValue?.trim();
+    if (raw == null || raw.isEmpty) return;
+    _handlePayload(raw);
   }
 
   String _destinationForRole(UserRole? role) {
@@ -158,13 +216,6 @@ class _QrScannerScreenState extends State<QrScannerScreen>
       UserRole.agency => AppRouter.agencyHome,
       null => AppRouter.login,
     };
-  }
-
-  void _onDetect(BarcodeCapture capture) {
-    if (_scanLocked || _controller.isBusy) return;
-    final raw = capture.barcodes.firstOrNull?.rawValue?.trim();
-    if (raw == null || raw.isEmpty) return;
-    _handlePayload(raw);
   }
 
   @override
@@ -188,6 +239,9 @@ class _QrScannerScreenState extends State<QrScannerScreen>
             foregroundColor:
                 qrUsesNativeCamera ? Colors.white : AppColors.darkText,
             title: const Text('Workforce identity'),
+            systemOverlayStyle: qrUsesNativeCamera
+                ? SystemUiOverlayStyle.light
+                : null,
             leading: IconButton(
               icon: const Icon(Icons.close),
               tooltip: 'Close',
@@ -292,15 +346,23 @@ class _NativeScannerBody extends StatelessWidget {
           onDetect: onDetect,
           errorBuilder: (context, error, child) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              onCameraError(_cameraErrorMessage(error));
+              final message = _cameraErrorMessage(error);
+              if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
+                QrScannerTelemetry.setCameraPermission('denied');
+              } else {
+                QrScannerTelemetry.setCameraPermission('error');
+              }
+              onCameraError(message);
             });
             return child ?? const SizedBox.shrink();
           },
         ),
-        AnimatedBuilder(
-          animation: scanLineAnimation,
-          builder: (context, _) => QrScanOverlay(
-            scanLineProgress: scanLineAnimation.value,
+        RepaintBoundary(
+          child: AnimatedBuilder(
+            animation: scanLineAnimation,
+            builder: (context, _) => QrScanOverlay(
+              scanLineProgress: scanLineAnimation.value,
+            ),
           ),
         ),
         if (isProcessing)
@@ -309,13 +371,14 @@ class _NativeScannerBody extends StatelessWidget {
           ),
         if (showSuccess) const QrScanSuccessOverlay(),
         if (errorMessage != null)
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 32,
-            child: _ErrorBanner(
-              message: errorMessage!,
-              onRetry: onScanAgain,
+          SafeArea(
+            minimum: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: _ErrorBanner(
+                message: errorMessage!,
+                onRetry: onScanAgain,
+              ),
             ),
           ),
       ],

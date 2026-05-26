@@ -16,15 +16,18 @@ class QrLoginController extends ChangeNotifier {
   String? _errorMessage;
   AuthResponse? _lastAuth;
   bool _handledScan = false;
+  bool _inFlight = false;
 
   QrLoginStatus get status => _status;
   String? get errorMessage => _errorMessage;
   AuthResponse? get lastAuth => _lastAuth;
   bool get isBusy =>
+      _inFlight ||
       _status == QrLoginStatus.processing ||
       _status == QrLoginStatus.scanning;
 
   void startScanning() {
+    if (_inFlight) return;
     _handledScan = false;
     _errorMessage = null;
     _status = QrLoginStatus.scanning;
@@ -33,6 +36,7 @@ class QrLoginController extends ChangeNotifier {
 
   void reset() {
     _handledScan = false;
+    _inFlight = false;
     _errorMessage = null;
     _lastAuth = null;
     _status = QrLoginStatus.idle;
@@ -48,11 +52,12 @@ class QrLoginController extends ChangeNotifier {
       return null;
     }
 
-    if (_handledScan && _status == QrLoginStatus.processing) {
+    if (_inFlight || (_handledScan && _status == QrLoginStatus.processing)) {
       return null;
     }
 
     _handledScan = true;
+    _inFlight = true;
     _status = QrLoginStatus.processing;
     _errorMessage = null;
     notifyListeners();
@@ -61,18 +66,21 @@ class QrLoginController extends ChangeNotifier {
       final auth = await _service.loginWithPayload(payload);
       _lastAuth = auth;
       _status = QrLoginStatus.success;
+      _inFlight = false;
       notifyListeners();
       return auth;
     } on ApiException catch (e) {
       _errorMessage = friendlyQrErrorMessage(e);
       _status = QrLoginStatus.error;
       _handledScan = false;
+      _inFlight = false;
       notifyListeners();
       return null;
     } catch (e) {
       _errorMessage = friendlyQrErrorMessage(e);
       _status = QrLoginStatus.error;
       _handledScan = false;
+      _inFlight = false;
       notifyListeners();
       return null;
     }

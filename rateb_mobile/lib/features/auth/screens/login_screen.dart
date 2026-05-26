@@ -7,6 +7,7 @@ import '../../../core/models/user_role.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/auth_provider.dart';
+import '../../debug/pilot_tools_screen.dart';
 import '../../qr/qr_scanner_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -56,6 +57,21 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final theme = Theme.of(context);
+
+    if (auth.status == AuthStatus.unknown) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Restoring session…'),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -213,6 +229,29 @@ class _LoginScreenState extends State<LoginScreen> {
                           icon: const Icon(Icons.qr_code_scanner_rounded),
                           label: const Text('Workforce identity login'),
                         ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Scan your badge QR code from RATEB System Settings',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.5),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        if (PilotToolsScreen.isAvailable) ...[
+                          const SizedBox(height: 20),
+                          TextButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => const PilotToolsScreen(),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.build_circle_outlined, size: 18),
+                            label: const Text('Pilot tools (internal)'),
+                          ),
+                        ],
                       ],
                     ),
                   ),

@@ -16,7 +16,7 @@ class OfflineBannerHost extends StatelessWidget {
     return ListenableBuilder(
       listenable: NetworkMonitor.instance,
       builder: (context, _) {
-        final offline = !NetworkMonitor.instance.isOnline;
+        final offline = !NetworkMonitor.instance.isEffectivelyOnline;
         return Stack(
           fit: StackFit.expand,
           children: [

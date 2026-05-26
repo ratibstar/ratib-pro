@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
+import '../debug/api_telemetry.dart';
+import '../debug/diagnostics_config.dart';
 import 'api_exception.dart';
 import '../services/network_monitor.dart';
 
@@ -30,6 +32,16 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          if (NetworkMonitor.instance.simulateOffline) {
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                type: DioExceptionType.connectionError,
+                message: 'Simulated offline (pilot mode)',
+              ),
+            );
+            return;
+          }
           final target = '${options.uri}';
           if (!_isPublicPath(target)) {
             final token = await _tokenProvider?.call();
@@ -37,18 +49,21 @@ class ApiClient {
               options.headers['Authorization'] = 'Bearer $token';
             }
           }
+          options.extra['sw'] = Stopwatch()..start();
           handler.next(options);
         },
         onResponse: (response, handler) {
+          _recordTiming(response.requestOptions, success: true);
           NetworkMonitor.instance.markOnline();
           handler.next(response);
         },
         onError: (error, handler) async {
+          _recordTiming(error.requestOptions, success: false);
           final status = error.response?.statusCode;
           if (status == 401 &&
               _onUnauthorized != null &&
               !_isPublicPath('${error.requestOptions.uri}')) {
-            await _onUnauthorized!.call();
+            await _onUnauthorized.call();
           } else if (error.type == DioExceptionType.connectionError ||
               error.type == DioExceptionType.connectionTimeout ||
               error.type == DioExceptionType.sendTimeout ||
@@ -64,6 +79,19 @@ class ApiClient {
   final Dio _dio;
   final TokenProvider? _tokenProvider;
   final UnauthorizedHandler? _onUnauthorized;
+
+  void _recordTiming(RequestOptions options, {required bool success}) {
+    if (!DiagnosticsConfig.enabled) return;
+    final sw = options.extra['sw'];
+    if (sw is! Stopwatch) return;
+    sw.stop();
+    final path = options.path;
+    if (success) {
+      ApiTelemetry.recordSuccess(path, sw.elapsedMilliseconds);
+    } else {
+      ApiTelemetry.recordFailure(path, sw.elapsedMilliseconds);
+    }
+  }
 
   static bool _isPublicPath(String path) {
     return path.contains('login.php') ||

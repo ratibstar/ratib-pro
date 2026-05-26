@@ -16,12 +16,13 @@ class AuthProvider extends ChangeNotifier {
 
   final AuthRepository _repository;
 
-  AuthStatus _status = AuthStatus.unauthenticated;
+  AuthStatus _status = AuthStatus.unknown;
   UserRole? _role;
   String? _username;
   String? _errorMessage;
   String? _sessionMessage;
   bool _isLoading = false;
+  bool _handlingUnauthorized = false;
 
   AuthStatus get status => _status;
   UserRole? get role => _role;
@@ -35,13 +36,19 @@ class AuthProvider extends ChangeNotifier {
       final session = await _repository
           .restoreSession()
           .timeout(const Duration(seconds: 5));
-      if (session == null) return;
+      if (session == null) {
+        _status = AuthStatus.unauthenticated;
+        notifyListeners();
+        return;
+      }
 
       final profile = await _repository
           .fetchProfile(session.role)
           .timeout(const Duration(seconds: 8));
       if (profile == null) {
         await _repository.clearSession();
+        _status = AuthStatus.unauthenticated;
+        notifyListeners();
         return;
       }
 
@@ -52,9 +59,11 @@ class AuthProvider extends ChangeNotifier {
       _status = AuthStatus.authenticated;
       notifyListeners();
     } on TimeoutException {
-      // Stay on login screen.
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
     } catch (_) {
-      // Stay on login screen.
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
     }
   }
 
@@ -62,6 +71,7 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
+    if (_isLoading) return false;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -80,45 +90,12 @@ class AuthProvider extends ChangeNotifier {
       _errorMessage = e.message;
       _status = AuthStatus.unauthenticated;
       return false;
-    } on FormatException catch (e) {
-      _errorMessage = 'Unexpected server response: ${e.message}';
+    } on FormatException catch (_) {
+      _errorMessage = 'Unexpected server response. Please try again.';
       _status = AuthStatus.unauthenticated;
       return false;
-    } catch (e) {
-      _errorMessage = kDebugMode
-          ? 'Login failed: $e'
-          : 'Login failed. Please try again.';
-      _status = AuthStatus.unauthenticated;
-      return false;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<bool> loginWithQr(String qrPayload) async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      final response = await _repository
-          .loginWithQr(qrPayload)
-          .timeout(const Duration(seconds: 25));
-      _applyAuthResponse(response);
-      return true;
-    } on TimeoutException {
-      _errorMessage = 'QR login timed out. Check your connection and try again.';
-      _status = AuthStatus.unauthenticated;
-      return false;
-    } on ApiException catch (e) {
-      _errorMessage = e.message;
-      _status = AuthStatus.unauthenticated;
-      return false;
-    } catch (e) {
-      _errorMessage = kDebugMode
-          ? 'QR login failed: $e'
-          : 'QR login failed. Please try again.';
+    } catch (_) {
+      _errorMessage = 'Login failed. Please try again.';
       _status = AuthStatus.unauthenticated;
       return false;
     } finally {
@@ -127,8 +104,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// Called when [QrLoginController] already received a valid auth response.
   Future<bool> completeQrLogin(AuthResponse response) async {
+    if (_isLoading) return false;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -136,10 +113,8 @@ class AuthProvider extends ChangeNotifier {
       await _repository.persistAuthResponse(response);
       _applyAuthResponse(response);
       return true;
-    } catch (e) {
-      _errorMessage = kDebugMode
-          ? 'Could not save session: $e'
-          : 'Could not save session.';
+    } catch (_) {
+      _errorMessage = 'Could not save session.';
       _status = AuthStatus.unauthenticated;
       return false;
     } finally {
@@ -156,10 +131,12 @@ class AuthProvider extends ChangeNotifier {
         fallbackUsername;
     _status = AuthStatus.authenticated;
     _sessionMessage = null;
+    _errorMessage = null;
     notifyListeners();
   }
 
   Future<void> logout() async {
+    if (_isLoading) return;
     _isLoading = true;
     notifyListeners();
     await _repository.logout();
@@ -173,15 +150,22 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> handleUnauthorized() async {
-    if (_status == AuthStatus.unauthenticated) return;
-    await _repository.clearSession();
-    ScreenCache.instance.clear();
-    _role = null;
-    _username = null;
-    _status = AuthStatus.unauthenticated;
-    _sessionMessage = 'Session expired. Please sign in again.';
-    _errorMessage = null;
-    notifyListeners();
+    if (_status == AuthStatus.unauthenticated || _handlingUnauthorized) {
+      return;
+    }
+    _handlingUnauthorized = true;
+    try {
+      await _repository.clearSession();
+      ScreenCache.instance.clear();
+      _role = null;
+      _username = null;
+      _status = AuthStatus.unauthenticated;
+      _sessionMessage = 'Session expired. Please sign in again.';
+      _errorMessage = null;
+      notifyListeners();
+    } finally {
+      _handlingUnauthorized = false;
+    }
   }
 
   void clearSessionMessage() {

@@ -60,29 +60,31 @@ class QrScanOverlay extends StatelessWidget {
                 child: _ScanFrameBorder(progress: scanLineProgress),
               ),
               if (showHint)
-                Positioned(
-                  left: 24,
-                  right: 24,
-                  bottom: 120,
-                  child: Column(
-                    children: [
-                      Text(
-                        'Align QR inside frame',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Hold steady — sign-in is automatic',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.75),
-                            ),
-                      ),
-                    ],
+                SafeArea(
+                  minimum: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  child: Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Align QR inside frame',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Hold steady — sign-in is automatic',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.75),
+                              ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
             ],

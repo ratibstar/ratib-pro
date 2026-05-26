@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -13,11 +14,28 @@ import 'shared/widgets/offline_banner.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  _configureErrorHandling();
+  runApp(const RatebMobileApp());
+}
+
+void _configureErrorHandling() {
   FlutterError.onError = (details) {
+    if (kReleaseMode) {
+      debugPrint('Unhandled Flutter error');
+      return;
+    }
     FlutterError.presentError(details);
     debugPrint('FlutterError: ${details.exceptionAsString()}');
   };
-  runApp(const RatebMobileApp());
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    if (kReleaseMode) {
+      debugPrint('Unhandled async error');
+      return true;
+    }
+    debugPrint('AsyncError: $error');
+    return false;
+  };
 }
 
 class RatebMobileApp extends StatefulWidget {
