@@ -62,6 +62,19 @@
       var el = document.getElementById('loading');
       if (el) el.remove();
     });
+
+    // If Flutter never boots (stale dev server, JS error), show guidance.
+    setTimeout(function () {
+      var el = document.getElementById('loading');
+      if (!el) return;
+      el.innerHTML =
+        'Loading RATEB…<br><br>' +
+        '<small style="max-width:420px;text-align:center;line-height:1.5;display:inline-block">' +
+        'If this screen does not change, restart the dev server:<br>' +
+        '<code>flutter run -d web-server --web-port=8090</code><br>' +
+        'Or use <code>flutter run -d chrome</code> / a release build.' +
+        '</small>';
+    }, 25000);
   </script>
 </body>
 </html>
