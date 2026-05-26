@@ -1,5 +1,6 @@
 # N-Genius / local secrets (never commit)
 .env
+.env.mobile-unblock
 config/ngenius.secrets.php
 config/infra.secrets.php
 config/env/infra.secrets.php

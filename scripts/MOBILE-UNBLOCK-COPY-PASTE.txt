@@ -1,0 +1,12 @@
+RATEB MOBILE — production auth is live
+======================================
+
+Verified: login + Company Portal working on production.
+
+Server cleanup (if not done yet):
+  1. Remove MOBILE_ENV_DIAG_IP from public_html/.env
+  2. Delete public_html/api/mobile/debug-env.php (if still on server)
+  3. Restart PHP-FPM
+
+Re-check anytime:
+  powershell -ExecutionPolicy Bypass -File scripts\verify-mobile-production.ps1
