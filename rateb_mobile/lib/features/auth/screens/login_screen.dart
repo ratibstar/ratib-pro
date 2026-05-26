@@ -211,14 +211,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   );
                                 },
                           icon: const Icon(Icons.qr_code_scanner_rounded),
-                          label: const Text('Login with QR'),
+                          label: const Text('Workforce identity login'),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Workforce identity QR login is available for workers with a RATEB badge.',
+                    'Scan your RATEB workforce badge on a phone, or use password sign-in here.',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     ),

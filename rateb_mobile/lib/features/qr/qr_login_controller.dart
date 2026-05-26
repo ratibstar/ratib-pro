@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/api/api_exception.dart';
 import '../../core/models/auth_response.dart';
+import 'qr_error_messages.dart';
 import 'qr_service.dart';
 
 enum QrLoginStatus { idle, scanning, processing, success, error }
@@ -63,15 +64,13 @@ class QrLoginController extends ChangeNotifier {
       notifyListeners();
       return auth;
     } on ApiException catch (e) {
-      _errorMessage = e.message;
+      _errorMessage = friendlyQrErrorMessage(e);
       _status = QrLoginStatus.error;
       _handledScan = false;
       notifyListeners();
       return null;
     } catch (e) {
-      _errorMessage = kDebugMode
-          ? 'QR login failed: $e'
-          : 'QR login failed. Try again or use password.';
+      _errorMessage = friendlyQrErrorMessage(e);
       _status = QrLoginStatus.error;
       _handledScan = false;
       notifyListeners();
