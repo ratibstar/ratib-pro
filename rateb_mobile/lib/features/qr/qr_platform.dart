@@ -5,10 +5,10 @@ enum QrScannerMode {
   /// Android / iPhone — native camera scanner.
   nativeCamera,
 
-  /// Flutter web — manual payload fallback only.
+  /// Flutter web — payload paste fallback only.
   webFallback,
 
-  /// Desktop (Windows/macOS/Linux) — paste fallback; no mobile camera UX.
+  /// Desktop (Windows/macOS/Linux) — payload paste fallback.
   desktopFallback,
 }
 
@@ -25,12 +25,8 @@ QrScannerMode resolveQrScannerMode() {
   }
 }
 
-bool get qrShowsManualPaste {
-  if (qrUsesNativeCamera) {
-    return false;
-  }
-  return kIsWeb || kDebugMode || resolveQrScannerMode() == QrScannerMode.desktopFallback;
-}
-
 bool get qrUsesNativeCamera =>
     resolveQrScannerMode() == QrScannerMode.nativeCamera;
+
+/// Payload paste is shown only when the live camera scanner is unavailable.
+bool get qrShowsManualPaste => !qrUsesNativeCamera;

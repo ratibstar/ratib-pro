@@ -87,12 +87,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8),
                         Text(
-                          AppConfig.appTagline,
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          'Secure workforce access using your RATEB identity badge.',
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.65),
+                                .withValues(alpha: 0.55),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -218,9 +218,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Scan your RATEB workforce badge on a phone, or use password sign-in here.',
+                    AppConfig.appTagline,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                     ),
                     textAlign: TextAlign.center,
                   ),

@@ -1,6 +1,6 @@
 import '../../core/api/api_exception.dart';
 
-/// Enterprise-facing QR login error copy.
+/// Enterprise-facing QR login error copy — never exposes raw backend codes.
 String friendlyQrErrorMessage(Object error) {
   if (error is ApiException) {
     return _fromApi(error);
@@ -10,14 +10,22 @@ String friendlyQrErrorMessage(Object error) {
 
 String _fromApi(ApiException e) {
   switch (e.code) {
-    case 'nonce_reused':
-      return 'This identity badge has already been used. Ask your administrator for a new badge QR.';
+    case 'expired':
+      return 'This workforce badge has expired. Request a new QR from RATEB System Settings.';
+    case 'invalid_signature':
+      return 'This badge could not be authenticated. Use a current QR from RATEB System Settings.';
+    case 'invalid_format':
     case 'invalid':
-      return 'Unrecognized workforce badge. Align the QR inside the frame or use password sign-in.';
-    case 'config_error':
-      return 'Workforce identity service is temporarily unavailable. Try again shortly or use password sign-in.';
+      return 'Unrecognized workforce badge. Check the QR or use password sign-in.';
+    case 'nonce_reused':
+      return 'This identity badge has already been used. Request a new QR from your administrator.';
+    case 'unauthorized':
     case 'invalid_credentials':
       return 'This badge is not authorized for mobile access.';
+    case 'config_error':
+      return 'Workforce identity service is temporarily unavailable. Try again shortly or use password sign-in.';
+    case 'network_error':
+      return 'No network connection. Check your internet and try again.';
   }
 
   if (e.statusCode == 401) {
@@ -30,11 +38,19 @@ String _fromApi(ApiException e) {
     return 'Connection timed out. Check your network and try again.';
   }
 
-  final msg = e.message.trim();
-  if (msg.isNotEmpty &&
-      !msg.toLowerCase().contains('exception') &&
-      msg.length < 120) {
-    return msg;
+  final msg = e.message.trim().toLowerCase();
+  if (msg.contains('expired')) {
+    return 'This workforce badge has expired. Request a new QR from RATEB System Settings.';
+  }
+  if (msg.contains('network') || msg.contains('reach server')) {
+    return 'No network connection. Check your internet and try again.';
+  }
+
+  final raw = e.message.trim();
+  if (raw.isNotEmpty &&
+      !raw.toLowerCase().contains('exception') &&
+      raw.length < 120) {
+    return raw;
   }
   return 'Unable to verify your workforce identity. Please try again.';
 }

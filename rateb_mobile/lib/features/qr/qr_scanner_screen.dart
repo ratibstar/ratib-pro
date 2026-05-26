@@ -32,6 +32,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
 
   bool _scanLocked = false;
   bool _showSuccess = false;
+  bool _torchOn = false;
   String? _cameraError;
 
   @override
@@ -78,6 +79,15 @@ class _QrScannerScreenState extends State<QrScannerScreen>
         unawaited(scanner.stop());
       case AppLifecycleState.hidden:
         break;
+    }
+  }
+
+  Future<void> _toggleTorch() async {
+    final scanner = _scannerController;
+    if (scanner == null) return;
+    await scanner.toggleTorch();
+    if (mounted) {
+      setState(() => _torchOn = !_torchOn);
     }
   }
 
@@ -159,32 +169,41 @@ class _QrScannerScreenState extends State<QrScannerScreen>
 
   @override
   Widget build(BuildContext context) {
-    final mode = resolveQrScannerMode();
-    final showPaste = qrShowsManualPaste && !qrUsesNativeCamera;
-
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, _) {
-        final status = _controller.status;
         final error = _controller.errorMessage;
-        final isProcessing = status == QrLoginStatus.processing;
+        final isProcessing =
+            _controller.status == QrLoginStatus.processing;
 
         return Scaffold(
-          backgroundColor: Colors.black,
+          backgroundColor:
+              qrUsesNativeCamera ? Colors.black : AppColors.darkBackground,
           extendBodyBehindAppBar: qrUsesNativeCamera,
           appBar: AppBar(
-            backgroundColor:
-                qrUsesNativeCamera ? Colors.transparent : null,
+            backgroundColor: qrUsesNativeCamera
+                ? Colors.transparent
+                : AppColors.darkSurface,
             elevation: 0,
-            foregroundColor: qrUsesNativeCamera ? Colors.white : null,
+            foregroundColor:
+                qrUsesNativeCamera ? Colors.white : AppColors.darkText,
             title: const Text('Workforce identity'),
             leading: IconButton(
               icon: const Icon(Icons.close),
+              tooltip: 'Close',
               onPressed: () => Navigator.of(context).pop(),
             ),
             actions: [
+              if (qrUsesNativeCamera)
+                IconButton(
+                  tooltip: _torchOn ? 'Turn off flashlight' : 'Turn on flashlight',
+                  icon: Icon(
+                    _torchOn ? Icons.flashlight_on : Icons.flashlight_off_outlined,
+                  ),
+                  onPressed: _toggleTorch,
+                ),
               IconButton(
-                tooltip: 'Sample badge',
+                tooltip: 'Preview workforce badge',
                 icon: const Icon(Icons.badge_outlined),
                 onPressed: () {
                   Navigator.of(context).push(
@@ -196,33 +215,34 @@ class _QrScannerScreenState extends State<QrScannerScreen>
               ),
             ],
           ),
-          body: qrUsesNativeCamera
-              ? _NativeScannerBody(
-                  scannerController: _scannerController!,
-                  scanLineAnimation: _scanLineController,
-                  cameraError: _cameraError,
-                  showSuccess: _showSuccess,
-                  isProcessing: isProcessing,
-                  errorMessage: error,
-                  onDetect: _onDetect,
-                  onCameraError: (message) {
-                    setState(() => _cameraError = message);
-                  },
-                  onRetryCamera: _resumeScanning,
-                  onScanAgain: _resumeScanning,
-                )
-              : _FallbackBody(
-                  mode: mode,
-                  showPaste: showPaste,
-                  manualController: _manualController,
-                  controller: _controller,
-                  isProcessing: isProcessing,
-                  errorMessage: error,
-                  onSubmitPaste: () {
-                    _handlePayload(_manualController.text);
-                  },
-                  onScanAgain: _resumeScanning,
-                ),
+          body: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 280),
+            child: qrUsesNativeCamera
+                ? _NativeScannerBody(
+                    key: const ValueKey('native'),
+                    scannerController: _scannerController!,
+                    scanLineAnimation: _scanLineController,
+                    cameraError: _cameraError,
+                    showSuccess: _showSuccess,
+                    isProcessing: isProcessing,
+                    errorMessage: error,
+                    onDetect: _onDetect,
+                    onCameraError: (message) {
+                      setState(() => _cameraError = message);
+                    },
+                    onRetryCamera: _resumeScanning,
+                    onScanAgain: _resumeScanning,
+                  )
+                : _FallbackBody(
+                    key: const ValueKey('fallback'),
+                    manualController: _manualController,
+                    controller: _controller,
+                    isProcessing: isProcessing,
+                    errorMessage: error,
+                    onSubmitPaste: () => _handlePayload(_manualController.text),
+                    onScanAgain: _resumeScanning,
+                  ),
+          ),
         );
       },
     );
@@ -231,6 +251,7 @@ class _QrScannerScreenState extends State<QrScannerScreen>
 
 class _NativeScannerBody extends StatelessWidget {
   const _NativeScannerBody({
+    super.key,
     required this.scannerController,
     required this.scanLineAnimation,
     required this.cameraError,
@@ -283,7 +304,7 @@ class _NativeScannerBody extends StatelessWidget {
           ),
         ),
         if (isProcessing)
-          _ProcessingOverlay(
+          const _ProcessingOverlay(
             message: 'Verifying workforce identity…',
           ),
         if (showSuccess) const QrScanSuccessOverlay(),
@@ -303,7 +324,7 @@ class _NativeScannerBody extends StatelessWidget {
 
   static String _cameraErrorMessage(MobileScannerException error) {
     if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
-      return 'Camera access is required to scan your workforce badge. Enable camera permission in Settings.';
+      return 'Camera access is required to scan your workforce badge. Enable camera permission in Settings, then tap Try again.';
     }
     return 'Unable to start the camera. Check permissions and try again.';
   }
@@ -311,8 +332,7 @@ class _NativeScannerBody extends StatelessWidget {
 
 class _FallbackBody extends StatelessWidget {
   const _FallbackBody({
-    required this.mode,
-    required this.showPaste,
+    super.key,
     required this.manualController,
     required this.controller,
     required this.isProcessing,
@@ -321,8 +341,6 @@ class _FallbackBody extends StatelessWidget {
     required this.onScanAgain,
   });
 
-  final QrScannerMode mode;
-  final bool showPaste;
   final TextEditingController manualController;
   final QrLoginController controller;
   final bool isProcessing;
@@ -333,13 +351,6 @@ class _FallbackBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final headline = mode == QrScannerMode.webFallback
-        ? 'Workforce identity login'
-        : 'Workforce identity login';
-
-    final subtitle = mode == QrScannerMode.webFallback
-        ? 'Use the RATEB mobile app on Android or iPhone to scan your badge QR. On web, paste a badge payload from System Settings.'
-        : 'Install RATEB on a phone to scan your workforce badge. On this device, paste a badge payload from RATEB System Settings.';
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -347,63 +358,95 @@ class _FallbackBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const SizedBox(height: 8),
             Icon(
-              Icons.qr_code_scanner_rounded,
-              size: 56,
-              color: theme.colorScheme.primary,
+              Icons.verified_user_outlined,
+              size: 52,
+              color: AppColors.accent,
+              semanticLabel: 'Workforce identity',
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
-              headline,
+              'Paste workforce identity payload',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
+                color: AppColors.darkText,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
-              subtitle,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              'Use the QR payload generated from RATEB System Settings.',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: AppColors.darkMuted,
+                height: 1.45,
               ),
             ),
             if (isProcessing) ...[
-              const SizedBox(height: 32),
-              const Center(child: CircularProgressIndicator()),
-              const SizedBox(height: 12),
+              const SizedBox(height: 36),
+              const Center(
+                child: CircularProgressIndicator(color: AppColors.accent),
+              ),
+              const SizedBox(height: 14),
               Text(
                 'Verifying workforce identity…',
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium,
+                style: TextStyle(color: AppColors.darkMuted),
               ),
             ],
             if (errorMessage != null) ...[
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               _ErrorBanner(
                 message: errorMessage!,
                 onRetry: onScanAgain,
                 lightBackground: true,
               ),
             ],
-            if (showPaste) ...[
-              const SizedBox(height: 28),
-              TextField(
+            const SizedBox(height: 28),
+            Semantics(
+              label: 'Workforce identity payload',
+              child: TextField(
                 controller: manualController,
-                decoration: const InputDecoration(
-                  labelText: 'Badge payload',
-                  hintText: 'Paste from RATEB System Settings',
-                  prefixIcon: Icon(Icons.qr_code_2),
-                  border: OutlineInputBorder(),
+                style: const TextStyle(
+                  color: AppColors.darkText,
+                  fontFamily: 'monospace',
+                  fontSize: 13,
                 ),
-                minLines: 2,
-                maxLines: 4,
+                decoration: InputDecoration(
+                  labelText: 'Identity payload',
+                  hintText: 'RATEBMOBQR:…',
+                  filled: true,
+                  fillColor: AppColors.darkSurface,
+                  prefixIcon: const Icon(Icons.qr_code_2, color: AppColors.accent),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AppColors.accent.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AppColors.accent.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+                  ),
+                ),
+                minLines: 4,
+                maxLines: 6,
               ),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: controller.isBusy ? null : onSubmitPaste,
-                icon: const Icon(Icons.verified_user_outlined),
-                label: const Text('Verify identity'),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: controller.isBusy ? null : onSubmitPaste,
+              icon: const Icon(Icons.login_rounded),
+              label: const Text('Verify and sign in'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-            ],
+            ),
           ],
         ),
       ),
@@ -418,29 +461,32 @@ class _ProcessingOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black.withValues(alpha: 0.55),
-      alignment: Alignment.center,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(
-            width: 44,
-            height: 44,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              color: Colors.white,
+    return Semantics(
+      label: message,
+      child: Container(
+        color: Colors.black.withValues(alpha: 0.55),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(
+              width: 44,
+              height: 44,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                color: Colors.white,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Text(
+              message,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -460,7 +506,7 @@ class _ErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = lightBackground
-        ? Theme.of(context).colorScheme.errorContainer
+        ? AppColors.error.withValues(alpha: 0.12)
         : AppColors.error.withValues(alpha: 0.92);
 
     return Material(
@@ -476,9 +522,7 @@ class _ErrorBanner extends StatelessWidget {
               children: [
                 Icon(
                   Icons.error_outline_rounded,
-                  color: lightBackground
-                      ? Theme.of(context).colorScheme.onErrorContainer
-                      : Colors.white,
+                  color: lightBackground ? AppColors.error : Colors.white,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -486,9 +530,7 @@ class _ErrorBanner extends StatelessWidget {
                     message,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: lightBackground
-                              ? Theme.of(context)
-                                  .colorScheme
-                                  .onErrorContainer
+                              ? AppColors.darkText
                               : Colors.white,
                         ),
                   ),
@@ -501,11 +543,9 @@ class _ErrorBanner extends StatelessWidget {
               child: TextButton(
                 onPressed: onRetry,
                 child: Text(
-                  'Scan again',
+                  qrUsesNativeCamera ? 'Scan again' : 'Try again',
                   style: TextStyle(
-                    color: lightBackground
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.white,
+                    color: lightBackground ? AppColors.accent : Colors.white,
                   ),
                 ),
               ),
