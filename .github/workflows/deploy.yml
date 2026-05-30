@@ -97,12 +97,35 @@ jobs:
             -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
             "${HOME_URL}" 2>/dev/null | head -c 250000 || true)"
           BRAND_FAIL=0
-          echo "$HOME_RAW" | grep -qi 'Ratib Company' && { echo "::error::home still contains Ratib Company"; BRAND_FAIL=1; }
-          echo "$HOME_RAW" | grep -q 'Workforce Intelligence</span>' && { echo "::error::home hero still uses Workforce Intelligence (stale CMS title)"; BRAND_FAIL=1; }
-          echo "$HOME_RAW" | grep -q 'Software Foundation for Information Technology' && { echo "::error::home still shows Software Foundation legal line"; BRAND_FAIL=1; }
-          echo "$HOME_RAW" | grep -qE 'Telemetry Enterprise Base|ratib-brand-full__word--w3' && echo "hero_expansion=ok" || { echo "::error::home hero missing Telemetry Enterprise Base expansion"; BRAND_FAIL=1; }
-          echo "$HOME_RAW" | grep -qi 'country_slug=home\|Country not found' && { echo "::error::/home wrongly routed as country slug (check .htaccess home rule order)"; BRAND_FAIL=1; }
-          echo "$HOME_RAW" | grep -q 'ratib-public-header-pin' && echo "header_pin_markup=ok" || { echo "::error::home missing ratib-public-header-pin (sticky header chrome)"; BRAND_FAIL=1; }
+          # Use grep <<< "$var" (not echo "$var" | grep) — large HTML + grep -q closes the pipe early → SIGPIPE noise.
+          if grep -qi 'Ratib Company' <<< "$HOME_RAW"; then
+            echo "::error::home still contains Ratib Company"
+            BRAND_FAIL=1
+          fi
+          if grep -q 'Workforce Intelligence</span>' <<< "$HOME_RAW"; then
+            echo "::error::home hero still uses Workforce Intelligence (stale CMS title)"
+            BRAND_FAIL=1
+          fi
+          if grep -q 'Software Foundation for Information Technology' <<< "$HOME_RAW"; then
+            echo "::error::home still shows Software Foundation legal line"
+            BRAND_FAIL=1
+          fi
+          if grep -qE 'Telemetry Enterprise Base|ratib-brand-full__word--w3' <<< "$HOME_RAW"; then
+            echo "hero_expansion=ok"
+          else
+            echo "::error::home hero missing Telemetry Enterprise Base expansion"
+            BRAND_FAIL=1
+          fi
+          if grep -qiE 'country_slug=home|Country not found' <<< "$HOME_RAW"; then
+            echo "::error::/home wrongly routed as country slug (check .htaccess home rule order)"
+            BRAND_FAIL=1
+          fi
+          if grep -q 'ratib-public-header-pin' <<< "$HOME_RAW"; then
+            echo "header_pin_markup=ok"
+          else
+            echo "::error::home missing ratib-public-header-pin (sticky header chrome)"
+            BRAND_FAIL=1
+          fi
           if [ -n "$LIVE_BUILD" ]; then
             echo "rebrand_build_marker=ok"
           else
@@ -116,12 +139,12 @@ jobs:
               echo "::error::css/pages/home-public.css returned $HOMECSS (check .htaccess does not rewrite /css/pages/ as country_slug)"
               exit 1
             fi
-            if echo "$BODY" | grep -qi '<!DOCTYPE'; then
-              if echo "$BODY" | grep -q 'register-section-hidden ratib-register-wrap'; then
+            if grep -qi '<!DOCTYPE' <<< "$BODY"; then
+              if grep -q 'register-section-hidden ratib-register-wrap' <<< "$BODY"; then
                 echo "::error::register section still hidden with open=register (deploy home.php?)"
                 exit 1
               fi
-              if echo "$BODY" | grep -q 'openRegister.:true'; then
+              if grep -q 'openRegister.:true' <<< "$BODY"; then
                 echo "::notice::Deploy OK (home HTML + openRegister)"
                 exit 0
               fi
