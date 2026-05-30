@@ -293,12 +293,13 @@ $bodyClassAttr = ' class="' . htmlspecialchars(implode(' ', $bodyClassList), ENT
                 <i class="nav-icon fas fa-question-circle"></i>
                 <span>Help & Learning Center</span>
             </a>
-            <a href="<?php echo htmlspecialchars(ratib_logout_url(), ENT_QUOTES, 'UTF-8'); ?>" class="nav-item nav-link">
-                <i class="nav-icon fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
         </div>
     </nav>
+
+    <a href="<?php echo htmlspecialchars(ratib_logout_url(), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-topbar-logout" title="Logout" aria-label="Logout">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Logout</span>
+    </a>
 
     <?php if (class_exists('\App\UI\GlobalAIButton') && method_exists('\App\UI\GlobalAIButton', 'render')): ?>
     <?php echo \App\UI\GlobalAIButton::render(getBaseUrl()); ?>
