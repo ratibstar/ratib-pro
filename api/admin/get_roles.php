@@ -45,6 +45,16 @@ try {
             ]);
         }
     } else {
+        // Ensure mobile portal roles exist for System Settings user form.
+        $workerCheck = $conn->query("SELECT role_id FROM roles WHERE LOWER(role_name) LIKE '%worker%' OR LOWER(role_name) LIKE '%employee%' LIMIT 1");
+        if ($workerCheck && $workerCheck->num_rows === 0) {
+            $ins = $conn->prepare("INSERT INTO roles (role_name, description, permissions) VALUES ('Worker', 'Mobile worker portal access', '{}')");
+            if ($ins) {
+                $ins->execute();
+                $ins->close();
+            }
+        }
+
         // Get all roles
         $stmt = $conn->prepare("SELECT role_id, role_name, description, permissions, created_at FROM roles ORDER BY role_name");
         $stmt->execute();

@@ -2278,7 +2278,7 @@ class SettingsAPI {
                 'status' => array('is_active', 'status'),
                 'display_order' => array('display_order', 'order', 'sort_order')
             ),
-            'users' => array(
+            'users': array(
                 'name' => array('username', 'name', 'user_name', 'full_name'),
                 'email' => array('email', 'email_address'),
                 'password' => array('password', 'pass'),
@@ -2286,6 +2286,7 @@ class SettingsAPI {
                 'country_id' => array('country_id', 'country'),
                 'city' => array('city'),
                 'position' => array('position', 'job_title'),
+                'role_id' => array('role_id'),
                 'status' => array('status', 'is_active'),
                 'fingerprint_status' => array('fingerprint_status', 'has_fingerprint'),
                 'login_barcode' => array('login_barcode', 'barcode', 'user_barcode', 'card_number')

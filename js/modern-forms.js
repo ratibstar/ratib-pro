@@ -1222,6 +1222,7 @@ class ModernForms {
                 'password': ['password'],
                 'phone': ['phone', 'contact_number', 'phone_number'],
                 'position': ['position', 'job_title'],
+                'role_id': ['role_id'],
                 'status': ['status', 'is_active'],
                 'login_barcode': ['login_barcode', 'barcode', 'user_barcode', 'card_number'],
                 'fingerprint_status': ['fingerprint_status', 'has_fingerprint']
@@ -4215,7 +4216,7 @@ class ModernForms {
         const table = this.currentTable;
         const isControl = (typeof isControlPanelContext === 'function' && isControlPanelContext()) || (window.location && window.location.search && window.location.search.includes('control=1'));
         const requiredByTable = {
-            'users': isControl ? (this.currentAction === 'create' ? ['name', 'password'] : ['name']) : (this.currentAction === 'create' ? ['name', 'email', 'password'] : ['name', 'email']),
+            'users': isControl ? (this.currentAction === 'create' ? ['name', 'password'] : ['name']) : (this.currentAction === 'create' ? ['name', 'email', 'password', 'role_id'] : ['name', 'email']),
             'visa_types': ['name'],
             'recruitment_countries': ['name', 'code'],
             'office_managers': ['name', 'email'],
@@ -6509,6 +6510,7 @@ class ModernForms {
                         { name: 'login_barcode', label: 'Barcode (mobile login)', type: 'text', required: false, placeholder: 'Auto-generated on save if empty', help: 'Leave blank to create R… reference code on save. Use Access for the scannable workforce QR.' },
                         { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'Enter email address' },
                         { name: 'password', label: 'Password', type: 'password', required: false, placeholder: 'Enter password (leave blank to keep current)' },
+                        { name: 'role_id', label: 'Portal role', type: 'select', required: true, relation: { table: 'roles', displayField: 'role_name', valueField: 'role_id' }, help: 'Choose Worker for mobile worker portal. Admin/company staff use Company portal.' },
                         { name: 'phone', label: 'Phone', type: 'tel', placeholder: 'Enter phone number' },
                         { name: 'position', label: 'Position', type: 'text', placeholder: 'Enter position (optional)' },
                         { name: 'status', label: 'Status', type: 'select', options: [

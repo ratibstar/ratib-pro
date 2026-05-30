@@ -94,27 +94,49 @@ document.addEventListener('DOMContentLoaded', function () {
         statusEl.classList.remove('d-none');
     }
 
-    function lockSuccessUi(message) {
+    function lockSuccessUi(message, username) {
         scanComplete = true;
         clearHintTimer();
         if (scanner) {
             scanner.stop();
         }
-        var viewport = document.getElementById('qr-scan-viewport');
-        if (viewport) {
-            viewport.classList.add('qr-scan-viewport--done');
+        var shell = document.querySelector('.qr-scan-shell');
+        if (shell) {
+            Array.prototype.forEach.call(shell.children, function (el) {
+                if (el.id !== 'qr-scan-success') {
+                    el.classList.add('d-none');
+                }
+            });
+
+            var card = document.getElementById('qr-scan-success');
+            if (!card) {
+                card = document.createElement('div');
+                card.id = 'qr-scan-success';
+                card.className = 'qr-scan-success';
+                card.setAttribute('role', 'status');
+                shell.appendChild(card);
+            }
+            card.classList.remove('d-none');
+
+            var name = (username || '').toString().trim();
+            var who = name
+                ? '<p class="qr-scan-success-user">' + escapeHtml(name) + '</p>'
+                : '';
+            card.innerHTML =
+                '<div class="qr-scan-success-icon"><i class="fas fa-circle-check"></i></div>'
+                + '<h2 class="qr-scan-success-title">Logged in successfully</h2>'
+                + who
+                + '<p class="qr-scan-success-msg">' + escapeHtml(message) + '</p>';
         }
-        if (startBtn) {
-            startBtn.classList.add('d-none');
-        }
-        if (stopBtn) {
-            stopBtn.classList.add('d-none');
-        }
-        if (statusEl) {
-            statusEl.className = 'qr-scan-status qr-scan-status--success qr-scan-status--final';
-            statusEl.textContent = message;
-            statusEl.classList.remove('d-none');
-        }
+    }
+
+    function escapeHtml(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     function showPinPanel(show) {
@@ -230,14 +252,15 @@ document.addEventListener('DOMContentLoaded', function () {
             saveBadgeOnPhone(payload, scanValue, { username: json && json.username ? json.username : '' });
         }
         showPinPanel(false);
+        var username = json && json.username ? json.username : '';
         if (pairToken) {
             lockSuccessUi(
-                'Success! RATEB is opening on your computer. Badge saved on this phone for next time. '
-                + 'If the laptop is still waiting, switch back to it — login should finish in a few seconds.'
+                'RATEB is opening on your computer. You can switch back to the laptop now.',
+                username
             );
             return;
         }
-        lockSuccessUi('Signed in. Redirecting…');
+        lockSuccessUi('Signed in. Redirecting…', username);
         window.location.href = json.redirect || '/pages/dashboard.php';
     }
 
