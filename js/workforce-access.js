@@ -93,7 +93,7 @@
             return;
         }
         const scanValue = payloadToScanValue(payload);
-        let size = opts.fullscreen ? 260 : 190;
+        let size = opts.fullscreen ? 260 : 280;
         if (opts.fullscreen && opts.qrSize) {
             size = opts.qrSize;
         }
