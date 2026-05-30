@@ -653,11 +653,22 @@ def main() -> int:
         f"({(ok * 100 // total) if total else 0}% success) ==========",
         flush=True,
     )
-    need = sum(1 for m in MUST_OK if os.path.isfile(m))
-    must_hit = sum(1 for m in MUST_OK if m in succeeded)
+    # Only verify MUST_OK for paths in this run's upload list (not every file on disk).
+    # After trimming FAST_FILES, requiring all MUST_OK every push caused exit 1 even when
+    # ok=total (e.g. cms-media.php not in the 8-file baseline).
+    must_check = [m for m in MUST_OK if m in files]
+    need = len(must_check)
+    must_hit = sum(1 for m in must_check if m in succeeded)
     if fail > 0:
         return 1
-    return 0 if must_hit >= need else 1
+    if need > 0 and must_hit < need:
+        missing = [m for m in must_check if m not in succeeded]
+        print(
+            f"MUST_OK gate failed: {must_hit}/{need} required uploads OK; missing: {', '.join(missing)}",
+            flush=True,
+        )
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
