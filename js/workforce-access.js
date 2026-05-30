@@ -97,11 +97,15 @@
         if (opts.fullscreen && opts.qrSize) {
             size = opts.qrSize;
         }
+        // The badge URL carries a long signed token. Use a lower error-correction level and a
+        // tight quiet zone so the QR has fewer, larger modules — otherwise it is too dense for a
+        // phone camera to detect off a screen (the short login pairing URL does not have this issue).
+        const qrOpts = { ecc: 'L', margin: 4 };
         if (typeof global.ratibRenderQrImage === 'function') {
-            global.ratibRenderQrImage(qrHost, scanValue, size);
+            global.ratibRenderQrImage(qrHost, scanValue, size, qrOpts);
         } else {
             qrHost.innerHTML = '<img class="ratib-qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size='
-                + size + 'x' + size + '&margin=18&ecc=H&color=000000&bgcolor=ffffff&data='
+                + size + 'x' + size + '&margin=4&ecc=L&color=000000&bgcolor=ffffff&data='
                 + encodeURIComponent(scanValue) + '" width="' + size + '" height="' + size + '" alt="QR">';
         }
         if (!opts.fullscreen) {
