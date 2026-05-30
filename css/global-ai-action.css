@@ -14,11 +14,11 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Dock above chat bubble — avoids top bar / language links */
+/* Top-right, docked just left of the Logout button */
 .global-ai-action-btn--float {
     position: fixed;
-    bottom: 92px;
-    right: 20px;
+    top: 14px;
+    right: 140px;
     z-index: 1201;
 }
 
@@ -38,10 +38,18 @@
 
 @media (max-width: 1024px) {
     .global-ai-action-btn--float {
-        bottom: 84px;
-        right: 16px;
+        top: 14px;
+        right: 132px;
         padding: 9px 12px;
         font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .global-ai-action-btn--float {
+        top: 10px;
+        right: 64px;
+        padding: 8px 10px;
     }
 }
 
