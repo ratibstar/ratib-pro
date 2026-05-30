@@ -25,8 +25,15 @@ if (!isset($_SESSION['user_id']) || (int) $_SESSION['user_id'] < 1
         $ssoParts[] = 'control=1';
         $ssoParts[] = 'agency_id=' . (int) $_GET['agency_id'];
     }
-    $ssoQs = !empty($ssoParts) ? ('?' . implode('&', $ssoParts)) : '';
-    header('Location: ' . pageUrl('login.php') . $ssoQs);
+    if (!empty($ssoParts)) {
+        header('Location: ' . pageUrl('login.php') . '?' . implode('&', $ssoParts));
+    } else {
+        // Expired session refresh: rebuild the correct /{country}/login URL from the
+        // persistent login cookies so the user can sign back in (no "Country not found").
+        header('Location: ' . (function_exists('ratib_post_logout_login_url')
+            ? ratib_post_logout_login_url()
+            : pageUrl('login.php')));
+    }
     exit;
 }
 

@@ -108,7 +108,7 @@ body {
 }
 
 .barcode-open-phone-box {
-    padding: 1rem;
+    padding: 0.6rem;
     border-radius: 12px;
     background: rgba(15, 23, 42, 0.65);
     border: 1px solid rgba(56, 189, 248, 0.25);
@@ -118,13 +118,36 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 220px;
+    min-height: 150px;
 }
 
 .barcode-login-url-qr-img {
     border-radius: 8px;
     background: #fff;
     padding: 6px;
+    width: 190px;
+    height: 190px;
+    max-width: 100%;
+}
+
+/* Compact barcode (QR) login panel — fits without scrolling */
+.barcode-scan-panel {
+    margin-bottom: 0.85rem !important;
+}
+
+.barcode-scan-panel .icon-3em {
+    font-size: 2.2em;
+    margin-bottom: 0.35rem !important;
+    animation: none;
+}
+
+.barcode-scan-panel h3 {
+    font-size: 1.15rem;
+    margin-bottom: 0.35rem !important;
+}
+
+#barcode-form .barcode-open-phone-box .small {
+    font-size: 0.78rem;
 }
 
 .barcode-login-url-text {

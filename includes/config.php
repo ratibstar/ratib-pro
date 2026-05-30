@@ -562,6 +562,90 @@ if (!function_exists('ratib_set_login_context_cookies')) {
     }
 }
 
+if (!function_exists('ratib_post_logout_login_url')) {
+    /**
+     * Build the correct login URL after a session ends — manual logout OR idle timeout.
+     * Recovers country/agency from the session first, then from the long-lived
+     * ratib_last_* cookies (set at login), so an EXPIRED session still lands on the
+     * proper /{country}/login page with prefill instead of a context-less /pages/login
+     * that fails with "Country not found". Returns a plain login URL (no message) when
+     * there is no context at all, to avoid a misleading "logged out" banner.
+     */
+    function ratib_post_logout_login_url(): string
+    {
+        $countryId = isset($_SESSION['country_id']) ? (int)$_SESSION['country_id'] : 0;
+        $agencyId = isset($_SESSION['agency_id']) ? (int)$_SESSION['agency_id'] : 0;
+        if ($countryId <= 0 && !empty($_COOKIE['ratib_last_country_id']) && ctype_digit((string)$_COOKIE['ratib_last_country_id'])) {
+            $countryId = (int)$_COOKIE['ratib_last_country_id'];
+        }
+        if ($agencyId <= 0 && !empty($_COOKIE['ratib_last_agency_id']) && ctype_digit((string)$_COOKIE['ratib_last_agency_id'])) {
+            $agencyId = (int)$_COOKIE['ratib_last_agency_id'];
+        }
+
+        $lookup = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
+        $db = ($lookup instanceof mysqli)
+            ? $lookup
+            : ((isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli) ? $GLOBALS['conn'] : null);
+
+        if ($countryId <= 0 && $agencyId > 0 && $db instanceof mysqli) {
+            $chk = @$db->query("SHOW TABLES LIKE 'control_agencies'");
+            if ($chk && $chk->num_rows > 0) {
+                $stmt = @$db->prepare('SELECT country_id FROM control_agencies WHERE id = ? LIMIT 1');
+                if ($stmt) {
+                    $stmt->bind_param('i', $agencyId);
+                    $stmt->execute();
+                    $res = $stmt->get_result();
+                    if ($res && $res->num_rows > 0 && ($row = $res->fetch_assoc())) {
+                        $countryId = (int)($row['country_id'] ?? 0);
+                    }
+                    $stmt->close();
+                }
+            }
+        }
+
+        if ($countryId <= 0 && $agencyId <= 0) {
+            return pageUrl('login.php');
+        }
+
+        $slug = '';
+        if ($countryId > 0 && $db instanceof mysqli) {
+            $chk = @$db->query("SHOW TABLES LIKE 'control_countries'");
+            if ($chk && $chk->num_rows > 0) {
+                $stmt = @$db->prepare("SELECT slug FROM control_countries WHERE id = ? LIMIT 1");
+                if ($stmt) {
+                    $stmt->bind_param("i", $countryId);
+                    $stmt->execute();
+                    $res = $stmt->get_result();
+                    if ($res && $res->num_rows > 0 && ($row = $res->fetch_assoc())) {
+                        $slug = trim((string)($row['slug'] ?? ''));
+                    }
+                    $stmt->close();
+                }
+            }
+        }
+
+        if ($slug !== '') {
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $host = $_SERVER['HTTP_HOST'] ?? 'out.ratib.sa';
+            $base = rtrim((defined('BASE_URL') ? BASE_URL : ''), '/');
+            $url = $scheme . '://' . $host . ($base ? $base . '/' : '/') . $slug . '/login?message=logged_out';
+            if ($agencyId > 0) {
+                $url .= '&agency_id=' . $agencyId;
+            }
+            return $url;
+        }
+
+        $url = pageUrl('login.php') . '?message=logged_out';
+        if ($countryId > 0) {
+            $url .= '&country_id=' . $countryId;
+        }
+        if ($agencyId > 0) {
+            $url .= '&agency_id=' . $agencyId;
+        }
+        return $url;
+    }
+}
+
 if (!function_exists('ratib_control_panel_try_program_sso')) {
     /**
      * Manage Agencies "Open": same browser session uses session name ratib_control (see config/env/load.php).

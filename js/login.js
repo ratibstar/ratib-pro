@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         barcodePairQr.innerHTML = '';
         const img = document.createElement('img');
-        var pairSize = 280;
+        var pairSize = 190;
         if (typeof ratibQrImageUrl === 'function') {
             img.src = ratibQrImageUrl(scanUrl, pairSize);
         } else {

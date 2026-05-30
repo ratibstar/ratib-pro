@@ -10,6 +10,16 @@ $countryId = isset($_SESSION['country_id']) ? (int)$_SESSION['country_id'] : 0;
 $agencyId = isset($_SESSION['agency_id']) ? (int)$_SESSION['agency_id'] : 0;
 $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
 
+// On an idle/expired session the session is already empty, so recover the last
+// known country/agency from the long-lived login cookies. Without this the redirect
+// falls back to a context-less /pages/login that fails with "Country not found".
+if ($countryId <= 0 && !empty($_COOKIE['ratib_last_country_id']) && ctype_digit((string)$_COOKIE['ratib_last_country_id'])) {
+    $countryId = (int)$_COOKIE['ratib_last_country_id'];
+}
+if ($agencyId <= 0 && !empty($_COOKIE['ratib_last_agency_id']) && ctype_digit((string)$_COOKIE['ratib_last_agency_id'])) {
+    $agencyId = (int)$_COOKIE['ratib_last_agency_id'];
+}
+
 emitEvent('AUTH_LOGOUT', 'info', 'User logout', [
     'tenant_id' => $countryId > 0 ? $countryId : null,
     'user_id' => $userId > 0 ? $userId : null,
