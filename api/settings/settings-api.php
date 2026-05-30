@@ -2278,7 +2278,7 @@ class SettingsAPI {
                 'status' => array('is_active', 'status'),
                 'display_order' => array('display_order', 'order', 'sort_order')
             ),
-            'users': array(
+            'users' => array(
                 'name' => array('username', 'name', 'user_name', 'full_name'),
                 'email' => array('email', 'email_address'),
                 'password' => array('password', 'pass'),
