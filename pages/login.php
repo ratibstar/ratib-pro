@@ -1431,11 +1431,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
             <div class="text-center mt-4">
                 <!-- Login Method Selector -->
                 <div class="mb-3">
-                    <label for="login-method" class="text-muted me-2 small">Choose Login Method:</label>
-                    <select id="login-method" class="form-select form-select-sm d-inline-block w-auto">
-                        <option value="password">Username & Password</option>
-                        <option value="barcode">Barcode</option>
-                    </select>
+                    <p class="text-muted small mb-2">Choose Login Method:</p>
+                    <div class="login-method-toggle" role="group" aria-label="Choose login method">
+                        <button type="button" class="login-method-btn active" data-method="password" aria-pressed="true">
+                            <i class="fas fa-user-lock" aria-hidden="true"></i> Username &amp; Password
+                        </button>
+                        <button type="button" class="login-method-btn" data-method="barcode" aria-pressed="false">
+                            <i class="fas fa-qrcode" aria-hidden="true"></i> Barcode
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Username/Password Form (Default) -->
@@ -1486,7 +1490,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                         <div class="barcode-scan-panel mb-3">
                             <i class="fas fa-mobile-alt text-info icon-3em mb-2" aria-hidden="true"></i>
                             <h3 class="mb-2">Scan with your phone</h3>
-                            <p class="text-muted mb-0 small">First time: scan the QR with your phone, then scan your badge.<br>Next times on this computer: tap <strong>Continue</strong> (no phone needed).</p>
+                            <p class="text-muted mb-0 small">Scan the QR with your phone, then scan your badge.</p>
                         </div>
                         <div id="barcode-desktop-trusted" class="barcode-desktop-trusted d-none mb-3">
                             <p class="small text-success mb-2"><i class="fas fa-check-circle"></i> This computer is remembered</p>

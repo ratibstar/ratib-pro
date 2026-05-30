@@ -390,18 +390,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    if (loginMethodSelect) {
+    function applyLoginMethod(method) {
         hideAllForms();
-        showForm(passwordForm);
+        if (method === 'barcode') {
+            showForm(barcodeForm);
+            showBarcodeLoginPanel();
+        } else {
+            showForm(passwordForm);
+        }
+    }
 
+    var loginMethodButtons = Array.prototype.slice.call(document.querySelectorAll('.login-method-btn'));
+    if (loginMethodButtons.length) {
+        applyLoginMethod('password');
+        loginMethodButtons.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var method = btn.getAttribute('data-method') || 'password';
+                loginMethodButtons.forEach(function (other) {
+                    var isActive = other === btn;
+                    other.classList.toggle('active', isActive);
+                    other.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                });
+                applyLoginMethod(method);
+            });
+        });
+    } else if (loginMethodSelect) {
+        applyLoginMethod('password');
         loginMethodSelect.addEventListener('change', function () {
-            hideAllForms();
-            if (this.value === 'barcode') {
-                showForm(barcodeForm);
-                showBarcodeLoginPanel();
-            } else {
-                showForm(passwordForm);
-            }
+            applyLoginMethod(this.value === 'barcode' ? 'barcode' : 'password');
         });
     }
 
