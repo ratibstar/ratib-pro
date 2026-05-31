@@ -678,13 +678,21 @@ include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
                     <?php if (!empty($ratibVideoSources)): ?>
                     <div class="ratib-cms-media-strip ratib-cms-media-strip--video" role="region" aria-label="<?php echo htmlspecialchars($ratibHome['home.video.title'] ?? 'Videos', ENT_QUOTES, 'UTF-8'); ?>">
                         <div class="ratib-cms-media-strip__track">
-                            <?php foreach ($ratibVideoSources as $rvSrc): ?>
+                            <?php foreach ($ratibVideoSources as $rvSlot): ?>
+                            <?php
+                            $rvSrc = is_array($rvSlot) ? (string) ($rvSlot['url'] ?? '') : (string) $rvSlot;
+                            $rvIsImage = is_array($rvSlot) && !empty($rvSlot['is_image']);
+                            ?>
                             <div class="ratib-cms-media-strip__item ratib-cms-media-strip__item--video">
                                 <div class="video-wrap ratib-cms-media-strip__video-wrap">
+                                    <?php if ($rvIsImage): ?>
+                                    <img src="<?php echo htmlspecialchars($rvSrc, ENT_QUOTES, 'UTF-8'); ?>" alt="" class="home-video-player ratib-cms-media-strip__video ratib-cms-media-strip__still" loading="lazy" decoding="async">
+                                    <?php else: ?>
                                     <video controls preload="metadata" class="home-video-player ratib-cms-media-strip__video" playsinline>
-                                        <source src="<?php echo htmlspecialchars((string) $rvSrc, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
+                                        <source src="<?php echo htmlspecialchars($rvSrc, ENT_QUOTES, 'UTF-8'); ?>" type="video/mp4">
                                         Your browser does not support the video tag.
                                     </video>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <?php endforeach; ?>

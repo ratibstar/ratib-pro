@@ -1107,9 +1107,53 @@ if (!function_exists('ratib_site_content_asset_url')) {
             return null;
         }
     }
+    if (!function_exists('ratib_site_content_media_stored_is_image')) {
+        function ratib_site_content_media_stored_is_image(string $stored): bool
+        {
+            $stored = trim($stored);
+            if ($stored === '') {
+                return false;
+            }
+            $name = ratib_site_content_media_filename_from_token($stored);
+            if ($name === '') {
+                $path = (string) (parse_url($stored, PHP_URL_PATH) ?? $stored);
+                $name = basename(str_replace('\\', '/', $path));
+            }
+            $ext = strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
+
+            return in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true);
+        }
+    }
+    if (!function_exists('ratib_site_content_media_upload_direct_url')) {
+        /** Serve CMS uploads as static /uploads/ratib_cms_media/… when on disk under project root (avoids PHP stream HTTP/2 issues). */
+        function ratib_site_content_media_upload_direct_url(string $baseUrl, string $fs): string
+        {
+            $rootReal = realpath(dirname(__DIR__));
+            $fsReal = realpath($fs);
+            if ($rootReal === false || $fsReal === false) {
+                return '';
+            }
+            $prefix = rtrim(str_replace('\\', '/', $rootReal), '/') . '/';
+            $fsNorm = str_replace('\\', '/', $fsReal);
+            if (!str_starts_with($fsNorm, $prefix)) {
+                return '';
+            }
+            $rel = ltrim(substr($fsNorm, strlen($prefix)), '/');
+            if (!str_starts_with($rel, 'uploads/ratib_cms_media/')) {
+                return '';
+            }
+            $v = (int) filemtime($fsReal);
+
+            return rtrim($baseUrl, '/') . '/' . $rel . '?v=' . $v;
+        }
+    }
     if (!function_exists('ratib_site_content_media_serve')) {
         function ratib_site_content_media_serve(string $fileName): void
         {
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+
             $fileName = basename(str_replace('\\', '/', $fileName));
             $ext = strtolower((string) pathinfo($fileName, PATHINFO_EXTENSION));
             $allowed = [
@@ -1132,9 +1176,14 @@ if (!function_exists('ratib_site_content_asset_url')) {
                 http_response_code(404);
                 exit;
             }
+            $size = (int) filesize($fs);
             header('Content-Type: ' . ratib_site_content_media_detect_mime($fs, $ext));
-            header('Content-Length: ' . (string) filesize($fs));
+            header('Content-Length: ' . (string) $size);
             header('Cache-Control: public, max-age=604800, immutable');
+            header('X-Content-Type-Options: nosniff');
+            if (in_array($ext, ['mp4', 'webm', 'mov'], true)) {
+                header('Accept-Ranges: bytes');
+            }
             if ($ext === 'svg') {
                 $svg = (string) file_get_contents($fs);
                 $svg = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F]/', ' ', $svg) ?? $svg;
@@ -1142,7 +1191,9 @@ if (!function_exists('ratib_site_content_asset_url')) {
 
                 exit;
             }
-            readfile($fs);
+            if ($size > 0) {
+                readfile($fs);
+            }
             exit;
         }
     }
@@ -1174,6 +1225,10 @@ if (!function_exists('ratib_site_content_asset_url')) {
             $direct = ratib_site_content_bundled_asset_public_url($baseUrl, $fs);
             if ($direct !== '') {
                 return $direct;
+            }
+            $uploadDirect = ratib_site_content_media_upload_direct_url($baseUrl, $fs);
+            if ($uploadDirect !== '') {
+                return $uploadDirect;
             }
             $v = (int) filemtime($fs);
             $script = ratib_site_content_media_endpoint_script();

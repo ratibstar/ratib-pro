@@ -62,6 +62,32 @@ function ratib_control_site_content_media_preview_url(string $val): string
     return rtrim($baseUrl, '/') . '/' . $rel;
 }
 
+function ratib_control_site_content_slot_src_is_image(string $src): bool
+{
+    if (function_exists('ratib_site_content_media_stored_is_image')) {
+        return ratib_site_content_media_stored_is_image($src);
+    }
+    $ext = strtolower((string) pathinfo(basename(str_replace('\\', '/', $src)), PATHINFO_EXTENSION));
+
+    return in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true);
+}
+
+/**
+ * @return 'video'|'image'|''
+ */
+function ratib_control_site_content_video_slot_upload_kind(array $file): string
+{
+    $ext = strtolower((string) pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+    if (in_array($ext, ['mp4', 'webm', 'mov'], true)) {
+        return 'video';
+    }
+    if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'], true)) {
+        return 'image';
+    }
+
+    return '';
+}
+
 /**
  * English-labelled upload control (native file inputs follow the browser/OS language).
  *
@@ -481,9 +507,15 @@ function ratib_control_site_content_apply_video_slots_post(array &$posted, array
                 'error' => $fe,
                 'size' => isset($files['video_slot_upload']['size'][$i]) ? (int) $files['video_slot_upload']['size'][$i] : 0,
             ];
-            $up = ratib_control_site_content_store_media($f, 'video');
+            $kind = ratib_control_site_content_video_slot_upload_kind($f);
+            if ($kind === '') {
+                $badExt = strtolower((string) pathinfo((string) ($f['name'] ?? ''), PATHINFO_EXTENSION));
+
+                return 'Video/image upload failed (row ' . (string) ($i + 1) . '): Unsupported file type: ' . $badExt;
+            }
+            $up = ratib_control_site_content_store_media($f, $kind);
             if (!$up['ok']) {
-                return 'Video upload failed (row ' . (string) ($i + 1) . '): ' . $up['error'];
+                return ucfirst($kind) . ' upload failed (row ' . (string) ($i + 1) . '): ' . $up['error'];
             }
             if ($prev !== '' && $prev !== $up['path']) {
                 ratib_control_site_content_try_delete_media_file($prev);
@@ -600,7 +632,7 @@ function ratib_control_site_content_render_video_slots_editor(array $values): vo
     );
     echo '<div class="ratib-cms-slots ratib-cms-slots--video border rounded p-3 mb-2 bg-dark bg-opacity-25" translate="no">';
     echo '<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">';
-    echo '<p class="small text-muted mb-0 flex-grow-1" lang="en">Videos on the public homepage. MP4 / WebM / MOV. Empty placeholders are hidden — use <strong>Add row</strong> for another clip. <strong>Remove row</strong> removes that slot when you Save.</p>';
+    echo '<p class="small text-muted mb-0 flex-grow-1" lang="en">Videos and images on the public homepage. MP4 / WebM / MOV or JPG / PNG / WebP. Empty placeholders are hidden — use <strong>Add row</strong> for another clip. <strong>Remove row</strong> removes that slot when you Save.</p>';
     echo '<button type="button" class="btn btn-sm btn-outline-light flex-shrink-0" data-ratib-slot-add="video" lang="en"><i class="fas fa-plus" aria-hidden="true"></i> Add row</button>';
     echo '</div>';
     echo '<div id="ratib-video-slots-rows">';
@@ -616,15 +648,19 @@ function ratib_control_site_content_render_video_slot_row(int $idx, string $src)
 {
     $es = htmlspecialchars($src, ENT_QUOTES, 'UTF-8');
     echo '<div class="ratib-cms-slot-row border-bottom border-secondary pb-3 mb-3" data-slot-row="video">';
-    echo '<div class="small text-muted mb-1">Video #' . (string) ($idx + 1) . '</div>';
-    echo '<div class="mb-2"><label class="form-label">Video URL / path / token</label><input type="text" class="form-control form-control-sm font-monospace" name="video_slot_src[]" value="' . $es . '" maxlength="65000"></div>';
+    echo '<div class="small text-muted mb-1">Video / image #' . (string) ($idx + 1) . '</div>';
+    echo '<div class="mb-2"><label class="form-label">Media URL / path / token</label><input type="text" class="form-control form-control-sm font-monospace" name="video_slot_src[]" value="' . $es . '" maxlength="65000"></div>';
     echo '<input type="hidden" name="video_slot_prev_src[]" value="' . $es . '">';
-    ratib_control_site_content_render_slot_file_field('video_slot_upload[]', 'video/mp4,video/webm,video/quicktime');
+    ratib_control_site_content_render_slot_file_field('video_slot_upload[]', 'video/mp4,video/webm,video/quicktime,image/jpeg,image/png,image/webp,image/gif');
     echo '<input type="hidden" name="video_slot_delete_media[]" value="0" class="ratib-slot-del-hidden">';
     if (trim($src) !== '') {
         $previewUrl = ratib_control_site_content_media_preview_url($src);
         if ($previewUrl !== '') {
-            echo '<div class="mb-2"><video controls preload="metadata" style="max-width:260px;max-height:146px;border-radius:10px;background:#060b19"><source src="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '"></video></div>';
+            if (ratib_control_site_content_slot_src_is_image($src)) {
+                echo '<div class="mb-2"><img src="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '" alt="" style="max-width:260px;max-height:146px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,.15);"></div>';
+            } else {
+                echo '<div class="mb-2"><video controls preload="metadata" style="max-width:260px;max-height:146px;border-radius:10px;background:#060b19"><source src="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '"></video></div>';
+            }
         }
         echo '<label class="form-check-label small"><input class="form-check-input ratib-slot-del-cb me-1" type="checkbox" value="1"> Delete uploaded file for this row</label>';
     }
@@ -965,7 +1001,7 @@ if (function_exists('ratib_site_content_public_page_links')) {
         if (hidden) hidden.value = '0';
         var cb = row.querySelector('.ratib-slot-del-cb');
         if (cb) cb.checked = false;
-        row.querySelectorAll('.mb-2 video, label.form-check-label').forEach(function (n) { n.remove(); });
+        row.querySelectorAll('.mb-2 img, .mb-2 video, label.form-check-label').forEach(function (n) { n.remove(); });
     }
     document.querySelectorAll('.ratib-cms-slot-row[data-slot-row]').forEach(bindRow);
     document.addEventListener('change', function (ev) {

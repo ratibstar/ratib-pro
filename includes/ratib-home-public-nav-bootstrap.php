@@ -148,13 +148,17 @@ if (function_exists('ratib_site_content_home_video_src_strings_from_flat') && fu
         }
         $u = ratib_site_content_home_resolve_video_display_url($vs, $baseUrl);
         if ($u !== '') {
-            $ratibVideoSources[] = $u;
+            $ratibVideoSources[] = [
+                'url' => $u,
+                'is_image' => function_exists('ratib_site_content_media_stored_is_image')
+                    && ratib_site_content_media_stored_is_image($vs),
+            ];
         }
     }
 }
 if ($ratibVideoSources !== []) {
     $videoExists = true;
-    $videoSrcRel = (string) $ratibVideoSources[0];
+    $videoSrcRel = (string) ($ratibVideoSources[0]['url'] ?? '');
     $videoUrl = $videoSrcRel;
 }
 
