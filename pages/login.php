@@ -28,6 +28,10 @@ $loginAgencyPicklist = []; // SINGLE_URL_MODE: rows agency_id, agency_name, coun
 $loginCountryId = null;
 $loginCountryName = null;
 $singleCountryFromPath = false; // true when /bangladesh/login, /kenya/login, etc.
+$allowInactiveCountrySlug = (
+    (isset($_GET['control']) && (string)$_GET['control'] === '1')
+    || (!empty($_GET['agency_id']) && ctype_digit((string)$_GET['agency_id']))
+);
 $countryListConn = $conn;
 if (function_exists('get_control_lookup_conn') && defined('SINGLE_URL_MODE') && SINGLE_URL_MODE) {
     $ctrlLookup = get_control_lookup_conn();
@@ -44,7 +48,9 @@ if ($countryListConn instanceof mysqli) {
             $chk = @$db->query("SHOW TABLES LIKE 'control_countries'");
             if ($chk && $chk->num_rows > 0) {
                 $colActive = @$db->query("SHOW COLUMNS FROM control_countries LIKE 'is_active'");
-                $whereSlug = $colActive && $colActive->num_rows > 0 ? "WHERE LOWER(TRIM(slug)) = ? AND is_active = 1" : "WHERE LOWER(TRIM(slug)) = ?";
+                $whereSlug = ($colActive && $colActive->num_rows > 0 && !$allowInactiveCountrySlug)
+                    ? "WHERE LOWER(TRIM(slug)) = ? AND is_active = 1"
+                    : "WHERE LOWER(TRIM(slug)) = ?";
                 $slugAlt = str_replace('-', '_', $urlCountrySlug);
                 $stmtSlug = @$db->prepare("SELECT id, name, slug FROM control_countries $whereSlug LIMIT 1");
                 if ($stmtSlug) {
@@ -452,12 +458,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
         $rawSlug = $_POST['country_slug'] ?? $_GET['country_slug'] ?? '';
         $slug = is_string($rawSlug) ? trim(preg_replace('/[^a-z0-9_-]/', '', strtolower($rawSlug))) : '';
         if ($slug !== '') {
+            $allowInactiveSlugPost = (
+                (isset($_GET['control']) && (string)$_GET['control'] === '1')
+                || (!empty($_GET['agency_id']) && ctype_digit((string)$_GET['agency_id']))
+                || (!empty($_POST['agency_id']) && ctype_digit((string)$_POST['agency_id']))
+            );
             $lookup = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : $conn;
             if ($lookup instanceof mysqli) {
                 $chk = @$lookup->query("SHOW TABLES LIKE 'control_countries'");
                 if ($chk && $chk->num_rows > 0) {
                     $colActSlug = @$lookup->query("SHOW COLUMNS FROM control_countries LIKE 'is_active'");
-                    $whereSlugPost = ($colActSlug && $colActSlug->num_rows > 0)
+                    $whereSlugPost = ($colActSlug && $colActSlug->num_rows > 0 && !$allowInactiveSlugPost)
                         ? 'WHERE LOWER(TRIM(slug)) = ? AND is_active = 1'
                         : 'WHERE LOWER(TRIM(slug)) = ?';
                     foreach ([$slug, str_replace('-', '_', $slug), str_replace('_', '-', $slug)] as $trySlug) {
