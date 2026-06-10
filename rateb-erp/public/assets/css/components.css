@@ -1,0 +1,71 @@
+.rateb-table {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.rateb-table th {
+    background: var(--rateb-bg);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--rateb-text-muted);
+    border-bottom: 2px solid var(--rateb-border);
+    white-space: nowrap;
+}
+
+.rateb-table td,
+.rateb-table th {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+}
+
+.rateb-table tbody tr:hover {
+    background: rgba(13, 110, 253, 0.04);
+}
+
+.rateb-form-label {
+    font-weight: 500;
+    margin-bottom: 0.35rem;
+}
+
+.rateb-form-control {
+    background: var(--rateb-surface);
+    color: var(--rateb-text);
+    border-color: var(--rateb-border);
+}
+
+.rateb-badge-status {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.rateb-modal .modal-content {
+    background: var(--rateb-surface);
+    color: var(--rateb-text);
+    border-color: var(--rateb-border);
+}
+
+.rateb-actions .btn {
+    margin-inline-end: 0.25rem;
+}
+
+.rateb-flash {
+    border-radius: var(--rateb-radius);
+    margin-bottom: 1rem;
+}
+
+.rateb-pagination {
+    margin-top: 1rem;
+}
+
+.rateb-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}

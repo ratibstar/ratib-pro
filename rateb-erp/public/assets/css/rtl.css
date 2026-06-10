@@ -1,0 +1,32 @@
+[dir="rtl"] .rateb-sidebar {
+    left: auto;
+    right: 0;
+}
+
+[dir="rtl"] .rateb-main {
+    margin-inline-start: 0;
+    margin-inline-end: 260px;
+}
+
+[dir="rtl"] .rateb-nav-link i {
+    margin-inline-end: 0;
+}
+
+@media (max-width: 991px) {
+    [dir="rtl"] .rateb-sidebar {
+        transform: translateX(100%);
+    }
+
+    [dir="rtl"] .rateb-sidebar.open {
+        transform: translateX(0);
+    }
+
+    [dir="rtl"] .rateb-main {
+        margin-inline-end: 0;
+    }
+}
+
+[dir="rtl"] .rateb-actions .btn {
+    margin-inline-end: 0;
+    margin-inline-start: 0.25rem;
+}

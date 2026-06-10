@@ -5,6 +5,7 @@
  */
 require_once __DIR__ . '/client-platform-nav.php';
 require_once __DIR__ . '/public-marketing-urls.php';
+require_once __DIR__ . '/rateb-erp-nav.php';
 $logoUrl = (file_exists(__DIR__ . '/../../assets/logo.png')) ? asset('assets/logo.png') : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44'%3E%3Crect width='44' height='44' rx='10' fill='%236b21a8'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.35em' fill='white' font-size='18' font-weight='bold'%3ER%3C/text%3E%3C/svg%3E";
 $base = getBaseUrl();
 $fullBaseUrl = rtrim(defined('SITE_URL') ? SITE_URL : '', '/') . $base;
@@ -198,6 +199,16 @@ $clientPlatformActiveKey = control_client_platform_active_key();
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/country-program.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'country-program.php') ? 'active' : ''; ?>" data-permission="<?php echo htmlspecialchars($countryProgramPerms); ?>"><i class="fas fa-flag"></i><span>Country program</span></a></li>
             <li><a href="<?php echo pageUrl('control/accounting.php'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'accounting.php') ? 'active' : ''; ?>" data-permission="control_accounting,view_control_accounting"><i class="fas fa-calculator"></i><span>Accounting</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/hr.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'hr.php') ? 'active' : ''; ?>" data-permission="control_hr,view_control_hr"><i class="fas fa-user-tie"></i><span>HR Center</span></a></li>
+            <?php
+            $ratebErpLinks = function_exists('control_rateb_erp_nav_links') ? control_rateb_erp_nav_links() : [];
+            $ratebErpActive = function_exists('control_rateb_erp_active_key') ? control_rateb_erp_active_key() : '';
+            if (!empty($ratebErpLinks)) {
+            ?>
+            <li class="sidebar-section"><span class="section-label"><i class="fas fa-hospital"></i> RATEB ERP</span></li>
+            <?php foreach ($ratebErpLinks as $key => $link) { ?>
+            <li><a href="<?php echo htmlspecialchars($link['href'], ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo ($ratebErpActive === $key) ? ' active' : ''; ?>" target="_blank" rel="noopener noreferrer" data-permission="control_dashboard,control_system_settings"><i class="fas <?php echo htmlspecialchars($link['icon'], ENT_QUOTES, 'UTF-8'); ?>"></i><span><?php echo htmlspecialchars($link['label'], ENT_QUOTES, 'UTF-8'); ?></span></a></li>
+            <?php } ?>
+            <?php } ?>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/government.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'government.php') ? 'active' : ''; ?>" data-permission="control_government,view_control_government,gov_admin"><i class="fas fa-shield-halved"></i><span>Government Control</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-map.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'tracking-map.php') ? 'active' : ''; ?>" data-permission="control_government,view_control_government,gov_admin"><i class="fas fa-map-location-dot"></i><span>Tracking Map</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/tracking-onboarding.php')); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'tracking-onboarding.php') ? 'active' : ''; ?>" data-permission="control_government,manage_control_government,gov_admin"><i class="fas fa-qrcode"></i><span>Tracking Onboarding</span></a></li>

@@ -1,0 +1,169 @@
+body.rateb-app {
+    font-family: var(--rateb-font);
+    background: var(--rateb-bg);
+    color: var(--rateb-text);
+    min-height: 100vh;
+}
+
+.rateb-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+
+.rateb-sidebar {
+    width: 260px;
+    background: var(--rateb-sidebar);
+    color: var(--rateb-sidebar-text);
+    flex-shrink: 0;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    overflow-y: auto;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+}
+
+.rateb-sidebar-brand {
+    padding: 1.25rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.rateb-sidebar-brand i {
+    color: var(--rateb-accent);
+}
+
+.rateb-nav-section {
+    padding: 0.75rem 1rem 0.25rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.6;
+}
+
+.rateb-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1.25rem;
+    color: var(--rateb-sidebar-text);
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.rateb-nav-link:hover,
+.rateb-nav-link.active {
+    background: var(--rateb-sidebar-active);
+    color: #fff;
+}
+
+.rateb-main {
+    flex: 1;
+    margin-inline-start: 260px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.rateb-topbar {
+    background: var(--rateb-surface);
+    border-bottom: 1px solid var(--rateb-border);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 900;
+}
+
+.rateb-content {
+    padding: 1.5rem;
+}
+
+.rateb-card {
+    background: var(--rateb-surface);
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius);
+    box-shadow: var(--rateb-shadow);
+}
+
+.rateb-card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--rateb-border);
+    font-weight: 600;
+}
+
+.rateb-card-body {
+    padding: 1.25rem;
+}
+
+.rateb-widget {
+    background: var(--rateb-surface);
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius);
+    padding: 1.25rem;
+    box-shadow: var(--rateb-shadow);
+    height: 100%;
+}
+
+.rateb-widget-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.rateb-widget-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.rateb-widget-label {
+    color: var(--rateb-text-muted);
+    font-size: 0.875rem;
+}
+
+.rateb-auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+}
+
+.rateb-auth-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--rateb-surface);
+    border-radius: var(--rateb-radius);
+    box-shadow: var(--rateb-shadow);
+    padding: 2rem;
+}
+
+.rateb-chart-card {
+    min-height: 320px;
+}
+
+@media (max-width: 991px) {
+    .rateb-sidebar {
+        transform: translateX(-100%);
+    }
+
+    .rateb-sidebar.open {
+        transform: translateX(0);
+    }
+
+    .rateb-main {
+        margin-inline-start: 0;
+    }
+}

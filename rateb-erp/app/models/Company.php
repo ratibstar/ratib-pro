@@ -1,0 +1,48 @@
+<?php
+declare(strict_types=1);
+
+namespace Rateb\App\Models;
+
+use Rateb\App\Core\Model;
+
+final class Company extends Model
+{
+    protected string $table = 'rateb_companies';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'name', 'slug', 'email', 'phone', 'address', 'country', 'logo_path',
+        'status', 'plan_id', 'storage_limit_mb', 'user_limit', 'modules', 'settings',
+    ];
+
+    public function findBySlug(string $slug): ?array
+    {
+        $stmt = $this->db->prepare('SELECT * FROM rateb_companies WHERE slug = :slug LIMIT 1');
+        $stmt->execute(['slug' => $slug]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    public function suspend(int $id): bool
+    {
+        $stmt = $this->db->prepare("UPDATE rateb_companies SET status = 'suspended' WHERE id = :id");
+        return $stmt->execute(['id' => $id]);
+    }
+
+    public function activate(int $id): bool
+    {
+        $stmt = $this->db->prepare("UPDATE rateb_companies SET status = 'active' WHERE id = :id");
+        return $stmt->execute(['id' => $id]);
+    }
+
+    public function getStats(): array
+    {
+        $row = $this->queryOne(
+            "SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) AS active,
+                SUM(CASE WHEN status = 'suspended' THEN 1 ELSE 0 END) AS suspended
+             FROM rateb_companies"
+        );
+        return $row ?: ['total' => 0, 'active' => 0, 'suspended' => 0];
+    }
+}
