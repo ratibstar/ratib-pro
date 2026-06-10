@@ -11,8 +11,8 @@ function control_rateb_erp_base_url(): string
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
         $site = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
     }
-    $pathPrefix = function_exists('getBaseUrl') ? rtrim((string) getBaseUrl(), '/') : '';
-    return $site . $pathPrefix . '/rateb-erp/public';
+    // rateb-erp lives at site document root, not under /control-panel/
+    return $site . '/rateb-erp/public';
 }
 
 function control_rateb_erp_hub_page_url(): string
