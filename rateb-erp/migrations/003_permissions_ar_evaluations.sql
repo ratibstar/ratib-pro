@@ -1,4 +1,5 @@
 -- RATEB ERP - Arabic permissions, supplier evaluations, extra permissions
+-- Note: "empty result set" / "0 rows affected" in phpMyAdmin is NORMAL when columns/data already exist.
 SET NAMES utf8mb4;
 
 SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
@@ -10,79 +11,44 @@ PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
-UPDATE rateb_permissions SET
-    name_ar = 'عرض لوحة التحكم', description_ar = 'الوصول إلى لوحة التحكم'
-WHERE slug = 'dashboard.view';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة الشركات', description_ar = 'إدارة كاملة للشركات'
-WHERE slug = 'companies.manage';
-
-UPDATE rateb_permissions SET
-    name_ar = 'عرض الشركات', description_ar = 'عرض قائمة الشركات'
-WHERE slug = 'companies.view';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة الاشتراكات', description_ar = 'إدارة اشتراكات الشركات'
-WHERE slug = 'subscriptions.manage';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة الباقات', description_ar = 'إدارة باقات الاشتراك'
-WHERE slug = 'plans.manage';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة المستخدمين', description_ar = 'إدارة مستخدمي المنصة'
-WHERE slug = 'users.manage';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة الأدوار', description_ar = 'إدارة أدوار المستخدمين'
-WHERE slug = 'roles.manage';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة الصلاحيات', description_ar = 'إدارة صلاحيات النظام'
-WHERE slug = 'permissions.manage';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة المشتريات', description_ar = 'إدارة عمليات الشراء'
-WHERE slug = 'procurement.manage';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة المخزون', description_ar = 'إدارة المخزون والمستودعات'
-WHERE slug = 'inventory.manage';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة الموردين', description_ar = 'إدارة سجل الموردين'
-WHERE slug = 'suppliers.manage';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة الأصول', description_ar = 'إدارة الأصول الثابتة'
-WHERE slug = 'assets.manage';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة العقود', description_ar = 'إدارة العقود'
-WHERE slug = 'contracts.manage';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة المناقصات', description_ar = 'إدارة المناقصات'
-WHERE slug = 'tenders.manage';
-
-UPDATE rateb_permissions SET
-    name_ar = 'عرض التقارير', description_ar = 'عرض تقارير المنصة'
-WHERE slug = 'reports.view';
-
-UPDATE rateb_permissions SET
-    name_ar = 'إدارة الإعدادات', description_ar = 'إدارة إعدادات النظام'
-WHERE slug = 'settings.manage';
-
+-- Upsert: creates missing permissions AND updates Arabic labels (safe to re-run)
 INSERT INTO rateb_permissions (name, name_ar, slug, module, description, description_ar) VALUES
+('View Dashboard', 'عرض لوحة التحكم', 'dashboard.view', 'dashboard', 'Access dashboard', 'الوصول إلى لوحة التحكم'),
+('Manage Companies', 'إدارة الشركات', 'companies.manage', 'companies', 'Full company management', 'إدارة كاملة للشركات'),
+('View Companies', 'عرض الشركات', 'companies.view', 'companies', 'View companies', 'عرض قائمة الشركات'),
+('Manage Subscriptions', 'إدارة الاشتراكات', 'subscriptions.manage', 'subscriptions', 'Manage subscriptions', 'إدارة اشتراكات الشركات'),
+('Manage Plans', 'إدارة الباقات', 'plans.manage', 'plans', 'Manage plans', 'إدارة باقات الاشتراك'),
+('Manage Users', 'إدارة المستخدمين', 'users.manage', 'users', 'Manage users', 'إدارة مستخدمي المنصة'),
+('Manage Roles', 'إدارة الأدوار', 'roles.manage', 'roles', 'Manage roles', 'إدارة أدوار المستخدمين'),
+('Manage Permissions', 'إدارة الصلاحيات', 'permissions.manage', 'permissions', 'Manage permissions', 'إدارة صلاحيات النظام'),
+('Manage Procurement', 'إدارة المشتريات', 'procurement.manage', 'procurement', 'Manage procurement', 'إدارة عمليات الشراء'),
+('Manage Inventory', 'إدارة المخزون', 'inventory.manage', 'inventory', 'Manage inventory', 'إدارة المخزون والمستودعات'),
+('Manage Suppliers', 'إدارة الموردين', 'suppliers.manage', 'suppliers', 'Manage suppliers', 'إدارة سجل الموردين'),
+('Manage Assets', 'إدارة الأصول', 'assets.manage', 'assets', 'Manage assets', 'إدارة الأصول الثابتة'),
+('Manage Contracts', 'إدارة العقود', 'contracts.manage', 'contracts', 'Manage contracts', 'إدارة العقود'),
+('Manage Tenders', 'إدارة المناقصات', 'tenders.manage', 'tenders', 'Manage tenders', 'إدارة المناقصات'),
+('View Reports', 'عرض التقارير', 'reports.view', 'reports', 'View reports', 'عرض تقارير المنصة'),
+('Manage Settings', 'إدارة الإعدادات', 'settings.manage', 'settings', 'Manage system settings', 'إدارة إعدادات النظام'),
 ('Manage Supplier Evaluations', 'إدارة تقييم الموردين', 'evaluations.manage', 'suppliers', 'Create and manage supplier evaluations', 'إنشاء وإدارة تقييمات الموردين'),
 ('View Supplier Evaluations', 'عرض تقييم الموردين', 'evaluations.view', 'suppliers', 'View supplier evaluation records', 'عرض سجلات تقييم الموردين'),
-('Manage Company Plans', 'إدارة باقات الشركات', 'company_plans.manage', 'companies', 'Edit company plan limits and modules', 'تعديل حدود الباقة والوحدات للشركات')
-ON DUPLICATE KEY UPDATE name_ar = VALUES(name_ar), description_ar = VALUES(description_ar);
+('Manage Company Plans', 'إدارة باقات الشركات', 'company_plans.manage', 'companies', 'Edit company plan limits and modules', 'تعديل حدود الباقة والوحدات للشركات'),
+('Manage Access Control', 'إدارة التحكم بالوصول', 'access.manage', 'access', 'Full users, roles, permissions control', 'التحكم الكامل بالمستخدمين والأدوار والصلاحيات'),
+('View Accounting', 'عرض الحسابات', 'accounting.view', 'accounting', 'View chart of accounts and journals', 'عرض دليل الحسابات والقيود'),
+('Manage Accounting', 'إدارة الحسابات', 'accounting.manage', 'accounting', 'Manage chart of accounts and journal entries', 'إدارة دليل الحسابات والقيود اليومية'),
+('Post Journal Entries', 'ترحيل القيود', 'accounting.post', 'accounting', 'Post and void journal entries', 'ترحيل وإلغاء القيود المحاسبية')
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    name_ar = VALUES(name_ar),
+    module = VALUES(module),
+    description = VALUES(description),
+    description_ar = VALUES(description_ar);
 
 INSERT INTO rateb_role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM rateb_roles r
-JOIN rateb_permissions p ON p.slug IN ('evaluations.manage', 'evaluations.view', 'company_plans.manage')
+JOIN rateb_permissions p ON p.slug IN (
+    'evaluations.manage', 'evaluations.view', 'company_plans.manage',
+    'access.manage', 'accounting.view', 'accounting.manage', 'accounting.post'
+)
 WHERE r.slug = 'super-admin'
 ON DUPLICATE KEY UPDATE role_id = role_id;
 
@@ -107,4 +73,6 @@ CREATE TABLE IF NOT EXISTS rateb_supplier_evaluations (
     CONSTRAINT fk_eval_supplier FOREIGN KEY (supplier_id) REFERENCES rateb_suppliers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-UPDATE rateb_system_settings SET setting_value = 'ar' WHERE setting_key = 'default_locale';
+INSERT INTO rateb_system_settings (setting_key, setting_value, setting_group)
+VALUES ('default_locale', 'ar', 'general')
+ON DUPLICATE KEY UPDATE setting_value = 'ar';

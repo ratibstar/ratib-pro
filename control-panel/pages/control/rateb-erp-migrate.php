@@ -42,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_migrations'])) {
 
 $dbTest = $installed ? control_rateb_erp_db_test() : ['ok' => false, 'schema' => false, 'db' => control_rateb_erp_db_name(), 'error' => ''];
 $schemaReady = $dbTest['ok'] && $dbTest['schema'];
+$dbDiagnose = ($installed && $dbTest['ok']) ? control_rateb_erp_db_diagnose() : ['erp' => [], 'control_panel' => []];
 
 if (empty($_SESSION['rateb_erp_migrate_csrf'])) {
     $_SESSION['rateb_erp_migrate_csrf'] = bin2hex(random_bytes(16));
@@ -74,6 +75,53 @@ startControlLayout('نظام رتب ERP — إعداد قاعدة البيانا
         <span>Tables: <?php echo $schemaReady ? 'rateb_* tables exist' : 'Not created yet — run migrations below'; ?></span>
     </div>
 </div>
+
+<?php if (!empty($dbDiagnose['erp']) || !empty($dbDiagnose['control_panel'])) {
+    $erpD = $dbDiagnose['erp'] ?? [];
+    $cpD = $dbDiagnose['control_panel'] ?? [];
+    ?>
+<div class="control-settings-card mb-4">
+    <h3><i class="fas fa-stethoscope"></i> فحص القواعد</h3>
+    <div class="table-responsive">
+        <table class="table table-sm table-dark mb-0">
+            <thead>
+            <tr>
+                <th>القاعدة</th>
+                <th>الحالة</th>
+                <th>جداول rateb_*</th>
+                <th>صلاحيات</th>
+                <th>أدوار</th>
+                <th>أدوار مكررة</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td><code><?php echo htmlspecialchars((string) ($erpD['db'] ?? control_rateb_erp_db_name()), ENT_QUOTES, 'UTF-8'); ?></code> <span class="badge bg-primary">ERP</span></td>
+                <td><?php echo !empty($erpD['ok']) ? '<span class="text-success">OK</span>' : '<span class="text-danger">خطأ</span>'; ?></td>
+                <td><?php echo (int) ($erpD['rateb_tables'] ?? 0); ?></td>
+                <td><?php echo (int) ($erpD['permissions'] ?? 0); ?></td>
+                <td><?php echo (int) ($erpD['roles'] ?? 0); ?></td>
+                <td><?php echo (int) ($erpD['duplicate_role_slugs'] ?? 0); ?></td>
+            </tr>
+            <tr>
+                <td><code><?php echo htmlspecialchars((string) ($cpD['db'] ?? 'outratib_control_panel_db'), ENT_QUOTES, 'UTF-8'); ?></code> <span class="badge bg-secondary">CP</span></td>
+                <td><?php echo !empty($cpD['ok']) ? '<span class="text-success">OK</span>' : '<span class="text-warning">—</span>'; ?></td>
+                <td><?php echo (int) ($cpD['rateb_tables'] ?? 0); ?></td>
+                <td><?php echo (int) ($cpD['permissions'] ?? 0); ?></td>
+                <td><?php echo (int) ($cpD['roles'] ?? 0); ?></td>
+                <td><?php echo (int) ($cpD['duplicate_role_slugs'] ?? 0); ?></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <?php if (!empty($cpD['warning'])) { ?>
+    <p class="small text-warning mb-0 mt-2"><i class="fas fa-triangle-exclamation"></i> <?php echo htmlspecialchars((string) $cpD['warning'], ENT_QUOTES, 'UTF-8'); ?></p>
+    <?php } elseif ((int) ($cpD['rateb_tables'] ?? 0) === 0) { ?>
+    <p class="small text-muted mb-0 mt-2">قاعدة لوحة التحكم نظيفة (لا توجد جداول ERP) — هذا صحيح.</p>
+    <?php } ?>
+    <p class="small text-muted mb-0 mt-2">زر التشغيل أدناه يطبّق الترحيلات على <strong>قاعدة ERP فقط</strong> (<code><?php echo htmlspecialchars(control_rateb_erp_db_name(), ENT_QUOTES, 'UTF-8'); ?></code>).</p>
+</div>
+<?php } ?>
 
 <?php if ($installed && !$dbTest['ok']) {
     $dbUser = defined('DB_USER') ? (string) DB_USER : 'outratib_out';
@@ -116,12 +164,12 @@ RATEB_ERP_DB_NAME=<?php echo htmlspecialchars($dbName, ENT_QUOTES, 'UTF-8'); ?><
 
 <div class="control-settings-grid mb-4">
     <div class="control-settings-card">
-        <h3><i class="fas fa-play"></i> Step 1 — Run migrations</h3>
-        <p>Creates all <code>rateb_*</code> tables and default super admin (<code>admin@rateb.sa</code> / <code>password</code>).</p>
+        <h3><i class="fas fa-play"></i> الخطوة 1 — إصلاح قاعدة ERP</h3>
+        <p>يشغّل كل الترحيلات (001–008) على <code><?php echo htmlspecialchars(control_rateb_erp_db_name(), ENT_QUOTES, 'UTF-8'); ?></code> فقط، يدمج الأدوار المكررة، ويعرض تقريراً.</p>
         <form method="post" action="<?php echo htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" name="_csrf" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
             <button type="submit" name="run_migrations" value="1" class="btn btn-primary"<?php echo $installed ? '' : ' disabled'; ?>>
-                <i class="fas fa-database"></i> Run migrations now
+                <i class="fas fa-database"></i> تشغيل الإصلاح والترحيلات
             </button>
         </form>
     </div>

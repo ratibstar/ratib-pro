@@ -173,10 +173,26 @@ function control_rateb_erp_run_migrations(): array
     require_once RATEB_ROOT . '/config/database.php';
     require_once RATEB_ROOT . '/app/Core/Database.php';
     require_once RATEB_ROOT . '/app/services/MigrationService.php';
+    require_once RATEB_ROOT . '/app/services/AuthorizationService.php';
+    require_once RATEB_ROOT . '/app/services/ErpDatabaseService.php';
     if (function_exists('set_time_limit')) {
         @set_time_limit(300);
     }
-    return (new \Rateb\App\Services\MigrationService())->runAll();
+    return (new \Rateb\App\Services\ErpDatabaseService())->fixErpDatabase();
+}
+
+/** @return array{erp:array<string,mixed>,control_panel:array<string,mixed>} */
+function control_rateb_erp_db_diagnose(): array
+{
+    control_rateb_erp_ensure_root();
+    require_once RATEB_ROOT . '/config/database.php';
+    require_once RATEB_ROOT . '/app/Core/Database.php';
+    require_once RATEB_ROOT . '/app/services/ErpDatabaseService.php';
+    $svc = new \Rateb\App\Services\ErpDatabaseService();
+    return [
+        'erp' => $svc->diagnoseErp(),
+        'control_panel' => $svc->diagnoseControlPanel(),
+    ];
 }
 
 function control_rateb_erp_assets_base_url(): string

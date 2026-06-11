@@ -62,7 +62,13 @@ final class MigrationService
     private function execSqlFile(PDO $pdo, string $sql): void
     {
         $sql = preg_replace('/^\s*USE\s+`[^`]+`\s*;\s*/mi', '', $sql) ?? $sql;
+        if (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS')) {
+            $pdo->setAttribute(PDO::MYSQL_ATTR_MULTI_STATEMENTS, true);
+        }
         $pdo->exec($sql);
+        while ($pdo->nextRowset()) {
+            // drain remaining statements in multi-query file
+        }
     }
 
     public function isSchemaReady(): bool
