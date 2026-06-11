@@ -79,3 +79,6 @@ CREATE TABLE IF NOT EXISTS rateb_journal_lines (
     CONSTRAINT fk_jl_entry FOREIGN KEY (journal_entry_id) REFERENCES rateb_journal_entries(id) ON DELETE CASCADE,
     CONSTRAINT fk_jl_account FOREIGN KEY (account_id) REFERENCES rateb_chart_of_accounts(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+UPDATE rateb_plans SET modules = '["procurement","inventory","suppliers","assets","contracts","tenders","reports","medical_devices","accounting"]' WHERE slug = 'enterprise';
+UPDATE rateb_plans SET modules = '["procurement","inventory","suppliers","assets","contracts","reports","accounting"]' WHERE slug = 'professional';
