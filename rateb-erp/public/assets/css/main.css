@@ -13,7 +13,7 @@ body.rateb-app {
 }
 
 .rateb-sidebar {
-    width: 260px;
+    width: 268px;
     background: var(--rateb-sidebar);
     color: var(--rateb-sidebar-text);
     flex-shrink: 0;
@@ -23,9 +23,16 @@ body.rateb-app {
     left: 0;
     right: auto;
     overflow-y: auto;
+    overflow-x: hidden;
     z-index: 1000;
     transition: transform 0.3s ease;
     border-right: 1px solid rgba(255, 255, 255, 0.06);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.rateb-sidebar nav {
+    padding: 0.35rem 0 1.25rem;
 }
 
 .rateb-sidebar-brand {
@@ -43,35 +50,75 @@ body.rateb-app {
 }
 
 .rateb-nav-section {
-    padding: 0.75rem 1rem 0.25rem;
-    font-size: 0.7rem;
+    padding: 0.9rem 1.15rem 0.3rem;
+    font-size: 0.68rem;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    opacity: 0.6;
+    letter-spacing: 0.06em;
+    opacity: 0.55;
+    color: var(--rateb-sidebar-text);
 }
 
 .rateb-nav-link {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.65rem 1.25rem;
+    gap: 0.65rem;
+    padding: 0.55rem 1.15rem;
+    margin: 0.1rem 0.5rem;
+    border-radius: 8px;
     color: var(--rateb-sidebar-text);
     text-decoration: none;
-    transition: background 0.2s;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    border-left: 3px solid transparent;
+    font-size: 0.92rem;
+    line-height: 1.35;
 }
 
-.rateb-nav-link:hover,
+.rateb-nav-link i {
+    width: 1.15rem;
+    flex-shrink: 0;
+    text-align: center;
+    font-size: 0.95rem;
+    opacity: 0.9;
+}
+
+.rateb-nav-link span {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rateb-nav-link:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+}
+
 .rateb-nav-link.active {
     background: var(--rateb-sidebar-active);
     color: #fff;
+    border-left-color: var(--rateb-accent);
+}
+
+.rateb-nav-link.rateb-nav-logout {
+    margin-top: 0.65rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fca5a5;
+}
+
+.rateb-nav-link.rateb-nav-logout:hover {
+    background: rgba(248, 113, 113, 0.12);
+    color: #fecaca;
 }
 
 .rateb-main {
     flex: 1 1 auto;
-    margin-left: 260px;
+    margin-left: 268px;
     margin-right: 0;
-    width: calc(100% - 260px);
-    max-width: calc(100% - 260px);
+    width: calc(100% - 268px);
+    max-width: calc(100% - 268px);
     display: flex;
     flex-direction: column;
     min-width: 0;

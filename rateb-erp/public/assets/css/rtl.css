@@ -13,33 +13,61 @@
 
 [dir="rtl"] .rateb-main {
     margin-left: 0;
-    margin-right: 260px;
-    width: calc(100% - 260px);
-    max-width: calc(100% - 260px);
+    margin-right: 268px;
+    width: calc(100% - 268px);
+    max-width: calc(100% - 268px);
+}
+
+[dir="rtl"] .rateb-sidebar-brand {
+    flex-direction: row;
+    justify-content: flex-start;
+    text-align: right;
+    gap: 0.65rem;
+    padding: 1rem 1.15rem;
 }
 
 [dir="rtl"] .rateb-nav-section {
     text-transform: none;
     letter-spacing: 0;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
+    padding: 0.95rem 1.35rem 0.35rem;
+    text-align: right;
 }
 
 [dir="rtl"] .rateb-nav-link {
-    flex-direction: row-reverse;
+    flex-direction: row;
+    justify-content: flex-start;
     text-align: right;
+    padding: 0.55rem 1rem 0.55rem 1.15rem;
+    margin: 0.12rem 0.45rem 0.12rem 0.55rem;
+    border-left: none;
+    border-right: 3px solid transparent;
 }
 
-[dir="rtl"] .rateb-sidebar-brand {
-    flex-direction: row-reverse;
-    text-align: right;
+[dir="rtl"] .rateb-nav-link.active {
+    border-right-color: var(--rateb-accent);
+    border-left: none;
+}
+
+[dir="rtl"] .rateb-nav-link i {
+    margin-inline-start: 0;
 }
 
 [dir="rtl"] .rateb-topbar {
-    flex-direction: row-reverse;
+    flex-direction: row;
+    padding-inline: 1.35rem 1.5rem;
 }
 
 [dir="rtl"] .rateb-topbar > .d-flex {
-    flex-direction: row-reverse;
+    flex-direction: row;
+}
+
+[dir="rtl"] .rateb-topbar h1 {
+    text-align: right;
+}
+
+[dir="rtl"] .rateb-content {
+    padding: 1.35rem 1.5rem 1.5rem;
 }
 
 [dir="rtl"] .rateb-table th,
@@ -53,7 +81,8 @@
 }
 
 [dir="rtl"] .rateb-accounting-nav-brand {
-    flex-direction: row-reverse;
+    flex-direction: row;
+    justify-content: flex-start;
 }
 
 [dir="rtl"] .rateb-toolbar {
@@ -75,8 +104,8 @@
 }
 
 [dir="rtl"] .rateb-widget-icon {
-    margin-left: auto;
-    margin-right: 0;
+    margin-inline-start: auto;
+    margin-inline-end: 0;
 }
 
 [dir="rtl"] .rateb-card-header {

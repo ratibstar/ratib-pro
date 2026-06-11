@@ -58,7 +58,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
                 echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
             }
             ?>
-            <a href="<?php echo rateb_url('company/logout'); ?>" class="rateb-nav-link"><i class="fas fa-sign-out-alt"></i><span><?php echo __('logout'); ?></span></a>
+            <a href="<?php echo rateb_url('company/logout'); ?>" class="rateb-nav-link rateb-nav-logout"><i class="fas fa-sign-out-alt"></i><span><?php echo __('logout'); ?></span></a>
         </nav>
     </aside>
     <div class="rateb-main">

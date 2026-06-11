@@ -34,7 +34,6 @@ $accountingActive = $erpRoute !== '' && preg_match('#(accounting|chart-of-accoun
             <span><?php echo __('rateb_erp'); ?></span>
         </div>
         <nav>
-            <div class="rateb-nav-section"><?php echo __('dashboard'); ?></div>
             <a href="<?php echo rateb_url('admin'); ?>" class="rateb-nav-link<?php echo strpos($currentPath, '/admin') !== false && substr_count($currentPath, '/') <= 3 ? ' active' : ''; ?>">
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </a>
@@ -71,7 +70,7 @@ $accountingActive = $erpRoute !== '' && preg_match('#(accounting|chart-of-accoun
             <a href="<?php echo rateb_url('admin/support-tickets'); ?>" class="rateb-nav-link"><i class="fas fa-life-ring"></i><span><?php echo __('support_tickets'); ?></span></a>
             <a href="<?php echo rateb_url('admin/email-templates'); ?>" class="rateb-nav-link"><i class="fas fa-envelope"></i><span><?php echo __('email_templates'); ?></span></a>
             <a href="<?php echo rateb_url('admin/sms-templates'); ?>" class="rateb-nav-link"><i class="fas fa-sms"></i><span><?php echo __('sms_templates'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/logout'); ?>" class="rateb-nav-link"><i class="fas fa-sign-out-alt"></i><span><?php echo __('logout'); ?></span></a>
+            <a href="<?php echo rateb_url('admin/logout'); ?>" class="rateb-nav-link rateb-nav-logout"><i class="fas fa-sign-out-alt"></i><span><?php echo __('logout'); ?></span></a>
         </nav>
     </aside>
     <div class="rateb-main">
