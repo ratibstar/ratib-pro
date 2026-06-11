@@ -62,13 +62,56 @@ final class MigrationService
     private function execSqlFile(PDO $pdo, string $sql): void
     {
         $sql = preg_replace('/^\s*USE\s+`[^`]+`\s*;\s*/mi', '', $sql) ?? $sql;
-        if (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS')) {
-            $pdo->setAttribute(PDO::MYSQL_ATTR_MULTI_STATEMENTS, true);
+        foreach ($this->splitStatements($sql) as $statement) {
+            if ($statement === '') {
+                continue;
+            }
+            try {
+                $pdo->exec($statement);
+            } catch (\PDOException $e) {
+                if ($this->isBenignMigrationError($e->getMessage())) {
+                    continue;
+                }
+                throw $e;
+            }
         }
-        $pdo->exec($sql);
-        while ($pdo->nextRowset()) {
-            // drain remaining statements in multi-query file
+    }
+
+    /** @return array<int, string> */
+    private function splitStatements(string $sql): array
+    {
+        $sql = preg_replace('/\/\*.*?\*\//s', '', $sql) ?? $sql;
+        $statements = [];
+        $buffer = '';
+        foreach (preg_split('/\R/', $sql) ?: [] as $line) {
+            $trimmed = trim($line);
+            if ($trimmed === '' || str_starts_with($trimmed, '--')) {
+                continue;
+            }
+            $buffer .= $line . "\n";
+            if (preg_match('/;\s*$/', $trimmed)) {
+                $stmt = trim($buffer);
+                if ($stmt !== '') {
+                    $statements[] = $stmt;
+                }
+                $buffer = '';
+            }
         }
+        $tail = trim($buffer);
+        if ($tail !== '') {
+            $statements[] = $tail;
+        }
+        return $statements;
+    }
+
+    private function isBenignMigrationError(string $message): bool
+    {
+        foreach (['1050', '1060', '1061', '1091', '1826'] as $code) {
+            if (strpos($message, $code) !== false) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public function isSchemaReady(): bool
