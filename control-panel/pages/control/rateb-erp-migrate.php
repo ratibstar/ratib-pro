@@ -75,8 +75,28 @@ startControlLayout('RATEB ERP — Database Setup', ['css/system-settings.css', '
     </div>
 </div>
 
-<?php if ($installed && !$dbTest['ok'] && ($dbTest['error'] ?? '') !== '') { ?>
-<div class="alert alert-danger"><?php echo htmlspecialchars((string) $dbTest['error'], ENT_QUOTES, 'UTF-8'); ?></div>
+<?php if ($installed && !$dbTest['ok']) {
+    $dbUser = defined('DB_USER') ? (string) DB_USER : 'outratib_out';
+    $dbName = control_rateb_erp_db_name();
+    ?>
+<div class="alert alert-danger">
+    <strong><i class="fas fa-key me-1"></i> صلاحيات MySQL مطلوبة — الكود لا يستطيع إصلاحها تلقائياً</strong>
+    <p class="mb-2 mt-2">المستخدم <code><?php echo htmlspecialchars($dbUser, ENT_QUOTES, 'UTF-8'); ?></code> غير مربوط بقاعدة <code><?php echo htmlspecialchars($dbName, ENT_QUOTES, 'UTF-8'); ?></code>.</p>
+    <ol class="mb-2">
+        <li>cPanel → <strong>MySQL® Databases</strong></li>
+        <li>تأكد أن القاعدة <code><?php echo htmlspecialchars($dbName, ENT_QUOTES, 'UTF-8'); ?></code> موجودة (35 جدول rateb_*)</li>
+        <li><strong>Add User To Database</strong> → User: <code><?php echo htmlspecialchars($dbUser, ENT_QUOTES, 'UTF-8'); ?></code> + DB: <code><?php echo htmlspecialchars($dbName, ENT_QUOTES, 'UTF-8'); ?></code></li>
+        <li>اختر <strong>ALL PRIVILEGES</strong> → <strong>Make Changes</strong></li>
+        <li>أعد تحميل صفحة تسجيل الدخول</li>
+    </ol>
+    <p class="small mb-1"><strong>بديل:</strong> أنشئ مستخدماً جديداً <code>outratib_erp</code> واربطه بالقاعدة فقط، ثم أضف في <code>.env</code>:</p>
+    <pre class="rateb-erp-migrate-log mb-0">RATEB_ERP_DB_USER=outratib_erp
+RATEB_ERP_DB_PASS=your_password
+RATEB_ERP_DB_NAME=<?php echo htmlspecialchars($dbName, ENT_QUOTES, 'UTF-8'); ?></pre>
+    <?php if (($dbTest['error'] ?? '') !== '') { ?>
+    <p class="small text-muted mt-2 mb-0"><?php echo htmlspecialchars((string) $dbTest['error'], ENT_QUOTES, 'UTF-8'); ?></p>
+    <?php } ?>
+</div>
 <?php } ?>
 
 <?php if ($error !== '') { ?>

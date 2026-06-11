@@ -92,6 +92,8 @@ if (!function_exists('ratib_env_load_bridge_dotenv')) {
             'CONTROL_DB_PASS',
             'CONTROL_PANEL_DB_NAME',
             'RATEB_ERP_DB_NAME',
+            'RATEB_ERP_DB_USER',
+            'RATEB_ERP_DB_PASS',
             'CONTROL_PANEL_DB_USER',
             'CONTROL_PANEL_DB_PASS',
             'RATIB_SITE_CONTENT_DB_HOST',

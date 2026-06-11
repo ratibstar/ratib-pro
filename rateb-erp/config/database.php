@@ -73,24 +73,63 @@ if (!defined('IS_CONTROL_PANEL') || !IS_CONTROL_PANEL) {
     }
 }
 
+if (!function_exists('rateb_erp_db_credentials')) {
+    /** @return array{0:string,1:string} */
+    function rateb_erp_db_credentials(): array
+    {
+        $user = '';
+        $pass = '';
+        if (defined('RATEB_ERP_DB_USER') && (string) RATEB_ERP_DB_USER !== '') {
+            $user = (string) RATEB_ERP_DB_USER;
+        } else {
+            $fromEnv = getenv('RATEB_ERP_DB_USER');
+            if ($fromEnv !== false && $fromEnv !== '') {
+                $user = (string) $fromEnv;
+            }
+        }
+        if (defined('RATEB_ERP_DB_PASS') && (string) RATEB_ERP_DB_PASS !== '') {
+            $pass = (string) RATEB_ERP_DB_PASS;
+        } else {
+            $fromEnv = getenv('RATEB_ERP_DB_PASS');
+            if ($fromEnv !== false && $fromEnv !== '') {
+                $pass = (string) $fromEnv;
+            }
+        }
+        if ($user === '' && defined('DB_USER')) {
+            $user = (string) DB_USER;
+        }
+        if ($pass === '' && defined('DB_PASS')) {
+            $pass = (string) DB_PASS;
+        }
+        if ($user === '') {
+            $u = getenv('CONTROL_DB_USER') ?: getenv('DB_USER');
+            $user = ($u !== false && $u !== '') ? (string) $u : 'root';
+        }
+        if ($pass === '') {
+            $p = getenv('CONTROL_DB_PASS');
+            if ($p === false) {
+                $p = getenv('DB_PASS');
+            }
+            $pass = $p !== false ? (string) $p : '';
+        }
+        return [$user, $pass];
+    }
+}
+
 if (!defined('RATEB_DB_HOST')) {
+    [$erpUser, $erpPass] = rateb_erp_db_credentials();
     if (defined('DB_HOST')) {
         define('RATEB_DB_HOST', (string) DB_HOST);
         define('RATEB_DB_PORT', defined('DB_PORT') ? (int) DB_PORT : 3306);
-        define('RATEB_DB_USER', defined('DB_USER') ? (string) DB_USER : 'root');
-        define('RATEB_DB_PASS', defined('DB_PASS') ? (string) DB_PASS : '');
+        define('RATEB_DB_USER', $erpUser);
+        define('RATEB_DB_PASS', $erpPass);
     } else {
         $dbHost = getenv('CONTROL_DB_HOST') ?: getenv('DB_HOST');
         $dbPort = getenv('CONTROL_DB_PORT') ?: getenv('DB_PORT');
-        $dbUser = getenv('CONTROL_DB_USER') ?: getenv('DB_USER');
-        $dbPass = getenv('CONTROL_DB_PASS');
-        if ($dbPass === false) {
-            $dbPass = getenv('DB_PASS');
-        }
         define('RATEB_DB_HOST', $dbHost !== false && $dbHost !== '' ? (string) $dbHost : '127.0.0.1');
         define('RATEB_DB_PORT', (int) ($dbPort !== false && $dbPort !== '' ? $dbPort : 3306));
-        define('RATEB_DB_USER', $dbUser !== false && $dbUser !== '' ? (string) $dbUser : 'root');
-        define('RATEB_DB_PASS', $dbPass !== false ? (string) $dbPass : '');
+        define('RATEB_DB_USER', $erpUser);
+        define('RATEB_DB_PASS', $erpPass);
     }
     define('RATEB_DB_NAME', rateb_erp_database_name());
 }

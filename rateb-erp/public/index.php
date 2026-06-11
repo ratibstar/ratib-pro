@@ -41,7 +41,9 @@ try {
             echo 'لا يملك صلاحية على قاعدة <code style="direction:ltr">outratib_rateb-erp</code> (وليس outratib-rateb-erp).<br><br>';
             echo '<strong>في cPanel:</strong><br>1. MySQL® Databases → تأكد أن القاعدة <b>outratib_rateb-erp</b> موجودة<br>';
             echo '2. Add User To Database → <code>outratib_out</code> + <code>outratib_rateb-erp</code><br>';
-            echo '3. ALL PRIVILEGES → Make Changes';
+            echo '3. ALL PRIVILEGES → Make Changes<br><br>';
+            echo '4. إن لم ينجح: أنشئ مستخدم MySQL جديد <code>outratib_erp</code> واربطه بالقاعدة فقط، ثم ضع في ملف <code>.env</code> على السيرفر:<br>';
+            echo '<code style="direction:ltr;display:block;margin-top:0.5rem">RATEB_ERP_DB_USER=outratib_erp<br>RATEB_ERP_DB_PASS=...</code>';
             echo '</div>';
         }
         if ($cpMode && function_exists('control_rateb_erp_migrate_page_url')) {
