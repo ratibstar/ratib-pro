@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_migrations'])) {
       $error = 'rateb-erp folder is missing on the server. Upload it first.';
   } else {
       try {
-          define('RATEB_ROOT', str_replace('\\', '/', realpath($erpRoot) ?: $erpRoot));
+          control_rateb_erp_ensure_root();
           require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
           Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
           require_once RATEB_ROOT . '/app/services/MigrationService.php';
@@ -45,17 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_migrations'])) {
 }
 
 if ($installed) {
-    try {
-        if (!defined('RATEB_ROOT')) {
-            define('RATEB_ROOT', str_replace('\\', '/', realpath($erpRoot) ?: $erpRoot));
-        }
-        require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
-        Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
-        require_once RATEB_ROOT . '/app/services/MigrationService.php';
-        $schemaReady = (new \Rateb\App\Services\MigrationService())->isSchemaReady();
-    } catch (Throwable $e) {
-        $schemaReady = false;
-    }
+    $schemaReady = control_rateb_erp_schema_ready();
 }
 
 if (empty($_SESSION['rateb_erp_migrate_csrf'])) {

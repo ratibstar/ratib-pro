@@ -332,8 +332,12 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             $data['password'] = password_hash($password, PASSWORD_DEFAULT);
         }
         $data['is_super_admin'] = $this->input('is_super_admin') ? 1 : 0;
-        if ($data['company_id'] === '' || $data['company_id'] === '0') {
+        if ($data['company_id'] === '' || $data['company_id'] === '0' || $data['company_id'] === null) {
             $data['company_id'] = null;
+        } else {
+            $companyId = (int) $data['company_id'];
+            $company = (new \Rateb\App\Models\Company())->find($companyId);
+            $data['company_id'] = $company ? $companyId : null;
         }
         return $data;
     }

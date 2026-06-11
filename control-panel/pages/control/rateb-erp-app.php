@@ -41,14 +41,18 @@ if (!is_file($indexFile)) {
     exit;
 }
 
-$route = trim((string) ($_GET['route'] ?? 'admin'), '/');
+$routeRaw = $_GET['route'] ?? 'admin';
+if (is_array($routeRaw)) {
+    $routeRaw = end($routeRaw);
+}
+$route = trim((string) $routeRaw, '/');
 if ($route === '') {
     $route = 'admin';
 }
 
 define('RATEB_CP_ENTRY', true);
 define('RATEB_CP_ROUTE', $route);
-define('RATEB_CP_APP_URL', control_rateb_erp_app_url(''));
+define('RATEB_CP_APP_URL', control_rateb_erp_app_base_url());
 define('RATEB_CP_ASSETS_URL', control_rateb_erp_assets_base_url());
 
 $_GET['route'] = $route;

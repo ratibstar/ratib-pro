@@ -54,6 +54,14 @@ function control_rateb_erp_diagnostic(): array
     ];
 }
 
+/** Base CP app URL without &route= (used as RATEB_CP_APP_URL for rateb_url()). */
+function control_rateb_erp_app_base_url(): string
+{
+    return function_exists('control_panel_page_with_control')
+        ? control_panel_page_with_control('control/rateb-erp-app.php')
+        : '/control-panel/pages/control/rateb-erp-app.php?control=1';
+}
+
 /**
  * Open ERP module through Control Panel (no /rateb-erp/public/ URL needed).
  */
@@ -63,10 +71,42 @@ function control_rateb_erp_app_url(string $route = 'admin'): string
     if ($route === '') {
         $route = 'admin';
     }
-    $base = function_exists('control_panel_page_with_control')
-        ? control_panel_page_with_control('control/rateb-erp-app.php')
-        : '/control-panel/pages/control/rateb-erp-app.php?control=1';
-    return $base . '&route=' . rawurlencode($route);
+    return control_rateb_erp_app_base_url() . '&route=' . rawurlencode($route);
+}
+
+function control_rateb_erp_ensure_root(): string
+{
+    if (defined('RATEB_ROOT')) {
+        return (string) RATEB_ROOT;
+    }
+    $erpRoot = control_rateb_erp_root_path();
+    define('RATEB_ROOT', str_replace('\\', '/', realpath($erpRoot) ?: $erpRoot));
+    return (string) RATEB_ROOT;
+}
+
+function control_rateb_erp_schema_ready(): bool
+{
+    if (!control_rateb_erp_is_installed()) {
+        return false;
+    }
+    try {
+        control_rateb_erp_ensure_root();
+        require_once RATEB_ROOT . '/config/database.php';
+        $dsn = sprintf(
+            'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+            RATEB_DB_HOST,
+            RATEB_DB_PORT,
+            RATEB_DB_NAME
+        );
+        $pdo = new PDO($dsn, RATEB_DB_USER, RATEB_DB_PASS, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        ]);
+        $stmt = $pdo->query("SHOW TABLES LIKE 'rateb_companies'");
+        return $stmt !== false && $stmt->rowCount() > 0;
+    } catch (Throwable $e) {
+        error_log('RATEB ERP schema check: ' . $e->getMessage());
+        return false;
+    }
 }
 
 function control_rateb_erp_migrate_page_url(): string

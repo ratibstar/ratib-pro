@@ -39,7 +39,9 @@ if (!function_exists('rateb_url')) {
     {
         $path = ltrim($path, '/');
         if (defined('RATEB_CP_MODE') && RATEB_CP_MODE) {
-            $base = rtrim((string) RATEB_BASE_URL, '&');
+            $base = (string) RATEB_BASE_URL;
+            $base = preg_replace('/([&?])route=[^&]*/', '$1', $base) ?? $base;
+            $base = rtrim($base, '?&');
             if (strpos($base, '?') === false) {
                 $base .= '?control=1';
             }

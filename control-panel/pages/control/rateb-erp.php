@@ -23,16 +23,7 @@ $erpInstalled = $erpDiag['installed'];
 $schemaReady = false;
 
 if ($erpInstalled) {
-    try {
-        $erpRoot = control_rateb_erp_root_path();
-        define('RATEB_ROOT', str_replace('\\', '/', realpath($erpRoot) ?: $erpRoot));
-        require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
-        Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
-        require_once RATEB_ROOT . '/app/services/MigrationService.php';
-        $schemaReady = (new \Rateb\App\Services\MigrationService())->isSchemaReady();
-    } catch (Throwable $e) {
-        $schemaReady = false;
-    }
+    $schemaReady = control_rateb_erp_schema_ready();
 }
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';

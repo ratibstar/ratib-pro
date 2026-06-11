@@ -60,11 +60,20 @@ final class AuthorizationService
     {
         $db = \Rateb\App\Core\Database::connection();
         $db->prepare('DELETE FROM rateb_user_roles WHERE user_id = :uid')->execute(['uid' => $userId]);
+        if ($roleIds === []) {
+            return;
+        }
+        $ids = array_values(array_unique(array_filter(array_map('intval', $roleIds), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return;
+        }
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $check = $db->prepare('SELECT id FROM rateb_roles WHERE id IN (' . $placeholders . ')');
+        $check->execute($ids);
+        $valid = array_map('intval', array_column($check->fetchAll(\PDO::FETCH_ASSOC), 'id'));
         $stmt = $db->prepare('INSERT INTO rateb_user_roles (user_id, role_id) VALUES (:uid, :rid)');
-        foreach (array_unique(array_map('intval', $roleIds)) as $rid) {
-            if ($rid > 0) {
-                $stmt->execute(['uid' => $userId, 'rid' => $rid]);
-            }
+        foreach ($valid as $rid) {
+            $stmt->execute(['uid' => $userId, 'rid' => $rid]);
         }
     }
 
