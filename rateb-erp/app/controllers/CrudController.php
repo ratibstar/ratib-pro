@@ -16,6 +16,9 @@ abstract class CrudController extends Controller
     protected string $routePrefix;
     protected array $fields = [];
     protected string $entityName = 'record';
+    protected bool $bulkEnabled = true;
+    protected bool $createEnabled = true;
+    protected bool $actionsEnabled = true;
 
     public function index(): void
     {
@@ -23,7 +26,13 @@ abstract class CrudController extends Controller
         $limit = 20;
         $offset = ($page - 1) * $limit;
 
-        $this->view($this->viewPrefix . '/index', [
+        $this->view($this->viewPrefix . '/index', $this->indexViewData($limit, $offset, $page), $this->layout());
+    }
+
+    /** @return array<string, mixed> */
+    protected function indexViewData(int $limit, int $offset, int $page): array
+    {
+        return [
             'title' => __($this->entityName),
             'items' => $this->model->all($limit, $offset),
             'total' => $this->model->count(),
@@ -32,7 +41,10 @@ abstract class CrudController extends Controller
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
-        ], $this->layout());
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => $this->createEnabled,
+            'actionsEnabled' => $this->actionsEnabled,
+        ];
     }
 
     public function create(): void
@@ -106,6 +118,41 @@ abstract class CrudController extends Controller
         (new AuditService())->log('delete', $this->entityName, $id);
         SessionManager::flash('success', __('delete') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function bulkDestroy(): void
+    {
+        if (!$this->bulkEnabled) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+
+        $deleted = $this->model->deleteMany($ids);
+        foreach ($ids as $id) {
+            (new AuditService())->log('bulk_delete', $this->entityName, $id);
+        }
+        SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    /** @return array<int, int> */
+    protected function parseBulkIds(): array
+    {
+        $raw = $this->input('ids', []);
+        if (!is_array($raw)) {
+            return [];
+        }
+        return array_values(array_unique(array_filter(array_map('intval', $raw), static fn (int $id): bool => $id > 0)));
     }
 
     protected function collectData(): array

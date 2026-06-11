@@ -70,6 +70,41 @@
     margin-bottom: 1rem;
 }
 
+.rateb-bulk-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    background: var(--rateb-bg);
+    border-bottom: 1px solid var(--rateb-border);
+}
+
+.rateb-bulk-count {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--rateb-text-muted);
+    margin-inline-end: 0.5rem;
+}
+
+.rateb-bulk-th {
+    width: 2.5rem;
+}
+
+.rateb-matrix-table .rateb-matrix-sticky {
+    min-width: 220px;
+    background: var(--rateb-surface);
+}
+
+.rateb-matrix-module-row td {
+    background: var(--rateb-bg);
+    font-size: 0.875rem;
+}
+
+.rateb-matrix-role-col {
+    min-width: 110px;
+}
+
 .rateb-accounting-nav {
     background: var(--rateb-surface);
     border: 1px solid var(--rateb-border);

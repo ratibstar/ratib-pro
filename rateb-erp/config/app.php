@@ -10,7 +10,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260611-rtab8');
+define('RATEB_ASSET_BUILD', '20260611-rtab9');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -67,6 +67,24 @@ if (!function_exists('rateb_is_rtl')) {
     function rateb_is_rtl(): bool
     {
         return rateb_locale() === 'ar';
+    }
+}
+
+if (!function_exists('rateb_can')) {
+    function rateb_can(string $slug): bool
+    {
+        if (!empty($_SESSION['rateb_is_super_admin'])) {
+            return true;
+        }
+        $userId = (int) ($_SESSION['rateb_user_id'] ?? 0);
+        if ($userId <= 0 || $slug === '') {
+            return $slug === '';
+        }
+        static $cache = [];
+        if (!isset($cache[$userId])) {
+            $cache[$userId] = (new \Rateb\App\Services\AuthorizationService())->userPermissionSlugs($userId);
+        }
+        return in_array($slug, $cache[$userId], true);
     }
 }
 

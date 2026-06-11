@@ -99,6 +99,7 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
             ?>
             <div class="rateb-nav-section"><?php echo __('access_control'); ?></div>
             <a href="<?php echo rateb_url('admin/access-control'); ?>" class="rateb-nav-link"><i class="fas fa-shield-halved"></i><span><?php echo __('access_control'); ?></span></a>
+            <a href="<?php echo rateb_url('admin/access-control/matrix'); ?>" class="rateb-nav-link"><i class="fas fa-table-cells"></i><span><?php echo __('permission_matrix'); ?></span></a>
             <a href="<?php echo rateb_url('admin/users'); ?>" class="rateb-nav-link"><i class="fas fa-users"></i><span><?php echo __('users'); ?></span></a>
             <a href="<?php echo rateb_url('admin/roles'); ?>" class="rateb-nav-link"><i class="fas fa-user-shield"></i><span><?php echo __('roles'); ?></span></a>
             <a href="<?php echo rateb_url('admin/permissions'); ?>" class="rateb-nav-link"><i class="fas fa-key"></i><span><?php echo __('permissions'); ?></span></a>

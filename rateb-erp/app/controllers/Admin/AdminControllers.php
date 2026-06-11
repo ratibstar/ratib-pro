@@ -183,6 +183,36 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
         SessionManager::flash('success', __('save') . ' OK');
         Response::redirect(rateb_url('admin/companies'));
     }
+
+    public function bulkSuspend(): void
+    {
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_url('admin/companies'));
+        }
+        $count = 0;
+        foreach ($this->parseBulkIds() as $id) {
+            $this->model->suspend($id);
+            (new AuditService())->log('bulk_suspend', 'company', $id);
+            $count++;
+        }
+        SessionManager::flash('success', __('bulk_suspended', ['count' => $count]));
+        Response::redirect(rateb_url('admin/companies'));
+    }
+
+    public function bulkActivate(): void
+    {
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_url('admin/companies'));
+        }
+        $count = 0;
+        foreach ($this->parseBulkIds() as $id) {
+            $this->model->activate($id);
+            (new AuditService())->log('bulk_activate', 'company', $id);
+            $count++;
+        }
+        SessionManager::flash('success', __('bulk_activated', ['count' => $count]));
+        Response::redirect(rateb_url('admin/companies'));
+    }
 }
 
 final class SubscriptionsController extends \Rateb\App\Controllers\CrudController
@@ -370,6 +400,46 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         ];
     }
 
+    public function index(): void
+    {
+        $page = max(1, (int) $this->input('page', 1));
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $items = $this->model->all($limit, $offset);
+        foreach ($items as &$row) {
+            $row['roles_list'] = $authz->getUserRoleNames((int) $row['id']);
+            if (!empty($row['is_super_admin'])) {
+                $row['roles_list'] = __('super_admin') . ($row['roles_list'] !== '' ? ' · ' . $row['roles_list'] : '');
+            }
+        }
+        unset($row);
+
+        $displayFields = [
+            ['name' => 'name', 'label' => 'name'],
+            ['name' => 'email', 'label' => 'email'],
+            ['name' => 'phone', 'label' => 'phone'],
+            ['name' => 'company_id', 'label' => 'company_id'],
+            ['name' => 'roles_list', 'label' => 'roles'],
+            ['name' => 'status', 'label' => 'status'],
+            ['name' => 'locale', 'label' => 'language'],
+        ];
+
+        $this->view($this->viewPrefix . '/index', [
+            'title' => __($this->entityName),
+            'items' => $items,
+            'total' => $this->model->count(),
+            'page' => $page,
+            'limit' => $limit,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $displayFields,
+            'csrf' => Csrf::token(),
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => $this->createEnabled,
+            'actionsEnabled' => $this->actionsEnabled,
+        ], $this->layout());
+    }
+
     public function create(): void
     {
         $this->view($this->viewPrefix . '/form', $this->userFormData(null), $this->layout());
@@ -468,6 +538,40 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'slug', 'label' => 'Slug', 'type' => 'text'],
             ['name' => 'description', 'label' => 'Description', 'type' => 'text'],
         ];
+    }
+
+    public function index(): void
+    {
+        $page = max(1, (int) $this->input('page', 1));
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $items = $this->model->all($limit, $offset);
+        foreach ($items as &$row) {
+            $row['permission_count'] = $authz->getRolePermissionCount((int) $row['id']);
+        }
+        unset($row);
+
+        $displayFields = [
+            ['name' => 'name', 'label' => 'name'],
+            ['name' => 'slug', 'label' => 'slug'],
+            ['name' => 'description', 'label' => 'description'],
+            ['name' => 'permission_count', 'label' => 'permissions_count'],
+        ];
+
+        $this->view($this->viewPrefix . '/index', [
+            'title' => __($this->entityName),
+            'items' => $items,
+            'total' => $this->model->count(),
+            'page' => $page,
+            'limit' => $limit,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $displayFields,
+            'csrf' => Csrf::token(),
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => $this->createEnabled,
+            'actionsEnabled' => $this->actionsEnabled,
+        ], $this->layout());
     }
 
     public function create(): void
@@ -583,6 +687,9 @@ final class PermissionsController extends \Rateb\App\Controllers\CrudController
             'routePrefix' => $this->routePrefix,
             'fields' => $displayFields,
             'csrf' => Csrf::token(),
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => $this->createEnabled,
+            'actionsEnabled' => $this->actionsEnabled,
         ], $this->layout());
     }
 }

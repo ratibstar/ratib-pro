@@ -3,6 +3,9 @@
 /** @var array<int, array<string, mixed>>|null $fields */
 /** @var string $routePrefix */
 /** @var string $csrf */
+$bulkEnabled = $bulkEnabled ?? true;
+$createEnabled = $createEnabled ?? true;
+$actionsEnabled = $actionsEnabled ?? true;
 $columns = $fields ?? [];
 if (empty($columns) && !empty($items)) {
     $columns = [];
@@ -13,42 +16,80 @@ if (empty($columns) && !empty($items)) {
         $columns[] = ['name' => $key, 'label' => $key];
     }
 }
+$colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0);
+$isCompanies = ($routePrefix ?? '') === 'admin/companies';
 ?>
-<div class="rateb-card">
-    <div class="rateb-card-header d-flex justify-content-between align-items-center">
-        <span><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></span>
+<div class="rateb-card<?php echo empty($title) ? ' border-0 shadow-none' : ''; ?>">
+    <?php if (!empty($title)) { ?>
+    <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><?php echo Rateb\App\Core\View::escape($title); ?></span>
+        <?php if ($createEnabled) { ?>
         <a href="<?php echo rateb_url($routePrefix . '/create'); ?>" class="btn btn-primary btn-sm">
             <i class="fas fa-plus"></i> <?php echo __('create'); ?>
         </a>
+        <?php } ?>
     </div>
+    <?php } ?>
+    <?php if ($bulkEnabled && !empty($items)) { ?>
+    <div class="rateb-bulk-bar d-none" data-rateb-bulk-bar>
+        <span class="rateb-bulk-count" data-rateb-bulk-count data-label="<?php echo Rateb\App\Core\View::escape(__('bulk_selected')); ?>">0</span>
+        <form method="post" action="<?php echo rateb_url($routePrefix . '/bulk-delete'); ?>" class="d-inline" data-rateb-bulk-form="delete" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('bulk_confirm_delete')); ?>">
+            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> <?php echo __('bulk_delete'); ?></button>
+        </form>
+        <?php if ($isCompanies) { ?>
+        <form method="post" action="<?php echo rateb_url('admin/companies/bulk-suspend'); ?>" class="d-inline" data-rateb-bulk-form="suspend">
+            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <button type="submit" class="btn btn-warning btn-sm"><i class="fas fa-pause"></i> <?php echo __('bulk_suspend'); ?></button>
+        </form>
+        <form method="post" action="<?php echo rateb_url('admin/companies/bulk-activate'); ?>" class="d-inline" data-rateb-bulk-form="activate">
+            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-play"></i> <?php echo __('bulk_activate'); ?></button>
+        </form>
+        <?php } ?>
+    </div>
+    <?php } ?>
     <div class="rateb-card-body p-0">
         <div class="table-responsive">
-            <table class="table rateb-table mb-0">
+            <table class="table rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
                 <thead>
                 <tr>
+                    <?php if ($bulkEnabled) { ?>
+                    <th class="rateb-bulk-th">
+                        <input type="checkbox" class="form-check-input" data-rateb-select-all title="<?php echo __('select_all'); ?>">
+                    </th>
+                    <?php } ?>
                     <?php foreach ($columns as $col) { ?>
                     <th><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
                     <?php } ?>
+                    <?php if ($actionsEnabled) { ?>
                     <th><?php echo __('actions'); ?></th>
+                    <?php } ?>
                 </tr>
                 </thead>
                 <tbody>
                 <?php if (empty($items)) { ?>
-                <tr><td colspan="<?php echo count($columns) + 1; ?>" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
+                <tr><td colspan="<?php echo $colspan; ?>" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
                 <?php } else { foreach ($items as $row) { ?>
                 <tr>
+                    <?php if ($bulkEnabled) { ?>
+                    <td>
+                        <input type="checkbox" class="form-check-input rateb-row-check" value="<?php echo (int) $row['id']; ?>" data-rateb-row-check>
+                    </td>
+                    <?php } ?>
                     <?php foreach ($columns as $col) {
                         $val = $row[$col['name']] ?? '';
                         ?>
                     <td><?php echo Rateb\App\Core\View::escape($val); ?></td>
                     <?php } ?>
+                    <?php if ($actionsEnabled) { ?>
                     <td class="rateb-actions">
                         <a href="<?php echo rateb_url($routePrefix . '/' . (int)$row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
                         <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int)$row['id'] . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                         </form>
-                        <?php if (($routePrefix ?? '') === 'admin/companies') { ?>
+                        <?php if ($isCompanies) { ?>
                         <form method="post" action="<?php echo rateb_url('admin/companies/' . (int)$row['id'] . '/suspend'); ?>" class="d-inline">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <button type="submit" class="btn btn-sm btn-outline-warning"><i class="fas fa-pause"></i></button>
@@ -59,6 +100,7 @@ if (empty($columns) && !empty($items)) {
                         </form>
                         <?php } ?>
                     </td>
+                    <?php } ?>
                 </tr>
                 <?php } } ?>
                 </tbody>

@@ -54,8 +54,13 @@ $router->post('/admin/companies/{id}', [CompaniesController::class, 'update'], r
 $router->post('/admin/companies/{id}/delete', [CompaniesController::class, 'destroy'], rateb_admin_mw('companies.manage'));
 $router->post('/admin/companies/{id}/suspend', [CompaniesController::class, 'suspend'], rateb_admin_mw('companies.manage'));
 $router->post('/admin/companies/{id}/activate', [CompaniesController::class, 'activate'], rateb_admin_mw('companies.manage'));
+$router->post('/admin/companies/bulk-delete', [CompaniesController::class, 'bulkDestroy'], rateb_admin_mw('companies.manage'));
+$router->post('/admin/companies/bulk-suspend', [CompaniesController::class, 'bulkSuspend'], rateb_admin_mw('companies.manage'));
+$router->post('/admin/companies/bulk-activate', [CompaniesController::class, 'bulkActivate'], rateb_admin_mw('companies.manage'));
 
 $router->get('/admin/access-control', [AccessControlController::class, 'index'], rateb_admin_mw('access.manage'));
+$router->get('/admin/access-control/matrix', [AccessControlController::class, 'matrix'], rateb_admin_mw('access.manage'));
+$router->post('/admin/access-control/matrix', [AccessControlController::class, 'saveMatrix'], rateb_admin_mw('access.manage'));
 
 $router->get('/admin/accounting', [AccountingDashboardController::class, 'index'], rateb_admin_mw('accounting.view'));
 $router->post('/admin/accounting/sync', [AccountingDashboardController::class, 'sync'], rateb_admin_mw('accounting.post'));
@@ -66,6 +71,7 @@ $router->post('/admin/chart-of-accounts', [ChartOfAccountsController::class, 'st
 $router->get('/admin/chart-of-accounts/{id}/edit', [ChartOfAccountsController::class, 'edit'], rateb_admin_mw('accounting.manage'));
 $router->post('/admin/chart-of-accounts/{id}', [ChartOfAccountsController::class, 'update'], rateb_admin_mw('accounting.manage'));
 $router->post('/admin/chart-of-accounts/{id}/delete', [ChartOfAccountsController::class, 'destroy'], rateb_admin_mw('accounting.manage'));
+$router->post('/admin/chart-of-accounts/bulk-delete', [ChartOfAccountsController::class, 'bulkDestroy'], rateb_admin_mw('accounting.manage'));
 
 $router->get('/admin/journal-entries', [AdminJournalEntriesController::class, 'index'], rateb_admin_mw('accounting.view'));
 $router->get('/admin/journal-entries/{id}', [AdminJournalEntriesController::class, 'show'], rateb_admin_mw('accounting.view'));
@@ -93,6 +99,7 @@ foreach ($crudRoutes as $path => [$class, $perm]) {
     $router->get('/admin/' . $path . '/{id}/edit', [$class, 'edit'], rateb_admin_mw($perm));
     $router->post('/admin/' . $path . '/{id}', [$class, 'update'], rateb_admin_mw($perm));
     $router->post('/admin/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_admin_mw($perm));
+    $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw($perm));
 }
 
 $router->get('/admin/audit-logs', [AuditLogsController::class, 'index'], rateb_admin_mw('settings.manage'));

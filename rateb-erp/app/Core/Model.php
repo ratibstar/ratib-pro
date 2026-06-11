@@ -168,6 +168,23 @@ abstract class Model
         return $stmt->execute($params);
     }
 
+    /** @param array<int, int> $ids */
+    public function deleteMany(array $ids): int
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return 0;
+        }
+
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($this->delete($id)) {
+                $deleted++;
+            }
+        }
+        return $deleted;
+    }
+
     protected function filterFillable(array $data): array
     {
         if (empty($this->fillable)) {

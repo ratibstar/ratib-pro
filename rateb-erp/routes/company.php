@@ -55,6 +55,7 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
     $router->get('/company/' . $path . '/{id}/edit', [$class, 'edit'], $mw);
     $router->post('/company/' . $path . '/{id}', [$class, 'update'], $mw);
     $router->post('/company/' . $path . '/{id}/delete', [$class, 'destroy'], $mw);
+    $router->post('/company/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], $mw);
 }
 
 $router->get('/company/purchase-orders/{id}', [PurchaseOrdersController::class, 'show'], rateb_company_mw('procurement'));
@@ -66,6 +67,7 @@ $router->post('/company/chart-of-accounts', [CompanyChartOfAccountsController::c
 $router->get('/company/chart-of-accounts/{id}/edit', [CompanyChartOfAccountsController::class, 'edit'], rateb_company_mw('accounting'));
 $router->post('/company/chart-of-accounts/{id}', [CompanyChartOfAccountsController::class, 'update'], rateb_company_mw('accounting'));
 $router->post('/company/chart-of-accounts/{id}/delete', [CompanyChartOfAccountsController::class, 'destroy'], rateb_company_mw('accounting'));
+$router->post('/company/chart-of-accounts/bulk-delete', [CompanyChartOfAccountsController::class, 'bulkDestroy'], rateb_company_mw('accounting'));
 $router->get('/company/journal-entries', [CompanyJournalEntriesController::class, 'index'], rateb_company_mw('accounting'));
 $router->get('/company/journal-entries/{id}', [CompanyJournalEntriesController::class, 'show'], rateb_company_mw('accounting'));
 

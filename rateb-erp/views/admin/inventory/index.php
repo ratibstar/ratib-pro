@@ -3,4 +3,4 @@
         <span><?php echo __('inventory_value'); ?>: <strong><?php echo number_format((float)($total_value ?? 0), 2); ?></strong></span>
     </div>
 </div>
-<?php Rateb\App\Core\View::partial('crud-index', ['title' => __('inventory'), 'items' => $items ?? [], 'csrf' => $csrf, 'routePrefix' => 'admin/inventory']); ?>
+<?php Rateb\App\Core\View::partial('crud-index', ['title' => __('inventory'), 'items' => $items ?? [], 'csrf' => $csrf, 'routePrefix' => 'admin/inventory', 'bulkEnabled' => false, 'createEnabled' => false, 'actionsEnabled' => false]); ?>

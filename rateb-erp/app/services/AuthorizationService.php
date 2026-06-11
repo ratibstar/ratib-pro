@@ -111,4 +111,50 @@ final class AuthorizationService
         }
         return $grouped;
     }
+
+    /** @return array<int, array<string, mixed>> */
+    public function allRoles(): array
+    {
+        return (new Role())->query('SELECT * FROM rateb_roles ORDER BY name');
+    }
+
+    /** @return array<int, array<int, int>> roleId => permission ids */
+    public function rolePermissionMatrix(): array
+    {
+        $matrix = [];
+        foreach ($this->allRoles() as $role) {
+            $matrix[(int) $role['id']] = $this->getRolePermissionIds((int) $role['id']);
+        }
+        return $matrix;
+    }
+
+    /** @param array<int|string, array<int|string>> $matrix roleId => permission ids */
+    public function syncMatrixFromPost(array $matrix): void
+    {
+        foreach ($this->allRoles() as $role) {
+            $roleId = (int) $role['id'];
+            $permIds = array_map('intval', (array) ($matrix[$roleId] ?? $matrix[(string) $roleId] ?? []));
+            $this->syncRolePermissions($roleId, $permIds);
+        }
+    }
+
+    public function getUserRoleNames(int $userId): string
+    {
+        $rows = (new Role())->query(
+            'SELECT r.name FROM rateb_roles r
+             JOIN rateb_user_roles ur ON ur.role_id = r.id
+             WHERE ur.user_id = :uid ORDER BY r.name',
+            ['uid' => $userId]
+        );
+        return implode(', ', array_column($rows, 'name'));
+    }
+
+    public function getRolePermissionCount(int $roleId): int
+    {
+        $row = (new Permission())->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_role_permissions WHERE role_id = :rid',
+            ['rid' => $roleId]
+        );
+        return (int) ($row['c'] ?? 0);
+    }
 }

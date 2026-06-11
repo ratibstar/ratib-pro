@@ -26,6 +26,31 @@ final class AccessControlController extends Controller
             'csrf' => Csrf::token(),
         ], 'main');
     }
+
+    public function matrix(): void
+    {
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $this->view('admin/access-control/matrix', [
+            'title' => __('permission_matrix'),
+            'roles' => $authz->allRoles(),
+            'permissionGroups' => $authz->allPermissionsGrouped(),
+            'matrix' => $authz->rolePermissionMatrix(),
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function saveMatrix(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_url('admin/access-control/matrix'));
+        }
+        $matrix = (array) $this->input('matrix', []);
+        (new \Rateb\App\Services\AuthorizationService())->syncMatrixFromPost($matrix);
+        (new AuditService())->log('update', 'role_permissions_matrix', null, ['roles' => count($matrix)]);
+        SessionManager::flash('success', __('save') . ' OK');
+        Response::redirect(rateb_url('admin/access-control/matrix'));
+    }
 }
 
 final class AccountingDashboardController extends Controller
