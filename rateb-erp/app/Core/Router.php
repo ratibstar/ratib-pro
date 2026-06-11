@@ -5,30 +5,35 @@ namespace Rateb\App\Core;
 
 final class Router
 {
-    /** @var array<int, array{method:string,pattern:string,handler:callable,middleware:array<int,string>}> */
+    /** @var array<int, array{method:string,pattern:string,handler:callable|array|\Closure,middleware:array<int,string>}> */
     private array $routes = [];
 
-    public function get(string $pattern, callable $handler, array $middleware = []): void
+    /** @param callable|array{0:class-string|object,1:string}|\Closure $handler */
+    public function get(string $pattern, $handler, array $middleware = []): void
     {
         $this->add('GET', $pattern, $handler, $middleware);
     }
 
-    public function post(string $pattern, callable $handler, array $middleware = []): void
+    /** @param callable|array{0:class-string|object,1:string}|\Closure $handler */
+    public function post(string $pattern, $handler, array $middleware = []): void
     {
         $this->add('POST', $pattern, $handler, $middleware);
     }
 
-    public function put(string $pattern, callable $handler, array $middleware = []): void
+    /** @param callable|array{0:class-string|object,1:string}|\Closure $handler */
+    public function put(string $pattern, $handler, array $middleware = []): void
     {
         $this->add('PUT', $pattern, $handler, $middleware);
     }
 
-    public function delete(string $pattern, callable $handler, array $middleware = []): void
+    /** @param callable|array{0:class-string|object,1:string}|\Closure $handler */
+    public function delete(string $pattern, $handler, array $middleware = []): void
     {
         $this->add('DELETE', $pattern, $handler, $middleware);
     }
 
-    public function add(string $method, string $pattern, callable $handler, array $middleware = []): void
+    /** @param callable|array{0:class-string|object,1:string}|\Closure $handler */
+    public function add(string $method, string $pattern, $handler, array $middleware = []): void
     {
         $this->routes[] = [
             'method' => strtoupper($method),
