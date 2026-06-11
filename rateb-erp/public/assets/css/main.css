@@ -18,9 +18,12 @@ body.rateb-app {
     position: fixed;
     top: 0;
     bottom: 0;
+    left: 0;
+    right: auto;
     overflow-y: auto;
     z-index: 1000;
     transition: transform 0.3s ease;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .rateb-sidebar-brand {

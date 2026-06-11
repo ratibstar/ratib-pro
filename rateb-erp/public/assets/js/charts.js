@@ -11,6 +11,38 @@
         };
     }
 
+    function chartLabel(el, fallback) {
+        return (el && el.dataset && el.dataset.chartLabel) ? el.dataset.chartLabel : fallback;
+    }
+
+    function isRtl() {
+        return document.documentElement.getAttribute('dir') === 'rtl';
+    }
+
+    function baseOptions(colors) {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    rtl: isRtl(),
+                    labels: { color: colors.muted, font: { family: 'Tajawal, sans-serif' } }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: colors.muted, font: { family: 'Tajawal, sans-serif' } },
+                    grid: { color: colors.grid },
+                    reverse: false
+                },
+                y: {
+                    ticks: { color: colors.muted, font: { family: 'Tajawal, sans-serif' } },
+                    grid: { color: colors.grid }
+                }
+            }
+        };
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof Chart === 'undefined') {
             return;
@@ -24,22 +56,15 @@
                 data: {
                     labels: JSON.parse(revenueEl.dataset.labels),
                     datasets: [{
-                        label: 'Revenue',
+                        label: chartLabel(revenueEl, 'Revenue'),
                         data: JSON.parse(revenueEl.dataset.values),
                         borderColor: colors.primary,
-                        backgroundColor: 'rgba(13,110,253,0.1)',
+                        backgroundColor: 'rgba(59,130,246,0.12)',
                         fill: true,
                         tension: 0.3
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { ticks: { color: colors.muted }, grid: { color: colors.grid } },
-                        y: { ticks: { color: colors.muted }, grid: { color: colors.grid } }
-                    }
-                }
+                options: baseOptions(colors)
             });
         }
 
@@ -50,19 +75,12 @@
                 data: {
                     labels: JSON.parse(companyEl.dataset.labels),
                     datasets: [{
-                        label: 'Companies',
+                        label: chartLabel(companyEl, 'Companies'),
                         data: JSON.parse(companyEl.dataset.values),
                         backgroundColor: colors.accent
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { ticks: { color: colors.muted }, grid: { color: colors.grid } },
-                        y: { ticks: { color: colors.muted }, grid: { color: colors.grid } }
-                    }
-                }
+                options: baseOptions(colors)
             });
         }
 
@@ -73,20 +91,13 @@
                 data: {
                     labels: JSON.parse(subEl.dataset.labels),
                     datasets: [{
-                        label: 'Subscriptions',
+                        label: chartLabel(subEl, 'Subscriptions'),
                         data: JSON.parse(subEl.dataset.values),
                         borderColor: colors.accent,
                         tension: 0.3
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { ticks: { color: colors.muted }, grid: { color: colors.grid } },
-                        y: { ticks: { color: colors.muted }, grid: { color: colors.grid } }
-                    }
-                }
+                options: baseOptions(colors)
             });
         }
     });

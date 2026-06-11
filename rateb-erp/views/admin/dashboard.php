@@ -42,7 +42,7 @@ $subValues = json_encode(array_map('intval', array_column($c['subscription_growt
         <div class="rateb-card rateb-chart-card">
             <div class="rateb-card-header"><?php echo __('revenue'); ?></div>
             <div class="rateb-card-body">
-                <canvas id="chart-revenue" data-labels='<?php echo Rateb\App\Core\View::escape($revLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($revValues); ?>'></canvas>
+                <canvas id="chart-revenue" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('revenue')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($revLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($revValues); ?>'></canvas>
             </div>
         </div>
     </div>
@@ -50,7 +50,7 @@ $subValues = json_encode(array_map('intval', array_column($c['subscription_growt
         <div class="rateb-card rateb-chart-card">
             <div class="rateb-card-header"><?php echo __('company_growth'); ?></div>
             <div class="rateb-card-body">
-                <canvas id="chart-companies" data-labels='<?php echo Rateb\App\Core\View::escape($coLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($coValues); ?>'></canvas>
+                <canvas id="chart-companies" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('company_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($coLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($coValues); ?>'></canvas>
             </div>
         </div>
     </div>
@@ -58,7 +58,7 @@ $subValues = json_encode(array_map('intval', array_column($c['subscription_growt
         <div class="rateb-card rateb-chart-card">
             <div class="rateb-card-header"><?php echo __('subscription_growth'); ?></div>
             <div class="rateb-card-body">
-                <canvas id="chart-subscriptions" data-labels='<?php echo Rateb\App\Core\View::escape($subLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($subValues); ?>'></canvas>
+                <canvas id="chart-subscriptions" data-chart-label="<?php echo Rateb\App\Core\View::escape(__('subscription_growth')); ?>" data-labels='<?php echo Rateb\App\Core\View::escape($subLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($subValues); ?>'></canvas>
             </div>
         </div>
     </div>

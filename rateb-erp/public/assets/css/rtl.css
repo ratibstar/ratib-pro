@@ -1,15 +1,96 @@
+/* RATEB ERP — Arabic / RTL layout */
+
+[dir="rtl"] body.rateb-app {
+    text-align: right;
+}
+
 [dir="rtl"] .rateb-sidebar {
     left: auto;
     right: 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    border-right: none;
 }
 
+/* Keep margin on inline-start only — it flips to the physical right in RTL */
 [dir="rtl"] .rateb-main {
-    margin-inline-start: 0;
-    margin-inline-end: 260px;
+    margin-inline-end: 0;
 }
 
-[dir="rtl"] .rateb-nav-link i {
+[dir="rtl"] .rateb-nav-section {
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.75rem;
+}
+
+[dir="rtl"] .rateb-nav-link {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+[dir="rtl"] .rateb-sidebar-brand {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+[dir="rtl"] .rateb-topbar {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .rateb-topbar .d-flex {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .rateb-table th,
+[dir="rtl"] .rateb-table td {
+    text-align: right;
+}
+
+[dir="rtl"] .rateb-table th.text-end,
+[dir="rtl"] .rateb-table td.text-end {
+    text-align: left;
+}
+
+[dir="rtl"] .rateb-accounting-nav-brand {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .rateb-accounting-nav-tabs {
+    justify-content: flex-start;
+}
+
+[dir="rtl"] .rateb-toolbar {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .rateb-actions .btn {
     margin-inline-end: 0;
+    margin-inline-start: 0.25rem;
+}
+
+[dir="rtl"] .form-label,
+[dir="rtl"] .form-check-label {
+    text-align: right;
+}
+
+[dir="rtl"] .input-group > :not(:first-child) {
+    border-radius: 0.375rem 0 0 0.375rem;
+}
+
+[dir="rtl"] .rateb-widget {
+    text-align: right;
+}
+
+[dir="rtl"] .rateb-widget-icon {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+[dir="rtl"] .rateb-card-header {
+    text-align: right;
+}
+
+[dir="rtl"] .pagination {
+    justify-content: flex-start;
 }
 
 @media (max-width: 991px) {
@@ -22,11 +103,6 @@
     }
 
     [dir="rtl"] .rateb-main {
-        margin-inline-end: 0;
+        margin-inline-start: 0;
     }
-}
-
-[dir="rtl"] .rateb-actions .btn {
-    margin-inline-end: 0;
-    margin-inline-start: 0.25rem;
 }
