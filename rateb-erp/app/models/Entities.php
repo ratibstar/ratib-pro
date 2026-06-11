@@ -92,6 +92,32 @@ final class Permission extends Model
     protected array $fillable = ['name', 'name_ar', 'slug', 'module', 'description', 'description_ar'];
 }
 
+final class ChartOfAccount extends Model
+{
+    protected string $table = 'rateb_chart_of_accounts';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'company_id', 'code', 'name', 'name_ar', 'account_type', 'parent_id', 'is_active',
+    ];
+}
+
+final class JournalEntry extends Model
+{
+    protected string $table = 'rateb_journal_entries';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'company_id', 'entry_no', 'entry_date', 'description', 'description_ar',
+        'source_type', 'source_id', 'status', 'created_by', 'posted_at',
+    ];
+}
+
+final class JournalLine extends Model
+{
+    protected string $table = 'rateb_journal_lines';
+    protected bool $tenantScoped = false;
+    protected array $fillable = ['journal_entry_id', 'account_id', 'debit', 'credit', 'memo'];
+}
+
 final class SupplierEvaluation extends Model
 {
     protected string $table = 'rateb_supplier_evaluations';

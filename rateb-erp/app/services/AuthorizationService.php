@@ -44,4 +44,62 @@ final class AuthorizationService
             ['uid' => $userId, 'rid' => $roleId]
         );
     }
+
+    /** @return array<int, int> */
+    public function getUserRoleIds(int $userId): array
+    {
+        $rows = (new Role())->query(
+            'SELECT role_id FROM rateb_user_roles WHERE user_id = :uid',
+            ['uid' => $userId]
+        );
+        return array_map('intval', array_column($rows, 'role_id'));
+    }
+
+    /** @param array<int, int|string> $roleIds */
+    public function syncUserRoles(int $userId, array $roleIds): void
+    {
+        $db = \Rateb\App\Core\Database::connection();
+        $db->prepare('DELETE FROM rateb_user_roles WHERE user_id = :uid')->execute(['uid' => $userId]);
+        $stmt = $db->prepare('INSERT INTO rateb_user_roles (user_id, role_id) VALUES (:uid, :rid)');
+        foreach (array_unique(array_map('intval', $roleIds)) as $rid) {
+            if ($rid > 0) {
+                $stmt->execute(['uid' => $userId, 'rid' => $rid]);
+            }
+        }
+    }
+
+    /** @return array<int, int> */
+    public function getRolePermissionIds(int $roleId): array
+    {
+        $rows = (new Permission())->query(
+            'SELECT permission_id FROM rateb_role_permissions WHERE role_id = :rid',
+            ['rid' => $roleId]
+        );
+        return array_map('intval', array_column($rows, 'permission_id'));
+    }
+
+    /** @param array<int, int|string> $permissionIds */
+    public function syncRolePermissions(int $roleId, array $permissionIds): void
+    {
+        $db = \Rateb\App\Core\Database::connection();
+        $db->prepare('DELETE FROM rateb_role_permissions WHERE role_id = :rid')->execute(['rid' => $roleId]);
+        $stmt = $db->prepare('INSERT INTO rateb_role_permissions (role_id, permission_id) VALUES (:rid, :pid)');
+        foreach (array_unique(array_map('intval', $permissionIds)) as $pid) {
+            if ($pid > 0) {
+                $stmt->execute(['rid' => $roleId, 'pid' => $pid]);
+            }
+        }
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function allPermissionsGrouped(): array
+    {
+        $rows = (new Permission())->query('SELECT * FROM rateb_permissions ORDER BY module, slug');
+        $grouped = [];
+        foreach ($rows as $row) {
+            $mod = (string) ($row['module'] ?? 'general');
+            $grouped[$mod][] = $row;
+        }
+        return $grouped;
+    }
 }

@@ -18,6 +18,9 @@ use Rateb\App\Controllers\Company\SupplierEvaluationsController;
 use Rateb\App\Controllers\Company\SuppliersController;
 use Rateb\App\Controllers\Company\TendersController;
 use Rateb\App\Controllers\Company\WarehousesController;
+use Rateb\App\Controllers\Company\AccountingDashboardController as CompanyAccountingDashboardController;
+use Rateb\App\Controllers\Company\ChartOfAccountsController as CompanyChartOfAccountsController;
+use Rateb\App\Controllers\Company\JournalEntriesController as CompanyJournalEntriesController;
 
 require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
@@ -55,6 +58,17 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
 }
 
 $router->get('/company/purchase-orders/{id}', [PurchaseOrdersController::class, 'show'], rateb_company_mw('procurement'));
+$router->get('/company/accounting', [CompanyAccountingDashboardController::class, 'index'], rateb_company_mw('accounting'));
+$router->post('/company/accounting/sync', [CompanyAccountingDashboardController::class, 'sync'], rateb_company_mw('accounting'));
+$router->get('/company/chart-of-accounts', [CompanyChartOfAccountsController::class, 'index'], rateb_company_mw('accounting'));
+$router->get('/company/chart-of-accounts/create', [CompanyChartOfAccountsController::class, 'create'], rateb_company_mw('accounting'));
+$router->post('/company/chart-of-accounts', [CompanyChartOfAccountsController::class, 'store'], rateb_company_mw('accounting'));
+$router->get('/company/chart-of-accounts/{id}/edit', [CompanyChartOfAccountsController::class, 'edit'], rateb_company_mw('accounting'));
+$router->post('/company/chart-of-accounts/{id}', [CompanyChartOfAccountsController::class, 'update'], rateb_company_mw('accounting'));
+$router->post('/company/chart-of-accounts/{id}/delete', [CompanyChartOfAccountsController::class, 'destroy'], rateb_company_mw('accounting'));
+$router->get('/company/journal-entries', [CompanyJournalEntriesController::class, 'index'], rateb_company_mw('accounting'));
+$router->get('/company/journal-entries/{id}', [CompanyJournalEntriesController::class, 'show'], rateb_company_mw('accounting'));
+
 $router->get('/company/reports', [ReportsController::class, 'index'], rateb_company_mw('reports'));
 $router->get('/company/notifications', [NotificationsController::class, 'index'], rateb_company_mw());
 $router->get('/company/profile', [ProfileController::class, 'index'], rateb_company_mw());

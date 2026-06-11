@@ -25,6 +25,10 @@ use Rateb\App\Controllers\Admin\SupplierEvaluationsController as AdminSupplierEv
 use Rateb\App\Controllers\Admin\SuppliersController as AdminSuppliersController;
 use Rateb\App\Controllers\Admin\SupportTicketsController;
 use Rateb\App\Controllers\Admin\UsersController;
+use Rateb\App\Controllers\Admin\AccessControlController;
+use Rateb\App\Controllers\Admin\AccountingDashboardController;
+use Rateb\App\Controllers\Admin\ChartOfAccountsController;
+use Rateb\App\Controllers\Admin\JournalEntriesController as AdminJournalEntriesController;
 
 require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
@@ -51,12 +55,27 @@ $router->post('/admin/companies/{id}/delete', [CompaniesController::class, 'dest
 $router->post('/admin/companies/{id}/suspend', [CompaniesController::class, 'suspend'], rateb_admin_mw('companies.manage'));
 $router->post('/admin/companies/{id}/activate', [CompaniesController::class, 'activate'], rateb_admin_mw('companies.manage'));
 
+$router->get('/admin/access-control', [AccessControlController::class, 'index'], rateb_admin_mw('access.manage'));
+
+$router->get('/admin/accounting', [AccountingDashboardController::class, 'index'], rateb_admin_mw('accounting.view'));
+$router->post('/admin/accounting/sync', [AccountingDashboardController::class, 'sync'], rateb_admin_mw('accounting.post'));
+
+$router->get('/admin/chart-of-accounts', [ChartOfAccountsController::class, 'index'], rateb_admin_mw('accounting.view'));
+$router->get('/admin/chart-of-accounts/create', [ChartOfAccountsController::class, 'create'], rateb_admin_mw('accounting.manage'));
+$router->post('/admin/chart-of-accounts', [ChartOfAccountsController::class, 'store'], rateb_admin_mw('accounting.manage'));
+$router->get('/admin/chart-of-accounts/{id}/edit', [ChartOfAccountsController::class, 'edit'], rateb_admin_mw('accounting.manage'));
+$router->post('/admin/chart-of-accounts/{id}', [ChartOfAccountsController::class, 'update'], rateb_admin_mw('accounting.manage'));
+$router->post('/admin/chart-of-accounts/{id}/delete', [ChartOfAccountsController::class, 'destroy'], rateb_admin_mw('accounting.manage'));
+
+$router->get('/admin/journal-entries', [AdminJournalEntriesController::class, 'index'], rateb_admin_mw('accounting.view'));
+$router->get('/admin/journal-entries/{id}', [AdminJournalEntriesController::class, 'show'], rateb_admin_mw('accounting.view'));
+
 $crudRoutes = [
     'subscriptions' => [SubscriptionsController::class, 'subscriptions.manage'],
     'plans' => [PlansController::class, 'plans.manage'],
-    'users' => [UsersController::class, 'users.manage'],
-    'roles' => [RolesController::class, 'roles.manage'],
-    'permissions' => [PermissionsController::class, 'permissions.manage'],
+    'users' => [UsersController::class, 'access.manage'],
+    'roles' => [RolesController::class, 'access.manage'],
+    'permissions' => [PermissionsController::class, 'access.manage'],
     'payments' => [PaymentsController::class, 'subscriptions.manage'],
     'invoices' => [InvoicesController::class, 'subscriptions.manage'],
     'email-templates' => [EmailTemplatesController::class, 'settings.manage'],

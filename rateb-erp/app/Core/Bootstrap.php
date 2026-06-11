@@ -44,6 +44,9 @@ final class Bootstrap
             '/app/Core/Middleware/Middleware.php',
             '/app/services/MigrationService.php',
             '/app/services/PlanLimitService.php',
+            '/app/services/AccountingService.php',
+            '/app/controllers/Admin/AccountingControllers.php',
+            '/app/controllers/Company/AccountingControllers.php',
         ] as $bundle) {
             $f = $basePath . $bundle;
             if (is_file($f)) {

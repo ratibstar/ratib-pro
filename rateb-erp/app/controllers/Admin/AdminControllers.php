@@ -251,9 +251,77 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
             ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
-            ['name' => 'company_id', 'label' => 'Company ID', 'type' => 'number'],
+            ['name' => 'phone', 'label' => 'Phone', 'type' => 'text'],
+            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'inactive', 'suspended']],
+            ['name' => 'locale', 'label' => 'language', 'type' => 'select', 'options' => ['ar', 'en']],
         ];
+    }
+
+    public function create(): void
+    {
+        $this->view($this->viewPrefix . '/form', $this->userFormData(null), $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', $this->userFormData($item), $this->layout());
+    }
+
+    /** @return array<string, mixed> */
+    private function userFormData(?array $item): array
+    {
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $userId = $item ? (int) $item['id'] : 0;
+        return [
+            'title' => ($item ? __('edit') : __('create')) . ' ' . __('users'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'roles' => (new \Rateb\App\Models\Role())->all(200, 0),
+            'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
+            'selectedRoles' => $userId > 0 ? $authz->getUserRoleIds($userId) : [],
+            'isSuperAdmin' => !empty($item['is_super_admin']),
+        ];
+    }
+
+    public function store(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectData();
+        $roleIds = array_map('intval', (array) $this->input('role_ids', []));
+        $id = $this->model->create($data);
+        (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function update(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectData();
+        $roleIds = array_map('intval', (array) $this->input('role_ids', []));
+        $this->model->update($id, $data);
+        (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
     }
 
     protected function collectData(): array
@@ -262,6 +330,10 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         $password = (string) $this->input('password', '');
         if ($password !== '') {
             $data['password'] = password_hash($password, PASSWORD_DEFAULT);
+        }
+        $data['is_super_admin'] = $this->input('is_super_admin') ? 1 : 0;
+        if ($data['company_id'] === '' || $data['company_id'] === '0') {
+            $data['company_id'] = null;
         }
         return $data;
     }
@@ -280,6 +352,70 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'slug', 'label' => 'Slug', 'type' => 'text'],
             ['name' => 'description', 'label' => 'Description', 'type' => 'text'],
         ];
+    }
+
+    public function create(): void
+    {
+        $this->view($this->viewPrefix . '/form', $this->roleFormData(null), $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', $this->roleFormData($item), $this->layout());
+    }
+
+    /** @return array<string, mixed> */
+    private function roleFormData(?array $item): array
+    {
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        $roleId = $item ? (int) $item['id'] : 0;
+        return [
+            'title' => ($item ? __('edit') : __('create')) . ' ' . __('roles'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'permissionGroups' => $authz->allPermissionsGrouped(),
+            'selectedPermissions' => $roleId > 0 ? $authz->getRolePermissionIds($roleId) : [],
+        ];
+    }
+
+    public function store(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectData();
+        $permIds = array_map('intval', (array) $this->input('permission_ids', []));
+        $id = $this->model->create($data);
+        (new \Rateb\App\Services\AuthorizationService())->syncRolePermissions($id, $permIds);
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function update(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectData();
+        $permIds = array_map('intval', (array) $this->input('permission_ids', []));
+        $this->model->update($id, $data);
+        (new \Rateb\App\Services\AuthorizationService())->syncRolePermissions($id, $permIds);
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
     }
 }
 
@@ -349,6 +485,24 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['pending', 'completed', 'failed', 'refunded']],
         ];
     }
+
+    public function update(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectData();
+        $this->model->update($id, $data);
+        $row = $this->model->find($id);
+        if ($row && ($row['status'] ?? '') === 'completed') {
+            (new \Rateb\App\Services\AccountingService())->postPayment($row);
+        }
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
 }
 
 final class InvoicesController extends \Rateb\App\Controllers\CrudController
@@ -365,6 +519,24 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'total_amount', 'label' => 'Total', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'sent', 'paid', 'overdue', 'cancelled']],
         ];
+    }
+
+    public function update(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectData();
+        $this->model->update($id, $data);
+        $row = $this->model->find($id);
+        if ($row && ($row['status'] ?? '') === 'paid') {
+            (new \Rateb\App\Services\AccountingService())->postInvoice($row);
+        }
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
     }
 }
 
