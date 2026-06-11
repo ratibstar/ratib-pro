@@ -21,7 +21,7 @@
 }
 
 .rateb-table tbody tr:hover {
-    background: rgba(13, 110, 253, 0.04);
+    background: var(--rateb-table-hover);
 }
 
 .rateb-form-label {

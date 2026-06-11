@@ -18,5 +18,14 @@
                 }
             });
         });
+
+        document.querySelectorAll('form[data-confirm-delete]').forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                var msg = form.getAttribute('data-confirm-delete') || 'Delete?';
+                if (!window.confirm(msg)) {
+                    e.preventDefault();
+                }
+            });
+        });
     });
 })();

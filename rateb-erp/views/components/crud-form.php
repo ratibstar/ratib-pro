@@ -19,7 +19,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int)$item['id']) : rateb_url
                     ?>
                 <div class="col-md-6">
                     <label class="form-label rateb-form-label" for="f_<?php echo Rateb\App\Core\View::escape($name); ?>">
-                        <?php echo Rateb\App\Core\View::escape($field['label'] ?? $name); ?>
+                        <?php echo Rateb\App\Core\View::escape(rateb_label((string) ($field['label'] ?? $name))); ?>
                     </label>
                     <?php if ($type === 'textarea') { ?>
                     <textarea class="form-control rateb-form-control" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>" name="<?php echo Rateb\App\Core\View::escape($name); ?>" rows="4"><?php echo Rateb\App\Core\View::escape($value); ?></textarea>
@@ -36,7 +36,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int)$item['id']) : rateb_url
                 <?php } ?>
                 <?php if (($routePrefix ?? '') === 'admin/users' && !$isEdit) { ?>
                 <div class="col-md-6">
-                    <label class="form-label rateb-form-label" for="f_password">Password</label>
+                    <label class="form-label rateb-form-label" for="f_password"><?php echo __('password'); ?></label>
                     <input class="form-control rateb-form-control" type="password" id="f_password" name="password">
                 </div>
                 <?php } ?>

@@ -3,22 +3,30 @@ $locale = rateb_locale();
 $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="auto">
+<html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="dark" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo Rateb\App\Core\View::escape($title ?? __('login')); ?> | RATEB ERP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/variables.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/main.css'); ?>" rel="stylesheet">
-    <?php if ($dir === 'rtl') { ?>
+    <link href="<?php echo rateb_asset('css/dark.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/rtl.css'); ?>" rel="stylesheet">
-    <?php } ?>
 </head>
 <body class="rateb-auth-page">
     <div class="rateb-auth-card">
-        <div class="text-center mb-4">
+        <div class="text-center mb-3">
+            <div class="d-flex justify-content-center gap-2 mb-3">
+                <div class="btn-group btn-group-sm">
+                    <a href="<?php echo rateb_url('locale/en'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>">EN</a>
+                    <a href="<?php echo rateb_url('locale/ar'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>">عربي</a>
+                </div>
+            </div>
             <i class="fas fa-hospital fa-2x text-primary mb-2"></i>
             <h2 class="h4"><?php echo __('rateb_erp'); ?></h2>
         </div>

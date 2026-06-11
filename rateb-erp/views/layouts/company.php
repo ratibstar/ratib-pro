@@ -4,19 +4,21 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="auto">
+<html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="dark" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo Rateb\App\Core\View::escape($title ?? RATEB_APP_NAME); ?> | RATEB ERP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/variables.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/main.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/components.css'); ?>" rel="stylesheet">
-    <?php if ($dir === 'rtl') { ?>
+    <link href="<?php echo rateb_asset('css/dark.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/rtl.css'); ?>" rel="stylesheet">
-    <?php } ?>
 </head>
 <body class="rateb-app">
 <div class="rateb-wrapper">
@@ -61,13 +63,13 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
             </div>
             <div class="d-flex align-items-center gap-2">
                 <div class="btn-group btn-group-sm">
-                    <button type="button" class="btn btn-outline-secondary" data-theme-choice="light"><i class="fas fa-sun"></i></button>
-                    <button type="button" class="btn btn-outline-secondary" data-theme-choice="dark"><i class="fas fa-moon"></i></button>
-                    <button type="button" class="btn btn-outline-secondary active" data-theme-choice="auto"><i class="fas fa-circle-half-stroke"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" data-theme-choice="light" title="<?php echo __('theme_light'); ?>"><i class="fas fa-sun"></i></button>
+                    <button type="button" class="btn btn-outline-secondary active" data-theme-choice="dark" title="<?php echo __('theme_dark'); ?>"><i class="fas fa-moon"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" data-theme-choice="auto" title="<?php echo __('theme_auto'); ?>"><i class="fas fa-circle-half-stroke"></i></button>
                 </div>
                 <div class="btn-group btn-group-sm">
-                    <a href="<?php echo rateb_url('locale/en'); ?>" class="btn btn-outline-secondary">EN</a>
-                    <a href="<?php echo rateb_url('locale/ar'); ?>" class="btn btn-outline-secondary">AR</a>
+                    <a href="<?php echo rateb_url('locale/en'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>" data-locale="en">EN</a>
+                    <a href="<?php echo rateb_url('locale/ar'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>" data-locale="ar">عربي</a>
                 </div>
             </div>
         </header>

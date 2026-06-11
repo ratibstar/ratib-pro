@@ -27,7 +27,7 @@ final class AuthController extends Controller
     public function login(): void
     {
         if (!$this->validateCsrf()) {
-            SessionManager::flash('error', 'Invalid request');
+            SessionManager::flash('error', __('invalid_request'));
             Response::redirect(rateb_url('admin/login'));
         }
 
@@ -35,7 +35,7 @@ final class AuthController extends Controller
         $password = (string) $this->input('password', '');
 
         if (!RateLimiter::attempt('admin_login_' . md5($email), 5, 300)) {
-            SessionManager::flash('error', 'Too many attempts');
+            SessionManager::flash('error', __('too_many_attempts'));
             Response::redirect(rateb_url('admin/login'));
         }
 
@@ -43,8 +43,12 @@ final class AuthController extends Controller
         (new LoginActivityService())->record($user ? (int) $user['id'] : null, $email, $user !== null);
 
         if (!$user) {
-            SessionManager::flash('error', 'Invalid credentials');
+            SessionManager::flash('error', __('invalid_credentials'));
             Response::redirect(rateb_url('admin/login'));
+        }
+
+        if (!empty($user['locale']) && in_array($user['locale'], RATEB_SUPPORTED_LOCALES, true)) {
+            $_SESSION['rateb_locale'] = $user['locale'];
         }
 
         (new User())->updateLastLogin((int) $user['id']);
@@ -483,7 +487,10 @@ final class LocaleController extends Controller
         if (in_array($locale, RATEB_SUPPORTED_LOCALES, true)) {
             $_SESSION['rateb_locale'] = $locale;
         }
-        $ref = $_SERVER['HTTP_REFERER'] ?? rateb_url('admin');
+        $ref = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+        if ($ref === '' || strpos($ref, 'rateb-erp-app') === false) {
+            $ref = rateb_url('admin');
+        }
         Response::redirect($ref);
     }
 }

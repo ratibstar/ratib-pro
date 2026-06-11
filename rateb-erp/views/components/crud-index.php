@@ -10,7 +10,7 @@ if (empty($columns) && !empty($items)) {
         if (in_array($key, ['password', 'payload'], true)) {
             continue;
         }
-        $columns[] = ['name' => $key, 'label' => ucfirst(str_replace('_', ' ', $key))];
+        $columns[] = ['name' => $key, 'label' => $key];
     }
 }
 ?>
@@ -27,14 +27,14 @@ if (empty($columns) && !empty($items)) {
                 <thead>
                 <tr>
                     <?php foreach ($columns as $col) { ?>
-                    <th><?php echo Rateb\App\Core\View::escape($col['label'] ?? $col['name']); ?></th>
+                    <th><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
                     <?php } ?>
                     <th><?php echo __('actions'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
                 <?php if (empty($items)) { ?>
-                <tr><td colspan="<?php echo count($columns) + 1; ?>" class="text-center text-muted py-4">—</td></tr>
+                <tr><td colspan="<?php echo count($columns) + 1; ?>" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
                 <?php } else { foreach ($items as $row) { ?>
                 <tr>
                     <?php foreach ($columns as $col) {
@@ -44,7 +44,7 @@ if (empty($columns) && !empty($items)) {
                     <?php } ?>
                     <td class="rateb-actions">
                         <a href="<?php echo rateb_url($routePrefix . '/' . (int)$row['id'] . '/edit'); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
-                        <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int)$row['id'] . '/delete'); ?>" class="d-inline" onsubmit="return confirm('Delete?');">
+                        <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int)$row['id'] . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
                         </form>

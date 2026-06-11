@@ -4,9 +4,10 @@
     function chartColors() {
         var style = getComputedStyle(document.documentElement);
         return {
-            primary: '#0d6efd',
-            accent: '#20c997',
-            muted: style.getPropertyValue('--rateb-text-muted').trim() || '#64748b'
+            primary: style.getPropertyValue('--rateb-primary').trim() || '#3b82f6',
+            accent: style.getPropertyValue('--rateb-accent').trim() || '#2dd4bf',
+            muted: style.getPropertyValue('--rateb-text-muted').trim() || '#94a3b8',
+            grid: style.getPropertyValue('--rateb-border').trim() || '#2a3a52'
         };
     }
 
@@ -31,7 +32,14 @@
                         tension: 0.3
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: colors.muted }, grid: { color: colors.grid } },
+                        y: { ticks: { color: colors.muted }, grid: { color: colors.grid } }
+                    }
+                }
             });
         }
 
@@ -47,7 +55,14 @@
                         backgroundColor: colors.accent
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: colors.muted }, grid: { color: colors.grid } },
+                        y: { ticks: { color: colors.muted }, grid: { color: colors.grid } }
+                    }
+                }
             });
         }
 
@@ -64,7 +79,14 @@
                         tension: 0.3
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: colors.muted }, grid: { color: colors.grid } },
+                        y: { ticks: { color: colors.muted }, grid: { color: colors.grid } }
+                    }
+                }
             });
         }
     });

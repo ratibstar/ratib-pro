@@ -48,7 +48,7 @@ $subValues = json_encode(array_map('intval', array_column($c['subscription_growt
     </div>
     <div class="col-lg-4">
         <div class="rateb-card rateb-chart-card">
-            <div class="rateb-card-header"><?php echo __('companies'); ?></div>
+            <div class="rateb-card-header"><?php echo __('company_growth'); ?></div>
             <div class="rateb-card-body">
                 <canvas id="chart-companies" data-labels='<?php echo Rateb\App\Core\View::escape($coLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($coValues); ?>'></canvas>
             </div>
@@ -56,7 +56,7 @@ $subValues = json_encode(array_map('intval', array_column($c['subscription_growt
     </div>
     <div class="col-lg-4">
         <div class="rateb-card rateb-chart-card">
-            <div class="rateb-card-header"><?php echo __('subscriptions'); ?></div>
+            <div class="rateb-card-header"><?php echo __('subscription_growth'); ?></div>
             <div class="rateb-card-body">
                 <canvas id="chart-subscriptions" data-labels='<?php echo Rateb\App\Core\View::escape($subLabels); ?>' data-values='<?php echo Rateb\App\Core\View::escape($subValues); ?>'></canvas>
             </div>

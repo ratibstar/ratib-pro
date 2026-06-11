@@ -1,0 +1,111 @@
+/* RATEB ERP — full dark UI (Bootstrap + custom components) */
+
+html[data-theme="dark"],
+html[data-bs-theme="dark"] {
+    color-scheme: dark;
+}
+
+.rateb-app .table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--rateb-text);
+    --bs-table-border-color: var(--rateb-border);
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.02);
+    --bs-table-hover-bg: var(--rateb-table-hover);
+    --bs-table-active-bg: var(--rateb-table-hover);
+}
+
+.rateb-app .table > :not(caption) > * > * {
+    background-color: transparent;
+    color: var(--rateb-text);
+    border-bottom-color: var(--rateb-border);
+}
+
+.rateb-app .form-control,
+.rateb-app .form-select {
+    background-color: var(--rateb-input-bg);
+    border-color: var(--rateb-border);
+    color: var(--rateb-text);
+}
+
+.rateb-app .form-control:focus,
+.rateb-app .form-select:focus {
+    background-color: var(--rateb-input-bg);
+    border-color: var(--rateb-primary);
+    color: var(--rateb-text);
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.2);
+}
+
+.rateb-app .form-control::placeholder {
+    color: var(--rateb-text-muted);
+}
+
+.rateb-app .btn-outline-secondary {
+    --bs-btn-color: var(--rateb-text-muted);
+    --bs-btn-border-color: var(--rateb-border);
+    --bs-btn-hover-color: var(--rateb-text);
+    --bs-btn-hover-bg: var(--rateb-surface-elevated);
+    --bs-btn-hover-border-color: var(--rateb-text-muted);
+    --bs-btn-active-bg: var(--rateb-sidebar-active);
+}
+
+.rateb-app .btn-outline-primary {
+    --bs-btn-color: var(--rateb-primary);
+    --bs-btn-border-color: var(--rateb-primary);
+    --bs-btn-hover-bg: var(--rateb-primary);
+}
+
+.rateb-app .btn-outline-danger {
+    --bs-btn-hover-bg: var(--rateb-danger);
+}
+
+.rateb-app .btn-outline-warning {
+    --bs-btn-hover-color: #1e293b;
+}
+
+.rateb-app .text-muted {
+    color: var(--rateb-text-muted) !important;
+}
+
+.rateb-app .pagination .page-link {
+    background-color: var(--rateb-surface);
+    border-color: var(--rateb-border);
+    color: var(--rateb-text);
+}
+
+.rateb-app .pagination .page-item.active .page-link {
+    background-color: var(--rateb-primary);
+    border-color: var(--rateb-primary);
+}
+
+.rateb-app .alert {
+    border-color: var(--rateb-border);
+}
+
+.rateb-app .alert-success {
+    background-color: rgba(52, 211, 153, 0.12);
+    color: #6ee7b7;
+}
+
+.rateb-app .alert-danger {
+    background-color: rgba(248, 113, 113, 0.12);
+    color: #fca5a5;
+}
+
+.rateb-app .alert-warning {
+    background-color: rgba(251, 191, 36, 0.12);
+    color: #fcd34d;
+}
+
+.rateb-auth-page .rateb-auth-card {
+    border: 1px solid var(--rateb-border);
+}
+
+.rateb-auth-page .form-control {
+    background-color: var(--rateb-input-bg);
+    border-color: var(--rateb-border);
+    color: var(--rateb-text);
+}
+
+[data-theme="light"] .rateb-app .table > :not(caption) > * > * {
+    color: var(--rateb-text);
+}

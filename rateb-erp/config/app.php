@@ -21,7 +21,7 @@ if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_BASE_URL', $basePath !== '' ? $basePath : '/rateb-erp/public');
 }
 
-define('RATEB_DEFAULT_LOCALE', 'en');
+define('RATEB_DEFAULT_LOCALE', 'ar');
 define('RATEB_SUPPORTED_LOCALES', ['en', 'ar']);
 
 if (!function_exists('rateb_asset')) {
@@ -64,16 +64,25 @@ if (!function_exists('rateb_is_rtl')) {
     }
 }
 
+if (!function_exists('rateb_label')) {
+    function rateb_label(string $labelOrKey): string
+    {
+        $key = strtolower(str_replace([' ', '-'], '_', trim($labelOrKey)));
+        $translated = __($key);
+        return $translated !== $key ? $translated : $labelOrKey;
+    }
+}
+
 if (!function_exists('__')) {
     function __(string $key, array $replace = []): string
     {
-        static $strings = null;
-        if ($strings === null) {
-            $locale = rateb_locale();
+        static $cache = [];
+        $locale = rateb_locale();
+        if (!isset($cache[$locale])) {
             $file = RATEB_ROOT . '/config/lang/' . $locale . '.php';
-            $strings = is_file($file) ? require $file : [];
+            $cache[$locale] = is_file($file) ? require $file : [];
         }
-        $text = $strings[$key] ?? $key;
+        $text = $cache[$locale][$key] ?? $key;
         foreach ($replace as $k => $v) {
             $text = str_replace(':' . $k, (string) $v, $text);
         }

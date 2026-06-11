@@ -4,16 +4,25 @@
     var STORAGE_KEY = 'rateb_theme';
     var root = document.documentElement;
 
+    function resolveBsTheme(mode) {
+        if (mode === 'auto') {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        return mode === 'light' ? 'light' : 'dark';
+    }
+
     function applyTheme(mode) {
-        root.setAttribute('data-theme', mode || 'auto');
-        localStorage.setItem(STORAGE_KEY, mode || 'auto');
+        var chosen = mode || 'dark';
+        root.setAttribute('data-theme', chosen);
+        root.setAttribute('data-bs-theme', resolveBsTheme(chosen));
+        localStorage.setItem(STORAGE_KEY, chosen);
         document.querySelectorAll('[data-theme-choice]').forEach(function (btn) {
-            btn.classList.toggle('active', btn.getAttribute('data-theme-choice') === (mode || 'auto'));
+            btn.classList.toggle('active', btn.getAttribute('data-theme-choice') === chosen);
         });
     }
 
     function initTheme() {
-        var saved = localStorage.getItem(STORAGE_KEY) || 'auto';
+        var saved = localStorage.getItem(STORAGE_KEY) || 'dark';
         applyTheme(saved);
     }
 
@@ -24,5 +33,12 @@
                 applyTheme(btn.getAttribute('data-theme-choice'));
             });
         });
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+                if ((localStorage.getItem(STORAGE_KEY) || 'dark') === 'auto') {
+                    applyTheme('auto');
+                }
+            });
+        }
     });
 })();
