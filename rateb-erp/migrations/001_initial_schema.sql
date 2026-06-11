@@ -70,7 +70,8 @@ CREATE TABLE IF NOT EXISTS rateb_roles (
     description VARCHAR(255) NULL,
     is_system TINYINT(1) NOT NULL DEFAULT 0,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_roles_company_slug (company_id, slug),
+    UNIQUE KEY uq_roles_slug (slug),
+    INDEX idx_roles_company (company_id),
     CONSTRAINT fk_roles_company FOREIGN KEY (company_id) REFERENCES rateb_companies(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

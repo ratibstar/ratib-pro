@@ -118,7 +118,7 @@ final class MigrationService
 
     private function isBenignMigrationError(string $message): bool
     {
-        foreach (['1050', '1060', '1061', '1091', '1826'] as $code) {
+        foreach (['1050', '1060', '1061', '1091', '1826', '1825'] as $code) {
             if (strpos($message, $code) !== false) {
                 return true;
             }
