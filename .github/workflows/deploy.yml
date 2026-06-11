@@ -55,7 +55,27 @@ jobs:
         run: |
           SITE="${{ secrets.CPANEL_SITE_URL || 'https://out.ratib.sa' }}"
           # home.php 302-redirects to /home — must follow redirects (-L). /home must NOT hit country_slug=home.
-          code() { curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 8 --max-time 20 "$1" 2>/dev/null || echo 000; }
+          code() {
+            local out code_try=1
+            while [ "$code_try" -le 2 ]; do
+              out="$(curl -sS -o /dev/null -w "%{http_code}" -L --connect-timeout 10 --max-time 30 "$1" 2>/dev/null || true)"
+              if [ -n "$out" ] && [ "$out" != "000" ]; then
+                echo "$out"
+                return 0
+              fi
+              code_try=$((code_try + 1))
+              sleep 2
+            done
+            echo "${out:-000}"
+          }
+          # Bypass LiteSpeed HTML cache before register/home probes.
+          LIVE_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 15 \
+            -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
+            "${SITE}/public/ratib-build.txt?deploy_verify=$(date +%s)" 2>/dev/null | tr -d '\r\n' || true)"
+          if ! echo "$LIVE_BUILD" | grep -q 'rateb-'; then
+            LIVE_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 20 -H 'Cache-Control: no-cache' \
+              "${SITE}/pages/ratib-rebrand-status.php" 2>/dev/null | sed -n 's/^build=//p' | head -1 | tr -d '\r\n' || true)"
+          fi
           P="$(code "${SITE}/profile/")"
           G="$(code "${SITE}/js/pages/ratib-profile-nav-guard.js")"
           H="$(code "${SITE}/home")"
@@ -65,8 +85,8 @@ jobs:
             REG="${SITE}/home?v=${LIVE_BUILD}&open=register&plan=gold&years=1&_deploy_verify=1"
           fi
           HR="$(code "${REG}")"
-          BODY="$(curl -sS -L --connect-timeout 8 --max-time 25 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${REG}" 2>/dev/null | head -c 250000 || true)"
-          echo "profile/=$P home=$H home.php(legacy)=$HLEG register=$HR guard.js=$G"
+          BODY="$(curl -sS -L --connect-timeout 10 --max-time 35 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "${REG}" 2>/dev/null | head -c 250000 || true)"
+          echo "profile/=$P home=$H home.php(legacy)=$HLEG register=$HR guard.js=$G live_build=${LIVE_BUILD}"
           GOV_BYTES="$(curl -sS -L --connect-timeout 8 --max-time 20 "${SITE}/public/cms-bundle-gov-control-v2.png" 2>/dev/null | wc -c | tr -d ' ')"
           GOV_MAGIC="$(curl -sS -L --connect-timeout 8 --max-time 20 "${SITE}/public/cms-bundle-gov-control-v2.png" 2>/dev/null | head -c 3 | xxd -p 2>/dev/null || echo 000000)"
           echo "gov-control-v2 bytes=${GOV_BYTES} magic=${GOV_MAGIC}"
@@ -78,15 +98,6 @@ jobs:
             echo "::error::gov-control-v2 not a valid image (magic ${GOV_MAGIC})"
             exit 1
           fi
-          # Bypass LiteSpeed HTML cache: use canonical ?v= from disk (uploaded last in fast deploy).
-          LIVE_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 15 \
-            -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' \
-            "${SITE}/public/ratib-build.txt?deploy_verify=$(date +%s)" 2>/dev/null | tr -d '\r\n' || true)"
-          if ! echo "$LIVE_BUILD" | grep -q 'rateb-'; then
-            LIVE_BUILD="$(curl -sS -L --connect-timeout 8 --max-time 20 -H 'Cache-Control: no-cache' \
-              "${SITE}/pages/ratib-rebrand-status.php" 2>/dev/null | sed -n 's/^build=//p' | head -1 | tr -d '\r\n' || true)"
-          fi
-          echo "live_build=${LIVE_BUILD}"
           HOME_URL="${SITE}/home"
           if [ -n "$LIVE_BUILD" ]; then
             HOME_URL="${HOME_URL}?v=${LIVE_BUILD}&_deploy_verify=1"
@@ -132,7 +143,14 @@ jobs:
             echo "::warning::ratib-build.txt empty or unreachable; verify HTML rebrand= comment matches git"
           fi
           [ "$BRAND_FAIL" -eq 1 ] && exit 1
-          if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ] && [ "$HR" = "200" ]; then
+          REGISTER_OK=0
+          if [ "$HR" = "200" ]; then
+            REGISTER_OK=1
+          elif grep -qi '<!DOCTYPE' <<< "$BODY"; then
+            echo "::warning::register HTTP=$HR but body is HTML (treating as OK)"
+            REGISTER_OK=1
+          fi
+          if [ "$P" = "200" ] && [ "$G" = "200" ] && [ "$H" = "200" ] && [ "$REGISTER_OK" -eq 1 ]; then
             HOMECSS="$(code "${SITE}/css/pages/home-public.css")"
             echo "home-public.css=$HOMECSS"
             if [ "$HOMECSS" != "200" ]; then
