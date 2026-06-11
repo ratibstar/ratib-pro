@@ -1,3 +1,4 @@
+<?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'admin']); ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body p-0">

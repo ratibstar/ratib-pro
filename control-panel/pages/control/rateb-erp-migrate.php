@@ -44,9 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_migrations'])) {
   }
 }
 
-if ($installed) {
-    $schemaReady = control_rateb_erp_schema_ready();
-}
+$dbTest = $installed ? control_rateb_erp_db_test() : ['ok' => false, 'schema' => false, 'db' => control_rateb_erp_db_name(), 'error' => ''];
+$schemaReady = $dbTest['ok'] && $dbTest['schema'];
 
 if (empty($_SESSION['rateb_erp_migrate_csrf'])) {
     $_SESSION['rateb_erp_migrate_csrf'] = bin2hex(random_bytes(16));
@@ -70,11 +69,19 @@ startControlLayout('RATEB ERP — Database Setup', ['css/system-settings.css', '
         <i class="fas <?php echo $installed ? 'fa-circle-check' : 'fa-triangle-exclamation'; ?>"></i>
         <span>ERP files: <?php echo $installed ? 'Found' : 'Missing — upload rateb-erp/ folder'; ?></span>
     </div>
+    <div class="rateb-erp-status-item<?php echo $dbTest['ok'] ? ' rateb-erp-status-ok' : ' rateb-erp-status-warn'; ?>">
+        <i class="fas <?php echo $dbTest['ok'] ? 'fa-link' : 'fa-unlink'; ?>"></i>
+        <span>DB connection: <?php echo $dbTest['ok'] ? 'OK (' . htmlspecialchars((string) $dbTest['db'], ENT_QUOTES, 'UTF-8') . ')' : 'Failed — grant user on ' . htmlspecialchars((string) $dbTest['db'], ENT_QUOTES, 'UTF-8'); ?></span>
+    </div>
     <div class="rateb-erp-status-item<?php echo $schemaReady ? ' rateb-erp-status-ok' : ' rateb-erp-status-warn'; ?>">
         <i class="fas <?php echo $schemaReady ? 'fa-table' : 'fa-database'; ?>"></i>
         <span>Tables: <?php echo $schemaReady ? 'rateb_* tables exist' : 'Not created yet — run migrations below'; ?></span>
     </div>
 </div>
+
+<?php if ($installed && !$dbTest['ok'] && ($dbTest['error'] ?? '') !== '') { ?>
+<div class="alert alert-danger"><?php echo htmlspecialchars((string) $dbTest['error'], ENT_QUOTES, 'UTF-8'); ?></div>
+<?php } ?>
 
 <?php if ($error !== '') { ?>
 <div class="alert alert-danger"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>

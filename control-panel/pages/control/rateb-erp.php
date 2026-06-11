@@ -20,11 +20,8 @@ requireControlPermission(CONTROL_PERM_DASHBOARD, 'control_system_settings', 'vie
 $erpLinks = control_rateb_erp_nav_links();
 $erpDiag = control_rateb_erp_diagnostic();
 $erpInstalled = $erpDiag['installed'];
-$schemaReady = false;
-
-if ($erpInstalled) {
-    $schemaReady = control_rateb_erp_schema_ready();
-}
+$dbTest = $erpInstalled ? control_rateb_erp_db_test() : ['ok' => false, 'schema' => false, 'db' => control_rateb_erp_db_name(), 'error' => ''];
+$schemaReady = $dbTest['ok'] && $dbTest['schema'];
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('RATEB ERP', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
@@ -52,6 +49,14 @@ startControlLayout('RATEB ERP', ['css/system-settings.css', 'css/control/rateb-e
     ارفع مجلد <code>rateb-erp/</code> إلى <code>public_html/rateb-erp/</code> بجانب <code>control-panel/</code> عبر cPanel File Manager،
     أو اعمل <strong>git push</strong> إلى فرع <code>main</code> وانتظر اكتمال النشر التلقائي.
     <div class="mt-2 small text-muted">المسار المتوقع: <code><?php echo htmlspecialchars($erpDiag['resolved'] . '/public/index.php', ENT_QUOTES, 'UTF-8'); ?></code></div>
+</div>
+<?php } elseif ($erpInstalled && !$dbTest['ok']) { ?>
+<div class="alert alert-danger mb-4">
+    <strong><i class="fas fa-database me-1"></i> صلاحيات قاعدة البيانات</strong><br>
+    المستخدم <code><?php echo htmlspecialchars(defined('DB_USER') ? (string) DB_USER : 'outratib_out', ENT_QUOTES, 'UTF-8'); ?></code>
+    لا يستطيع الاتصال بقاعدة <code><?php echo htmlspecialchars((string) $dbTest['db'], ENT_QUOTES, 'UTF-8'); ?></code>.<br>
+    في cPanel → MySQL® Databases → Add User To Database → ALL PRIVILEGES.<br>
+    <span class="small text-muted"><?php echo htmlspecialchars((string) $dbTest['error'], ENT_QUOTES, 'UTF-8'); ?></span>
 </div>
 <?php } elseif (!$schemaReady) { ?>
 <div class="control-settings-card mb-4">

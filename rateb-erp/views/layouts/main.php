@@ -2,6 +2,8 @@
 $locale = rateb_locale();
 $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+$erpRoute = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : '';
+$accountingActive = $erpRoute !== '' && preg_match('#(accounting|chart-of-accounts|journal-entries|invoices|payments|subscriptions)#', $erpRoute);
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="dark" data-bs-theme="dark">
@@ -52,18 +54,14 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
                 echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
             }
             ?>
-            <div class="rateb-nav-section"><?php echo __('accounting'); ?></div>
-            <a href="<?php echo rateb_url('admin/accounting'); ?>" class="rateb-nav-link"><i class="fas fa-calculator"></i><span><?php echo __('accounting'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/chart-of-accounts'); ?>" class="rateb-nav-link"><i class="fas fa-list-ol"></i><span><?php echo __('chart_of_accounts'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/journal-entries'); ?>" class="rateb-nav-link"><i class="fas fa-book"></i><span><?php echo __('journal_entries'); ?></span></a>
+            <div class="rateb-nav-section"><?php echo __('accounting_module'); ?></div>
+            <a href="<?php echo rateb_url('admin/accounting'); ?>" class="rateb-nav-link<?php echo $accountingActive ? ' active' : ''; ?>"><i class="fas fa-calculator"></i><span><?php echo __('accounting_module'); ?></span></a>
             <div class="rateb-nav-section"><?php echo __('access_control'); ?></div>
             <a href="<?php echo rateb_url('admin/access-control'); ?>" class="rateb-nav-link"><i class="fas fa-shield-halved"></i><span><?php echo __('access_control'); ?></span></a>
             <a href="<?php echo rateb_url('admin/users'); ?>" class="rateb-nav-link"><i class="fas fa-users"></i><span><?php echo __('users'); ?></span></a>
             <a href="<?php echo rateb_url('admin/roles'); ?>" class="rateb-nav-link"><i class="fas fa-user-shield"></i><span><?php echo __('roles'); ?></span></a>
             <a href="<?php echo rateb_url('admin/permissions'); ?>" class="rateb-nav-link"><i class="fas fa-key"></i><span><?php echo __('permissions'); ?></span></a>
             <a href="<?php echo rateb_url('admin/plans'); ?>" class="rateb-nav-link"><i class="fas fa-layer-group"></i><span><?php echo __('plans'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/payments'); ?>" class="rateb-nav-link"><i class="fas fa-money-bill-wave"></i><span><?php echo __('payments'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/invoices'); ?>" class="rateb-nav-link"><i class="fas fa-file-invoice"></i><span><?php echo __('invoices'); ?></span></a>
             <a href="<?php echo rateb_url('admin/audit-logs'); ?>" class="rateb-nav-link"><i class="fas fa-clipboard-list"></i><span><?php echo __('audit_logs'); ?></span></a>
             <a href="<?php echo rateb_url('admin/notifications'); ?>" class="rateb-nav-link"><i class="fas fa-bell"></i><span><?php echo __('notifications'); ?></span></a>
             <a href="<?php echo rateb_url('admin/support-tickets'); ?>" class="rateb-nav-link"><i class="fas fa-life-ring"></i><span><?php echo __('support_tickets'); ?></span></a>

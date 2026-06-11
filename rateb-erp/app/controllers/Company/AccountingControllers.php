@@ -23,8 +23,9 @@ final class AccountingDashboardController extends Controller
         $service->ensureDefaultAccounts($companyId);
 
         $this->view('company/accounting/dashboard', [
-            'title' => __('accounting'),
+            'title' => __('accounting_module'),
             'trial' => $service->trialBalance($companyId),
+            'summary' => $service->financialSummary($companyId),
             'csrf' => Csrf::token(),
         ], 'company');
     }

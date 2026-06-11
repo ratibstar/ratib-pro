@@ -69,3 +69,70 @@
     justify-content: space-between;
     margin-bottom: 1rem;
 }
+
+.rateb-accounting-nav {
+    background: var(--rateb-surface);
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius);
+    padding: 0.75rem 1rem;
+}
+
+.rateb-accounting-nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    color: var(--rateb-primary);
+}
+
+.rateb-accounting-nav-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.rateb-accounting-tab {
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    text-decoration: none;
+    color: var(--rateb-text-muted);
+    border: 1px solid transparent;
+}
+
+.rateb-accounting-tab:hover {
+    color: var(--rateb-text);
+    background: var(--rateb-surface-2);
+}
+
+.rateb-accounting-tab.active {
+    background: var(--rateb-primary);
+    color: #fff;
+    border-color: var(--rateb-primary);
+}
+
+.rateb-stat-card {
+    background: var(--rateb-surface);
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius);
+    padding: 1rem;
+    height: 100%;
+}
+
+.rateb-stat-label {
+    font-size: 0.8rem;
+    color: var(--rateb-text-muted);
+    margin-bottom: 0.35rem;
+}
+
+.rateb-stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.rateb-stat-meta {
+    font-size: 0.75rem;
+    color: var(--rateb-text-muted);
+    margin-top: 0.25rem;
+}

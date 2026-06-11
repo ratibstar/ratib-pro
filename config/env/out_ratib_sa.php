@@ -22,6 +22,10 @@ define('DB_USER', ($dbUser !== false && $dbUser !== '') ? (string) $dbUser : 'ou
 define('DB_PASS', ($dbPass !== false && $dbPass !== '') ? (string) $dbPass : '9s%BpMr1]dfb');
 define('DB_NAME', ($dbName !== false && $dbName !== '') ? (string) $dbName : 'outratib_out');
 define('CONTROL_PANEL_DB_NAME', getenv('CONTROL_PANEL_DB_NAME') ?: 'outratib_control_panel_db');
+if (!defined('RATEB_ERP_DB_NAME')) {
+    $_erpDb = getenv('RATEB_ERP_DB_NAME');
+    define('RATEB_ERP_DB_NAME', ($_erpDb !== false && $_erpDb !== '') ? (string) $_erpDb : 'outratib_rateb-erp');
+}
 
 define('SITE_URL', 'https://out.ratib.sa');
 define('SINGLE_URL_MODE', true);  // All countries use same URL; DB switches by country selection

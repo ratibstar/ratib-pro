@@ -232,6 +232,52 @@ final class AccountingService
         return true;
     }
 
+    /** @return array<string, mixed> */
+    public function financialSummary(?int $companyId): array
+    {
+        $pdo = Database::connection();
+        $cidSql = $companyId !== null ? ' AND company_id = ' . (int) $companyId : '';
+        $cidParam = $companyId !== null ? ['cid' => $companyId] : [];
+
+        $invoicePaid = $pdo->query(
+            "SELECT COALESCE(SUM(total_amount), 0) AS t, COUNT(*) AS c FROM rateb_invoices WHERE status = 'paid'" . $cidSql
+        )->fetch() ?: ['t' => 0, 'c' => 0];
+
+        $invoiceOpen = $pdo->query(
+            "SELECT COALESCE(SUM(total_amount), 0) AS t, COUNT(*) AS c FROM rateb_invoices WHERE status IN ('sent','overdue','draft')" . $cidSql
+        )->fetch() ?: ['t' => 0, 'c' => 0];
+
+        $payments = $pdo->query(
+            "SELECT COALESCE(SUM(amount), 0) AS t, COUNT(*) AS c FROM rateb_payments WHERE status = 'completed'" . $cidSql
+        )->fetch() ?: ['t' => 0, 'c' => 0];
+
+        $journal = (new JournalEntry())->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_journal_entries WHERE status = :st' . ($companyId !== null ? ' AND company_id = :cid' : ''),
+            array_merge(['st' => 'posted'], $cidParam)
+        ) ?: ['c' => 0];
+
+        $accounts = (new ChartOfAccount())->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_chart_of_accounts WHERE is_active = 1' . ($companyId !== null ? ' AND company_id = :cid' : ' AND company_id IS NULL'),
+            $cidParam
+        ) ?: ['c' => 0];
+
+        $poReceived = $pdo->query(
+            "SELECT COALESCE(SUM(total_amount), 0) AS t FROM rateb_purchase_orders WHERE status IN ('received','confirmed')" . $cidSql
+        )->fetch() ?: ['t' => 0];
+
+        return [
+            'invoices_paid_total' => (float) ($invoicePaid['t'] ?? 0),
+            'invoices_paid_count' => (int) ($invoicePaid['c'] ?? 0),
+            'invoices_open_total' => (float) ($invoiceOpen['t'] ?? 0),
+            'invoices_open_count' => (int) ($invoiceOpen['c'] ?? 0),
+            'payments_total' => (float) ($payments['t'] ?? 0),
+            'payments_count' => (int) ($payments['c'] ?? 0),
+            'journal_posted' => (int) ($journal['c'] ?? 0),
+            'accounts_active' => (int) ($accounts['c'] ?? 0),
+            'procurement_received' => (float) ($poReceived['t'] ?? 0),
+        ];
+    }
+
     /** @return array<int, array<string, mixed>> */
     public function trialBalance(?int $companyId): array
     {

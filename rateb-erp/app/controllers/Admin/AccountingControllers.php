@@ -34,11 +34,11 @@ final class AccountingDashboardController extends Controller
     {
         $service = new AccountingService();
         $service->ensureDefaultAccounts(null);
-        $trial = $service->trialBalance(null);
 
         $this->view('admin/accounting/dashboard', [
-            'title' => __('accounting'),
-            'trial' => $trial,
+            'title' => __('accounting_module'),
+            'trial' => $service->trialBalance(null),
+            'summary' => $service->financialSummary(null),
             'csrf' => Csrf::token(),
         ], 'main');
     }

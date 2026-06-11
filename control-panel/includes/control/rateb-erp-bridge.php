@@ -86,27 +86,32 @@ function control_rateb_erp_ensure_root(): string
 
 function control_rateb_erp_schema_ready(): bool
 {
+    $test = control_rateb_erp_db_test();
+    return $test['ok'] && $test['schema'];
+}
+
+/** @return array{ok:bool,schema:bool,db:string,error:string} */
+function control_rateb_erp_db_test(): array
+{
+    $result = ['ok' => false, 'schema' => false, 'db' => control_rateb_erp_db_name(), 'error' => ''];
     if (!control_rateb_erp_is_installed()) {
-        return false;
+        $result['error'] = 'ERP files missing on server.';
+        return $result;
     }
     try {
         control_rateb_erp_ensure_root();
         require_once RATEB_ROOT . '/config/database.php';
-        $dsn = sprintf(
-            'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
-            RATEB_DB_HOST,
-            RATEB_DB_PORT,
-            RATEB_DB_NAME
-        );
-        $pdo = new PDO($dsn, RATEB_DB_USER, RATEB_DB_PASS, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        ]);
+        require_once RATEB_ROOT . '/app/Core/Database.php';
+        $pdo = \Rateb\App\Core\Database::connection();
+        $result['ok'] = true;
+        $result['db'] = \Rateb\App\Core\Database::resolvedDatabaseName();
         $stmt = $pdo->query("SHOW TABLES LIKE 'rateb_companies'");
-        return $stmt !== false && $stmt->rowCount() > 0;
+        $result['schema'] = $stmt !== false && $stmt->rowCount() > 0;
     } catch (Throwable $e) {
-        error_log('RATEB ERP schema check: ' . $e->getMessage());
-        return false;
+        $result['error'] = $e->getMessage();
+        error_log('RATEB ERP DB test: ' . $e->getMessage());
     }
+    return $result;
 }
 
 function control_rateb_erp_migrate_page_url(): string
@@ -129,6 +134,7 @@ function control_rateb_erp_nav_links(): array
         'assets' => ['route' => 'admin/assets', 'label' => 'Assets', 'icon' => 'fa-toolbox', 'description' => 'Fixed assets and medical equipment registry.'],
         'contracts' => ['route' => 'admin/contracts', 'label' => 'Contracts', 'icon' => 'fa-file-contract', 'description' => 'Healthcare and procurement contracts.'],
         'reports' => ['route' => 'admin/reports', 'label' => 'Reports', 'icon' => 'fa-chart-pie', 'description' => 'Platform analytics and export views.'],
+        'accounting' => ['route' => 'admin/accounting', 'label' => 'Accounting', 'icon' => 'fa-calculator', 'description' => 'Full accounting: chart of accounts, journals, invoices, payments, trial balance.'],
         'settings' => ['route' => 'admin/settings', 'label' => 'Settings', 'icon' => 'fa-gear', 'description' => 'System settings, templates, and configuration.'],
     ];
 

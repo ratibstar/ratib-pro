@@ -1,7 +1,29 @@
-<?php $trial = $trial ?? []; ?>
-<div class="d-flex flex-wrap gap-2 mb-4">
-    <a href="<?php echo rateb_url('company/chart-of-accounts'); ?>" class="btn btn-outline-primary btn-sm"><i class="fas fa-list"></i> <?php echo __('chart_of_accounts'); ?></a>
-    <a href="<?php echo rateb_url('company/journal-entries'); ?>" class="btn btn-outline-primary btn-sm"><i class="fas fa-book"></i> <?php echo __('journal_entries'); ?></a>
+<?php
+$trial = $trial ?? [];
+$summary = $summary ?? [];
+Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']);
+?>
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="rateb-stat-card">
+            <div class="rateb-stat-label"><?php echo __('invoices_paid'); ?></div>
+            <div class="rateb-stat-value"><?php echo number_format((float) ($summary['invoices_paid_total'] ?? 0), 2); ?> <small>SAR</small></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="rateb-stat-card">
+            <div class="rateb-stat-label"><?php echo __('payments'); ?></div>
+            <div class="rateb-stat-value"><?php echo number_format((float) ($summary['payments_total'] ?? 0), 2); ?> <small>SAR</small></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="rateb-stat-card">
+            <div class="rateb-stat-label"><?php echo __('procurement'); ?></div>
+            <div class="rateb-stat-value"><?php echo number_format((float) ($summary['procurement_received'] ?? 0), 2); ?> <small>SAR</small></div>
+        </div>
+    </div>
+</div>
+<div class="d-flex flex-wrap gap-2 mb-3">
     <form method="post" action="<?php echo rateb_url('company/accounting/sync'); ?>" class="d-inline">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-sync"></i> <?php echo __('accounting_sync'); ?></button>
@@ -31,7 +53,7 @@
                 <tr>
                     <td><?php echo Rateb\App\Core\View::escape($row['code']); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($name); ?></td>
-                    <td><?php echo __( (string) ($row['account_type'] ?? '')); ?></td>
+                    <td><?php echo __((string) ($row['account_type'] ?? '')); ?></td>
                     <td class="text-end"><?php echo number_format((float) $row['total_debit'], 2); ?></td>
                     <td class="text-end"><?php echo number_format((float) $row['total_credit'], 2); ?></td>
                 </tr>
