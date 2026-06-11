@@ -11,9 +11,11 @@
     border-right: none;
 }
 
-/* Keep margin on inline-start only — it flips to the physical right in RTL */
 [dir="rtl"] .rateb-main {
-    margin-inline-end: 0;
+    margin-left: 0;
+    margin-right: 260px;
+    width: calc(100% - 260px);
+    max-width: calc(100% - 260px);
 }
 
 [dir="rtl"] .rateb-nav-section {
@@ -36,7 +38,7 @@
     flex-direction: row-reverse;
 }
 
-[dir="rtl"] .rateb-topbar .d-flex {
+[dir="rtl"] .rateb-topbar > .d-flex {
     flex-direction: row-reverse;
 }
 
@@ -54,10 +56,6 @@
     flex-direction: row-reverse;
 }
 
-[dir="rtl"] .rateb-accounting-nav-tabs {
-    justify-content: flex-start;
-}
-
 [dir="rtl"] .rateb-toolbar {
     flex-direction: row-reverse;
 }
@@ -70,10 +68,6 @@
 [dir="rtl"] .form-label,
 [dir="rtl"] .form-check-label {
     text-align: right;
-}
-
-[dir="rtl"] .input-group > :not(:first-child) {
-    border-radius: 0.375rem 0 0 0.375rem;
 }
 
 [dir="rtl"] .rateb-widget {
@@ -103,6 +97,8 @@
     }
 
     [dir="rtl"] .rateb-main {
-        margin-inline-start: 0;
+        margin-right: 0;
+        width: 100%;
+        max-width: 100%;
     }
 }

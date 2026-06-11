@@ -8,6 +8,8 @@ body.rateb-app {
 .rateb-wrapper {
     display: flex;
     min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 .rateb-sidebar {
@@ -65,11 +67,16 @@ body.rateb-app {
 }
 
 .rateb-main {
-    flex: 1;
-    margin-inline-start: 260px;
+    flex: 1 1 auto;
+    margin-left: 260px;
+    margin-right: 0;
+    width: calc(100% - 260px);
+    max-width: calc(100% - 260px);
     display: flex;
     flex-direction: column;
     min-width: 0;
+    position: relative;
+    z-index: 1;
 }
 
 .rateb-topbar {
@@ -167,6 +174,9 @@ body.rateb-app {
     }
 
     .rateb-main {
-        margin-inline-start: 0;
+        margin-left: 0;
+        margin-right: 0;
+        width: 100%;
+        max-width: 100%;
     }
 }

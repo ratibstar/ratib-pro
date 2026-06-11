@@ -10,6 +10,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RATEB');
 define('RATEB_APP_VERSION', '1.0.0');
+define('RATEB_ASSET_BUILD', '20260611-rtl3');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -27,10 +28,13 @@ define('RATEB_SUPPORTED_LOCALES', ['en', 'ar']);
 if (!function_exists('rateb_asset')) {
     function rateb_asset(string $path): string
     {
+        $path = ltrim($path, '/');
+        $ver = defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1';
+        $suffix = '?v=' . rawurlencode($ver);
         if (defined('RATEB_CP_MODE') && RATEB_CP_MODE && defined('RATEB_CP_ASSETS_URL')) {
-            return rtrim((string) RATEB_CP_ASSETS_URL, '/') . '/' . ltrim($path, '/');
+            return rtrim((string) RATEB_CP_ASSETS_URL, '/') . '/' . $path . $suffix;
         }
-        return RATEB_BASE_URL . '/assets/' . ltrim($path, '/');
+        return RATEB_BASE_URL . '/assets/' . $path . $suffix;
     }
 }
 
