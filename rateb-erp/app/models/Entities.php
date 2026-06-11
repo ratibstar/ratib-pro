@@ -17,7 +17,7 @@ final class Asset extends Model
     protected string $table = 'rateb_assets';
     protected bool $tenantScoped = true;
     protected array $fillable = [
-        'asset_tag', 'name', 'category', 'purchase_date', 'purchase_cost',
+        'company_id', 'asset_tag', 'name', 'category', 'purchase_date', 'purchase_cost',
         'current_value', 'location', 'status',
     ];
 }
@@ -37,7 +37,7 @@ final class Contract extends Model
     protected string $table = 'rateb_contracts';
     protected bool $tenantScoped = true;
     protected array $fillable = [
-        'contract_no', 'title', 'supplier_id', 'contract_type', 'start_date',
+        'company_id', 'contract_no', 'title', 'supplier_id', 'contract_type', 'start_date',
         'end_date', 'value', 'status', 'document_path',
     ];
 }
@@ -195,7 +195,42 @@ final class Notification extends Model
 {
     protected string $table = 'rateb_notifications';
     protected bool $tenantScoped = false;
-    protected array $fillable = ['company_id', 'user_id', 'title', 'message', 'type', 'is_read'];
+    protected array $fillable = [
+        'company_id', 'user_id', 'title', 'message', 'type', 'trigger_type',
+        'entity_type', 'entity_id', 'is_read',
+    ];
+}
+
+final class PurchaseRequestItem extends Model
+{
+    protected string $table = 'rateb_purchase_request_items';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'purchase_request_id', 'item_name', 'sku', 'quantity', 'unit', 'unit_price', 'total_price',
+    ];
+}
+
+final class ProductCategory extends Model
+{
+    protected string $table = 'rateb_product_categories';
+    protected bool $tenantScoped = true;
+    protected array $fillable = ['name', 'name_ar', 'parent_id', 'is_active'];
+}
+
+final class Document extends Model
+{
+    protected string $table = 'rateb_documents';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'entity_type', 'entity_id', 'title', 'file_name', 'file_path', 'mime_type', 'file_size', 'uploaded_by',
+    ];
+}
+
+final class ApprovalWorkflow extends Model
+{
+    protected string $table = 'rateb_approval_workflows';
+    protected bool $tenantScoped = false;
+    protected array $fillable = ['company_id', 'name', 'entity_type', 'is_active'];
 }
 
 final class AuditLog extends Model

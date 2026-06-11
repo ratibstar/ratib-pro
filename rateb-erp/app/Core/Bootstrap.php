@@ -37,17 +37,21 @@ final class Bootstrap
         }
         foreach ([
             '/app/controllers/CrudController.php',
+            '/app/helpers/LineItems.php',
             '/app/services/AuditService.php',
             '/app/controllers/Admin/AdminControllers.php',
+            '/app/controllers/Admin/ExtendedControllers.php',
+            '/app/controllers/Admin/AccountingControllers.php',
             '/app/controllers/Company/CompanyControllers.php',
+            '/app/controllers/Company/ExtendedControllers.php',
+            '/app/controllers/Company/AccountingControllers.php',
+            '/app/controllers/Shared/PasswordResetController.php',
             '/app/controllers/Api/ApiController.php',
             '/app/Core/Middleware/Middleware.php',
             '/app/services/MigrationService.php',
             '/app/services/PlanLimitService.php',
             '/app/services/AccountingService.php',
             '/app/services/BillingService.php',
-            '/app/controllers/Admin/AccountingControllers.php',
-            '/app/controllers/Company/AccountingControllers.php',
         ] as $bundle) {
             $f = $basePath . $bundle;
             if (is_file($f)) {

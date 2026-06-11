@@ -111,6 +111,88 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         }
         return $data;
     }
+
+    public function create(): void
+    {
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('create') . ' ' . __($this->entityName),
+            'item' => null,
+            'lineItems' => [],
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+        ], $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], $this->layout());
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('edit') . ' ' . __($this->entityName),
+            'item' => $item,
+            'lineItems' => \Rateb\App\Helpers\LineItems::loadPurchaseRequestItems($id),
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+        ], $this->layout());
+    }
+
+    public function store(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectData();
+        $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
+        if ($lines !== []) {
+            $data['total_estimated'] = array_sum(array_column($lines, 'total_price'));
+        }
+        $id = $this->model->create($data);
+        if ($lines !== []) {
+            \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($id, $lines);
+        }
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function update(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectData();
+        $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
+        if ($lines !== []) {
+            $data['total_estimated'] = array_sum(array_column($lines, 'total_price'));
+        }
+        $this->model->update($id, $data);
+        \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($id, $lines);
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function export(): void
+    {
+        $items = $this->model->all(500, 0);
+        $columns = [
+            ['name' => 'request_no', 'label' => __('request_no')],
+            ['name' => 'title', 'label' => __('title')],
+            ['name' => 'status', 'label' => __('status')],
+            ['name' => 'total_estimated', 'label' => __('total')],
+        ];
+        \Rateb\App\Controllers\Shared\ExportController::send('purchase_requests', $columns, $items, __('purchase_requests'));
+    }
 }
 
 final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudController
@@ -142,7 +224,93 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         if (empty($data['order_no'])) {
             $data['order_no'] = $this->model->generateOrderNo();
         }
+        if (empty($data['order_date'])) {
+            $data['order_date'] = date('Y-m-d');
+        }
         return $data;
+    }
+
+    public function create(): void
+    {
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('create') . ' ' . __($this->entityName),
+            'item' => null,
+            'lineItems' => [],
+            'suppliers' => (new \Rateb\App\Models\Supplier())->all(200, 0),
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+        ], $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], $this->layout());
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('edit') . ' ' . __($this->entityName),
+            'item' => $item,
+            'lineItems' => \Rateb\App\Helpers\LineItems::loadPurchaseOrderItems($id),
+            'suppliers' => (new \Rateb\App\Models\Supplier())->all(200, 0),
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+        ], $this->layout());
+    }
+
+    public function store(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectData();
+        $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
+        $id = $this->model->create($data);
+        $total = \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
+        if ($total > 0) {
+            $this->model->update($id, ['total_amount' => $total, 'subtotal' => $total]);
+        }
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function update(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectData();
+        $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
+        $total = \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
+        if ($total > 0) {
+            $data['total_amount'] = $total;
+            $data['subtotal'] = $total;
+        }
+        $this->model->update($id, $data);
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function export(): void
+    {
+        $items = $this->model->all(500, 0);
+        $columns = [
+            ['name' => 'order_no', 'label' => __('order_no')],
+            ['name' => 'status', 'label' => __('status')],
+            ['name' => 'order_date', 'label' => __('order_date')],
+            ['name' => 'total_amount', 'label' => __('total')],
+        ];
+        \Rateb\App\Controllers\Shared\ExportController::send('purchase_orders', $columns, $items, __('purchase_orders'));
     }
 
     public function show(array $params): void
@@ -154,7 +322,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             $this->view('errors/404', ['title' => '404'], 'company');
             return;
         }
-        $items = (new \Rateb\App\Models\PurchaseItem())->all(100, 0, ['purchase_order_id' => $id]);
+        $items = \Rateb\App\Helpers\LineItems::loadPurchaseOrderItems($id);
         $this->view('company/purchase-orders/show', [
             'title' => __('purchase_orders'),
             'order' => $item,
@@ -385,7 +553,24 @@ final class ReportsController extends Controller
             'title' => __('reports'),
             'metrics' => $service->companyMetrics($companyId),
             'csrf' => Csrf::token(),
+            'exportRoute' => rateb_url('company/reports/export'),
         ], 'company');
+    }
+
+    public function export(): void
+    {
+        $companyId = (int) SessionManager::get('rateb_company_id');
+        TenantContext::setCompanyId($companyId);
+        $m = (new DashboardService())->companyMetrics($companyId);
+        \Rateb\App\Controllers\Shared\ExportController::send('company_reports', [
+            ['name' => 'metric', 'label' => __('metric')],
+            ['name' => 'value', 'label' => __('value')],
+        ], [
+            ['metric' => __('purchase_requests'), 'value' => $m['purchase_requests']],
+            ['metric' => __('purchase_orders'), 'value' => $m['purchase_orders']],
+            ['metric' => __('inventory_value'), 'value' => $m['inventory_value']],
+            ['metric' => __('suppliers'), 'value' => $m['suppliers']],
+        ], __('reports'));
     }
 }
 
@@ -404,6 +589,16 @@ final class NotificationsController extends Controller
             'items' => $items,
             'csrf' => Csrf::token(),
         ], 'company');
+    }
+
+    public function markRead(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_url('company/notifications'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        (new \Rateb\App\Services\NotificationService())->markRead($id, (int) SessionManager::get('rateb_user_id'));
+        Response::redirect(rateb_url('company/notifications'));
     }
 }
 

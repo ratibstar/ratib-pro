@@ -20,7 +20,10 @@ use Rateb\App\Controllers\Company\TendersController;
 use Rateb\App\Controllers\Company\WarehousesController;
 use Rateb\App\Controllers\Company\AccountingDashboardController as CompanyAccountingDashboardController;
 use Rateb\App\Controllers\Company\ChartOfAccountsController as CompanyChartOfAccountsController;
-use Rateb\App\Controllers\Company\JournalEntriesController as CompanyJournalEntriesController;
+use Rateb\App\Controllers\Company\ProductCategoriesController;
+use Rateb\App\Controllers\Company\StockMovementsController;
+use Rateb\App\Controllers\Company\DocumentsController;
+use Rateb\App\Controllers\Company\WorkflowsController;
 
 require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
@@ -72,6 +75,29 @@ $router->get('/company/journal-entries', [CompanyJournalEntriesController::class
 $router->get('/company/journal-entries/{id}', [CompanyJournalEntriesController::class, 'show'], rateb_company_mw('accounting'));
 
 $router->get('/company/reports', [ReportsController::class, 'index'], rateb_company_mw('reports'));
+$router->get('/company/reports/export', [ReportsController::class, 'export'], rateb_company_mw('reports'));
+$router->get('/company/purchase-requests/export', [PurchaseRequestsController::class, 'export'], rateb_company_mw('procurement'));
+$router->get('/company/purchase-orders/export', [PurchaseOrdersController::class, 'export'], rateb_company_mw('procurement'));
+
+$router->get('/company/stock-movements', [StockMovementsController::class, 'index'], rateb_company_mw('inventory'));
+$router->post('/company/stock-movements', [StockMovementsController::class, 'store'], rateb_company_mw('inventory'));
+$router->get('/company/stock-movements/export', [StockMovementsController::class, 'export'], rateb_company_mw('reports'));
+
+$router->get('/company/documents', [DocumentsController::class, 'index'], rateb_company_mw('documents'));
+$router->post('/company/documents', [DocumentsController::class, 'store'], rateb_company_mw('documents'));
+
+$router->get('/company/workflows', [WorkflowsController::class, 'index'], rateb_company_mw('workflows'));
+$router->post('/company/workflows/{id}/approve', [WorkflowsController::class, 'approve'], rateb_company_mw('workflows'));
+$router->post('/company/workflows/{id}/reject', [WorkflowsController::class, 'reject'], rateb_company_mw('workflows'));
+
+$router->get('/company/product-categories', [ProductCategoriesController::class, 'index'], rateb_company_mw('inventory'));
+$router->get('/company/product-categories/create', [ProductCategoriesController::class, 'create'], rateb_company_mw('inventory'));
+$router->post('/company/product-categories', [ProductCategoriesController::class, 'store'], rateb_company_mw('inventory'));
+$router->get('/company/product-categories/{id}/edit', [ProductCategoriesController::class, 'edit'], rateb_company_mw('inventory'));
+$router->post('/company/product-categories/{id}', [ProductCategoriesController::class, 'update'], rateb_company_mw('inventory'));
+$router->post('/company/product-categories/{id}/delete', [ProductCategoriesController::class, 'destroy'], rateb_company_mw('inventory'));
+
 $router->get('/company/notifications', [NotificationsController::class, 'index'], rateb_company_mw());
+$router->post('/company/notifications/{id}/read', [NotificationsController::class, 'markRead'], rateb_company_mw());
 $router->get('/company/profile', [ProfileController::class, 'index'], rateb_company_mw());
 $router->post('/company/profile', [ProfileController::class, 'update'], rateb_company_mw());

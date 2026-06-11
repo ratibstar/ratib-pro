@@ -8,6 +8,18 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+    (function () {
+        try {
+            var mode = localStorage.getItem('rateb_theme') || 'dark';
+            var bs = mode === 'auto'
+                ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : (mode === 'light' ? 'light' : 'dark');
+            document.documentElement.setAttribute('data-theme', mode);
+            document.documentElement.setAttribute('data-bs-theme', bs);
+        } catch (e) {}
+    })();
+    </script>
     <title><?php echo Rateb\App\Core\View::escape($title ?? RATEB_APP_NAME); ?> | <?php echo __('rateb_erp'); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,6 +35,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
     <link href="<?php echo rateb_asset('css/components.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/dark.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/rtl.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_asset('css/light.css'); ?>" rel="stylesheet">
 </head>
 <body class="rateb-app<?php echo $dir === 'rtl' ? ' rateb-rtl' : ''; ?>">
 <div class="rateb-wrapper">
@@ -33,22 +46,57 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
         </div>
         <nav>
             <a href="<?php echo rateb_url('company'); ?>" class="rateb-nav-link"><i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span></a>
+            <div class="rateb-nav-section"><?php echo __('procurement'); ?></div>
             <?php
-            $links = [
+            $procLinks = [
                 ['company/purchase-requests', 'purchase_requests', 'fa-file-circle-plus'],
                 ['company/purchase-orders', 'purchase_orders', 'fa-file-invoice'],
                 ['company/rfq', 'rfq', 'fa-comments-dollar'],
                 ['company/quotations', 'quotations', 'fa-file-signature'],
-                ['company/suppliers', 'suppliers', 'fa-truck-field'],
-                ['company/supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke'],
+                ['company/workflows', 'workflows', 'fa-diagram-project'],
+            ];
+            foreach ($procLinks as $link) {
+                $active = strpos($currentPath, $link[0]) !== false ? ' active' : '';
+                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
+                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
+            }
+            ?>
+            <div class="rateb-nav-section"><?php echo __('inventory'); ?></div>
+            <?php
+            $invLinks = [
                 ['company/inventory', 'inventory', 'fa-boxes-stacked'],
                 ['company/warehouses', 'warehouses', 'fa-warehouse'],
-                ['company/assets', 'assets', 'fa-toolbox'],
-                ['company/medical-devices', 'medical_devices', 'fa-stethoscope'],
+                ['company/stock-movements', 'stock_movements', 'fa-arrows-rotate'],
+                ['company/product-categories', 'product_categories', 'fa-tags'],
+            ];
+            foreach ($invLinks as $link) {
+                $active = strpos($currentPath, $link[0]) !== false ? ' active' : '';
+                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
+                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
+            }
+            ?>
+            <div class="rateb-nav-section"><?php echo __('suppliers'); ?></div>
+            <?php
+            $supLinks = [
+                ['company/suppliers', 'suppliers', 'fa-truck-field'],
+                ['company/supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke'],
+            ];
+            foreach ($supLinks as $link) {
+                $active = strpos($currentPath, $link[0]) !== false ? ' active' : '';
+                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
+                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
+            }
+            ?>
+            <div class="rateb-nav-section"><?php echo __('contracts'); ?> / <?php echo __('assets'); ?></div>
+            <?php
+            $links = [
                 ['company/contracts', 'contracts', 'fa-file-contract'],
                 ['company/tenders', 'tenders', 'fa-gavel'],
+                ['company/assets', 'assets', 'fa-toolbox'],
+                ['company/medical-devices', 'medical_devices', 'fa-stethoscope'],
                 ['company/accounting', 'accounting_module', 'fa-calculator'],
                 ['company/reports', 'reports', 'fa-chart-pie'],
+                ['company/documents', 'documents', 'fa-folder-open'],
                 ['company/notifications', 'notifications', 'fa-bell'],
                 ['company/profile', 'profile', 'fa-user-gear'],
             ];
@@ -90,6 +138,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?php echo rateb_asset('js/theme.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/lang.js'); ?>"></script>
+<script src="<?php echo rateb_asset('js/line-items.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/app.js'); ?>"></script>
 </body>
 </html>

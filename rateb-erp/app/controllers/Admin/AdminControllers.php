@@ -1185,8 +1185,9 @@ final class ProcurementController extends Controller
         $po = new \Rateb\App\Models\PurchaseOrder();
         $this->view('admin/procurement/index', [
             'title' => __('procurement'),
-            'purchase_requests' => $pr->all(20, 0),
-            'purchase_orders' => $po->all(20, 0),
+            'purchase_requests' => $pr->all(50, 0),
+            'purchase_orders' => $po->all(50, 0),
+            'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -1217,6 +1218,7 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = 'admin/suppliers';
         $this->entityName = 'suppliers';
         $this->fields = [
+            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'number'],
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
             ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
             ['name' => 'phone', 'label' => 'Phone', 'type' => 'text'],
@@ -1234,6 +1236,7 @@ final class AssetsController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = 'admin/assets';
         $this->entityName = 'assets';
         $this->fields = [
+            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'number'],
             ['name' => 'asset_tag', 'label' => 'Tag', 'type' => 'text'],
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
             ['name' => 'category', 'label' => 'Category', 'type' => 'text'],
@@ -1251,6 +1254,7 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = 'admin/contracts';
         $this->entityName = 'contracts';
         $this->fields = [
+            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'number'],
             ['name' => 'contract_no', 'label' => 'Contract No', 'type' => 'text'],
             ['name' => 'title', 'label' => 'Title', 'type' => 'text'],
             ['name' => 'start_date', 'label' => 'Start', 'type' => 'date'],

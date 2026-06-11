@@ -20,19 +20,56 @@ abstract class Model
         $this->db = Database::connection();
     }
 
+    /** Super Admin on admin portal sees all tenants; company users stay scoped. */
+    protected function appliesTenantScope(): bool
+    {
+        if (!$this->tenantScoped) {
+            return false;
+        }
+        if (TenantContext::isSuperAdmin()) {
+            return false;
+        }
+        return TenantContext::companyId() !== null;
+    }
+
+    /** @return array{0:string,1:array<string,mixed>} */
+    protected function tenantFilterClause(string $alias = ''): array
+    {
+        if (!$this->appliesTenantScope()) {
+            $adminFilter = $this->adminCompanyFilterClause($alias);
+            if ($adminFilter[0] !== '') {
+                return $adminFilter;
+            }
+            return ['', []];
+        }
+
+        $col = ($alias !== '' ? $alias . '.' : '') . $this->tenantColumn;
+        return [" AND {$col} = :company_id", ['company_id' => TenantContext::companyId()]];
+    }
+
+    /** Optional ?company_id= filter for Super Admin list views. */
+    /** @return array{0:string,1:array<string,mixed>} */
+    protected function adminCompanyFilterClause(string $alias = ''): array
+    {
+        if (!TenantContext::isSuperAdmin() || !$this->tenantScoped) {
+            return ['', []];
+        }
+        $filterId = (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
+        if ($filterId < 1) {
+            return ['', []];
+        }
+        $col = ($alias !== '' ? $alias . '.' : '') . $this->tenantColumn;
+        return [" AND {$col} = :admin_company_filter", ['admin_company_filter' => $filterId]];
+    }
+
     public function find(int $id): ?array
     {
         $sql = "SELECT * FROM {$this->table} WHERE {$this->primaryKey} = :id";
         $params = ['id' => $id];
 
-        if ($this->tenantScoped) {
-            $companyId = TenantContext::companyId();
-            if ($companyId === null) {
-                return null;
-            }
-            $sql .= " AND {$this->tenantColumn} = :company_id";
-            $params['company_id'] = $companyId;
-        }
+        [$extra, $extraParams] = $this->tenantFilterClause();
+        $sql .= $extra;
+        $params = array_merge($params, $extraParams);
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -45,14 +82,9 @@ abstract class Model
         $sql = "SELECT * FROM {$this->table} WHERE 1=1";
         $params = [];
 
-        if ($this->tenantScoped) {
-            $companyId = TenantContext::companyId();
-            if ($companyId === null) {
-                return [];
-            }
-            $sql .= " AND {$this->tenantColumn} = :company_id";
-            $params['company_id'] = $companyId;
-        }
+        [$extra, $extraParams] = $this->tenantFilterClause();
+        $sql .= $extra;
+        $params = array_merge($params, $extraParams);
 
         foreach ($filters as $column => $value) {
             if ($value === null || $value === '') {
@@ -78,14 +110,9 @@ abstract class Model
         $sql = "SELECT COUNT(*) AS c FROM {$this->table} WHERE 1=1";
         $params = [];
 
-        if ($this->tenantScoped) {
-            $companyId = TenantContext::companyId();
-            if ($companyId === null) {
-                return 0;
-            }
-            $sql .= " AND {$this->tenantColumn} = :company_id";
-            $params['company_id'] = $companyId;
-        }
+        [$extra, $extraParams] = $this->tenantFilterClause();
+        $sql .= $extra;
+        $params = array_merge($params, $extraParams);
 
         foreach ($filters as $column => $value) {
             if ($value === null || $value === '') {
@@ -103,7 +130,12 @@ abstract class Model
     public function create(array $data): int
     {
         if ($this->tenantScoped) {
-            $data[$this->tenantColumn] = TenantContext::companyId();
+            $companyId = TenantContext::companyId();
+            if ($companyId !== null) {
+                $data[$this->tenantColumn] = $companyId;
+            } elseif (empty($data[$this->tenantColumn]) && !TenantContext::isSuperAdmin()) {
+                throw new \RuntimeException('Company context required for tenant-scoped create.');
+            }
         }
 
         $data = $this->filterFillable($data);
@@ -137,14 +169,9 @@ abstract class Model
         $sql = "UPDATE {$this->table} SET " . implode(', ', $sets) . " WHERE {$this->primaryKey} = :id";
         $data['id'] = $id;
 
-        if ($this->tenantScoped) {
-            $companyId = TenantContext::companyId();
-            if ($companyId === null) {
-                return false;
-            }
-            $sql .= " AND {$this->tenantColumn} = :company_id";
-            $data['company_id'] = $companyId;
-        }
+        [$extra, $extraParams] = $this->tenantFilterClause();
+        $sql .= $extra;
+        $data = array_merge($data, $extraParams);
 
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($data);
@@ -155,14 +182,9 @@ abstract class Model
         $sql = "DELETE FROM {$this->table} WHERE {$this->primaryKey} = :id";
         $params = ['id' => $id];
 
-        if ($this->tenantScoped) {
-            $companyId = TenantContext::companyId();
-            if ($companyId === null) {
-                return false;
-            }
-            $sql .= " AND {$this->tenantColumn} = :company_id";
-            $params['company_id'] = $companyId;
-        }
+        [$extra, $extraParams] = $this->tenantFilterClause();
+        $sql .= $extra;
+        $params = array_merge($params, $extraParams);
 
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($params);

@@ -1,0 +1,115 @@
+<?php
+declare(strict_types=1);
+
+namespace Rateb\App\Services;
+
+use Rateb\App\Core\TenantContext;
+use Rateb\App\Models\Notification;
+use Rateb\App\Models\SmsTemplate;
+
+final class NotificationService
+{
+    public function notifyUser(int $userId, ?int $companyId, string $title, string $message, string $type = 'info', ?string $triggerType = null, ?string $entityType = null, ?int $entityId = null): int
+    {
+        return (new Notification())->create([
+            'company_id' => $companyId,
+            'user_id' => $userId,
+            'title' => $title,
+            'message' => $message,
+            'type' => $type,
+            'trigger_type' => $triggerType,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'is_read' => 0,
+        ]);
+    }
+
+    public function notifyCompany(?int $companyId, string $title, string $message, string $type = 'info', ?string $triggerType = null): int
+    {
+        return (new Notification())->create([
+            'company_id' => $companyId ?? TenantContext::companyId(),
+            'user_id' => null,
+            'title' => $title,
+            'message' => $message,
+            'type' => $type,
+            'trigger_type' => $triggerType,
+            'is_read' => 0,
+        ]);
+    }
+
+    public function markRead(int $id, int $userId): bool
+    {
+        $row = (new Notification())->queryOne(
+            'SELECT id FROM rateb_notifications WHERE id = :id AND (user_id = :uid OR user_id IS NULL) LIMIT 1',
+            ['id' => $id, 'uid' => $userId]
+        );
+        if (!$row) {
+            return false;
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        $db->prepare('UPDATE rateb_notifications SET is_read = 1 WHERE id = :id')->execute(['id' => $id]);
+        return true;
+    }
+
+    public function queueEmail(string $recipient, string $subject, string $body, string $status = 'pending'): void
+    {
+        $db = \Rateb\App\Core\Database::connection();
+        $db->prepare(
+            'INSERT INTO rateb_notification_queue (company_id, channel, recipient, subject, body, status, sent_at)
+             VALUES (:cid, :ch, :to, :sub, :body, :st, :sent)'
+        )->execute([
+            'cid' => TenantContext::companyId(),
+            'ch' => 'email',
+            'to' => $recipient,
+            'sub' => $subject,
+            'body' => $body,
+            'st' => $status === 'sent' ? 'sent' : ($status === 'failed' ? 'failed' : 'pending'),
+            'sent' => $status === 'sent' ? date('Y-m-d H:i:s') : null,
+        ]);
+    }
+
+    public function sendSms(string $phone, string $slug, array $vars = []): bool
+    {
+        $tpl = (new SmsTemplate())->queryOne('SELECT body FROM rateb_sms_templates WHERE slug = :s AND is_active = 1 LIMIT 1', ['s' => $slug]);
+        if (!$tpl) {
+            return false;
+        }
+        $body = (string) $tpl['body'];
+        foreach ($vars as $k => $v) {
+            $body = str_replace('{' . $k . '}', (string) $v, $body);
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        $db->prepare(
+            'INSERT INTO rateb_notification_queue (company_id, channel, recipient, body, status) VALUES (:cid, :ch, :to, :body, :st)'
+        )->execute([
+            'cid' => TenantContext::companyId(),
+            'ch' => 'sms',
+            'to' => $phone,
+            'body' => $body,
+            'st' => 'pending',
+        ]);
+        return true;
+    }
+
+    public function triggerLowStock(int $companyId, string $itemName, float $quantity): void
+    {
+        $title = __('low_stock_alert');
+        $msg = __('low_stock_message', ['item' => $itemName, 'qty' => (string) $quantity]);
+        $this->notifyCompany($companyId, $title, $msg, 'warning', 'low_stock');
+    }
+
+    public function triggerContractExpiry(int $companyId, string $contractNo, string $endDate): void
+    {
+        $this->notifyCompany($companyId, __('contract_expiry_alert'), __('contract_expiry_message', ['no' => $contractNo, 'date' => $endDate]), 'warning', 'contract_expiry');
+    }
+
+    public function triggerApproval(int $userId, int $companyId, string $entityType, int $entityId): void
+    {
+        $this->notifyUser($userId, $companyId, __('approval_required'), __('approval_required_message', ['type' => $entityType]), 'info', 'approval', $entityType, $entityId);
+    }
+
+    public function triggerMaintenanceDue(int $companyId, string $deviceName, string $dueDate): void
+    {
+        $this->notifyCompany($companyId, __('maintenance_due_alert'), __('maintenance_due_message', ['device' => $deviceName, 'date' => $dueDate]), 'info', 'maintenance_due');
+    }
+}

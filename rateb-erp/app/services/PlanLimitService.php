@@ -22,6 +22,8 @@ final class PlanLimitService
             'reports' => 'reports',
             'medical_devices' => 'medical_devices',
             'accounting' => 'accounting',
+            'documents' => 'documents',
+            'workflows' => 'workflows',
         ];
     }
 

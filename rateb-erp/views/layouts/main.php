@@ -66,13 +66,18 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
             <?php
             $adminLinks = [
                 ['admin/companies', 'companies', 'fa-building'],
+                ['admin/subscriptions', 'subscriptions', 'fa-credit-card'],
                 ['admin/procurement', 'procurement', 'fa-cart-shopping'],
                 ['admin/inventory', 'inventory', 'fa-boxes-stacked'],
+                ['admin/stock-movements', 'stock_movements', 'fa-arrows-rotate'],
                 ['admin/suppliers', 'suppliers', 'fa-truck-field'],
                 ['admin/supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke'],
-                ['admin/assets', 'assets', 'fa-toolbox'],
                 ['admin/contracts', 'contracts', 'fa-file-contract'],
+                ['admin/assets', 'assets', 'fa-toolbox'],
+                ['admin/medical-devices', 'medical_devices', 'fa-stethoscope'],
                 ['admin/reports', 'reports', 'fa-chart-pie'],
+                ['admin/notifications', 'notifications', 'fa-bell'],
+                ['admin/workflows', 'workflows', 'fa-diagram-project'],
                 ['admin/settings', 'settings', 'fa-gear'],
             ];
             foreach ($adminLinks as $link) {

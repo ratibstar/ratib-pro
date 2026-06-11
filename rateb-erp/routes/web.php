@@ -28,7 +28,9 @@ use Rateb\App\Controllers\Admin\UsersController;
 use Rateb\App\Controllers\Admin\AccessControlController;
 use Rateb\App\Controllers\Admin\AccountingDashboardController;
 use Rateb\App\Controllers\Admin\ChartOfAccountsController;
-use Rateb\App\Controllers\Admin\JournalEntriesController as AdminJournalEntriesController;
+use Rateb\App\Controllers\Admin\AdminMedicalDevicesController;
+use Rateb\App\Controllers\Admin\AdminStockMovementsController;
+use Rateb\App\Controllers\Admin\AdminWorkflowsController;
 
 require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
@@ -37,6 +39,11 @@ require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 $router->get('/', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url('admin/login'));
 });
+
+$router->get('/password/forgot', [\Rateb\App\Controllers\Shared\PasswordResetController::class, 'showForgot'], rateb_guest_mw());
+$router->post('/password/forgot', [\Rateb\App\Controllers\Shared\PasswordResetController::class, 'sendLink'], rateb_guest_mw());
+$router->get('/password/reset/{token}', [\Rateb\App\Controllers\Shared\PasswordResetController::class, 'showReset'], rateb_guest_mw());
+$router->post('/password/reset/{token}', [\Rateb\App\Controllers\Shared\PasswordResetController::class, 'reset'], rateb_guest_mw());
 
 $router->get('/admin/login', [AdminAuthController::class, 'showLogin'], rateb_guest_mw());
 $router->post('/admin/login', [AdminAuthController::class, 'login'], rateb_guest_mw());
@@ -110,3 +117,9 @@ $router->get('/admin/reports', [AdminReportsController::class, 'index'], rateb_a
 $router->get('/admin/procurement', [ProcurementController::class, 'index'], rateb_admin_mw('procurement.manage'));
 $router->get('/admin/inventory', [AdminInventoryController::class, 'index'], rateb_admin_mw('inventory.manage'));
 $router->get('/admin/supplier-evaluations', [AdminSupplierEvaluationsController::class, 'index'], rateb_admin_mw('evaluations.view'));
+
+$router->get('/admin/stock-movements', [AdminStockMovementsController::class, 'index'], rateb_admin_mw('inventory.manage'));
+$router->get('/admin/stock-movements/export', [AdminStockMovementsController::class, 'export'], rateb_admin_mw('reports.export'));
+$router->get('/admin/workflows', [AdminWorkflowsController::class, 'index'], rateb_admin_mw('workflows.view'));
+$router->post('/admin/workflows', [AdminWorkflowsController::class, 'store'], rateb_admin_mw('workflows.manage'));
+$router->get('/admin/medical-devices', [AdminMedicalDevicesController::class, 'index'], rateb_admin_mw('assets.manage'));

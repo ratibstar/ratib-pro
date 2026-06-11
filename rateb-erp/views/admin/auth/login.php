@@ -9,4 +9,5 @@
         <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
     </div>
     <button type="submit" class="btn btn-primary w-100"><?php echo __('login'); ?></button>
+    <p class="mt-3 mb-0 text-center"><a href="<?php echo rateb_url('password/forgot?portal=admin'); ?>"><?php echo __('password_forgot'); ?></a></p>
 </form>
