@@ -31,9 +31,15 @@ try {
         $isDbAccess = strpos($msg, '1044') !== false || strpos($msg, '1049') !== false || strpos($msg, 'Access denied') !== false;
         $dbName = function_exists('control_rateb_erp_db_name') ? control_rateb_erp_db_name() : 'outratib_rateb-erp';
         $dbUser = defined('RATEB_DB_USER') ? (string) RATEB_DB_USER : (defined('DB_USER') ? (string) DB_USER : 'outratib_out');
-        echo '<div style="font-family:Tajawal,system-ui,sans-serif;max-width:760px;margin:2rem auto;padding:1rem 1.25rem;direction:rtl;text-align:right;">';
-        echo '<h1 style="font-size:1.35rem;">خطأ RATEB ERP</h1>';
-        echo '<pre style="background:#f5f5f5;padding:1rem;overflow:auto;direction:ltr;text-align:left;">' . htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') . '</pre>';
+        $assetBase = defined('RATEB_CP_ASSETS_URL') ? (string) RATEB_CP_ASSETS_URL : '/rateb-erp/public/assets';
+        echo '<!DOCTYPE html><html lang="ar" dir="rtl" data-theme="light" data-bs-theme="light"><head><meta charset="UTF-8">';
+        echo '<link href="' . htmlspecialchars($assetBase . '/css/variables.css', ENT_QUOTES, 'UTF-8') . '" rel="stylesheet">';
+        echo '<link href="' . htmlspecialchars($assetBase . '/css/light.css', ENT_QUOTES, 'UTF-8') . '" rel="stylesheet">';
+        echo '<style>body{font-family:Tajawal,system-ui,sans-serif;background:#cce0f5;color:#1a3354;margin:0;padding:2rem}</style>';
+        echo '</head><body class="rateb-app">';
+        echo '<div style="max-width:760px;margin:0 auto;padding:1rem 1.25rem;text-align:right;">';
+        echo '<h1 style="font-size:1.35rem;">خطأ نظام رتب ERP</h1>';
+        echo '<pre style="background:#e3effc;border:1px solid #b8cfe8;border-radius:8px;padding:1rem;overflow:auto;direction:ltr;text-align:left;">' . htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') . '</pre>';
         if ($isDbAccess) {
             echo '<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:1rem;margin:1rem 0;">';
             echo '<strong>صلاحيات قاعدة البيانات</strong><br>';
@@ -49,7 +55,7 @@ try {
         if ($cpMode && function_exists('control_rateb_erp_migrate_page_url')) {
             echo '<p><a href="' . htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8') . '">فتح إعداد قاعدة بيانات ERP</a></p>';
         }
-        echo '</div>';
+        echo '</div></body></html>';
     } else {
         echo 'RATEB ERP is temporarily unavailable. Please check server logs or run migrations.';
     }

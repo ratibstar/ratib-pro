@@ -138,6 +138,11 @@ body.rateb-app {
     z-index: 900;
 }
 
+.rateb-topbar-logout {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 .rateb-content {
     padding: 1.5rem;
 }

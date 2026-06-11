@@ -49,7 +49,7 @@ if (empty($_SESSION['rateb_erp_migrate_csrf'])) {
 $csrf = (string) $_SESSION['rateb_erp_migrate_csrf'];
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
-startControlLayout('RATEB ERP — Database Setup', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
+startControlLayout('نظام رتب ERP — إعداد قاعدة البيانات', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
 ?>
 
 <p class="control-settings-intro mb-3">

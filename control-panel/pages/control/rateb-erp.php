@@ -24,11 +24,11 @@ $dbTest = $erpInstalled ? control_rateb_erp_db_test() : ['ok' => false, 'schema'
 $schemaReady = $dbTest['ok'] && $dbTest['schema'];
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
-startControlLayout('RATEB ERP', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
+startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
 ?>
 
 <p class="control-settings-intro mb-3">
-    <strong><i class="fas fa-hospital me-2"></i>RATEB ERP</strong>
+    <strong><i class="fas fa-hospital me-2"></i>نظام رتب ERP</strong>
     — Medical Procurement &amp; Healthcare ERP. Everything opens here on <strong>out.ratib.sa</strong> inside your Control Panel (not rateb.sa).
 </p>
 

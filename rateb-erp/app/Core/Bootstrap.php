@@ -45,6 +45,7 @@ final class Bootstrap
             '/app/services/MigrationService.php',
             '/app/services/PlanLimitService.php',
             '/app/services/AccountingService.php',
+            '/app/services/BillingService.php',
             '/app/controllers/Admin/AccountingControllers.php',
             '/app/controllers/Company/AccountingControllers.php',
         ] as $bundle) {

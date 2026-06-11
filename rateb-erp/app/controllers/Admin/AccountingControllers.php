@@ -32,6 +32,7 @@ final class AccountingDashboardController extends Controller
 {
     public function index(): void
     {
+        (new \Rateb\App\Services\BillingService())->ensureBillingReady();
         $service = new AccountingService();
         $service->ensureDefaultAccounts(null);
 

@@ -187,25 +187,29 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
 
 final class SubscriptionsController extends \Rateb\App\Controllers\CrudController
 {
+    private \Rateb\App\Services\BillingService $billing;
+
     public function __construct()
     {
+        $this->billing = new \Rateb\App\Services\BillingService();
         $this->model = new \Rateb\App\Models\Subscription();
         $this->viewPrefix = 'admin/subscriptions';
         $this->routePrefix = 'admin/subscriptions';
         $this->entityName = 'subscriptions';
         $this->fields = [
-            ['name' => 'company_id', 'label' => 'Company ID', 'type' => 'number'],
-            ['name' => 'plan_id', 'label' => 'Plan ID', 'type' => 'number'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['trial', 'active', 'cancelled', 'expired']],
-            ['name' => 'billing_cycle', 'label' => 'Billing', 'type' => 'select', 'options' => ['monthly', 'yearly']],
-            ['name' => 'amount', 'label' => 'Amount', 'type' => 'number'],
-            ['name' => 'starts_at', 'label' => 'Starts', 'type' => 'date'],
-            ['name' => 'ends_at', 'label' => 'Ends', 'type' => 'date'],
+            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'company_select'],
+            ['name' => 'plan_id', 'label' => 'plan_id', 'type' => 'plan_select'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['trial', 'active', 'cancelled', 'expired']],
+            ['name' => 'billing_cycle', 'label' => 'billing_cycle', 'type' => 'select', 'options' => ['monthly', 'yearly']],
+            ['name' => 'amount', 'label' => 'amount', 'type' => 'number'],
+            ['name' => 'starts_at', 'label' => 'start_date', 'type' => 'date'],
+            ['name' => 'ends_at', 'label' => 'end_date', 'type' => 'date'],
         ];
     }
 
     public function index(): void
     {
+        $this->billing->ensureBillingReady();
         $page = max(1, (int) $this->input('page', 1));
         $limit = 20;
         $offset = ($page - 1) * $limit;
@@ -216,8 +220,116 @@ final class SubscriptionsController extends \Rateb\App\Controllers\CrudControlle
             'page' => $page,
             'limit' => $limit,
             'routePrefix' => $this->routePrefix,
+            'fields' => [
+                ['name' => 'company_name', 'label' => 'company_name'],
+                ['name' => 'plan_name', 'label' => 'plans'],
+                ['name' => 'status', 'label' => 'status'],
+                ['name' => 'billing_cycle', 'label' => 'billing_cycle'],
+                ['name' => 'amount', 'label' => 'amount'],
+                ['name' => 'starts_at', 'label' => 'start_date'],
+            ],
             'csrf' => Csrf::token(),
         ], 'main');
+    }
+
+    public function create(): void
+    {
+        $this->billing->ensureBillingReady();
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('create') . ' ' . __('subscriptions'),
+            'item' => ['starts_at' => date('Y-m-d'), 'status' => 'trial', 'billing_cycle' => 'monthly'],
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'companies' => $this->billing->companyOptions(),
+            'plans' => $this->billing->planOptions(),
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectBillingData();
+        if (!$this->validateSubscriptionData($data)) {
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
+        $id = $this->model->create($data);
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function edit(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('edit') . ' ' . __('subscriptions'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'companies' => $this->billing->companyOptions(),
+            'plans' => $this->billing->planOptions(),
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function update(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectBillingData();
+        if (!$this->validateSubscriptionData($data)) {
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
+        $this->model->update($id, $data);
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    /** @param array<string, mixed> $data */
+    private function validateSubscriptionData(array $data): bool
+    {
+        $companyId = (int) ($data['company_id'] ?? 0);
+        $planId = (int) ($data['plan_id'] ?? 0);
+        if (!$this->billing->companyExists($companyId)) {
+            SessionManager::flash('error', __('billing_company_required'));
+            return false;
+        }
+        if (!$this->billing->planExists($planId)) {
+            SessionManager::flash('error', __('billing_plan_required'));
+            return false;
+        }
+        return true;
+    }
+
+    /** @return array<string, mixed> */
+    private function collectBillingData(): array
+    {
+        $data = $this->collectData();
+        $data['company_id'] = (int) ($data['company_id'] ?? 0);
+        $data['plan_id'] = (int) ($data['plan_id'] ?? 0);
+        $data['amount'] = (float) ($data['amount'] ?? 0);
+        $data['auto_renew'] = 1;
+        if (($data['starts_at'] ?? '') === '') {
+            $data['starts_at'] = date('Y-m-d');
+        }
+        if (($data['ends_at'] ?? '') === '') {
+            unset($data['ends_at']);
+        }
+        return $data;
     }
 }
 
@@ -477,17 +589,107 @@ final class PermissionsController extends \Rateb\App\Controllers\CrudController
 
 final class PaymentsController extends \Rateb\App\Controllers\CrudController
 {
+    private \Rateb\App\Services\BillingService $billing;
+
     public function __construct()
     {
+        $this->billing = new \Rateb\App\Services\BillingService();
         $this->model = new \Rateb\App\Models\Payment();
         $this->viewPrefix = 'admin/payments';
         $this->routePrefix = 'admin/payments';
         $this->entityName = 'payments';
         $this->fields = [
-            ['name' => 'company_id', 'label' => 'Company ID', 'type' => 'number'],
-            ['name' => 'amount', 'label' => 'Amount', 'type' => 'number'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['pending', 'completed', 'failed', 'refunded']],
+            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'company_select'],
+            ['name' => 'subscription_id', 'label' => 'subscriptions', 'type' => 'subscription_select'],
+            ['name' => 'amount', 'label' => 'amount', 'type' => 'number'],
+            ['name' => 'currency', 'label' => 'currency', 'type' => 'text'],
+            ['name' => 'method', 'label' => 'payment_method', 'type' => 'text'],
+            ['name' => 'reference_no', 'label' => 'reference_no', 'type' => 'text'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['pending', 'completed', 'failed', 'refunded']],
+            ['name' => 'paid_at', 'label' => 'paid_at', 'type' => 'datetime-local'],
         ];
+    }
+
+    public function index(): void
+    {
+        $this->billing->ensureBillingReady();
+        $page = max(1, (int) $this->input('page', 1));
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+        $this->view($this->viewPrefix . '/index', [
+            'title' => __('payments'),
+            'items' => $this->model->withRelations($limit, $offset),
+            'total' => $this->model->count(),
+            'page' => $page,
+            'limit' => $limit,
+            'routePrefix' => $this->routePrefix,
+            'fields' => [
+                ['name' => 'company_name', 'label' => 'company_name'],
+                ['name' => 'amount', 'label' => 'amount'],
+                ['name' => 'currency', 'label' => 'currency'],
+                ['name' => 'method', 'label' => 'payment_method'],
+                ['name' => 'status', 'label' => 'status'],
+                ['name' => 'paid_at', 'label' => 'paid_at'],
+            ],
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function create(): void
+    {
+        $this->billing->ensureBillingReady();
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('create') . ' ' . __('payments'),
+            'item' => ['currency' => 'SAR', 'status' => 'pending', 'paid_at' => date('Y-m-d\TH:i')],
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'companies' => $this->billing->companyOptions(),
+            'subscriptions' => $this->billing->subscriptionOptions(),
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectPaymentData();
+        if (!$this->validatePaymentData($data)) {
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
+        $id = $this->model->create($data);
+        $row = $this->model->find($id);
+        if ($row && ($row['status'] ?? '') === 'completed') {
+            (new \Rateb\App\Services\AccountingService())->postPayment($row);
+        }
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function edit(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        if (!empty($item['paid_at'])) {
+            $item['paid_at'] = date('Y-m-d\TH:i', strtotime((string) $item['paid_at']));
+        }
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('edit') . ' ' . __('payments'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'companies' => $this->billing->companyOptions(),
+            'subscriptions' => $this->billing->subscriptionOptions((int) ($item['company_id'] ?? 0)),
+            'csrf' => Csrf::token(),
+        ], 'main');
     }
 
     public function update(array $params): void
@@ -497,7 +699,10 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
-        $data = $this->collectData();
+        $data = $this->collectPaymentData();
+        if (!$this->validatePaymentData($data)) {
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
         $this->model->update($id, $data);
         $row = $this->model->find($id);
         if ($row && ($row['status'] ?? '') === 'completed') {
@@ -507,22 +712,154 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
     }
+
+    /** @param array<string, mixed> $data */
+    private function validatePaymentData(array $data): bool
+    {
+        $companyId = (int) ($data['company_id'] ?? 0);
+        if (!$this->billing->companyExists($companyId)) {
+            SessionManager::flash('error', __('billing_company_required'));
+            return false;
+        }
+        $subId = isset($data['subscription_id']) && $data['subscription_id'] !== '' ? (int) $data['subscription_id'] : null;
+        if (!$this->billing->subscriptionBelongsToCompany($subId, $companyId)) {
+            SessionManager::flash('error', __('billing_subscription_invalid'));
+            return false;
+        }
+        return true;
+    }
+
+    /** @return array<string, mixed> */
+    private function collectPaymentData(): array
+    {
+        $data = $this->collectData();
+        $data['company_id'] = (int) ($data['company_id'] ?? 0);
+        $data['amount'] = (float) ($data['amount'] ?? 0);
+        $data['currency'] = ($data['currency'] ?? '') !== '' ? strtoupper((string) $data['currency']) : 'SAR';
+        if (($data['subscription_id'] ?? '') === '') {
+            $data['subscription_id'] = null;
+        } else {
+            $data['subscription_id'] = (int) $data['subscription_id'];
+        }
+        if (($data['paid_at'] ?? '') === '') {
+            $data['paid_at'] = null;
+        } else {
+            $data['paid_at'] = date('Y-m-d H:i:s', strtotime((string) $data['paid_at']));
+        }
+        if (($data['status'] ?? '') === 'completed' && $data['paid_at'] === null) {
+            $data['paid_at'] = date('Y-m-d H:i:s');
+        }
+        return $data;
+    }
 }
 
 final class InvoicesController extends \Rateb\App\Controllers\CrudController
 {
+    private \Rateb\App\Services\BillingService $billing;
+
     public function __construct()
     {
+        $this->billing = new \Rateb\App\Services\BillingService();
         $this->model = new \Rateb\App\Models\Invoice();
         $this->viewPrefix = 'admin/invoices';
         $this->routePrefix = 'admin/invoices';
         $this->entityName = 'invoices';
         $this->fields = [
-            ['name' => 'company_id', 'label' => 'Company ID', 'type' => 'number'],
-            ['name' => 'invoice_no', 'label' => 'Invoice No', 'type' => 'text'],
-            ['name' => 'total_amount', 'label' => 'Total', 'type' => 'number'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'sent', 'paid', 'overdue', 'cancelled']],
+            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'company_select'],
+            ['name' => 'subscription_id', 'label' => 'subscriptions', 'type' => 'subscription_select'],
+            ['name' => 'invoice_no', 'label' => 'invoice_no', 'type' => 'text'],
+            ['name' => 'amount', 'label' => 'amount', 'type' => 'number'],
+            ['name' => 'tax_amount', 'label' => 'tax_amount', 'type' => 'number'],
+            ['name' => 'total_amount', 'label' => 'total_amount', 'type' => 'number'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'sent', 'paid', 'overdue', 'cancelled']],
+            ['name' => 'issued_at', 'label' => 'issued_at', 'type' => 'date'],
+            ['name' => 'due_date', 'label' => 'due_date', 'type' => 'date'],
         ];
+    }
+
+    public function index(): void
+    {
+        $this->billing->ensureBillingReady();
+        $page = max(1, (int) $this->input('page', 1));
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+        $this->view($this->viewPrefix . '/index', [
+            'title' => __('invoices'),
+            'items' => $this->model->withRelations($limit, $offset),
+            'total' => $this->model->count(),
+            'page' => $page,
+            'limit' => $limit,
+            'routePrefix' => $this->routePrefix,
+            'fields' => [
+                ['name' => 'invoice_no', 'label' => 'invoice_no'],
+                ['name' => 'company_name', 'label' => 'company_name'],
+                ['name' => 'total_amount', 'label' => 'total_amount'],
+                ['name' => 'tax_amount', 'label' => 'tax_amount'],
+                ['name' => 'status', 'label' => 'status'],
+                ['name' => 'issued_at', 'label' => 'issued_at'],
+            ],
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function create(): void
+    {
+        $this->billing->ensureBillingReady();
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('create') . ' ' . __('invoices'),
+            'item' => [
+                'invoice_no' => $this->billing->nextInvoiceNo(),
+                'status' => 'draft',
+                'issued_at' => date('Y-m-d'),
+                'tax_amount' => '0',
+                'currency' => 'SAR',
+            ],
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'companies' => $this->billing->companyOptions(),
+            'subscriptions' => $this->billing->subscriptionOptions(),
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectInvoiceData();
+        if (!$this->validateInvoiceData($data)) {
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
+        $id = $this->model->create($data);
+        $row = $this->model->find($id);
+        if ($row && ($row['status'] ?? '') === 'paid') {
+            (new \Rateb\App\Services\AccountingService())->postInvoice($row);
+        }
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function edit(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('edit') . ' ' . __('invoices'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'companies' => $this->billing->companyOptions(),
+            'subscriptions' => $this->billing->subscriptionOptions((int) ($item['company_id'] ?? 0)),
+            'csrf' => Csrf::token(),
+        ], 'main');
     }
 
     public function update(array $params): void
@@ -532,7 +869,10 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
-        $data = $this->collectData();
+        $data = $this->collectInvoiceData();
+        if (!$this->validateInvoiceData($data)) {
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
         $this->model->update($id, $data);
         $row = $this->model->find($id);
         if ($row && ($row['status'] ?? '') === 'paid') {
@@ -541,6 +881,53 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    /** @param array<string, mixed> $data */
+    private function validateInvoiceData(array $data): bool
+    {
+        $companyId = (int) ($data['company_id'] ?? 0);
+        if (!$this->billing->companyExists($companyId)) {
+            SessionManager::flash('error', __('billing_company_required'));
+            return false;
+        }
+        $subId = isset($data['subscription_id']) && $data['subscription_id'] !== '' ? (int) $data['subscription_id'] : null;
+        if (!$this->billing->subscriptionBelongsToCompany($subId, $companyId)) {
+            SessionManager::flash('error', __('billing_subscription_invalid'));
+            return false;
+        }
+        return true;
+    }
+
+    /** @return array<string, mixed> */
+    private function collectInvoiceData(): array
+    {
+        $data = $this->collectData();
+        $data['company_id'] = (int) ($data['company_id'] ?? 0);
+        $data['amount'] = (float) ($data['amount'] ?? 0);
+        $data['tax_amount'] = (float) ($data['tax_amount'] ?? 0);
+        $data['total_amount'] = (float) ($data['total_amount'] ?? 0);
+        if ($data['total_amount'] <= 0 && $data['amount'] > 0) {
+            $data['total_amount'] = $data['amount'] + $data['tax_amount'];
+        }
+        if ($data['amount'] <= 0 && $data['total_amount'] > 0) {
+            $data['amount'] = max(0, $data['total_amount'] - $data['tax_amount']);
+        }
+        if (($data['invoice_no'] ?? '') === '') {
+            $data['invoice_no'] = $this->billing->nextInvoiceNo();
+        }
+        if (($data['issued_at'] ?? '') === '') {
+            $data['issued_at'] = date('Y-m-d');
+        }
+        if (($data['due_date'] ?? '') === '') {
+            $data['due_date'] = null;
+        }
+        if (($data['subscription_id'] ?? '') === '') {
+            $data['subscription_id'] = null;
+        } else {
+            $data['subscription_id'] = (int) $data['subscription_id'];
+        }
+        return $data;
     }
 }
 

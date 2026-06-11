@@ -10,7 +10,7 @@ $routePrefix = $routePrefix ?? '';
     <ul class="pagination pagination-sm mb-0">
         <?php for ($i = 1; $i <= $pages; $i++) { ?>
         <li class="page-item<?php echo $i === $page ? ' active' : ''; ?>">
-            <a class="page-link" href="<?php echo rateb_url($routePrefix . '?page=' . $i); ?>"><?php echo $i; ?></a>
+            <a class="page-link" href="<?php echo rateb_url($routePrefix) . '&page=' . $i; ?>"><?php echo $i; ?></a>
         </li>
         <?php } ?>
     </ul>

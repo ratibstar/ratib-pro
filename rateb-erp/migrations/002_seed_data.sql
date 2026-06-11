@@ -46,18 +46,18 @@ SELECT u.id, r.id FROM rateb_users u JOIN rateb_roles r ON r.slug = 'super-admin
 ON DUPLICATE KEY UPDATE user_id = user_id;
 
 INSERT INTO rateb_system_settings (setting_key, setting_value, setting_group) VALUES
-('app_name', 'RATEB ERP', 'general'),
+('app_name', 'RTAB ERP', 'general'),
 ('default_locale', 'ar', 'general'),
 ('default_currency', 'SAR', 'billing'),
 ('support_email', 'support@rateb.sa', 'general')
 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);
 
 INSERT INTO rateb_email_templates (slug, subject, body_html, body_text, is_active) VALUES
-('welcome', 'Welcome to RATEB ERP', '<p>Welcome to RATEB ERP platform.</p>', 'Welcome to RATEB ERP platform.', 1),
+('welcome', 'Welcome to RTAB ERP', '<p>Welcome to RTAB ERP platform.</p>', 'Welcome to RTAB ERP platform.', 1),
 ('password_reset', 'Password Reset', '<p>Your password reset link.</p>', 'Your password reset link.', 1)
 ON DUPLICATE KEY UPDATE subject = VALUES(subject);
 
 INSERT INTO rateb_sms_templates (slug, body, is_active) VALUES
-('otp', 'Your RATEB verification code is: {code}', 1),
-('alert', 'RATEB Alert: {message}', 1)
+('otp', 'Your RTAB verification code is: {code}', 1),
+('alert', 'RTAB Alert: {message}', 1)
 ON DUPLICATE KEY UPDATE body = VALUES(body);

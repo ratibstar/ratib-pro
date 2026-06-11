@@ -155,6 +155,18 @@ final class Payment extends Model
         'company_id', 'subscription_id', 'amount', 'currency', 'method',
         'reference_no', 'status', 'paid_at',
     ];
+
+    public function withRelations(int $limit = 50, int $offset = 0): array
+    {
+        $limit = max(1, min(500, $limit));
+        $offset = max(0, $offset);
+        return $this->query(
+            "SELECT p.*, c.name AS company_name
+             FROM rateb_payments p
+             LEFT JOIN rateb_companies c ON c.id = p.company_id
+             ORDER BY p.id DESC LIMIT {$limit} OFFSET {$offset}"
+        );
+    }
 }
 
 final class Invoice extends Model
@@ -165,6 +177,18 @@ final class Invoice extends Model
         'company_id', 'subscription_id', 'invoice_no', 'amount', 'tax_amount',
         'total_amount', 'status', 'due_date', 'issued_at',
     ];
+
+    public function withRelations(int $limit = 50, int $offset = 0): array
+    {
+        $limit = max(1, min(500, $limit));
+        $offset = max(0, $offset);
+        return $this->query(
+            "SELECT i.*, c.name AS company_name
+             FROM rateb_invoices i
+             LEFT JOIN rateb_companies c ON c.id = i.company_id
+             ORDER BY i.id DESC LIMIT {$limit} OFFSET {$offset}"
+        );
+    }
 }
 
 final class Notification extends Model

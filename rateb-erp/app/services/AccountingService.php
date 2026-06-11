@@ -21,8 +21,18 @@ final class AccountingService
         'inventory' => ['code' => '1300', 'name' => 'Inventory', 'name_ar' => 'المخزون', 'type' => 'asset'],
     ];
 
+    public function normalizeCompanyId($companyId): ?int
+    {
+        if ($companyId === null || $companyId === '') {
+            return null;
+        }
+        $id = (int) $companyId;
+        return $id > 0 ? $id : null;
+    }
+
     public function ensureDefaultAccounts(?int $companyId): void
     {
+        $companyId = $this->normalizeCompanyId($companyId);
         $coa = new ChartOfAccount();
         foreach (self::DEFAULT_ACCOUNTS as $def) {
             $exists = $coa->queryOne(
@@ -97,7 +107,7 @@ final class AccountingService
 
     public function postInvoice(array $invoice): bool
     {
-        $companyId = isset($invoice['company_id']) ? (int) $invoice['company_id'] : null;
+        $companyId = $this->normalizeCompanyId($invoice['company_id'] ?? null);
         if ($this->entryExists('invoice', (int) $invoice['id'])) {
             return false;
         }
@@ -135,7 +145,7 @@ final class AccountingService
 
     public function postPayment(array $payment): bool
     {
-        $companyId = isset($payment['company_id']) ? (int) $payment['company_id'] : null;
+        $companyId = $this->normalizeCompanyId($payment['company_id'] ?? null);
         if ($this->entryExists('payment', (int) $payment['id'])) {
             return false;
         }
@@ -203,6 +213,7 @@ final class AccountingService
 
         $entryModel = new JournalEntry();
         $entryNo = $this->nextEntryNo($companyId);
+        $companyId = $this->normalizeCompanyId($companyId);
         $entryId = $entryModel->create([
             'company_id' => $companyId,
             'entry_no' => $entryNo,

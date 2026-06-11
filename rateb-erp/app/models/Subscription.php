@@ -29,8 +29,8 @@ final class Subscription extends Model
         return $this->query(
             "SELECT s.*, c.name AS company_name, p.name AS plan_name
              FROM rateb_subscriptions s
-             JOIN rateb_companies c ON c.id = s.company_id
-             JOIN rateb_plans p ON p.id = s.plan_id
+             LEFT JOIN rateb_companies c ON c.id = s.company_id
+             LEFT JOIN rateb_plans p ON p.id = s.plan_id
              ORDER BY s.id DESC LIMIT {$limit} OFFSET {$offset}"
         );
     }

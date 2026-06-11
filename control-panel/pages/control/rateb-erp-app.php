@@ -25,10 +25,10 @@ $indexFile = $erpRoot . '/public/index.php';
 if (!is_file($indexFile)) {
     $diag = control_rateb_erp_diagnostic();
     require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
-    startControlLayout('RATEB ERP', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
+    startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
     ?>
     <div class="alert alert-warning">
-        <h2 class="h5"><i class="fas fa-exclamation-triangle"></i> RATEB ERP files not on server</h2>
+        <h2 class="h5"><i class="fas fa-exclamation-triangle"></i> ملفات نظام رتب ERP غير موجودة على السيرفر</h2>
         <p>Upload <code>rateb-erp/</code> to <code>public_html/rateb-erp/</code> (same level as <code>control-panel/</code>), or push to GitHub <code>main</code> and wait for deploy.</p>
         <p class="mb-1">Checked path:</p>
         <code><?php echo htmlspecialchars($diag['resolved'] . '/public/index.php', ENT_QUOTES, 'UTF-8'); ?></code>

@@ -21,7 +21,7 @@ final class ApiController extends Controller
         Response::json([
             'success' => true,
             'version' => 'v1',
-            'name' => 'RATEB ERP API',
+            'name' => 'RTAB ERP API',
             'endpoints' => [
                 'POST /api/v1/auth/token',
                 'GET /api/v1/dashboard',
