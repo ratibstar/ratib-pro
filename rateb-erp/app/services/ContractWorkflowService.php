@@ -26,13 +26,16 @@ final class ContractWorkflowService
     /** @param array<string, mixed> $data */
     public function createRenewal(array $data): int
     {
+        $cid = TenantGuard::requireCompanyId();
+        $contractId = (int) ($data['contract_id'] ?? 0);
+        TenantGuard::assertContract($contractId, $cid);
         $db = \Rateb\App\Core\Database::connection();
         $db->prepare(
             'INSERT INTO rateb_contract_renewals (company_id, contract_id, renewal_date, new_end_date, new_value, status, notes)
              VALUES (:cid, :contract_id, :rd, :ned, :nv, :st, :notes)'
         )->execute([
-            'cid' => TenantContext::companyId(),
-            'contract_id' => (int) ($data['contract_id'] ?? 0),
+            'cid' => $cid,
+            'contract_id' => $contractId,
             'rd' => $data['renewal_date'] ?? date('Y-m-d'),
             'ned' => $data['new_end_date'] ?? null,
             'nv' => (float) ($data['new_value'] ?? 0),
@@ -71,13 +74,18 @@ final class ContractWorkflowService
         $count = 0;
         foreach ($contracts as $c) {
             $exists = (new \Rateb\App\Models\Notification())->queryOne(
-                'SELECT id FROM rateb_notifications WHERE company_id = :cid AND trigger_type = :tt AND entity_id = :eid AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) LIMIT 1',
-                ['cid' => $companyId, 'tt' => 'contract_expiry', 'eid' => (int) $c['id']]
+                'SELECT id FROM rateb_notifications WHERE company_id = :cid AND trigger_type = :tt AND entity_type = :et AND entity_id = :eid AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) LIMIT 1',
+                ['cid' => $companyId, 'tt' => 'contract_expiry', 'et' => 'contract', 'eid' => (int) $c['id']]
             );
             if ($exists) {
                 continue;
             }
-            $notifier->triggerContractExpiry($companyId, (string) ($c['contract_no'] ?? ''), (string) ($c['end_date'] ?? ''));
+            $notifier->triggerContractExpiry(
+                $companyId,
+                (string) ($c['contract_no'] ?? ''),
+                (string) ($c['end_date'] ?? ''),
+                (int) ($c['id'] ?? 0)
+            );
             $count++;
         }
         return $count;

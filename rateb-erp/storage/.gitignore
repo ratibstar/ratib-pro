@@ -1,0 +1,5 @@
+*
+!.gitignore
+!.deploy-migrate-token.example
+
+.deploy-migrate-token

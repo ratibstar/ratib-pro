@@ -7,6 +7,8 @@ final class TenantContext
 {
     private static ?int $companyId = null;
     private static bool $superAdmin = false;
+    /** @var array<int, string>|null */
+    private static ?array $apiModules = null;
 
     public static function setCompanyId(?int $companyId): void
     {
@@ -26,5 +28,17 @@ final class TenantContext
     public static function isSuperAdmin(): bool
     {
         return self::$superAdmin;
+    }
+
+    /** @param array<int, string>|null $modules */
+    public static function setApiModules(?array $modules): void
+    {
+        self::$apiModules = $modules;
+    }
+
+    /** @return array<int, string>|null */
+    public static function apiModules(): ?array
+    {
+        return self::$apiModules;
     }
 }

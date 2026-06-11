@@ -73,6 +73,61 @@ final class PlanLimitService
         return in_array($module, $limits['modules'], true);
     }
 
+    public function companyAccessAllowed(int $companyId): bool
+    {
+        $company = $this->getCompanyRow($companyId);
+        if (!$company) {
+            return false;
+        }
+        $status = (string) ($company['status'] ?? '');
+        if ($status === 'suspended') {
+            return false;
+        }
+        if ($status !== 'active') {
+            return false;
+        }
+        return $this->hasValidSubscription($companyId);
+    }
+
+    public function hasValidSubscription(int $companyId): bool
+    {
+        $sub = (new \Rateb\App\Models\Subscription())->queryOne(
+            'SELECT status, ends_at FROM rateb_subscriptions WHERE company_id = :cid ORDER BY id DESC LIMIT 1',
+            ['cid' => $companyId]
+        );
+        if (!$sub) {
+            return true;
+        }
+        $st = (string) ($sub['status'] ?? '');
+        if (in_array($st, ['active', 'trial'], true)) {
+            $ends = (string) ($sub['ends_at'] ?? '');
+            if ($ends !== '' && strtotime($ends) < strtotime('today')) {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public function storageUsedBytes(int $companyId): int
+    {
+        $row = (new Company())->queryOne(
+            'SELECT COALESCE(SUM(file_size), 0) AS total FROM rateb_documents WHERE company_id = :cid',
+            ['cid' => $companyId]
+        );
+        return (int) ($row['total'] ?? 0);
+    }
+
+    public function canUploadBytes(int $companyId, int $bytes): bool
+    {
+        $limits = $this->getLimits($companyId);
+        $maxBytes = (int) $limits['storage_limit_mb'] * 1024 * 1024;
+        if ($maxBytes < 1) {
+            return true;
+        }
+        return ($this->storageUsedBytes($companyId) + $bytes) <= $maxBytes;
+    }
+
     public function canAddUser(int $companyId): bool
     {
         $limits = $this->getLimits($companyId);

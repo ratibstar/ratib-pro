@@ -59,8 +59,49 @@ final class ApiAuthMiddleware implements MiddlewareInterface
             return false;
         }
 
-        \Rateb\App\Core\TenantContext::setCompanyId((int) $tokenRow['company_id']);
-        \Rateb\App\Core\TenantContext::setSuperAdmin((int) ($tokenRow['is_super_admin'] ?? 0) === 1);
+        $companyId = (int) ($tokenRow['company_id'] ?? 0);
+        if ($companyId < 1 || !(new \Rateb\App\Services\PlanLimitService())->companyAccessAllowed($companyId)) {
+            Response::json(['success' => false, 'message' => 'Company access denied'], 403);
+            return false;
+        }
+
+        $abilities = json_decode((string) ($tokenRow['abilities'] ?? '[]'), true);
+        \Rateb\App\Core\TenantContext::setApiModules(is_array($abilities) ? $abilities : []);
+        \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+        \Rateb\App\Core\TenantContext::setSuperAdmin(false);
+        return true;
+    }
+}
+
+final class ApiModuleMiddleware implements MiddlewareInterface
+{
+    private string $module;
+
+    public function __construct(string $module = '')
+    {
+        $this->module = $module;
+    }
+
+    public function handle(): bool
+    {
+        $companyId = \Rateb\App\Core\TenantContext::companyId();
+        if ($companyId === null || $companyId < 1 || $this->module === '') {
+            Response::json(['success' => false, 'message' => 'Forbidden'], 403);
+            return false;
+        }
+
+        $limits = new \Rateb\App\Services\PlanLimitService();
+        if (!$limits->companyHasModule($companyId, $this->module)) {
+            Response::json(['success' => false, 'message' => 'Module not in plan'], 403);
+            return false;
+        }
+
+        $tokenModules = \Rateb\App\Core\TenantContext::apiModules();
+        if ($tokenModules !== null && $tokenModules !== [] && !in_array($this->module, $tokenModules, true)) {
+            Response::json(['success' => false, 'message' => 'Token not authorized for module'], 403);
+            return false;
+        }
+
         return true;
     }
 }
@@ -133,6 +174,60 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
         $limits = new \Rateb\App\Services\PlanLimitService();
         if (!$limits->companyHasModule($companyId, $this->module)) {
             SessionManager::flash('error', __('module_not_in_plan'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('company') : (RATEB_BASE_URL . '/company'));
+            return false;
+        }
+
+        return true;
+    }
+}
+
+final class CompanySaaSMiddleware implements MiddlewareInterface
+{
+    public function handle(): bool
+    {
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        if ($companyId < 1) {
+            Response::redirect(function_exists('rateb_url') ? rateb_url('company/login') : (RATEB_BASE_URL . '/company/login'));
+            return false;
+        }
+
+        $limits = new \Rateb\App\Services\PlanLimitService();
+        if (!$limits->companyAccessAllowed($companyId)) {
+            SessionManager::flash('error', __('company_access_denied'));
+            Auth::logout();
+            Response::redirect(function_exists('rateb_url') ? rateb_url('company/login') : (RATEB_BASE_URL . '/company/login'));
+            return false;
+        }
+
+        return true;
+    }
+}
+
+final class CompanyPermissionMiddleware implements MiddlewareInterface
+{
+    private string $permission;
+    private string $module;
+
+    public function __construct(string $permission = '', string $module = '')
+    {
+        $parts = explode('|', $permission, 2);
+        $this->permission = $parts[0];
+        $this->module = $module !== '' ? $module : ($parts[1] ?? '');
+    }
+
+    public function handle(): bool
+    {
+        $userId = (int) SessionManager::get('rateb_user_id', 0);
+        if ($userId < 1 || $this->permission === '') {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('company') : (RATEB_BASE_URL . '/company'));
+            return false;
+        }
+
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        if (!$authz->companyUserCan($userId, $this->permission, $this->module)) {
+            SessionManager::flash('error', __('access_denied'));
             Response::redirect(function_exists('rateb_url') ? rateb_url('company') : (RATEB_BASE_URL . '/company'));
             return false;
         }

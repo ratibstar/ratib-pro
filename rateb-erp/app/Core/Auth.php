@@ -28,6 +28,23 @@ final class Auth
             return null;
         }
 
+        if ($portal === 'company') {
+            $companyId = (int) ($user['company_id'] ?? 0);
+            if ($companyId < 1) {
+                return null;
+            }
+            $company = (new \Rateb\App\Models\Company())->find($companyId);
+            if (!$company || (string) ($company['status'] ?? '') !== 'active') {
+                return null;
+            }
+            $limits = new \Rateb\App\Services\PlanLimitService();
+            if (!$limits->companyAccessAllowed($companyId)) {
+                return null;
+            }
+        }
+
+        SessionManager::regenerate();
+
         SessionManager::set('rateb_user_id', (int) $user['id']);
         SessionManager::set('rateb_company_id', $user['company_id'] !== null ? (int) $user['company_id'] : null);
         SessionManager::set('rateb_is_super_admin', $isSuper);

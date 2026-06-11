@@ -24,7 +24,7 @@ final class NotificationService
         ]);
     }
 
-    public function notifyCompany(?int $companyId, string $title, string $message, string $type = 'info', ?string $triggerType = null): int
+    public function notifyCompany(?int $companyId, string $title, string $message, string $type = 'info', ?string $triggerType = null, ?string $entityType = null, ?int $entityId = null): int
     {
         return (new Notification())->create([
             'company_id' => $companyId ?? TenantContext::companyId(),
@@ -33,15 +33,18 @@ final class NotificationService
             'message' => $message,
             'type' => $type,
             'trigger_type' => $triggerType,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
             'is_read' => 0,
         ]);
     }
 
     public function markRead(int $id, int $userId): bool
     {
+        $companyId = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id') ?? 0);
         $row = (new Notification())->queryOne(
-            'SELECT id FROM rateb_notifications WHERE id = :id AND (user_id = :uid OR user_id IS NULL) LIMIT 1',
-            ['id' => $id, 'uid' => $userId]
+            'SELECT id FROM rateb_notifications WHERE id = :id AND company_id = :cid AND (user_id = :uid OR user_id IS NULL) LIMIT 1',
+            ['id' => $id, 'uid' => $userId, 'cid' => $companyId]
         );
         if (!$row) {
             return false;
@@ -98,9 +101,17 @@ final class NotificationService
         $this->notifyCompany($companyId, $title, $msg, 'warning', 'low_stock');
     }
 
-    public function triggerContractExpiry(int $companyId, string $contractNo, string $endDate): void
+    public function triggerContractExpiry(int $companyId, string $contractNo, string $endDate, int $contractId = 0): void
     {
-        $this->notifyCompany($companyId, __('contract_expiry_alert'), __('contract_expiry_message', ['no' => $contractNo, 'date' => $endDate]), 'warning', 'contract_expiry');
+        $this->notifyCompany(
+            $companyId,
+            __('contract_expiry_alert'),
+            __('contract_expiry_message', ['no' => $contractNo, 'date' => $endDate]),
+            'warning',
+            'contract_expiry',
+            'contract',
+            $contractId > 0 ? $contractId : null
+        );
     }
 
     public function triggerApproval(int $userId, int $companyId, string $entityType, int $entityId): void

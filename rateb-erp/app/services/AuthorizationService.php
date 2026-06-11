@@ -24,6 +24,32 @@ final class AuthorizationService
         return $row !== null;
     }
 
+    public function userHasAnyRole(int $userId): bool
+    {
+        return $this->getUserRoleIds($userId) !== [];
+    }
+
+    /** Company portal: RBAC when roles assigned; legacy module access when no roles. */
+    public function companyUserCan(int $userId, string $permissionSlug, string $module = ''): bool
+    {
+        if ($permissionSlug === '') {
+            return true;
+        }
+        if ($this->userHasPermission($userId, $permissionSlug)) {
+            return true;
+        }
+        if ($this->userHasAnyRole($userId)) {
+            return false;
+        }
+        if ($module === '') {
+            return false;
+        }
+        $map = is_file(RATEB_ROOT . '/config/module-permissions.php')
+            ? require RATEB_ROOT . '/config/module-permissions.php'
+            : [];
+        return ($map[$module] ?? '') === $permissionSlug;
+    }
+
     /** @return array<int, string> */
     public function userPermissionSlugs(int $userId): array
     {

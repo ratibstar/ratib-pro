@@ -27,6 +27,11 @@ final class PasswordResetController extends Controller
             SessionManager::flash('error', __('invalid_request'));
             Response::redirect(rateb_url('password/forgot'));
         }
+        $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+        if (!\Rateb\App\Core\IpRateLimiter::attempt('pwd_reset_' . md5($ip), 5, 900)) {
+            SessionManager::flash('error', __('too_many_attempts'));
+            Response::redirect(rateb_url('password/forgot'));
+        }
         $email = trim((string) $this->input('email', ''));
         (new PasswordResetService())->createTokenForEmail($email);
         SessionManager::flash('success', __('password_reset_sent'));

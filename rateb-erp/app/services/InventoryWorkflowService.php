@@ -206,7 +206,9 @@ final class InventoryWorkflowService
                 __('expiry_alert'),
                 __('expiry_alert_message', ['item' => (string) ($item['item_name'] ?? ''), 'date' => $exp]),
                 'warning',
-                'expiry'
+                'expiry',
+                'inventory',
+                (int) $item['id']
             );
             $count++;
         }

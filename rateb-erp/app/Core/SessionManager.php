@@ -61,4 +61,11 @@ final class SessionManager
         unset($_SESSION['_flash'][$key]);
         return $val;
     }
+
+    public static function regenerate(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+    }
 }

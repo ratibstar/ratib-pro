@@ -34,6 +34,8 @@ define('RATEB_ERP_DB_NAME', $e('RATEB_ERP_DB_NAME', 'outratib_rateb-erp'));
 /** Optional: dedicated MySQL user for ERP only (leave empty to use CONTROL_DB_USER / outratib_out). */
 define('RATEB_ERP_DB_USER', $e('RATEB_ERP_DB_USER', ''));
 define('RATEB_ERP_DB_PASS', $e('RATEB_ERP_DB_PASS', ''));
+/** Deploy/automation token for rateb-erp/public/run-migrations.php (defaults to CPANEL API token env). */
+define('RATEB_ERP_MIGRATE_TOKEN', $e('RATEB_ERP_MIGRATE_TOKEN', $e('CPANEL_API_TOKEN', '')));
 define('SITE_URL', $e('CONTROL_SITE_URL', 'https://out.ratib.sa'));
 define('RATIB_PRO_URL', $e('RATIB_PRO_URL', SITE_URL));
 // Designed app: pages/designed-launcher.php works without /Designed/ rewrites; override with full URL if needed.

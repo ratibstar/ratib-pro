@@ -95,7 +95,7 @@ final class Permission extends Model
 final class ChartOfAccount extends Model
 {
     protected string $table = 'rateb_chart_of_accounts';
-    protected bool $tenantScoped = false;
+    protected bool $tenantScoped = true;
     protected array $fillable = [
         'company_id', 'code', 'name', 'name_ar', 'account_type', 'parent_id', 'is_active',
     ];

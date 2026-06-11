@@ -358,4 +358,7 @@ return [
     'view' => 'عرض',
     'color' => 'اللون',
     'expiry_date' => 'تاريخ الانتهاء',
+    'company_access_denied' => 'الوصول للشركة موقوف أو انتهى الاشتراك.',
+    'storage_limit_exceeded' => 'تم تجاوز حد التخزين للباقة.',
+    'user_limit_reached' => 'تم الوصول إلى حد المستخدمين للباقة.',
 ];

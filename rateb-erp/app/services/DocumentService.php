@@ -30,18 +30,21 @@ final class DocumentService
             return ['success' => false, 'error' => 'File too large (max 10MB)'];
         }
 
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file((string) ($file['tmp_name'] ?? '')) ?: '';
-        if (!in_array($mime, self::ALLOWED_MIMES, true)) {
-            return ['success' => false, 'error' => 'File type not allowed'];
-        }
-
         $companyId = TenantContext::companyId();
         if ($companyId === null && !TenantContext::isSuperAdmin()) {
             return ['success' => false, 'error' => 'Company context required'];
         }
+        if ($companyId !== null && !(new PlanLimitService())->canUploadBytes((int) $companyId, $size)) {
+            return ['success' => false, 'error' => __('storage_limit_exceeded')];
+        }
         if ($companyId === null) {
-            $companyId = 0;
+            return ['success' => false, 'error' => 'Company context required'];
+        }
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file((string) ($file['tmp_name'] ?? '')) ?: '';
+        if (!in_array($mime, self::ALLOWED_MIMES, true)) {
+            return ['success' => false, 'error' => 'File type not allowed'];
         }
 
         $ext = pathinfo((string) ($file['name'] ?? 'file'), PATHINFO_EXTENSION);
@@ -63,7 +66,7 @@ final class DocumentService
             'INSERT INTO rateb_documents (company_id, entity_type, entity_id, title, file_name, file_path, mime_type, file_size, uploaded_by)
              VALUES (:cid, :et, :eid, :title, :fn, :fp, :mime, :sz, :uid)'
         )->execute([
-            'cid' => $companyId > 0 ? $companyId : (int) ($_POST['company_id'] ?? 0),
+            'cid' => (int) $companyId,
             'et' => $entityType,
             'eid' => $entityId,
             'title' => $title !== '' ? $title : (string) ($file['name'] ?? $safeName),

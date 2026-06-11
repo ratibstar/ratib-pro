@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Rateb\App\Controllers\Api;
 
 use Rateb\App\Core\Controller;
+use Rateb\App\Core\IpRateLimiter;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\Company;
@@ -13,6 +14,8 @@ use Rateb\App\Models\PurchaseRequest;
 use Rateb\App\Models\Supplier;
 use Rateb\App\Services\ApiTokenService;
 use Rateb\App\Services\DashboardService;
+use Rateb\App\Services\Logger;
+use Rateb\App\Services\PlanLimitService;
 
 final class ApiController extends Controller
 {
@@ -22,21 +25,17 @@ final class ApiController extends Controller
             'success' => true,
             'version' => 'v1',
             'name' => 'RTAB ERP API',
-            'endpoints' => [
-                'POST /api/v1/auth/token',
-                'GET /api/v1/dashboard',
-                'GET /api/v1/companies',
-                'GET|POST /api/v1/companies/{id}',
-                'GET|POST /api/v1/suppliers',
-                'GET|POST /api/v1/purchase-requests',
-                'GET|POST /api/v1/purchase-orders',
-                'GET|POST /api/v1/inventory',
-            ],
         ]);
     }
 
     public function createToken(): void
     {
+        $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+        if (!IpRateLimiter::attempt('api_token_' . md5($ip), 10, 900)) {
+            Response::json(['success' => false, 'message' => 'Too many attempts'], 429);
+            return;
+        }
+
         $body = json_decode((string) file_get_contents('php://input'), true) ?: [];
         $email = trim((string) ($body['email'] ?? ''));
         $password = (string) ($body['password'] ?? '');
@@ -44,22 +43,38 @@ final class ApiController extends Controller
         $userModel = new \Rateb\App\Models\User();
         $user = $userModel->findByEmail($email);
         if (!$user || !password_verify($password, (string) $user['password'])) {
+            Logger::warning('API token auth failed', ['email' => $email, 'ip' => $ip]);
             Response::json(['success' => false, 'message' => 'Invalid credentials'], 401);
+            return;
+        }
+        if ((string) ($user['status'] ?? '') !== 'active') {
+            Response::json(['success' => false, 'message' => 'Account inactive'], 403);
+            return;
+        }
+        if ((int) ($user['is_super_admin'] ?? 0) === 1) {
+            Response::json(['success' => false, 'message' => 'Super admin API tokens disabled'], 403);
+            return;
+        }
+        $companyId = (int) ($user['company_id'] ?? 0);
+        if ($companyId < 1 || !(new PlanLimitService())->companyAccessAllowed($companyId)) {
+            Response::json(['success' => false, 'message' => 'Company access denied'], 403);
+            return;
         }
 
-        $token = (new ApiTokenService())->createToken((int) $user['id'], 'API Token');
+        $token = (new ApiTokenService())->createToken((int) $user['id'], 'API Token', 90);
         Response::json(['success' => true, 'token' => $token['token'], 'expires_at' => $token['expires_at']]);
     }
 
     public function dashboard(): void
     {
         if (TenantContext::isSuperAdmin()) {
-            $service = new DashboardService();
-            Response::json(['success' => true, 'data' => $service->adminMetrics()]);
+            Response::json(['success' => false, 'message' => 'Forbidden'], 403);
+            return;
         }
         $companyId = TenantContext::companyId();
         if (!$companyId) {
             Response::json(['success' => false, 'message' => 'No company context'], 403);
+            return;
         }
         $service = new DashboardService();
         Response::json(['success' => true, 'data' => $service->companyMetrics($companyId)]);
@@ -67,38 +82,17 @@ final class ApiController extends Controller
 
     public function listCompanies(): void
     {
-        if (!TenantContext::isSuperAdmin()) {
-            Response::json(['success' => false, 'message' => 'Forbidden'], 403);
-        }
-        $model = new Company();
-        Response::json(['success' => true, 'data' => $model->all(100, 0)]);
+        Response::json(['success' => false, 'message' => 'Forbidden'], 403);
     }
 
     public function getCompany(array $params): void
     {
-        if (!TenantContext::isSuperAdmin()) {
-            Response::json(['success' => false, 'message' => 'Forbidden'], 403);
-        }
-        $item = (new Company())->find((int) ($params['id'] ?? 0));
-        if (!$item) {
-            Response::json(['success' => false, 'message' => 'Not found'], 404);
-        }
-        Response::json(['success' => true, 'data' => $item]);
+        Response::json(['success' => false, 'message' => 'Forbidden'], 403);
     }
 
     public function createCompany(): void
     {
-        if (!TenantContext::isSuperAdmin()) {
-            Response::json(['success' => false, 'message' => 'Forbidden'], 403);
-        }
-        $body = json_decode((string) file_get_contents('php://input'), true) ?: [];
-        $id = (new Company())->create([
-            'name' => trim((string) ($body['name'] ?? '')),
-            'slug' => trim((string) ($body['slug'] ?? '')),
-            'email' => trim((string) ($body['email'] ?? '')),
-            'status' => 'pending',
-        ]);
-        Response::json(['success' => true, 'id' => $id], 201);
+        Response::json(['success' => false, 'message' => 'Forbidden'], 403);
     }
 
     public function listSuppliers(): void

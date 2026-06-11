@@ -10,14 +10,17 @@ final class AssetDeviceWorkflowService
     /** @param array<string, mixed> $data */
     public function createMaintenance(array $data, string $table = 'rateb_asset_maintenance'): int
     {
+        $cid = TenantGuard::requireCompanyId();
         $db = \Rateb\App\Core\Database::connection();
         if ($table === 'rateb_asset_maintenance') {
+            $assetId = (int) ($data['asset_id'] ?? 0);
+            TenantGuard::assertAsset($assetId, $cid);
             $db->prepare(
                 'INSERT INTO rateb_asset_maintenance (company_id, asset_id, maintenance_type, scheduled_date, cost, status, notes)
                  VALUES (:cid, :aid, :mt, :sd, :cost, :st, :notes)'
             )->execute([
-                'cid' => TenantContext::companyId(),
-                'aid' => (int) ($data['asset_id'] ?? 0),
+                'cid' => $cid,
+                'aid' => $assetId,
                 'mt' => $data['maintenance_type'] ?? 'general',
                 'sd' => $data['scheduled_date'] ?? null,
                 'cost' => (float) ($data['cost'] ?? 0),
@@ -25,12 +28,14 @@ final class AssetDeviceWorkflowService
                 'notes' => $data['notes'] ?? null,
             ]);
         } else {
+            $deviceId = (int) ($data['device_id'] ?? 0);
+            TenantGuard::assertDevice($deviceId, $cid);
             $db->prepare(
                 'INSERT INTO rateb_device_service_history (company_id, device_id, service_date, service_type, provider, cost, notes)
                  VALUES (:cid, :did, :sd, :st, :pr, :cost, :notes)'
             )->execute([
-                'cid' => TenantContext::companyId(),
-                'did' => (int) ($data['device_id'] ?? 0),
+                'cid' => $cid,
+                'did' => $deviceId,
                 'sd' => $data['service_date'] ?? date('Y-m-d'),
                 'st' => $data['service_type'] ?? 'maintenance',
                 'pr' => $data['provider'] ?? null,
@@ -44,22 +49,25 @@ final class AssetDeviceWorkflowService
     /** @param array<string, mixed> $data */
     public function createAssignment(array $data): int
     {
+        $cid = TenantGuard::requireCompanyId();
+        $assetId = (int) ($data['asset_id'] ?? 0);
+        TenantGuard::assertAsset($assetId, $cid);
         $db = \Rateb\App\Core\Database::connection();
         $db->prepare(
             'INSERT INTO rateb_asset_assignments (company_id, asset_id, assigned_to, department, assigned_at, notes)
              VALUES (:cid, :aid, :to, :dept, :at, :notes)'
         )->execute([
-            'cid' => TenantContext::companyId(),
-            'aid' => (int) ($data['asset_id'] ?? 0),
+            'cid' => $cid,
+            'aid' => $assetId,
             'to' => $data['assigned_to'] ?? '',
             'dept' => $data['department'] ?? null,
             'at' => $data['assigned_at'] ?? date('Y-m-d'),
             'notes' => $data['notes'] ?? null,
         ]);
         $id = (int) $db->lastInsertId();
-        if (!empty($data['asset_id']) && !empty($data['assigned_to'])) {
-            $db->prepare('UPDATE rateb_assets SET assigned_to = :t WHERE id = :id')
-                ->execute(['t' => $data['assigned_to'], 'id' => (int) $data['asset_id']]);
+        if ($assetId > 0 && !empty($data['assigned_to'])) {
+            $db->prepare('UPDATE rateb_assets SET assigned_to = :t WHERE id = :id AND company_id = :cid')
+                ->execute(['t' => $data['assigned_to'], 'id' => $assetId, 'cid' => $cid]);
         }
         return $id;
     }
@@ -67,22 +75,25 @@ final class AssetDeviceWorkflowService
     /** @param array<string, mixed> $data */
     public function recordDepreciation(array $data): int
     {
-        $db = \Rateb\App\Core\Database::connection();
+        $cid = TenantGuard::requireCompanyId();
         $assetId = (int) ($data['asset_id'] ?? 0);
+        TenantGuard::assertAsset($assetId, $cid);
         $amount = (float) ($data['amount'] ?? 0);
         $book = (float) ($data['book_value'] ?? 0);
+        $db = \Rateb\App\Core\Database::connection();
         $db->prepare(
             'INSERT INTO rateb_asset_depreciation (company_id, asset_id, period_date, amount, book_value)
              VALUES (:cid, :aid, :pd, :amt, :bv)'
         )->execute([
-            'cid' => TenantContext::companyId(),
+            'cid' => $cid,
             'aid' => $assetId,
             'pd' => $data['period_date'] ?? date('Y-m-d'),
             'amt' => $amount,
             'bv' => $book,
         ]);
         if ($assetId > 0 && $book >= 0) {
-            $db->prepare('UPDATE rateb_assets SET current_value = :v WHERE id = :id')->execute(['v' => $book, 'id' => $assetId]);
+            $db->prepare('UPDATE rateb_assets SET current_value = :v WHERE id = :id AND company_id = :cid')
+                ->execute(['v' => $book, 'id' => $assetId, 'cid' => $cid]);
         }
         return (int) $db->lastInsertId();
     }
@@ -90,13 +101,16 @@ final class AssetDeviceWorkflowService
     /** @param array<string, mixed> $data */
     public function createSparePart(array $data): int
     {
+        $cid = TenantGuard::requireCompanyId();
+        $deviceId = (int) ($data['device_id'] ?? 0);
+        TenantGuard::assertDevice($deviceId, $cid);
         $db = \Rateb\App\Core\Database::connection();
         $db->prepare(
             'INSERT INTO rateb_device_spare_parts (company_id, device_id, part_name, part_no, quantity, reorder_level)
              VALUES (:cid, :did, :name, :pn, :qty, :rl)'
         )->execute([
-            'cid' => TenantContext::companyId(),
-            'did' => (int) ($data['device_id'] ?? 0),
+            'cid' => $cid,
+            'did' => $deviceId,
             'name' => $data['part_name'] ?? '',
             'pn' => $data['part_no'] ?? null,
             'qty' => (float) ($data['quantity'] ?? 0),
@@ -107,9 +121,11 @@ final class AssetDeviceWorkflowService
 
     public function updateDeviceWarranty(int $deviceId, string $warrantyExpiry): bool
     {
+        $cid = TenantGuard::requireCompanyId();
+        TenantGuard::assertDevice($deviceId, $cid);
         $db = \Rateb\App\Core\Database::connection();
-        $stmt = $db->prepare('UPDATE rateb_medical_devices SET warranty_expiry = :we WHERE id = :id');
-        return $stmt->execute(['we' => $warrantyExpiry, 'id' => $deviceId]);
+        $stmt = $db->prepare('UPDATE rateb_medical_devices SET warranty_expiry = :we WHERE id = :id AND company_id = :cid');
+        return $stmt->execute(['we' => $warrantyExpiry, 'id' => $deviceId, 'cid' => $cid]);
     }
 
     /** @return array<int, array<string, mixed>> */

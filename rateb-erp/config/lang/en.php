@@ -358,4 +358,7 @@ return [
     'view' => 'View',
     'color' => 'Color',
     'expiry_date' => 'Expiry Date',
+    'company_access_denied' => 'Company access is suspended or subscription expired.',
+    'storage_limit_exceeded' => 'Storage limit exceeded for your plan.',
+    'user_limit_reached' => 'User limit reached for this company plan.',
 ];

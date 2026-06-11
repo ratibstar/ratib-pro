@@ -66,8 +66,6 @@ final class DashboardController extends Controller
     {
         $companyId = (int) SessionManager::get('rateb_company_id');
         TenantContext::setCompanyId($companyId);
-        (new \Rateb\App\Services\InventoryWorkflowService())->processExpiryAlerts($companyId);
-        (new \Rateb\App\Services\ContractWorkflowService())->processExpiryAlerts($companyId);
         $service = new DashboardService();
         $limits = (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId);
         $userCount = (new User())->count(['company_id' => $companyId]);

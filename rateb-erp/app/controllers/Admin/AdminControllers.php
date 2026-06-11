@@ -287,6 +287,9 @@ final class SubscriptionsController extends \Rateb\App\Controllers\CrudControlle
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $id = $this->model->create($data);
+        if (!empty($data['company_id']) && !empty($data['plan_id']) && in_array((string) ($data['status'] ?? ''), ['active', 'trial'], true)) {
+            (new \Rateb\App\Services\PlanLimitService())->syncFromPlan((int) $data['company_id'], (int) $data['plan_id']);
+        }
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
@@ -324,6 +327,9 @@ final class SubscriptionsController extends \Rateb\App\Controllers\CrudControlle
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
         $this->model->update($id, $data);
+        if (!empty($data['company_id']) && !empty($data['plan_id']) && in_array((string) ($data['status'] ?? ''), ['active', 'trial'], true)) {
+            (new \Rateb\App\Services\PlanLimitService())->syncFromPlan((int) $data['company_id'], (int) $data['plan_id']);
+        }
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
@@ -386,7 +392,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
 {
     public function __construct()
     {
-        $this->model = new User();
+        $this->model = new \Rateb\App\Models\User();
         $this->viewPrefix = 'admin/users';
         $this->routePrefix = 'admin/users';
         $this->entityName = 'users';
@@ -483,6 +489,11 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         }
         $data = $this->collectData();
         $roleIds = array_map('intval', (array) $this->input('role_ids', []));
+        $companyId = (int) ($data['company_id'] ?? 0);
+        if ($companyId > 0 && !(new \Rateb\App\Services\PlanLimitService())->canAddUser($companyId)) {
+            SessionManager::flash('error', __('user_limit_reached'));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
         $id = $this->model->create($data);
         (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
         (new AuditService())->log('create', $this->entityName, $id, $data);

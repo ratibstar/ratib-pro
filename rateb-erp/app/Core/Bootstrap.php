@@ -45,6 +45,7 @@ final class Bootstrap
             '/app/controllers/Company/CompanyControllers.php',
             '/app/controllers/Company/ExtendedControllers.php',
             '/app/controllers/Company/AccountingControllers.php',
+            '/app/controllers/Company/BusinessControllers.php',
             '/app/controllers/Shared/PasswordResetController.php',
             '/app/controllers/Api/ApiController.php',
             '/app/Core/Middleware/Middleware.php',
@@ -137,7 +138,7 @@ final class Bootstrap
 
     private static function ensureStorage(string $basePath): void
     {
-        foreach (['storage/logs', 'storage/uploads'] as $dir) {
+        foreach (['storage/logs', 'storage/uploads', 'storage/backups', 'storage/rate-limit'] as $dir) {
             $full = $basePath . '/' . $dir;
             if (!is_dir($full)) {
                 @mkdir($full, 0755, true);

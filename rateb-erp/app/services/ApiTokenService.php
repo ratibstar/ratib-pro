@@ -19,13 +19,17 @@ final class ApiTokenService
         $hash = hash('sha256', $plain);
 
         $expiresAt = $expiresDays ? date('Y-m-d H:i:s', time() + ($expiresDays * 86400)) : null;
+        $modules = [];
+        if (!empty($user['company_id'])) {
+            $modules = (new PlanLimitService())->getLimits((int) $user['company_id'])['modules'] ?? [];
+        }
 
         (new ApiToken())->create([
             'user_id' => $userId,
             'company_id' => $user['company_id'],
             'token_hash' => $hash,
             'name' => $name,
-            'abilities' => json_encode(['*']),
+            'abilities' => json_encode($modules),
             'expires_at' => $expiresAt,
         ]);
 
@@ -36,7 +40,7 @@ final class ApiTokenService
     {
         $hash = hash('sha256', $plainToken);
         $token = (new ApiToken())->queryOne(
-            'SELECT t.*, u.is_super_admin FROM rateb_api_tokens t JOIN rateb_users u ON u.id = t.user_id WHERE t.token_hash = :h LIMIT 1',
+            'SELECT t.*, u.is_super_admin, u.status AS user_status FROM rateb_api_tokens t JOIN rateb_users u ON u.id = t.user_id WHERE t.token_hash = :h LIMIT 1',
             ['h' => $hash]
         );
 
@@ -44,11 +48,19 @@ final class ApiTokenService
             return null;
         }
 
+        if ((string) ($token['user_status'] ?? '') !== 'active') {
+            return null;
+        }
+
+        if ((int) ($token['is_super_admin'] ?? 0) === 1) {
+            return null;
+        }
+
         if (!empty($token['expires_at']) && strtotime((string) $token['expires_at']) < time()) {
             return null;
         }
 
-        $upd = (new ApiToken())->queryOne(
+        (new ApiToken())->queryOne(
             'UPDATE rateb_api_tokens SET last_used_at = NOW() WHERE id = :id',
             ['id' => (int) $token['id']]
         );

@@ -63,14 +63,22 @@ final class WorkflowService
 
     private function decide(int $instanceId, string $action, ?string $comment): bool
     {
-        $db = Database::connection();
-        $inst = $db->prepare('SELECT * FROM rateb_approval_instances WHERE id = :id LIMIT 1');
-        $inst->execute(['id' => $instanceId]);
-        $row = $inst->fetch();
-        if (!$row || (string) $row['status'] !== 'pending') {
+        try {
+            $row = TenantGuard::assertApprovalInstance($instanceId);
+        } catch (\Throwable $e) {
+            return false;
+        }
+        if ((string) ($row['status'] ?? '') !== 'pending') {
             return false;
         }
 
+        $userId = (int) SessionManager::get('rateb_user_id', 0);
+        $authz = new AuthorizationService();
+        if (!$authz->companyUserCan($userId, 'workflows.approve', 'workflows')) {
+            return false;
+        }
+
+        $db = Database::connection();
         $step = (int) $row['current_step'];
         $db->prepare(
             'INSERT INTO rateb_approval_actions (instance_id, step_order, user_id, action, comment) VALUES (:iid, :st, :uid, :act, :c)'

@@ -383,19 +383,14 @@ final class DeviceMaintenanceController extends Controller
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_url('company/device-maintenance'));
         }
-        $db = \Rateb\App\Core\Database::connection();
-        $db->prepare(
-            'INSERT INTO rateb_device_service_history (company_id, device_id, service_date, service_type, provider, cost, notes)
-             VALUES (:cid, :did, :sd, :st, :pr, :cost, :notes)'
-        )->execute([
-            'cid' => TenantContext::companyId(),
-            'did' => (int) $this->input('device_id', 0),
-            'sd' => (string) $this->input('service_date', date('Y-m-d')),
-            'st' => (string) $this->input('service_type', 'maintenance'),
-            'pr' => trim((string) $this->input('provider', '')),
+        (new AssetDeviceWorkflowService())->createMaintenance([
+            'device_id' => (int) $this->input('device_id', 0),
+            'service_date' => (string) $this->input('service_date', date('Y-m-d')),
+            'service_type' => (string) $this->input('service_type', 'maintenance'),
+            'provider' => trim((string) $this->input('provider', '')),
             'cost' => (float) $this->input('cost', 0),
             'notes' => trim((string) $this->input('notes', '')),
-        ]);
+        ], 'rateb_device_service_history');
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url('company/device-maintenance'));
     }
