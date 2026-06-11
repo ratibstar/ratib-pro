@@ -31,11 +31,13 @@ $clientPlatformActiveKey = control_client_platform_active_key();
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/control-hub.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'control-hub.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-layer-group"></i><span>Control hub</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_panel_page_with_control('control/help-center.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'help-center.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-book"></i><span>Help center</span></a></li>
             <li class="sidebar-section"><span class="section-label"><i class="fas fa-hospital"></i> RATEB ERP</span></li>
-            <li><a href="<?php echo htmlspecialchars(function_exists('control_rateb_erp_hub_page_url') ? control_rateb_erp_hub_page_url() : control_panel_page_with_control('control/rateb-erp.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF']) === 'rateb-erp.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-hospital"></i><span>RATEB ERP</span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_hub_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo in_array(basename($_SERVER['PHP_SELF'] ?? ''), ['rateb-erp.php', 'rateb-erp-migrate.php', 'rateb-erp-app.php'], true) ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-hospital"></i><span>RATEB ERP</span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF'] ?? '') === 'rateb-erp-migrate.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-database"></i><span>ERP Database Setup</span></a></li>
             <?php
             $ratebErpNavLinks = function_exists('control_rateb_erp_nav_links') ? control_rateb_erp_nav_links() : [];
             foreach ($ratebErpNavLinks as $erpLink) {
-                echo '<li><a href="' . htmlspecialchars($erpLink['href'], ENT_QUOTES, 'UTF-8') . '" class="sidebar-item" target="_blank" rel="noopener noreferrer" data-permission="control_dashboard"><i class="fas ' . htmlspecialchars($erpLink['icon'], ENT_QUOTES, 'UTF-8') . '"></i><span>' . htmlspecialchars($erpLink['label'], ENT_QUOTES, 'UTF-8') . '</span></a></li>';
+                $active = (function_exists('control_rateb_erp_active_key') && control_rateb_erp_active_key() === ($erpLink['key'] ?? '')) ? ' active' : '';
+                echo '<li><a href="' . htmlspecialchars($erpLink['href'], ENT_QUOTES, 'UTF-8') . '" class="sidebar-item' . $active . '" data-permission="control_dashboard"><i class="fas ' . htmlspecialchars($erpLink['icon'], ENT_QUOTES, 'UTF-8') . '"></i><span>' . htmlspecialchars($erpLink['label'], ENT_QUOTES, 'UTF-8') . '</span></a></li>';
             }
             ?>
             <?php

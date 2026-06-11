@@ -1,7 +1,7 @@
 <?php
 /**
  * RATEB ERP — launcher inside the Control Panel shell.
- * URL: …/pages/control/rateb-erp.php?control=1
+ * URL: …/control-panel/pages/control/rateb-erp.php?control=1
  */
 if (!defined('IS_CONTROL_PANEL')) {
     define('IS_CONTROL_PANEL', true);
@@ -17,13 +17,22 @@ if (empty($_SESSION['control_logged_in'])) {
 require_once __DIR__ . '/../../includes/control-permissions.php';
 requireControlPermission(CONTROL_PERM_DASHBOARD, 'control_system_settings', 'view_control_system_settings');
 
-$erpBase = control_rateb_erp_base_url();
 $erpLinks = control_rateb_erp_nav_links();
-$erpRoot = dirname(__DIR__, 3) . '/rateb-erp';
-$erpPublicIndex = $erpRoot . '/public/index.php';
-$erpInstalled = is_file($erpPublicIndex);
-$migrationRunner = $erpRoot . '/migrations/run.php';
-$migrationsReady = is_file($migrationRunner);
+$erpInstalled = control_rateb_erp_is_installed();
+$schemaReady = false;
+
+if ($erpInstalled) {
+    try {
+        $erpRoot = control_rateb_erp_root_path();
+        define('RATEB_ROOT', str_replace('\\', '/', realpath($erpRoot) ?: $erpRoot));
+        require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
+        Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
+        require_once RATEB_ROOT . '/app/services/MigrationService.php';
+        $schemaReady = (new \Rateb\App\Services\MigrationService())->isSchemaReady();
+    } catch (Throwable $e) {
+        $schemaReady = false;
+    }
+}
 
 require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
 startControlLayout('RATEB ERP', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
@@ -31,53 +40,54 @@ startControlLayout('RATEB ERP', ['css/system-settings.css', 'css/control/rateb-e
 
 <p class="control-settings-intro mb-3">
     <strong><i class="fas fa-hospital me-2"></i>RATEB ERP</strong>
-    — Medical Procurement &amp; Healthcare ERP (Super Admin, company portal, REST API). Open modules below in a new tab.
+    — Medical Procurement &amp; Healthcare ERP. Everything opens here on <strong>out.ratib.sa</strong> inside your Control Panel (not rateb.sa).
 </p>
 
 <div class="rateb-erp-status mb-4" role="status">
     <div class="rateb-erp-status-item<?php echo $erpInstalled ? ' rateb-erp-status-ok' : ' rateb-erp-status-warn'; ?>">
         <i class="fas <?php echo $erpInstalled ? 'fa-circle-check' : 'fa-triangle-exclamation'; ?>"></i>
-        <span>Application files: <?php echo $erpInstalled ? 'Found' : 'Missing (upload rateb-erp/)'; ?></span>
+        <span>Application files: <?php echo $erpInstalled ? 'Found' : 'Missing — upload rateb-erp/ to server'; ?></span>
     </div>
-    <div class="rateb-erp-status-item<?php echo $migrationsReady ? ' rateb-erp-status-ok' : ' rateb-erp-status-warn'; ?>">
-        <i class="fas <?php echo $migrationsReady ? 'fa-database' : 'fa-triangle-exclamation'; ?>"></i>
-        <span>Database migrations: <?php echo $migrationsReady ? 'Ready (run php rateb-erp/migrations/run.php)' : 'Not found'; ?></span>
-    </div>
-    <div class="rateb-erp-status-item rateb-erp-status-info">
-        <i class="fas fa-link"></i>
-        <span>Base URL: <code><?php echo htmlspecialchars($erpBase, ENT_QUOTES, 'UTF-8'); ?></code></span>
+    <div class="rateb-erp-status-item<?php echo $schemaReady ? ' rateb-erp-status-ok' : ' rateb-erp-status-warn'; ?>">
+        <i class="fas <?php echo $schemaReady ? 'fa-table' : 'fa-database'; ?>"></i>
+        <span>Database: <?php echo $schemaReady ? 'Ready' : 'Run setup first'; ?></span>
     </div>
 </div>
 
-<div class="control-settings-intro mb-2"><strong>Super Admin</strong></div>
+<?php if (!$schemaReady) { ?>
+<div class="control-settings-card mb-4">
+    <h3><i class="fas fa-database"></i> First time setup</h3>
+    <p>Click once to create tables — no SSH, no <code>php rateb-erp/migrations/run.php</code> in terminal.</p>
+    <a href="<?php echo htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary">
+        <i class="fas fa-play"></i> Run database setup
+    </a>
+</div>
+<?php } ?>
+
+<div class="control-settings-intro mb-2"><strong>Super Admin modules</strong></div>
 <div class="control-settings-grid mb-4">
     <?php foreach ($erpLinks as $link) { ?>
     <div class="control-settings-card" data-permission="control_dashboard,control_system_settings">
         <h3><i class="fas <?php echo htmlspecialchars($link['icon'], ENT_QUOTES, 'UTF-8'); ?>"></i> <?php echo htmlspecialchars($link['label'], ENT_QUOTES, 'UTF-8'); ?></h3>
-        <p><?php echo htmlspecialchars($link['description'] ?? 'Open in RATEB ERP Super Admin.', ENT_QUOTES, 'UTF-8'); ?></p>
-        <a href="<?php echo htmlspecialchars($link['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary" target="_blank" rel="noopener noreferrer">
-            <i class="fas fa-arrow-up-right-from-square"></i> Open
+        <p><?php echo htmlspecialchars($link['description'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
+        <a href="<?php echo htmlspecialchars($link['href'], ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary<?php echo $schemaReady ? '' : ' disabled'; ?>">
+            <i class="fas fa-arrow-right"></i> Open
         </a>
     </div>
     <?php } ?>
 </div>
 
-<div class="control-settings-intro mb-2"><strong>Portals &amp; API</strong></div>
+<div class="control-settings-intro mb-2"><strong>Portals</strong></div>
 <div class="control-settings-grid mb-4">
-    <div class="control-settings-card" data-permission="control_dashboard,control_system_settings">
-        <h3><i class="fas fa-right-to-bracket"></i> Super Admin login</h3>
-        <p>Platform administrator sign-in for companies, plans, and subscriptions.</p>
-        <a href="<?php echo htmlspecialchars($erpBase . '/admin/login', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary" target="_blank" rel="noopener noreferrer"><i class="fas fa-user-shield"></i> Admin login</a>
+    <div class="control-settings-card">
+        <h3><i class="fas fa-user-shield"></i> Super Admin login</h3>
+        <p>Default: <code>admin@rateb.sa</code> / <code>password</code> (change after first login).</p>
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_app_url('admin/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary<?php echo $schemaReady ? '' : ' disabled'; ?>">Admin login</a>
     </div>
-    <div class="control-settings-card" data-permission="control_dashboard,control_system_settings">
-        <h3><i class="fas fa-building-user"></i> Company portal</h3>
-        <p>Procurement, inventory, suppliers, assets, and tenders per company.</p>
-        <a href="<?php echo htmlspecialchars($erpBase . '/company/login', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary" target="_blank" rel="noopener noreferrer"><i class="fas fa-building"></i> Company login</a>
-    </div>
-    <div class="control-settings-card" data-permission="control_dashboard,control_system_settings">
-        <h3><i class="fas fa-code"></i> REST API v1</h3>
-        <p>Token-based JSON API for integrations and mobile clients.</p>
-        <a href="<?php echo htmlspecialchars($erpBase . '/api/v1', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-light" target="_blank" rel="noopener noreferrer"><i class="fas fa-plug"></i> API index</a>
+    <div class="control-settings-card">
+        <h3><i class="fas fa-building"></i> Company portal</h3>
+        <p>Procurement &amp; inventory per company.</p>
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_app_url('company/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary<?php echo $schemaReady ? '' : ' disabled'; ?>">Company login</a>
     </div>
 </div>
 

@@ -18,7 +18,7 @@ final class AdminAuthMiddleware implements MiddlewareInterface
     {
         Auth::bootstrapFromSession();
         if (!Auth::check() || !SessionManager::get('rateb_is_super_admin')) {
-            Response::redirect(RATEB_BASE_URL . '/admin/login');
+            Response::redirect(function_exists('rateb_url') ? rateb_url('admin/login') : (RATEB_BASE_URL . '/admin/login'));
             return false;
         }
         return true;
@@ -31,11 +31,11 @@ final class CompanyAuthMiddleware implements MiddlewareInterface
     {
         Auth::bootstrapFromSession();
         if (!Auth::check() || SessionManager::get('rateb_is_super_admin')) {
-            Response::redirect(RATEB_BASE_URL . '/company/login');
+            Response::redirect(function_exists('rateb_url') ? rateb_url('company/login') : (RATEB_BASE_URL . '/company/login'));
             return false;
         }
         if (!SessionManager::get('rateb_company_id')) {
-            Response::redirect(RATEB_BASE_URL . '/company/login');
+            Response::redirect(function_exists('rateb_url') ? rateb_url('company/login') : (RATEB_BASE_URL . '/company/login'));
             return false;
         }
         return true;
@@ -72,7 +72,7 @@ final class GuestMiddleware implements MiddlewareInterface
         Auth::bootstrapFromSession();
         if (Auth::check()) {
             $portal = SessionManager::get('rateb_portal', 'company');
-            Response::redirect(RATEB_BASE_URL . '/' . $portal);
+            Response::redirect(function_exists('rateb_url') ? rateb_url($portal) : (RATEB_BASE_URL . '/' . $portal));
             return false;
         }
         return true;

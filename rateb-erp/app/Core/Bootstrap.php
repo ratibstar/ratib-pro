@@ -40,6 +40,7 @@ final class Bootstrap
             '/app/controllers/Company/CompanyControllers.php',
             '/app/controllers/Api/ApiController.php',
             '/app/Core/Middleware/Middleware.php',
+            '/app/services/MigrationService.php',
         ] as $bundle) {
             $f = $basePath . $bundle;
             if (is_file($f)) {

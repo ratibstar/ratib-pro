@@ -11,9 +11,15 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 define('RATEB_APP_NAME', 'RATEB');
 define('RATEB_APP_VERSION', '1.0.0');
 
-$scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
-$basePath = rtrim(str_replace('/public/index.php', '', $scriptName), '/');
-define('RATEB_BASE_URL', $basePath !== '' ? $basePath : '/rateb-erp/public');
+if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
+    define('RATEB_CP_MODE', true);
+    define('RATEB_BASE_URL', (string) RATEB_CP_APP_URL);
+} else {
+    define('RATEB_CP_MODE', false);
+    $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $basePath = rtrim(str_replace('/public/index.php', '', $scriptName), '/');
+    define('RATEB_BASE_URL', $basePath !== '' ? $basePath : '/rateb-erp/public');
+}
 
 define('RATEB_DEFAULT_LOCALE', 'en');
 define('RATEB_SUPPORTED_LOCALES', ['en', 'ar']);
@@ -21,6 +27,9 @@ define('RATEB_SUPPORTED_LOCALES', ['en', 'ar']);
 if (!function_exists('rateb_asset')) {
     function rateb_asset(string $path): string
     {
+        if (defined('RATEB_CP_MODE') && RATEB_CP_MODE && defined('RATEB_CP_ASSETS_URL')) {
+            return rtrim((string) RATEB_CP_ASSETS_URL, '/') . '/' . ltrim($path, '/');
+        }
         return RATEB_BASE_URL . '/assets/' . ltrim($path, '/');
     }
 }
@@ -28,7 +37,15 @@ if (!function_exists('rateb_asset')) {
 if (!function_exists('rateb_url')) {
     function rateb_url(string $path = ''): string
     {
-        return RATEB_BASE_URL . '/' . ltrim($path, '/');
+        $path = ltrim($path, '/');
+        if (defined('RATEB_CP_MODE') && RATEB_CP_MODE) {
+            $base = rtrim((string) RATEB_BASE_URL, '&');
+            if (strpos($base, '?') === false) {
+                $base .= '?control=1';
+            }
+            return $base . '&route=' . rawurlencode($path !== '' ? $path : 'admin');
+        }
+        return RATEB_BASE_URL . '/' . $path;
     }
 }
 
