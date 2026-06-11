@@ -39,7 +39,9 @@ final class ErpDatabaseService
     /** @return array<int, string> */
     public function fixErpDatabase(): array
     {
+        Database::disconnect();
         $log = (new MigrationService())->runAll();
+        Database::disconnect();
         try {
             $removed = (new AuthorizationService())->dedupeDuplicateRoles();
             $log[] = 'Role dedupe: removed ' . $removed . ' duplicate role row(s).';
@@ -60,18 +62,16 @@ final class ErpDatabaseService
   /** @return array<string, int|string> */
     private function stats(PDO $pdo): array
     {
-        $ratebTables = (int) $pdo->query(
+        $ratebTables = $this->scalar($pdo,
             "SELECT COUNT(*) FROM information_schema.tables
              WHERE table_schema = DATABASE() AND table_name LIKE 'rateb\\_%'"
-        )->fetchColumn();
+        );
 
         $permissions = $this->tableCount($pdo, 'rateb_permissions');
         $roles = $this->tableCount($pdo, 'rateb_roles');
         $dupRoles = 0;
         if ($roles > 0) {
-            $dupRoles = (int) $pdo->query(
-                'SELECT COUNT(*) - COUNT(DISTINCT slug) FROM rateb_roles'
-            )->fetchColumn();
+            $dupRoles = $this->scalar($pdo, 'SELECT COUNT(*) - COUNT(DISTINCT slug) FROM rateb_roles');
         }
 
         return [
@@ -85,10 +85,26 @@ final class ErpDatabaseService
     private function tableCount(PDO $pdo, string $table): int
     {
         $stmt = $pdo->query("SHOW TABLES LIKE " . $pdo->quote($table));
-        if ($stmt === false || $stmt->rowCount() === 0) {
+        if ($stmt === false) {
             return 0;
         }
-        return (int) $pdo->query('SELECT COUNT(*) FROM `' . str_replace('`', '``', $table) . '`')->fetchColumn();
+        $exists = $stmt->fetch() !== false;
+        $stmt->closeCursor();
+        if (!$exists) {
+            return 0;
+        }
+        return $this->scalar($pdo, 'SELECT COUNT(*) FROM `' . str_replace('`', '``', $table) . '`');
+    }
+
+    private function scalar(PDO $pdo, string $sql): int
+    {
+        $stmt = $pdo->query($sql);
+        if ($stmt === false) {
+            return 0;
+        }
+        $val = $stmt->fetchColumn();
+        $stmt->closeCursor();
+        return (int) $val;
     }
 
     private function openDatabase(string $dbName): PDO
@@ -105,10 +121,14 @@ final class ErpDatabaseService
         }
 
         $dsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port, $dbName);
-        return new PDO($dsn, $user, $pass, [
+        $options = [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
+        ];
+        if (defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')) {
+            $options[PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
+        }
+        return new PDO($dsn, $user, $pass, $options);
     }
 
     private function expectedErpDbName(): string

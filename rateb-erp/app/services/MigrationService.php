@@ -67,7 +67,7 @@ final class MigrationService
                 continue;
             }
             try {
-                $pdo->exec($statement);
+                $this->execStatement($pdo, $statement);
             } catch (\PDOException $e) {
                 if ($this->isBenignMigrationError($e->getMessage())) {
                     continue;
@@ -75,6 +75,18 @@ final class MigrationService
                 throw $e;
             }
         }
+    }
+
+    private function execStatement(PDO $pdo, string $statement): void
+    {
+        $stmt = $pdo->query($statement);
+        if ($stmt === false) {
+            return;
+        }
+        do {
+            $stmt->fetchAll();
+        } while ($stmt->nextRowset());
+        $stmt->closeCursor();
     }
 
     /** @return array<int, string> */
@@ -119,7 +131,11 @@ final class MigrationService
         try {
             $pdo = Database::connection();
             $stmt = $pdo->query("SHOW TABLES LIKE 'rateb_companies'");
-            return $stmt !== false && $stmt->rowCount() > 0;
+            $row = $stmt !== false ? $stmt->fetch() : false;
+            if ($stmt instanceof \PDOStatement) {
+                $stmt->closeCursor();
+            }
+            return $row !== false;
         } catch (\Throwable $e) {
             return false;
         }
