@@ -23,13 +23,21 @@ $erpRoot = control_rateb_erp_root_path();
 $indexFile = $erpRoot . '/public/index.php';
 
 if (!is_file($indexFile)) {
-    http_response_code(503);
-    header('Content-Type: text/html; charset=UTF-8');
-    echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>RATEB ERP</title></head><body>';
-    echo '<h1>RATEB ERP not installed</h1>';
-    echo '<p>Upload the <code>rateb-erp/</code> folder to the server, then open ';
-    echo '<a href="' . htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8') . '">Run database setup</a>.</p>';
-    echo '</body></html>';
+    $diag = control_rateb_erp_diagnostic();
+    require_once __DIR__ . '/../../includes/control/layout-wrapper.php';
+    startControlLayout('RATEB ERP', ['css/system-settings.css', 'css/control/rateb-erp-hub.css'], []);
+    ?>
+    <div class="alert alert-warning">
+        <h2 class="h5"><i class="fas fa-exclamation-triangle"></i> RATEB ERP files not on server</h2>
+        <p>Upload <code>rateb-erp/</code> to <code>public_html/rateb-erp/</code> (same level as <code>control-panel/</code>), or push to GitHub <code>main</code> and wait for deploy.</p>
+        <p class="mb-1">Checked path:</p>
+        <code><?php echo htmlspecialchars($diag['resolved'] . '/public/index.php', ENT_QUOTES, 'UTF-8'); ?></code>
+        <div class="mt-3">
+            <a href="<?php echo htmlspecialchars(control_rateb_erp_hub_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary">Back to ERP hub</a>
+        </div>
+    </div>
+    <?php
+    endControlLayout();
     exit;
 }
 

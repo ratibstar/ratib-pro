@@ -41,6 +41,7 @@ cache/
 *.gz
 *.sql
 !modules/infrastructure-marketplace/Migrations/*.sql
+!rateb-erp/migrations/*.sql
 *.sqlite
 
 # Editor/system files

@@ -23,6 +23,7 @@ DEPLOY_ALLOW_PREFIXES = (
     "includes/",
     "pages/",
     "control-panel/",
+    "rateb-erp/",
     "js/",
     "css/",
     "api/",
@@ -319,6 +320,27 @@ def ensure_remote_dir(remote_dir: str, remote_base: str) -> None:
         _mkdir_cache.add(built)
 
 
+RATEB_ERP_TRIGGER_PREFIXES = (
+    "rateb-erp/",
+    "control-panel/pages/control/rateb-erp",
+    "control-panel/includes/control/rateb-erp",
+)
+
+
+def rateb_erp_bundle_files() -> list[str]:
+    """Upload full rateb-erp tree when ERP control-panel files change."""
+    root = os.path.join(os.getcwd(), "rateb-erp")
+    if not os.path.isdir(root):
+        return []
+    out: list[str] = []
+    for dirpath, _dirnames, filenames in os.walk(root):
+        for name in filenames:
+            rel = os.path.relpath(os.path.join(dirpath, name), os.getcwd()).replace("\\", "/")
+            if is_auto_deploy_path(rel):
+                out.append(rel)
+    return sorted(set(out))
+
+
 def is_auto_deploy_path(path: str) -> bool:
     if not path or path.startswith("."):
         return False
@@ -549,7 +571,8 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
     seen = set(core)
     seen.add(marker)
     extras: list[str] = []
-    for path in sorted(git_changed_paths()):
+    changed = sorted(git_changed_paths())
+    for path in changed:
         if path in seen:
             continue
         if not is_auto_deploy_path(path):
@@ -560,6 +583,20 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
         seen.add(path)
         if len(extras) >= FAST_DEPLOY_CHANGED_CAP:
             break
+    if any(
+        any(c.startswith(prefix) for prefix in RATEB_ERP_TRIGGER_PREFIXES)
+        for c in changed
+    ):
+        bundle = rateb_erp_bundle_files()
+        added = 0
+        for path in bundle:
+            if path in seen:
+                continue
+            extras.append(path)
+            seen.add(path)
+            added += 1
+        if added:
+            print(f"fast deploy: +{added} rateb-erp bundle file(s)", flush=True)
     files = core + extras + [marker]
     if extras:
         print(

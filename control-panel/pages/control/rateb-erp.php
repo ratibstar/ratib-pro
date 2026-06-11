@@ -18,7 +18,8 @@ require_once __DIR__ . '/../../includes/control-permissions.php';
 requireControlPermission(CONTROL_PERM_DASHBOARD, 'control_system_settings', 'view_control_system_settings');
 
 $erpLinks = control_rateb_erp_nav_links();
-$erpInstalled = control_rateb_erp_is_installed();
+$erpDiag = control_rateb_erp_diagnostic();
+$erpInstalled = $erpDiag['installed'];
 $schemaReady = false;
 
 if ($erpInstalled) {
@@ -54,7 +55,14 @@ startControlLayout('RATEB ERP', ['css/system-settings.css', 'css/control/rateb-e
     </div>
 </div>
 
-<?php if (!$schemaReady) { ?>
+<?php if (!$erpInstalled) { ?>
+<div class="alert alert-warning mb-4">
+    <strong><i class="fas fa-cloud-upload-alt me-1"></i> الملفات غير موجودة على السيرفر</strong><br>
+    ارفع مجلد <code>rateb-erp/</code> إلى <code>public_html/rateb-erp/</code> بجانب <code>control-panel/</code> عبر cPanel File Manager،
+    أو اعمل <strong>git push</strong> إلى فرع <code>main</code> وانتظر اكتمال النشر التلقائي.
+    <div class="mt-2 small text-muted">المسار المتوقع: <code><?php echo htmlspecialchars($erpDiag['resolved'] . '/public/index.php', ENT_QUOTES, 'UTF-8'); ?></code></div>
+</div>
+<?php } elseif (!$schemaReady) { ?>
 <div class="control-settings-card mb-4">
     <h3><i class="fas fa-database"></i> First time setup</h3>
     <p>Click once to create tables — no SSH, no <code>php rateb-erp/migrations/run.php</code> in terminal.</p>

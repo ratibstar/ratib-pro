@@ -1,14 +1,57 @@
 <?php
 declare(strict_types=1);
 
+function control_rateb_erp_root_candidates(): array
+{
+    $candidates = [];
+    $fromBridge = dirname(__DIR__, 3) . '/rateb-erp';
+    $candidates[] = $fromBridge;
+
+  // control-panel/ may be the deploy root on some hosts
+    $candidates[] = dirname(__DIR__, 2) . '/rateb-erp';
+
+    $docRoot = (string) ($_SERVER['DOCUMENT_ROOT'] ?? '');
+    if ($docRoot !== '') {
+        $candidates[] = rtrim($docRoot, '/\\') . '/rateb-erp';
+        $candidates[] = dirname(rtrim($docRoot, '/\\')) . '/rateb-erp';
+    }
+
+    $unique = [];
+    foreach ($candidates as $path) {
+        $norm = str_replace('\\', '/', $path);
+        if (!in_array($norm, $unique, true)) {
+            $unique[] = $norm;
+        }
+    }
+    return $unique;
+}
+
 function control_rateb_erp_root_path(): string
 {
-    return dirname(__DIR__, 3) . '/rateb-erp';
+    foreach (control_rateb_erp_root_candidates() as $path) {
+        if (is_file($path . '/public/index.php')) {
+            return $path;
+        }
+    }
+    return control_rateb_erp_root_candidates()[0] ?? (dirname(__DIR__, 3) . '/rateb-erp');
 }
 
 function control_rateb_erp_is_installed(): bool
 {
     return is_file(control_rateb_erp_root_path() . '/public/index.php');
+}
+
+function control_rateb_erp_diagnostic(): array
+{
+    $resolved = control_rateb_erp_root_path();
+    $candidates = control_rateb_erp_root_candidates();
+    return [
+        'installed' => control_rateb_erp_is_installed(),
+        'resolved' => $resolved,
+        'index_exists' => is_file($resolved . '/public/index.php'),
+        'candidates' => $candidates,
+        'document_root' => (string) ($_SERVER['DOCUMENT_ROOT'] ?? ''),
+    ];
 }
 
 /**
