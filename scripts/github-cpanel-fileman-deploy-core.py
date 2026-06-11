@@ -341,6 +341,26 @@ def rateb_erp_bundle_files() -> list[str]:
     return sorted(set(out))
 
 
+def rateb_erp_control_panel_files() -> list[str]:
+    """Companion Control Panel files (migrate page, hub CSS, bridge, etc.)."""
+    cp_roots = [
+        os.path.join(os.getcwd(), "control-panel/pages/control"),
+        os.path.join(os.getcwd(), "control-panel/includes/control"),
+        os.path.join(os.getcwd(), "control-panel/css/control"),
+    ]
+    out: list[str] = []
+    for root in cp_roots:
+        if not os.path.isdir(root):
+            continue
+        for name in os.listdir(root):
+            if not name.startswith("rateb-erp"):
+                continue
+            rel = os.path.relpath(os.path.join(root, name), os.getcwd()).replace("\\", "/")
+            if os.path.isfile(os.path.join(os.getcwd(), rel)) and is_auto_deploy_path(rel):
+                out.append(rel)
+    return sorted(set(out))
+
+
 def is_auto_deploy_path(path: str) -> bool:
     if not path or path.startswith("."):
         return False
@@ -587,7 +607,7 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
         any(c.startswith(prefix) for prefix in RATEB_ERP_TRIGGER_PREFIXES)
         for c in changed
     ):
-        bundle = rateb_erp_bundle_files()
+        bundle = rateb_erp_bundle_files() + rateb_erp_control_panel_files()
         added = 0
         for path in bundle:
             if path in seen:

@@ -25,8 +25,15 @@ try {
     http_response_code(500);
     header('Content-Type: text/html; charset=UTF-8');
     $debug = (getenv('APP_DEBUG') === 'true' || getenv('APP_DEBUG') === '1');
-    if ($debug) {
-        echo '<h1>RATEB ERP Error</h1><pre>' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . '</pre>';
+    $cpMode = defined('RATEB_CP_ENTRY') && RATEB_CP_ENTRY;
+    if ($debug || $cpMode) {
+        echo '<div style="font-family:system-ui,sans-serif;max-width:720px;margin:2rem auto;padding:1rem 1.25rem;">';
+        echo '<h1 style="font-size:1.25rem;">RATEB ERP Error</h1>';
+        echo '<pre style="background:#f5f5f5;padding:1rem;overflow:auto;">' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . '</pre>';
+        if ($cpMode && function_exists('control_rateb_erp_migrate_page_url')) {
+            echo '<p><a href="' . htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8') . '">Open ERP Database Setup</a> to run migrations.</p>';
+        }
+        echo '</div>';
     } else {
         echo 'RATEB ERP is temporarily unavailable. Please check server logs or run migrations.';
     }
