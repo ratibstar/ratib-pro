@@ -62,19 +62,62 @@ final class Bootstrap
                 return;
             }
 
-            $relative = str_replace('\\', DIRECTORY_SEPARATOR, substr($class, strlen($prefix)));
-            $paths = [
-                $basePath . '/app/' . $relative . '.php',
-                $basePath . '/app/' . strtolower($relative) . '.php',
-            ];
-
-            foreach ($paths as $path) {
-                if (is_file($path)) {
-                    require_once $path;
-                    return;
-                }
+            $relative = substr($class, strlen($prefix));
+            $path = self::resolveAutoloadPath($basePath, $relative);
+            if ($path !== null) {
+                require_once $path;
             }
         });
+    }
+
+    /** Linux cPanel is case-sensitive: namespace Controllers vs folder controllers. */
+    private static function resolveAutoloadPath(string $basePath, string $relative): ?string
+    {
+        $relative = str_replace('\\', '/', $relative);
+        $exact = $basePath . '/app/' . $relative . '.php';
+        if (is_file($exact)) {
+            return $exact;
+        }
+
+        $parts = explode('/', $relative);
+        $classFile = array_pop($parts) . '.php';
+        $dir = $basePath . '/app';
+
+        foreach ($parts as $segment) {
+            $next = self::matchPathSegment($dir, $segment, true);
+            if ($next === null) {
+                return null;
+            }
+            $dir = $next;
+        }
+
+        return self::matchPathSegment($dir, $classFile, false);
+    }
+
+    private static function matchPathSegment(string $parent, string $name, bool $directory): ?string
+    {
+        if (!is_dir($parent)) {
+            return null;
+        }
+
+        $target = strtolower($name);
+        foreach (scandir($parent) ?: [] as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+            if (strtolower($entry) !== $target) {
+                continue;
+            }
+            $full = $parent . '/' . $entry;
+            if ($directory && is_dir($full)) {
+                return $full;
+            }
+            if (!$directory && is_file($full)) {
+                return $full;
+            }
+        }
+
+        return null;
     }
 
     private static function loadConfig(string $basePath): void
