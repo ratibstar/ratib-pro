@@ -31,11 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['run_migrations'])) {
       $error = 'rateb-erp folder is missing on the server. Upload it first.';
   } else {
       try {
-          control_rateb_erp_ensure_root();
-          require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
-          Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
-          require_once RATEB_ROOT . '/app/services/MigrationService.php';
-          $log = (new \Rateb\App\Services\MigrationService())->runAll();
+          $log = control_rateb_erp_run_migrations();
           $success = true;
       } catch (Throwable $e) {
           $error = $e->getMessage();

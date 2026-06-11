@@ -158,10 +158,25 @@ function control_rateb_erp_db_name(): string
         return rateb_erp_database_name();
     }
     if (defined('RATEB_ERP_DB_NAME') && (string) RATEB_ERP_DB_NAME !== '') {
-        return (string) RATEB_ERP_DB_NAME;
+        $name = (string) RATEB_ERP_DB_NAME;
+        return $name === 'outratib-rateb-erp' ? 'outratib_rateb-erp' : $name;
     }
     $env = getenv('RATEB_ERP_DB_NAME');
-    return ($env !== false && $env !== '') ? (string) $env : 'outratib_rateb-erp';
+    $name = ($env !== false && $env !== '') ? (string) $env : 'outratib_rateb-erp';
+    return $name === 'outratib-rateb-erp' ? 'outratib_rateb-erp' : $name;
+}
+
+/** @return array<int, string> */
+function control_rateb_erp_run_migrations(): array
+{
+    control_rateb_erp_ensure_root();
+    require_once RATEB_ROOT . '/config/database.php';
+    require_once RATEB_ROOT . '/app/Core/Database.php';
+    require_once RATEB_ROOT . '/app/services/MigrationService.php';
+    if (function_exists('set_time_limit')) {
+        @set_time_limit(300);
+    }
+    return (new \Rateb\App\Services\MigrationService())->runAll();
 }
 
 function control_rateb_erp_assets_base_url(): string

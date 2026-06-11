@@ -30,7 +30,9 @@ final class Database
             : [defined('RATEB_DB_NAME') ? (string) RATEB_DB_NAME : 'outratib_rateb-erp'];
 
         $last = null;
+        $tried = [];
         foreach ($candidates as $dbName) {
+            $tried[] = $dbName;
             try {
                 self::$pdo = self::open($dbName);
                 self::$resolvedDbName = $dbName;
@@ -45,12 +47,47 @@ final class Database
             }
         }
 
+        $probed = self::probeErpDatabase($candidates);
+        if ($probed !== null && !in_array($probed, $tried, true)) {
+            try {
+                self::$pdo = self::open($probed);
+                self::$resolvedDbName = $probed;
+                return self::$pdo;
+            } catch (PDOException $e) {
+                $last = $e;
+                $tried[] = $probed;
+            }
+        }
+
         if ($last instanceof PDOException) {
-            error_log('RATEB ERP DB connection failed: ' . $last->getMessage());
-            throw $last;
+            $hint = 'Tried: ' . implode(', ', $tried) . '. Grant ' . RATEB_DB_USER
+                . ' ALL PRIVILEGES on outratib_rateb-erp in cPanel → MySQL® Databases.';
+            error_log('RATEB ERP DB connection failed: ' . $last->getMessage() . ' — ' . $hint);
+            throw new PDOException($last->getMessage() . "\n\n" . $hint, (int) $last->getCode(), $last);
         }
 
         throw new PDOException('RATEB ERP database connection failed.');
+    }
+
+    private static function probeErpDatabase(array $preferred): ?string
+    {
+        try {
+            $dsn = sprintf('mysql:host=%s;port=%d;charset=utf8mb4', RATEB_DB_HOST, RATEB_DB_PORT);
+            $pdo = new PDO($dsn, RATEB_DB_USER, RATEB_DB_PASS, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+            $stmt = $pdo->query("SHOW DATABASES LIKE '%rateb%erp%'");
+            if ($stmt === false) {
+                return null;
+            }
+            $found = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($preferred as $name) {
+                if (in_array($name, $found, true)) {
+                    return $name;
+                }
+            }
+            return isset($found[0]) ? (string) $found[0] : null;
+        } catch (PDOException $e) {
+            return null;
+        }
     }
 
     private static function open(string $dbName): PDO

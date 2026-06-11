@@ -38,8 +38,10 @@ try {
             echo '<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:1rem;margin:1rem 0;">';
             echo '<strong>صلاحيات قاعدة البيانات</strong><br>';
             echo 'المستخدم <code style="direction:ltr">' . htmlspecialchars($dbUser, ENT_QUOTES, 'UTF-8') . '</code> ';
-            echo 'لا يملك صلاحية على قاعدة <code style="direction:ltr">' . htmlspecialchars($dbName, ENT_QUOTES, 'UTF-8') . '</code>.<br><br>';
-            echo '<strong>في cPanel:</strong> MySQL® Databases → Add User To Database → اختر المستخدم والقاعدة → ALL PRIVILEGES → Make Changes.';
+            echo 'لا يملك صلاحية على قاعدة <code style="direction:ltr">outratib_rateb-erp</code> (وليس outratib-rateb-erp).<br><br>';
+            echo '<strong>في cPanel:</strong><br>1. MySQL® Databases → تأكد أن القاعدة <b>outratib_rateb-erp</b> موجودة<br>';
+            echo '2. Add User To Database → <code>outratib_out</code> + <code>outratib_rateb-erp</code><br>';
+            echo '3. ALL PRIVILEGES → Make Changes';
             echo '</div>';
         }
         if ($cpMode && function_exists('control_rateb_erp_migrate_page_url')) {
