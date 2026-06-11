@@ -468,7 +468,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
-            'roles' => (new \Rateb\App\Models\Role())->all(200, 0),
+            'roles' => $authz->allRoles(),
             'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
             'selectedRoles' => $userId > 0 ? $authz->getUserRoleIds($userId) : [],
             'isSuperAdmin' => !empty($item['is_super_admin']),
@@ -546,7 +546,17 @@ final class RolesController extends \Rateb\App\Controllers\CrudController
         $limit = 20;
         $offset = ($page - 1) * $limit;
         $authz = new \Rateb\App\Services\AuthorizationService();
+        $authz->dedupeDuplicateRoles();
         $items = $this->model->all($limit, $offset);
+        $seenSlugs = [];
+        $items = array_values(array_filter($items, static function (array $row) use (&$seenSlugs): bool {
+            $slug = (string) ($row['slug'] ?? '');
+            if ($slug === '' || isset($seenSlugs[$slug])) {
+                return false;
+            }
+            $seenSlugs[$slug] = true;
+            return true;
+        }));
         foreach ($items as &$row) {
             $row['permission_count'] = $authz->getRolePermissionCount((int) $row['id']);
         }

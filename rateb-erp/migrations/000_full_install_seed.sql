@@ -33,10 +33,17 @@ INSERT INTO rateb_permissions (name, name_ar, slug, module, description, descrip
 ('Manage Accounting', 'إدارة الحسابات', 'accounting.manage', 'accounting', 'Manage chart of accounts and journal entries', 'إدارة دليل الحسابات والقيود اليومية'),
 ('Post Journal Entries', 'ترحيل القيود', 'accounting.post', 'accounting', 'Post and void journal entries', 'ترحيل وإلغاء القيود المحاسبية');
 
-INSERT INTO rateb_roles (company_id, name, slug, description, is_system) VALUES
-(NULL, 'Super Admin', 'super-admin', 'Platform super administrator', 1),
-(NULL, 'Accountant', 'accountant', 'Accounting and reports access', 1),
-(NULL, 'Access Manager', 'access-manager', 'Users and roles management', 1);
+INSERT INTO rateb_roles (company_id, name, slug, description, is_system)
+SELECT NULL, 'Super Admin', 'super-admin', 'Platform super administrator', 1
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM rateb_roles WHERE slug = 'super-admin');
+
+INSERT INTO rateb_roles (company_id, name, slug, description, is_system)
+SELECT NULL, 'Accountant', 'accountant', 'Accounting and reports access', 1
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM rateb_roles WHERE slug = 'accountant');
+
+INSERT INTO rateb_roles (company_id, name, slug, description, is_system)
+SELECT NULL, 'Access Manager', 'access-manager', 'Users and roles management', 1
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM rateb_roles WHERE slug = 'access-manager');
 
 INSERT INTO rateb_role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM rateb_roles r CROSS JOIN rateb_permissions p WHERE r.slug = 'super-admin';

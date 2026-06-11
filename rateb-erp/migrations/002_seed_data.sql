@@ -28,8 +28,8 @@ INSERT INTO rateb_permissions (name, slug, module, description) VALUES
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 INSERT INTO rateb_roles (company_id, name, slug, description, is_system)
-VALUES (NULL, 'Super Admin', 'super-admin', 'Platform super administrator', 1)
-ON DUPLICATE KEY UPDATE name = VALUES(name);
+SELECT NULL, 'Super Admin', 'super-admin', 'Platform super administrator', 1
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM rateb_roles WHERE slug = 'super-admin');
 
 INSERT INTO rateb_role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM rateb_roles r CROSS JOIN rateb_permissions p WHERE r.slug = 'super-admin'

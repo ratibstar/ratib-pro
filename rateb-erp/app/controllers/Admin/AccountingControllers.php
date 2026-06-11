@@ -30,6 +30,7 @@ final class AccessControlController extends Controller
     public function matrix(): void
     {
         $authz = new \Rateb\App\Services\AuthorizationService();
+        $authz->dedupeDuplicateRoles();
         $this->view('admin/access-control/matrix', [
             'title' => __('permission_matrix'),
             'roles' => $authz->allRoles(),
