@@ -65,7 +65,7 @@ startControlLayout('RATEB ERP', ['css/system-settings.css', 'css/control/rateb-e
 <?php } elseif (!$schemaReady) { ?>
 <div class="control-settings-card mb-4">
     <h3><i class="fas fa-database"></i> First time setup</h3>
-    <p>Click once to create tables — no SSH, no <code>php rateb-erp/migrations/run.php</code> in terminal.</p>
+    <p>Creates tables in <code><?php echo htmlspecialchars(control_rateb_erp_db_name(), ENT_QUOTES, 'UTF-8'); ?></code> — no SSH required.</p>
     <a href="<?php echo htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary">
         <i class="fas fa-play"></i> Run database setup
     </a>

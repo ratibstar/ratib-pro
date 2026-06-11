@@ -106,6 +106,18 @@ function control_rateb_erp_nav_links(): array
     return $links;
 }
 
+function control_rateb_erp_db_name(): string
+{
+    if (function_exists('rateb_erp_database_name')) {
+        return rateb_erp_database_name();
+    }
+    if (defined('RATEB_ERP_DB_NAME') && (string) RATEB_ERP_DB_NAME !== '') {
+        return (string) RATEB_ERP_DB_NAME;
+    }
+    $env = getenv('RATEB_ERP_DB_NAME');
+    return ($env !== false && $env !== '') ? (string) $env : 'outratib_rateb-erp';
+}
+
 function control_rateb_erp_assets_base_url(): string
 {
     $site = rtrim(defined('SITE_URL') ? (string) SITE_URL : '', '/');

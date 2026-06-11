@@ -69,8 +69,10 @@ startControlLayout('RATEB ERP — Database Setup', ['css/system-settings.css', '
 
 <p class="control-settings-intro mb-3">
     <strong><i class="fas fa-database me-2"></i>Database setup</strong>
-    — Run this once from your Control Panel. Uses the same database as <code>out.ratib.sa</code> (from your <code>.env</code>).
-    No SSH or terminal required.
+    — Creates all <code>rateb_*</code> tables in the dedicated ERP database
+    <code><?php echo htmlspecialchars(control_rateb_erp_db_name(), ENT_QUOTES, 'UTF-8'); ?></code>
+    (not the control panel DB). In cPanel → MySQL®, add user <code><?php echo htmlspecialchars(defined('DB_USER') ? (string) DB_USER : 'outratib_out', ENT_QUOTES, 'UTF-8'); ?></code>
+    to database <code><?php echo htmlspecialchars(control_rateb_erp_db_name(), ENT_QUOTES, 'UTF-8'); ?></code> with ALL PRIVILEGES.
 </p>
 
 <div class="rateb-erp-status mb-4">

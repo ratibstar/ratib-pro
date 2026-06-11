@@ -29,6 +29,8 @@ define('SEC_RATE_LIMIT_IP_MAX', (int) $e('SEC_RATE_LIMIT_IP_MAX', '120'));
 define('REQUEST_SIGNING_SECRET', $e('REQUEST_SIGNING_SECRET', ''));
 /** Ratib Pro / N-Genius orders DB (usually outratib_out). Used to fill registration list from ngenius_reg_orders. */
 define('RATIB_PRO_DB_NAME', $e('RATIB_PRO_DB_NAME', 'outratib_out'));
+/** RATEB ERP — isolated database (all rateb_* tables). Grant DB_USER access in cPanel → MySQL®. */
+define('RATEB_ERP_DB_NAME', $e('RATEB_ERP_DB_NAME', 'outratib_rateb-erp'));
 define('SITE_URL', $e('CONTROL_SITE_URL', 'https://out.ratib.sa'));
 define('RATIB_PRO_URL', $e('RATIB_PRO_URL', SITE_URL));
 // Designed app: pages/designed-launcher.php works without /Designed/ rewrites; override with full URL if needed.
