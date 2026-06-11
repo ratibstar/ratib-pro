@@ -6,7 +6,7 @@
 /** @var array<int, array<string, mixed>>|null $companies */
 /** @var array<int, array<string, mixed>>|null $plans */
 /** @var array<int, array<string, mixed>>|null $subscriptions */
-$isEdit = !empty($item);
+$isEdit = is_array($item) && (int) ($item['id'] ?? 0) > 0;
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
 $companies = $companies ?? [];
 $plans = $plans ?? [];
@@ -24,7 +24,7 @@ $subscriptions = $subscriptions ?? [];
                 <?php foreach ($fields as $field) {
                     $name = $field['name'];
                     $type = $field['type'] ?? 'text';
-                    $value = $item[$name] ?? '';
+                    $value = is_array($item) ? ($item[$name] ?? '') : '';
                     ?>
                 <div class="col-md-6">
                     <label class="form-label rateb-form-label" for="f_<?php echo Rateb\App\Core\View::escape($name); ?>">
