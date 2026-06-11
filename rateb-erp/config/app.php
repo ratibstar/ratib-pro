@@ -2,10 +2,10 @@
 declare(strict_types=1);
 
 if (!defined('RATEB_ROOT')) {
-    define('RATEB_ROOT', dirname(__DIR__));
+    define('RATEB_ROOT', dirname(__DIR__, 1));
 }
 
-define('RATEB_VIEWS_PATH', RATEB_ROOT . '/views');
+define('RATEB_VIEWS_PATH', RATEB_ROOT . DIRECTORY_SEPARATOR . 'views');
 define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RATEB');

@@ -159,18 +159,20 @@ RewriteCond %{REQUEST_URI} ^/public/ [OR]
 RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ [NC]
 RewriteRule ^ - [L]
 
-# RATEB ERP — static assets under rateb-erp/public/assets/
+# RATEB ERP — static assets
 RewriteCond %{REQUEST_URI} ^/rateb-erp/public/assets/ [NC]
 RewriteCond %{REQUEST_FILENAME} -f
 RewriteRule ^ - [L]
 
-# RATEB ERP — front controller (must run before site-wide catch-all below)
+# RATEB ERP — front controller (before site catch-all; pass path as ?route=)
 RewriteCond %{REQUEST_URI} ^/rateb-erp/public/ [NC]
+RewriteCond %{REQUEST_URI} !^/rateb-erp/public/index\.php [NC]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^rateb-erp/public/(.*)$ rateb-erp/public/index.php [L,QSA]
+RewriteRule ^rateb-erp/public/?(.*)$ rateb-erp/public/index.php?route=$1 [L,QSA]
 
 # Redirect all other requests to public/index.php except existing files/directories
+RewriteCond %{REQUEST_URI} !^/rateb-erp/ [NC]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ public/index.php [QSA,L]

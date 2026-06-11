@@ -7,13 +7,13 @@ final class Request
 {
     public static function resolvePath(): string
     {
-        if (!empty($_SERVER['PATH_INFO'])) {
-            $path = (string) $_SERVER['PATH_INFO'];
-            return self::normalize($path);
+        // Set by root .htaccess: rateb-erp/public/index.php?route=admin/settings
+        if (isset($_GET['route']) && is_string($_GET['route']) && $_GET['route'] !== '') {
+            return self::normalize('/' . ltrim($_GET['route'], '/'));
         }
 
-        if (!empty($_GET['route']) && is_string($_GET['route'])) {
-            return self::normalize('/' . ltrim($_GET['route'], '/'));
+        if (!empty($_SERVER['PATH_INFO'])) {
+            return self::normalize((string) $_SERVER['PATH_INFO']);
         }
 
         $uri = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
@@ -23,11 +23,17 @@ final class Request
 
         if ($scriptBase !== '' && strpos($uri, $scriptBase) === 0) {
             $uri = substr($uri, strlen($scriptBase)) ?: '/';
-        } elseif (defined('RATEB_BASE_URL')) {
+        }
+
+        if (defined('RATEB_BASE_URL')) {
             $erpBase = (string) RATEB_BASE_URL;
             if ($erpBase !== '' && strpos($uri, $erpBase) === 0) {
                 $uri = substr($uri, strlen($erpBase)) ?: '/';
             }
+        }
+
+        if (preg_match('#/rateb-erp/public(/.*)?$#', $uri, $m)) {
+            $uri = $m[1] ?? '/';
         }
 
         if ($uri === '/index.php' || substr($uri, -10) === '/index.php') {
