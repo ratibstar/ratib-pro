@@ -62,8 +62,13 @@ final class Router
             }
 
             $handler = $route['handler'];
-            foreach ($route['middleware'] as $middlewareClass) {
-                $middleware = new $middlewareClass();
+            foreach ($route['middleware'] as $middlewareDef) {
+                if (is_array($middlewareDef)) {
+                    $middlewareClass = $middlewareDef[0];
+                    $middleware = new $middlewareClass($middlewareDef[1] ?? '');
+                } else {
+                    $middleware = new $middlewareDef();
+                }
                 if (!$middleware->handle()) {
                     return;
                 }

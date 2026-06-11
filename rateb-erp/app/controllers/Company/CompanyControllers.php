@@ -67,9 +67,14 @@ final class DashboardController extends Controller
         $companyId = (int) SessionManager::get('rateb_company_id');
         TenantContext::setCompanyId($companyId);
         $service = new DashboardService();
+        $limits = (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId);
+        $userCount = (new User())->count(['company_id' => $companyId]);
+
         $this->view('company/dashboard', [
             'title' => __('dashboard'),
             'metrics' => $service->companyMetrics($companyId),
+            'limits' => $limits,
+            'userCount' => $userCount,
             'csrf' => Csrf::token(),
         ], 'company');
     }
@@ -399,6 +404,133 @@ final class NotificationsController extends Controller
             'items' => $items,
             'csrf' => Csrf::token(),
         ], 'company');
+    }
+}
+
+final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new \Rateb\App\Models\SupplierEvaluation();
+        $this->viewPrefix = 'company/supplier-evaluations';
+        $this->routePrefix = 'company/supplier-evaluations';
+        $this->entityName = 'supplier_evaluations';
+        $this->fields = [
+            ['name' => 'supplier_id', 'label' => 'supplier_id', 'type' => 'number'],
+            ['name' => 'evaluation_date', 'label' => 'evaluation_date', 'type' => 'date'],
+            ['name' => 'quality_score', 'label' => 'quality_score', 'type' => 'number'],
+            ['name' => 'delivery_score', 'label' => 'delivery_score', 'type' => 'number'],
+            ['name' => 'price_score', 'label' => 'price_score', 'type' => 'number'],
+            ['name' => 'service_score', 'label' => 'service_score', 'type' => 'number'],
+            ['name' => 'comments', 'label' => 'comments', 'type' => 'textarea'],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'published', 'archived']],
+        ];
+    }
+
+    public function index(): void
+    {
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $items = $this->model->query(
+            'SELECT e.*, s.name AS supplier_name FROM rateb_supplier_evaluations e
+             LEFT JOIN rateb_suppliers s ON s.id = e.supplier_id
+             WHERE e.company_id = :cid ORDER BY e.id DESC LIMIT 100',
+            ['cid' => $companyId]
+        );
+
+        $this->view($this->viewPrefix . '/index', [
+            'title' => __($this->entityName),
+            'items' => $items,
+            'total' => count($items),
+            'page' => 1,
+            'limit' => 100,
+            'routePrefix' => $this->routePrefix,
+            'fields' => [
+                ['name' => 'supplier_name', 'label' => 'suppliers'],
+                ['name' => 'evaluation_date', 'label' => 'evaluation_date'],
+                ['name' => 'overall_score', 'label' => 'overall_score'],
+                ['name' => 'quality_score', 'label' => 'quality_score'],
+                ['name' => 'status', 'label' => 'status'],
+            ],
+            'csrf' => Csrf::token(),
+        ], $this->layout());
+    }
+
+    public function create(): void
+    {
+        $this->view($this->viewPrefix . '/form', $this->evalFormData(null), $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', $this->evalFormData($item), $this->layout());
+    }
+
+    /** @return array<string, mixed> */
+    private function evalFormData(?array $item): array
+    {
+        return [
+            'title' => ($item ? __('edit') : __('create')) . ' ' . __('supplier_evaluations'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'suppliers' => (new \Rateb\App\Models\Supplier())->all(200, 0),
+        ];
+    }
+
+    public function store(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectData();
+        $id = $this->model->create($data);
+        $this->model->updateSupplierRating((int) ($data['supplier_id'] ?? 0));
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function update(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectData();
+        $this->model->update($id, $data);
+        $this->model->updateSupplierRating((int) ($data['supplier_id'] ?? 0));
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $evalModel = new \Rateb\App\Models\SupplierEvaluation();
+        $data['overall_score'] = $evalModel->recalculateOverall([
+            (int) ($data['quality_score'] ?? 0),
+            (int) ($data['delivery_score'] ?? 0),
+            (int) ($data['price_score'] ?? 0),
+            (int) ($data['service_score'] ?? 0),
+        ]);
+        $data['evaluated_by'] = SessionManager::get('rateb_user_id');
+        return $data;
+    }
+
+    protected function layout(): string
+    {
+        return 'company';
     }
 }
 

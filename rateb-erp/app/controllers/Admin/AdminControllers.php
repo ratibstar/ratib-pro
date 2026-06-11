@@ -91,7 +91,73 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
             ['name' => 'phone', 'label' => 'Phone', 'type' => 'text'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['pending', 'active', 'suspended']],
+            ['name' => 'plan_id', 'label' => 'plan_id', 'type' => 'number'],
+            ['name' => 'user_limit', 'label' => 'user_limit', 'type' => 'number'],
+            ['name' => 'storage_limit_mb', 'label' => 'storage_limit_mb', 'type' => 'number'],
         ];
+    }
+
+    public function create(): void
+    {
+        $this->view($this->viewPrefix . '/form', $this->formData(null), $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', $this->formData($item), $this->layout());
+    }
+
+    /** @return array<string, mixed> */
+    private function formData(?array $item): array
+    {
+        $selectedModules = [];
+        if ($item && !empty($item['modules'])) {
+            $decoded = json_decode((string) $item['modules'], true);
+            $selectedModules = is_array($decoded) ? $decoded : [];
+        }
+
+        return [
+            'title' => ($item ? __('edit') : __('create')) . ' ' . __('companies'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'plans' => (new \Rateb\App\Models\Plan())->all(100, 0),
+            'moduleCatalog' => \Rateb\App\Services\PlanLimitService::moduleCatalog(),
+            'selectedModules' => $selectedModules,
+            'limits' => $item ? (new \Rateb\App\Services\PlanLimitService())->getLimits((int) $item['id']) : null,
+        ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $modules = $this->input('modules', []);
+        if (is_array($modules)) {
+            $data['modules'] = json_encode(array_values(array_filter(array_map('strval', $modules))), JSON_UNESCAPED_UNICODE);
+        }
+        if (!empty($data['plan_id']) && (int) $data['plan_id'] > 0) {
+            $plan = (new \Rateb\App\Models\Plan())->find((int) $data['plan_id']);
+            if ($plan) {
+                if (empty($data['user_limit'])) {
+                    $data['user_limit'] = (int) ($plan['max_users'] ?? 10);
+                }
+                if (empty($data['storage_limit_mb'])) {
+                    $data['storage_limit_mb'] = (int) ($plan['max_storage_mb'] ?? 1024);
+                }
+                if (empty($data['modules']) || $data['modules'] === '[]') {
+                    $data['modules'] = $plan['modules'] ?? '[]';
+                }
+            }
+        }
+        return $data;
     }
 
     public function suspend(array $params): void
@@ -227,9 +293,45 @@ final class PermissionsController extends \Rateb\App\Controllers\CrudController
         $this->entityName = 'permissions';
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
+            ['name' => 'name_ar', 'label' => 'name_ar', 'type' => 'text'],
             ['name' => 'slug', 'label' => 'Slug', 'type' => 'text'],
             ['name' => 'module', 'label' => 'Module', 'type' => 'text'],
+            ['name' => 'description', 'label' => 'description', 'type' => 'textarea'],
+            ['name' => 'description_ar', 'label' => 'description_ar', 'type' => 'textarea'],
         ];
+    }
+
+    public function index(): void
+    {
+        $page = max(1, (int) $this->input('page', 1));
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+        $items = $this->model->all($limit, $offset);
+
+        foreach ($items as &$row) {
+            $row['name'] = rateb_permission_label($row);
+            if (rateb_locale() === 'ar' && !empty($row['description_ar'])) {
+                $row['description'] = $row['description_ar'];
+            }
+        }
+        unset($row);
+
+        $displayFields = [
+            ['name' => 'name', 'label' => 'name'],
+            ['name' => 'slug', 'label' => 'slug'],
+            ['name' => 'module', 'label' => 'module'],
+        ];
+
+        $this->view($this->viewPrefix . '/index', [
+            'title' => __($this->entityName),
+            'items' => $items,
+            'total' => $this->model->count(),
+            'page' => $page,
+            'limit' => $limit,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $displayFields,
+            'csrf' => Csrf::token(),
+        ], $this->layout());
     }
 }
 
@@ -476,6 +578,27 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'value', 'label' => 'Value', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'active', 'expired', 'terminated']],
         ];
+    }
+}
+
+final class SupplierEvaluationsController extends Controller
+{
+    public function index(): void
+    {
+        $model = new \Rateb\App\Models\SupplierEvaluation();
+        $items = $model->query(
+            'SELECT e.*, s.name AS supplier_name, c.name AS company_name
+             FROM rateb_supplier_evaluations e
+             LEFT JOIN rateb_suppliers s ON s.id = e.supplier_id
+             LEFT JOIN rateb_companies c ON c.id = e.company_id
+             ORDER BY e.id DESC LIMIT 100'
+        );
+
+        $this->view('admin/supplier-evaluations/index', [
+            'title' => __('supplier_evaluations'),
+            'items' => $items,
+            'csrf' => Csrf::token(),
+        ], 'main');
     }
 }
 

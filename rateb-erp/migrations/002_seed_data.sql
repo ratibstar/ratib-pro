@@ -37,7 +37,7 @@ ON DUPLICATE KEY UPDATE role_id = role_id;
 
 -- Default super admin: admin@rateb.sa / Rateb@2024 (change after first login)
 INSERT INTO rateb_users (company_id, name, email, password, is_super_admin, status, locale)
-SELECT NULL, 'Super Admin', 'admin@rateb.sa', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'active', 'en'
+SELECT NULL, 'Super Admin', 'admin@rateb.sa', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, 'active', 'ar'
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM rateb_users WHERE email = 'admin@rateb.sa');
 
@@ -47,7 +47,7 @@ ON DUPLICATE KEY UPDATE user_id = user_id;
 
 INSERT INTO rateb_system_settings (setting_key, setting_value, setting_group) VALUES
 ('app_name', 'RATEB ERP', 'general'),
-('default_locale', 'en', 'general'),
+('default_locale', 'ar', 'general'),
 ('default_currency', 'SAR', 'billing'),
 ('support_email', 'support@rateb.sa', 'general')
 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value);

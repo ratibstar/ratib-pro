@@ -40,6 +40,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
                 ['admin/procurement', 'procurement', 'fa-cart-shopping'],
                 ['admin/inventory', 'inventory', 'fa-boxes-stacked'],
                 ['admin/suppliers', 'suppliers', 'fa-truck-field'],
+                ['admin/supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke'],
                 ['admin/assets', 'assets', 'fa-toolbox'],
                 ['admin/contracts', 'contracts', 'fa-file-contract'],
                 ['admin/reports', 'reports', 'fa-chart-pie'],

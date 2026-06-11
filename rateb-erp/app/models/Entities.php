@@ -89,7 +89,36 @@ final class Permission extends Model
 {
     protected string $table = 'rateb_permissions';
     protected bool $tenantScoped = false;
-    protected array $fillable = ['name', 'slug', 'module', 'description'];
+    protected array $fillable = ['name', 'name_ar', 'slug', 'module', 'description', 'description_ar'];
+}
+
+final class SupplierEvaluation extends Model
+{
+    protected string $table = 'rateb_supplier_evaluations';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'company_id', 'supplier_id', 'evaluated_by', 'evaluation_date',
+        'quality_score', 'delivery_score', 'price_score', 'service_score',
+        'overall_score', 'comments', 'status',
+    ];
+
+    public function recalculateOverall(array $scores): float
+    {
+        $vals = array_map('intval', $scores);
+        $sum = array_sum($vals);
+        return round($sum / max(count($vals), 1), 2);
+    }
+
+    public function updateSupplierRating(int $supplierId): void
+    {
+        $row = $this->queryOne(
+            'SELECT AVG(overall_score) AS avg_rating FROM rateb_supplier_evaluations WHERE supplier_id = :sid AND status = :st',
+            ['sid' => $supplierId, 'st' => 'published']
+        );
+        $avg = $row ? round((float) $row['avg_rating'], 2) : 0.0;
+        $this->db->prepare('UPDATE rateb_suppliers SET rating = :r WHERE id = :id')
+            ->execute(['r' => $avg, 'id' => $supplierId]);
+    }
 }
 
 final class Payment extends Model

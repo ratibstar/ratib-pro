@@ -10,6 +10,10 @@ final class AuthorizationService
 {
     public function userHasPermission(int $userId, string $permissionSlug): bool
     {
+        if ($permissionSlug === '') {
+            return true;
+        }
+
         $row = (new Permission())->queryOne(
             'SELECT p.id FROM rateb_permissions p
              JOIN rateb_role_permissions rp ON rp.permission_id = p.id
@@ -18,6 +22,19 @@ final class AuthorizationService
             ['uid' => $userId, 'slug' => $permissionSlug]
         );
         return $row !== null;
+    }
+
+    /** @return array<int, string> */
+    public function userPermissionSlugs(int $userId): array
+    {
+        $rows = (new Permission())->query(
+            'SELECT p.slug FROM rateb_permissions p
+             JOIN rateb_role_permissions rp ON rp.permission_id = p.id
+             JOIN rateb_user_roles ur ON ur.role_id = rp.role_id
+             WHERE ur.user_id = :uid',
+            ['uid' => $userId]
+        );
+        return array_values(array_unique(array_column($rows, 'slug')));
     }
 
     public function assignRole(int $userId, int $roleId): void

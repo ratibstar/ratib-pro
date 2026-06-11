@@ -36,6 +36,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
                 ['company/rfq', 'rfq', 'fa-comments-dollar'],
                 ['company/quotations', 'quotations', 'fa-file-signature'],
                 ['company/suppliers', 'suppliers', 'fa-truck-field'],
+                ['company/supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke'],
                 ['company/inventory', 'inventory', 'fa-boxes-stacked'],
                 ['company/warehouses', 'warehouses', 'fa-warehouse'],
                 ['company/assets', 'assets', 'fa-toolbox'],

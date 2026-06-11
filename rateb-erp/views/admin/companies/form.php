@@ -1,1 +1,93 @@
-﻿<?php Rateb\App\Core\View::partial('crud-form', get_defined_vars()); ?>
+﻿<?php
+/** @var array<string, mixed>|null $item */
+/** @var array<int, array<string, mixed>> $plans */
+/** @var array<string, string> $moduleCatalog */
+/** @var array<int, string> $selectedModules */
+/** @var array<string, mixed>|null $limits */
+$isEdit = !empty($item);
+$action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
+?>
+<div class="rateb-card">
+    <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
+    <div class="rateb-card-body">
+        <form method="post" action="<?php echo $action; ?>">
+            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label"><?php echo __('name'); ?></label>
+                    <input class="form-control" type="text" name="name" value="<?php echo Rateb\App\Core\View::escape($item['name'] ?? ''); ?>" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><?php echo __('slug'); ?></label>
+                    <input class="form-control" type="text" name="slug" value="<?php echo Rateb\App\Core\View::escape($item['slug'] ?? ''); ?>" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><?php echo __('email'); ?></label>
+                    <input class="form-control" type="email" name="email" value="<?php echo Rateb\App\Core\View::escape($item['email'] ?? ''); ?>" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label"><?php echo __('phone'); ?></label>
+                    <input class="form-control" type="text" name="phone" value="<?php echo Rateb\App\Core\View::escape($item['phone'] ?? ''); ?>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label"><?php echo __('status'); ?></label>
+                    <select class="form-select" name="status">
+                        <?php foreach (['pending', 'active', 'suspended'] as $st) { ?>
+                        <option value="<?php echo $st; ?>"<?php echo ($item['status'] ?? '') === $st ? ' selected' : ''; ?>><?php echo __( $st); ?></option>
+                        <?php } ?>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label"><?php echo __('plans'); ?></label>
+                    <select class="form-select" name="plan_id" id="rateb-company-plan">
+                        <option value="">—</option>
+                        <?php foreach ($plans as $plan) { ?>
+                        <option value="<?php echo (int) $plan['id']; ?>"<?php echo (int) ($item['plan_id'] ?? 0) === (int) $plan['id'] ? ' selected' : ''; ?>>
+                            <?php echo Rateb\App\Core\View::escape($plan['name']); ?>
+                        </option>
+                        <?php } ?>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label"><?php echo __('user_limit'); ?></label>
+                    <input class="form-control" type="number" name="user_limit" min="1" value="<?php echo Rateb\App\Core\View::escape((string) ($item['user_limit'] ?? ($limits['user_limit'] ?? 10))); ?>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label"><?php echo __('storage_limit_mb'); ?></label>
+                    <input class="form-control" type="number" name="storage_limit_mb" min="128" value="<?php echo Rateb\App\Core\View::escape((string) ($item['storage_limit_mb'] ?? ($limits['storage_limit_mb'] ?? 1024))); ?>">
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <h3 class="h6 mb-2"><?php echo __('plan_modules'); ?></h3>
+                <div class="row g-2">
+                    <?php foreach ($moduleCatalog as $modKey => $modLabel) { ?>
+                    <div class="col-md-4 col-lg-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="modules[]" value="<?php echo Rateb\App\Core\View::escape($modKey); ?>" id="mod_<?php echo Rateb\App\Core\View::escape($modKey); ?>"
+                                <?php echo in_array($modKey, $selectedModules, true) ? ' checked' : ''; ?>>
+                            <label class="form-check-label" for="mod_<?php echo Rateb\App\Core\View::escape($modKey); ?>">
+                                <?php echo __(is_string($modLabel) ? $modLabel : $modKey); ?>
+                            </label>
+                        </div>
+                    </div>
+                    <?php } ?>
+                </div>
+            </div>
+
+            <?php if ($limits) { ?>
+            <div class="alert alert-secondary mt-3 mb-0">
+                <strong><?php echo __('current_plan'); ?>:</strong>
+                <?php echo Rateb\App\Core\View::escape($limits['plan_name'] ?? '—'); ?>
+                · <?php echo __('user_limit'); ?>: <?php echo (int) $limits['user_limit']; ?>
+                · <?php echo __('storage_limit_mb'); ?>: <?php echo (int) $limits['storage_limit_mb']; ?>
+            </div>
+            <?php } ?>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
+                <a href="<?php echo rateb_url($routePrefix); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
+            </div>
+        </form>
+    </div>
+</div>

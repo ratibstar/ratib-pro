@@ -21,11 +21,12 @@ use Rateb\App\Controllers\Admin\RolesController;
 use Rateb\App\Controllers\Admin\SettingsController;
 use Rateb\App\Controllers\Admin\SmsTemplatesController;
 use Rateb\App\Controllers\Admin\SubscriptionsController;
+use Rateb\App\Controllers\Admin\SupplierEvaluationsController as AdminSupplierEvaluationsController;
 use Rateb\App\Controllers\Admin\SuppliersController as AdminSuppliersController;
 use Rateb\App\Controllers\Admin\SupportTicketsController;
 use Rateb\App\Controllers\Admin\UsersController;
-use Rateb\App\Core\Middleware\AdminAuthMiddleware;
-use Rateb\App\Core\Middleware\GuestMiddleware;
+
+require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
 /** @var Rateb\App\Core\Router $router */
 
@@ -33,52 +34,53 @@ $router->get('/', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url('admin/login'));
 });
 
-$guest = [GuestMiddleware::class];
-$admin = [AdminAuthMiddleware::class];
+$router->get('/admin/login', [AdminAuthController::class, 'showLogin'], rateb_guest_mw());
+$router->post('/admin/login', [AdminAuthController::class, 'login'], rateb_guest_mw());
+$router->get('/admin/logout', [AdminAuthController::class, 'logout'], rateb_admin_mw());
 
-$router->get('/admin/login', [AdminAuthController::class, 'showLogin'], $guest);
-$router->post('/admin/login', [AdminAuthController::class, 'login'], $guest);
-$router->get('/admin/logout', [AdminAuthController::class, 'logout'], $admin);
-
-$router->get('/admin', [AdminDashboardController::class, 'index'], $admin);
 $router->get('/locale/{locale}', [LocaleController::class, 'switch']);
 
-$router->get('/admin/companies', [CompaniesController::class, 'index'], $admin);
-$router->get('/admin/companies/create', [CompaniesController::class, 'create'], $admin);
-$router->post('/admin/companies', [CompaniesController::class, 'store'], $admin);
-$router->get('/admin/companies/{id}/edit', [CompaniesController::class, 'edit'], $admin);
-$router->post('/admin/companies/{id}', [CompaniesController::class, 'update'], $admin);
-$router->post('/admin/companies/{id}/delete', [CompaniesController::class, 'destroy'], $admin);
-$router->post('/admin/companies/{id}/suspend', [CompaniesController::class, 'suspend'], $admin);
-$router->post('/admin/companies/{id}/activate', [CompaniesController::class, 'activate'], $admin);
+$router->get('/admin', [AdminDashboardController::class, 'index'], rateb_admin_mw('dashboard.view'));
 
-foreach ([
-    'subscriptions' => SubscriptionsController::class,
-    'plans' => PlansController::class,
-    'users' => UsersController::class,
-    'roles' => RolesController::class,
-    'permissions' => PermissionsController::class,
-    'payments' => PaymentsController::class,
-    'invoices' => InvoicesController::class,
-    'email-templates' => EmailTemplatesController::class,
-    'sms-templates' => SmsTemplatesController::class,
-    'support-tickets' => SupportTicketsController::class,
-    'suppliers' => AdminSuppliersController::class,
-    'assets' => AdminAssetsController::class,
-    'contracts' => AdminContractsController::class,
-] as $path => $class) {
-    $router->get('/admin/' . $path, [$class, 'index'], $admin);
-    $router->get('/admin/' . $path . '/create', [$class, 'create'], $admin);
-    $router->post('/admin/' . $path, [$class, 'store'], $admin);
-    $router->get('/admin/' . $path . '/{id}/edit', [$class, 'edit'], $admin);
-    $router->post('/admin/' . $path . '/{id}', [$class, 'update'], $admin);
-    $router->post('/admin/' . $path . '/{id}/delete', [$class, 'destroy'], $admin);
+$router->get('/admin/companies', [CompaniesController::class, 'index'], rateb_admin_mw('companies.view'));
+$router->get('/admin/companies/create', [CompaniesController::class, 'create'], rateb_admin_mw('companies.manage'));
+$router->post('/admin/companies', [CompaniesController::class, 'store'], rateb_admin_mw('companies.manage'));
+$router->get('/admin/companies/{id}/edit', [CompaniesController::class, 'edit'], rateb_admin_mw('company_plans.manage'));
+$router->post('/admin/companies/{id}', [CompaniesController::class, 'update'], rateb_admin_mw('company_plans.manage'));
+$router->post('/admin/companies/{id}/delete', [CompaniesController::class, 'destroy'], rateb_admin_mw('companies.manage'));
+$router->post('/admin/companies/{id}/suspend', [CompaniesController::class, 'suspend'], rateb_admin_mw('companies.manage'));
+$router->post('/admin/companies/{id}/activate', [CompaniesController::class, 'activate'], rateb_admin_mw('companies.manage'));
+
+$crudRoutes = [
+    'subscriptions' => [SubscriptionsController::class, 'subscriptions.manage'],
+    'plans' => [PlansController::class, 'plans.manage'],
+    'users' => [UsersController::class, 'users.manage'],
+    'roles' => [RolesController::class, 'roles.manage'],
+    'permissions' => [PermissionsController::class, 'permissions.manage'],
+    'payments' => [PaymentsController::class, 'subscriptions.manage'],
+    'invoices' => [InvoicesController::class, 'subscriptions.manage'],
+    'email-templates' => [EmailTemplatesController::class, 'settings.manage'],
+    'sms-templates' => [SmsTemplatesController::class, 'settings.manage'],
+    'support-tickets' => [SupportTicketsController::class, 'settings.manage'],
+    'suppliers' => [AdminSuppliersController::class, 'suppliers.manage'],
+    'assets' => [AdminAssetsController::class, 'assets.manage'],
+    'contracts' => [AdminContractsController::class, 'contracts.manage'],
+];
+
+foreach ($crudRoutes as $path => [$class, $perm]) {
+    $router->get('/admin/' . $path, [$class, 'index'], rateb_admin_mw($perm));
+    $router->get('/admin/' . $path . '/create', [$class, 'create'], rateb_admin_mw($perm));
+    $router->post('/admin/' . $path, [$class, 'store'], rateb_admin_mw($perm));
+    $router->get('/admin/' . $path . '/{id}/edit', [$class, 'edit'], rateb_admin_mw($perm));
+    $router->post('/admin/' . $path . '/{id}', [$class, 'update'], rateb_admin_mw($perm));
+    $router->post('/admin/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_admin_mw($perm));
 }
 
-$router->get('/admin/audit-logs', [AuditLogsController::class, 'index'], $admin);
-$router->get('/admin/settings', [SettingsController::class, 'index'], $admin);
-$router->post('/admin/settings', [SettingsController::class, 'save'], $admin);
-$router->get('/admin/notifications', [AdminNotificationsController::class, 'index'], $admin);
-$router->get('/admin/reports', [AdminReportsController::class, 'index'], $admin);
-$router->get('/admin/procurement', [ProcurementController::class, 'index'], $admin);
-$router->get('/admin/inventory', [AdminInventoryController::class, 'index'], $admin);
+$router->get('/admin/audit-logs', [AuditLogsController::class, 'index'], rateb_admin_mw('settings.manage'));
+$router->get('/admin/settings', [SettingsController::class, 'index'], rateb_admin_mw('settings.manage'));
+$router->post('/admin/settings', [SettingsController::class, 'save'], rateb_admin_mw('settings.manage'));
+$router->get('/admin/notifications', [AdminNotificationsController::class, 'index'], rateb_admin_mw('dashboard.view'));
+$router->get('/admin/reports', [AdminReportsController::class, 'index'], rateb_admin_mw('reports.view'));
+$router->get('/admin/procurement', [ProcurementController::class, 'index'], rateb_admin_mw('procurement.manage'));
+$router->get('/admin/inventory', [AdminInventoryController::class, 'index'], rateb_admin_mw('inventory.manage'));
+$router->get('/admin/supplier-evaluations', [AdminSupplierEvaluationsController::class, 'index'], rateb_admin_mw('evaluations.view'));

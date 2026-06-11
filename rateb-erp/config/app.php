@@ -64,6 +64,16 @@ if (!function_exists('rateb_is_rtl')) {
     }
 }
 
+if (!function_exists('rateb_permission_label')) {
+    function rateb_permission_label(array $row): string
+    {
+        if (rateb_locale() === 'ar' && !empty($row['name_ar'])) {
+            return (string) $row['name_ar'];
+        }
+        return (string) ($row['name'] ?? '');
+    }
+}
+
 if (!function_exists('rateb_label')) {
     function rateb_label(string $labelOrKey): string
     {

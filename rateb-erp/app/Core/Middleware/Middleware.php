@@ -78,3 +78,65 @@ final class GuestMiddleware implements MiddlewareInterface
         return true;
     }
 }
+
+final class RequirePermissionMiddleware implements MiddlewareInterface
+{
+    private string $permission;
+
+    public function __construct(string $permission = '')
+    {
+        $this->permission = $permission;
+    }
+
+    public function handle(): bool
+    {
+        if (SessionManager::get('rateb_is_super_admin')) {
+            return true;
+        }
+
+        $userId = (int) SessionManager::get('rateb_user_id', 0);
+        if ($userId < 1 || $this->permission === '') {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
+            return false;
+        }
+
+        $authz = new \Rateb\App\Services\AuthorizationService();
+        if (!$authz->userHasPermission($userId, $this->permission)) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
+            return false;
+        }
+
+        return true;
+    }
+}
+
+final class CompanyModuleMiddleware implements MiddlewareInterface
+{
+    private string $module;
+
+    public function __construct(string $module = '')
+    {
+        $this->module = $module;
+    }
+
+    public function handle(): bool
+    {
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        if ($companyId < 1 || $this->module === '') {
+            SessionManager::flash('error', __('module_not_allowed'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('company') : (RATEB_BASE_URL . '/company'));
+            return false;
+        }
+
+        $limits = new \Rateb\App\Services\PlanLimitService();
+        if (!$limits->companyHasModule($companyId, $this->module)) {
+            SessionManager::flash('error', __('module_not_in_plan'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('company') : (RATEB_BASE_URL . '/company'));
+            return false;
+        }
+
+        return true;
+    }
+}

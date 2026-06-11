@@ -14,46 +14,48 @@ use Rateb\App\Controllers\Company\PurchaseRequestsController;
 use Rateb\App\Controllers\Company\QuotationsController;
 use Rateb\App\Controllers\Company\ReportsController;
 use Rateb\App\Controllers\Company\RfqController;
+use Rateb\App\Controllers\Company\SupplierEvaluationsController;
 use Rateb\App\Controllers\Company\SuppliersController;
 use Rateb\App\Controllers\Company\TendersController;
 use Rateb\App\Controllers\Company\WarehousesController;
-use Rateb\App\Core\Middleware\CompanyAuthMiddleware;
-use Rateb\App\Core\Middleware\GuestMiddleware;
+
+require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
 /** @var Rateb\App\Core\Router $router */
 
-$guest = [GuestMiddleware::class];
-$company = [CompanyAuthMiddleware::class];
+$router->get('/company/login', [CompanyAuthController::class, 'showLogin'], rateb_guest_mw());
+$router->post('/company/login', [CompanyAuthController::class, 'login'], rateb_guest_mw());
+$router->get('/company/logout', [CompanyAuthController::class, 'logout'], rateb_company_mw());
 
-$router->get('/company/login', [CompanyAuthController::class, 'showLogin'], $guest);
-$router->post('/company/login', [CompanyAuthController::class, 'login'], $guest);
-$router->get('/company/logout', [CompanyAuthController::class, 'logout'], $company);
+$router->get('/company', [CompanyDashboardController::class, 'index'], rateb_company_mw());
 
-$router->get('/company', [CompanyDashboardController::class, 'index'], $company);
+$moduleRoutes = [
+    'purchase-requests' => [PurchaseRequestsController::class, 'procurement'],
+    'purchase-orders' => [PurchaseOrdersController::class, 'procurement'],
+    'rfq' => [RfqController::class, 'procurement'],
+    'quotations' => [QuotationsController::class, 'procurement'],
+    'suppliers' => [SuppliersController::class, 'suppliers'],
+    'supplier-evaluations' => [SupplierEvaluationsController::class, 'suppliers'],
+    'inventory' => [InventoryController::class, 'inventory'],
+    'warehouses' => [WarehousesController::class, 'inventory'],
+    'assets' => [AssetsController::class, 'assets'],
+    'medical-devices' => [MedicalDevicesController::class, 'medical_devices'],
+    'contracts' => [ContractsController::class, 'contracts'],
+    'tenders' => [TendersController::class, 'tenders'],
+];
 
-foreach ([
-    'purchase-requests' => PurchaseRequestsController::class,
-    'purchase-orders' => PurchaseOrdersController::class,
-    'rfq' => RfqController::class,
-    'quotations' => QuotationsController::class,
-    'suppliers' => SuppliersController::class,
-    'inventory' => InventoryController::class,
-    'warehouses' => WarehousesController::class,
-    'assets' => AssetsController::class,
-    'medical-devices' => MedicalDevicesController::class,
-    'contracts' => ContractsController::class,
-    'tenders' => TendersController::class,
-] as $path => $class) {
-    $router->get('/company/' . $path, [$class, 'index'], $company);
-    $router->get('/company/' . $path . '/create', [$class, 'create'], $company);
-    $router->post('/company/' . $path, [$class, 'store'], $company);
-    $router->get('/company/' . $path . '/{id}/edit', [$class, 'edit'], $company);
-    $router->post('/company/' . $path . '/{id}', [$class, 'update'], $company);
-    $router->post('/company/' . $path . '/{id}/delete', [$class, 'destroy'], $company);
+foreach ($moduleRoutes as $path => [$class, $module]) {
+    $mw = rateb_company_mw($module);
+    $router->get('/company/' . $path, [$class, 'index'], $mw);
+    $router->get('/company/' . $path . '/create', [$class, 'create'], $mw);
+    $router->post('/company/' . $path, [$class, 'store'], $mw);
+    $router->get('/company/' . $path . '/{id}/edit', [$class, 'edit'], $mw);
+    $router->post('/company/' . $path . '/{id}', [$class, 'update'], $mw);
+    $router->post('/company/' . $path . '/{id}/delete', [$class, 'destroy'], $mw);
 }
 
-$router->get('/company/purchase-orders/{id}', [PurchaseOrdersController::class, 'show'], $company);
-$router->get('/company/reports', [ReportsController::class, 'index'], $company);
-$router->get('/company/notifications', [NotificationsController::class, 'index'], $company);
-$router->get('/company/profile', [ProfileController::class, 'index'], $company);
-$router->post('/company/profile', [ProfileController::class, 'update'], $company);
+$router->get('/company/purchase-orders/{id}', [PurchaseOrdersController::class, 'show'], rateb_company_mw('procurement'));
+$router->get('/company/reports', [ReportsController::class, 'index'], rateb_company_mw('reports'));
+$router->get('/company/notifications', [NotificationsController::class, 'index'], rateb_company_mw());
+$router->get('/company/profile', [ProfileController::class, 'index'], rateb_company_mw());
+$router->post('/company/profile', [ProfileController::class, 'update'], rateb_company_mw());
