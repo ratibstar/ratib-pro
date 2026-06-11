@@ -27,6 +27,10 @@ final class Bootstrap
         date_default_timezone_set('Asia/Riyadh');
 
         self::registerAutoloader($basePath);
+        $requestHelper = $basePath . '/app/helpers/Request.php';
+        if (is_file($requestHelper)) {
+            require_once $requestHelper;
+        }
         $entities = $basePath . '/app/models/Entities.php';
         if (is_file($entities)) {
             require_once $entities;

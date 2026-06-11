@@ -80,7 +80,7 @@ RewriteRule ^workforce/badge/?$ /pages/workforce-badge.php [L,QSA]
 RewriteRule ^([a-z0-9_-]+)/login/badge/?$ /pages/login-badge.php?country_slug=$1 [L,QSA]
 
 # Country root: /bangladesh, /kenya, etc. → country dashboard route (not /home, /profile, or marketing paths)
-RewriteCond %{REQUEST_URI} !^/(control-panel|pages|api|public|Designed|js|css|assets|tap-payments|home|profile|architecture|security-compliance|procurement-legal|enterprise-trust|government-workforce-operations|enterprise-pack)(/|$) [NC]
+RewriteCond %{REQUEST_URI} !^/(control-panel|rateb-erp|pages|api|public|Designed|js|css|assets|tap-payments|home|profile|architecture|security-compliance|procurement-legal|enterprise-trust|government-workforce-operations|enterprise-pack)(/|$) [NC]
 RewriteRule ^([a-z0-9_-]+)/?$ /pages/dashboard.php?country_slug=$1 [L,QSA]
 
 # Country-prefixed Ratib pages: /philippines/pages/dashboard → /pages/dashboard?country_slug=philippines (QSA keeps control=, agency_id=)
@@ -158,6 +158,17 @@ DirectoryIndex public/index.php index.php
 RewriteCond %{REQUEST_URI} ^/public/ [OR]
 RewriteCond %{REQUEST_URI} \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ [NC]
 RewriteRule ^ - [L]
+
+# RATEB ERP — static assets under rateb-erp/public/assets/
+RewriteCond %{REQUEST_URI} ^/rateb-erp/public/assets/ [NC]
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# RATEB ERP — front controller (must run before site-wide catch-all below)
+RewriteCond %{REQUEST_URI} ^/rateb-erp/public/ [NC]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^rateb-erp/public/(.*)$ rateb-erp/public/index.php [L,QSA]
 
 # Redirect all other requests to public/index.php except existing files/directories
 RewriteCond %{REQUEST_FILENAME} !-f

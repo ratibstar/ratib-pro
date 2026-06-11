@@ -85,8 +85,9 @@ final class Router
         http_response_code(404);
         if (strpos($path, '/api/') === 0) {
             Response::json(['success' => false, 'message' => 'Not found'], 404);
+            return;
         }
 
-        View::render('errors/404', ['title' => '404']);
+        View::render('errors/404', ['title' => '404'], 'auth');
     }
 }

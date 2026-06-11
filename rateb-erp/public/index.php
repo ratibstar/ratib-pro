@@ -15,10 +15,7 @@ require RATEB_ROOT . '/routes/web.php';
 require RATEB_ROOT . '/routes/company.php';
 require RATEB_ROOT . '/routes/api.php';
 
-$uri = $_SERVER['REQUEST_URI'] ?? '/';
-$base = RATEB_BASE_URL;
-if ($base !== '' && strpos($uri, $base) === 0) {
-    $uri = substr($uri, strlen($base)) ?: '/';
-}
+require_once RATEB_ROOT . '/app/helpers/Request.php';
 
-$router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $uri);
+$path = \Rateb\App\Helpers\Request::resolvePath();
+$router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $path);
