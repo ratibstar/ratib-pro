@@ -28,7 +28,7 @@ final class MedicalDevice extends Model
     protected bool $tenantScoped = true;
     protected array $fillable = [
         'asset_id', 'device_name', 'manufacturer', 'model_no', 'serial_no',
-        'calibration_due', 'maintenance_due', 'regulatory_status', 'status',
+        'calibration_due', 'maintenance_due', 'warranty_expiry', 'regulatory_status', 'status',
     ];
 }
 
@@ -38,7 +38,7 @@ final class Contract extends Model
     protected bool $tenantScoped = true;
     protected array $fillable = [
         'company_id', 'contract_no', 'title', 'supplier_id', 'contract_type', 'start_date',
-        'end_date', 'value', 'status', 'document_path',
+        'end_date', 'renewal_date', 'alert_days', 'approval_status', 'value', 'status', 'document_path',
     ];
 }
 
@@ -231,6 +231,27 @@ final class ApprovalWorkflow extends Model
     protected string $table = 'rateb_approval_workflows';
     protected bool $tenantScoped = false;
     protected array $fillable = ['company_id', 'name', 'entity_type', 'is_active'];
+}
+
+final class InventoryBatch extends Model
+{
+    protected string $table = 'rateb_inventory_batches';
+    protected bool $tenantScoped = true;
+    protected array $fillable = ['inventory_id', 'batch_no', 'quantity', 'expiry_date', 'warehouse_id'];
+}
+
+final class InventoryAudit extends Model
+{
+    protected string $table = 'rateb_inventory_audits';
+    protected bool $tenantScoped = true;
+    protected array $fillable = ['audit_no', 'warehouse_id', 'audit_date', 'status', 'notes', 'created_by'];
+}
+
+final class SupplierClassification extends Model
+{
+    protected string $table = 'rateb_supplier_classifications';
+    protected bool $tenantScoped = true;
+    protected array $fillable = ['name', 'slug', 'color'];
 }
 
 final class AuditLog extends Model

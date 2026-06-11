@@ -31,6 +31,8 @@ use Rateb\App\Controllers\Admin\ChartOfAccountsController;
 use Rateb\App\Controllers\Admin\AdminMedicalDevicesController;
 use Rateb\App\Controllers\Admin\AdminStockMovementsController;
 use Rateb\App\Controllers\Admin\AdminWorkflowsController;
+use Rateb\App\Controllers\Admin\JournalEntriesController as AdminJournalEntriesController;
+use Rateb\App\Controllers\Admin\ExecutiveDashboardController;
 
 require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
@@ -52,6 +54,7 @@ $router->get('/admin/logout', [AdminAuthController::class, 'logout'], rateb_admi
 $router->get('/locale/{locale}', [LocaleController::class, 'switch']);
 
 $router->get('/admin', [AdminDashboardController::class, 'index'], rateb_admin_mw('dashboard.view'));
+$router->get('/admin/executive-dashboard', [ExecutiveDashboardController::class, 'index'], rateb_admin_mw('dashboard.view'));
 
 $router->get('/admin/companies', [CompaniesController::class, 'index'], rateb_admin_mw('companies.view'));
 $router->get('/admin/companies/create', [CompaniesController::class, 'create'], rateb_admin_mw('companies.manage'));

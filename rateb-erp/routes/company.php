@@ -24,6 +24,20 @@ use Rateb\App\Controllers\Company\ProductCategoriesController;
 use Rateb\App\Controllers\Company\StockMovementsController;
 use Rateb\App\Controllers\Company\DocumentsController;
 use Rateb\App\Controllers\Company\WorkflowsController;
+use Rateb\App\Controllers\Company\JournalEntriesController as CompanyJournalEntriesController;
+use Rateb\App\Controllers\Company\InventoryBatchesController;
+use Rateb\App\Controllers\Company\InventoryAuditsController;
+use Rateb\App\Controllers\Company\InventoryCodesController;
+use Rateb\App\Controllers\Company\SupplierClassificationsController;
+use Rateb\App\Controllers\Company\SupplierKpiController;
+use Rateb\App\Controllers\Company\ContractRenewalsController;
+use Rateb\App\Controllers\Company\AssetMaintenanceController;
+use Rateb\App\Controllers\Company\AssetAssignmentsController;
+use Rateb\App\Controllers\Company\AssetDepreciationController;
+use Rateb\App\Controllers\Company\DeviceMaintenanceController;
+use Rateb\App\Controllers\Company\DeviceSparePartsController;
+use Rateb\App\Controllers\Company\DeviceWarrantyController;
+use Rateb\App\Controllers\Company\AnalyticsReportsController;
 
 require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
@@ -101,3 +115,62 @@ $router->get('/company/notifications', [NotificationsController::class, 'index']
 $router->post('/company/notifications/{id}/read', [NotificationsController::class, 'markRead'], rateb_company_mw());
 $router->get('/company/profile', [ProfileController::class, 'index'], rateb_company_mw());
 $router->post('/company/profile', [ProfileController::class, 'update'], rateb_company_mw());
+
+$invMw = rateb_company_mw('inventory');
+$router->get('/company/inventory-batches', [InventoryBatchesController::class, 'index'], $invMw);
+$router->get('/company/inventory-batches/create', [InventoryBatchesController::class, 'create'], $invMw);
+$router->post('/company/inventory-batches', [InventoryBatchesController::class, 'store'], $invMw);
+$router->get('/company/inventory-batches/export', [InventoryBatchesController::class, 'export'], rateb_company_mw('reports'));
+
+$router->get('/company/inventory-audits', [InventoryAuditsController::class, 'index'], $invMw);
+$router->get('/company/inventory-audits/create', [InventoryAuditsController::class, 'create'], $invMw);
+$router->post('/company/inventory-audits', [InventoryAuditsController::class, 'store'], $invMw);
+$router->get('/company/inventory-audits/{id}', [InventoryAuditsController::class, 'show'], $invMw);
+$router->post('/company/inventory-audits/{id}/reconcile', [InventoryAuditsController::class, 'reconcile'], $invMw);
+
+$router->get('/company/inventory/{id}/codes', [InventoryCodesController::class, 'show'], $invMw);
+$router->post('/company/inventory/{id}/codes/generate', [InventoryCodesController::class, 'generate'], $invMw);
+
+$supMw = rateb_company_mw('suppliers');
+$router->get('/company/supplier-classifications', [SupplierClassificationsController::class, 'index'], $supMw);
+$router->get('/company/supplier-classifications/create', [SupplierClassificationsController::class, 'create'], $supMw);
+$router->post('/company/supplier-classifications', [SupplierClassificationsController::class, 'store'], $supMw);
+$router->get('/company/supplier-classifications/{id}/edit', [SupplierClassificationsController::class, 'edit'], $supMw);
+$router->post('/company/supplier-classifications/{id}', [SupplierClassificationsController::class, 'update'], $supMw);
+$router->post('/company/supplier-classifications/{id}/delete', [SupplierClassificationsController::class, 'destroy'], $supMw);
+
+$router->get('/company/supplier-kpi', [SupplierKpiController::class, 'index'], $supMw);
+$router->get('/company/supplier-kpi/export', [SupplierKpiController::class, 'export'], rateb_company_mw('reports'));
+
+$ctrMw = rateb_company_mw('contracts');
+$router->get('/company/contract-renewals', [ContractRenewalsController::class, 'index'], $ctrMw);
+$router->post('/company/contract-renewals', [ContractRenewalsController::class, 'store'], $ctrMw);
+
+$astMw = rateb_company_mw('assets');
+$router->get('/company/asset-maintenance', [AssetMaintenanceController::class, 'index'], $astMw);
+$router->post('/company/asset-maintenance', [AssetMaintenanceController::class, 'store'], $astMw);
+$router->get('/company/asset-assignments', [AssetAssignmentsController::class, 'index'], $astMw);
+$router->post('/company/asset-assignments', [AssetAssignmentsController::class, 'store'], $astMw);
+$router->get('/company/asset-depreciation', [AssetDepreciationController::class, 'index'], $astMw);
+$router->post('/company/asset-depreciation', [AssetDepreciationController::class, 'store'], $astMw);
+
+$devMw = rateb_company_mw('medical_devices');
+$router->get('/company/device-maintenance', [DeviceMaintenanceController::class, 'index'], $devMw);
+$router->post('/company/device-maintenance', [DeviceMaintenanceController::class, 'store'], $devMw);
+$router->get('/company/device-spare-parts', [DeviceSparePartsController::class, 'index'], $devMw);
+$router->post('/company/device-spare-parts', [DeviceSparePartsController::class, 'store'], $devMw);
+$router->get('/company/device-warranty', [DeviceWarrantyController::class, 'index'], $devMw);
+$router->post('/company/device-warranty/{id}', [DeviceWarrantyController::class, 'update'], $devMw);
+
+$repMw = rateb_company_mw('reports');
+$procMw = rateb_company_mw('procurement');
+$router->get('/company/reports/procurement', [AnalyticsReportsController::class, 'procurement'], $procMw);
+$router->get('/company/reports/procurement/export', [AnalyticsReportsController::class, 'exportProcurement'], rateb_company_mw('reports'));
+$router->get('/company/reports/kpi', [AnalyticsReportsController::class, 'kpi'], $repMw);
+$router->get('/company/reports/kpi/export', [AnalyticsReportsController::class, 'exportKpi'], rateb_company_mw('reports'));
+$router->get('/company/reports/cost-analysis', [AnalyticsReportsController::class, 'costAnalysis'], $repMw);
+$router->get('/company/reports/cost-analysis/export', [AnalyticsReportsController::class, 'exportCost'], rateb_company_mw('reports'));
+$router->get('/company/reports/supplier-performance', [AnalyticsReportsController::class, 'supplierPerformance'], $supMw);
+$router->get('/company/reports/supplier-performance/export', [AnalyticsReportsController::class, 'exportSupplierPerformance'], rateb_company_mw('reports'));
+$router->get('/company/reports/inventory-valuation', [AnalyticsReportsController::class, 'inventoryValuation'], $invMw);
+$router->get('/company/reports/inventory-valuation/export', [AnalyticsReportsController::class, 'exportInventoryValuation'], rateb_company_mw('reports'));

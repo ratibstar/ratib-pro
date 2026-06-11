@@ -66,15 +66,21 @@ final class DashboardController extends Controller
     {
         $companyId = (int) SessionManager::get('rateb_company_id');
         TenantContext::setCompanyId($companyId);
+        (new \Rateb\App\Services\InventoryWorkflowService())->processExpiryAlerts($companyId);
+        (new \Rateb\App\Services\ContractWorkflowService())->processExpiryAlerts($companyId);
         $service = new DashboardService();
         $limits = (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId);
         $userCount = (new User())->count(['company_id' => $companyId]);
+        $invSvc = new \Rateb\App\Services\InventoryWorkflowService();
+        $ctrSvc = new \Rateb\App\Services\ContractWorkflowService();
 
         $this->view('company/dashboard', [
             'title' => __('dashboard'),
             'metrics' => $service->companyMetrics($companyId),
             'limits' => $limits,
             'userCount' => $userCount,
+            'expiringInventory' => $invSvc->expiringItems(30),
+            'expiringContracts' => $ctrSvc->expiringContracts(60),
             'csrf' => Csrf::token(),
         ], 'company');
     }
@@ -391,6 +397,8 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
             ['name' => 'code', 'label' => 'Code', 'type' => 'text'],
             ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
             ['name' => 'phone', 'label' => 'Phone', 'type' => 'text'],
+            ['name' => 'classification_id', 'label' => 'supplier_classifications', 'type' => 'number'],
+            ['name' => 'performance_kpi', 'label' => 'performance_kpi', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'inactive', 'blacklisted']],
         ];
     }

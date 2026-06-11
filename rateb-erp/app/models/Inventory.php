@@ -10,8 +10,9 @@ final class Inventory extends Model
     protected string $table = 'rateb_inventory';
     protected bool $tenantScoped = true;
     protected array $fillable = [
-        'warehouse_id', 'item_name', 'sku', 'category', 'quantity', 'unit',
-        'unit_cost', 'reorder_level', 'expiry_date', 'status',
+        'warehouse_id', 'item_name', 'sku', 'category', 'category_id', 'barcode', 'qr_code',
+        'quantity', 'unit', 'unit_cost', 'reorder_level', 'min_stock', 'max_stock',
+        'expiry_date', 'status',
     ];
 
     public function totalValue(): float

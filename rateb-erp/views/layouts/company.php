@@ -65,6 +65,8 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
             <?php
             $invLinks = [
                 ['company/inventory', 'inventory', 'fa-boxes-stacked'],
+                ['company/inventory-batches', 'inventory_batches', 'fa-layer-group'],
+                ['company/inventory-audits', 'inventory_audits', 'fa-clipboard-check'],
                 ['company/warehouses', 'warehouses', 'fa-warehouse'],
                 ['company/stock-movements', 'stock_movements', 'fa-arrows-rotate'],
                 ['company/product-categories', 'product_categories', 'fa-tags'],
@@ -80,6 +82,8 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
             $supLinks = [
                 ['company/suppliers', 'suppliers', 'fa-truck-field'],
                 ['company/supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke'],
+                ['company/supplier-classifications', 'supplier_classifications', 'fa-tags'],
+                ['company/supplier-kpi', 'supplier_kpi', 'fa-chart-line'],
             ];
             foreach ($supLinks as $link) {
                 $active = strpos($currentPath, $link[0]) !== false ? ' active' : '';
@@ -91,11 +95,23 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
             <?php
             $links = [
                 ['company/contracts', 'contracts', 'fa-file-contract'],
+                ['company/contract-renewals', 'contract_renewals', 'fa-rotate'],
                 ['company/tenders', 'tenders', 'fa-gavel'],
                 ['company/assets', 'assets', 'fa-toolbox'],
+                ['company/asset-maintenance', 'asset_maintenance', 'fa-wrench'],
+                ['company/asset-assignments', 'asset_assignments', 'fa-user-check'],
+                ['company/asset-depreciation', 'asset_depreciation', 'fa-chart-line'],
                 ['company/medical-devices', 'medical_devices', 'fa-stethoscope'],
+                ['company/device-maintenance', 'device_maintenance', 'fa-screwdriver-wrench'],
+                ['company/device-spare-parts', 'device_spare_parts', 'fa-gears'],
+                ['company/device-warranty', 'device_warranty', 'fa-shield-halved'],
                 ['company/accounting', 'accounting_module', 'fa-calculator'],
                 ['company/reports', 'reports', 'fa-chart-pie'],
+                ['company/reports/procurement', 'procurement_analytics', 'fa-cart-shopping'],
+                ['company/reports/kpi', 'company_kpi', 'fa-gauge-high'],
+                ['company/reports/cost-analysis', 'cost_analysis', 'fa-coins'],
+                ['company/reports/supplier-performance', 'supplier_performance_report', 'fa-truck-field'],
+                ['company/reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked'],
                 ['company/documents', 'documents', 'fa-folder-open'],
                 ['company/notifications', 'notifications', 'fa-bell'],
                 ['company/profile', 'profile', 'fa-user-gear'],

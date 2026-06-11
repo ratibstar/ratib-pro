@@ -10,6 +10,6 @@ final class Supplier extends Model
     protected string $table = 'rateb_suppliers';
     protected bool $tenantScoped = true;
     protected array $fillable = [
-        'company_id', 'name', 'code', 'email', 'phone', 'address', 'rating', 'status', 'notes',
+        'company_id', 'name', 'code', 'email', 'phone', 'address', 'rating', 'classification_id', 'performance_kpi', 'status', 'notes',
     ];
 }
