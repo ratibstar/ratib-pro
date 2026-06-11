@@ -36,6 +36,8 @@ final class Bootstrap
             require_once $entities;
         }
         foreach ([
+            '/app/controllers/CrudController.php',
+            '/app/services/AuditService.php',
             '/app/controllers/Admin/AdminControllers.php',
             '/app/controllers/Company/CompanyControllers.php',
             '/app/controllers/Api/ApiController.php',
