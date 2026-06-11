@@ -155,7 +155,6 @@ return [
     'storage_limit_mb' => 'حد التخزين (ميجابايت)',
     'name_ar' => 'الاسم بالعربية',
     'description_ar' => 'الوصف بالعربية',
-    'pending' => 'قيد الانتظار',
     'published' => 'منشور',
     'archived' => 'مؤرشف',
 ];
