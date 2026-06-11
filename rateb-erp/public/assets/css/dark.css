@@ -5,6 +5,11 @@ html[data-bs-theme="dark"] {
     color-scheme: dark;
 }
 
+html[data-theme="light"],
+html[data-bs-theme="light"] {
+    color-scheme: light;
+}
+
 .rateb-app .table {
     --bs-table-bg: transparent;
     --bs-table-color: var(--rateb-text);
@@ -108,4 +113,31 @@ html[data-bs-theme="dark"] {
 
 [data-theme="light"] .rateb-app .table > :not(caption) > * > * {
     color: var(--rateb-text);
+}
+
+[data-theme="light"] .rateb-app .alert-success {
+    background-color: rgba(52, 211, 153, 0.18);
+    color: #047857;
+}
+
+[data-theme="light"] .rateb-app .alert-danger {
+    background-color: rgba(248, 113, 113, 0.18);
+    color: #b91c1c;
+}
+
+[data-theme="light"] .rateb-app .alert-warning {
+    background-color: rgba(251, 191, 36, 0.22);
+    color: #92400e;
+}
+
+[data-theme="light"] .rateb-sidebar {
+    border-color: rgba(15, 40, 75, 0.35);
+}
+
+[data-theme="light"] .rateb-nav-link:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .rateb-nav-link.active {
+    background: var(--rateb-sidebar-active);
 }

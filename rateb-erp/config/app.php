@@ -10,7 +10,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RATEB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260611-nav4');
+define('RATEB_ASSET_BUILD', '20260611-light5');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
