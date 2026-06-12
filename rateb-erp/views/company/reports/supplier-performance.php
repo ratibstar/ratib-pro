@@ -1,7 +1,7 @@
 <div class="rateb-card">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></span>
-        <?php Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => $exportRoute ?? '']); ?>
+        <?php Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => $exportRoute ?? '', 'exportEnabled' => $exportEnabled ?? true]); ?>
     </div>
     <div class="rateb-card-body">
         <?php Rateb\App\Core\View::partial('workflow-list', [

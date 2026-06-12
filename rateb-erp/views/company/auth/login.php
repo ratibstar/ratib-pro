@@ -1,4 +1,4 @@
-<form method="post" action="<?php echo rateb_url('company/login'); ?>">
+<form method="post" action="<?php echo rateb_url('login'); ?>">
     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
     <div class="mb-3">
         <label class="form-label" for="email"><?php echo __('login_email'); ?></label>

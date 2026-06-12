@@ -14,6 +14,7 @@
         <hr>
         <?php } ?>
         <h6 class="mb-3"><?php echo __('update_warranty'); ?></h6>
+        <?php if ($canManage ?? rateb_can_manage_entity('device-warranty')) { ?>
         <?php foreach ($devices ?? [] as $d) { ?>
         <form method="post" action="<?php echo rateb_app_url('device-warranty/' . (int) $d['id']); ?>" class="row g-2 align-items-end mb-2">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
@@ -23,6 +24,7 @@
             </div>
             <div class="col-md-3"><button type="submit" class="btn btn-sm btn-primary"><?php echo __('save'); ?></button></div>
         </form>
+        <?php } ?>
         <?php } ?>
     </div>
 </div>

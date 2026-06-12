@@ -35,13 +35,14 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
 
     public function create(): void
     {
+        rateb_require_manage('inventory-batches');
         $this->view($this->viewPrefix . '/form', [
             'title' => __('create') . ' ' . __('inventory_batches'),
             'routePrefix' => $this->routePrefix,
             'csrf' => Csrf::token(),
             'inventory' => (new \Rateb\App\Models\Inventory())->all(200, 0),
             'warehouses' => (new \Rateb\App\Models\Warehouse())->all(100, 0),
-        ], 'company');
+        ], 'main');
     }
 
     public function index(): void
@@ -51,11 +52,14 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
             'items' => (new InventoryWorkflowService())->listBatches(100),
             'csrf' => Csrf::token(),
             'exportRoute' => rateb_app_url('inventory-batches/export'),
-        ], 'company');
+            'exportEnabled' => rateb_can_export_entity('inventory-batches'),
+            'canManage' => rateb_can_manage_entity('inventory-batches'),
+        ], 'main');
     }
 
     public function store(): void
     {
+        rateb_require_manage('inventory-batches');
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_url($this->routePrefix));
         }
@@ -86,22 +90,25 @@ final class InventoryAuditsController extends Controller
             'title' => __('inventory_audits'),
             'items' => $model->all(50, 0),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canManage' => rateb_can_manage_entity('inventory-audits'),
+        ], 'main');
     }
 
     public function create(): void
     {
+        rateb_require_manage('inventory-audits');
         $this->view('company/inventory-audits/form', [
             'title' => __('create') . ' ' . __('inventory_audits'),
             'auditNo' => (new InventoryWorkflowService())->nextAuditNo(),
             'warehouses' => (new \Rateb\App\Models\Warehouse())->all(100, 0),
             'inventory' => (new \Rateb\App\Models\Inventory())->all(200, 0),
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 
     public function store(): void
     {
+        rateb_require_manage('inventory-audits');
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('inventory-audits'));
         }
@@ -129,7 +136,7 @@ final class InventoryAuditsController extends Controller
         $audit = (new \Rateb\App\Models\InventoryAudit())->find($id);
         if (!$audit) {
             http_response_code(404);
-            $this->view('errors/404', ['title' => '404'], 'company');
+            $this->view('errors/404', ['title' => '404'], 'main');
             return;
         }
         $this->view('company/inventory-audits/show', [
@@ -137,11 +144,13 @@ final class InventoryAuditsController extends Controller
             'audit' => $audit,
             'lines' => (new InventoryWorkflowService())->auditLines($id),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canManage' => rateb_can_manage_entity('inventory-audits'),
+        ], 'main');
     }
 
     public function reconcile(array $params): void
     {
+        rateb_require_manage('inventory-audits');
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('inventory-audits'));
         }
@@ -165,18 +174,19 @@ final class InventoryCodesController extends Controller
         $item = (new \Rateb\App\Models\Inventory())->find($id);
         if (!$item) {
             http_response_code(404);
-            $this->view('errors/404', ['title' => '404'], 'company');
+            $this->view('errors/404', ['title' => '404'], 'main');
             return;
         }
         $this->view('company/inventory-codes/show', [
             'title' => __('barcode_qr'),
             'item' => $item,
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 
     public function generate(array $params): void
     {
+        rateb_require_manage('inventory');
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('inventory'));
         }
@@ -221,7 +231,8 @@ final class SupplierKpiController extends Controller
             'suppliers' => (new ErpAnalyticsService())->supplierPerformance($companyId),
             'csrf' => Csrf::token(),
             'exportRoute' => rateb_app_url('supplier-kpi/export'),
-        ], 'company');
+            'exportEnabled' => rateb_can_export_entity('supplier-kpi'),
+        ], 'main');
     }
 
     public function export(): void
@@ -249,11 +260,13 @@ final class ContractRenewalsController extends Controller
             'expiring' => (new ContractWorkflowService())->expiringContracts(60),
             'contracts' => (new \Rateb\App\Models\Contract())->all(100, 0),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canManage' => rateb_can_manage_entity('contract-renewals'),
+        ], 'main');
     }
 
     public function store(): void
     {
+        rateb_require_manage('contract-renewals');
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('contract-renewals'));
         }
@@ -284,11 +297,13 @@ final class AssetMaintenanceController extends Controller
             'items' => $this->svc->listAssetMaintenance(),
             'assets' => (new \Rateb\App\Models\Asset())->all(200, 0),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canManage' => rateb_can_manage_entity('asset-maintenance'),
+        ], 'main');
     }
 
     public function store(): void
     {
+        rateb_require_manage('asset-maintenance');
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('asset-maintenance'));
         }
@@ -316,11 +331,13 @@ final class AssetAssignmentsController extends Controller
             'items' => $svc->listAssignments(),
             'assets' => (new \Rateb\App\Models\Asset())->all(200, 0),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canManage' => rateb_can_manage_entity('asset-assignments'),
+        ], 'main');
     }
 
     public function store(): void
     {
+        rateb_require_manage('asset-assignments');
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('asset-assignments'));
         }
@@ -346,11 +363,13 @@ final class AssetDepreciationController extends Controller
             'items' => (new AssetDeviceWorkflowService())->listDepreciation(),
             'assets' => (new \Rateb\App\Models\Asset())->all(200, 0),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canManage' => rateb_can_manage_entity('asset-depreciation'),
+        ], 'main');
     }
 
     public function store(): void
     {
+        rateb_require_manage('asset-depreciation');
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('asset-depreciation'));
         }
@@ -375,11 +394,13 @@ final class DeviceMaintenanceController extends Controller
             'items' => (new AssetDeviceWorkflowService())->listDeviceService(),
             'devices' => (new \Rateb\App\Models\MedicalDevice())->all(200, 0),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canManage' => rateb_can_manage_entity('device-maintenance'),
+        ], 'main');
     }
 
     public function store(): void
     {
+        rateb_require_manage('device-maintenance');
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('device-maintenance'));
         }
@@ -405,11 +426,13 @@ final class DeviceSparePartsController extends Controller
             'items' => (new AssetDeviceWorkflowService())->listSpareParts(),
             'devices' => (new \Rateb\App\Models\MedicalDevice())->all(200, 0),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canManage' => rateb_can_manage_entity('device-spare-parts'),
+        ], 'main');
     }
 
     public function store(): void
     {
+        rateb_require_manage('device-spare-parts');
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('device-spare-parts'));
         }
@@ -434,11 +457,13 @@ final class DeviceWarrantyController extends Controller
             'devices' => (new \Rateb\App\Models\MedicalDevice())->all(200, 0),
             'due' => (new AssetDeviceWorkflowService())->devicesWarrantyDue(90),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canManage' => rateb_can_manage_entity('device-warranty'),
+        ], 'main');
     }
 
     public function update(array $params): void
     {
+        rateb_require_manage('device-warranty');
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('device-warranty'));
         }
@@ -465,8 +490,9 @@ final class AnalyticsReportsController extends Controller
             'title' => __('procurement_analytics'),
             'data' => (new ErpAnalyticsService())->procurementDashboard($cid),
             'exportRoute' => rateb_app_url('reports/procurement/export'),
+            'exportEnabled' => rateb_can_export_entity('reports/procurement'),
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 
     public function kpi(): void
@@ -476,8 +502,9 @@ final class AnalyticsReportsController extends Controller
             'title' => __('company_kpi'),
             'data' => (new ErpAnalyticsService())->companyKpi($cid),
             'exportRoute' => rateb_app_url('reports/kpi/export'),
+            'exportEnabled' => rateb_can_export_entity('reports/kpi'),
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 
     public function costAnalysis(): void
@@ -487,8 +514,9 @@ final class AnalyticsReportsController extends Controller
             'title' => __('cost_analysis'),
             'data' => (new ErpAnalyticsService())->costAnalysis($cid),
             'exportRoute' => rateb_app_url('reports/cost-analysis/export'),
+            'exportEnabled' => rateb_can_export_entity('reports/cost-analysis'),
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 
     public function supplierPerformance(): void
@@ -498,8 +526,9 @@ final class AnalyticsReportsController extends Controller
             'title' => __('supplier_performance_report'),
             'rows' => (new ErpAnalyticsService())->supplierPerformance($cid),
             'exportRoute' => rateb_app_url('reports/supplier-performance/export'),
+            'exportEnabled' => rateb_can_export_entity('reports/supplier-performance'),
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 
     public function inventoryValuation(): void
@@ -511,8 +540,9 @@ final class AnalyticsReportsController extends Controller
             'rows' => $val['rows'],
             'total_value' => $val['total_value'],
             'exportRoute' => rateb_app_url('reports/inventory-valuation/export'),
+            'exportEnabled' => rateb_can_export_entity('reports/inventory-valuation'),
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 
     public function exportProcurement(): void

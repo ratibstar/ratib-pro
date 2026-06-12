@@ -3,7 +3,7 @@
     'items' => $items ?? [],
     'fields' => $fields ?? [],
     'csrf' => $csrf,
-    'routePrefix' => $routePrefix ?? 'company/supplier-classifications',
+    'routePrefix' => $routePrefix ?? rateb_app_route('supplier-classifications'),
     'bulkEnabled' => $bulkEnabled ?? true,
     'createEnabled' => $createEnabled ?? true,
     'actionsEnabled' => $actionsEnabled ?? true,

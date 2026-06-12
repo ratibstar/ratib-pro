@@ -27,11 +27,13 @@ final class AccountingDashboardController extends Controller
             'trial' => $service->trialBalance($companyId),
             'summary' => $service->financialSummary($companyId),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canManage' => rateb_can_manage_entity('accounting'),
+        ], 'main');
     }
 
     public function sync(): void
     {
+        rateb_require_manage('accounting');
         if (!$this->validateCsrf()) {
             Response::redirect(rateb_app_url('accounting'));
         }
@@ -68,7 +70,7 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
             'SELECT * FROM rateb_chart_of_accounts WHERE company_id = :cid ORDER BY code',
             ['cid' => $companyId]
         );
-        $this->view($this->viewPrefix . '/index', [
+        $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __($this->entityName),
             'items' => $items,
             'total' => count($items),
@@ -77,7 +79,10 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
-        ], $this->layout());
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => $this->createEnabled,
+            'actionsEnabled' => $this->actionsEnabled,
+        ]), $this->layout());
     }
 
     protected function collectData(): array
@@ -108,7 +113,7 @@ final class JournalEntriesController extends Controller
             'title' => __('journal_entries'),
             'items' => $items,
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 
     public function show(array $params): void
@@ -137,6 +142,6 @@ final class JournalEntriesController extends Controller
             'entry' => $entry,
             'lines' => $lines,
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 }

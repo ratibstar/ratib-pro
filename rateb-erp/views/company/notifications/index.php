@@ -1,1 +1,1 @@
-<?php Rateb\App\Core\View::partial('crud-index', ['title' => $title, 'items' => $items ?? [], 'csrf' => $csrf, 'routePrefix' => 'company/notifications', 'bulkEnabled' => false, 'createEnabled' => false, 'actionsEnabled' => false]); ?>
+<?php Rateb\App\Core\View::partial('crud-index', ['title' => $title, 'items' => $items ?? [], 'csrf' => $csrf, 'routePrefix' => rateb_app_route('notifications'), 'bulkEnabled' => false, 'createEnabled' => false, 'actionsEnabled' => false]); ?>

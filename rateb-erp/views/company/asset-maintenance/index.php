@@ -12,6 +12,7 @@ $action = rateb_app_url('asset-maintenance');
 <div class="rateb-card mb-4">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? __('asset_maintenance')); ?></div>
     <div class="rateb-card-body">
+        <?php if ($canManage ?? rateb_can_manage_entity('asset-maintenance')) { ?>
         <form method="post" action="<?php echo $action; ?>" class="row g-3 mb-4">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-4">
@@ -44,6 +45,7 @@ $action = rateb_app_url('asset-maintenance');
             <?php } ?>
             <div class="col-12"><button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button></div>
         </form>
+        <?php } ?>
         <?php Rateb\App\Core\View::partial('workflow-list', [
             'items' => $items ?? [],
             'columns' => [

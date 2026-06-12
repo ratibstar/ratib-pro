@@ -256,6 +256,18 @@ if (!function_exists('rateb_can_export_entity')) {
     }
 }
 
+/** Redirect to entity list when manage permission is missing. */
+if (!function_exists('rateb_require_manage')) {
+    function rateb_require_manage(string $resource): void
+    {
+        if (rateb_can_manage_entity($resource)) {
+            return;
+        }
+        \Rateb\App\Core\SessionManager::flash('error', __('access_denied'));
+        \Rateb\App\Core\Response::redirect(rateb_app_url($resource));
+    }
+}
+
 if (!function_exists('__')) {
     function __(string $key, array $replace = []): string
     {

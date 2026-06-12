@@ -91,7 +91,7 @@ final class DashboardController extends Controller
             'expiringInventory' => $invSvc->expiringItems(30),
             'expiringContracts' => $ctrSvc->expiringContracts(60),
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 }
 
@@ -367,7 +367,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $item = $this->model->find($id);
         if (!$item) {
             http_response_code(404);
-            $this->view('errors/404', ['title' => '404'], 'company');
+            $this->view('errors/404', ['title' => '404'], 'main');
             return;
         }
         $items = \Rateb\App\Helpers\LineItems::loadPurchaseOrderItems($id);
@@ -376,7 +376,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             'order' => $item,
             'items' => $items,
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 }
 
@@ -403,7 +403,7 @@ final class RfqController extends \Rateb\App\Controllers\CrudController
         $rfq = $this->model->find($id);
         if (!$rfq) {
             http_response_code(404);
-            $this->view('errors/404', ['title' => '404'], 'company');
+            $this->view('errors/404', ['title' => '404'], 'main');
             return;
         }
         $quotations = (new \Rateb\App\Models\SupplierQuotation())->query(
@@ -419,7 +419,7 @@ final class RfqController extends \Rateb\App\Controllers\CrudController
             'rfq' => $rfq,
             'quotations' => $quotations,
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 
     public function index(): void
@@ -740,7 +740,8 @@ final class ReportsController extends Controller
             'metrics' => $service->companyMetrics($companyId),
             'csrf' => Csrf::token(),
             'exportRoute' => rateb_app_url('reports/export'),
-        ], 'company');
+            'exportEnabled' => rateb_can_export_entity('reports'),
+        ], 'main');
     }
 
     public function export(): void
@@ -774,7 +775,7 @@ final class NotificationsController extends Controller
             'title' => __('notifications'),
             'items' => $items,
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 
     public function markRead(array $params): void
@@ -819,7 +820,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             ['cid' => $companyId]
         );
 
-        $this->view($this->viewPrefix . '/index', [
+        $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __($this->entityName),
             'items' => $items,
             'total' => count($items),
@@ -834,16 +835,18 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
                 ['name' => 'status', 'label' => 'status'],
             ],
             'csrf' => Csrf::token(),
-        ], $this->layout());
+        ]), $this->layout());
     }
 
     public function create(): void
     {
+        $this->guardManage();
         $this->view($this->viewPrefix . '/form', $this->evalFormData(null), $this->layout());
     }
 
     public function edit(array $params): void
     {
+        $this->guardManage();
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
@@ -869,6 +872,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
 
     public function store(): void
     {
+        $this->guardManage();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
@@ -889,6 +893,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
 
     public function update(array $params): void
     {
+        $this->guardManage();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
@@ -937,7 +942,7 @@ final class ProfileController extends Controller
             'title' => __('profile'),
             'user' => $user,
             'csrf' => Csrf::token(),
-        ], 'company');
+        ], 'main');
     }
 
     public function update(): void

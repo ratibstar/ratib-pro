@@ -1,7 +1,7 @@
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? __('supplier_kpi')); ?></div>
     <div class="rateb-card-body">
-        <?php Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => $exportRoute ?? '']); ?>
+        <?php Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => $exportRoute ?? '', 'exportEnabled' => $exportEnabled ?? true]); ?>
         <?php Rateb\App\Core\View::partial('workflow-list', [
             'items' => $suppliers ?? [],
             'columns' => [

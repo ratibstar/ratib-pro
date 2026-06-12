@@ -2,10 +2,12 @@
 <div class="rateb-card">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo Rateb\App\Core\View::escape($item['item_name'] ?? __('barcode_qr')); ?></span>
+        <?php if (rateb_can_manage_entity('inventory')) { ?>
         <form method="post" action="<?php echo rateb_app_url('inventory/' . (int) $item['id'] . '/codes/generate'); ?>" class="d-inline">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-barcode"></i> <?php echo __('generate_codes'); ?></button>
         </form>
+        <?php } ?>
     </div>
     <div class="rateb-card-body">
         <div class="row g-4" data-rateb-barcodes data-barcode="<?php echo Rateb\App\Core\View::escape($item['barcode'] ?? ''); ?>" data-qr="<?php echo Rateb\App\Core\View::escape($item['qr_code'] ?? ''); ?>">

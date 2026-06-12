@@ -2,6 +2,6 @@
     'title' => $title ?? '',
     'item' => $item ?? null,
     'fields' => $fields ?? [],
-    'routePrefix' => $routePrefix ?? 'company/supplier-classifications',
+    'routePrefix' => $routePrefix ?? rateb_app_route('supplier-classifications'),
     'csrf' => $csrf,
 ]); ?>

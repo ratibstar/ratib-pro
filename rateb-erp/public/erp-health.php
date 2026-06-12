@@ -47,7 +47,7 @@ try {
 
     if ($probe === 'dispatch' || $dispatchRoute !== '') {
         require_once RATEB_ROOT . '/app/helpers/Request.php';
-        $route = $dispatchRoute !== '' ? $dispatchRoute : 'company/login';
+        $route = $dispatchRoute !== '' ? $dispatchRoute : 'login';
         $_GET['route'] = ltrim($route, '/');
         $path = \Rateb\App\Helpers\Request::resolvePath();
         $steps[] = 'resolved path=' . $path;

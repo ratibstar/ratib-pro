@@ -13,10 +13,8 @@ final class PasswordResetController extends Controller
 {
     public function showForgot(): void
     {
-        $portal = strpos((string) ($_SERVER['REQUEST_URI'] ?? ''), 'company') !== false ? 'company' : 'admin';
         $this->view('auth/forgot-password', [
             'title' => __('password_reset'),
-            'portal' => $portal,
             'csrf' => Csrf::token(),
         ], 'auth');
     }
