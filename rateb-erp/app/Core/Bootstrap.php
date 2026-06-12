@@ -15,6 +15,11 @@ final class Bootstrap
 
         self::$booted = true;
 
+        $basePath = self::resolveRootPath($basePath);
+        if (!defined('RATEB_ROOT')) {
+            define('RATEB_ROOT', $basePath);
+        }
+
         if (PHP_VERSION_ID < 70400) {
             http_response_code(500);
             exit('RATEB ERP requires PHP 7.4 or newer.');
@@ -134,8 +139,47 @@ final class Bootstrap
         return null;
     }
 
+    /** ERP root from this file: app/Core/Bootstrap.php → ../.. */
+    public static function erpRootFromBootstrapFile(): string
+    {
+        $root = realpath(__DIR__ . '/../..');
+        if ($root !== false) {
+            return str_replace('\\', '/', $root);
+        }
+        return str_replace('\\', '/', dirname(__DIR__, 2));
+    }
+
+    /**
+     * cPanel rewrite can leave callers with /rateb-erp instead of public_html path.
+     * Always prefer a root where config/database.php exists.
+     */
+    public static function resolveRootPath(string $basePath): string
+    {
+        $basePath = str_replace('\\', '/', rtrim($basePath, '/'));
+        $candidates = [
+            $basePath,
+        ];
+        $real = realpath($basePath);
+        if ($real !== false) {
+            $candidates[] = str_replace('\\', '/', $real);
+        }
+        $candidates[] = self::erpRootFromBootstrapFile();
+
+        foreach ($candidates as $path) {
+            if ($path !== '' && is_file($path . '/config/database.php')) {
+                return $path;
+            }
+        }
+
+        return self::erpRootFromBootstrapFile();
+    }
+
     private static function loadConfig(string $basePath): void
     {
+        $basePath = self::resolveRootPath($basePath);
+        if (!defined('RATEB_ROOT')) {
+            define('RATEB_ROOT', $basePath);
+        }
         require_once $basePath . '/config/app.php';
         require_once $basePath . '/config/database.php';
     }

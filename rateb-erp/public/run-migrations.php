@@ -8,7 +8,8 @@ declare(strict_types=1);
 header('Content-Type: text/plain; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 
-define('RATEB_ROOT', dirname(__DIR__));
+$ratebRoot = realpath(__DIR__ . '/..');
+define('RATEB_ROOT', str_replace('\\', '/', $ratebRoot !== false ? $ratebRoot : dirname(__DIR__)));
 define('RATEB_MIGRATE_ALLOWED', true);
 
 $provided = trim((string) ($_SERVER['HTTP_X_RATEB_MIGRATE_TOKEN'] ?? ''));

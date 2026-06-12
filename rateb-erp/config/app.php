@@ -2,7 +2,8 @@
 declare(strict_types=1);
 
 if (!defined('RATEB_ROOT')) {
-    define('RATEB_ROOT', dirname(__DIR__, 1));
+    $root = realpath(dirname(__DIR__));
+    define('RATEB_ROOT', str_replace('\\', '/', $root !== false ? $root : dirname(__DIR__)));
 }
 
 define('RATEB_VIEWS_PATH', RATEB_ROOT . DIRECTORY_SEPARATOR . 'views');

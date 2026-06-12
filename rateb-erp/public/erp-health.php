@@ -3,8 +3,15 @@ declare(strict_types=1);
 
 header('Content-Type: text/plain; charset=UTF-8');
 
-define('RATEB_ROOT', str_replace('\\', '/', realpath(dirname(__DIR__)) ?: dirname(__DIR__)));
 define('RATIB_ENV_NO_SESSION', true);
+
+$ratebRoot = realpath(__DIR__ . '/..');
+if ($ratebRoot === false) {
+    $ratebRoot = dirname(__DIR__);
+}
+if (!defined('RATEB_ROOT')) {
+    define('RATEB_ROOT', str_replace('\\', '/', $ratebRoot));
+}
 
 $probe = isset($_GET['probe']) ? (string) $_GET['probe'] : '';
 $dispatchRoute = isset($_GET['dispatch']) ? (string) $_GET['dispatch'] : '';
@@ -12,6 +19,7 @@ $dispatchRoute = isset($_GET['dispatch']) ? (string) $_GET['dispatch'] : '';
 $steps = [];
 try {
     $steps[] = 'PHP ' . PHP_VERSION;
+    $steps[] = 'RATEB_ROOT=' . RATEB_ROOT;
 
     require_once RATEB_ROOT . '/config/app.php';
     $steps[] = 'app.php OK';

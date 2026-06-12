@@ -1,10 +1,16 @@
 <?php
 declare(strict_types=1);
 
-define('RATEB_ROOT', str_replace('\\', '/', realpath(dirname(__DIR__)) ?: dirname(__DIR__)));
-
 if (!defined('RATIB_ENV_NO_SESSION')) {
     define('RATIB_ENV_NO_SESSION', true);
+}
+
+$ratebRoot = realpath(__DIR__ . '/..');
+if ($ratebRoot === false) {
+    $ratebRoot = dirname(__DIR__);
+}
+if (!defined('RATEB_ROOT')) {
+    define('RATEB_ROOT', str_replace('\\', '/', $ratebRoot));
 }
 
 register_shutdown_function(static function (): void {
@@ -21,7 +27,7 @@ register_shutdown_function(static function (): void {
 });
 
 try {
-    require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
+    require_once __DIR__ . '/../app/Core/Bootstrap.php';
 
     Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
 
