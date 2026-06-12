@@ -5,14 +5,6 @@ if (!defined('RATIB_ENV_NO_SESSION')) {
     define('RATIB_ENV_NO_SESSION', true);
 }
 
-$ratebRoot = realpath(__DIR__ . '/..');
-if ($ratebRoot === false) {
-    $ratebRoot = dirname(__DIR__);
-}
-if (!defined('RATEB_ROOT')) {
-    define('RATEB_ROOT', str_replace('\\', '/', $ratebRoot));
-}
-
 register_shutdown_function(static function (): void {
     $err = error_get_last();
     if ($err === null || !in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
@@ -27,9 +19,14 @@ register_shutdown_function(static function (): void {
 });
 
 try {
-    require_once __DIR__ . '/../app/Core/Bootstrap.php';
+    $ratebRootHint = realpath(dirname(__FILE__, 2));
+    if ($ratebRootHint === false) {
+        $ratebRootHint = dirname(__FILE__, 2);
+    }
 
-    Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
+    require_once dirname(__FILE__, 2) . '/app/Core/Bootstrap.php';
+
+    Rateb\App\Core\Bootstrap::init($ratebRootHint);
 
     Rateb\App\Core\Auth::bootstrapFromSession();
 

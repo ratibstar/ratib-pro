@@ -139,31 +139,33 @@ final class Bootstrap
         return null;
     }
 
-    /** ERP root from this file: app/Core/Bootstrap.php → ../.. */
+    /** ERP root from this file: {root}/app/Core/Bootstrap.php */
     public static function erpRootFromBootstrapFile(): string
     {
-        $root = realpath(__DIR__ . '/../..');
+        $root = realpath(dirname(__FILE__, 3));
         if ($root !== false) {
             return str_replace('\\', '/', $root);
         }
-        return str_replace('\\', '/', dirname(__DIR__, 2));
+        return str_replace('\\', '/', dirname(__FILE__, 3));
     }
 
     /**
-     * cPanel rewrite can leave callers with /rateb-erp instead of public_html path.
-     * Always prefer a root where config/database.php exists.
+     * cPanel rewrite can pass /rateb-erp (symlink) while __FILE__ stays under public_html.
+     * Always anchor to Bootstrap.php real location first.
      */
     public static function resolveRootPath(string $basePath): string
     {
+        $anchor = self::erpRootFromBootstrapFile();
+        if ($anchor !== '' && is_file($anchor . '/config/database.php')) {
+            return $anchor;
+        }
+
         $basePath = str_replace('\\', '/', rtrim($basePath, '/'));
-        $candidates = [
-            $basePath,
-        ];
+        $candidates = [$basePath];
         $real = realpath($basePath);
         if ($real !== false) {
             $candidates[] = str_replace('\\', '/', $real);
         }
-        $candidates[] = self::erpRootFromBootstrapFile();
 
         foreach ($candidates as $path) {
             if ($path !== '' && is_file($path . '/config/database.php')) {
@@ -171,7 +173,7 @@ final class Bootstrap
             }
         }
 
-        return self::erpRootFromBootstrapFile();
+        return $anchor !== '' ? $anchor : $basePath;
     }
 
     private static function loadConfig(string $basePath): void
@@ -180,8 +182,12 @@ final class Bootstrap
         if (!defined('RATEB_ROOT')) {
             define('RATEB_ROOT', $basePath);
         }
-        require_once $basePath . '/config/app.php';
-        require_once $basePath . '/config/database.php';
+        $configRoot = $basePath;
+        if (!is_file($configRoot . '/config/database.php')) {
+            $configRoot = self::erpRootFromBootstrapFile();
+        }
+        require_once $configRoot . '/config/app.php';
+        require_once $configRoot . '/config/database.php';
     }
 
     private static function ensureStorage(string $basePath): void

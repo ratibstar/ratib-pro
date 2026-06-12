@@ -5,9 +5,9 @@ header('Content-Type: text/plain; charset=UTF-8');
 
 define('RATIB_ENV_NO_SESSION', true);
 
-$ratebRoot = realpath(__DIR__ . '/..');
+$ratebRoot = realpath(dirname(__FILE__, 2));
 if ($ratebRoot === false) {
-    $ratebRoot = dirname(__DIR__);
+    $ratebRoot = dirname(__FILE__, 2);
 }
 if (!defined('RATEB_ROOT')) {
     define('RATEB_ROOT', str_replace('\\', '/', $ratebRoot));
