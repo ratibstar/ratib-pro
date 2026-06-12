@@ -147,6 +147,8 @@ return [
     'access_denied' => 'You do not have permission to access this page.',
     'module_not_allowed' => 'Module access is not configured for your company.',
     'module_not_in_plan' => 'This module is not included in your subscription plan.',
+    'module_not_in_plan_named' => 'The «:module» module is not included in your current plan.',
+    'plan_upgrade_hint' => 'To unlock more modules: Admin → Companies → Edit company → choose Professional or Enterprise.',
     'supplier_evaluations' => 'Supplier Evaluations',
     'evaluation_date' => 'Evaluation Date',
     'quality_score' => 'Quality',

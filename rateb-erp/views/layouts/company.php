@@ -2,6 +2,44 @@
 $locale = rateb_locale();
 $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+
+$companyId = (int) \Rateb\App\Core\SessionManager::get('rateb_company_id');
+$planLimits = $companyId > 0
+    ? (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId)
+    : ['modules' => [], 'plan_name' => null];
+$planModules = $planLimits['modules'] ?? [];
+
+$companyHasModule = static function (string $module) use ($planModules): bool {
+    return $module === '' || in_array($module, $planModules, true);
+};
+
+$renderNavLink = static function (array $link, string $currentPath) use ($companyHasModule): void {
+    [$path, $labelKey, $icon, $module] = array_pad($link, 4, '');
+    if (!$companyHasModule($module)) {
+        return;
+    }
+    $active = strpos($currentPath, $path) !== false ? ' active' : '';
+    echo '<a href="' . rateb_url($path) . '" class="rateb-nav-link' . $active . '">';
+    echo '<i class="fas ' . $icon . '"></i><span>' . __($labelKey) . '</span></a>';
+};
+
+$renderNavSection = static function (string $title, array $links, string $currentPath) use ($companyHasModule, $renderNavLink): void {
+    $visible = false;
+    foreach ($links as $link) {
+        $module = $link[3] ?? '';
+        if ($companyHasModule($module)) {
+            $visible = true;
+            break;
+        }
+    }
+    if (!$visible) {
+        return;
+    }
+    echo '<div class="rateb-nav-section">' . Rateb\App\Core\View::escape($title) . '</div>';
+    foreach ($links as $link) {
+        $renderNavLink($link, $currentPath);
+    }
+};
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="dark" data-bs-theme="dark">
@@ -46,81 +84,55 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
         </div>
         <nav>
             <a href="<?php echo rateb_url('company'); ?>" class="rateb-nav-link"><i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span></a>
-            <div class="rateb-nav-section"><?php echo __('procurement'); ?></div>
             <?php
-            $procLinks = [
-                ['company/purchase-requests', 'purchase_requests', 'fa-file-circle-plus'],
-                ['company/purchase-orders', 'purchase_orders', 'fa-file-invoice'],
-                ['company/rfq', 'rfq', 'fa-comments-dollar'],
-                ['company/quotations', 'quotations', 'fa-file-signature'],
-                ['company/workflows', 'workflows', 'fa-diagram-project'],
-            ];
-            foreach ($procLinks as $link) {
-                $active = strpos($currentPath, $link[0]) !== false ? ' active' : '';
-                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
-                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
-            }
-            ?>
-            <div class="rateb-nav-section"><?php echo __('inventory'); ?></div>
-            <?php
-            $invLinks = [
-                ['company/inventory', 'inventory', 'fa-boxes-stacked'],
-                ['company/inventory-batches', 'inventory_batches', 'fa-layer-group'],
-                ['company/inventory-audits', 'inventory_audits', 'fa-clipboard-check'],
-                ['company/warehouses', 'warehouses', 'fa-warehouse'],
-                ['company/stock-movements', 'stock_movements', 'fa-arrows-rotate'],
-                ['company/product-categories', 'product_categories', 'fa-tags'],
-            ];
-            foreach ($invLinks as $link) {
-                $active = strpos($currentPath, $link[0]) !== false ? ' active' : '';
-                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
-                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
-            }
-            ?>
-            <div class="rateb-nav-section"><?php echo __('suppliers'); ?></div>
-            <?php
-            $supLinks = [
-                ['company/suppliers', 'suppliers', 'fa-truck-field'],
-                ['company/supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke'],
-                ['company/supplier-classifications', 'supplier_classifications', 'fa-tags'],
-                ['company/supplier-kpi', 'supplier_kpi', 'fa-chart-line'],
-            ];
-            foreach ($supLinks as $link) {
-                $active = strpos($currentPath, $link[0]) !== false ? ' active' : '';
-                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
-                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
-            }
-            ?>
-            <div class="rateb-nav-section"><?php echo __('contracts'); ?> / <?php echo __('assets'); ?></div>
-            <?php
-            $links = [
-                ['company/contracts', 'contracts', 'fa-file-contract'],
-                ['company/contract-renewals', 'contract_renewals', 'fa-rotate'],
-                ['company/tenders', 'tenders', 'fa-gavel'],
-                ['company/assets', 'assets', 'fa-toolbox'],
-                ['company/asset-maintenance', 'asset_maintenance', 'fa-wrench'],
-                ['company/asset-assignments', 'asset_assignments', 'fa-user-check'],
-                ['company/asset-depreciation', 'asset_depreciation', 'fa-chart-line'],
-                ['company/medical-devices', 'medical_devices', 'fa-stethoscope'],
-                ['company/device-maintenance', 'device_maintenance', 'fa-screwdriver-wrench'],
-                ['company/device-spare-parts', 'device_spare_parts', 'fa-gears'],
-                ['company/device-warranty', 'device_warranty', 'fa-shield-halved'],
-                ['company/accounting', 'accounting_module', 'fa-calculator'],
-                ['company/reports', 'reports', 'fa-chart-pie'],
-                ['company/reports/procurement', 'procurement_analytics', 'fa-cart-shopping'],
-                ['company/reports/kpi', 'company_kpi', 'fa-gauge-high'],
-                ['company/reports/cost-analysis', 'cost_analysis', 'fa-coins'],
-                ['company/reports/supplier-performance', 'supplier_performance_report', 'fa-truck-field'],
-                ['company/reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked'],
-                ['company/documents', 'documents', 'fa-folder-open'],
-                ['company/notifications', 'notifications', 'fa-bell'],
-                ['company/profile', 'profile', 'fa-user-gear'],
-            ];
-            foreach ($links as $link) {
-                $active = strpos($currentPath, $link[0]) !== false ? ' active' : '';
-                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
-                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
-            }
+            $renderNavSection(__('procurement'), [
+                ['company/purchase-requests', 'purchase_requests', 'fa-file-circle-plus', 'procurement'],
+                ['company/purchase-orders', 'purchase_orders', 'fa-file-invoice', 'procurement'],
+                ['company/rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
+                ['company/quotations', 'quotations', 'fa-file-signature', 'procurement'],
+                ['company/workflows', 'workflows', 'fa-diagram-project', 'workflows'],
+            ], $currentPath);
+
+            $renderNavSection(__('inventory'), [
+                ['company/inventory', 'inventory', 'fa-boxes-stacked', 'inventory'],
+                ['company/inventory-batches', 'inventory_batches', 'fa-layer-group', 'inventory'],
+                ['company/inventory-audits', 'inventory_audits', 'fa-clipboard-check', 'inventory'],
+                ['company/warehouses', 'warehouses', 'fa-warehouse', 'inventory'],
+                ['company/stock-movements', 'stock_movements', 'fa-arrows-rotate', 'inventory'],
+                ['company/product-categories', 'product_categories', 'fa-tags', 'inventory'],
+            ], $currentPath);
+
+            $renderNavSection(__('suppliers'), [
+                ['company/suppliers', 'suppliers', 'fa-truck-field', 'suppliers'],
+                ['company/supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke', 'suppliers'],
+                ['company/supplier-classifications', 'supplier_classifications', 'fa-tags', 'suppliers'],
+                ['company/supplier-kpi', 'supplier_kpi', 'fa-chart-line', 'suppliers'],
+            ], $currentPath);
+
+            $renderNavSection(__('contracts') . ' / ' . __('assets'), [
+                ['company/contracts', 'contracts', 'fa-file-contract', 'contracts'],
+                ['company/contract-renewals', 'contract_renewals', 'fa-rotate', 'contracts'],
+                ['company/tenders', 'tenders', 'fa-gavel', 'tenders'],
+                ['company/assets', 'assets', 'fa-toolbox', 'assets'],
+                ['company/asset-maintenance', 'asset_maintenance', 'fa-wrench', 'assets'],
+                ['company/asset-assignments', 'asset_assignments', 'fa-user-check', 'assets'],
+                ['company/asset-depreciation', 'asset_depreciation', 'fa-chart-line', 'assets'],
+                ['company/medical-devices', 'medical_devices', 'fa-stethoscope', 'medical_devices'],
+                ['company/device-maintenance', 'device_maintenance', 'fa-screwdriver-wrench', 'medical_devices'],
+                ['company/device-spare-parts', 'device_spare_parts', 'fa-gears', 'medical_devices'],
+                ['company/device-warranty', 'device_warranty', 'fa-shield-halved', 'medical_devices'],
+                ['company/accounting', 'accounting_module', 'fa-calculator', 'accounting'],
+                ['company/reports', 'reports', 'fa-chart-pie', 'reports'],
+                ['company/reports/procurement', 'procurement_analytics', 'fa-cart-shopping', 'procurement'],
+                ['company/reports/kpi', 'company_kpi', 'fa-gauge-high', 'reports'],
+                ['company/reports/cost-analysis', 'cost_analysis', 'fa-coins', 'reports'],
+                ['company/reports/supplier-performance', 'supplier_performance_report', 'fa-truck-field', 'suppliers'],
+                ['company/reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked', 'inventory'],
+                ['company/documents', 'documents', 'fa-folder-open', 'documents'],
+            ], $currentPath);
+
+            $renderNavLink(['company/notifications', 'notifications', 'fa-bell', ''], $currentPath);
+            $renderNavLink(['company/profile', 'profile', 'fa-user-gear', ''], $currentPath);
             ?>
         </nav>
     </aside>

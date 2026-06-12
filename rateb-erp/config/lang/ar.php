@@ -147,6 +147,8 @@ return [
     'access_denied' => 'ليس لديك صلاحية للوصول إلى هذه الصفحة.',
     'module_not_allowed' => 'لم يتم تهيئة الوصول إلى هذه الوحدة لشركتك.',
     'module_not_in_plan' => 'هذه الوحدة غير مشمولة في باقة اشتراكك.',
+    'module_not_in_plan_named' => 'وحدة «:module» غير مشمولة في باقتك الحالية.',
+    'plan_upgrade_hint' => 'لتفعيل وحدات إضافية: من لوحة الإدارة → الشركات → تعديل الشركة → اختر باقة Professional أو Enterprise.',
     'supplier_evaluations' => 'تقييم الموردين',
     'evaluation_date' => 'تاريخ التقييم',
     'quality_score' => 'الجودة',

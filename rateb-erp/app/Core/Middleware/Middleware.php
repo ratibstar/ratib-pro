@@ -173,7 +173,8 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
 
         $limits = new \Rateb\App\Services\PlanLimitService();
         if (!$limits->companyHasModule($companyId, $this->module)) {
-            SessionManager::flash('error', __('module_not_in_plan'));
+            $label = function_exists('__') ? __($this->module) : $this->module;
+            SessionManager::flash('error', __('module_not_in_plan_named', ['module' => $label]));
             Response::redirect(function_exists('rateb_url') ? rateb_url('company') : (RATEB_BASE_URL . '/company'));
             return false;
         }
