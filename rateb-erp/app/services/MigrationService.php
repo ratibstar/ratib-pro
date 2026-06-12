@@ -12,8 +12,8 @@ final class MigrationService
     public function runAll(): array
     {
         $log = [];
-        $pdo = Database::connection();
-        $log[] = 'Connected to database: ' . Database::resolvedDatabaseName();
+        [$pdo, $dbName] = $this->migrationConnection();
+        $log[] = 'Connected to database: ' . $dbName;
         $this->ensureMigrationsTable($pdo);
         $this->seedLegacyAppliedMigrations($pdo, $log);
 
@@ -83,15 +83,6 @@ final class MigrationService
     /** Existing DBs installed before rateb_migrations tracking — skip re-running 001–012. */
     private function seedLegacyAppliedMigrations(PDO $pdo, array &$log): void
     {
-        $stmt = $pdo->query('SELECT COUNT(*) FROM rateb_migrations');
-        $count = $stmt !== false ? (int) $stmt->fetchColumn() : 0;
-        if ($stmt instanceof \PDOStatement) {
-            $stmt->closeCursor();
-        }
-        if ($count > 0) {
-            return;
-        }
-
         $check = $pdo->query("SHOW TABLES LIKE 'rateb_companies'");
         $hasSchema = $check !== false && $check->fetch() !== false;
         if ($check instanceof \PDOStatement) {
@@ -116,11 +107,14 @@ final class MigrationService
             if ((int) $m[1] >= 13) {
                 continue;
             }
+            if ($this->isApplied($pdo, $name)) {
+                continue;
+            }
             $this->markApplied($pdo, $name);
             $marked++;
         }
         if ($marked > 0) {
-            $log[] = 'Legacy schema detected: marked migrations 001–012 as already applied (' . $marked . ' files).';
+            $log[] = 'Legacy schema: marked migrations 001–012 as already applied (' . $marked . ' new rows).';
         }
     }
 
@@ -155,6 +149,11 @@ final class MigrationService
 
     private function execStatement(PDO $pdo, string $statement): void
     {
+        if (preg_match('/\b(PREPARE|EXECUTE|DEALLOCATE)\b/i', $statement)) {
+            $pdo->exec($statement);
+            return;
+        }
+
         $stmt = $pdo->query($statement);
         if ($stmt === false) {
             return;
@@ -200,6 +199,49 @@ final class MigrationService
             }
         }
         return false;
+    }
+
+    /** @return array{0:PDO,1:string} */
+    private function migrationConnection(): array
+    {
+        Database::disconnect();
+        $candidates = function_exists('rateb_erp_database_candidates')
+            ? rateb_erp_database_candidates()
+            : [defined('RATEB_DB_NAME') ? (string) RATEB_DB_NAME : 'outratib_rateb-erp'];
+        $last = null;
+        foreach ($candidates as $dbName) {
+            try {
+                return [$this->openMigrationPdo($dbName), $dbName];
+            } catch (\PDOException $e) {
+                $last = $e;
+            }
+        }
+        if ($last instanceof \PDOException) {
+            throw $last;
+        }
+        throw new \PDOException('RATEB ERP migration database connection failed.');
+    }
+
+    private function openMigrationPdo(string $dbName): PDO
+    {
+        $dsn = sprintf(
+            'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+            RATEB_DB_HOST,
+            RATEB_DB_PORT,
+            $dbName
+        );
+        $options = [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+            \PDO::ATTR_EMULATE_PREPARES => false,
+        ];
+        if (defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')) {
+            $options[\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
+        }
+        if (defined('PDO::MYSQL_ATTR_MULTI_STATEMENTS')) {
+            $options[\PDO::MYSQL_ATTR_MULTI_STATEMENTS] = true;
+        }
+        return new \PDO($dsn, RATEB_DB_USER, RATEB_DB_PASS, $options);
     }
 
     public function isSchemaReady(): bool

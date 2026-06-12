@@ -727,7 +727,31 @@ def main() -> int:
         )
         return 1
 
+    upload_erp_migrate_token(remote_base, succeeded)
     return 0
+
+
+def upload_erp_migrate_token(remote_base: str, succeeded: set[str]) -> None:
+    """Ship deploy auth token with the rateb-erp bundle (used by migrate HTTP endpoint)."""
+    if not os.environ.get("CPANEL_API_TOKEN"):
+        return
+    if not any(p.startswith("rateb-erp/") for p in succeeded):
+        return
+    token_path = "rateb-erp/storage/deploy-migrate-token"
+    try:
+        os.makedirs(os.path.dirname(token_path), exist_ok=True)
+        with open(token_path, "w", encoding="utf-8") as handle:
+            handle.write(os.environ["CPANEL_API_TOKEN"])
+        _rel, ok, err = upload_text_one(token_path, remote_base)
+        if ok:
+            print("erp migrate token: uploaded with deploy bundle", flush=True)
+        else:
+            print(f"::warning::erp migrate token upload failed: {err}", flush=True)
+    finally:
+        try:
+            os.remove(token_path)
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":

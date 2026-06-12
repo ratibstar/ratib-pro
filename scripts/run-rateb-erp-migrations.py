@@ -30,34 +30,13 @@ def sanitize_host(host: str) -> str:
 
 
 def upload_migrate_token(dc) -> bool:
-    token = os.environ.get("CPANEL_API_TOKEN", "")
-    remote_base = os.environ.get("CPANEL_REMOTE_BASE", "/home/outratib/public_html").rstrip("/")
-    if not token:
-        print("::warning::Skip token upload — no CPANEL_API_TOKEN", flush=True)
-        return False
-
-    host = sanitize_host(os.environ.get("CPANEL_HOST", ""))
-    if host:
-        os.environ["CPANEL_HOST"] = host
-
-    local_rel = "rateb-erp/storage/deploy-migrate-token"
-    os.makedirs(os.path.dirname(local_rel), exist_ok=True)
-    with open(local_rel, "w", encoding="utf-8") as handle:
-        handle.write(token)
-    try:
-        _rel_path, ok, err = dc.upload_text_one(local_rel, remote_base)
-    finally:
-        try:
-            os.remove(local_rel)
-        except OSError:
-            pass
-
-    if not ok:
-        print(f"::warning::Migrate token upload failed: {err}", flush=True)
-        return False
-
-    print("migrate token file uploaded", flush=True)
-    return True
+    """Token is uploaded during deploy bundle step; this is a no-op fallback."""
+    token_path = "rateb-erp/storage/deploy-migrate-token"
+    if os.path.isfile(token_path):
+        print("migrate token: local file present (deploy step should upload it)", flush=True)
+        return True
+    print("::warning::Migrate token not uploaded in deploy step — HTTP auth may fail", flush=True)
+    return False
 
 
 def http_migrate(site: str, token: str, path: str) -> tuple[int, str]:
