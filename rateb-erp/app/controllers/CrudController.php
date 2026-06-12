@@ -20,6 +20,7 @@ abstract class CrudController extends Controller
     protected bool $bulkEnabled = true;
     protected bool $createEnabled = true;
     protected bool $actionsEnabled = true;
+    protected string $permissionResource = '';
     /** @var array<int, string> */
     protected array $tenantForeignKeys = [];
 
@@ -29,7 +30,7 @@ abstract class CrudController extends Controller
         $limit = 20;
         $offset = ($page - 1) * $limit;
 
-        $this->view($this->viewPrefix . '/index', $this->indexViewData($limit, $offset, $page), $this->layout());
+        $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags($this->indexViewData($limit, $offset, $page)), $this->layout());
     }
 
     /** @return array<string, mixed> */
@@ -50,8 +51,41 @@ abstract class CrudController extends Controller
         ];
     }
 
+    /** @param array<string, mixed> $data */
+    protected function applyPermissionFlags(array $data): array
+    {
+        if (!function_exists('rateb_can_manage_entity')) {
+            return $data;
+        }
+        $resource = $this->permissionResourceKey();
+        $canManage = rateb_can_manage_entity($resource);
+        $data['createEnabled'] = ($data['createEnabled'] ?? true) && $canManage;
+        $data['actionsEnabled'] = ($data['actionsEnabled'] ?? true) && $canManage;
+        $data['bulkEnabled'] = ($data['bulkEnabled'] ?? true) && $canManage;
+        $data['exportEnabled'] = rateb_can_export_entity($resource);
+        $data['permissionResource'] = $resource;
+        return $data;
+    }
+
+    protected function permissionResourceKey(): string
+    {
+        if ($this->permissionResource !== '') {
+            return $this->permissionResource;
+        }
+        return (string) preg_replace('#^admin/(ops/)?#', '', $this->routePrefix);
+    }
+
+    protected function guardManage(): void
+    {
+        if (function_exists('rateb_can_manage_entity') && !rateb_can_manage_entity($this->permissionResourceKey())) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+    }
+
     public function create(): void
     {
+        $this->guardManage();
         $this->view($this->viewPrefix . '/form', [
             'title' => __('create') . ' ' . __($this->entityName),
             'item' => null,
@@ -63,6 +97,7 @@ abstract class CrudController extends Controller
 
     public function store(): void
     {
+        $this->guardManage();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', 'Invalid CSRF token');
             $this->redirect(rateb_url($this->routePrefix));
@@ -83,6 +118,7 @@ abstract class CrudController extends Controller
 
     public function edit(array $params): void
     {
+        $this->guardManage();
         $id = (int) ($params['id'] ?? 0);
         $item = $this->model->find($id);
         if (!$item) {
@@ -102,6 +138,7 @@ abstract class CrudController extends Controller
 
     public function update(array $params): void
     {
+        $this->guardManage();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', 'Invalid CSRF token');
             $this->redirect(rateb_url($this->routePrefix));
@@ -123,6 +160,7 @@ abstract class CrudController extends Controller
 
     public function destroy(array $params): void
     {
+        $this->guardManage();
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', 'Invalid CSRF token');
             $this->redirect(rateb_url($this->routePrefix));
@@ -137,6 +175,7 @@ abstract class CrudController extends Controller
 
     public function bulkDestroy(): void
     {
+        $this->guardManage();
         if (!$this->bulkEnabled) {
             SessionManager::flash('error', __('access_denied'));
             $this->redirect(rateb_url($this->routePrefix));

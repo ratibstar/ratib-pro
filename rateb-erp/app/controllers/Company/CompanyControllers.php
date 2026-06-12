@@ -61,7 +61,7 @@ final class AuthController extends Controller
 
         (new User())->updateLastLogin((int) $user['id']);
         (new AuditService())->log('login', 'user', (int) $user['id']);
-        Response::redirect(rateb_url('company'));
+        Response::redirect(rateb_url('admin'));
     }
 
     public function logout(): void
@@ -101,7 +101,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
     {
         $this->model = new \Rateb\App\Models\PurchaseRequest();
         $this->viewPrefix = 'company/purchase-requests';
-        $this->routePrefix = 'company/purchase-requests';
+        $this->routePrefix = rateb_app_route('purchase-requests');
         $this->entityName = 'purchase_requests';
         $this->fields = [
             ['name' => 'title', 'label' => 'Title', 'type' => 'text'],
@@ -115,7 +115,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 
     protected function collectData(): array
@@ -226,7 +226,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
     {
         $this->model = new \Rateb\App\Models\PurchaseOrder();
         $this->viewPrefix = 'company/purchase-orders';
-        $this->routePrefix = 'company/purchase-orders';
+        $this->routePrefix = rateb_app_route('purchase-orders');
         $this->entityName = 'purchase_orders';
         $this->tenantForeignKeys = ['supplier_id'];
         $this->fields = [
@@ -241,7 +241,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 
     protected function collectData(): array
@@ -386,7 +386,7 @@ final class RfqController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\Rfq();
         $this->viewPrefix = 'company/rfq';
-        $this->routePrefix = 'company/rfq';
+        $this->routePrefix = rateb_app_route('rfq');
         $this->entityName = 'rfq';
         $this->fields = [
             ['name' => 'rfq_no', 'label' => 'RFQ No', 'type' => 'text'],
@@ -444,7 +444,7 @@ final class RfqController extends \Rateb\App\Controllers\CrudController
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 }
 
@@ -454,7 +454,7 @@ final class QuotationsController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\SupplierQuotation();
         $this->viewPrefix = 'company/quotations';
-        $this->routePrefix = 'company/quotations';
+        $this->routePrefix = rateb_app_route('quotations');
         $this->entityName = 'quotations';
         $this->tenantForeignKeys = ['rfq_id', 'supplier_id'];
         $this->fields = [
@@ -468,7 +468,7 @@ final class QuotationsController extends \Rateb\App\Controllers\CrudController
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 }
 
@@ -478,7 +478,7 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\Supplier();
         $this->viewPrefix = 'company/suppliers';
-        $this->routePrefix = 'company/suppliers';
+        $this->routePrefix = rateb_app_route('suppliers');
         $this->entityName = 'suppliers';
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
@@ -493,7 +493,7 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 }
 
@@ -503,7 +503,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\Inventory();
         $this->viewPrefix = 'company/inventory';
-        $this->routePrefix = 'company/inventory';
+        $this->routePrefix = rateb_app_route('inventory');
         $this->entityName = 'inventory';
         $this->tenantForeignKeys = ['warehouse_id'];
         $this->fields = [
@@ -520,7 +520,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 }
 
@@ -530,7 +530,7 @@ final class WarehousesController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\Warehouse();
         $this->viewPrefix = 'company/warehouses';
-        $this->routePrefix = 'company/warehouses';
+        $this->routePrefix = rateb_app_route('warehouses');
         $this->entityName = 'warehouses';
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
@@ -542,7 +542,7 @@ final class WarehousesController extends \Rateb\App\Controllers\CrudController
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 }
 
@@ -552,7 +552,7 @@ final class AssetsController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\Asset();
         $this->viewPrefix = 'company/assets';
-        $this->routePrefix = 'company/assets';
+        $this->routePrefix = rateb_app_route('assets');
         $this->entityName = 'assets';
         $this->fields = [
             ['name' => 'asset_tag', 'label' => 'Tag', 'type' => 'text'],
@@ -565,7 +565,7 @@ final class AssetsController extends \Rateb\App\Controllers\CrudController
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 }
 
@@ -575,7 +575,7 @@ final class MedicalDevicesController extends \Rateb\App\Controllers\CrudControll
     {
         $this->model = new \Rateb\App\Models\MedicalDevice();
         $this->viewPrefix = 'company/medical-devices';
-        $this->routePrefix = 'company/medical-devices';
+        $this->routePrefix = rateb_app_route('medical-devices');
         $this->entityName = 'medical_devices';
         $this->fields = [
             ['name' => 'device_name', 'label' => 'Device', 'type' => 'text'],
@@ -589,7 +589,7 @@ final class MedicalDevicesController extends \Rateb\App\Controllers\CrudControll
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 }
 
@@ -599,7 +599,7 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\Contract();
         $this->viewPrefix = 'company/contracts';
-        $this->routePrefix = 'company/contracts';
+        $this->routePrefix = rateb_app_route('contracts');
         $this->entityName = 'contracts';
         $this->tenantForeignKeys = ['supplier_id'];
         $this->fields = [
@@ -700,7 +700,7 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 }
 
@@ -710,7 +710,7 @@ final class TendersController extends \Rateb\App\Controllers\CrudController
     {
         $this->model = new \Rateb\App\Models\Tender();
         $this->viewPrefix = 'company/tenders';
-        $this->routePrefix = 'company/tenders';
+        $this->routePrefix = rateb_app_route('tenders');
         $this->entityName = 'tenders';
         $this->fields = [
             ['name' => 'tender_no', 'label' => 'Tender No', 'type' => 'text'],
@@ -724,7 +724,7 @@ final class TendersController extends \Rateb\App\Controllers\CrudController
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 }
 
@@ -739,7 +739,7 @@ final class ReportsController extends Controller
             'title' => __('reports'),
             'metrics' => $service->companyMetrics($companyId),
             'csrf' => Csrf::token(),
-            'exportRoute' => rateb_url('company/reports/export'),
+            'exportRoute' => rateb_app_url('reports/export'),
         ], 'company');
     }
 
@@ -780,11 +780,11 @@ final class NotificationsController extends Controller
     public function markRead(array $params): void
     {
         if (!$this->validateCsrf()) {
-            Response::redirect(rateb_url('company/notifications'));
+            Response::redirect(rateb_app_url('notifications'));
         }
         $id = (int) ($params['id'] ?? 0);
         (new \Rateb\App\Services\NotificationService())->markRead($id, (int) SessionManager::get('rateb_user_id'));
-        Response::redirect(rateb_url('company/notifications'));
+        Response::redirect(rateb_app_url('notifications'));
     }
 }
 
@@ -794,7 +794,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
     {
         $this->model = new \Rateb\App\Models\SupplierEvaluation();
         $this->viewPrefix = 'company/supplier-evaluations';
-        $this->routePrefix = 'company/supplier-evaluations';
+        $this->routePrefix = rateb_app_route('supplier-evaluations');
         $this->entityName = 'supplier_evaluations';
         $this->tenantForeignKeys = ['supplier_id'];
         $this->fields = [
@@ -924,7 +924,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 }
 
@@ -943,7 +943,7 @@ final class ProfileController extends Controller
     public function update(): void
     {
         if (!$this->validateCsrf()) {
-            Response::redirect(rateb_url('company/profile'));
+            Response::redirect(rateb_app_url('profile'));
         }
         $user = Auth::user();
         if (!$user) {
@@ -961,6 +961,6 @@ final class ProfileController extends Controller
         (new User())->update((int) $user['id'], $data);
         $_SESSION['rateb_locale'] = $data['locale'];
         SessionManager::flash('success', __('save') . ' OK');
-        Response::redirect(rateb_url('company/profile'));
+        Response::redirect(rateb_app_url('profile'));
     }
 }

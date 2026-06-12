@@ -3,7 +3,7 @@
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo Rateb\App\Core\View::escape($audit['audit_no'] ?? __('inventory_audits')); ?></span>
         <?php if (($audit['status'] ?? '') !== 'completed') { ?>
-        <form method="post" action="<?php echo rateb_url('company/inventory-audits/' . (int) $audit['id'] . '/reconcile'); ?>" class="d-inline" onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('reconcile_confirm')); ?>');">
+        <form method="post" action="<?php echo rateb_app_url('inventory-audits/' . (int) $audit['id'] . '/reconcile'); ?>" class="d-inline" onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('reconcile_confirm')); ?>');">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <button type="submit" class="btn btn-warning btn-sm"><i class="fas fa-balance-scale"></i> <?php echo __('stock_reconciliation'); ?></button>
         </form>
@@ -27,4 +27,4 @@
         ]); ?>
     </div>
 </div>
-<a href="<?php echo rateb_url('company/inventory-audits'); ?>" class="btn btn-outline-secondary"><?php echo __('back_to_list'); ?></a>
+<a href="<?php echo rateb_app_url('inventory-audits'); ?>" class="btn btn-outline-secondary"><?php echo __('back_to_list'); ?></a>

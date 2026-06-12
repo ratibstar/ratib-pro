@@ -1,13 +1,14 @@
 <?php
 declare(strict_types=1);
 
-use Rateb\App\Core\Middleware\AdminAuthMiddleware;
-use Rateb\App\Core\Middleware\CompanyAuthMiddleware;
 use Rateb\App\Core\Middleware\CompanyModuleMiddleware;
 use Rateb\App\Core\Middleware\CompanyPermissionMiddleware;
 use Rateb\App\Core\Middleware\CompanySaaSMiddleware;
+use Rateb\App\Core\Middleware\EntityPermissionMiddleware;
+use Rateb\App\Core\Middleware\ErpAuthMiddleware;
 use Rateb\App\Core\Middleware\GuestMiddleware;
 use Rateb\App\Core\Middleware\RequirePermissionMiddleware;
+use Rateb\App\Core\Middleware\SuperAdminMiddleware;
 
 if (!function_exists('rateb_guest_mw')) {
     function rateb_guest_mw(): array
@@ -17,9 +18,10 @@ if (!function_exists('rateb_guest_mw')) {
 }
 
 if (!function_exists('rateb_admin_mw')) {
+    /** Platform oversight routes — super admin + optional permission. */
     function rateb_admin_mw(string $permission = ''): array
     {
-        $stack = [AdminAuthMiddleware::class];
+        $stack = [ErpAuthMiddleware::class, SuperAdminMiddleware::class];
         if ($permission !== '') {
             $stack[] = [RequirePermissionMiddleware::class, $permission];
         }
@@ -39,18 +41,38 @@ if (!function_exists('rateb_module_permission')) {
     }
 }
 
-if (!function_exists('rateb_company_mw')) {
-    /** @param string $module Plan module slug. @param string $permission Optional permission override. */
-    function rateb_company_mw(string $module = '', string $permission = ''): array
+if (!function_exists('rateb_erp_mw')) {
+    /**
+     * Unified app middleware: login + plan + entity/view/manage permissions.
+     *
+     * @param string $module      Plan module slug (procurement, inventory, …)
+     * @param string $permission  Explicit permission override (e.g. reports.export, workflows.approve)
+     * @param string $resource    Entity resource key from config/entity-permissions.php
+     */
+    function rateb_erp_mw(string $module = '', string $permission = '', string $resource = ''): array
     {
-        $stack = [CompanyAuthMiddleware::class, CompanySaaSMiddleware::class];
+        $stack = [ErpAuthMiddleware::class, CompanySaaSMiddleware::class];
         if ($module !== '') {
             $stack[] = [CompanyModuleMiddleware::class, $module];
-            $perm = $permission !== '' ? $permission : rateb_module_permission($module);
+        }
+        if ($permission !== '') {
+            $stack[] = [CompanyPermissionMiddleware::class, $permission . ($module !== '' ? '|' . $module : '')];
+        } elseif ($resource !== '') {
+            $stack[] = [EntityPermissionMiddleware::class, $resource];
+        } elseif ($module !== '') {
+            $perm = rateb_module_permission($module);
             if ($perm !== '') {
                 $stack[] = [CompanyPermissionMiddleware::class, $perm . '|' . $module];
             }
         }
         return $stack;
+    }
+}
+
+if (!function_exists('rateb_company_mw')) {
+    /** @deprecated Use rateb_erp_mw() — kept for legacy route aliases. */
+    function rateb_company_mw(string $module = '', string $permission = ''): array
+    {
+        return rateb_erp_mw($module, $permission);
     }
 }

@@ -24,7 +24,7 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
     </div>
 </div>
 <div class="d-flex flex-wrap gap-2 mb-3">
-    <form method="post" action="<?php echo rateb_url('company/accounting/sync'); ?>" class="d-inline">
+    <form method="post" action="<?php echo rateb_app_url('accounting/sync'); ?>" class="d-inline">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-sync"></i> <?php echo __('accounting_sync'); ?></button>
     </form>

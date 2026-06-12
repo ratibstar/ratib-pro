@@ -34,4 +34,4 @@ $desc = rateb_locale() === 'ar' && !empty($entry['description_ar']) ? $entry['de
         </table>
     </div>
 </div>
-<a href="<?php echo rateb_url('company/journal-entries'); ?>" class="btn btn-outline-secondary mt-3"><?php echo __('cancel'); ?></a>
+<a href="<?php echo rateb_app_url('journal-entries'); ?>" class="btn btn-outline-secondary mt-3"><?php echo __('cancel'); ?></a>

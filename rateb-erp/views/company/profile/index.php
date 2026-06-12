@@ -1,7 +1,7 @@
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo __('profile'); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo rateb_url('company/profile'); ?>">
+        <form method="post" action="<?php echo rateb_app_url('profile'); ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="row g-3">
                 <div class="col-md-6">

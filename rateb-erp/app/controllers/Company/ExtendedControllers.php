@@ -24,14 +24,20 @@ final class StockMovementsController extends Controller
             'inventory' => (new \Rateb\App\Models\Inventory())->all(200, 0),
             'warehouses' => (new \Rateb\App\Models\Warehouse())->all(100, 0),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canManage' => rateb_can_manage_entity('stock-movements'),
+            'exportEnabled' => rateb_can_export_entity('stock-movements'),
+        ], 'main');
     }
 
     public function store(): void
     {
+        if (!rateb_can_manage_entity('stock-movements')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_app_url('stock-movements'));
+        }
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
-            $this->redirect(rateb_url('company/stock-movements'));
+            $this->redirect(rateb_app_url('stock-movements'));
         }
         try {
             $payload = [
@@ -51,7 +57,7 @@ final class StockMovementsController extends Controller
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
         }
-        $this->redirect(rateb_url('company/stock-movements'));
+        $this->redirect(rateb_app_url('stock-movements'));
     }
 
     public function export(): void
@@ -78,13 +84,18 @@ final class DocumentsController extends Controller
             'title' => __('documents'),
             'items' => $stmt->fetchAll(),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canManage' => rateb_can_manage_entity('documents'),
+        ], 'main');
     }
 
     public function store(): void
     {
+        if (!rateb_can_manage_entity('documents')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_app_url('documents'));
+        }
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/documents'));
+            $this->redirect(rateb_app_url('documents'));
         }
         $result = (new DocumentService())->storeUpload(
             $_FILES['document'] ?? [],
@@ -97,7 +108,7 @@ final class DocumentsController extends Controller
         } else {
             SessionManager::flash('error', $result['error'] ?? __('invalid_request'));
         }
-        $this->redirect(rateb_url('company/documents'));
+        $this->redirect(rateb_app_url('documents'));
     }
 }
 
@@ -119,31 +130,32 @@ final class WorkflowsController extends Controller
             'workflows' => $svc->listWorkflows($companyId),
             'pending' => $pending->fetchAll(),
             'csrf' => Csrf::token(),
-        ], 'company');
+            'canApprove' => rateb_can('workflows.approve'),
+        ], 'main');
     }
 
     public function approve(array $params): void
     {
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/workflows'));
+            $this->redirect(rateb_app_url('workflows'));
         }
         $id = (int) ($params['id'] ?? 0);
         (new WorkflowService())->approve($id, trim((string) $this->input('comment', '')));
         (new AuditService())->log('approve', 'workflow_instance', $id);
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url('company/workflows'));
+        $this->redirect(rateb_app_url('workflows'));
     }
 
     public function reject(array $params): void
     {
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/workflows'));
+            $this->redirect(rateb_app_url('workflows'));
         }
         $id = (int) ($params['id'] ?? 0);
         (new WorkflowService())->reject($id, trim((string) $this->input('comment', '')));
         (new AuditService())->log('reject', 'workflow_instance', $id);
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url('company/workflows'));
+        $this->redirect(rateb_app_url('workflows'));
     }
 }
 
@@ -153,7 +165,7 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
     {
         $this->model = new \Rateb\App\Models\ProductCategory();
         $this->viewPrefix = 'company/product-categories';
-        $this->routePrefix = 'company/product-categories';
+        $this->routePrefix = rateb_app_route('product-categories');
         $this->entityName = 'product_categories';
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
@@ -164,6 +176,6 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 }

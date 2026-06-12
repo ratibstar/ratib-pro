@@ -1,7 +1,7 @@
 <div class="rateb-card mb-4">
     <div class="rateb-card-header"><?php echo __('contract_renewals'); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo rateb_url('company/contract-renewals'); ?>" class="row g-3 mb-4">
+        <form method="post" action="<?php echo rateb_app_url('contract-renewals'); ?>" class="row g-3 mb-4">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-4">
                 <label class="form-label"><?php echo __('contracts'); ?></label>

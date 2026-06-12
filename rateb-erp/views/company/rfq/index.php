@@ -32,7 +32,7 @@ $items = $items ?? [];
                         <td><?php echo Rateb\App\Core\View::escape($row['status'] ?? ''); ?></td>
                         <td><?php echo Rateb\App\Core\View::escape($row['deadline'] ?? ''); ?></td>
                         <td class="text-nowrap">
-                            <a class="btn btn-sm btn-outline-primary" href="<?php echo rateb_url('company/rfq/' . (int) $row['id'] . '/compare'); ?>"><?php echo __('quotation_compare'); ?></a>
+                            <a class="btn btn-sm btn-outline-primary" href="<?php echo rateb_app_url('rfq/' . (int) $row['id'] . '/compare'); ?>"><?php echo __('quotation_compare'); ?></a>
                             <?php if ($actionsEnabled ?? true) { ?>
                             <a class="btn btn-sm btn-outline-secondary" href="<?php echo rateb_url($routePrefix . '/' . (int) $row['id'] . '/edit'); ?>"><?php echo __('edit'); ?></a>
                             <?php } ?>

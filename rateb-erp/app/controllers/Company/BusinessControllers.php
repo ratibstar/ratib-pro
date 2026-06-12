@@ -20,7 +20,7 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
     {
         $this->model = new \Rateb\App\Models\InventoryBatch();
         $this->viewPrefix = 'company/inventory-batches';
-        $this->routePrefix = 'company/inventory-batches';
+        $this->routePrefix = rateb_app_route('inventory-batches');
         $this->entityName = 'inventory_batches';
         $this->fields = [
             ['name' => 'inventory_id', 'label' => 'inventory', 'type' => 'number'],
@@ -31,7 +31,7 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
         ];
     }
 
-    protected function layout(): string { return 'company'; }
+    protected function layout(): string { return 'main'; }
 
     public function create(): void
     {
@@ -50,7 +50,7 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
             'title' => __('inventory_batches'),
             'items' => (new InventoryWorkflowService())->listBatches(100),
             'csrf' => Csrf::token(),
-            'exportRoute' => rateb_url('company/inventory-batches/export'),
+            'exportRoute' => rateb_app_url('inventory-batches/export'),
         ], 'company');
     }
 
@@ -103,7 +103,7 @@ final class InventoryAuditsController extends Controller
     public function store(): void
     {
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/inventory-audits'));
+            $this->redirect(rateb_app_url('inventory-audits'));
         }
         $svc = new InventoryWorkflowService();
         $auditId = $svc->createAudit(
@@ -120,7 +120,7 @@ final class InventoryAuditsController extends Controller
         $svc->saveAuditLines($auditId, $lines);
         (new AuditService())->log('create', 'inventory_audit', $auditId);
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url('company/inventory-audits/' . $auditId));
+        $this->redirect(rateb_app_url('inventory-audits/' . $auditId));
     }
 
     public function show(array $params): void
@@ -143,7 +143,7 @@ final class InventoryAuditsController extends Controller
     public function reconcile(array $params): void
     {
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/inventory-audits'));
+            $this->redirect(rateb_app_url('inventory-audits'));
         }
         $id = (int) ($params['id'] ?? 0);
         try {
@@ -153,7 +153,7 @@ final class InventoryAuditsController extends Controller
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
         }
-        $this->redirect(rateb_url('company/inventory-audits/' . $id));
+        $this->redirect(rateb_app_url('inventory-audits/' . $id));
     }
 }
 
@@ -178,7 +178,7 @@ final class InventoryCodesController extends Controller
     public function generate(array $params): void
     {
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/inventory'));
+            $this->redirect(rateb_app_url('inventory'));
         }
         $id = (int) ($params['id'] ?? 0);
         try {
@@ -188,7 +188,7 @@ final class InventoryCodesController extends Controller
         } catch (\Throwable $e) {
             SessionManager::flash('error', $e->getMessage());
         }
-        $this->redirect(rateb_url('company/inventory/' . $id . '/codes'));
+        $this->redirect(rateb_app_url('inventory/' . $id . '/codes'));
     }
 }
 
@@ -198,7 +198,7 @@ final class SupplierClassificationsController extends \Rateb\App\Controllers\Cru
     {
         $this->model = new \Rateb\App\Models\SupplierClassification();
         $this->viewPrefix = 'company/supplier-classifications';
-        $this->routePrefix = 'company/supplier-classifications';
+        $this->routePrefix = rateb_app_route('supplier-classifications');
         $this->entityName = 'supplier_classifications';
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
@@ -207,7 +207,7 @@ final class SupplierClassificationsController extends \Rateb\App\Controllers\Cru
         ];
     }
 
-    protected function layout(): string { return 'company'; }
+    protected function layout(): string { return 'main'; }
 }
 
 final class SupplierKpiController extends Controller
@@ -220,7 +220,7 @@ final class SupplierKpiController extends Controller
             'title' => __('supplier_kpi'),
             'suppliers' => (new ErpAnalyticsService())->supplierPerformance($companyId),
             'csrf' => Csrf::token(),
-            'exportRoute' => rateb_url('company/supplier-kpi/export'),
+            'exportRoute' => rateb_app_url('supplier-kpi/export'),
         ], 'company');
     }
 
@@ -255,7 +255,7 @@ final class ContractRenewalsController extends Controller
     public function store(): void
     {
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/contract-renewals'));
+            $this->redirect(rateb_app_url('contract-renewals'));
         }
         $id = (new ContractWorkflowService())->createRenewal([
             'contract_id' => (int) $this->input('contract_id', 0),
@@ -267,7 +267,7 @@ final class ContractRenewalsController extends Controller
         ]);
         (new AuditService())->log('create', 'contract_renewal', $id);
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url('company/contract-renewals'));
+        $this->redirect(rateb_app_url('contract-renewals'));
     }
 }
 
@@ -290,7 +290,7 @@ final class AssetMaintenanceController extends Controller
     public function store(): void
     {
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/asset-maintenance'));
+            $this->redirect(rateb_app_url('asset-maintenance'));
         }
         $id = $this->svc->createMaintenance([
             'asset_id' => (int) $this->input('asset_id', 0),
@@ -302,7 +302,7 @@ final class AssetMaintenanceController extends Controller
         ]);
         (new AuditService())->log('create', 'asset_maintenance', $id);
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url('company/asset-maintenance'));
+        $this->redirect(rateb_app_url('asset-maintenance'));
     }
 }
 
@@ -322,7 +322,7 @@ final class AssetAssignmentsController extends Controller
     public function store(): void
     {
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/asset-assignments'));
+            $this->redirect(rateb_app_url('asset-assignments'));
         }
         $id = (new AssetDeviceWorkflowService())->createAssignment([
             'asset_id' => (int) $this->input('asset_id', 0),
@@ -333,7 +333,7 @@ final class AssetAssignmentsController extends Controller
         ]);
         (new AuditService())->log('create', 'asset_assignment', $id);
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url('company/asset-assignments'));
+        $this->redirect(rateb_app_url('asset-assignments'));
     }
 }
 
@@ -352,7 +352,7 @@ final class AssetDepreciationController extends Controller
     public function store(): void
     {
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/asset-depreciation'));
+            $this->redirect(rateb_app_url('asset-depreciation'));
         }
         $id = (new AssetDeviceWorkflowService())->recordDepreciation([
             'asset_id' => (int) $this->input('asset_id', 0),
@@ -362,7 +362,7 @@ final class AssetDepreciationController extends Controller
         ]);
         (new AuditService())->log('create', 'asset_depreciation', $id);
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url('company/asset-depreciation'));
+        $this->redirect(rateb_app_url('asset-depreciation'));
     }
 }
 
@@ -381,7 +381,7 @@ final class DeviceMaintenanceController extends Controller
     public function store(): void
     {
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/device-maintenance'));
+            $this->redirect(rateb_app_url('device-maintenance'));
         }
         (new AssetDeviceWorkflowService())->createMaintenance([
             'device_id' => (int) $this->input('device_id', 0),
@@ -392,7 +392,7 @@ final class DeviceMaintenanceController extends Controller
             'notes' => trim((string) $this->input('notes', '')),
         ], 'rateb_device_service_history');
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url('company/device-maintenance'));
+        $this->redirect(rateb_app_url('device-maintenance'));
     }
 }
 
@@ -411,7 +411,7 @@ final class DeviceSparePartsController extends Controller
     public function store(): void
     {
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/device-spare-parts'));
+            $this->redirect(rateb_app_url('device-spare-parts'));
         }
         (new AssetDeviceWorkflowService())->createSparePart([
             'device_id' => (int) $this->input('device_id', 0),
@@ -421,7 +421,7 @@ final class DeviceSparePartsController extends Controller
             'reorder_level' => (float) $this->input('reorder_level', 0),
         ]);
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url('company/device-spare-parts'));
+        $this->redirect(rateb_app_url('device-spare-parts'));
     }
 }
 
@@ -440,12 +440,12 @@ final class DeviceWarrantyController extends Controller
     public function update(array $params): void
     {
         if (!$this->validateCsrf()) {
-            $this->redirect(rateb_url('company/device-warranty'));
+            $this->redirect(rateb_app_url('device-warranty'));
         }
         $id = (int) ($params['id'] ?? 0);
         (new AssetDeviceWorkflowService())->updateDeviceWarranty($id, (string) $this->input('warranty_expiry', ''));
         SessionManager::flash('success', __('save') . ' OK');
-        $this->redirect(rateb_url('company/device-warranty'));
+        $this->redirect(rateb_app_url('device-warranty'));
     }
 }
 
@@ -464,7 +464,7 @@ final class AnalyticsReportsController extends Controller
         $this->view('company/reports/procurement', [
             'title' => __('procurement_analytics'),
             'data' => (new ErpAnalyticsService())->procurementDashboard($cid),
-            'exportRoute' => rateb_url('company/reports/procurement/export'),
+            'exportRoute' => rateb_app_url('reports/procurement/export'),
             'csrf' => Csrf::token(),
         ], 'company');
     }
@@ -475,7 +475,7 @@ final class AnalyticsReportsController extends Controller
         $this->view('company/reports/kpi', [
             'title' => __('company_kpi'),
             'data' => (new ErpAnalyticsService())->companyKpi($cid),
-            'exportRoute' => rateb_url('company/reports/kpi/export'),
+            'exportRoute' => rateb_app_url('reports/kpi/export'),
             'csrf' => Csrf::token(),
         ], 'company');
     }
@@ -486,7 +486,7 @@ final class AnalyticsReportsController extends Controller
         $this->view('company/reports/cost-analysis', [
             'title' => __('cost_analysis'),
             'data' => (new ErpAnalyticsService())->costAnalysis($cid),
-            'exportRoute' => rateb_url('company/reports/cost-analysis/export'),
+            'exportRoute' => rateb_app_url('reports/cost-analysis/export'),
             'csrf' => Csrf::token(),
         ], 'company');
     }
@@ -497,7 +497,7 @@ final class AnalyticsReportsController extends Controller
         $this->view('company/reports/supplier-performance', [
             'title' => __('supplier_performance_report'),
             'rows' => (new ErpAnalyticsService())->supplierPerformance($cid),
-            'exportRoute' => rateb_url('company/reports/supplier-performance/export'),
+            'exportRoute' => rateb_app_url('reports/supplier-performance/export'),
             'csrf' => Csrf::token(),
         ], 'company');
     }
@@ -510,7 +510,7 @@ final class AnalyticsReportsController extends Controller
             'title' => __('inventory_valuation_report'),
             'rows' => $val['rows'],
             'total_value' => $val['total_value'],
-            'exportRoute' => rateb_url('company/reports/inventory-valuation/export'),
+            'exportRoute' => rateb_app_url('reports/inventory-valuation/export'),
             'csrf' => Csrf::token(),
         ], 'company');
     }

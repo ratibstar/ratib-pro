@@ -54,7 +54,16 @@ final class Router
                 continue;
             }
 
-            $regex = '#^' . preg_replace('#\{([a-zA-Z_]+)\}#', '(?P<$1>[^/]+)', $route['pattern']) . '$#';
+            $regex = '#^' . preg_replace_callback(
+                '#\{([a-zA-Z_][a-zA-Z0-9_]*)(?::(\.\+))?\}#',
+                static function (array $m): string {
+                    if (($m[2] ?? '') === '.+') {
+                        return '(?P<' . $m[1] . '>.+)';
+                    }
+                    return '(?P<' . $m[1] . '>[^/]+)';
+                },
+                $route['pattern']
+            ) . '$#';
             if (!preg_match($regex, $path, $matches)) {
                 continue;
             }

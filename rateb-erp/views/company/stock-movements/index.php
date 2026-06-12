@@ -1,8 +1,12 @@
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? __('stock_movements')); ?></div>
     <div class="rateb-card-body">
-        <?php Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => rateb_url('company/stock-movements/export')]); ?>
-        <form method="post" action="<?php echo rateb_url('company/stock-movements'); ?>" class="row g-3 mb-4">
+        <?php Rateb\App\Core\View::partial('export-toolbar', [
+            'exportRoute' => rateb_app_url('stock-movements/export'),
+            'exportEnabled' => $exportEnabled ?? true,
+        ]); ?>
+        <?php if ($canManage ?? true) { ?>
+        <form method="post" action="<?php echo rateb_app_url('stock-movements'); ?>" class="row g-3 mb-4">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-4">
                 <label class="form-label"><?php echo __('inventory'); ?></label>
@@ -43,6 +47,7 @@
                 <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
             </div>
         </form>
+        <?php } ?>
         <?php Rateb\App\Core\View::partial('crud-index', [
             'title' => '',
             'items' => $items ?? [],
@@ -54,7 +59,8 @@
                 ['name' => 'created_at', 'label' => 'created_at'],
             ],
             'csrf' => $csrf,
-            'routePrefix' => 'company/stock-movements',
+            'routePrefix' => rateb_app_route('stock-movements'),
+            'permissionResource' => 'stock-movements',
             'bulkEnabled' => false,
             'createEnabled' => false,
             'actionsEnabled' => false,

@@ -1,7 +1,7 @@
 <div class="rateb-card">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo Rateb\App\Core\View::escape($title ?? __('inventory_batches')); ?></span>
-        <a href="<?php echo rateb_url('company/inventory-batches/create'); ?>" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> <?php echo __('create'); ?></a>
+        <a href="<?php echo rateb_app_url('inventory-batches/create'); ?>" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> <?php echo __('create'); ?></a>
     </div>
     <div class="rateb-card-body">
         <?php Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => $exportRoute ?? '']); ?>

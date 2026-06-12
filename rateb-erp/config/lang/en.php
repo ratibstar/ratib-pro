@@ -121,7 +121,7 @@ return [
     'confirm_delete' => 'Delete this record?',
     'login_email' => 'Email address',
     'invalid_credentials' => 'Invalid email or password',
-    'unified_login_hint' => 'Sign in once — you will be routed to the admin or company dashboard based on your account.',
+    'unified_login_hint' => 'Sign in once — you will land on the unified dashboard (/admin); menus and modules depend on your permissions.',
     'company_login_admin_blocked' => 'Use the same login page — you will be routed automatically.',
     'admin_login_link' => 'Admin login',
     'too_many_attempts' => 'Too many login attempts. Try again later.',

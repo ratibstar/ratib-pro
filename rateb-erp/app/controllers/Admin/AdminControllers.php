@@ -9,6 +9,7 @@ use Rateb\App\Core\Csrf;
 use Rateb\App\Core\RateLimiter;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
+use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\User;
 use Rateb\App\Services\AuditService;
 use Rateb\App\Services\DashboardService;
@@ -67,11 +68,32 @@ final class DashboardController extends Controller
 {
     public function index(): void
     {
+        if (SessionManager::get('rateb_is_super_admin')) {
+            $service = new DashboardService();
+            $this->view('admin/dashboard', [
+                'title' => __('dashboard'),
+                'metrics' => $service->adminMetrics(),
+                'charts' => $service->adminCharts(),
+                'csrf' => Csrf::token(),
+            ], 'main');
+            return;
+        }
+
+        $companyId = (int) SessionManager::get('rateb_company_id');
+        TenantContext::setCompanyId($companyId);
         $service = new DashboardService();
-        $this->view('admin/dashboard', [
+        $limits = (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId);
+        $userCount = (new User())->count(['company_id' => $companyId]);
+        $invSvc = new \Rateb\App\Services\InventoryWorkflowService();
+        $ctrSvc = new \Rateb\App\Services\ContractWorkflowService();
+
+        $this->view('company/dashboard', [
             'title' => __('dashboard'),
-            'metrics' => $service->adminMetrics(),
-            'charts' => $service->adminCharts(),
+            'metrics' => $service->companyMetrics($companyId),
+            'limits' => $limits,
+            'userCount' => $userCount,
+            'expiringInventory' => $invSvc->expiringItems(30),
+            'expiringContracts' => $ctrSvc->expiringContracts(60),
             'csrf' => Csrf::token(),
         ], 'main');
     }

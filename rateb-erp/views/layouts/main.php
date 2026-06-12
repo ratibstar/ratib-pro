@@ -62,32 +62,34 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
             <a href="<?php echo rateb_url('admin'); ?>" class="rateb-nav-link<?php echo $navActive('admin') && !$accountingActive ? ' active' : ''; ?>">
                 <i class="fas fa-chart-line"></i><span><?php echo __('dashboard'); ?></span>
             </a>
+            <?php require RATEB_ROOT . '/views/partials/sidebar-nav.php'; ?>
+            <?php if (rateb_is_super_admin()) { ?>
             <a href="<?php echo rateb_url('admin/executive-dashboard'); ?>" class="rateb-nav-link<?php echo $navActive('admin/executive-dashboard') ? ' active' : ''; ?>">
                 <i class="fas fa-gauge-high"></i><span><?php echo __('executive_dashboard'); ?></span>
-            </a>
-            <a href="<?php echo rateb_url('login'); ?>" class="rateb-nav-link rateb-nav-link-portal<?php echo $navActive('company') ? ' active' : ''; ?>">
-                <i class="fas fa-building"></i><span><?php echo __('company_portal'); ?></span>
             </a>
             <div class="rateb-nav-section"><?php echo __('admin_oversight_section'); ?></div>
             <?php
             $adminLinks = [
-                ['admin/companies', 'companies', 'fa-building'],
-                ['admin/subscriptions', 'subscriptions', 'fa-credit-card'],
-                ['admin/procurement', 'procurement', 'fa-cart-shopping'],
-                ['admin/rfq', 'rfq', 'fa-comments-dollar'],
-                ['admin/inventory', 'inventory', 'fa-boxes-stacked'],
-                ['admin/stock-movements', 'stock_movements', 'fa-arrows-rotate'],
-                ['admin/suppliers', 'suppliers', 'fa-truck-field'],
-                ['admin/supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke'],
-                ['admin/contracts', 'contracts', 'fa-file-contract'],
-                ['admin/assets', 'assets', 'fa-toolbox'],
-                ['admin/medical-devices', 'medical_devices', 'fa-stethoscope'],
-                ['admin/reports', 'reports', 'fa-chart-pie'],
-                ['admin/notifications', 'notifications', 'fa-bell'],
-                ['admin/workflows', 'workflows', 'fa-diagram-project'],
-                ['admin/settings', 'settings', 'fa-gear'],
+                ['admin/companies', 'companies', 'fa-building', 'companies.view'],
+                ['admin/subscriptions', 'subscriptions', 'fa-credit-card', 'subscriptions.manage'],
+                ['admin/procurement', 'procurement', 'fa-cart-shopping', 'procurement.manage'],
+                ['admin/rfq', 'rfq', 'fa-comments-dollar', 'procurement.manage'],
+                ['admin/inventory', 'inventory', 'fa-boxes-stacked', 'inventory.manage'],
+                ['admin/stock-movements', 'stock_movements', 'fa-arrows-rotate', 'inventory.manage'],
+                ['admin/suppliers', 'suppliers', 'fa-truck-field', 'suppliers.manage'],
+                ['admin/supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke', 'evaluations.view'],
+                ['admin/contracts', 'contracts', 'fa-file-contract', 'contracts.manage'],
+                ['admin/assets', 'assets', 'fa-toolbox', 'assets.manage'],
+                ['admin/medical-devices', 'medical_devices', 'fa-stethoscope', 'assets.manage'],
+                ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view'],
+                ['admin/notifications', 'notifications', 'fa-bell', 'dashboard.view'],
+                ['admin/workflows', 'workflows', 'fa-diagram-project', 'workflows.view'],
+                ['admin/settings', 'settings', 'fa-gear', 'settings.manage'],
             ];
             foreach ($adminLinks as $link) {
+                if (!rateb_nav_can($link[3])) {
+                    continue;
+                }
                 $active = $navActive($link[0]) ? ' active' : '';
                 echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
                 echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
@@ -96,31 +98,92 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
             <div class="rateb-nav-section"><?php echo __('accounting_module'); ?></div>
             <?php
             $accountingLinks = [
-                ['admin/accounting', 'accounting_overview', 'fa-gauge-high'],
-                ['admin/chart-of-accounts', 'chart_of_accounts', 'fa-list'],
-                ['admin/journal-entries', 'journal_entries', 'fa-book'],
-                ['admin/invoices', 'invoices', 'fa-file-invoice'],
-                ['admin/payments', 'payments', 'fa-money-bill-wave'],
-                ['admin/subscriptions', 'subscriptions', 'fa-credit-card'],
+                ['admin/accounting', 'accounting_overview', 'fa-gauge-high', 'accounting.view'],
+                ['admin/chart-of-accounts', 'chart_of_accounts', 'fa-list', 'accounting.view'],
+                ['admin/journal-entries', 'journal_entries', 'fa-book', 'accounting.view'],
+                ['admin/invoices', 'invoices', 'fa-file-invoice', 'accounting.view'],
+                ['admin/payments', 'payments', 'fa-money-bill-wave', 'accounting.view'],
             ];
             foreach ($accountingLinks as $link) {
+                if (!rateb_nav_can($link[3])) {
+                    continue;
+                }
                 $active = $navActive($link[0]) ? ' active' : '';
                 echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
                 echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
             }
             ?>
             <div class="rateb-nav-section"><?php echo __('access_control'); ?></div>
-            <a href="<?php echo rateb_url('admin/access-control'); ?>" class="rateb-nav-link"><i class="fas fa-shield-halved"></i><span><?php echo __('access_control'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/access-control/matrix'); ?>" class="rateb-nav-link"><i class="fas fa-table-cells"></i><span><?php echo __('permission_matrix'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/users'); ?>" class="rateb-nav-link"><i class="fas fa-users"></i><span><?php echo __('users'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/roles'); ?>" class="rateb-nav-link"><i class="fas fa-user-shield"></i><span><?php echo __('roles'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/permissions'); ?>" class="rateb-nav-link"><i class="fas fa-key"></i><span><?php echo __('permissions'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/plans'); ?>" class="rateb-nav-link"><i class="fas fa-layer-group"></i><span><?php echo __('plans'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/audit-logs'); ?>" class="rateb-nav-link"><i class="fas fa-clipboard-list"></i><span><?php echo __('audit_logs'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/notifications'); ?>" class="rateb-nav-link"><i class="fas fa-bell"></i><span><?php echo __('notifications'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/support-tickets'); ?>" class="rateb-nav-link"><i class="fas fa-life-ring"></i><span><?php echo __('support_tickets'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/email-templates'); ?>" class="rateb-nav-link"><i class="fas fa-envelope"></i><span><?php echo __('email_templates'); ?></span></a>
-            <a href="<?php echo rateb_url('admin/sms-templates'); ?>" class="rateb-nav-link"><i class="fas fa-sms"></i><span><?php echo __('sms_templates'); ?></span></a>
+            <?php
+            $accessLinks = [
+                ['admin/access-control', 'access_control', 'fa-shield-halved', 'access.manage'],
+                ['admin/access-control/matrix', 'permission_matrix', 'fa-table-cells', 'access.manage'],
+                ['admin/users', 'users', 'fa-users', 'access.manage'],
+                ['admin/roles', 'roles', 'fa-user-shield', 'access.manage'],
+                ['admin/permissions', 'permissions', 'fa-key', 'access.manage'],
+                ['admin/plans', 'plans', 'fa-layer-group', 'plans.manage'],
+                ['admin/audit-logs', 'audit_logs', 'fa-clipboard-list', 'settings.manage'],
+                ['admin/support-tickets', 'support_tickets', 'fa-life-ring', 'settings.manage'],
+                ['admin/email-templates', 'email_templates', 'fa-envelope', 'settings.manage'],
+                ['admin/sms-templates', 'sms_templates', 'fa-sms', 'settings.manage'],
+            ];
+            foreach ($accessLinks as $link) {
+                if (!rateb_nav_can($link[3])) {
+                    continue;
+                }
+                $active = $navActive($link[0]) ? ' active' : '';
+                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
+                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
+            }
+            ?>
+            <?php } else { ?>
+            <?php
+            $opsSection(__('procurement'), [
+                ['purchase-requests', 'purchase_requests', 'fa-file-circle-plus', 'procurement'],
+                ['purchase-orders', 'purchase_orders', 'fa-file-invoice', 'procurement'],
+                ['rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
+                ['quotations', 'quotations', 'fa-file-signature', 'procurement'],
+                ['workflows', 'workflows', 'fa-diagram-project', 'workflows'],
+            ]);
+            $opsSection(__('inventory'), [
+                ['inventory', 'inventory', 'fa-boxes-stacked', 'inventory'],
+                ['inventory-batches', 'inventory_batches', 'fa-layer-group', 'inventory'],
+                ['inventory-audits', 'inventory_audits', 'fa-clipboard-check', 'inventory'],
+                ['warehouses', 'warehouses', 'fa-warehouse', 'inventory'],
+                ['stock-movements', 'stock_movements', 'fa-arrows-rotate', 'inventory'],
+                ['product-categories', 'product_categories', 'fa-tags', 'inventory'],
+            ]);
+            $opsSection(__('suppliers'), [
+                ['suppliers', 'suppliers', 'fa-truck-field', 'suppliers'],
+                ['supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke', 'suppliers'],
+                ['supplier-classifications', 'supplier_classifications', 'fa-tags', 'suppliers'],
+                ['supplier-kpi', 'supplier_kpi', 'fa-chart-line', 'suppliers'],
+            ]);
+            $opsSection(__('contracts') . ' / ' . __('assets'), [
+                ['contracts', 'contracts', 'fa-file-contract', 'contracts'],
+                ['contract-renewals', 'contract_renewals', 'fa-rotate', 'contracts'],
+                ['tenders', 'tenders', 'fa-gavel', 'tenders'],
+                ['assets', 'assets', 'fa-toolbox', 'assets'],
+                ['asset-maintenance', 'asset_maintenance', 'fa-wrench', 'assets'],
+                ['asset-assignments', 'asset_assignments', 'fa-user-check', 'assets'],
+                ['asset-depreciation', 'asset_depreciation', 'fa-chart-line', 'assets'],
+                ['medical-devices', 'medical_devices', 'fa-stethoscope', 'medical_devices'],
+                ['device-maintenance', 'device_maintenance', 'fa-screwdriver-wrench', 'medical_devices'],
+                ['device-spare-parts', 'device_spare_parts', 'fa-gears', 'medical_devices'],
+                ['device-warranty', 'device_warranty', 'fa-shield-halved', 'medical_devices'],
+                ['accounting', 'accounting_module', 'fa-calculator', 'accounting'],
+                ['reports', 'reports', 'fa-chart-pie', 'reports'],
+                ['reports/procurement', 'procurement_analytics', 'fa-cart-shopping', 'procurement'],
+                ['reports/kpi', 'company_kpi', 'fa-gauge-high', 'reports'],
+                ['reports/cost-analysis', 'cost_analysis', 'fa-coins', 'reports'],
+                ['reports/supplier-performance', 'supplier_performance_report', 'fa-truck-field', 'suppliers'],
+                ['reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked', 'inventory'],
+                ['documents', 'documents', 'fa-folder-open', 'documents'],
+            ]);
+            $opsLink('notifications', 'notifications', 'fa-bell');
+            $opsLink('profile', 'profile', 'fa-user-gear');
+            ?>
+            <?php } ?>
         </nav>
     </aside>
     <div class="rateb-main">
@@ -155,6 +218,7 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
 <script src="<?php echo rateb_asset('js/theme.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/lang.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/app.js'); ?>"></script>
+<script src="<?php echo rateb_asset('js/line-items.js'); ?>"></script>
 <script src="<?php echo rateb_asset('js/charts.js'); ?>"></script>
 </body>
 </html>

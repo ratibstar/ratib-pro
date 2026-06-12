@@ -7,7 +7,7 @@ $fields = [
     ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['scheduled', 'in_progress', 'completed']],
     ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea'],
 ];
-$action = rateb_url('company/asset-maintenance');
+$action = rateb_app_url('asset-maintenance');
 ?>
 <div class="rateb-card mb-4">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? __('asset_maintenance')); ?></div>

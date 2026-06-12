@@ -1,7 +1,8 @@
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? __('documents')); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo rateb_url('company/documents'); ?>" enctype="multipart/form-data" class="row g-3 mb-4">
+        <?php if ($canManage ?? rateb_can_manage_entity('documents')) { ?>
+        <form method="post" action="<?php echo rateb_app_url('documents'); ?>" enctype="multipart/form-data" class="row g-3 mb-4">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-4">
                 <label class="form-label"><?php echo __('title'); ?></label>
@@ -28,6 +29,7 @@
                 <button type="submit" class="btn btn-primary"><?php echo __('upload'); ?></button>
             </div>
         </form>
+        <?php } ?>
         <div class="table-responsive">
             <table class="table rateb-table">
                 <thead><tr><th><?php echo __('title'); ?></th><th><?php echo __('entity_type'); ?></th><th><?php echo __('file_name'); ?></th><th><?php echo __('created_at'); ?></th></tr></thead>

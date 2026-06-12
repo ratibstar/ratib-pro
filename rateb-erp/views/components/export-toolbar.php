@@ -3,6 +3,10 @@
 if (empty($exportRoute)) {
     return;
 }
+$exportEnabled = $exportEnabled ?? true;
+if (!$exportEnabled) {
+    return;
+}
 ?>
 <div class="d-flex flex-wrap gap-2 mb-3">
     <a href="<?php echo Rateb\App\Core\View::escape($exportRoute . '?format=csv'); ?>" class="btn btn-sm btn-outline-success"><i class="fas fa-file-csv"></i> CSV</a>

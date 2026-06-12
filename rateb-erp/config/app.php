@@ -119,6 +119,143 @@ if (!function_exists('rateb_label')) {
     }
 }
 
+if (!function_exists('rateb_is_super_admin')) {
+    function rateb_is_super_admin(): bool
+    {
+        return !empty($_SESSION['rateb_is_super_admin']);
+    }
+}
+
+/** Company operational route under unified /admin shell (ops/ prefix avoids oversight URL clashes). */
+if (!function_exists('rateb_app_route')) {
+    function rateb_app_route(string $path): string
+    {
+        $path = ltrim(preg_replace('#^company/#', '', trim($path)), '/');
+        static $conflictRoots = [
+            'inventory', 'suppliers', 'assets', 'contracts', 'stock-movements',
+            'supplier-evaluations', 'workflows', 'medical-devices', 'reports',
+            'notifications', 'accounting', 'chart-of-accounts', 'journal-entries',
+        ];
+        $root = explode('/', $path)[0];
+        if (in_array($root, $conflictRoots, true)) {
+            return 'admin/ops/' . $path;
+        }
+        return 'admin/' . $path;
+    }
+}
+
+if (!function_exists('rateb_app_url')) {
+    function rateb_app_url(string $path): string
+    {
+        return rateb_url(rateb_app_route($path));
+    }
+}
+
+if (!function_exists('rateb_nav_can')) {
+    function rateb_nav_can(string $permission = '', string $module = ''): bool
+    {
+        if (rateb_is_super_admin()) {
+            return $permission === '' || rateb_can($permission);
+        }
+        if ($permission !== '' && !rateb_can($permission)) {
+            return false;
+        }
+        if ($module === '') {
+            return true;
+        }
+        $companyId = (int) ($_SESSION['rateb_company_id'] ?? 0);
+        if ($companyId < 1) {
+            return false;
+        }
+        return (new \Rateb\App\Services\PlanLimitService())->companyHasModule($companyId, $module);
+    }
+}
+
+if (!function_exists('rateb_entity_perms')) {
+    /** @return array{module:string,view:string,manage:string,export:string} */
+    function rateb_entity_perms(string $resource): array
+    {
+        static $map = null;
+        if ($map === null) {
+            $file = RATEB_ROOT . '/config/entity-permissions.php';
+            $map = is_file($file) ? require $file : [];
+        }
+        $resource = ltrim(preg_replace('#^(company/|admin/ops/|admin/)#', '', trim($resource)), '/');
+        $row = $map[$resource] ?? null;
+        if (!is_array($row)) {
+            return ['module' => '', 'view' => '', 'manage' => '', 'export' => 'reports.export'];
+        }
+        return [
+            'module' => (string) ($row['module'] ?? ''),
+            'view' => (string) ($row['view'] ?? ''),
+            'manage' => (string) ($row['manage'] ?? ($row['view'] ?? '')),
+            'export' => (string) ($row['export'] ?? 'reports.export'),
+        ];
+    }
+}
+
+if (!function_exists('rateb_user_has_perm')) {
+    function rateb_user_has_perm(string $slug): bool
+    {
+        if ($slug === '' || rateb_is_super_admin()) {
+            return true;
+        }
+        return rateb_can($slug);
+    }
+}
+
+if (!function_exists('rateb_user_has_any_perm')) {
+    /** @param array<int, string> $slugs */
+    function rateb_user_has_any_perm(array $slugs): bool
+    {
+        if (rateb_is_super_admin()) {
+            return true;
+        }
+        foreach ($slugs as $slug) {
+            if ($slug !== '' && rateb_can($slug)) {
+                return true;
+            }
+        }
+        return $slugs === [];
+    }
+}
+
+if (!function_exists('rateb_can_view_entity')) {
+    function rateb_can_view_entity(string $resource): bool
+    {
+        if (rateb_is_super_admin()) {
+            return true;
+        }
+        $p = rateb_entity_perms($resource);
+        if ($p['view'] === '' && $p['manage'] === '') {
+            return true;
+        }
+        return rateb_user_has_any_perm(array_values(array_unique(array_filter([$p['view'], $p['manage']]))));
+    }
+}
+
+if (!function_exists('rateb_can_manage_entity')) {
+    function rateb_can_manage_entity(string $resource): bool
+    {
+        if (rateb_is_super_admin()) {
+            return true;
+        }
+        $manage = rateb_entity_perms($resource)['manage'];
+        return $manage === '' || rateb_can($manage);
+    }
+}
+
+if (!function_exists('rateb_can_export_entity')) {
+    function rateb_can_export_entity(string $resource): bool
+    {
+        if (rateb_is_super_admin()) {
+            return true;
+        }
+        $export = rateb_entity_perms($resource)['export'];
+        return $export === '' || rateb_can($export);
+    }
+}
+
 if (!function_exists('__')) {
     function __(string $key, array $replace = []): string
     {

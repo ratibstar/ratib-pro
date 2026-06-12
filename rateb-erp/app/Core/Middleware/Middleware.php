@@ -25,6 +25,42 @@ final class AdminAuthMiddleware implements MiddlewareInterface
     }
 }
 
+/** Any authenticated ERP user (platform admin or company user). */
+final class ErpAuthMiddleware implements MiddlewareInterface
+{
+    public function handle(): bool
+    {
+        Auth::bootstrapFromSession();
+        if (!Auth::check()) {
+            Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
+            return false;
+        }
+        if (SessionManager::get('rateb_is_super_admin')) {
+            return true;
+        }
+        if ((int) SessionManager::get('rateb_company_id', 0) < 1) {
+            Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
+            return false;
+        }
+        return true;
+    }
+}
+
+/** Platform super-admin only (companies, plans, global settings). */
+final class SuperAdminMiddleware implements MiddlewareInterface
+{
+    public function handle(): bool
+    {
+        Auth::bootstrapFromSession();
+        if (!Auth::check() || !SessionManager::get('rateb_is_super_admin')) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
+            return false;
+        }
+        return true;
+    }
+}
+
 final class CompanyAuthMiddleware implements MiddlewareInterface
 {
     public function handle(): bool
@@ -164,10 +200,14 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
 
     public function handle(): bool
     {
+        if (SessionManager::get('rateb_is_super_admin')) {
+            return true;
+        }
+
         $companyId = (int) SessionManager::get('rateb_company_id', 0);
         if ($companyId < 1 || $this->module === '') {
             SessionManager::flash('error', __('module_not_allowed'));
-            Response::redirect(function_exists('rateb_url') ? rateb_url('company') : (RATEB_BASE_URL . '/company'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
         }
 
@@ -175,7 +215,7 @@ final class CompanyModuleMiddleware implements MiddlewareInterface
         if (!$limits->companyHasModule($companyId, $this->module)) {
             $label = function_exists('__') ? __($this->module) : $this->module;
             SessionManager::flash('error', __('module_not_in_plan_named', ['module' => $label]));
-            Response::redirect(function_exists('rateb_url') ? rateb_url('company') : (RATEB_BASE_URL . '/company'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
         }
 
@@ -187,6 +227,10 @@ final class CompanySaaSMiddleware implements MiddlewareInterface
 {
     public function handle(): bool
     {
+        if (SessionManager::get('rateb_is_super_admin')) {
+            return true;
+        }
+
         $companyId = (int) SessionManager::get('rateb_company_id', 0);
         if ($companyId < 1) {
             Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
@@ -219,20 +263,60 @@ final class CompanyPermissionMiddleware implements MiddlewareInterface
 
     public function handle(): bool
     {
+        if (SessionManager::get('rateb_is_super_admin')) {
+            return true;
+        }
+
         $userId = (int) SessionManager::get('rateb_user_id', 0);
         if ($userId < 1 || $this->permission === '') {
             SessionManager::flash('error', __('access_denied'));
-            Response::redirect(function_exists('rateb_url') ? rateb_url('company') : (RATEB_BASE_URL . '/company'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
         }
 
         $authz = new \Rateb\App\Services\AuthorizationService();
         if (!$authz->companyUserCan($userId, $this->permission, $this->module)) {
             SessionManager::flash('error', __('access_denied'));
-            Response::redirect(function_exists('rateb_url') ? rateb_url('company') : (RATEB_BASE_URL . '/company'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
             return false;
         }
 
         return true;
+    }
+}
+
+/** Entity RBAC: view on GET, manage on mutations (from permission matrix). */
+final class EntityPermissionMiddleware implements MiddlewareInterface
+{
+    private string $resource;
+
+    public function __construct(string $resource = '')
+    {
+        $this->resource = $resource;
+    }
+
+    public function handle(): bool
+    {
+        if (SessionManager::get('rateb_is_super_admin')) {
+            return true;
+        }
+
+        if ($this->resource === '' || !function_exists('rateb_entity_perms')) {
+            return true;
+        }
+
+        $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        $isMutation = in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true);
+        $allowed = $isMutation
+            ? rateb_can_manage_entity($this->resource)
+            : rateb_can_view_entity($this->resource);
+
+        if ($allowed) {
+            return true;
+        }
+
+        SessionManager::flash('error', __('access_denied'));
+        Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
+        return false;
     }
 }

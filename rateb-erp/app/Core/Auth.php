@@ -77,10 +77,7 @@ final class Auth
     /** Dashboard path after login or when already authenticated. */
     public static function homePath(): string
     {
-        if (SessionManager::get('rateb_is_super_admin')) {
-            return 'admin';
-        }
-        return 'company';
+        return 'admin';
     }
 
     public static function user(): ?array

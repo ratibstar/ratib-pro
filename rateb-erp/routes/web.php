@@ -34,6 +34,7 @@ use Rateb\App\Controllers\Admin\AdminStockMovementsController;
 use Rateb\App\Controllers\Admin\AdminWorkflowsController;
 use Rateb\App\Controllers\Admin\JournalEntriesController as AdminJournalEntriesController;
 use Rateb\App\Controllers\Admin\ExecutiveDashboardController;
+use Rateb\App\Core\Middleware\ErpAuthMiddleware;
 
 require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
@@ -60,11 +61,11 @@ $router->get('/admin/login', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url('login'), 301);
 });
 $router->post('/admin/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'login'], rateb_guest_mw());
-$router->get('/admin/logout', [AdminAuthController::class, 'logout'], rateb_admin_mw());
+$router->get('/admin/logout', [AdminAuthController::class, 'logout'], [ErpAuthMiddleware::class]);
 
 $router->get('/locale/{locale}', [LocaleController::class, 'switch']);
 
-$router->get('/admin', [AdminDashboardController::class, 'index'], rateb_admin_mw('dashboard.view'));
+$router->get('/admin', [AdminDashboardController::class, 'index'], [ErpAuthMiddleware::class]);
 $router->get('/admin/executive-dashboard', [ExecutiveDashboardController::class, 'index'], rateb_admin_mw('dashboard.view'));
 
 $router->get('/admin/companies', [CompaniesController::class, 'index'], rateb_admin_mw('companies.view'));

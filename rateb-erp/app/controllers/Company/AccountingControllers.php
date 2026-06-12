@@ -33,13 +33,13 @@ final class AccountingDashboardController extends Controller
     public function sync(): void
     {
         if (!$this->validateCsrf()) {
-            Response::redirect(rateb_url('company/accounting'));
+            Response::redirect(rateb_app_url('accounting'));
         }
         $companyId = (int) SessionManager::get('rateb_company_id', 0);
         $count = (new AccountingService())->syncFromSources($companyId);
         (new AuditService())->log('accounting_sync', 'journal', null, ['count' => $count, 'company_id' => $companyId]);
         SessionManager::flash('success', __('accounting_sync_done') . ' (' . $count . ')');
-        Response::redirect(rateb_url('company/accounting'));
+        Response::redirect(rateb_app_url('accounting'));
     }
 }
 
@@ -49,7 +49,7 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
     {
         $this->model = new ChartOfAccount();
         $this->viewPrefix = 'company/chart-of-accounts';
-        $this->routePrefix = 'company/chart-of-accounts';
+        $this->routePrefix = rateb_app_route('chart-of-accounts');
         $this->entityName = 'chart_of_accounts';
         $this->fields = [
             ['name' => 'code', 'label' => 'code', 'type' => 'text'],
@@ -90,7 +90,7 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
 
     protected function layout(): string
     {
-        return 'company';
+        return 'main';
     }
 }
 

@@ -1,0 +1,210 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Maps company operation resources to RBAC slugs (from permission matrix).
+ * view = list/read, manage = create/edit/delete, export = optional export action.
+ */
+return [
+    'purchase-requests' => [
+        'module' => 'procurement',
+        'view' => 'procurement.manage',
+        'manage' => 'procurement.manage',
+        'export' => 'reports.export',
+    ],
+    'purchase-orders' => [
+        'module' => 'procurement',
+        'view' => 'procurement.manage',
+        'manage' => 'procurement.manage',
+        'export' => 'reports.export',
+    ],
+    'rfq' => [
+        'module' => 'procurement',
+        'view' => 'procurement.manage',
+        'manage' => 'procurement.manage',
+    ],
+    'quotations' => [
+        'module' => 'procurement',
+        'view' => 'procurement.manage',
+        'manage' => 'procurement.manage',
+    ],
+    'inventory' => [
+        'module' => 'inventory',
+        'view' => 'inventory.manage',
+        'manage' => 'inventory.manage',
+    ],
+    'warehouses' => [
+        'module' => 'inventory',
+        'view' => 'inventory.manage',
+        'manage' => 'inventory.manage',
+    ],
+    'stock-movements' => [
+        'module' => 'inventory',
+        'view' => 'stock_movements.view',
+        'manage' => 'stock_movements.manage',
+        'export' => 'reports.export',
+    ],
+    'product-categories' => [
+        'module' => 'inventory',
+        'view' => 'categories.view',
+        'manage' => 'categories.manage',
+    ],
+    'inventory-batches' => [
+        'module' => 'inventory',
+        'view' => 'inventory_batches.view',
+        'manage' => 'inventory_batches.manage',
+        'export' => 'reports.export',
+    ],
+    'inventory-audits' => [
+        'module' => 'inventory',
+        'view' => 'inventory_audit.view',
+        'manage' => 'inventory_audit.manage',
+    ],
+    'suppliers' => [
+        'module' => 'suppliers',
+        'view' => 'suppliers.manage',
+        'manage' => 'suppliers.manage',
+    ],
+    'supplier-evaluations' => [
+        'module' => 'suppliers',
+        'view' => 'evaluations.view',
+        'manage' => 'evaluations.manage',
+    ],
+    'supplier-classifications' => [
+        'module' => 'suppliers',
+        'view' => 'supplier_classifications.view',
+        'manage' => 'supplier_classifications.manage',
+    ],
+    'supplier-kpi' => [
+        'module' => 'suppliers',
+        'view' => 'supplier_kpi.view',
+        'manage' => 'supplier_kpi.view',
+        'export' => 'reports.export',
+    ],
+    'contracts' => [
+        'module' => 'contracts',
+        'view' => 'contracts.manage',
+        'manage' => 'contracts.manage',
+    ],
+    'contract-renewals' => [
+        'module' => 'contracts',
+        'view' => 'contract_renewals.view',
+        'manage' => 'contract_renewals.manage',
+    ],
+    'tenders' => [
+        'module' => 'tenders',
+        'view' => 'tenders.manage',
+        'manage' => 'tenders.manage',
+    ],
+    'assets' => [
+        'module' => 'assets',
+        'view' => 'assets.manage',
+        'manage' => 'assets.manage',
+    ],
+    'asset-maintenance' => [
+        'module' => 'assets',
+        'view' => 'asset_maintenance.view',
+        'manage' => 'asset_maintenance.manage',
+    ],
+    'asset-assignments' => [
+        'module' => 'assets',
+        'view' => 'asset_assignments.view',
+        'manage' => 'asset_assignments.manage',
+    ],
+    'asset-depreciation' => [
+        'module' => 'assets',
+        'view' => 'asset_depreciation.view',
+        'manage' => 'asset_depreciation.manage',
+    ],
+    'medical-devices' => [
+        'module' => 'medical_devices',
+        'view' => 'device_service.view',
+        'manage' => 'device_service.manage',
+    ],
+    'device-maintenance' => [
+        'module' => 'medical_devices',
+        'view' => 'device_service.view',
+        'manage' => 'device_service.manage',
+    ],
+    'device-spare-parts' => [
+        'module' => 'medical_devices',
+        'view' => 'device_service.view',
+        'manage' => 'device_spare_parts.manage',
+    ],
+    'device-warranty' => [
+        'module' => 'medical_devices',
+        'view' => 'device_warranty.view',
+        'manage' => 'device_service.manage',
+    ],
+    'accounting' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+    ],
+    'chart-of-accounts' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+    ],
+    'journal-entries' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
+    'reports' => [
+        'module' => 'reports',
+        'view' => 'reports.view',
+        'manage' => 'reports.view',
+        'export' => 'reports.export',
+    ],
+    'reports/procurement' => [
+        'module' => 'procurement',
+        'view' => 'procurement.analytics',
+        'manage' => 'procurement.analytics',
+        'export' => 'reports.export',
+    ],
+    'reports/kpi' => [
+        'module' => 'reports',
+        'view' => 'reports.kpi.view',
+        'manage' => 'reports.kpi.view',
+        'export' => 'reports.export',
+    ],
+    'reports/cost-analysis' => [
+        'module' => 'reports',
+        'view' => 'reports.cost_analysis.view',
+        'manage' => 'reports.cost_analysis.view',
+        'export' => 'reports.export',
+    ],
+    'reports/supplier-performance' => [
+        'module' => 'reports',
+        'view' => 'reports.view',
+        'manage' => 'reports.view',
+        'export' => 'reports.export',
+    ],
+    'reports/inventory-valuation' => [
+        'module' => 'reports',
+        'view' => 'reports.inventory_valuation.view',
+        'manage' => 'reports.inventory_valuation.view',
+        'export' => 'reports.export',
+    ],
+    'documents' => [
+        'module' => 'documents',
+        'view' => 'documents.view',
+        'manage' => 'documents.manage',
+    ],
+    'workflows' => [
+        'module' => 'workflows',
+        'view' => 'workflows.view',
+        'manage' => 'workflows.manage',
+    ],
+    'notifications' => [
+        'module' => 'notifications',
+        'view' => 'notifications.manage',
+        'manage' => 'notifications.manage',
+    ],
+    'profile' => [
+        'module' => '',
+        'view' => '',
+        'manage' => '',
+    ],
+];

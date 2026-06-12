@@ -27,7 +27,7 @@
                     <td><?php echo Rateb\App\Core\View::escape($row['entry_date']); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($desc); ?></td>
                     <td><?php echo __( (string) ($row['source_type'] ?? '')); ?></td>
-                    <td><a href="<?php echo rateb_url('company/journal-entries/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a></td>
+                    <td><a href="<?php echo rateb_app_url('journal-entries/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a></td>
                 </tr>
                 <?php } } ?>
                 </tbody>

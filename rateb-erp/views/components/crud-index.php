@@ -6,6 +6,14 @@
 $bulkEnabled = $bulkEnabled ?? true;
 $createEnabled = $createEnabled ?? true;
 $actionsEnabled = $actionsEnabled ?? true;
+$exportEnabled = $exportEnabled ?? true;
+if (!empty($permissionResource) && function_exists('rateb_can_manage_entity')) {
+    $canManage = rateb_can_manage_entity((string) $permissionResource);
+    $createEnabled = $createEnabled && $canManage;
+    $actionsEnabled = $actionsEnabled && $canManage;
+    $bulkEnabled = $bulkEnabled && $canManage;
+    $exportEnabled = $exportEnabled && rateb_can_export_entity((string) $permissionResource);
+}
 $columns = $fields ?? [];
 if (empty($columns) && !empty($items)) {
     $columns = [];

@@ -1,7 +1,7 @@
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo rateb_url('company/inventory-audits'); ?>">
+        <form method="post" action="<?php echo rateb_app_url('inventory-audits'); ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
@@ -41,7 +41,7 @@
             </div>
             <div class="mt-4 d-flex gap-2">
                 <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
-                <a href="<?php echo rateb_url('company/inventory-audits'); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
+                <a href="<?php echo rateb_app_url('inventory-audits'); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
             </div>
         </form>
     </div>

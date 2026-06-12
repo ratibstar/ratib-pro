@@ -1,7 +1,7 @@
 <div class="rateb-card mb-3">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo __('quotation_compare'); ?>: <?php echo Rateb\App\Core\View::escape($rfq['rfq_no'] ?? ''); ?></span>
-        <a href="<?php echo rateb_url('company/rfq'); ?>" class="btn btn-sm btn-outline-secondary"><?php echo __('back_to_list'); ?></a>
+        <a href="<?php echo rateb_app_url('rfq'); ?>" class="btn btn-sm btn-outline-secondary"><?php echo __('back_to_list'); ?></a>
     </div>
     <div class="rateb-card-body">
         <p class="mb-3"><strong><?php echo Rateb\App\Core\View::escape($rfq['title'] ?? ''); ?></strong></p>

@@ -15,7 +15,7 @@
         <?php } ?>
         <h6 class="mb-3"><?php echo __('update_warranty'); ?></h6>
         <?php foreach ($devices ?? [] as $d) { ?>
-        <form method="post" action="<?php echo rateb_url('company/device-warranty/' . (int) $d['id']); ?>" class="row g-2 align-items-end mb-2">
+        <form method="post" action="<?php echo rateb_app_url('device-warranty/' . (int) $d['id']); ?>" class="row g-2 align-items-end mb-2">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-5"><strong><?php echo Rateb\App\Core\View::escape($d['device_name'] ?? ''); ?></strong></div>
             <div class="col-md-4">

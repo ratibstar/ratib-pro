@@ -8,9 +8,8 @@ require_once dirname(__DIR__) . '/config/app.php';
 
 $loginUrl = rateb_public_url('login');
 $links = [
-    ['تسجيل الدخول — رابط واحد للجميع', 'login', 'fa-right-to-bracket', 'primary'],
-    ['لوحة الإدارة (بعد الدخول)', 'admin', 'fa-chart-line', 'outline'],
-    ['بوابة الشركة (بعد الدخول)', 'company', 'fa-building', 'outline'],
+    ['تسجيل الدخول — رابط واحد', 'login', 'fa-right-to-bracket', 'primary'],
+    ['لوحة النظام (بعد الدخول)', 'admin', 'fa-chart-line', 'outline'],
     ['المشتريات — مراقبة', 'admin/procurement', 'fa-cart-shopping', 'outline'],
     ['المخزون — مراقبة', 'admin/inventory', 'fa-boxes-stacked', 'outline'],
 ];
@@ -32,7 +31,7 @@ $links = [
 <body class="p-4">
 <div class="container" style="max-width: 720px;">
     <h1 class="h3 mb-2"><i class="fas fa-hospital text-info"></i> نظام رتب ERP</h1>
-    <p class="text-secondary mb-4">رابط دخول <strong>واحد</strong> — النظام يوجّهك تلقائياً (إدارة أو شركة) حسب صلاحيات حسابك.</p>
+    <p class="text-secondary mb-4">رابط دخول <strong>واحد</strong> — بعد الدخول تفتح لوحة النظام الموحّدة (<code>/admin</code>) وتظهر القوائم حسب صلاحيات حسابك.</p>
     <div class="d-grid gap-2 mb-4">
         <?php foreach ($links as [$label, $route, $icon, $btn]) {
             $href = rateb_public_url($route);
