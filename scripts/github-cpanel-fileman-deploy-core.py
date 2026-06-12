@@ -326,6 +326,26 @@ RATEB_ERP_TRIGGER_PREFIXES = (
     "control-panel/includes/control/rateb-erp",
 )
 
+# Full rateb-erp tree upload only when CP bridge or migrations change (not every PHP edit).
+RATEB_ERP_FULL_BUNDLE_PREFIXES = (
+    "control-panel/pages/control/rateb-erp",
+    "control-panel/includes/control/rateb-erp",
+    "control-panel/css/control/rateb-erp",
+    "control-panel/api/control/rateb-erp",
+)
+
+
+def needs_full_erp_bundle(changed: list[str]) -> bool:
+    flag = os.environ.get("CPANEL_ERP_FULL_BUNDLE", "").strip().lower()
+    if flag in ("1", "true", "yes", "on"):
+        return True
+    if any(c.startswith("rateb-erp/migrations/") for c in changed):
+        return True
+    return any(
+        any(c.startswith(prefix) for prefix in RATEB_ERP_FULL_BUNDLE_PREFIXES)
+        for c in changed
+    )
+
 
 def rateb_erp_bundle_files() -> list[str]:
     """Upload full rateb-erp tree when ERP control-panel files change."""
@@ -604,10 +624,7 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
         seen.add(path)
         if len(extras) >= FAST_DEPLOY_CHANGED_CAP:
             break
-    if any(
-        any(c.startswith(prefix) for prefix in RATEB_ERP_TRIGGER_PREFIXES)
-        for c in changed
-    ):
+    if needs_full_erp_bundle(changed):
         bundle = rateb_erp_bundle_files() + rateb_erp_control_panel_files()
         added = 0
         for path in bundle:
@@ -625,10 +642,58 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
             + (" …" if len(extras) > 8 else ""),
             flush=True,
         )
-    workers = 2
-    if any(is_binary_upload(f) for f in files):
-        workers = 1
-    return files, workers
+    return files, 2
+
+
+def _upload_batch(
+    rels: list[str],
+    remote_base: str,
+    workers: int,
+    total: int,
+    start_done: int,
+) -> tuple[int, int, set[str], int]:
+    """Upload a batch; return ok, fail, succeeded, done counter."""
+    ok = 0
+    fail = 0
+    succeeded: set[str] = set()
+    done = start_done
+    if not rels:
+        return ok, fail, succeeded, done
+
+    if workers <= 1 or len(rels) == 1:
+        for rel in rels:
+            done += 1
+            pct = done * 100 // total if total else 100
+            print(f"[{done}/{total}] {pct}% upload {rel} ... ", end="", flush=True)
+            _, success, err = upload_one(rel, remote_base)
+            if success:
+                print("OK", flush=True)
+                ok += 1
+                succeeded.add(rel)
+            else:
+                print("FAIL", flush=True)
+                fail += 1
+                if err:
+                    print(err[:200], flush=True)
+        return ok, fail, succeeded, done
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = [pool.submit(upload_one, rel, remote_base) for rel in rels]
+        for fut in as_completed(futures):
+            rel, success, err = fut.result()
+            done += 1
+            pct = done * 100 // total if total else 100
+            line = f"[{done}/{total}] {pct}% upload {rel} ... {'OK' if success else 'FAIL'}"
+            with _print_lock:
+                print(line, flush=True)
+                if not success and err:
+                    print(err[:200], flush=True)
+            if success:
+                ok += 1
+                succeeded.add(rel)
+            else:
+                fail += 1
+    return ok, fail, succeeded, done
 
 
 def run_uploads(files: list[str], remote_base: str, workers: int) -> tuple[int, int, set[str]]:
@@ -656,40 +721,19 @@ def run_uploads(files: list[str], remote_base: str, workers: int) -> tuple[int, 
     for d in remote_dirs:
         ensure_remote_dir(d, remote_base)
 
-    if workers <= 1:
-        n = done
-        for rel in existing:
-            n += 1
-            pct = n * 100 // total if total else 100
-            print(f"[{n}/{total}] {pct}% upload {rel} ... ", end="", flush=True)
-            _, success, err = upload_one(rel, remote_base)
-            if success:
-                print("OK", flush=True)
-                ok += 1
-                succeeded.add(rel)
-            else:
-                print("FAIL", flush=True)
-                fail += 1
-                if err:
-                    print(err[:200], flush=True)
-        return ok, fail, succeeded
+    binary_rels = [rel for rel in existing if is_binary_upload(rel)]
+    text_rels = [rel for rel in existing if not is_binary_upload(rel)]
+    text_workers = max(workers, 2)
 
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = [pool.submit(upload_one, rel, remote_base) for rel in existing]
-        for fut in as_completed(futures):
-            rel, success, err = fut.result()
-            done += 1
-            pct = done * 100 // total if total else 100
-            line = f"[{done}/{total}] {pct}% upload {rel} ... {'OK' if success else 'FAIL'}"
-            with _print_lock:
-                print(line, flush=True)
-                if not success and err:
-                    print(err[:200], flush=True)
-            if success:
-                ok += 1
-                succeeded.add(rel)
-            else:
-                fail += 1
+    b_ok, b_fail, b_suc, done = _upload_batch(binary_rels, remote_base, 1, total, done)
+    ok += b_ok
+    fail += b_fail
+    succeeded |= b_suc
+
+    t_ok, t_fail, t_suc, done = _upload_batch(text_rels, remote_base, text_workers, total, done)
+    ok += t_ok
+    fail += t_fail
+    succeeded |= t_suc
     return ok, fail, succeeded
 
 

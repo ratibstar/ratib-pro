@@ -101,7 +101,7 @@ All company data includes `company_id`. Tenant scoping is enforced in models via
 1. Super Admin creates a company (`admin/companies`)
 2. Assign a plan and activate the company
 3. Create a company user (non super-admin) linked to `company_id`
-4. Company user logs in at `/company/login`
+4. Company user logs in at `/login` (same URL as platform admin; menu after login follows role permissions)
 
 ## License
 

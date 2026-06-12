@@ -1,4 +1,4 @@
--- Demo company portal user (for /company/login — not super admin)
+-- Demo company portal user (unified /login — not super admin)
 SET NAMES utf8mb4;
 
 SET @cid = (SELECT id FROM rateb_companies WHERE slug = 'demo-company' LIMIT 1);

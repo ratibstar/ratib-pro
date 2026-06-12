@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 use Rateb\App\Controllers\Company\AssetsController;
 use Rateb\App\Controllers\Company\ContractsController;
-use Rateb\App\Controllers\Company\DashboardController as CompanyDashboardController;
 use Rateb\App\Controllers\Company\InventoryController;
 use Rateb\App\Controllers\Company\MedicalDevicesController;
 use Rateb\App\Controllers\Company\NotificationsController;

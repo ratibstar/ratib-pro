@@ -6,94 +6,12 @@ namespace Rateb\App\Controllers\Company;
 use Rateb\App\Core\Auth;
 use Rateb\App\Core\Controller;
 use Rateb\App\Core\Csrf;
-use Rateb\App\Core\RateLimiter;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\User;
 use Rateb\App\Services\AuditService;
 use Rateb\App\Services\DashboardService;
-use Rateb\App\Services\LoginActivityService;
-
-final class AuthController extends Controller
-{
-    public function showLogin(): void
-    {
-        $this->view('company/auth/login', [
-            'title' => __('login'),
-            'csrf' => Csrf::token(),
-        ], 'auth');
-    }
-
-    public function login(): void
-    {
-        if (!$this->validateCsrf()) {
-            SessionManager::flash('error', 'Invalid request');
-            Response::redirect(rateb_url('login'));
-        }
-
-        $email = trim((string) $this->input('email', ''));
-        $password = (string) $this->input('password', '');
-
-        if (!RateLimiter::attempt('company_login_' . md5($email), 5, 300)) {
-            SessionManager::flash('error', 'Too many attempts');
-            Response::redirect(rateb_url('login'));
-        }
-
-        $userModel = new User();
-        $candidate = $userModel->findByEmail($email);
-        if (
-            $candidate
-            && password_verify($password, (string) $candidate['password'])
-            && (int) ($candidate['is_super_admin'] ?? 0) === 1
-        ) {
-            SessionManager::flash('error', __('company_login_admin_blocked'));
-            Response::redirect(rateb_url('login'));
-        }
-
-        $user = Auth::attempt($email, $password, 'company');
-        (new LoginActivityService())->record($user ? (int) $user['id'] : null, $email, $user !== null);
-
-        if (!$user) {
-            SessionManager::flash('error', __('invalid_credentials'));
-            Response::redirect(rateb_url('login'));
-        }
-
-        (new User())->updateLastLogin((int) $user['id']);
-        (new AuditService())->log('login', 'user', (int) $user['id']);
-        Response::redirect(rateb_url('admin'));
-    }
-
-    public function logout(): void
-    {
-        Auth::logout();
-        Response::redirect(rateb_url('login'));
-    }
-}
-
-final class DashboardController extends Controller
-{
-    public function index(): void
-    {
-        $companyId = (int) SessionManager::get('rateb_company_id');
-        TenantContext::setCompanyId($companyId);
-        $service = new DashboardService();
-        $limits = (new \Rateb\App\Services\PlanLimitService())->getLimits($companyId);
-        $userCount = (new User())->count(['company_id' => $companyId]);
-        $invSvc = new \Rateb\App\Services\InventoryWorkflowService();
-        $ctrSvc = new \Rateb\App\Services\ContractWorkflowService();
-
-        $this->view('company/dashboard', [
-            'title' => __('dashboard'),
-            'metrics' => $service->companyMetrics($companyId),
-            'limits' => $limits,
-            'userCount' => $userCount,
-            'expiringInventory' => $invSvc->expiringItems(30),
-            'expiringContracts' => $ctrSvc->expiringContracts(60),
-            'csrf' => Csrf::token(),
-        ], 'main');
-    }
-}
 
 final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudController
 {

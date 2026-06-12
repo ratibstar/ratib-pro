@@ -17,46 +17,6 @@ use Rateb\App\Services\LoginActivityService;
 
 final class AuthController extends Controller
 {
-    public function showLogin(): void
-    {
-        $this->view('admin/auth/login', [
-            'title' => __('login'),
-            'csrf' => Csrf::token(),
-        ], 'auth');
-    }
-
-    public function login(): void
-    {
-        if (!$this->validateCsrf()) {
-            SessionManager::flash('error', __('invalid_request'));
-            Response::redirect(rateb_url('login'));
-        }
-
-        $email = trim((string) $this->input('email', ''));
-        $password = (string) $this->input('password', '');
-
-        if (!RateLimiter::attempt('admin_login_' . md5($email), 5, 300)) {
-            SessionManager::flash('error', __('too_many_attempts'));
-            Response::redirect(rateb_url('login'));
-        }
-
-        $user = Auth::attempt($email, $password, 'admin');
-        (new LoginActivityService())->record($user ? (int) $user['id'] : null, $email, $user !== null);
-
-        if (!$user) {
-            SessionManager::flash('error', __('invalid_credentials'));
-            Response::redirect(rateb_url('login'));
-        }
-
-        if (!empty($user['locale']) && in_array($user['locale'], RATEB_SUPPORTED_LOCALES, true)) {
-            $_SESSION['rateb_locale'] = $user['locale'];
-        }
-
-        (new User())->updateLastLogin((int) $user['id']);
-        (new AuditService())->log('login', 'user', (int) $user['id']);
-        Response::redirect(rateb_url('admin'));
-    }
-
     public function logout(): void
     {
         Auth::logout();
