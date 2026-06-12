@@ -135,6 +135,7 @@ if (!function_exists('rateb_app_route')) {
             'inventory', 'suppliers', 'assets', 'contracts', 'stock-movements',
             'supplier-evaluations', 'workflows', 'medical-devices', 'reports',
             'notifications', 'accounting', 'chart-of-accounts', 'journal-entries',
+            'rfq', 'quotations',
         ];
         $root = explode('/', $path)[0];
         if (in_array($root, $conflictRoots, true)) {

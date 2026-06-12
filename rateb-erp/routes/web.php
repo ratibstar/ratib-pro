@@ -129,9 +129,18 @@ $router->get('/admin/settings', [SettingsController::class, 'index'], rateb_admi
 $router->post('/admin/settings', [SettingsController::class, 'save'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/notifications', [AdminNotificationsController::class, 'index'], rateb_admin_mw('dashboard.view'));
 $router->get('/admin/reports', [AdminReportsController::class, 'index'], rateb_admin_mw('reports.view'));
-$router->get('/admin/procurement', [ProcurementController::class, 'index'], rateb_admin_mw('procurement.manage'));
-$router->get('/admin/rfq', [RfqOversightController::class, 'index'], rateb_admin_mw('procurement.manage'));
-$router->get('/admin/inventory', [AdminInventoryController::class, 'index'], rateb_admin_mw('inventory.manage'));
+$router->get('/admin/procurement', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('purchase-requests')), 301);
+});
+$router->get('/admin/inventory', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('inventory')), 301);
+});
+$router->get('/admin/rfq', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('rfq')), 301);
+});
+$router->get('/admin/oversight/procurement', [ProcurementController::class, 'index'], rateb_admin_mw('procurement.manage'));
+$router->get('/admin/oversight/rfq', [RfqOversightController::class, 'index'], rateb_admin_mw('procurement.manage'));
+$router->get('/admin/oversight/inventory', [AdminInventoryController::class, 'index'], rateb_admin_mw('inventory.manage'));
 $router->get('/admin/supplier-evaluations', [AdminSupplierEvaluationsController::class, 'index'], rateb_admin_mw('evaluations.view'));
 
 $router->get('/admin/stock-movements', [AdminStockMovementsController::class, 'index'], rateb_admin_mw('inventory.manage'));
