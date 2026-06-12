@@ -121,6 +121,8 @@ return [
     'confirm_delete' => 'هل تريد حذف هذا السجل؟',
     'login_email' => 'البريد الإلكتروني',
     'invalid_credentials' => 'بيانات الدخول غير صحيحة',
+    'company_login_admin_blocked' => 'حساب الإدارة (Super Admin) لا يدخل من بوابة الشركة. استخدم رابط دخول الإدارة: /admin/login',
+    'admin_login_link' => 'دخول الإدارة',
     'too_many_attempts' => 'محاولات كثيرة. حاول لاحقاً.',
     'invalid_request' => 'طلب غير صالح. حدّث الصفحة وحاول مجدداً.',
     'company_growth' => 'نمو الشركات',

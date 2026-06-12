@@ -10,4 +10,8 @@
     </div>
     <button type="submit" class="btn btn-primary w-100"><?php echo __('login'); ?></button>
     <p class="mt-3 mb-0 text-center"><a href="<?php echo rateb_url('password/forgot?portal=company'); ?>"><?php echo __('password_forgot'); ?></a></p>
+    <p class="mt-2 mb-0 text-center small text-muted">
+        <?php echo __('super_admin'); ?>؟
+        <a href="<?php echo rateb_url('admin/login'); ?>"><?php echo __('admin_login_link'); ?></a>
+    </p>
 </form>

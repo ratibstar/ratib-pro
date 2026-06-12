@@ -40,11 +40,22 @@ final class AuthController extends Controller
             Response::redirect(rateb_url('company/login'));
         }
 
+        $userModel = new User();
+        $candidate = $userModel->findByEmail($email);
+        if (
+            $candidate
+            && password_verify($password, (string) $candidate['password'])
+            && (int) ($candidate['is_super_admin'] ?? 0) === 1
+        ) {
+            SessionManager::flash('error', __('company_login_admin_blocked'));
+            Response::redirect(rateb_url('company/login'));
+        }
+
         $user = Auth::attempt($email, $password, 'company');
         (new LoginActivityService())->record($user ? (int) $user['id'] : null, $email, $user !== null);
 
         if (!$user) {
-            SessionManager::flash('error', 'Invalid credentials');
+            SessionManager::flash('error', __('invalid_credentials'));
             Response::redirect(rateb_url('company/login'));
         }
 

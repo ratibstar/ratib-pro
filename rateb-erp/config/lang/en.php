@@ -121,6 +121,8 @@ return [
     'confirm_delete' => 'Delete this record?',
     'login_email' => 'Email address',
     'invalid_credentials' => 'Invalid email or password',
+    'company_login_admin_blocked' => 'Super Admin accounts cannot sign in here. Use the admin login at /admin/login',
+    'admin_login_link' => 'Admin login',
     'too_many_attempts' => 'Too many login attempts. Try again later.',
     'invalid_request' => 'Invalid request. Please refresh and try again.',
     'company_growth' => 'Company Growth',
