@@ -10,8 +10,8 @@ $loginUrl = rateb_public_url('login');
 $links = [
     ['تسجيل الدخول — رابط واحد', 'login', 'fa-right-to-bracket', 'primary'],
     ['لوحة النظام (بعد الدخول)', 'admin', 'fa-chart-line', 'outline'],
-    ['المشتريات — مراقبة', 'admin/procurement', 'fa-cart-shopping', 'outline'],
-    ['المخزون — مراقبة', 'admin/inventory', 'fa-boxes-stacked', 'outline'],
+    ['طلبات الشراء', rateb_app_route('purchase-requests'), 'fa-file-circle-plus', 'outline'],
+    ['المخزون', rateb_app_route('inventory'), 'fa-boxes-stacked', 'outline'],
 ];
 ?>
 <!DOCTYPE html>

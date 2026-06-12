@@ -57,6 +57,8 @@ return [
     'open_operations' => 'فتح العمليات',
     'procurement_oversight' => 'مراقبة المشتريات',
     'inventory_oversight' => 'مراقبة المخزون',
+    'rfq_oversight' => 'مراقبة عروض الأسعار',
+    'workflow_definitions' => 'تعريف مسارات الموافقة',
     'theme_light' => 'فاتح',
     'theme_dark' => 'داكن',
     'theme_auto' => 'تلقائي',

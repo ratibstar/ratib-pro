@@ -1,3 +1,4 @@
+<?php Rateb\App\Core\View::partial('admin-company-portal-banner'); ?>
 <div class="row g-3">
     <?php if (!empty($companies)) { ?>
     <div class="col-12">

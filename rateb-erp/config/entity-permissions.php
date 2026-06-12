@@ -198,7 +198,7 @@ return [
         'manage' => 'workflows.manage',
     ],
     'notifications' => [
-        'module' => 'notifications',
+        'module' => '',
         'view' => 'notifications.manage',
         'manage' => 'notifications.manage',
     ],

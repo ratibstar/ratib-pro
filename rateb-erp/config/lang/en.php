@@ -57,6 +57,8 @@ return [
     'open_operations' => 'Open operations',
     'procurement_oversight' => 'Procurement oversight',
     'inventory_oversight' => 'Inventory oversight',
+    'rfq_oversight' => 'RFQ oversight',
+    'workflow_definitions' => 'Workflow definitions',
     'theme_light' => 'Light',
     'theme_dark' => 'Dark',
     'theme_auto' => 'Auto',

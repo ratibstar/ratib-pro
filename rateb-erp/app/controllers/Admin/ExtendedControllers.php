@@ -59,7 +59,7 @@ final class AdminWorkflowsController extends Controller
     public function store(): void
     {
         if (!$this->validateCsrf()) {
-            Response::redirect(rateb_url('admin/workflows'));
+            Response::redirect(rateb_url('admin/oversight/workflows'));
         }
         $db = \Rateb\App\Core\Database::connection();
         $db->prepare(
@@ -71,7 +71,7 @@ final class AdminWorkflowsController extends Controller
         ]);
         (new AuditService())->log('create', 'workflow', (int) $db->lastInsertId());
         SessionManager::flash('success', __('save') . ' OK');
-        Response::redirect(rateb_url('admin/workflows'));
+        Response::redirect(rateb_url('admin/oversight/workflows'));
     }
 }
 

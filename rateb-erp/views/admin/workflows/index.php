@@ -1,7 +1,9 @@
+<?php Rateb\App\Core\View::partial('admin-company-portal-banner'); ?>
+<?php if (rateb_can('workflows.manage')) { ?>
 <div class="rateb-card mb-3">
     <div class="rateb-card-header"><?php echo __('create'); ?> <?php echo __('workflows'); ?></div>
     <div class="rateb-card-body">
-        <form method="post" action="<?php echo rateb_url('admin/workflows'); ?>" class="row g-3">
+        <form method="post" action="<?php echo rateb_url('admin/oversight/workflows'); ?>" class="row g-3">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-4">
                 <label class="form-label"><?php echo __('name'); ?></label>
@@ -26,6 +28,7 @@
         </form>
     </div>
 </div>
+<?php } ?>
 <?php Rateb\App\Core\View::partial('crud-index', [
     'title' => __('workflows'),
     'items' => $workflows ?? [],
@@ -35,7 +38,7 @@
         ['name' => 'is_active', 'label' => 'active'],
     ],
     'csrf' => $csrf,
-    'routePrefix' => 'admin/workflows',
+    'routePrefix' => 'admin/oversight/workflows',
     'bulkEnabled' => false,
     'createEnabled' => false,
     'actionsEnabled' => false,

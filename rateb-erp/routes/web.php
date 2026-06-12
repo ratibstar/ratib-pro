@@ -2,16 +2,13 @@
 declare(strict_types=1);
 
 use Rateb\App\Controllers\Admin\AuthController as AdminAuthController;
-use Rateb\App\Controllers\Admin\AssetsController as AdminAssetsController;
 use Rateb\App\Controllers\Admin\AuditLogsController;
 use Rateb\App\Controllers\Admin\CompaniesController;
-use Rateb\App\Controllers\Admin\ContractsController as AdminContractsController;
 use Rateb\App\Controllers\Admin\DashboardController as AdminDashboardController;
 use Rateb\App\Controllers\Admin\EmailTemplatesController;
 use Rateb\App\Controllers\Admin\InventoryController as AdminInventoryController;
 use Rateb\App\Controllers\Admin\InvoicesController;
 use Rateb\App\Controllers\Admin\LocaleController;
-use Rateb\App\Controllers\Admin\NotificationsController as AdminNotificationsController;
 use Rateb\App\Controllers\Admin\PaymentsController;
 use Rateb\App\Controllers\Admin\PermissionsController;
 use Rateb\App\Controllers\Admin\PlansController;
@@ -22,15 +19,11 @@ use Rateb\App\Controllers\Admin\RolesController;
 use Rateb\App\Controllers\Admin\SettingsController;
 use Rateb\App\Controllers\Admin\SmsTemplatesController;
 use Rateb\App\Controllers\Admin\SubscriptionsController;
-use Rateb\App\Controllers\Admin\SupplierEvaluationsController as AdminSupplierEvaluationsController;
-use Rateb\App\Controllers\Admin\SuppliersController as AdminSuppliersController;
 use Rateb\App\Controllers\Admin\SupportTicketsController;
 use Rateb\App\Controllers\Admin\UsersController;
 use Rateb\App\Controllers\Admin\AccessControlController;
 use Rateb\App\Controllers\Admin\AccountingDashboardController;
 use Rateb\App\Controllers\Admin\ChartOfAccountsController;
-use Rateb\App\Controllers\Admin\AdminMedicalDevicesController;
-use Rateb\App\Controllers\Admin\AdminStockMovementsController;
 use Rateb\App\Controllers\Admin\AdminWorkflowsController;
 use Rateb\App\Controllers\Admin\JournalEntriesController as AdminJournalEntriesController;
 use Rateb\App\Controllers\Admin\ExecutiveDashboardController;
@@ -109,9 +102,6 @@ $crudRoutes = [
     'email-templates' => [EmailTemplatesController::class, 'settings.manage'],
     'sms-templates' => [SmsTemplatesController::class, 'settings.manage'],
     'support-tickets' => [SupportTicketsController::class, 'settings.manage'],
-    'suppliers' => [AdminSuppliersController::class, 'suppliers.manage'],
-    'assets' => [AdminAssetsController::class, 'assets.manage'],
-    'contracts' => [AdminContractsController::class, 'contracts.manage'],
 ];
 
 foreach ($crudRoutes as $path => [$class, $perm]) {
@@ -127,7 +117,6 @@ foreach ($crudRoutes as $path => [$class, $perm]) {
 $router->get('/admin/audit-logs', [AuditLogsController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/settings', [SettingsController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings', [SettingsController::class, 'save'], rateb_admin_mw('settings.manage'));
-$router->get('/admin/notifications', [AdminNotificationsController::class, 'index'], rateb_admin_mw('dashboard.view'));
 $router->get('/admin/reports', [AdminReportsController::class, 'index'], rateb_admin_mw('reports.view'));
 $router->get('/admin/procurement', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('purchase-requests')), 301);
@@ -138,13 +127,38 @@ $router->get('/admin/inventory', static function (): void {
 $router->get('/admin/rfq', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('rfq')), 301);
 });
+$router->get('/admin/stock-movements', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('stock-movements')), 301);
+});
+$router->get('/admin/stock-movements/export', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('stock-movements') . '/export'), 301);
+});
+$router->get('/admin/supplier-evaluations', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('supplier-evaluations')), 301);
+});
+$router->get('/admin/medical-devices', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('medical-devices')), 301);
+});
+$router->get('/admin/notifications', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('notifications')), 301);
+});
+$legacyOpsResources = ['suppliers', 'assets', 'contracts'];
+foreach ($legacyOpsResources as $legacyOps) {
+    $router->get('/admin/' . $legacyOps, static function () use ($legacyOps): void {
+        \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route($legacyOps)), 301);
+    });
+    $router->get('/admin/' . $legacyOps . '/{rest:.+}', static function (array $params) use ($legacyOps): void {
+        \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route($legacyOps) . '/' . ($params['rest'] ?? '')), 301);
+    });
+}
+$router->get('/admin/workflows', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url('admin/oversight/workflows'), 301);
+});
+$router->post('/admin/workflows', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url('admin/oversight/workflows'), 307);
+});
 $router->get('/admin/oversight/procurement', [ProcurementController::class, 'index'], rateb_admin_mw('procurement.manage'));
 $router->get('/admin/oversight/rfq', [RfqOversightController::class, 'index'], rateb_admin_mw('procurement.manage'));
 $router->get('/admin/oversight/inventory', [AdminInventoryController::class, 'index'], rateb_admin_mw('inventory.manage'));
-$router->get('/admin/supplier-evaluations', [AdminSupplierEvaluationsController::class, 'index'], rateb_admin_mw('evaluations.view'));
-
-$router->get('/admin/stock-movements', [AdminStockMovementsController::class, 'index'], rateb_admin_mw('inventory.manage'));
-$router->get('/admin/stock-movements/export', [AdminStockMovementsController::class, 'export'], rateb_admin_mw('reports.export'));
-$router->get('/admin/workflows', [AdminWorkflowsController::class, 'index'], rateb_admin_mw('workflows.view'));
-$router->post('/admin/workflows', [AdminWorkflowsController::class, 'store'], rateb_admin_mw('workflows.manage'));
-$router->get('/admin/medical-devices', [AdminMedicalDevicesController::class, 'index'], rateb_admin_mw('assets.manage'));
+$router->get('/admin/oversight/workflows', [AdminWorkflowsController::class, 'index'], rateb_admin_mw('workflows.view'));
+$router->post('/admin/oversight/workflows', [AdminWorkflowsController::class, 'store'], rateb_admin_mw('workflows.manage'));
