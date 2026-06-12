@@ -136,6 +136,10 @@ final class WorkflowsController extends Controller
 
     public function approve(array $params): void
     {
+        if (!rateb_can('workflows.approve')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_app_url('workflows'));
+        }
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('workflows'));
         }
@@ -148,6 +152,10 @@ final class WorkflowsController extends Controller
 
     public function reject(array $params): void
     {
+        if (!rateb_can('workflows.approve')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_app_url('workflows'));
+        }
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('workflows'));
         }

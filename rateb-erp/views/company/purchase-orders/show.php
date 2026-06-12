@@ -8,6 +8,14 @@
             <?php } ?>
         </dl>
         <h6 class="mt-4"><?php echo __('purchase_orders'); ?> Items</h6>
-        <?php Rateb\App\Core\View::partial('crud-index', ['title' => '', 'items' => $items ?? [], 'csrf' => $csrf, 'routePrefix' => rateb_app_route('purchase-orders')]); ?>
+        <?php Rateb\App\Core\View::partial('crud-index', [
+            'title' => '',
+            'items' => $items ?? [],
+            'csrf' => $csrf,
+            'routePrefix' => rateb_app_route('purchase-orders'),
+            'bulkEnabled' => false,
+            'createEnabled' => false,
+            'actionsEnabled' => false,
+        ]); ?>
     </div>
 </div>

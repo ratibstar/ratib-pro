@@ -427,7 +427,7 @@ final class RfqController extends \Rateb\App\Controllers\CrudController
         $page = max(1, (int) $this->input('page', 1));
         $limit = 20;
         $offset = ($page - 1) * $limit;
-        $this->view($this->viewPrefix . '/index', [
+        $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __($this->entityName),
             'items' => $this->model->all($limit, $offset),
             'total' => $this->model->count(),
@@ -439,7 +439,7 @@ final class RfqController extends \Rateb\App\Controllers\CrudController
             'bulkEnabled' => $this->bulkEnabled,
             'createEnabled' => $this->createEnabled,
             'actionsEnabled' => $this->actionsEnabled,
-        ], $this->layout());
+        ]), $this->layout());
     }
 
     protected function layout(): string
