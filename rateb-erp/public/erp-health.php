@@ -6,8 +6,13 @@ header('Content-Type: text/plain; charset=UTF-8');
 define('RATEB_ROOT', str_replace('\\', '/', realpath(dirname(__DIR__)) ?: dirname(__DIR__)));
 define('RATIB_ENV_NO_SESSION', true);
 
+$probe = isset($_GET['probe']) ? (string) $_GET['probe'] : '';
+$dispatchRoute = isset($_GET['dispatch']) ? (string) $_GET['dispatch'] : '';
+
 $steps = [];
 try {
+    $steps[] = 'PHP ' . PHP_VERSION;
+
     require_once RATEB_ROOT . '/config/app.php';
     $steps[] = 'app.php OK';
 
@@ -20,6 +25,30 @@ try {
 
     $pdo = \Rateb\App\Core\Database::connection();
     $steps[] = 'DB connection OK (' . \Rateb\App\Core\Database::resolvedDatabaseName() . ')';
+
+    if ($probe === 'routes' || $probe === 'dispatch' || $dispatchRoute !== '') {
+        \Rateb\App\Core\Auth::bootstrapFromSession();
+        $router = new \Rateb\App\Core\Router();
+        require RATEB_ROOT . '/routes/web.php';
+        $steps[] = 'routes/web.php OK';
+        require RATEB_ROOT . '/routes/company.php';
+        $steps[] = 'routes/company.php OK';
+        require RATEB_ROOT . '/routes/api.php';
+        $steps[] = 'routes/api.php OK';
+    }
+
+    if ($probe === 'dispatch' || $dispatchRoute !== '') {
+        require_once RATEB_ROOT . '/app/helpers/Request.php';
+        $route = $dispatchRoute !== '' ? $dispatchRoute : 'company/login';
+        $_GET['route'] = ltrim($route, '/');
+        $path = \Rateb\App\Helpers\Request::resolvePath();
+        $steps[] = 'resolved path=' . $path;
+
+        ob_start();
+        $router->dispatch('GET', $path);
+        $body = (string) ob_get_clean();
+        $steps[] = 'dispatch OK body_len=' . strlen($body);
+    }
 
     echo "RATEB ERP health: OK\n";
     foreach ($steps as $line) {

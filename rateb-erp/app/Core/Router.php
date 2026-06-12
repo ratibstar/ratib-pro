@@ -88,7 +88,7 @@ final class Router
                 $handler[0] = new $handler[0]();
             }
 
-            call_user_func($handler, $params);
+            self::invokeHandler($handler, $params);
             return;
         }
 
@@ -99,5 +99,43 @@ final class Router
         }
 
         View::render('errors/404', ['title' => '404'], 'auth');
+    }
+
+    /** @param callable|array{0:object,1:string} $handler @param array<string,mixed> $params */
+    private static function invokeHandler($handler, array $params): void
+    {
+        if ($params === []) {
+            call_user_func($handler);
+            return;
+        }
+
+        if (!is_array($handler) || !isset($handler[1]) || !is_string($handler[1])) {
+            call_user_func($handler, $params);
+            return;
+        }
+
+        try {
+            $ref = new \ReflectionMethod($handler[0], $handler[1]);
+        } catch (\ReflectionException $e) {
+            call_user_func($handler, $params);
+            return;
+        }
+
+        $required = $ref->getNumberOfRequiredParameters();
+        if ($required === 0 && $ref->getNumberOfParameters() === 0) {
+            call_user_func($handler);
+            return;
+        }
+
+        if ($required <= 1 && $ref->getNumberOfParameters() === 1) {
+            $first = $ref->getParameters()[0];
+            $type = $first->getType();
+            if ($type instanceof \ReflectionNamedType && $type->getName() === 'array') {
+                call_user_func($handler, $params);
+                return;
+            }
+        }
+
+        call_user_func_array($handler, array_values($params));
     }
 }

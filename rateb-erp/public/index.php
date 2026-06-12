@@ -3,6 +3,23 @@ declare(strict_types=1);
 
 define('RATEB_ROOT', str_replace('\\', '/', realpath(dirname(__DIR__)) ?: dirname(__DIR__)));
 
+if (!defined('RATIB_ENV_NO_SESSION')) {
+    define('RATIB_ENV_NO_SESSION', true);
+}
+
+register_shutdown_function(static function (): void {
+    $err = error_get_last();
+    if ($err === null || !in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+        return;
+    }
+    if (headers_sent()) {
+        return;
+    }
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=UTF-8');
+    echo 'RATEB ERP fatal: ' . $err['message'] . ' in ' . $err['file'] . ':' . $err['line'];
+});
+
 try {
     require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
 
@@ -22,12 +39,21 @@ try {
     $router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $path);
 } catch (Throwable $e) {
     error_log('RATEB ERP bootstrap error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
-    http_response_code(500);
-    header('Content-Type: text/html; charset=UTF-8');
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo 'RATEB ERP error: ' . $e->getMessage() . "\n" . $e->getFile() . ':' . $e->getLine() . "\n";
+    }
     $debug = (getenv('APP_DEBUG') === 'true' || getenv('APP_DEBUG') === '1');
     $cpMode = defined('RATEB_CP_ENTRY') && RATEB_CP_ENTRY;
     $directPublic = !$cpMode;
-    if ($debug || $cpMode || $directPublic) {
+    if ($directPublic) {
+        return;
+    }
+    if ($debug || $cpMode) {
+        if (!headers_sent()) {
+            header('Content-Type: text/html; charset=UTF-8');
+        }
         $msg = $e->getMessage();
         $isDbAccess = strpos($msg, '1044') !== false || strpos($msg, '1049') !== false || strpos($msg, 'Access denied') !== false;
         $dbName = function_exists('control_rateb_erp_db_name') ? control_rateb_erp_db_name() : 'outratib_rateb-erp';
