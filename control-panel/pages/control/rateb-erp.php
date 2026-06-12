@@ -68,7 +68,23 @@ startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/contr
 </div>
 <?php } ?>
 
-<div class="control-settings-intro mb-2"><strong>Super Admin modules</strong></div>
+<div class="alert alert-primary mb-4" role="region" aria-label="بوابة الشركة">
+    <h2 class="h5 mb-2"><i class="fas fa-building me-2"></i>بوابة الشركة — للإضافة والتعديل والحذف</h2>
+    <p class="mb-3 small mb-0">
+        لإضافة <strong>مشتريات</strong> أو <strong>مخزون</strong> استخدم بوابة الشركة (حساب مرتبط بشركة).
+        شاشات <em>Procurement</em> و <em>Inventory</em> أدناه للمراقعة فقط — بدون أزرار إنشاء.
+    </p>
+    <div class="d-flex flex-wrap gap-2 mt-3">
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_app_url('company/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary<?php echo $schemaReady ? '' : ' disabled'; ?>">
+            <i class="fas fa-sign-in-alt"></i> دخول بوابة الشركة
+        </a>
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_app_url('admin/users'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary<?php echo $schemaReady ? '' : ' disabled'; ?>">
+            <i class="fas fa-user-plus"></i> إنشاء مستخدم شركة
+        </a>
+    </div>
+</div>
+
+<div class="control-settings-intro mb-2"><strong>Super Admin modules</strong> <span class="text-muted small">(مراقبة — قراءة فقط للمشتريات والمخزون)</span></div>
 <div class="control-settings-grid mb-4">
     <?php foreach ($erpLinks as $link) { ?>
     <div class="control-settings-card" data-permission="control_dashboard,control_system_settings">
