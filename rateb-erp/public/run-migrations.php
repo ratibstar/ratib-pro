@@ -18,7 +18,10 @@ if ($provided === '') {
 }
 
 $expected = '';
-$tokenFile = RATEB_ROOT . '/storage/.deploy-migrate-token';
+$tokenFile = RATEB_ROOT . '/storage/deploy-migrate-token';
+if (!is_file($tokenFile)) {
+    $tokenFile = RATEB_ROOT . '/storage/.deploy-migrate-token';
+}
 if (is_file($tokenFile)) {
     $expected = trim((string) file_get_contents($tokenFile));
 }

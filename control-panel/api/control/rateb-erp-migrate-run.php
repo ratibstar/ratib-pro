@@ -32,7 +32,10 @@ if ($expected === '') {
     }
 }
 $erpRoot = control_rateb_erp_root_path();
-$tokenFile = $erpRoot . '/storage/.deploy-migrate-token';
+$tokenFile = $erpRoot . '/storage/deploy-migrate-token';
+if (!is_file($tokenFile)) {
+    $tokenFile = $erpRoot . '/storage/.deploy-migrate-token';
+}
 if ($expected === '' && is_file($tokenFile)) {
     $expected = trim((string) file_get_contents($tokenFile));
 }

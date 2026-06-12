@@ -15,6 +15,7 @@ final class MigrationService
         $pdo = Database::connection();
         $log[] = 'Connected to database: ' . Database::resolvedDatabaseName();
         $this->ensureMigrationsTable($pdo);
+        $this->seedLegacyAppliedMigrations($pdo, $log);
 
         $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
         $files = glob($root . '/migrations/*.sql') ?: [];
@@ -77,6 +78,50 @@ final class MigrationService
     {
         $stmt = $pdo->prepare('INSERT IGNORE INTO rateb_migrations (filename) VALUES (:f)');
         $stmt->execute(['f' => $filename]);
+    }
+
+    /** Existing DBs installed before rateb_migrations tracking — skip re-running 001–012. */
+    private function seedLegacyAppliedMigrations(PDO $pdo, array &$log): void
+    {
+        $stmt = $pdo->query('SELECT COUNT(*) FROM rateb_migrations');
+        $count = $stmt !== false ? (int) $stmt->fetchColumn() : 0;
+        if ($stmt instanceof \PDOStatement) {
+            $stmt->closeCursor();
+        }
+        if ($count > 0) {
+            return;
+        }
+
+        $check = $pdo->query("SHOW TABLES LIKE 'rateb_companies'");
+        $hasSchema = $check !== false && $check->fetch() !== false;
+        if ($check instanceof \PDOStatement) {
+            $check->closeCursor();
+        }
+        if (!$hasSchema) {
+            return;
+        }
+
+        $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
+        $files = glob($root . '/migrations/*.sql') ?: [];
+        sort($files);
+        $marked = 0;
+        foreach ($files as $file) {
+            $name = basename($file);
+            if (!$this->isRunnableMigration($name)) {
+                continue;
+            }
+            if (!preg_match('/^(\d{3})_/', $name, $m)) {
+                continue;
+            }
+            if ((int) $m[1] >= 13) {
+                continue;
+            }
+            $this->markApplied($pdo, $name);
+            $marked++;
+        }
+        if ($marked > 0) {
+            $log[] = 'Legacy schema detected: marked migrations 001–012 as already applied (' . $marked . ' files).';
+        }
     }
 
     private function isRunnableMigration(string $basename): bool

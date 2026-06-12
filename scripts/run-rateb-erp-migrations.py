@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib.util
-import json
 import os
 import sys
 import urllib.error
@@ -31,33 +30,30 @@ def sanitize_host(host: str) -> str:
 
 
 def upload_migrate_token(dc) -> bool:
-    host = sanitize_host(os.environ.get("CPANEL_HOST", ""))
-    user = os.environ.get("CPANEL_USER", "")
     token = os.environ.get("CPANEL_API_TOKEN", "")
     remote_base = os.environ.get("CPANEL_REMOTE_BASE", "/home/outratib/public_html").rstrip("/")
-    if not (host and user and token):
-        print("::warning::Skip token upload — missing CPANEL_HOST/USER/TOKEN", flush=True)
+    if not token:
+        print("::warning::Skip token upload — no CPANEL_API_TOKEN", flush=True)
         return False
 
-    os.environ["CPANEL_HOST"] = host
-    rel = "rateb-erp/storage/.deploy-migrate-token"
-    dir_path = dc.remote_dir(remote_base, rel)
-    dc.ensure_remote_dir(dir_path, remote_base)
+    host = sanitize_host(os.environ.get("CPANEL_HOST", ""))
+    if host:
+        os.environ["CPANEL_HOST"] = host
+
+    local_rel = "rateb-erp/storage/deploy-migrate-token"
+    os.makedirs(os.path.dirname(local_rel), exist_ok=True)
+    with open(local_rel, "w", encoding="utf-8") as handle:
+        handle.write(token)
     try:
-        payload = dc.api_post(
-            "Fileman/save_file_content",
-            {
-                "dir": dir_path,
-                "file": ".deploy-migrate-token",
-                "content": token,
-            },
-        )
-    except Exception as exc:
-        print(f"::warning::Migrate token upload failed: {exc}", flush=True)
-        return False
+        _rel_path, ok, err = dc.upload_text_one(local_rel, remote_base)
+    finally:
+        try:
+            os.remove(local_rel)
+        except OSError:
+            pass
 
-    if not dc.uapi_ok(payload):
-        print(f"::warning::Migrate token upload rejected: {json.dumps(payload)[:300]}", flush=True)
+    if not ok:
+        print(f"::warning::Migrate token upload failed: {err}", flush=True)
         return False
 
     print("migrate token file uploaded", flush=True)
