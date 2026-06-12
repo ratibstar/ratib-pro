@@ -361,4 +361,10 @@ return [
     'company_access_denied' => 'Company access is suspended or subscription expired.',
     'storage_limit_exceeded' => 'Storage limit exceeded for your plan.',
     'user_limit_reached' => 'User limit reached for this company plan.',
+    'quotation_compare' => 'Quotation comparison',
+    'best_price' => 'Best price',
+    'contract_attachment' => 'Contract attachment',
+    'current_file' => 'Current file',
+    'upload_failed' => 'File upload failed',
+    'deadline' => 'Deadline',
 ];

@@ -241,4 +241,33 @@ final class InventoryWorkflowService
         )['c'] ?? 0);
         return 'AUD-' . str_pad((string) ($count + 1), 5, '0', STR_PAD_LEFT);
     }
+
+    public function processLowStockAlerts(int $companyId): int
+    {
+        if ($companyId < 1) {
+            return 0;
+        }
+        TenantContext::setCompanyId($companyId);
+        $rows = (new Inventory())->query(
+            'SELECT id, item_name, quantity, reorder_level FROM rateb_inventory
+             WHERE company_id = :cid AND reorder_level > 0 AND quantity <= reorder_level',
+            ['cid' => $companyId]
+        );
+        $notifier = new NotificationService();
+        $count = 0;
+        foreach ($rows as $row) {
+            $itemId = (int) ($row['id'] ?? 0);
+            $exists = (new \Rateb\App\Models\Notification())->queryOne(
+                'SELECT id FROM rateb_notifications WHERE company_id = :cid AND trigger_type = :tt
+                 AND entity_type = :et AND entity_id = :eid AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) LIMIT 1',
+                ['cid' => $companyId, 'tt' => 'low_stock', 'et' => 'inventory', 'eid' => $itemId]
+            );
+            if ($exists) {
+                continue;
+            }
+            $notifier->triggerLowStock($companyId, (string) ($row['item_name'] ?? ''), (float) ($row['quantity'] ?? 0));
+            $count++;
+        }
+        return $count;
+    }
 }

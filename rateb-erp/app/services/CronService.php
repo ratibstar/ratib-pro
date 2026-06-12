@@ -15,6 +15,7 @@ final class CronService
         $stats = [
             'queue' => (new QueueWorkerService())->processPending(100),
             'inventory_alerts' => 0,
+            'low_stock_alerts' => 0,
             'contract_alerts' => 0,
             'password_resets_cleaned' => $this->cleanupPasswordResets(),
         ];
@@ -30,6 +31,7 @@ final class CronService
             }
             TenantContext::setCompanyId($cid);
             $stats['inventory_alerts'] += $invSvc->processExpiryAlerts($cid);
+            $stats['low_stock_alerts'] += $invSvc->processLowStockAlerts($cid);
             $stats['contract_alerts'] += $ctrSvc->processExpiryAlerts($cid);
         }
         TenantContext::setCompanyId(null);

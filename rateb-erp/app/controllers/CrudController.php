@@ -8,6 +8,7 @@ use Rateb\App\Core\Csrf;
 use Rateb\App\Core\Model;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Services\AuditService;
+use Rateb\App\Services\TenantFkValidator;
 
 abstract class CrudController extends Controller
 {
@@ -19,6 +20,8 @@ abstract class CrudController extends Controller
     protected bool $bulkEnabled = true;
     protected bool $createEnabled = true;
     protected bool $actionsEnabled = true;
+    /** @var array<int, string> */
+    protected array $tenantForeignKeys = [];
 
     public function index(): void
     {
@@ -66,6 +69,12 @@ abstract class CrudController extends Controller
         }
 
         $data = $this->collectData();
+        try {
+            TenantFkValidator::validate($data, $this->tenantForeignKeys);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
         $id = $this->model->create($data);
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
@@ -100,6 +109,12 @@ abstract class CrudController extends Controller
 
         $id = (int) ($params['id'] ?? 0);
         $data = $this->collectData();
+        try {
+            TenantFkValidator::validate($data, $this->tenantForeignKeys);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
         $this->model->update($id, $data);
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');

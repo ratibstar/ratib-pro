@@ -162,6 +162,10 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         if ($lines !== []) {
             \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($id, $lines);
         }
+        (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseRequestStatus(
+            $id,
+            (string) ($data['status'] ?? 'draft')
+        );
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
@@ -174,6 +178,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
+        $old = $this->model->find($id);
         $data = $this->collectData();
         $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
         if ($lines !== []) {
@@ -181,6 +186,11 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         }
         $this->model->update($id, $data);
         \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($id, $lines);
+        (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseRequestStatus(
+            $id,
+            (string) ($data['status'] ?? ''),
+            $old ? (string) ($old['status'] ?? '') : null
+        );
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
@@ -207,6 +217,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->viewPrefix = 'company/purchase-orders';
         $this->routePrefix = 'company/purchase-orders';
         $this->entityName = 'purchase_orders';
+        $this->tenantForeignKeys = ['supplier_id'];
         $this->fields = [
             ['name' => 'supplier_id', 'label' => 'Supplier ID', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled']],
@@ -274,12 +285,22 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             $this->redirect(rateb_url($this->routePrefix));
         }
         $data = $this->collectData();
+        try {
+            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
         $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
         $id = $this->model->create($data);
         $total = \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
         if ($total > 0) {
             $this->model->update($id, ['total_amount' => $total, 'subtotal' => $total]);
         }
+        (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseOrderStatus(
+            $id,
+            (string) ($data['status'] ?? 'draft')
+        );
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
@@ -292,7 +313,14 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
+        $old = $this->model->find($id);
         $data = $this->collectData();
+        try {
+            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
         $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
         $total = \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
         if ($total > 0) {
@@ -300,6 +328,11 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             $data['subtotal'] = $total;
         }
         $this->model->update($id, $data);
+        (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseOrderStatus(
+            $id,
+            (string) ($data['status'] ?? ''),
+            $old ? (string) ($old['status'] ?? '') : null
+        );
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
@@ -353,6 +386,51 @@ final class RfqController extends \Rateb\App\Controllers\CrudController
         ];
     }
 
+    public function compare(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $rfq = $this->model->find($id);
+        if (!$rfq) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], 'company');
+            return;
+        }
+        $quotations = (new \Rateb\App\Models\SupplierQuotation())->query(
+            'SELECT q.*, s.name AS supplier_name
+             FROM rateb_supplier_quotations q
+             LEFT JOIN rateb_suppliers s ON s.id = q.supplier_id
+             WHERE q.rfq_id = :rid
+             ORDER BY q.amount ASC',
+            ['rid' => $id]
+        );
+        $this->view('company/rfq/compare', [
+            'title' => __('quotation_compare'),
+            'rfq' => $rfq,
+            'quotations' => $quotations,
+            'csrf' => Csrf::token(),
+        ], 'company');
+    }
+
+    public function index(): void
+    {
+        $page = max(1, (int) $this->input('page', 1));
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+        $this->view($this->viewPrefix . '/index', [
+            'title' => __($this->entityName),
+            'items' => $this->model->all($limit, $offset),
+            'total' => $this->model->count(),
+            'page' => $page,
+            'limit' => $limit,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => $this->createEnabled,
+            'actionsEnabled' => $this->actionsEnabled,
+        ], $this->layout());
+    }
+
     protected function layout(): string
     {
         return 'company';
@@ -367,6 +445,7 @@ final class QuotationsController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'company/quotations';
         $this->routePrefix = 'company/quotations';
         $this->entityName = 'quotations';
+        $this->tenantForeignKeys = ['rfq_id', 'supplier_id'];
         $this->fields = [
             ['name' => 'rfq_id', 'label' => 'RFQ ID', 'type' => 'number'],
             ['name' => 'supplier_id', 'label' => 'Supplier ID', 'type' => 'number'],
@@ -415,6 +494,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'company/inventory';
         $this->routePrefix = 'company/inventory';
         $this->entityName = 'inventory';
+        $this->tenantForeignKeys = ['warehouse_id'];
         $this->fields = [
             ['name' => 'warehouse_id', 'label' => 'Warehouse ID', 'type' => 'number'],
             ['name' => 'item_name', 'label' => 'Item', 'type' => 'text'],
@@ -508,14 +588,101 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'company/contracts';
         $this->routePrefix = 'company/contracts';
         $this->entityName = 'contracts';
+        $this->tenantForeignKeys = ['supplier_id'];
         $this->fields = [
             ['name' => 'contract_no', 'label' => 'Contract No', 'type' => 'text'],
             ['name' => 'title', 'label' => 'Title', 'type' => 'text'],
+            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'number'],
             ['name' => 'start_date', 'label' => 'Start', 'type' => 'date'],
             ['name' => 'end_date', 'label' => 'End', 'type' => 'date'],
+            ['name' => 'renewal_date', 'label' => 'renewal_date', 'type' => 'date'],
             ['name' => 'value', 'label' => 'Value', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'active', 'expired', 'terminated']],
         ];
+    }
+
+    public function create(): void
+    {
+        $this->view($this->viewPrefix . '/form', $this->contractFormData(null), $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], $this->layout());
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', $this->contractFormData($item), $this->layout());
+    }
+
+    /** @return array<string, mixed> */
+    private function contractFormData(?array $item): array
+    {
+        return [
+            'title' => ($item ? __('edit') : __('create')) . ' ' . __('contracts'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'suppliers' => (new \Rateb\App\Models\Supplier())->all(200, 0),
+            'multipart' => true,
+        ];
+    }
+
+    public function store(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectData();
+        try {
+            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
+        $id = $this->model->create($data);
+        $companyId = (int) TenantContext::companyId();
+        $upload = \Rateb\App\Helpers\ContractUpload::handleOptionalFile($companyId, $id);
+        if (!($upload['success'] ?? false)) {
+            SessionManager::flash('error', (string) ($upload['error'] ?? __('upload_failed')));
+        } elseif (!empty($upload['path'])) {
+            $this->model->update($id, ['document_path' => $upload['path']]);
+        }
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function update(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectData();
+        try {
+            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
+        $this->model->update($id, $data);
+        $companyId = (int) TenantContext::companyId();
+        $upload = \Rateb\App\Helpers\ContractUpload::handleOptionalFile($companyId, $id);
+        if (!($upload['success'] ?? false)) {
+            SessionManager::flash('error', (string) ($upload['error'] ?? __('upload_failed')));
+        } elseif (!empty($upload['path'])) {
+            $this->model->update($id, ['document_path' => $upload['path']]);
+        }
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
     }
 
     protected function layout(): string
@@ -616,6 +783,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         $this->viewPrefix = 'company/supplier-evaluations';
         $this->routePrefix = 'company/supplier-evaluations';
         $this->entityName = 'supplier_evaluations';
+        $this->tenantForeignKeys = ['supplier_id'];
         $this->fields = [
             ['name' => 'supplier_id', 'label' => 'supplier_id', 'type' => 'number'],
             ['name' => 'evaluation_date', 'label' => 'evaluation_date', 'type' => 'date'],
@@ -693,6 +861,12 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             $this->redirect(rateb_url($this->routePrefix));
         }
         $data = $this->collectData();
+        try {
+            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
         $id = $this->model->create($data);
         $this->model->updateSupplierRating((int) ($data['supplier_id'] ?? 0));
         (new AuditService())->log('create', $this->entityName, $id, $data);
@@ -708,6 +882,12 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         }
         $id = (int) ($params['id'] ?? 0);
         $data = $this->collectData();
+        try {
+            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
         $this->model->update($id, $data);
         $this->model->updateSupplierRating((int) ($data['supplier_id'] ?? 0));
         (new AuditService())->log('update', $this->entityName, $id, $data);

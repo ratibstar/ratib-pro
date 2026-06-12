@@ -76,6 +76,7 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
 }
 
 $router->get('/company/purchase-orders/{id}', [PurchaseOrdersController::class, 'show'], rateb_company_mw('procurement'));
+$router->get('/company/rfq/{id}/compare', [RfqController::class, 'compare'], rateb_company_mw('procurement'));
 $router->get('/company/accounting', [CompanyAccountingDashboardController::class, 'index'], rateb_company_mw('accounting'));
 $router->post('/company/accounting/sync', [CompanyAccountingDashboardController::class, 'sync'], rateb_company_mw('accounting'));
 $router->get('/company/chart-of-accounts', [CompanyChartOfAccountsController::class, 'index'], rateb_company_mw('accounting'));

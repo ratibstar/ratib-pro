@@ -1210,11 +1210,28 @@ final class InventoryController extends Controller
     {
         $inv = new \Rateb\App\Models\Inventory();
         $wh = new \Rateb\App\Models\Warehouse();
+        $itemFields = [
+            ['name' => 'item_name', 'label' => 'item_name'],
+            ['name' => 'sku', 'label' => 'sku'],
+            ['name' => 'quantity', 'label' => 'quantity'],
+            ['name' => 'unit_cost', 'label' => 'unit_cost'],
+            ['name' => 'expiry_date', 'label' => 'expiry_date'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
+        $warehouseFields = [
+            ['name' => 'name', 'label' => 'name'],
+            ['name' => 'code', 'label' => 'code'],
+            ['name' => 'location', 'label' => 'location'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
         $this->view('admin/inventory/index', [
             'title' => __('inventory'),
             'items' => $inv->all(50, 0),
             'warehouses' => $wh->all(50, 0),
+            'itemFields' => $itemFields,
+            'warehouseFields' => $warehouseFields,
             'total_value' => $inv->totalValue(),
+            'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -1268,11 +1285,97 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'company_id', 'label' => 'company_id', 'type' => 'number'],
             ['name' => 'contract_no', 'label' => 'Contract No', 'type' => 'text'],
             ['name' => 'title', 'label' => 'Title', 'type' => 'text'],
+            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'number'],
             ['name' => 'start_date', 'label' => 'Start', 'type' => 'date'],
             ['name' => 'end_date', 'label' => 'End', 'type' => 'date'],
+            ['name' => 'renewal_date', 'label' => 'renewal_date', 'type' => 'date'],
             ['name' => 'value', 'label' => 'Value', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'active', 'expired', 'terminated']],
         ];
+    }
+
+    public function create(): void
+    {
+        $this->view($this->viewPrefix . '/form', $this->contractFormData(null), $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', $this->contractFormData($item), $this->layout());
+    }
+
+    /** @return array<string, mixed> */
+    private function contractFormData(?array $item): array
+    {
+        $companyId = $item ? (int) ($item['company_id'] ?? 0) : 0;
+        $suppliers = [];
+        if ($companyId > 0) {
+            $suppliers = (new \Rateb\App\Models\Supplier())->query(
+                'SELECT * FROM rateb_suppliers WHERE company_id = :cid ORDER BY name LIMIT 200',
+                ['cid' => $companyId]
+            );
+        }
+        return [
+            'title' => ($item ? __('edit') : __('create')) . ' ' . __('contracts'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'suppliers' => $suppliers,
+            'multipart' => true,
+        ];
+    }
+
+    public function store(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectData();
+        $companyId = (int) ($data['company_id'] ?? 0);
+        $id = $this->model->create($data);
+        if ($companyId > 0) {
+            $upload = \Rateb\App\Helpers\ContractUpload::handleOptionalFile($companyId, $id);
+            if (!($upload['success'] ?? false)) {
+                SessionManager::flash('error', (string) ($upload['error'] ?? __('upload_failed')));
+            } elseif (!empty($upload['path'])) {
+                $this->model->update($id, ['document_path' => $upload['path']]);
+            }
+        }
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function update(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectData();
+        $companyId = (int) ($data['company_id'] ?? 0);
+        $this->model->update($id, $data);
+        if ($companyId > 0) {
+            $upload = \Rateb\App\Helpers\ContractUpload::handleOptionalFile($companyId, $id);
+            if (!($upload['success'] ?? false)) {
+                SessionManager::flash('error', (string) ($upload['error'] ?? __('upload_failed')));
+            } elseif (!empty($upload['path'])) {
+                $this->model->update($id, ['document_path' => $upload['path']]);
+            }
+        }
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
     }
 }
 

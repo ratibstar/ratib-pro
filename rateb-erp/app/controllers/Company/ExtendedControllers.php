@@ -34,13 +34,18 @@ final class StockMovementsController extends Controller
             $this->redirect(rateb_url('company/stock-movements'));
         }
         try {
-            $id = (new StockMovementService())->record([
+            $payload = [
                 'inventory_id' => (int) $this->input('inventory_id', 0),
                 'warehouse_id' => (int) $this->input('warehouse_id', 0) ?: null,
                 'movement_type' => (string) $this->input('movement_type', 'in'),
                 'quantity' => (float) $this->input('quantity', 0),
                 'notes' => trim((string) $this->input('notes', '')),
-            ]);
+            ];
+            \Rateb\App\Services\TenantFkValidator::validate(
+                ['inventory_id' => $payload['inventory_id'], 'warehouse_id' => $payload['warehouse_id'] ?? 0],
+                ['inventory_id', 'warehouse_id']
+            );
+            $id = (new StockMovementService())->record($payload);
             (new AuditService())->log('create', 'stock_movement', $id);
             SessionManager::flash('success', __('save') . ' OK');
         } catch (\Throwable $e) {

@@ -19,6 +19,7 @@ final class TenantGuard
         'rateb_approval_instances',
         'rateb_chart_of_accounts',
         'rateb_journal_entries',
+        'rateb_rfq',
     ];
 
     public static function requireCompanyId(): int

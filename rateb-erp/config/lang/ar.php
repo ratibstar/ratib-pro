@@ -361,4 +361,10 @@ return [
     'company_access_denied' => 'الوصول للشركة موقوف أو انتهى الاشتراك.',
     'storage_limit_exceeded' => 'تم تجاوز حد التخزين للباقة.',
     'user_limit_reached' => 'تم الوصول إلى حد المستخدمين للباقة.',
+    'quotation_compare' => 'مقارنة عروض الأسعار',
+    'best_price' => 'أفضل سعر',
+    'contract_attachment' => 'مرفق العقد',
+    'current_file' => 'الملف الحالي',
+    'upload_failed' => 'فشل رفع الملف',
+    'deadline' => 'آخر موعد',
 ];

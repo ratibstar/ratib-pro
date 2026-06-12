@@ -96,7 +96,7 @@ final class PlanLimitService
             ['cid' => $companyId]
         );
         if (!$sub) {
-            return true;
+            return false;
         }
         $st = (string) ($sub['status'] ?? '');
         if (in_array($st, ['active', 'trial'], true)) {
