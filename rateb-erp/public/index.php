@@ -26,7 +26,8 @@ try {
     header('Content-Type: text/html; charset=UTF-8');
     $debug = (getenv('APP_DEBUG') === 'true' || getenv('APP_DEBUG') === '1');
     $cpMode = defined('RATEB_CP_ENTRY') && RATEB_CP_ENTRY;
-    if ($debug || $cpMode) {
+    $directPublic = !$cpMode;
+    if ($debug || $cpMode || $directPublic) {
         $msg = $e->getMessage();
         $isDbAccess = strpos($msg, '1044') !== false || strpos($msg, '1049') !== false || strpos($msg, 'Access denied') !== false;
         $dbName = function_exists('control_rateb_erp_db_name') ? control_rateb_erp_db_name() : 'outratib_rateb-erp';

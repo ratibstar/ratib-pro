@@ -35,6 +35,7 @@ $links = [
 <div class="container" style="max-width: 720px;">
     <h1 class="h3 mb-2"><i class="fas fa-hospital text-info"></i> نظام رتب ERP — روابط مباشرة</h1>
     <p class="text-secondary mb-4">تعمل <strong>بدون</strong> تسجيل دخول لوحة التحكم. سجّل دخول ERP فقط (إدارة أو شركة).</p>
+    <p class="small text-secondary mb-3">إذا ظهر خطأ 500 بعد التحديث: <a href="<?php echo htmlspecialchars(rateb_public_url('erp-health.php'), ENT_QUOTES, 'UTF-8'); ?>">فحص النظام (erp-health)</a></p>
     <div class="d-grid gap-2 mb-4">
         <?php foreach ($links as [$label, $route, $icon, $btn]) {
             $href = rateb_public_url($route);

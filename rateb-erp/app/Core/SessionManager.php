@@ -8,7 +8,10 @@ final class SessionManager
     public static function start(): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
-            return;
+            if (session_name() === 'rateb_erp') {
+                return;
+            }
+            session_write_close();
         }
 
         session_name('rateb_erp');
