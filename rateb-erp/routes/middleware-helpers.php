@@ -57,9 +57,10 @@ if (!function_exists('rateb_erp_mw')) {
         }
         if ($permission !== '') {
             $stack[] = [CompanyPermissionMiddleware::class, $permission . ($module !== '' ? '|' . $module : '')];
-        } elseif ($resource !== '') {
+        }
+        if ($resource !== '') {
             $stack[] = [EntityPermissionMiddleware::class, $resource];
-        } elseif ($module !== '') {
+        } elseif ($permission === '' && $module !== '') {
             $perm = rateb_module_permission($module);
             if ($perm !== '') {
                 $stack[] = [CompanyPermissionMiddleware::class, $perm . '|' . $module];

@@ -14,5 +14,4 @@ return [
     'accounting' => 'accounting.view',
     'documents' => 'documents.view',
     'workflows' => 'workflows.view',
-    'notifications' => 'notifications.manage',
 ];

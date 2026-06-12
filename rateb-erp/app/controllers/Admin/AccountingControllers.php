@@ -117,6 +117,8 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
+            'createEnabled' => rateb_can('accounting.manage'),
+            'actionsEnabled' => rateb_can('accounting.manage'),
         ], $this->layout());
     }
 

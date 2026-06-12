@@ -179,7 +179,7 @@ $router->post($app('device-warranty/{id}'), [DeviceWarrantyController::class, 'u
 $procMw = rateb_erp_mw('procurement', '', 'reports/procurement');
 $repMw = rateb_erp_mw('reports', '', 'reports/kpi');
 $router->get($app('reports/procurement'), [AnalyticsReportsController::class, 'procurement'], $procMw);
-$router->get($app('reports/procurement/export'), [AnalyticsReportsController::class, 'exportProcurement'], rateb_erp_mw('reports', 'reports.export', 'reports/procurement'));
+$router->get($app('reports/procurement/export'), [AnalyticsReportsController::class, 'exportProcurement'], rateb_erp_mw('procurement', 'reports.export', 'reports/procurement'));
 $router->get($app('reports/kpi'), [AnalyticsReportsController::class, 'kpi'], $repMw);
 $router->get($app('reports/kpi/export'), [AnalyticsReportsController::class, 'exportKpi'], rateb_erp_mw('reports', 'reports.export', 'reports/kpi'));
 $router->get($app('reports/cost-analysis'), [AnalyticsReportsController::class, 'costAnalysis'], rateb_erp_mw('reports', '', 'reports/cost-analysis'));

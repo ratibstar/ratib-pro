@@ -45,7 +45,7 @@ $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['reports/procurement', 'procurement_analytics', 'fa-cart-shopping', 'procurement'],
     ['reports/kpi', 'company_kpi', 'fa-gauge-high', 'reports'],
     ['reports/cost-analysis', 'cost_analysis', 'fa-coins', 'reports'],
-    ['reports/supplier-performance', 'supplier_performance_report', 'fa-truck-field', 'suppliers'],
+    ['reports/supplier-performance', 'supplier_performance_report', 'fa-truck-field', 'reports'],
     ['reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked', 'inventory'],
     ['documents', 'documents', 'fa-folder-open', 'documents'],
 ]);

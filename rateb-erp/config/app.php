@@ -184,7 +184,7 @@ if (!function_exists('rateb_entity_perms')) {
         $resource = ltrim(preg_replace('#^(company/|admin/ops/|admin/)#', '', trim($resource)), '/');
         $row = $map[$resource] ?? null;
         if (!is_array($row)) {
-            return ['module' => '', 'view' => '', 'manage' => '', 'export' => 'reports.export', 'post' => ''];
+            return ['module' => '', 'view' => '', 'manage' => '', 'export' => 'reports.export', 'post' => '', 'approve' => ''];
         }
         return [
             'module' => (string) ($row['module'] ?? ''),
@@ -192,6 +192,7 @@ if (!function_exists('rateb_entity_perms')) {
             'manage' => (string) ($row['manage'] ?? ($row['view'] ?? '')),
             'export' => (string) ($row['export'] ?? 'reports.export'),
             'post' => (string) ($row['post'] ?? ''),
+            'approve' => (string) ($row['approve'] ?? ''),
         ];
     }
 }

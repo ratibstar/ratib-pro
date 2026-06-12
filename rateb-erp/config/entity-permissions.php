@@ -188,7 +188,7 @@ return [
         'export' => 'reports.export',
     ],
     'reports/inventory-valuation' => [
-        'module' => 'reports',
+        'module' => 'inventory',
         'view' => 'reports.inventory_valuation.view',
         'manage' => 'reports.inventory_valuation.view',
         'export' => 'reports.export',
@@ -202,6 +202,7 @@ return [
         'module' => 'workflows',
         'view' => 'workflows.view',
         'manage' => 'workflows.manage',
+        'approve' => 'workflows.approve',
     ],
     'notifications' => [
         'module' => '',

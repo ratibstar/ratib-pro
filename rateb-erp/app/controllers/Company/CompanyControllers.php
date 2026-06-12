@@ -134,7 +134,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
             ['name' => 'status', 'label' => __('status')],
             ['name' => 'total_estimated', 'label' => __('total')],
         ];
-        \Rateb\App\Controllers\Shared\ExportController::send('purchase_requests', $columns, $items, __('purchase_requests'));
+        \Rateb\App\Controllers\Shared\ExportController::send('purchase_requests', $columns, $items, __('purchase_requests'), 'purchase-requests');
     }
 }
 
@@ -276,7 +276,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             ['name' => 'order_date', 'label' => __('order_date')],
             ['name' => 'total_amount', 'label' => __('total')],
         ];
-        \Rateb\App\Controllers\Shared\ExportController::send('purchase_orders', $columns, $items, __('purchase_orders'));
+        \Rateb\App\Controllers\Shared\ExportController::send('purchase_orders', $columns, $items, __('purchase_orders'), 'purchase-orders');
     }
 
     public function show(array $params): void
@@ -675,7 +675,7 @@ final class ReportsController extends Controller
             ['metric' => __('purchase_orders'), 'value' => $m['purchase_orders']],
             ['metric' => __('inventory_value'), 'value' => $m['inventory_value']],
             ['metric' => __('suppliers'), 'value' => $m['suppliers']],
-        ], __('reports'));
+        ], __('reports'), 'reports');
     }
 }
 

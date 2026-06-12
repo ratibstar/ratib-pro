@@ -77,7 +77,7 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
             ['name' => 'item_name', 'label' => __('item_name')],
             ['name' => 'quantity', 'label' => __('quantity')],
             ['name' => 'expiry_date', 'label' => __('expiry_date')],
-        ], (new InventoryWorkflowService())->listBatches(500), __('inventory_batches'));
+        ], (new InventoryWorkflowService())->listBatches(500), __('inventory_batches'), 'inventory-batches');
     }
 }
 
@@ -244,7 +244,7 @@ final class SupplierKpiController extends Controller
             ['name' => 'avg_eval', 'label' => __('overall_score')],
             ['name' => 'po_count', 'label' => __('purchase_orders')],
             ['name' => 'classification_name', 'label' => __('supplier_classifications')],
-        ], (new ErpAnalyticsService())->supplierPerformance($companyId), __('supplier_kpi'));
+        ], (new ErpAnalyticsService())->supplierPerformance($companyId), __('supplier_kpi'), 'supplier-kpi');
     }
 }
 
@@ -552,7 +552,7 @@ final class AnalyticsReportsController extends Controller
             ['name' => 'month', 'label' => __('month')],
             ['name' => 'c', 'label' => __('count')],
             ['name' => 'total', 'label' => __('total')],
-        ], $d['po_monthly'] ?? [], __('procurement_analytics'));
+        ], $d['po_monthly'] ?? [], __('procurement_analytics'), 'reports/procurement');
     }
 
     public function exportKpi(): void
@@ -567,7 +567,7 @@ final class AnalyticsReportsController extends Controller
         ExportController::send('company_kpi', [
             ['name' => 'metric', 'label' => __('metric')],
             ['name' => 'value', 'label' => __('value')],
-        ], $rows, __('company_kpi'));
+        ], $rows, __('company_kpi'), 'reports/kpi');
     }
 
     public function exportCost(): void
@@ -576,7 +576,7 @@ final class AnalyticsReportsController extends Controller
         ExportController::send('cost_analysis', [
             ['name' => 'supplier_name', 'label' => __('suppliers')],
             ['name' => 'total', 'label' => __('total')],
-        ], $d['po_by_supplier'] ?? [], __('cost_analysis'));
+        ], $d['po_by_supplier'] ?? [], __('cost_analysis'), 'reports/cost-analysis');
     }
 
     public function exportSupplierPerformance(): void
@@ -586,7 +586,7 @@ final class AnalyticsReportsController extends Controller
             ['name' => 'rating', 'label' => __('rating')],
             ['name' => 'avg_eval', 'label' => __('overall_score')],
             ['name' => 'po_count', 'label' => __('purchase_orders')],
-        ], (new ErpAnalyticsService())->supplierPerformance($this->companyId()), __('supplier_performance_report'));
+        ], (new ErpAnalyticsService())->supplierPerformance($this->companyId()), __('supplier_performance_report'), 'reports/supplier-performance');
     }
 
     public function exportInventoryValuation(): void
@@ -597,6 +597,6 @@ final class AnalyticsReportsController extends Controller
             ['name' => 'quantity', 'label' => __('quantity')],
             ['name' => 'unit_cost', 'label' => __('unit_price')],
             ['name' => 'line_value', 'label' => __('value')],
-        ], $val['rows'], __('inventory_valuation_report'));
+        ], $val['rows'], __('inventory_valuation_report'), 'reports/inventory-valuation');
     }
 }

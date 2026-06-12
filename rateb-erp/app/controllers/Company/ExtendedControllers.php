@@ -68,7 +68,7 @@ final class StockMovementsController extends Controller
             ['name' => 'item_name', 'label' => __('item_name')],
             ['name' => 'quantity', 'label' => __('quantity')],
             ['name' => 'created_at', 'label' => __('created_at')],
-        ], $items, __('stock_movements'));
+        ], $items, __('stock_movements'), 'stock-movements');
     }
 }
 

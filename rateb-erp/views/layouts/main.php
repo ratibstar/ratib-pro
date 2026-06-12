@@ -78,6 +78,7 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
                 ['admin/oversight/rfq', 'rfq_oversight', 'fa-chart-column', 'procurement.manage'],
                 ['admin/oversight/inventory', 'inventory_oversight', 'fa-chart-column', 'inventory.manage'],
                 ['admin/oversight/workflows', 'workflow_definitions', 'fa-diagram-project', 'workflows.view'],
+                ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view'],
                 ['admin/settings', 'settings', 'fa-gear', 'settings.manage'],
             ];
             foreach ($adminLinks as $link) {

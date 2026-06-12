@@ -247,11 +247,17 @@ final class SubscriptionsController extends \Rateb\App\Controllers\CrudControlle
                 ['name' => 'starts_at', 'label' => 'start_date'],
             ],
             'csrf' => Csrf::token(),
+            'createEnabled' => rateb_can('subscriptions.manage'),
+            'actionsEnabled' => rateb_can('subscriptions.manage'),
         ], 'main');
     }
 
     public function create(): void
     {
+        if (!rateb_can('subscriptions.manage')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         $this->billing->ensureBillingReady();
         $this->view($this->viewPrefix . '/form', [
             'title' => __('create') . ' ' . __('subscriptions'),
@@ -810,11 +816,17 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
                 ['name' => 'paid_at', 'label' => 'paid_at'],
             ],
             'csrf' => Csrf::token(),
+            'createEnabled' => rateb_can('billing.manage'),
+            'actionsEnabled' => rateb_can('billing.manage'),
         ], 'main');
     }
 
     public function create(): void
     {
+        if (!rateb_can('billing.manage')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         $this->billing->ensureBillingReady();
         $this->view($this->viewPrefix . '/form', [
             'title' => __('create') . ' ' . __('payments'),
@@ -829,6 +841,10 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
 
     public function store(): void
     {
+        if (!rateb_can('billing.manage')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));
@@ -977,11 +993,17 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
                 ['name' => 'issued_at', 'label' => 'issued_at'],
             ],
             'csrf' => Csrf::token(),
+            'createEnabled' => rateb_can('billing.manage'),
+            'actionsEnabled' => rateb_can('billing.manage'),
         ], 'main');
     }
 
     public function create(): void
     {
+        if (!rateb_can('billing.manage')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         $this->billing->ensureBillingReady();
         $this->view($this->viewPrefix . '/form', [
             'title' => __('create') . ' ' . __('invoices'),
@@ -1002,6 +1024,10 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
 
     public function store(): void
     {
+        if (!rateb_can('billing.manage')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             $this->redirect(rateb_url($this->routePrefix));

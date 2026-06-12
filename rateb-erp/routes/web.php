@@ -97,8 +97,6 @@ $crudRoutes = [
     'users' => [UsersController::class, 'access.manage'],
     'roles' => [RolesController::class, 'access.manage'],
     'permissions' => [PermissionsController::class, 'access.manage'],
-    'payments' => [PaymentsController::class, 'accounting.view'],
-    'invoices' => [InvoicesController::class, 'accounting.view'],
     'email-templates' => [EmailTemplatesController::class, 'settings.manage'],
     'sms-templates' => [SmsTemplatesController::class, 'settings.manage'],
     'support-tickets' => [SupportTicketsController::class, 'settings.manage'],
@@ -114,49 +112,63 @@ foreach ($crudRoutes as $path => [$class, $perm]) {
     $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw($perm));
 }
 
+$billingCrud = [
+    'payments' => PaymentsController::class,
+    'invoices' => InvoicesController::class,
+];
+foreach ($billingCrud as $path => $class) {
+    $router->get('/admin/' . $path, [$class, 'index'], rateb_admin_mw('accounting.view'));
+    $router->get('/admin/' . $path . '/create', [$class, 'create'], rateb_admin_mw('billing.manage'));
+    $router->post('/admin/' . $path, [$class, 'store'], rateb_admin_mw('billing.manage'));
+    $router->get('/admin/' . $path . '/{id}/edit', [$class, 'edit'], rateb_admin_mw('billing.manage'));
+    $router->post('/admin/' . $path . '/{id}', [$class, 'update'], rateb_admin_mw('billing.manage'));
+    $router->post('/admin/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_admin_mw('billing.manage'));
+    $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw('billing.manage'));
+}
+
 $router->get('/admin/audit-logs', [AuditLogsController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/settings', [SettingsController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings', [SettingsController::class, 'save'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/reports', [AdminReportsController::class, 'index'], rateb_admin_mw('reports.view'));
 $router->get('/admin/procurement', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('purchase-requests')), 301);
-});
+}, [ErpAuthMiddleware::class]);
 $router->get('/admin/inventory', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('inventory')), 301);
-});
+}, [ErpAuthMiddleware::class]);
 $router->get('/admin/rfq', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('rfq')), 301);
-});
+}, [ErpAuthMiddleware::class]);
 $router->get('/admin/stock-movements', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('stock-movements')), 301);
-});
+}, [ErpAuthMiddleware::class]);
 $router->get('/admin/stock-movements/export', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('stock-movements') . '/export'), 301);
-});
+}, [ErpAuthMiddleware::class]);
 $router->get('/admin/supplier-evaluations', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('supplier-evaluations')), 301);
-});
+}, [ErpAuthMiddleware::class]);
 $router->get('/admin/medical-devices', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('medical-devices')), 301);
-});
+}, [ErpAuthMiddleware::class]);
 $router->get('/admin/notifications', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route('notifications')), 301);
-});
+}, [ErpAuthMiddleware::class]);
 $legacyOpsResources = ['suppliers', 'assets', 'contracts'];
 foreach ($legacyOpsResources as $legacyOps) {
     $router->get('/admin/' . $legacyOps, static function () use ($legacyOps): void {
         \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route($legacyOps)), 301);
-    });
+    }, [ErpAuthMiddleware::class]);
     $router->get('/admin/' . $legacyOps . '/{rest:.+}', static function (array $params) use ($legacyOps): void {
         \Rateb\App\Core\Response::redirect(rateb_url(rateb_app_route($legacyOps) . '/' . ($params['rest'] ?? '')), 301);
-    });
+    }, [ErpAuthMiddleware::class]);
 }
 $router->get('/admin/workflows', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url('admin/oversight/workflows'), 301);
-});
+}, [ErpAuthMiddleware::class]);
 $router->post('/admin/workflows', static function (): void {
     \Rateb\App\Core\Response::redirect(rateb_url('admin/oversight/workflows'), 307);
-});
+}, [ErpAuthMiddleware::class]);
 $router->get('/admin/oversight/procurement', [ProcurementController::class, 'index'], rateb_admin_mw('procurement.manage'));
 $router->get('/admin/oversight/rfq', [RfqOversightController::class, 'index'], rateb_admin_mw('procurement.manage'));
 $router->get('/admin/oversight/inventory', [AdminInventoryController::class, 'index'], rateb_admin_mw('inventory.manage'));
