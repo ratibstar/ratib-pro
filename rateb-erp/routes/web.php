@@ -16,6 +16,7 @@ use Rateb\App\Controllers\Admin\PaymentsController;
 use Rateb\App\Controllers\Admin\PermissionsController;
 use Rateb\App\Controllers\Admin\PlansController;
 use Rateb\App\Controllers\Admin\ProcurementController;
+use Rateb\App\Controllers\Admin\RfqOversightController;
 use Rateb\App\Controllers\Admin\ReportsController as AdminReportsController;
 use Rateb\App\Controllers\Admin\RolesController;
 use Rateb\App\Controllers\Admin\SettingsController;
@@ -118,6 +119,7 @@ $router->post('/admin/settings', [SettingsController::class, 'save'], rateb_admi
 $router->get('/admin/notifications', [AdminNotificationsController::class, 'index'], rateb_admin_mw('dashboard.view'));
 $router->get('/admin/reports', [AdminReportsController::class, 'index'], rateb_admin_mw('reports.view'));
 $router->get('/admin/procurement', [ProcurementController::class, 'index'], rateb_admin_mw('procurement.manage'));
+$router->get('/admin/rfq', [RfqOversightController::class, 'index'], rateb_admin_mw('procurement.manage'));
 $router->get('/admin/inventory', [AdminInventoryController::class, 'index'], rateb_admin_mw('inventory.manage'));
 $router->get('/admin/supplier-evaluations', [AdminSupplierEvaluationsController::class, 'index'], rateb_admin_mw('evaluations.view'));
 

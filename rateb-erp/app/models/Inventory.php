@@ -15,10 +15,20 @@ final class Inventory extends Model
         'expiry_date', 'status',
     ];
 
-    public function totalValue(): float
+    public function totalValue(?int $filterCompanyId = null): float
     {
         $companyId = \Rateb\App\Core\TenantContext::companyId();
         if ($companyId === null) {
+            if ($filterCompanyId !== null && $filterCompanyId > 0) {
+                $companyId = $filterCompanyId;
+            } elseif (\Rateb\App\Core\TenantContext::isSuperAdmin()) {
+                $fromQuery = (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
+                if ($fromQuery > 0) {
+                    $companyId = $fromQuery;
+                }
+            }
+        }
+        if ($companyId === null || $companyId < 1) {
             $row = $this->queryOne('SELECT COALESCE(SUM(quantity * unit_cost), 0) AS v FROM rateb_inventory');
         } else {
             $row = $this->queryOne(

@@ -33,7 +33,7 @@ final class WorkflowSubmissionService
 
         $workflowId = (int) $workflow['id'];
         (new WorkflowService())->submit($entityType, $entityId, $companyId, $workflowId);
-        $this->notifyApprovers($companyId, $workflowId, $entityType, $entityId);
+        $this->notifyStepApprovers($companyId, $workflowId, 1, $entityType, $entityId);
     }
 
     /** @return array<string, mixed>|null */
@@ -51,13 +51,13 @@ final class WorkflowSubmissionService
         return $row ?: null;
     }
 
-    private function notifyApprovers(int $companyId, int $workflowId, string $entityType, int $entityId): void
+    public function notifyStepApprovers(int $companyId, int $workflowId, int $stepOrder, string $entityType, int $entityId): void
     {
         $db = Database::connection();
         $step = $db->prepare(
-            'SELECT * FROM rateb_approval_workflow_steps WHERE workflow_id = :wid ORDER BY step_order ASC LIMIT 1'
+            'SELECT * FROM rateb_approval_workflow_steps WHERE workflow_id = :wid AND step_order = :st LIMIT 1'
         );
-        $step->execute(['wid' => $workflowId]);
+        $step->execute(['wid' => $workflowId, 'st' => $stepOrder]);
         $first = $step->fetch();
         if (!$first) {
             return;

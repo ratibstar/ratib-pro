@@ -29,25 +29,14 @@ final class AuthorizationService
         return $this->getUserRoleIds($userId) !== [];
     }
 
-    /** Company portal: RBAC when roles assigned; legacy module access when no roles. */
+    /** Company portal: explicit RBAC only (permission via assigned roles). */
     public function companyUserCan(int $userId, string $permissionSlug, string $module = ''): bool
     {
+        unset($module);
         if ($permissionSlug === '') {
             return true;
         }
-        if ($this->userHasPermission($userId, $permissionSlug)) {
-            return true;
-        }
-        if ($this->userHasAnyRole($userId)) {
-            return false;
-        }
-        if ($module === '') {
-            return false;
-        }
-        $map = is_file(RATEB_ROOT . '/config/module-permissions.php')
-            ? require RATEB_ROOT . '/config/module-permissions.php'
-            : [];
-        return ($map[$module] ?? '') === $permissionSlug;
+        return $this->userHasPermission($userId, $permissionSlug);
     }
 
     /** @return array<int, string> */

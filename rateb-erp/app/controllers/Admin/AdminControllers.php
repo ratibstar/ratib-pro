@@ -1194,10 +1194,60 @@ final class ProcurementController extends Controller
     {
         $pr = new \Rateb\App\Models\PurchaseRequest();
         $po = new \Rateb\App\Models\PurchaseOrder();
+        $companyFilter = (int) ($_GET['company_id'] ?? 0);
         $this->view('admin/procurement/index', [
             'title' => __('procurement'),
             'purchase_requests' => $pr->all(50, 0),
             'purchase_orders' => $po->all(50, 0),
+            'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
+            'pr_stats' => $this->statusCounts('rateb_purchase_requests', $companyFilter),
+            'po_stats' => $this->statusCounts('rateb_purchase_orders', $companyFilter),
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    /** @return array<string, int> */
+    private function statusCounts(string $table, int $companyId): array
+    {
+        $allowed = ['rateb_purchase_requests', 'rateb_purchase_orders'];
+        if (!in_array($table, $allowed, true)) {
+            return [];
+        }
+        $sql = 'SELECT status, COUNT(*) AS c FROM ' . $table . ' WHERE 1=1';
+        $params = [];
+        if ($companyId > 0) {
+            $sql .= ' AND company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        $sql .= ' GROUP BY status';
+        $rows = (new \Rateb\App\Models\Company())->query($sql, $params);
+        $out = [];
+        foreach ($rows as $row) {
+            $out[(string) ($row['status'] ?? '')] = (int) ($row['c'] ?? 0);
+        }
+        return $out;
+    }
+}
+
+final class RfqOversightController extends Controller
+{
+    public function index(): void
+    {
+        $companyFilter = (int) ($_GET['company_id'] ?? 0);
+        $sql = 'SELECT r.*, c.name AS company_name,
+            (SELECT COUNT(*) FROM rateb_supplier_quotations q WHERE q.rfq_id = r.id) AS quote_count
+            FROM rateb_rfq r
+            LEFT JOIN rateb_companies c ON c.id = r.company_id WHERE 1=1';
+        $params = [];
+        if ($companyFilter > 0) {
+            $sql .= ' AND r.company_id = :cid';
+            $params['cid'] = $companyFilter;
+        }
+        $sql .= ' ORDER BY r.id DESC LIMIT 100';
+        $items = (new \Rateb\App\Models\Rfq())->query($sql, $params);
+        $this->view('admin/rfq/index', [
+            'title' => __('rfq'),
+            'items' => $items,
             'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
             'csrf' => Csrf::token(),
         ], 'main');

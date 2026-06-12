@@ -71,6 +71,7 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
                 ['admin/companies', 'companies', 'fa-building'],
                 ['admin/subscriptions', 'subscriptions', 'fa-credit-card'],
                 ['admin/procurement', 'procurement', 'fa-cart-shopping'],
+                ['admin/rfq', 'rfq', 'fa-comments-dollar'],
                 ['admin/inventory', 'inventory', 'fa-boxes-stacked'],
                 ['admin/stock-movements', 'stock_movements', 'fa-arrows-rotate'],
                 ['admin/suppliers', 'suppliers', 'fa-truck-field'],

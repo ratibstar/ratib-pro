@@ -90,22 +90,47 @@ final class WorkflowService
             'c' => $comment,
         ]);
 
+        $entityType = (string) ($row['entity_type'] ?? '');
+        $entityId = (int) ($row['entity_id'] ?? 0);
+        $companyId = (int) ($row['company_id'] ?? 0);
+        $workflowId = (int) ($row['workflow_id'] ?? 0);
+
         if ($action === 'reject') {
             $db->prepare('UPDATE rateb_approval_instances SET status = :st WHERE id = :id')->execute(['st' => 'rejected', 'id' => $instanceId]);
+            $this->syncEntityStatus($entityType, $entityId, 'rejected');
             return true;
         }
 
         $steps = $db->prepare('SELECT COUNT(*) AS c FROM rateb_approval_workflow_steps WHERE workflow_id = :wid');
-        $steps->execute(['wid' => (int) $row['workflow_id']]);
+        $steps->execute(['wid' => $workflowId]);
         $totalSteps = (int) ($steps->fetch()['c'] ?? 1);
 
         if ($step >= $totalSteps) {
             $db->prepare('UPDATE rateb_approval_instances SET status = :st WHERE id = :id')->execute(['st' => 'approved', 'id' => $instanceId]);
+            $this->syncEntityStatus($entityType, $entityId, 'approved');
         } else {
             $db->prepare('UPDATE rateb_approval_instances SET current_step = current_step + 1 WHERE id = :id')->execute(['id' => $instanceId]);
+            (new WorkflowSubmissionService())->notifyStepApprovers($companyId, $workflowId, $step + 1, $entityType, $entityId);
         }
 
         return true;
+    }
+
+    private function syncEntityStatus(string $entityType, int $entityId, string $instanceStatus): void
+    {
+        if ($entityId < 1) {
+            return;
+        }
+        $db = Database::connection();
+        if ($entityType === 'purchase_request') {
+            $status = $instanceStatus === 'approved' ? 'approved' : 'rejected';
+            $db->prepare('UPDATE rateb_purchase_requests SET status = :st WHERE id = :id')->execute(['st' => $status, 'id' => $entityId]);
+            return;
+        }
+        if ($entityType === 'purchase_order') {
+            $status = $instanceStatus === 'approved' ? 'confirmed' : 'cancelled';
+            $db->prepare('UPDATE rateb_purchase_orders SET status = :st WHERE id = :id')->execute(['st' => $status, 'id' => $entityId]);
+        }
     }
 
     /** @return array<int, array<string, mixed>> */

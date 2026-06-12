@@ -501,6 +501,8 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             ['name' => 'sku', 'label' => 'SKU', 'type' => 'text'],
             ['name' => 'quantity', 'label' => 'Quantity', 'type' => 'number'],
             ['name' => 'unit_cost', 'label' => 'Unit Cost', 'type' => 'number'],
+            ['name' => 'reorder_level', 'label' => 'reorder_level', 'type' => 'number'],
+            ['name' => 'expiry_date', 'label' => 'expiry_date', 'type' => 'date'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'inactive', 'expired']],
         ];
     }
