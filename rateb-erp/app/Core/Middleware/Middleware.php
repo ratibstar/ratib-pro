@@ -18,7 +18,7 @@ final class AdminAuthMiddleware implements MiddlewareInterface
     {
         Auth::bootstrapFromSession();
         if (!Auth::check() || !SessionManager::get('rateb_is_super_admin')) {
-            Response::redirect(function_exists('rateb_url') ? rateb_url('admin/login') : (RATEB_BASE_URL . '/admin/login'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
             return false;
         }
         return true;
@@ -31,11 +31,11 @@ final class CompanyAuthMiddleware implements MiddlewareInterface
     {
         Auth::bootstrapFromSession();
         if (!Auth::check() || SessionManager::get('rateb_is_super_admin')) {
-            Response::redirect(function_exists('rateb_url') ? rateb_url('company/login') : (RATEB_BASE_URL . '/company/login'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
             return false;
         }
         if (!SessionManager::get('rateb_company_id')) {
-            Response::redirect(function_exists('rateb_url') ? rateb_url('company/login') : (RATEB_BASE_URL . '/company/login'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
             return false;
         }
         return true;
@@ -112,7 +112,7 @@ final class GuestMiddleware implements MiddlewareInterface
     {
         Auth::bootstrapFromSession();
         if (Auth::check()) {
-            $portal = SessionManager::get('rateb_portal', 'company');
+            $portal = Auth::homePath();
             Response::redirect(function_exists('rateb_url') ? rateb_url($portal) : (RATEB_BASE_URL . '/' . $portal));
             return false;
         }
@@ -189,7 +189,7 @@ final class CompanySaaSMiddleware implements MiddlewareInterface
     {
         $companyId = (int) SessionManager::get('rateb_company_id', 0);
         if ($companyId < 1) {
-            Response::redirect(function_exists('rateb_url') ? rateb_url('company/login') : (RATEB_BASE_URL . '/company/login'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
             return false;
         }
 
@@ -197,7 +197,7 @@ final class CompanySaaSMiddleware implements MiddlewareInterface
         if (!$limits->companyAccessAllowed($companyId)) {
             SessionManager::flash('error', __('company_access_denied'));
             Auth::logout();
-            Response::redirect(function_exists('rateb_url') ? rateb_url('company/login') : (RATEB_BASE_URL . '/company/login'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
             return false;
         }
 

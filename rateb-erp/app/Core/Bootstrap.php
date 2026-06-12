@@ -53,6 +53,7 @@ final class Bootstrap
             '/app/controllers/Company/AccountingControllers.php',
             '/app/controllers/Company/BusinessControllers.php',
             '/app/controllers/Shared/PasswordResetController.php',
+            '/app/controllers/Shared/LoginController.php',
             '/app/controllers/Api/ApiController.php',
             '/app/Core/Router.php',
             '/app/Core/View.php',

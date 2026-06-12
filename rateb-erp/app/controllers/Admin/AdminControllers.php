@@ -28,7 +28,7 @@ final class AuthController extends Controller
     {
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
-            Response::redirect(rateb_url('admin/login'));
+            Response::redirect(rateb_url('login'));
         }
 
         $email = trim((string) $this->input('email', ''));
@@ -36,7 +36,7 @@ final class AuthController extends Controller
 
         if (!RateLimiter::attempt('admin_login_' . md5($email), 5, 300)) {
             SessionManager::flash('error', __('too_many_attempts'));
-            Response::redirect(rateb_url('admin/login'));
+            Response::redirect(rateb_url('login'));
         }
 
         $user = Auth::attempt($email, $password, 'admin');
@@ -44,7 +44,7 @@ final class AuthController extends Controller
 
         if (!$user) {
             SessionManager::flash('error', __('invalid_credentials'));
-            Response::redirect(rateb_url('admin/login'));
+            Response::redirect(rateb_url('login'));
         }
 
         if (!empty($user['locale']) && in_array($user['locale'], RATEB_SUPPORTED_LOCALES, true)) {
@@ -59,7 +59,7 @@ final class AuthController extends Controller
     public function logout(): void
     {
         Auth::logout();
-        Response::redirect(rateb_url('admin/login'));
+        Response::redirect(rateb_url('login'));
     }
 }
 

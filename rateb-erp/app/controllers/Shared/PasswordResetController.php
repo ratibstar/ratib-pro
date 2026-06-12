@@ -69,6 +69,6 @@ final class PasswordResetController extends Controller
             Response::redirect(rateb_url('password/forgot'));
         }
         SessionManager::flash('success', __('password_reset_done'));
-        Response::redirect(rateb_url('company/login'));
+        Response::redirect(rateb_url('login'));
     }
 }

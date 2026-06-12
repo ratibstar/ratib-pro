@@ -29,7 +29,7 @@ final class AuthController extends Controller
     {
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', 'Invalid request');
-            Response::redirect(rateb_url('company/login'));
+            Response::redirect(rateb_url('login'));
         }
 
         $email = trim((string) $this->input('email', ''));
@@ -37,7 +37,7 @@ final class AuthController extends Controller
 
         if (!RateLimiter::attempt('company_login_' . md5($email), 5, 300)) {
             SessionManager::flash('error', 'Too many attempts');
-            Response::redirect(rateb_url('company/login'));
+            Response::redirect(rateb_url('login'));
         }
 
         $userModel = new User();
@@ -48,7 +48,7 @@ final class AuthController extends Controller
             && (int) ($candidate['is_super_admin'] ?? 0) === 1
         ) {
             SessionManager::flash('error', __('company_login_admin_blocked'));
-            Response::redirect(rateb_url('company/login'));
+            Response::redirect(rateb_url('login'));
         }
 
         $user = Auth::attempt($email, $password, 'company');
@@ -56,7 +56,7 @@ final class AuthController extends Controller
 
         if (!$user) {
             SessionManager::flash('error', __('invalid_credentials'));
-            Response::redirect(rateb_url('company/login'));
+            Response::redirect(rateb_url('login'));
         }
 
         (new User())->updateLastLogin((int) $user['id']);
@@ -67,7 +67,7 @@ final class AuthController extends Controller
     public function logout(): void
     {
         Auth::logout();
-        Response::redirect(rateb_url('company/login'));
+        Response::redirect(rateb_url('login'));
     }
 }
 
@@ -947,7 +947,7 @@ final class ProfileController extends Controller
         }
         $user = Auth::user();
         if (!$user) {
-            Response::redirect(rateb_url('company/login'));
+            Response::redirect(rateb_url('login'));
         }
         $data = [
             'name' => trim((string) $this->input('name', '')),

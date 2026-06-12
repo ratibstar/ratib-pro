@@ -65,7 +65,7 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
             <a href="<?php echo rateb_url('admin/executive-dashboard'); ?>" class="rateb-nav-link<?php echo $navActive('admin/executive-dashboard') ? ' active' : ''; ?>">
                 <i class="fas fa-gauge-high"></i><span><?php echo __('executive_dashboard'); ?></span>
             </a>
-            <a href="<?php echo rateb_url('company/login'); ?>" class="rateb-nav-link rateb-nav-link-portal<?php echo $navActive('company') ? ' active' : ''; ?>">
+            <a href="<?php echo rateb_url('login'); ?>" class="rateb-nav-link rateb-nav-link-portal<?php echo $navActive('company') ? ' active' : ''; ?>">
                 <i class="fas fa-building"></i><span><?php echo __('company_portal'); ?></span>
             </a>
             <div class="rateb-nav-section"><?php echo __('admin_oversight_section'); ?></div>

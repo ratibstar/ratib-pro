@@ -43,8 +43,10 @@ require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 
 /** @var Rateb\App\Core\Router $router */
 
-$router->get('/company/login', [CompanyAuthController::class, 'showLogin'], rateb_guest_mw());
-$router->post('/company/login', [CompanyAuthController::class, 'login'], rateb_guest_mw());
+$router->get('/company/login', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url('login'), 301);
+});
+$router->post('/company/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'login'], rateb_guest_mw());
 $router->get('/company/logout', [CompanyAuthController::class, 'logout'], rateb_company_mw());
 
 $router->get('/company', [CompanyDashboardController::class, 'index'], rateb_company_mw());

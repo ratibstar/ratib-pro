@@ -56,6 +56,33 @@ final class Auth
         return $user;
     }
 
+    /** Detect portal from user role — one login form for admin and company users. */
+    public static function attemptAuto(string $email, string $password): ?array
+    {
+        $userModel = new User();
+        $user = $userModel->findByEmail($email);
+
+        if (!$user || !password_verify($password, (string) $user['password'])) {
+            return null;
+        }
+
+        if ((string) $user['status'] !== 'active') {
+            return null;
+        }
+
+        $isSuper = (int) ($user['is_super_admin'] ?? 0) === 1;
+        return self::attempt($email, $password, $isSuper ? 'admin' : 'company');
+    }
+
+    /** Dashboard path after login or when already authenticated. */
+    public static function homePath(): string
+    {
+        if (SessionManager::get('rateb_is_super_admin')) {
+            return 'admin';
+        }
+        return 'company';
+    }
+
     public static function user(): ?array
     {
         $id = SessionManager::get('rateb_user_id');

@@ -6,15 +6,13 @@ declare(strict_types=1);
  */
 require_once dirname(__DIR__) . '/config/app.php';
 
-$origin = rateb_site_origin();
+$loginUrl = rateb_public_url('login');
 $links = [
-    ['بوابة الشركة (إضافة مشتريات ومخزون)', 'company/login', 'fa-building', 'primary'],
-    ['دخول الإدارة (Super Admin)', 'admin/login', 'fa-user-shield', 'secondary'],
-    ['لوحة الإدارة', 'admin', 'fa-chart-line', 'outline'],
+    ['تسجيل الدخول — رابط واحد للجميع', 'login', 'fa-right-to-bracket', 'primary'],
+    ['لوحة الإدارة (بعد الدخول)', 'admin', 'fa-chart-line', 'outline'],
+    ['بوابة الشركة (بعد الدخول)', 'company', 'fa-building', 'outline'],
     ['المشتريات — مراقبة', 'admin/procurement', 'fa-cart-shopping', 'outline'],
     ['المخزون — مراقبة', 'admin/inventory', 'fa-boxes-stacked', 'outline'],
-    ['الشركات', 'admin/companies', 'fa-building', 'outline'],
-    ['المستخدمون', 'admin/users', 'fa-users', 'outline'],
 ];
 ?>
 <!DOCTYPE html>
@@ -33,13 +31,12 @@ $links = [
 </head>
 <body class="p-4">
 <div class="container" style="max-width: 720px;">
-    <h1 class="h3 mb-2"><i class="fas fa-hospital text-info"></i> نظام رتب ERP — روابط مباشرة</h1>
-    <p class="text-secondary mb-4">تعمل <strong>بدون</strong> تسجيل دخول لوحة التحكم. سجّل دخول ERP فقط (إدارة أو شركة).</p>
-    <p class="small text-secondary mb-3">إذا ظهر خطأ 500 بعد التحديث: <a href="<?php echo htmlspecialchars(rateb_public_url('erp-health.php'), ENT_QUOTES, 'UTF-8'); ?>">فحص النظام (erp-health)</a></p>
+    <h1 class="h3 mb-2"><i class="fas fa-hospital text-info"></i> نظام رتب ERP</h1>
+    <p class="text-secondary mb-4">رابط دخول <strong>واحد</strong> — النظام يوجّهك تلقائياً (إدارة أو شركة) حسب صلاحيات حسابك.</p>
     <div class="d-grid gap-2 mb-4">
         <?php foreach ($links as [$label, $route, $icon, $btn]) {
             $href = rateb_public_url($route);
-            $cls = $btn === 'primary' ? 'btn-primary btn-lg' : ($btn === 'secondary' ? 'btn-secondary btn-lg' : 'btn-outline-light');
+            $cls = $btn === 'primary' ? 'btn-primary btn-lg' : 'btn-outline-light';
             ?>
         <a class="btn <?php echo $cls; ?> text-start" href="<?php echo htmlspecialchars($href, ENT_QUOTES, 'UTF-8'); ?>">
             <i class="fas <?php echo htmlspecialchars($icon, ENT_QUOTES, 'UTF-8'); ?> me-2"></i><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?>
@@ -47,11 +44,8 @@ $links = [
         <?php } ?>
     </div>
     <div class="card p-3">
-        <h2 class="h6">انسخ الروابط</h2>
-        <p class="small text-secondary mb-2">بوابة الشركة (للعمل اليومي):</p>
-        <code><?php echo htmlspecialchars(rateb_public_url('company/login'), ENT_QUOTES, 'UTF-8'); ?></code>
-        <p class="small text-secondary mb-2 mt-3">إدارة النظام:</p>
-        <code><?php echo htmlspecialchars(rateb_public_url('admin/login'), ENT_QUOTES, 'UTF-8'); ?></code>
+        <h2 class="h6">رابط الدخول الموحّد</h2>
+        <code><?php echo htmlspecialchars($loginUrl, ENT_QUOTES, 'UTF-8'); ?></code>
     </div>
 </div>
 </body>

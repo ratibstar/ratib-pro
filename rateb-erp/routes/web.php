@@ -40,16 +40,26 @@ require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 /** @var Rateb\App\Core\Router $router */
 
 $router->get('/', static function (): void {
-    \Rateb\App\Core\Response::redirect(rateb_url('admin/login'));
+    if (\Rateb\App\Core\Auth::check()) {
+        \Rateb\App\Core\Response::redirect(rateb_url(\Rateb\App\Core\Auth::homePath()));
+        return;
+    }
+    \Rateb\App\Core\Response::redirect(rateb_url('login'));
 });
+
+$router->get('/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'showLogin'], rateb_guest_mw());
+$router->post('/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'login'], rateb_guest_mw());
+$router->get('/logout', [\Rateb\App\Controllers\Shared\LoginController::class, 'logout']);
 
 $router->get('/password/forgot', [\Rateb\App\Controllers\Shared\PasswordResetController::class, 'showForgot'], rateb_guest_mw());
 $router->post('/password/forgot', [\Rateb\App\Controllers\Shared\PasswordResetController::class, 'sendLink'], rateb_guest_mw());
 $router->get('/password/reset/{token}', [\Rateb\App\Controllers\Shared\PasswordResetController::class, 'showReset'], rateb_guest_mw());
 $router->post('/password/reset/{token}', [\Rateb\App\Controllers\Shared\PasswordResetController::class, 'reset'], rateb_guest_mw());
 
-$router->get('/admin/login', [AdminAuthController::class, 'showLogin'], rateb_guest_mw());
-$router->post('/admin/login', [AdminAuthController::class, 'login'], rateb_guest_mw());
+$router->get('/admin/login', static function (): void {
+    \Rateb\App\Core\Response::redirect(rateb_url('login'), 301);
+});
+$router->post('/admin/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'login'], rateb_guest_mw());
 $router->get('/admin/logout', [AdminAuthController::class, 'logout'], rateb_admin_mw());
 
 $router->get('/locale/{locale}', [LocaleController::class, 'switch']);

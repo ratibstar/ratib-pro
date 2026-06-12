@@ -4,7 +4,7 @@
         <strong><?php echo __('admin_oversight_title'); ?></strong>
         <?php echo __('admin_oversight_hint'); ?>
     </div>
-    <a href="<?php echo rateb_url('company/login'); ?>" class="btn btn-primary btn-sm">
+    <a href="<?php echo rateb_url('login'); ?>" class="btn btn-primary btn-sm">
         <i class="fas fa-building"></i> <?php echo __('open_company_portal'); ?>
     </a>
 </div>
