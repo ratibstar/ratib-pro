@@ -159,6 +159,7 @@ return [
     'comments' => 'Comments',
     'plan_limits' => 'Plan & Limits',
     'plan_modules' => 'Enabled Modules',
+    'plan_modules_help' => 'Choose modules included in this plan. If none are selected, procurement, inventory, and suppliers are enabled by default.',
     'current_plan' => 'Current Plan',
     'user_limit' => 'User Limit',
     'storage_limit_mb' => 'Storage Limit (MB)',

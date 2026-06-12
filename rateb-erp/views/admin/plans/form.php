@@ -1,1 +1,52 @@
-﻿<?php Rateb\App\Core\View::partial('crud-form', get_defined_vars()); ?>
+﻿<?php
+/** @var array<string, mixed>|null $item */
+/** @var array<string, string> $moduleCatalog */
+/** @var array<int, string> $selectedModules */
+$isEdit = !empty($item);
+$action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
+?>
+<div class="rateb-card">
+    <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
+    <div class="rateb-card-body">
+        <form method="post" action="<?php echo $action; ?>">
+            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+            <div class="row g-3">
+                <?php foreach ($fields as $field) {
+                    $name = (string) ($field['name'] ?? '');
+                    $type = (string) ($field['type'] ?? 'text');
+                    $label = (string) ($field['label'] ?? $name);
+                    $value = $item[$name] ?? '';
+                    ?>
+                <div class="col-md-6">
+                    <label class="form-label"><?php echo Rateb\App\Core\View::escape(__($label)); ?></label>
+                    <input class="form-control" type="<?php echo Rateb\App\Core\View::escape($type); ?>" name="<?php echo Rateb\App\Core\View::escape($name); ?>"
+                        value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"<?php echo $name === 'name' || $name === 'slug' ? ' required' : ''; ?>>
+                </div>
+                <?php } ?>
+            </div>
+
+            <div class="mt-4">
+                <h3 class="h6 mb-2"><?php echo __('plan_modules'); ?></h3>
+                <p class="text-muted small"><?php echo __('plan_modules_help'); ?></p>
+                <div class="row g-2">
+                    <?php foreach ($moduleCatalog as $modKey => $modLabel) { ?>
+                    <div class="col-md-4 col-lg-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="modules[]" value="<?php echo Rateb\App\Core\View::escape($modKey); ?>" id="plan_mod_<?php echo Rateb\App\Core\View::escape($modKey); ?>"
+                                <?php echo in_array($modKey, $selectedModules, true) ? ' checked' : ''; ?>>
+                            <label class="form-check-label" for="plan_mod_<?php echo Rateb\App\Core\View::escape($modKey); ?>">
+                                <?php echo __(is_string($modLabel) ? $modLabel : $modKey); ?>
+                            </label>
+                        </div>
+                    </div>
+                    <?php } ?>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
+                <a href="<?php echo rateb_url($routePrefix); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
+            </div>
+        </form>
+    </div>
+</div>

@@ -122,6 +122,9 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
             $decoded = json_decode((string) $item['modules'], true);
             $selectedModules = is_array($decoded) ? $decoded : [];
         }
+        if ($selectedModules === [] && $item) {
+            $selectedModules = (new \Rateb\App\Services\PlanLimitService())->getLimits((int) $item['id'])['modules'];
+        }
 
         return [
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('companies'),
@@ -153,7 +156,10 @@ final class CompaniesController extends \Rateb\App\Controllers\CrudController
                     $data['storage_limit_mb'] = (int) ($plan['max_storage_mb'] ?? 1024);
                 }
                 if (empty($data['modules']) || $data['modules'] === '[]') {
-                    $data['modules'] = $plan['modules'] ?? '[]';
+                    $data['modules'] = $plan['modules'] ?? json_encode(
+                        \Rateb\App\Services\PlanLimitService::defaultModules(),
+                        JSON_UNESCAPED_UNICODE
+                    );
                 }
             }
         }
@@ -385,6 +391,68 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
             ['name' => 'max_users', 'label' => 'Max Users', 'type' => 'number'],
             ['name' => 'max_storage_mb', 'label' => 'Storage MB', 'type' => 'number'],
         ];
+    }
+
+    public function create(): void
+    {
+        $this->view($this->viewPrefix . '/form', $this->formViewData(null), $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', $this->formViewData($item), $this->layout());
+    }
+
+    /** @return array<string, mixed> */
+    private function formViewData(?array $item): array
+    {
+        $selectedModules = [];
+        if ($item && !empty($item['modules'])) {
+            $decoded = json_decode((string) $item['modules'], true);
+            $selectedModules = is_array($decoded) ? $decoded : [];
+        }
+        if ($selectedModules === []) {
+            $selectedModules = \Rateb\App\Services\PlanLimitService::defaultModules();
+        }
+
+        return [
+            'title' => ($item ? __('edit') : __('create')) . ' ' . __('plans'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'moduleCatalog' => \Rateb\App\Services\PlanLimitService::moduleCatalog(),
+            'selectedModules' => $selectedModules,
+        ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $modules = $this->input('modules', []);
+        if (is_array($modules)) {
+            $data['modules'] = json_encode(array_values(array_filter(array_map('strval', $modules))), JSON_UNESCAPED_UNICODE);
+        }
+        if (empty($data['modules']) || $data['modules'] === '[]') {
+            $data['modules'] = json_encode(
+                \Rateb\App\Services\PlanLimitService::defaultModules(),
+                JSON_UNESCAPED_UNICODE
+            );
+        }
+        if ((int) ($data['max_users'] ?? 0) < 1) {
+            $data['max_users'] = 10;
+        }
+        if ((int) ($data['max_storage_mb'] ?? 0) < 1) {
+            $data['max_storage_mb'] = 1024;
+        }
+        return $data;
     }
 }
 

@@ -32,6 +32,12 @@ final class PlanLimitService
         return (new Company())->find($companyId);
     }
 
+    /** @return list<string> */
+    public static function defaultModules(): array
+    {
+        return ['procurement', 'inventory', 'suppliers'];
+    }
+
     /** @return array{user_limit:int,storage_limit_mb:int,modules:array<int,string>,plan_name:?string} */
     public function getLimits(int $companyId): array
     {
@@ -40,31 +46,62 @@ final class PlanLimitService
             return ['user_limit' => 0, 'storage_limit_mb' => 0, 'modules' => [], 'plan_name' => null];
         }
 
-        $modules = $this->decodeModules($company['modules'] ?? null);
-        $planName = null;
-
+        $plan = null;
         if (!empty($company['plan_id'])) {
             $plan = (new Plan())->find((int) $company['plan_id']);
-            if ($plan) {
-                $planName = (string) $plan['name'];
-                if ($modules === []) {
-                    $modules = $this->decodeModules($plan['modules'] ?? null);
-                }
-                if ((int) ($company['user_limit'] ?? 0) < 1) {
-                    $company['user_limit'] = (int) ($plan['max_users'] ?? 10);
-                }
-                if ((int) ($company['storage_limit_mb'] ?? 0) < 1) {
-                    $company['storage_limit_mb'] = (int) ($plan['max_storage_mb'] ?? 1024);
-                }
-            }
+        }
+
+        $modules = $this->resolveModules($company, $plan);
+        $planName = $plan ? (string) $plan['name'] : null;
+
+        $userLimit = (int) ($company['user_limit'] ?? 0);
+        if ($userLimit < 1 && $plan) {
+            $userLimit = (int) ($plan['max_users'] ?? 10);
+        }
+        if ($userLimit < 1) {
+            $userLimit = 10;
+        }
+
+        $storageMb = (int) ($company['storage_limit_mb'] ?? 0);
+        if ($storageMb < 1 && $plan) {
+            $storageMb = (int) ($plan['max_storage_mb'] ?? 1024);
+        }
+        if ($storageMb < 1) {
+            $storageMb = 1024;
         }
 
         return [
-            'user_limit' => (int) ($company['user_limit'] ?? 10),
-            'storage_limit_mb' => (int) ($company['storage_limit_mb'] ?? 1024),
+            'user_limit' => $userLimit,
+            'storage_limit_mb' => $storageMb,
             'modules' => $modules,
             'plan_name' => $planName,
         ];
+    }
+
+    /** @param array<string,mixed> $company @param array<string,mixed>|null $plan */
+    private function resolveModules(array $company, ?array $plan): array
+    {
+        $companyModules = $this->decodeModules($company['modules'] ?? null);
+        $modules = $companyModules;
+
+        if ($modules === [] && $plan) {
+            $modules = $this->decodeModules($plan['modules'] ?? null);
+        }
+
+        if ($modules === []) {
+            $starter = (new Plan())->queryOne(
+                "SELECT modules FROM rateb_plans WHERE slug = 'starter' AND is_active = 1 LIMIT 1"
+            );
+            if ($starter) {
+                $modules = $this->decodeModules($starter['modules'] ?? null);
+            }
+        }
+
+        if ($modules === []) {
+            $modules = self::defaultModules();
+        }
+
+        return $modules;
     }
 
     public function companyHasModule(int $companyId, string $module): bool

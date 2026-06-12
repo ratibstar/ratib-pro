@@ -10,7 +10,13 @@ $planLimits = $companyId > 0
 $planModules = $planLimits['modules'] ?? [];
 
 $companyHasModule = static function (string $module) use ($planModules): bool {
-    return $module === '' || in_array($module, $planModules, true);
+    if ($module === '') {
+        return true;
+    }
+    if ($planModules === []) {
+        return true;
+    }
+    return in_array($module, $planModules, true);
 };
 
 $renderNavLink = static function (array $link, string $currentPath) use ($companyHasModule): void {
