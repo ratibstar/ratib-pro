@@ -25,33 +25,44 @@ if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
 define('RATEB_DEFAULT_LOCALE', 'ar');
 define('RATEB_SUPPORTED_LOCALES', ['en', 'ar']);
 
+if (!function_exists('rateb_site_origin')) {
+    function rateb_site_origin(): string
+    {
+        if (defined('SITE_URL') && (string) SITE_URL !== '') {
+            return rtrim((string) SITE_URL, '/');
+        }
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'out.ratib.sa';
+        return $scheme . '://' . $host;
+    }
+}
+
+if (!function_exists('rateb_public_url')) {
+    /** Direct ERP URL — works without Control Panel login. */
+    function rateb_public_url(string $path = ''): string
+    {
+        $path = ltrim($path, '/');
+        $base = rateb_site_origin() . '/rateb-erp/public';
+        return $path === '' ? $base : $base . '/' . $path;
+    }
+}
+
 if (!function_exists('rateb_asset')) {
     function rateb_asset(string $path): string
     {
         $path = ltrim($path, '/');
         $ver = defined('RATEB_ASSET_BUILD') ? (string) RATEB_ASSET_BUILD : '1';
         $suffix = '?v=' . rawurlencode($ver);
-        if (defined('RATEB_CP_MODE') && RATEB_CP_MODE && defined('RATEB_CP_ASSETS_URL')) {
-            return rtrim((string) RATEB_CP_ASSETS_URL, '/') . '/' . $path . $suffix;
-        }
-        return RATEB_BASE_URL . '/assets/' . $path . $suffix;
+        return rateb_public_url('assets/' . $path) . $suffix;
     }
 }
 
 if (!function_exists('rateb_url')) {
+    /** Always use standalone public URLs (no CP session required). */
     function rateb_url(string $path = ''): string
     {
         $path = ltrim($path, '/');
-        if (defined('RATEB_CP_MODE') && RATEB_CP_MODE) {
-            $base = (string) RATEB_BASE_URL;
-            $base = preg_replace('/([&?])route=[^&]*/', '$1', $base) ?? $base;
-            $base = rtrim($base, '?&');
-            if (strpos($base, '?') === false) {
-                $base .= '?control=1';
-            }
-            return $base . '&route=' . rawurlencode($path !== '' ? $path : 'admin');
-        }
-        return RATEB_BASE_URL . '/' . $path;
+        return rateb_public_url($path !== '' ? $path : 'admin');
     }
 }
 

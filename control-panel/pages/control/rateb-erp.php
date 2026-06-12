@@ -68,20 +68,23 @@ startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/contr
 </div>
 <?php } ?>
 
-<div class="alert alert-primary mb-4" role="region" aria-label="بوابة الشركة">
-    <h2 class="h5 mb-2"><i class="fas fa-building me-2"></i>بوابة الشركة — للإضافة والتعديل والحذف</h2>
-    <p class="mb-3 small mb-0">
-        لإضافة <strong>مشتريات</strong> أو <strong>مخزون</strong> استخدم بوابة الشركة (حساب مرتبط بشركة).
-        شاشات <em>Procurement</em> و <em>Inventory</em> أدناه للمراقعة فقط — بدون أزرار إنشاء.
+<div class="alert alert-primary mb-4" role="region" aria-label="روابط مباشرة">
+    <h2 class="h5 mb-2"><i class="fas fa-link me-2"></i>روابط مباشرة — بدون تسجيل لوحة التحكم</h2>
+    <p class="small mb-2">
+        بعد تسجيل الخروج من لوحة التحكم استخدم هذه الروابط. لإضافة <strong>مشتريات</strong> أو <strong>مخزون</strong> افتح <strong>بوابة الشركة</strong>.
     </p>
-    <div class="d-flex flex-wrap gap-2 mt-3">
-        <a href="<?php echo htmlspecialchars(control_rateb_erp_app_url('company/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary<?php echo $schemaReady ? '' : ' disabled'; ?>">
-            <i class="fas fa-sign-in-alt"></i> دخول بوابة الشركة
+    <div class="d-flex flex-wrap gap-2 mt-2">
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('portals.php'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-info<?php echo $schemaReady ? '' : ' disabled'; ?>" target="_blank" rel="noopener">
+            <i class="fas fa-list"></i> كل الروابط
         </a>
-        <a href="<?php echo htmlspecialchars(control_rateb_erp_app_url('admin/users'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-secondary<?php echo $schemaReady ? '' : ' disabled'; ?>">
-            <i class="fas fa-user-plus"></i> إنشاء مستخدم شركة
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('company/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary<?php echo $schemaReady ? '' : ' disabled'; ?>" target="_blank" rel="noopener">
+            <i class="fas fa-building"></i> بوابة الشركة
+        </a>
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('admin/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary<?php echo $schemaReady ? '' : ' disabled'; ?>" target="_blank" rel="noopener">
+            <i class="fas fa-user-shield"></i> دخول الإدارة
         </a>
     </div>
+    <p class="small text-muted mb-0 mt-2"><code dir="ltr"><?php echo htmlspecialchars(control_rateb_erp_public_url('company/login'), ENT_QUOTES, 'UTF-8'); ?></code></p>
 </div>
 
 <div class="control-settings-intro mb-2"><strong>Super Admin modules</strong> <span class="text-muted small">(مراقبة — قراءة فقط للمشتريات والمخزون)</span></div>
@@ -102,12 +105,12 @@ startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/contr
     <div class="control-settings-card">
         <h3><i class="fas fa-user-shield"></i> Super Admin login</h3>
         <p>Default: <code>admin@rateb.sa</code> / <code>password</code> (change after first login).</p>
-        <a href="<?php echo htmlspecialchars(control_rateb_erp_app_url('admin/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary<?php echo $schemaReady ? '' : ' disabled'; ?>">Admin login</a>
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('admin/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-primary<?php echo $schemaReady ? '' : ' disabled'; ?>" target="_blank" rel="noopener">Admin login</a>
     </div>
     <div class="control-settings-card">
         <h3><i class="fas fa-building"></i> Company portal</h3>
         <p>Procurement &amp; inventory per company.</p>
-        <a href="<?php echo htmlspecialchars(control_rateb_erp_app_url('company/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary<?php echo $schemaReady ? '' : ' disabled'; ?>">Company login</a>
+        <a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('company/login'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary<?php echo $schemaReady ? '' : ' disabled'; ?>" target="_blank" rel="noopener">Company login</a>
     </div>
 </div>
 

@@ -36,7 +36,8 @@ $clientPlatformActiveKey = control_client_platform_active_key();
             $erpRouteCp = trim((string) ($_GET['route'] ?? ''), '/');
             $companyPortalActive = (basename($_SERVER['PHP_SELF'] ?? '') === 'rateb-erp-app.php' && strpos($erpRouteCp, 'company') === 0);
             ?>
-            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_app_url('company/login'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo $companyPortalActive ? ' active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-building"></i><span>بوابة الشركة</span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('company/login'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item<?php echo $companyPortalActive ? ' active' : ''; ?>" data-permission="control_dashboard" target="_blank" rel="noopener"><i class="fas fa-building"></i><span>بوابة الشركة</span></a></li>
+            <li><a href="<?php echo htmlspecialchars(control_rateb_erp_public_url('portals.php'), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item" data-permission="control_dashboard" target="_blank" rel="noopener"><i class="fas fa-link"></i><span>روابط ERP</span></a></li>
             <li><a href="<?php echo htmlspecialchars(control_rateb_erp_migrate_page_url(), ENT_QUOTES, 'UTF-8'); ?>" class="sidebar-item <?php echo (basename($_SERVER['PHP_SELF'] ?? '') === 'rateb-erp-migrate.php') ? 'active' : ''; ?>" data-permission="control_dashboard"><i class="fas fa-database"></i><span>ERP Database Setup</span></a></li>
             <?php
             $ratebErpNavLinks = function_exists('control_rateb_erp_nav_links') ? control_rateb_erp_nav_links() : [];

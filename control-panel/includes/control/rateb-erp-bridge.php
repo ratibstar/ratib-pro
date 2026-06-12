@@ -67,11 +67,22 @@ function control_rateb_erp_app_base_url(): string
  */
 function control_rateb_erp_app_url(string $route = 'admin'): string
 {
+    return control_rateb_erp_public_url($route);
+}
+
+/** Direct ERP URL — no Control Panel login required. */
+function control_rateb_erp_public_url(string $route = 'admin'): string
+{
     $route = trim($route, '/');
     if ($route === '') {
         $route = 'admin';
     }
-    return control_rateb_erp_app_base_url() . '&route=' . rawurlencode($route);
+    $site = rtrim(defined('SITE_URL') ? (string) SITE_URL : '', '/');
+    if ($site === '') {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $site = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'out.ratib.sa');
+    }
+    return $site . '/rateb-erp/public/' . $route;
 }
 
 function control_rateb_erp_ensure_root(): string
