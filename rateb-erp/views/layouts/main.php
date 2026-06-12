@@ -64,9 +64,11 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
             </a>
             <?php require RATEB_ROOT . '/views/partials/sidebar-ops-nav.php'; ?>
             <?php if (rateb_is_super_admin()) { ?>
+            <?php if (rateb_nav_can('executive.dashboard.view')) { ?>
             <a href="<?php echo rateb_url('admin/executive-dashboard'); ?>" class="rateb-nav-link<?php echo $navActive('admin/executive-dashboard') ? ' active' : ''; ?>">
                 <i class="fas fa-gauge-high"></i><span><?php echo __('executive_dashboard'); ?></span>
             </a>
+            <?php } ?>
             <div class="rateb-nav-section"><?php echo __('admin_oversight_section'); ?></div>
             <?php
             $adminLinks = [

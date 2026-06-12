@@ -184,13 +184,14 @@ if (!function_exists('rateb_entity_perms')) {
         $resource = ltrim(preg_replace('#^(company/|admin/ops/|admin/)#', '', trim($resource)), '/');
         $row = $map[$resource] ?? null;
         if (!is_array($row)) {
-            return ['module' => '', 'view' => '', 'manage' => '', 'export' => 'reports.export'];
+            return ['module' => '', 'view' => '', 'manage' => '', 'export' => 'reports.export', 'post' => ''];
         }
         return [
             'module' => (string) ($row['module'] ?? ''),
             'view' => (string) ($row['view'] ?? ''),
             'manage' => (string) ($row['manage'] ?? ($row['view'] ?? '')),
             'export' => (string) ($row['export'] ?? 'reports.export'),
+            'post' => (string) ($row['post'] ?? ''),
         ];
     }
 }
@@ -257,11 +258,36 @@ if (!function_exists('rateb_can_export_entity')) {
     }
 }
 
+if (!function_exists('rateb_can_post_entity')) {
+    function rateb_can_post_entity(string $resource): bool
+    {
+        if (rateb_is_super_admin()) {
+            return true;
+        }
+        $post = rateb_entity_perms($resource)['post'];
+        if ($post !== '') {
+            return rateb_can($post);
+        }
+        return rateb_can_manage_entity($resource);
+    }
+}
+
 /** Redirect to entity list when manage permission is missing. */
 if (!function_exists('rateb_require_manage')) {
     function rateb_require_manage(string $resource): void
     {
         if (rateb_can_manage_entity($resource)) {
+            return;
+        }
+        \Rateb\App\Core\SessionManager::flash('error', __('access_denied'));
+        \Rateb\App\Core\Response::redirect(rateb_app_url($resource));
+    }
+}
+
+if (!function_exists('rateb_require_post')) {
+    function rateb_require_post(string $resource): void
+    {
+        if (rateb_can_post_entity($resource)) {
             return;
         }
         \Rateb\App\Core\SessionManager::flash('error', __('access_denied'));

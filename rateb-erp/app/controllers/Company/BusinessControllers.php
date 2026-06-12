@@ -186,7 +186,7 @@ final class InventoryCodesController extends Controller
 
     public function generate(array $params): void
     {
-        rateb_require_manage('inventory');
+        rateb_require_manage('inventory-codes');
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('inventory'));
         }

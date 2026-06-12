@@ -88,7 +88,7 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
 $router->get($app('purchase-orders/{id}'), [PurchaseOrdersController::class, 'show'], rateb_erp_mw('procurement', '', 'purchase-orders'));
 $router->get($app('rfq/{id}/compare'), [RfqController::class, 'compare'], rateb_erp_mw('procurement', '', 'rfq'));
 $router->get($app('accounting'), [CompanyAccountingDashboardController::class, 'index'], rateb_erp_mw('accounting', '', 'accounting'));
-$router->post($app('accounting/sync'), [CompanyAccountingDashboardController::class, 'sync'], rateb_erp_mw('accounting', '', 'accounting'));
+$router->post($app('accounting/sync'), [CompanyAccountingDashboardController::class, 'sync'], rateb_erp_mw('accounting', 'accounting.post'));
 $router->get($app('chart-of-accounts'), [CompanyChartOfAccountsController::class, 'index'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->get($app('chart-of-accounts/create'), [CompanyChartOfAccountsController::class, 'create'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->post($app('chart-of-accounts'), [CompanyChartOfAccountsController::class, 'store'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
@@ -140,7 +140,7 @@ $router->post($app('inventory-audits'), [InventoryAuditsController::class, 'stor
 $router->get($app('inventory-audits/{id}'), [InventoryAuditsController::class, 'show'], $invAuditMw);
 $router->post($app('inventory-audits/{id}/reconcile'), [InventoryAuditsController::class, 'reconcile'], $invAuditMw);
 
-$invCodesMw = rateb_erp_mw('inventory', '', 'inventory');
+$invCodesMw = rateb_erp_mw('inventory', '', 'inventory-codes');
 $router->get($app('inventory/{id}/codes'), [InventoryCodesController::class, 'show'], $invCodesMw);
 $router->post($app('inventory/{id}/codes/generate'), [InventoryCodesController::class, 'generate'], $invCodesMw);
 

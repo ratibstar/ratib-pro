@@ -59,7 +59,7 @@ $router->get('/admin/logout', [AdminAuthController::class, 'logout'], [ErpAuthMi
 $router->get('/locale/{locale}', [LocaleController::class, 'switch']);
 
 $router->get('/admin', [AdminDashboardController::class, 'index'], [ErpAuthMiddleware::class]);
-$router->get('/admin/executive-dashboard', [ExecutiveDashboardController::class, 'index'], rateb_admin_mw('dashboard.view'));
+$router->get('/admin/executive-dashboard', [ExecutiveDashboardController::class, 'index'], rateb_admin_mw('executive.dashboard.view'));
 
 $router->get('/admin/companies', [CompaniesController::class, 'index'], rateb_admin_mw('companies.view'));
 $router->get('/admin/companies/create', [CompaniesController::class, 'create'], rateb_admin_mw('companies.manage'));

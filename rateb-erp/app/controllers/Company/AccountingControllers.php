@@ -28,12 +28,13 @@ final class AccountingDashboardController extends Controller
             'summary' => $service->financialSummary($companyId),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('accounting'),
+            'canPost' => rateb_can_post_entity('accounting'),
         ], 'main');
     }
 
     public function sync(): void
     {
-        rateb_require_manage('accounting');
+        rateb_require_post('accounting');
         if (!$this->validateCsrf()) {
             Response::redirect(rateb_app_url('accounting'));
         }

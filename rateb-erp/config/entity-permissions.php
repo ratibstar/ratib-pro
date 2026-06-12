@@ -33,6 +33,11 @@ return [
         'view' => 'inventory.manage',
         'manage' => 'inventory.manage',
     ],
+    'inventory-codes' => [
+        'module' => 'inventory',
+        'view' => 'inventory.manage',
+        'manage' => 'inventory.manage',
+    ],
     'warehouses' => [
         'module' => 'inventory',
         'view' => 'inventory.manage',
@@ -140,6 +145,7 @@ return [
         'module' => 'accounting',
         'view' => 'accounting.view',
         'manage' => 'accounting.manage',
+        'post' => 'accounting.post',
     ],
     'chart-of-accounts' => [
         'module' => 'accounting',
