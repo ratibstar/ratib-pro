@@ -342,11 +342,12 @@ def rateb_erp_bundle_files() -> list[str]:
 
 
 def rateb_erp_control_panel_files() -> list[str]:
-    """Companion Control Panel files (migrate page, hub CSS, bridge, etc.)."""
+    """Companion Control Panel files (migrate page, hub CSS, bridge, API runners)."""
     cp_roots = [
         os.path.join(os.getcwd(), "control-panel/pages/control"),
         os.path.join(os.getcwd(), "control-panel/includes/control"),
         os.path.join(os.getcwd(), "control-panel/css/control"),
+        os.path.join(os.getcwd(), "control-panel/api/control"),
     ]
     out: list[str] = []
     for root in cp_roots:
@@ -725,38 +726,6 @@ def main() -> int:
             flush=True,
         )
         return 1
-
-    rateb_touched = any(
-        f.startswith("rateb-erp/") or "rateb-erp" in f for f in succeeded
-    )
-    if rateb_touched and os.environ.get("CPANEL_API_TOKEN"):
-        print("rateb-erp deploy detected — running ERP migrations…", flush=True)
-        mig_script = os.path.join(root, "run-rateb-erp-migrations.sh")
-        if os.path.isfile(mig_script):
-            import subprocess
-
-            env = os.environ.copy()
-            env.setdefault("CPANEL_SITE_URL", "https://out.ratib.sa")
-            try:
-                proc = subprocess.run(
-                    ["bash", mig_script],
-                    cwd=os.path.join(root, ".."),
-                    env=env,
-                    capture_output=True,
-                    text=True,
-                    timeout=240,
-                )
-                if proc.stdout:
-                    print(proc.stdout, flush=True)
-                if proc.stderr:
-                    print(proc.stderr, flush=True)
-                if proc.returncode != 0:
-                    print(
-                        f"::warning::ERP migration script exit {proc.returncode} (deploy continues)",
-                        flush=True,
-                    )
-            except Exception as exc:
-                print(f"::warning::ERP migration script failed: {exc}", flush=True)
 
     return 0
 

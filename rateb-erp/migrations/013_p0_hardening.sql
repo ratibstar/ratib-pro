@@ -15,7 +15,7 @@ INSERT INTO rateb_system_settings (setting_key, setting_value, setting_group) VA
 ('smtp_pass', '', 'mail')
 ON DUPLICATE KEY UPDATE setting_key = setting_key;
 
-CREATE INDEX IF NOT EXISTS idx_notif_dedup ON rateb_notifications (company_id, trigger_type, entity_type, entity_id, created_at);
-CREATE INDEX IF NOT EXISTS idx_nq_status_created ON rateb_notification_queue (status, created_at);
-CREATE INDEX IF NOT EXISTS idx_inventory_expiry ON rateb_inventory (company_id, expiry_date);
-CREATE INDEX IF NOT EXISTS idx_contracts_expiry ON rateb_contracts (company_id, end_date, status);
+CREATE INDEX idx_notif_dedup ON rateb_notifications (company_id, trigger_type, entity_type, entity_id, created_at);
+CREATE INDEX idx_nq_status_created ON rateb_notification_queue (status, created_at);
+CREATE INDEX idx_inventory_expiry ON rateb_inventory (company_id, expiry_date);
+CREATE INDEX idx_contracts_expiry ON rateb_contracts (company_id, end_date, status);
