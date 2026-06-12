@@ -1,42 +1,11 @@
 #!/usr/bin/env python3
-"""Upload deploy migrate token and trigger RATEB ERP migrations on production."""
+"""Trigger RATEB ERP migrations on production after deploy."""
 from __future__ import annotations
 
-import importlib.util
 import os
 import sys
 import urllib.error
 import urllib.request
-
-ROOT = os.path.dirname(os.path.abspath(__file__))
-
-
-def load_deploy_core():
-    path = os.path.join(ROOT, "github-cpanel-fileman-deploy-core.py")
-    spec = importlib.util.spec_from_file_location("deploy_core", path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError("Cannot load github-cpanel-fileman-deploy-core.py")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
-def sanitize_host(host: str) -> str:
-    host = (host or "").strip()
-    for prefix in ("https://", "http://"):
-        if host.lower().startswith(prefix):
-            host = host[len(prefix) :]
-    return host.split("/")[0].strip()
-
-
-def upload_migrate_token(dc) -> bool:
-    """Token is uploaded during deploy bundle step; this is a no-op fallback."""
-    token_path = "rateb-erp/storage/deploy-migrate-token"
-    if os.path.isfile(token_path):
-        print("migrate token: local file present (deploy step should upload it)", flush=True)
-        return True
-    print("::warning::Migrate token not uploaded in deploy step — HTTP auth may fail", flush=True)
-    return False
 
 
 def http_migrate(site: str, token: str, path: str) -> tuple[int, str]:
@@ -68,8 +37,10 @@ def main() -> int:
         print("::warning::RATEB ERP migrations skipped — no token", flush=True)
         return 0
 
-    dc = load_deploy_core()
-    upload_migrate_token(dc)
+    print(
+        "migrate auth: workflow secret + server token from deploy bundle upload",
+        flush=True,
+    )
 
     endpoints = [
         "/control-panel/api/control/rateb-erp-migrate-run.php",
