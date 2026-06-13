@@ -12,6 +12,7 @@ use Rateb\App\Models\Inventory;
 use Rateb\App\Models\PurchaseOrder;
 use Rateb\App\Models\PurchaseRequest;
 use Rateb\App\Models\Supplier;
+use Rateb\App\Services\AccountLockoutService;
 use Rateb\App\Services\ApiTokenService;
 use Rateb\App\Services\DashboardService;
 use Rateb\App\Services\Logger;
@@ -41,12 +42,22 @@ final class ApiController extends Controller
         $password = (string) ($body['password'] ?? '');
 
         $userModel = new \Rateb\App\Models\User();
-        $user = $userModel->findByEmail($email);
+        $preUser = $userModel->findByEmail($email);
+        $lockout = new AccountLockoutService();
+        if ($lockout->isLocked($preUser)) {
+            Logger::warning('API token auth blocked (locked)', ['email' => $email, 'ip' => $ip]);
+            Response::json(['success' => false, 'message' => 'Account temporarily locked'], 403);
+            return;
+        }
+
+        $user = $preUser;
         if (!$user || !password_verify($password, (string) $user['password'])) {
+            $lockout->recordFailure($email);
             Logger::warning('API token auth failed', ['email' => $email, 'ip' => $ip]);
             Response::json(['success' => false, 'message' => 'Invalid credentials'], 401);
             return;
         }
+        $lockout->clearLock((int) $user['id']);
         if ((string) ($user['status'] ?? '') !== 'active') {
             Response::json(['success' => false, 'message' => 'Account inactive'], 403);
             return;

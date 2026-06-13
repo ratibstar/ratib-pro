@@ -11,6 +11,8 @@ final class TenantFkValidator
     private const FIELD_TABLE = [
         'supplier_id' => 'rateb_suppliers',
         'warehouse_id' => 'rateb_warehouses',
+        'source_warehouse_id' => 'rateb_warehouses',
+        'destination_warehouse_id' => 'rateb_warehouses',
         'inventory_id' => 'rateb_inventory',
         'rfq_id' => 'rateb_rfq',
     ];

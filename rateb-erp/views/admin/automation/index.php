@@ -1,8 +1,40 @@
 <?php
 /** @var array<string,mixed> $health */
 /** @var string $csrf */
+$m023 = $health['migration_023'] ?? [];
+$warnings = $health['cron_warnings'] ?? [];
 ?>
 <h1><?php echo __('automation_health'); ?></h1>
+
+<?php if (!empty($warnings)) { ?>
+<div class="alert alert-warning" role="alert">
+    <strong><?php echo __('deployment_warnings'); ?></strong>
+    <ul class="mb-0 mt-2">
+        <?php foreach ($warnings as $w) { ?>
+            <li><?php echo Rateb\App\Core\View::escape((string) $w); ?></li>
+        <?php } ?>
+    </ul>
+</div>
+<?php } ?>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5><?php echo __('migration_023_status'); ?></h5>
+        <?php if (!empty($m023['schema_ok'])) { ?>
+            <p class="text-success mb-0"><?php echo __('migration_023_ok'); ?></p>
+        <?php } else { ?>
+            <p class="text-danger mb-1"><?php echo __('migration_023_fail'); ?></p>
+            <?php if (!empty($m023['missing'])) { ?>
+                <ul class="small mb-0">
+                    <?php foreach ($m023['missing'] as $m) { ?>
+                        <li><code><?php echo Rateb\App\Core\View::escape((string) $m); ?></code></li>
+                    <?php } ?>
+                </ul>
+            <?php } ?>
+        <?php } ?>
+    </div>
+</div>
+
 <div class="row g-3">
     <div class="col-md-4">
         <div class="card"><div class="card-body">
@@ -17,6 +49,11 @@
             <h5><?php echo __('backup_health'); ?></h5>
             <p><?php echo Rateb\App\Core\View::escape((string) ($health['backup']['latest'] ?? '-')); ?></p>
             <p><?php echo __('count'); ?>: <?php echo (int) ($health['backup']['count'] ?? 0); ?></p>
+            <?php if (!empty($health['backup']['verify_ok'])) { ?>
+                <p class="text-success small mb-0"><?php echo __('backup_verify_ok'); ?></p>
+            <?php } elseif (($health['backup']['count'] ?? 0) > 0) { ?>
+                <p class="text-danger small mb-0"><?php echo __('backup_verify_fail'); ?>: <?php echo Rateb\App\Core\View::escape((string) ($health['backup']['verify_error'] ?? '')); ?></p>
+            <?php } ?>
         </div></div>
     </div>
     <div class="col-md-4">
@@ -28,13 +65,17 @@
     </div>
 </div>
 <h2 class="mt-4"><?php echo __('cron_health'); ?></h2>
+<?php if (($health['cron'] ?? []) === []) { ?>
+<p class="text-warning"><?php echo __('cron_warning_missing_erp_cron'); ?></p>
+<?php } ?>
 <table class="table table-sm">
-    <thead><tr><th>Job</th><th>Last run</th><th>Status</th></tr></thead>
+    <thead><tr><th>Job</th><th>Last run</th><th>Next expected</th><th>Status</th></tr></thead>
     <tbody>
     <?php foreach (($health['cron'] ?? []) as $job) { ?>
-        <tr>
+        <tr class="<?php echo ($job['status'] ?? '') === 'late' ? 'table-warning' : ''; ?>">
             <td><?php echo Rateb\App\Core\View::escape((string) ($job['job_name'] ?? '')); ?></td>
             <td><?php echo Rateb\App\Core\View::escape((string) ($job['last_run_at'] ?? '')); ?></td>
+            <td><?php echo Rateb\App\Core\View::escape((string) ($job['next_expected_at'] ?? '')); ?></td>
             <td><?php echo Rateb\App\Core\View::escape((string) ($job['status'] ?? '')); ?></td>
         </tr>
     <?php } ?>
