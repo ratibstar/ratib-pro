@@ -187,6 +187,19 @@ final class CmsArabicRepairService
             );
         }
 
+        $faqCategories = [
+            'general' => 'عام',
+            'pricing' => 'الباقات والأسعار',
+            'features' => 'المميزات',
+            'security' => 'الأمان والبيانات',
+        ];
+        foreach ($faqCategories as $slug => $nameAr) {
+            $patch(
+                'UPDATE rateb_cms_faq_categories SET name_ar = :n WHERE slug = :s',
+                ['n' => $nameAr, 's' => $slug]
+            );
+        }
+
         $extraTestimonials = [
             'Sara Al-Otaibi' => ['سارة العتيبي', 'مديرة المستودعات', 'شركة الإمداد الطبي', 'أخيراً أصبح لدينا رؤية فورية للمخزون في جميع الفروع.'],
             'Khalid Al-Harbi' => ['خالد الحربي', 'مدير العمليات', 'الخليج للتجارة', 'موافقات الشراء التي كانت تأخذ أياماً تُنجز الآن خلال ساعات.'],

@@ -73,19 +73,27 @@ final class ErpDatabaseService
     {
         try {
             $pdo = Database::connection();
-            $stmt = $pdo->query(
-                "SELECT title_ar FROM rateb_cms_sections WHERE page_slug='home' AND section_key='hero' LIMIT 1"
-            );
-            if ($stmt === false) {
-                return false;
+            $checks = [
+                "SELECT title_ar AS v FROM rateb_cms_sections WHERE page_slug='home' AND section_key='hero' LIMIT 1",
+                "SELECT question_ar AS v FROM rateb_cms_faqs WHERE question_ar <> '' LIMIT 1",
+                "SELECT quote_ar AS v FROM rateb_cms_testimonials WHERE quote_ar IS NOT NULL AND quote_ar <> '' LIMIT 1",
+            ];
+            foreach ($checks as $sql) {
+                $stmt = $pdo->query($sql);
+                if ($stmt === false) {
+                    continue;
+                }
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                $stmt->closeCursor();
+                if (!is_array($row)) {
+                    continue;
+                }
+                $value = (string) ($row['v'] ?? '');
+                if ($value === '' || str_contains($value, '?')) {
+                    return true;
+                }
             }
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            $stmt->closeCursor();
-            if (!is_array($row)) {
-                return false;
-            }
-            $title = (string) ($row['title_ar'] ?? '');
-            return $title === '' || strpos($title, '?') !== false;
+            return false;
         } catch (\Throwable $e) {
             return false;
         }
