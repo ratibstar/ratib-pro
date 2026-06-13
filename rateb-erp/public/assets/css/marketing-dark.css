@@ -32,3 +32,21 @@ html[data-theme="dark"] .rateb-portal-module-links .list-group-item,
 html[data-bs-theme="dark"] .rateb-portal-module-links .list-group-item {
     color: var(--cms-muted);
 }
+
+html[data-theme="dark"] .rateb-portal-page,
+html[data-bs-theme="dark"] .rateb-portal-page {
+    background: var(--cms-bg);
+}
+
+html[data-theme="dark"] .rateb-portal-page .rateb-portal-action-btn,
+html[data-bs-theme="dark"] .rateb-portal-page .rateb-portal-action-btn {
+    background: var(--cms-surface);
+    border: 1px solid var(--cms-border);
+    color: var(--cms-text);
+}
+
+html[data-theme="dark"] .rateb-portal-page .rateb-portal-action-btn:hover,
+html[data-bs-theme="dark"] .rateb-portal-page .rateb-portal-action-btn:hover {
+    border-color: var(--cms-primary);
+    color: var(--cms-primary);
+}

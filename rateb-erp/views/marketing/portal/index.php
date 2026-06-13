@@ -79,7 +79,7 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
                         <div class="row g-2">
                             <?php foreach ($quickLinks as $link) { ?>
                             <div class="col-sm-6">
-                                <a href="<?php echo Rateb\App\Core\View::escape((string) ($link['url'] ?? '#')); ?>" class="btn btn-outline-secondary w-100 text-start rateb-portal-action-btn">
+                                <a href="<?php echo Rateb\App\Core\View::escape((string) ($link['url'] ?? '#')); ?>" class="rateb-portal-action-btn">
                                     <i class="fas <?php echo Rateb\App\Core\View::escape((string) ($link['icon'] ?? 'fa-link')); ?> ms-2"></i>
                                     <?php echo Rateb\App\Core\View::escape((string) ($link['label'] ?? '')); ?>
                                     <?php if (!empty($link['badge'])) { ?>
