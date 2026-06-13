@@ -557,6 +557,8 @@ return [
     'cms_latest_articles' => 'أحدث المقالات',
     'cms_faq_preview' => 'أسئلة شائعة',
     'cms_view_all_faq' => 'عرض كل الأسئلة',
+    'cms_view_all_reviews' => 'عرض كل آراء العملاء',
+    'cms_more' => 'المزيد',
     'cms_contact_us' => 'اتصل بنا',
     'cms_footer_tagline' => 'منصة عمليات ذكية للمشتريات والمخزون والامتثال.',
     'cms_quick_links' => 'روابط سريعة',

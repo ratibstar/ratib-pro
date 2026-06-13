@@ -557,6 +557,8 @@ return [
     'cms_latest_articles' => 'Latest Articles',
     'cms_faq_preview' => 'FAQ',
     'cms_view_all_faq' => 'View All FAQ',
+    'cms_view_all_reviews' => 'View All Reviews',
+    'cms_more' => 'More',
     'cms_contact_us' => 'Contact Us',
     'cms_footer_tagline' => 'Smart operations platform for procurement, inventory, and compliance.',
     'cms_quick_links' => 'Quick Links',

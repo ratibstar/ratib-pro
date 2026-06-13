@@ -90,7 +90,11 @@ $slides = $slides ?? [];
 <?php if (!empty($testimonials)) { ?>
 <section class="rateb-mkt-section rateb-mkt-section-alt">
     <div class="container">
-        <h2 class="rateb-mkt-section-title"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($content['testimonials']['section'] ?? [], 'title') ?: __('cms_testimonials')); ?></h2>
+        <?php
+        $sectionTitle = CmsService::pickLocale($content['testimonials']['section'] ?? [], 'title') ?: __('cms_testimonials');
+        $moreUrl = rateb_url('site/reviews');
+        require RATEB_ROOT . '/views/marketing/partials/section-head-more.php';
+        ?>
         <div class="row g-3">
             <?php foreach ($testimonials as $t) { ?>
             <div class="col-md-4">
@@ -109,6 +113,11 @@ $slides = $slides ?? [];
                 </blockquote>
             </div>
             <?php } ?>
+        </div>
+        <div class="text-center mt-4">
+            <a href="<?php echo rateb_url('site/reviews'); ?>" class="btn btn-outline-primary rateb-mkt-more-btn">
+                <i class="fas fa-circle-plus ms-1"></i><?php echo __('cms_view_all_reviews'); ?>
+            </a>
         </div>
     </div>
 </section>
@@ -154,7 +163,11 @@ $slides = $slides ?? [];
 <?php if (!empty($faqs)) { ?>
 <section class="rateb-mkt-section">
     <div class="container">
-        <h2 class="rateb-mkt-section-title"><?php echo __('cms_faq_preview'); ?></h2>
+        <?php
+        $sectionTitle = __('cms_faq_preview');
+        $moreUrl = rateb_url('site/faq');
+        require RATEB_ROOT . '/views/marketing/partials/section-head-more.php';
+        ?>
         <div class="accordion rateb-mkt-faq" id="homeFaq">
             <?php foreach ($faqs as $i => $faq) { ?>
             <div class="accordion-item">
@@ -170,7 +183,9 @@ $slides = $slides ?? [];
             <?php } ?>
         </div>
         <div class="text-center mt-4">
-            <a href="<?php echo rateb_url('site/faq'); ?>" class="btn btn-outline-primary"><?php echo __('cms_view_all_faq'); ?></a>
+            <a href="<?php echo rateb_url('site/faq'); ?>" class="btn btn-outline-primary rateb-mkt-more-btn">
+                <i class="fas fa-circle-plus ms-1"></i><?php echo __('cms_view_all_faq'); ?>
+            </a>
         </div>
     </div>
 </section>

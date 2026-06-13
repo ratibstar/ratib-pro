@@ -88,8 +88,59 @@
 .rateb-mkt-section-title {
     font-size: 1.75rem;
     font-weight: 700;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
     text-align: center;
+}
+
+.rateb-mkt-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+
+.rateb-mkt-section-head .rateb-mkt-section-title {
+    text-align: start;
+    flex: 1 1 auto;
+}
+
+.rateb-mkt-more-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.9rem 0.45rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--cms-border);
+    background: var(--cms-surface);
+    color: var(--cms-primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
+    white-space: nowrap;
+}
+
+.rateb-mkt-more-link:hover {
+    border-color: var(--cms-primary);
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--cms-primary);
+    transform: translateY(-1px);
+}
+
+.rateb-mkt-more-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.rateb-mkt-more-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .rateb-mkt-section-lead {
