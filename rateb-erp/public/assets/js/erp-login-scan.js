@@ -10,8 +10,11 @@
         var stopBtn = document.getElementById('qr-scan-stop');
         var manualForm = document.getElementById('qr-scan-manual-form');
         var manualInput = document.getElementById('qr-scan-manual-input');
+        var mobileStore = (typeof window !== 'undefined' && window.RatebErpMobileBadgeStore) || null;
         var scanner = null;
         var scanComplete = false;
+        var savedBadgeUsed = false;
+        var skipAutoSaved = false;
 
         function setStatus(message, type) {
             if (!statusEl || scanComplete) return;
@@ -48,7 +51,7 @@
             var who = username ? '<p class="qr-scan-success-user">' + escapeHtml(username) + '</p>' : '';
             card.innerHTML =
                 '<div class="qr-scan-success-icon"><i class="fas fa-circle-check"></i></div>'
-                + '<h2 class="qr-scan-success-title">Logged in successfully</h2>'
+                + '<h2 class="qr-scan-success-title">' + escapeHtml(cfg.successTitle || 'Logged in successfully') + '</h2>'
                 + who
                 + '<p class="qr-scan-success-msg">' + escapeHtml(message) + '</p>';
         }
@@ -90,8 +93,14 @@
             if (banner) banner.classList.remove('d-none');
         }
 
+        function saveBadgeOnPhone(payload, scanValue, username) {
+            if (mobileStore && payload) {
+                mobileStore.save(payload, scanValue, { username: username || '' });
+            }
+        }
+
         function submitPayload(raw) {
-            setStatus('QR detected — checking…', 'loading');
+            setStatus(cfg.checkingMsg || 'QR detected — checking…', 'loading');
             var classified = classifyScan(raw);
             if (classified.kind === 'empty') {
                 setStatus('Could not read that QR. Try again.', 'error');
@@ -127,8 +136,9 @@
                 .then(function (json) {
                     if (json && json.success) {
                         var username = json.username || '';
+                        saveBadgeOnPhone(classified.payload, raw, username);
                         if (pairToken) {
-                            lockSuccessUi('ERP is opening on your computer. You can switch back to the laptop now.', username);
+                            lockSuccessUi(cfg.pairedMsg || 'ERP is opening on your computer. You can switch back to the laptop now.', username);
                         } else if (json.redirect) {
                             lockSuccessUi('Signed in. Redirecting…', username);
                             window.location.href = json.redirect;
@@ -137,6 +147,9 @@
                         }
                         return;
                     }
+                    if (json && (json.code === 'invalid' || json.code === 'revoked' || json.code === 'expired')) {
+                        if (mobileStore) mobileStore.clear();
+                    }
                     if (scanner) scanner.resetSubmit();
                     setStatus((json && json.message) || 'Scan failed.', 'error');
                 })
@@ -144,6 +157,23 @@
                     if (scanner) scanner.resetSubmit();
                     setStatus('Network error. Check connection and try again.', 'error');
                 });
+        }
+
+        function tryAutoUseSavedBadge() {
+            if (!pairToken || !mobileStore || skipAutoSaved || savedBadgeUsed) return;
+            var saved = mobileStore.load();
+            if (!saved || !saved.payload) return;
+            savedBadgeUsed = true;
+            var banner = document.getElementById('qr-scan-saved-banner');
+            var firstSteps = document.getElementById('qr-scan-first-steps');
+            if (banner) banner.classList.remove('d-none');
+            if (firstSteps) firstSteps.classList.add('d-none');
+            var meta = document.getElementById('qr-scan-saved-meta');
+            if (meta && saved.username) {
+                meta.textContent = saved.username;
+            }
+            setStatus(cfg.savedSigningIn || 'Signing in with saved badge…', 'loading');
+            submitPayload(saved.scanValue || saved.payload);
         }
 
         function startCamera() {
@@ -174,6 +204,7 @@
         if (startBtn) {
             startBtn.addEventListener('click', function (ev) {
                 ev.preventDefault();
+                skipAutoSaved = true;
                 startCamera();
             });
         }
@@ -189,6 +220,7 @@
         if (manualForm) {
             manualForm.addEventListener('submit', function (ev) {
                 ev.preventDefault();
+                skipAutoSaved = true;
                 var val = manualInput ? manualInput.value.trim() : '';
                 if (!val) return;
                 submitPayload(val);
@@ -203,8 +235,25 @@
             });
         }
 
+        var useSavedBtn = document.getElementById('qr-scan-use-saved');
+        if (useSavedBtn) {
+            useSavedBtn.addEventListener('click', function () {
+                if (!mobileStore) return;
+                var saved = mobileStore.load();
+                if (!saved) {
+                    setStatus(cfg.noSavedBadge || 'No saved badge. Scan your badge once first.', 'error');
+                    return;
+                }
+                savedBadgeUsed = true;
+                setStatus(cfg.savedSigningIn || 'Signing in with saved badge…', 'loading');
+                submitPayload(saved.scanValue || saved.payload);
+            });
+        }
+
         if (cfg.autoBadge) {
-            setTimeout(function () { submitPayload(cfg.autoBadge); }, 400);
+            setTimeout(function () { submitPayload(cfg.autoBadge); }, 300);
+        } else if (pairToken && mobileStore && mobileStore.load()) {
+            tryAutoUseSavedBadge();
         }
     }
 

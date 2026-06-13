@@ -21,6 +21,13 @@
         'apiQr' => rateb_url('api/qr-login'),
     ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
-    <script src="<?php echo rateb_asset('js/erp-login-badge.js'); ?>"></script>
+    <?php
+    foreach (['js/erp-mobile-badge-store.js', 'js/erp-login-badge.js'] as $asset) {
+        $path = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/public/assets/' . $asset;
+        if ($path !== '/public/assets/' . $asset && is_file($path)) {
+            echo '<script>', file_get_contents($path), '</script>';
+        }
+    }
+    ?>
 </body>
 </html>

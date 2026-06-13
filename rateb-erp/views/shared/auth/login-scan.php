@@ -21,7 +21,11 @@
     <div class="qr-scan-shell">
         <p class="qr-scan-brand"><?php echo __('rateb_erp'); ?></p>
         <h1 class="qr-scan-title"><?php echo __('barcode_scan_step2_title'); ?></h1>
-        <ol class="qr-scan-steps">
+        <div id="qr-scan-saved-banner" class="qr-scan-saved-panel d-none" role="status">
+            <p class="qr-scan-saved-title"><i class="fas fa-id-badge"></i> <?php echo __('badge_saved_on_phone'); ?></p>
+            <p class="qr-scan-saved-meta mb-0" id="qr-scan-saved-meta"><?php echo __('badge_auto_signin'); ?></p>
+        </div>
+        <ol class="qr-scan-steps" id="qr-scan-first-steps">
             <li class="qr-scan-steps-done"><?php echo __('barcode_scan_step_done'); ?></li>
             <li class="qr-scan-steps-active"><strong><?php echo __('barcode_scan_step_now'); ?></strong></li>
         </ol>
@@ -66,11 +70,15 @@
         'apiPair' => rateb_url('api/login-barcode-pair'),
         'autoBadge' => $autoBadge ?? '',
         'cameraPrompt' => __('barcode_camera_prompt'),
+        'savedSigningIn' => __('badge_saved_signing_in'),
+        'pairedMsg' => __('badge_paired_success'),
+        'successTitle' => __('barcode_login_success'),
+        'noSavedBadge' => __('badge_no_saved'),
     ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
     <?php
-    $scanAssets = ['js/erp-qr-scanner.js', 'js/erp-login-scan.js'];
+    $scanAssets = ['js/erp-mobile-badge-store.js', 'js/erp-qr-scanner.js', 'js/erp-login-scan.js'];
     foreach ($scanAssets as $asset) {
         $path = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/public/assets/' . $asset;
         if ($path !== '/public/assets/' . $asset && is_file($path)) {

@@ -7,6 +7,7 @@
     var directLogin = !!cfg.directLogin;
     var apiQr = cfg.apiQr || '/api/qr-login';
     var msg = document.getElementById('badge-msg');
+    var mobileStore = (typeof window !== 'undefined' && window.RatebErpMobileBadgeStore) || null;
 
     function show(text, type) {
         if (!msg) return;
@@ -37,6 +38,9 @@
         }).then(function (r) { return r.json(); })
             .then(function (json) {
                 if (json && json.success) {
+                    if (mobileStore && payload) {
+                        mobileStore.save(payload, payload, { username: json.username || '' });
+                    }
                     if (directLogin && json.redirect) {
                         show('Signed in. Redirecting…', 'success');
                         window.location.href = json.redirect;
