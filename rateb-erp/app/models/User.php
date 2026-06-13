@@ -11,7 +11,7 @@ final class User extends Model
     protected bool $tenantScoped = false;
     protected array $fillable = [
         'company_id', 'name', 'email', 'password', 'phone', 'avatar_path',
-        'is_super_admin', 'status', 'two_factor_secret', 'two_factor_enabled', 'locale',
+        'is_super_admin', 'status', 'two_factor_secret', 'two_factor_enabled', 'locale', 'login_barcode',
     ];
 
     public function find(int $id): ?array

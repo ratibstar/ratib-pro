@@ -216,6 +216,23 @@ body.rateb-app {
     padding: 2rem;
 }
 
+.rateb-login-qr-wrap {
+    width: 200px;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+.rateb-login-qr-img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
 .rateb-chart-card {
     min-height: 320px;
 }

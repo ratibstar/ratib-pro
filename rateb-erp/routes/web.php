@@ -43,6 +43,9 @@ $router->get('/', static function (): void {
 
 $router->get('/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'showLogin'], rateb_guest_mw());
 $router->post('/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'login'], rateb_guest_mw());
+$router->post('/login/barcode', [\Rateb\App\Controllers\Shared\BarcodeLoginController::class, 'loginBarcode'], rateb_guest_mw());
+$router->get('/login/scan', [\Rateb\App\Controllers\Shared\BarcodeLoginController::class, 'showScan'], rateb_guest_mw());
+$router->post('/api/login-barcode-pair', [\Rateb\App\Controllers\Shared\BarcodeLoginController::class, 'pairApi'], rateb_guest_mw());
 $router->get('/logout', [\Rateb\App\Controllers\Shared\LoginController::class, 'logout']);
 
 $router->get('/password/forgot', [\Rateb\App\Controllers\Shared\PasswordResetController::class, 'showForgot'], rateb_guest_mw());

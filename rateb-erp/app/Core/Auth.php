@@ -74,6 +74,41 @@ final class Auth
         return self::attempt($email, $password, $isSuper ? 'admin' : 'company');
     }
 
+    /** Establish session from a validated user row (barcode / badge login). */
+    public static function loginUser(array $user): bool
+    {
+        if ((string) ($user['status'] ?? '') !== 'active') {
+            return false;
+        }
+
+        $isSuper = (int) ($user['is_super_admin'] ?? 0) === 1;
+        if (!$isSuper) {
+            $companyId = (int) ($user['company_id'] ?? 0);
+            if ($companyId < 1) {
+                return false;
+            }
+            $company = (new \Rateb\App\Models\Company())->find($companyId);
+            if (!$company || (string) ($company['status'] ?? '') !== 'active') {
+                return false;
+            }
+            $limits = new \Rateb\App\Services\PlanLimitService();
+            if (!$limits->companyAccessAllowed($companyId)) {
+                return false;
+            }
+        }
+
+        SessionManager::regenerate();
+        SessionManager::set('rateb_user_id', (int) $user['id']);
+        SessionManager::set('rateb_company_id', $user['company_id'] !== null ? (int) $user['company_id'] : null);
+        SessionManager::set('rateb_is_super_admin', $isSuper);
+        SessionManager::set('rateb_portal', $isSuper ? 'admin' : 'company');
+
+        TenantContext::setSuperAdmin($isSuper);
+        TenantContext::setCompanyId($user['company_id'] !== null ? (int) $user['company_id'] : null);
+
+        return true;
+    }
+
     /** Dashboard path after login or when already authenticated. */
     public static function homePath(): string
     {

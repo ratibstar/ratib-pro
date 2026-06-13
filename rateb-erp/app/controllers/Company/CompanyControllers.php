@@ -856,11 +856,35 @@ final class ProfileController extends Controller
     public function index(): void
     {
         $user = Auth::user();
+        $userId = (int) ($user['id'] ?? 0);
+        $barcodeSvc = new \Rateb\App\Services\BarcodeLoginService();
+        $barcode = $userId > 0 ? $barcodeSvc->ensureUserBarcode($userId) : null;
+        $badgePayload = $barcode ? $barcodeSvc->badgePayload($barcode) : '';
         $this->view('company/profile/index', [
             'title' => __('profile'),
             'user' => $user,
             'csrf' => Csrf::token(),
+            'loginBarcode' => $barcode,
+            'badgeQrUrl' => $badgePayload !== '' ? $barcodeSvc->qrImageUrl($badgePayload, 180) : '',
         ], 'main');
+    }
+
+    public function regenerateBarcode(): void
+    {
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('profile'));
+        }
+        $user = Auth::user();
+        if (!$user) {
+            Response::redirect(rateb_url('login'));
+        }
+        $userId = (int) $user['id'];
+        $svc = new \Rateb\App\Services\BarcodeLoginService();
+        $newCode = $svc->generateBarcodeValue($userId, bin2hex(random_bytes(4)));
+        (new User())->update($userId, ['login_barcode' => $newCode]);
+        (new AuditService())->log('regenerate', 'login_barcode', $userId);
+        SessionManager::flash('success', __('barcode_regenerated'));
+        Response::redirect(rateb_app_url('profile'));
     }
 
     public function update(): void

@@ -126,6 +126,7 @@ $router->get($app('notifications'), [NotificationsController::class, 'index'], r
 $router->post($app('notifications/{id}/read'), [NotificationsController::class, 'markRead'], rateb_erp_mw('', '', 'notifications'));
 $router->get($app('profile'), [ProfileController::class, 'index'], rateb_erp_mw());
 $router->post($app('profile'), [ProfileController::class, 'update'], rateb_erp_mw());
+$router->post($app('profile/regenerate-barcode'), [ProfileController::class, 'regenerateBarcode'], rateb_erp_mw());
 
 $invMw = rateb_erp_mw('inventory', '', 'inventory-batches');
 $router->get($app('inventory-batches'), [InventoryBatchesController::class, 'index'], $invMw);
