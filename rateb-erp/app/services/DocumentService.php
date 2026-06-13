@@ -90,4 +90,80 @@ final class DocumentService
         $stmt->execute(['cid' => $companyId, 'et' => $entityType, 'eid' => $entityId]);
         return $stmt->fetchAll();
     }
+
+    /** @return array<string, mixed>|null */
+    public function findById(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        $stmt = $db->prepare('SELECT * FROM rateb_documents WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function latestForEntity(int $companyId, string $entityType, int $entityId): ?array
+    {
+        if ($companyId < 1 || $entityId < 1) {
+            return null;
+        }
+        $rows = $this->listForEntity($entityType, $entityId, $companyId);
+        return $rows[0] ?? null;
+    }
+
+    public function sendDownload(int $documentId): void
+    {
+        $doc = $this->findById($documentId);
+        if (!$doc) {
+            http_response_code(404);
+            echo 'Not found';
+            return;
+        }
+        if (!$this->canDownload($doc)) {
+            http_response_code(403);
+            echo __('access_denied');
+            return;
+        }
+        $relative = (string) ($doc['file_path'] ?? '');
+        if ($relative === '' || strpos($relative, '..') !== false) {
+            http_response_code(404);
+            echo 'Not found';
+            return;
+        }
+        $full = RATEB_STORAGE_PATH . '/' . ltrim($relative, '/');
+        if (!is_file($full)) {
+            http_response_code(404);
+            echo 'File missing';
+            return;
+        }
+        $mime = (string) ($doc['mime_type'] ?? 'application/octet-stream');
+        $name = (string) ($doc['file_name'] ?? basename($full));
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: attachment; filename="' . $this->safeFilename($name) . '"');
+        header('Content-Length: ' . (string) filesize($full));
+        readfile($full);
+        exit;
+    }
+
+    /** @param array<string, mixed> $doc */
+    private function canDownload(array $doc): bool
+    {
+        if (!\Rateb\App\Core\Auth::check()) {
+            return false;
+        }
+        if (TenantContext::isSuperAdmin()) {
+            return true;
+        }
+        $sessionCompany = (int) SessionManager::get('rateb_company_id', 0);
+        return $sessionCompany > 0 && $sessionCompany === (int) ($doc['company_id'] ?? 0);
+    }
+
+    private function safeFilename(string $name): string
+    {
+        $name = preg_replace('/[^\w\.\-]+/u', '_', $name) ?? 'file';
+        return $name !== '' ? $name : 'file';
+    }
 }

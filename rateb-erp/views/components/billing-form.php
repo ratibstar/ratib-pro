@@ -18,7 +18,7 @@ $subscriptions = $subscriptions ?? [];
         <?php if (empty($companies)) { ?>
         <div class="alert alert-warning"><?php echo __('billing_no_companies'); ?></div>
         <?php } ?>
-        <form method="post" action="<?php echo $action; ?>">
+        <form method="post" action="<?php echo $action; ?>"<?php echo !empty($multipart) ? ' enctype="multipart/form-data"' : ''; ?>>
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="row g-3">
                 <?php foreach ($fields as $field) {
@@ -68,6 +68,9 @@ $subscriptions = $subscriptions ?? [];
                     <?php } ?>
                 </div>
                 <?php } ?>
+                <?php if (!empty($attachment) && is_array($attachment)) {
+                    Rateb\App\Core\View::partial('entity-attachment-field', $attachment);
+                } ?>
             </div>
             <div class="mt-4 d-flex gap-2">
                 <button type="submit" class="btn btn-primary"<?php echo empty($companies) ? ' disabled' : ''; ?>><?php echo __('save'); ?></button>

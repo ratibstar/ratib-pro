@@ -12,7 +12,7 @@ final class Inventory extends Model
     protected array $fillable = [
         'warehouse_id', 'item_name', 'sku', 'category', 'category_id', 'barcode', 'qr_code',
         'quantity', 'unit', 'unit_cost', 'reorder_level', 'min_stock', 'max_stock',
-        'expiry_date', 'status',
+        'expiry_date', 'status', 'document_path',
     ];
 
     public function totalValue(?int $filterCompanyId = null): float

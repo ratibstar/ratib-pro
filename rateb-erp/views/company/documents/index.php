@@ -32,16 +32,21 @@
         <?php } ?>
         <div class="table-responsive">
             <table class="table rateb-table">
-                <thead><tr><th><?php echo __('title'); ?></th><th><?php echo __('entity_type'); ?></th><th><?php echo __('file_name'); ?></th><th><?php echo __('created_at'); ?></th></tr></thead>
+                <thead><tr><th><?php echo __('title'); ?></th><th><?php echo __('entity_type'); ?></th><th><?php echo __('file_name'); ?></th><th><?php echo __('created_at'); ?></th><th><?php echo __('actions'); ?></th></tr></thead>
                 <tbody>
                 <?php if (empty($items)) { ?>
-                <tr><td colspan="4" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
+                <tr><td colspan="5" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
                 <?php } else { foreach ($items as $row) { ?>
                 <tr>
                     <td><?php echo Rateb\App\Core\View::escape($row['title'] ?? ''); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($row['entity_type'] ?? ''); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($row['file_name'] ?? ''); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($row['created_at'] ?? ''); ?></td>
+                    <td>
+                        <a href="<?php echo rateb_url('documents/download/' . (int) ($row['id'] ?? 0)); ?>" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-download"></i> <?php echo __('download_file'); ?>
+                        </a>
+                    </td>
                 </tr>
                 <?php } } ?>
                 </tbody>

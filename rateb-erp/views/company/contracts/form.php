@@ -35,13 +35,9 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int)$item['id']) : rateb_url
                     <?php } ?>
                 </div>
                 <?php } ?>
-                <div class="col-md-6">
-                    <label class="form-label rateb-form-label" for="contract_file"><?php echo __('contract_attachment'); ?></label>
-                    <input class="form-control rateb-form-control" type="file" id="contract_file" name="contract_file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp">
-                    <?php if (!empty($item['document_path'])) { ?>
-                    <small class="text-muted d-block mt-1"><?php echo __('current_file'); ?>: <?php echo Rateb\App\Core\View::escape(basename((string) $item['document_path'])); ?></small>
-                    <?php } ?>
-                </div>
+                <?php if (!empty($attachment) && is_array($attachment)) {
+                    Rateb\App\Core\View::partial('entity-attachment-field', $attachment);
+                } ?>
             </div>
             <div class="mt-4 d-flex gap-2">
                 <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>

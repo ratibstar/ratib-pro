@@ -1060,6 +1060,15 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             'companies' => $this->billing->companyOptions(),
             'subscriptions' => $this->billing->subscriptionOptions(),
             'csrf' => Csrf::token(),
+            'multipart' => true,
+            'attachment' => [
+                'entityType' => 'invoice',
+                'entityId' => 0,
+                'companyId' => 0,
+                'documentPath' => '',
+                'inputName' => 'entity_attachment',
+                'label' => __('invoice_attachment'),
+            ],
         ], 'main');
     }
 
@@ -1079,6 +1088,7 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
         }
         $id = $this->model->create($data);
         (new \Rateb\App\Services\DocumentBarcodeService())->ensure('invoice', $id);
+        $this->saveInvoiceAttachment($id, $data);
         $row = $this->model->find($id);
         if ($row && ($row['status'] ?? '') === 'paid') {
             (new \Rateb\App\Services\AccountingService())->postInvoice($row);
@@ -1105,6 +1115,15 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             'companies' => $this->billing->companyOptions(),
             'subscriptions' => $this->billing->subscriptionOptions((int) ($item['company_id'] ?? 0)),
             'csrf' => Csrf::token(),
+            'multipart' => true,
+            'attachment' => [
+                'entityType' => 'invoice',
+                'entityId' => $id,
+                'companyId' => (int) ($item['company_id'] ?? 0),
+                'documentPath' => (string) ($item['document_path'] ?? ''),
+                'inputName' => 'entity_attachment',
+                'label' => __('invoice_attachment'),
+            ],
         ], 'main');
     }
 
@@ -1120,6 +1139,7 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
         $this->model->update($id, $data);
+        $this->saveInvoiceAttachment($id, $data);
         $row = $this->model->find($id);
         if ($row && ($row['status'] ?? '') === 'paid') {
             (new \Rateb\App\Services\AccountingService())->postInvoice($row);
@@ -1174,6 +1194,24 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             $data['subscription_id'] = (int) $data['subscription_id'];
         }
         return $data;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function saveInvoiceAttachment(int $id, array $data): void
+    {
+        $companyId = (int) ($data['company_id'] ?? 0);
+        $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
+            'entity_attachment',
+            $companyId,
+            'invoice',
+            $id,
+            __('invoice_attachment')
+        );
+        if (!($upload['success'] ?? false)) {
+            SessionManager::flash('error', (string) ($upload['error'] ?? __('upload_failed')));
+        } elseif (!empty($upload['path'])) {
+            $this->model->update($id, ['document_path' => $upload['path']]);
+        }
     }
 }
 
@@ -1498,6 +1536,30 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
             'csrf' => Csrf::token(),
             'suppliers' => $suppliers,
             'multipart' => true,
+            'attachment' => $this->attachmentFieldData($item),
+        ];
+    }
+
+    /** @param array<string, mixed>|null $item */
+    private function attachmentFieldData(?array $item): ?array
+    {
+        if (!$item || (int) ($item['id'] ?? 0) < 1) {
+            return [
+                'entityType' => 'contract',
+                'entityId' => 0,
+                'companyId' => (int) ($item['company_id'] ?? 0),
+                'documentPath' => '',
+                'inputName' => 'contract_file',
+                'label' => __('contract_attachment'),
+            ];
+        }
+        return [
+            'entityType' => 'contract',
+            'entityId' => (int) $item['id'],
+            'companyId' => (int) ($item['company_id'] ?? 0),
+            'documentPath' => (string) ($item['document_path'] ?? ''),
+            'inputName' => 'contract_file',
+            'label' => __('contract_attachment'),
         ];
     }
 

@@ -63,6 +63,8 @@ $router->get('/admin/logout', [AdminAuthController::class, 'logout'], [ErpAuthMi
 
 $router->get('/locale/{locale}', [LocaleController::class, 'switch']);
 
+$router->get('/documents/download/{id}', [\Rateb\App\Controllers\Shared\DocumentDownloadController::class, 'download'], [ErpAuthMiddleware::class]);
+
 $router->get('/admin', [AdminDashboardController::class, 'index'], [ErpAuthMiddleware::class]);
 $router->get('/admin/executive-dashboard', [ExecutiveDashboardController::class, 'index'], rateb_admin_mw('executive.dashboard.view'));
 

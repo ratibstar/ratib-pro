@@ -441,6 +441,42 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         return 'main';
     }
 
+    public function create(): void
+    {
+        $this->guardManage();
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('create') . ' ' . __($this->entityName),
+            'item' => null,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'multipart' => true,
+            'attachment' => $this->attachmentFieldData(null),
+        ], $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $this->guardManage();
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], $this->layout());
+            return;
+        }
+
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('edit') . ' ' . __($this->entityName),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'multipart' => true,
+            'attachment' => $this->attachmentFieldData($item),
+        ], $this->layout());
+    }
+
     public function store(): void
     {
         $this->guardManage();
@@ -458,9 +494,74 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         }
         $id = $this->model->create($data);
         (new \Rateb\App\Services\DocumentBarcodeService())->ensure('inventory', $id);
+        $this->saveInventoryAttachment($id);
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function update(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectData();
+        try {
+            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+        }
+        $this->model->update($id, $data);
+        $this->saveInventoryAttachment($id);
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    /** @param array<string, mixed>|null $item */
+    private function attachmentFieldData(?array $item): array
+    {
+        $companyId = (int) TenantContext::companyId();
+        if (!$item || (int) ($item['id'] ?? 0) < 1) {
+            return [
+                'entityType' => 'inventory',
+                'entityId' => 0,
+                'companyId' => $companyId,
+                'documentPath' => '',
+                'inputName' => 'entity_attachment',
+                'label' => __('inventory_attachment'),
+            ];
+        }
+        return [
+            'entityType' => 'inventory',
+            'entityId' => (int) $item['id'],
+            'companyId' => $companyId,
+            'documentPath' => (string) ($item['document_path'] ?? ''),
+            'inputName' => 'entity_attachment',
+            'label' => __('inventory_attachment'),
+        ];
+    }
+
+    private function saveInventoryAttachment(int $id): void
+    {
+        $companyId = (int) TenantContext::companyId();
+        $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
+            'entity_attachment',
+            $companyId,
+            'inventory',
+            $id,
+            __('inventory_attachment')
+        );
+        if (!($upload['success'] ?? false)) {
+            SessionManager::flash('error', (string) ($upload['error'] ?? __('upload_failed')));
+        } elseif (!empty($upload['path'])) {
+            $this->model->update($id, ['document_path' => $upload['path']]);
+        }
     }
 }
 
@@ -582,6 +683,31 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
             'csrf' => Csrf::token(),
             'suppliers' => (new \Rateb\App\Models\Supplier())->all(200, 0),
             'multipart' => true,
+            'attachment' => $this->attachmentFieldData($item),
+        ];
+    }
+
+    /** @param array<string, mixed>|null $item */
+    private function attachmentFieldData(?array $item): array
+    {
+        $companyId = (int) TenantContext::companyId();
+        if (!$item || (int) ($item['id'] ?? 0) < 1) {
+            return [
+                'entityType' => 'contract',
+                'entityId' => 0,
+                'companyId' => $companyId,
+                'documentPath' => '',
+                'inputName' => 'contract_file',
+                'label' => __('contract_attachment'),
+            ];
+        }
+        return [
+            'entityType' => 'contract',
+            'entityId' => (int) $item['id'],
+            'companyId' => $companyId,
+            'documentPath' => (string) ($item['document_path'] ?? ''),
+            'inputName' => 'contract_file',
+            'label' => __('contract_attachment'),
         ];
     }
 
