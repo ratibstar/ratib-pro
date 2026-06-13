@@ -20,8 +20,8 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
 ?>
 <div class="rateb-portal-page">
     <div class="container py-4">
-        <div class="card border-0 shadow-sm rateb-portal-welcome mb-4">
-            <div class="card-body p-4">
+        <div class="rateb-portal-welcome mb-4">
+            <div class="rateb-portal-welcome-inner">
                 <p class="text-muted small mb-1"><?php echo __('portal_welcome'); ?></p>
                 <h1 class="h3 mb-1"><?php echo Rateb\App\Core\View::escape($companyName !== '' ? $companyName : $userName); ?></h1>
                 <p class="text-muted mb-0"><?php echo Rateb\App\Core\View::escape(__('portal_welcome_user', ['name' => $userName])); ?></p>
@@ -31,32 +31,32 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
 
         <div class="row g-3 mb-4">
             <div class="col-6 col-lg-3">
-                <div class="card h-100 shadow-sm rateb-portal-stat-card">
-                    <div class="card-body text-center">
+                <div class="rateb-portal-stat-card h-100">
+                    <div class="rateb-portal-stat-inner text-center">
                         <div class="rateb-portal-stat-num"><?php echo (int) ($metrics['purchase_requests'] ?? 0); ?></div>
                         <div class="small text-muted"><?php echo __('purchase_requests'); ?></div>
                     </div>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
-                <div class="card h-100 shadow-sm rateb-portal-stat-card">
-                    <div class="card-body text-center">
+                <div class="rateb-portal-stat-card h-100">
+                    <div class="rateb-portal-stat-inner text-center">
                         <div class="rateb-portal-stat-num"><?php echo (int) ($metrics['purchase_orders'] ?? 0); ?></div>
                         <div class="small text-muted"><?php echo __('purchase_orders'); ?></div>
                     </div>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
-                <div class="card h-100 shadow-sm rateb-portal-stat-card">
-                    <div class="card-body text-center">
+                <div class="rateb-portal-stat-card h-100">
+                    <div class="rateb-portal-stat-inner text-center">
                         <div class="rateb-portal-stat-num"><?php echo number_format((float) ($metrics['inventory_value'] ?? 0), 0); ?></div>
                         <div class="small text-muted"><?php echo __('inventory_value'); ?></div>
                     </div>
                 </div>
             </div>
             <div class="col-6 col-lg-3">
-                <div class="card h-100 shadow-sm rateb-portal-stat-card">
-                    <div class="card-body text-center">
+                <div class="rateb-portal-stat-card h-100">
+                    <div class="rateb-portal-stat-inner text-center">
                         <div class="rateb-portal-stat-num"><?php echo (int) ($metrics['suppliers'] ?? 0); ?></div>
                         <div class="small text-muted"><?php echo __('suppliers'); ?></div>
                     </div>
@@ -66,8 +66,8 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
 
         <div class="row g-4">
             <div class="col-lg-8">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="rateb-portal-panel mb-4">
+                    <div class="rateb-portal-panel-head d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <span class="fw-semibold"><i class="fas fa-bolt text-primary ms-2"></i><?php echo __('portal_quick_links'); ?></span>
                         <?php if ($unreadNotifications > 0) { ?>
                         <a href="<?php echo rateb_url('site/portal/notifications'); ?>" class="badge text-bg-danger text-decoration-none">
@@ -75,7 +75,7 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
                         </a>
                         <?php } ?>
                     </div>
-                    <div class="card-body">
+                    <div class="rateb-portal-panel-body">
                         <div class="row g-2">
                             <?php foreach ($quickLinks as $link) { ?>
                             <div class="col-sm-6">
@@ -92,11 +92,11 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
                     </div>
                 </div>
 
-                <div class="card shadow-sm">
-                    <div class="card-header bg-transparent fw-semibold">
+                <div class="rateb-portal-panel">
+                    <div class="rateb-portal-panel-head fw-semibold">
                         <i class="fas fa-puzzle-piece text-primary ms-2"></i><?php echo __('portal_plan_modules'); ?>
                     </div>
-                    <div class="card-body">
+                    <div class="rateb-portal-panel-body">
                         <p class="text-muted small"><?php echo __('portal_plan_modules_hint'); ?></p>
                         <?php if ($modules === []) { ?>
                         <p class="text-muted mb-0"><?php echo __('portal_no_modules'); ?></p>
@@ -104,8 +104,8 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
                         <div class="row g-3">
                             <?php foreach ($modules as $mod) { ?>
                             <div class="col-md-6">
-                                <div class="card h-100 rateb-portal-module-card">
-                                    <div class="card-body">
+                                <div class="rateb-portal-module-card h-100">
+                                    <div class="rateb-portal-module-inner">
                                         <div class="fw-semibold rateb-portal-module-title mb-2">
                                             <i class="fas <?php echo Rateb\App\Core\View::escape((string) ($mod['icon'] ?? 'fa-cube')); ?> text-primary ms-2"></i>
                                             <?php echo Rateb\App\Core\View::escape((string) ($mod['label'] ?? '')); ?>
@@ -128,11 +128,11 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
             </div>
 
             <div class="col-lg-4">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-transparent fw-semibold">
+                <div class="rateb-portal-panel mb-4">
+                    <div class="rateb-portal-panel-head fw-semibold">
                         <i class="fas fa-id-card text-primary ms-2"></i><?php echo __('portal_account'); ?>
                     </div>
-                    <div class="card-body">
+                    <div class="rateb-portal-panel-body">
                         <dl class="rateb-portal-meta mb-3">
                             <dt><?php echo __('name'); ?></dt>
                             <dd><?php echo Rateb\App\Core\View::escape($userName); ?></dd>
@@ -149,11 +149,11 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
                     </div>
                 </div>
 
-                <div class="card shadow-sm">
-                    <div class="card-header bg-transparent fw-semibold">
+                <div class="rateb-portal-panel">
+                    <div class="rateb-portal-panel-head fw-semibold">
                         <i class="fas fa-crown text-warning ms-2"></i><?php echo __('plan_limits'); ?>
                     </div>
-                    <div class="card-body">
+                    <div class="rateb-portal-panel-body">
                         <dl class="rateb-portal-meta mb-3">
                             <dt><?php echo __('current_plan'); ?></dt>
                             <dd><?php echo Rateb\App\Core\View::escape((string) ($subscription['plan_display'] ?? $limits['plan_name'] ?? '—')); ?></dd>

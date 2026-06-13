@@ -9,14 +9,14 @@
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <?php if ($notifications === []) { ?>
-                <div class="card shadow-sm">
-                    <div class="card-body text-center text-muted py-5">
+                <div class="rateb-portal-panel">
+                    <div class="rateb-portal-panel-body text-center text-muted py-5">
                         <i class="fas fa-bell-slash fa-2x mb-3 opacity-50"></i>
                         <p class="mb-0"><?php echo __('portal_no_notifications'); ?></p>
                     </div>
                 </div>
                 <?php } else { ?>
-                <div class="list-group shadow-sm">
+                <div class="list-group rateb-portal-panel">
                     <?php foreach ($notifications as $item) {
                         $isRead = (int) ($item['is_read'] ?? 0) === 1;
                         ?>

@@ -5,9 +5,10 @@ $meta = $meta ?? [];
 $theme = $theme ?? [];
 $primary = $theme['primary_color'] ?? '#1a5fb4';
 $secondary = $theme['secondary_color'] ?? '#3584e4';
+$isPortalLayout = !empty($isPortalPage);
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="light" data-bs-theme="light">
+<html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="light" data-bs-theme="light"<?php echo $isPortalLayout ? ' data-portal-layout="1"' : ''; ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,7 +43,7 @@ $secondary = $theme['secondary_color'] ?? '#3584e4';
     <link href="<?php echo rateb_asset('css/marketing-rtl.css'); ?>" rel="stylesheet">
     <?php require RATEB_ROOT . '/views/marketing/partials/analytics-head.php'; ?>
 </head>
-<body class="rateb-marketing<?php echo $dir === 'rtl' ? ' rateb-marketing-rtl' : ''; ?>">
+<body class="rateb-marketing<?php echo $dir === 'rtl' ? ' rateb-marketing-rtl' : ''; ?><?php echo $isPortalLayout ? ' rateb-portal-layout' : ''; ?>">
 <?php
 $gtmId = !empty($analytics['google_tag_manager_id']) ? (string) $analytics['google_tag_manager_id'] : '';
 if ($gtmId !== '') {

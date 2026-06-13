@@ -267,17 +267,35 @@
 }
 
 .rateb-portal-welcome {
-    background: linear-gradient(135deg, var(--cms-primary), var(--cms-secondary));
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.rateb-portal-welcome-inner {
+    padding: 1.75rem 2rem;
+    background: linear-gradient(135deg, #1e4d8c 0%, #2d6cb5 50%, #3d84c9 100%);
+    color: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 10px 32px rgba(30, 77, 140, 0.22);
+}
+
+.rateb-portal-welcome-inner .text-muted {
+    color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.rateb-portal-welcome-inner h1,
+.rateb-portal-welcome-inner .h3 {
     color: #fff;
 }
 
-.rateb-portal-welcome .text-muted {
-    color: rgba(255, 255, 255, 0.82) !important;
+.rateb-portal-stat-card {
+    border-radius: 0.75rem;
+    border: 1px solid var(--cms-border);
+    background: var(--cms-surface);
 }
 
-.rateb-portal-welcome h1,
-.rateb-portal-welcome .h3 {
-    color: #fff;
+.rateb-portal-stat-inner {
+    padding: 1.1rem 1rem;
 }
 
 .rateb-portal-stat-num {
@@ -286,6 +304,23 @@
     color: var(--cms-primary);
     direction: ltr;
     unicode-bidi: isolate;
+}
+
+.rateb-portal-panel {
+    border-radius: 0.875rem;
+    border: 1px solid var(--cms-border);
+    background: var(--cms-surface);
+    overflow: hidden;
+}
+
+.rateb-portal-panel-head {
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--cms-border);
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.rateb-portal-panel-body {
+    padding: 1.25rem;
 }
 
 .rateb-portal-meta dt {
@@ -307,25 +342,16 @@
 
 .rateb-portal-module-card {
     border: 1px solid var(--cms-border);
-    background: var(--cms-surface);
-    position: relative;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 0.625rem;
 }
 
-.rateb-portal-module-card .card-body {
-    position: relative;
+.rateb-portal-module-inner {
+    padding: 1rem 1.1rem;
 }
 
 .rateb-portal-module-title {
     color: var(--cms-text);
-    position: relative;
-    z-index: 2;
-}
-
-.rateb-portal-module-links .list-group-item {
-    background: transparent;
-    color: var(--cms-muted);
-    position: relative;
-    z-index: 2;
 }
 
 .rateb-portal-module-subs {
@@ -349,138 +375,132 @@
     border-radius: 0.625rem;
     text-decoration: none;
     font-weight: 500;
-    transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.rateb-portal-page .card {
-    background: var(--cms-surface);
-    border-color: var(--cms-border);
-    color: var(--cms-text);
-}
-
-.rateb-portal-page .card-header {
-    border-color: var(--cms-border);
-    background: transparent;
+.rateb-portal-nav .nav-link.active {
+    color: var(--cms-primary);
 }
 
 .rateb-mkt-cta .btn-light {
     color: var(--cms-primary);
 }
 
-/* Light mode — softer portal (less glare, better contrast) */
-html[data-theme="light"] .rateb-portal-page,
-html[data-bs-theme="light"] .rateb-portal-page {
-    background: linear-gradient(180deg, #e9eef4 0%, #f3f6fa 40%, #f5f7fa 100%);
+/* Portal layout — default dark; soft slate if user picks light */
+body.rateb-portal-layout.rateb-marketing {
+    --cms-bg: #0f172a;
+    --cms-surface: #1e293b;
+    --cms-text: #e2e8f0;
+    --cms-muted: #94a3b8;
+    --cms-border: #334155;
 }
 
-html[data-theme="light"] .rateb-mkt-header-portal,
-html[data-bs-theme="light"] .rateb-mkt-header-portal {
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(10px);
-    border-bottom-color: #d5dee8;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+html[data-theme="light"] body.rateb-portal-layout.rateb-marketing,
+html[data-bs-theme="light"] body.rateb-portal-layout.rateb-marketing {
+    --cms-bg: #dce3eb;
+    --cms-surface: #eef2f6;
+    --cms-text: #1e293b;
+    --cms-muted: #5a6a7d;
+    --cms-border: #c5d0dc;
 }
 
-html[data-theme="light"] .rateb-portal-welcome,
-html[data-bs-theme="light"] .rateb-portal-welcome {
-    background: linear-gradient(135deg, #2563a8 0%, #3b7ec8 55%, #5b9bd5 100%);
-    box-shadow: 0 8px 28px rgba(37, 99, 168, 0.18);
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-page,
+html[data-bs-theme="light"] body.rateb-portal-layout .rateb-portal-page {
+    background: #dce3eb;
 }
 
-html[data-theme="light"] .rateb-portal-page .card,
-html[data-bs-theme="light"] .rateb-portal-page .card {
-    background: #ffffff;
-    border: 1px solid #d8e2ec;
-    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+html[data-theme="light"] body.rateb-portal-layout .rateb-mkt-header,
+html[data-bs-theme="light"] body.rateb-portal-layout .rateb-mkt-header {
+    background: #e8edf3;
+    border-bottom-color: #c5d0dc;
+    box-shadow: none;
 }
 
-html[data-theme="light"] .rateb-portal-page .card-header,
-html[data-bs-theme="light"] .rateb-portal-page .card-header {
-    background: #f8fafc;
-    border-bottom-color: #e2e8f0;
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-welcome-inner {
+    background: linear-gradient(135deg, #1a4f94 0%, #2a6cb8 100%);
 }
 
-html[data-theme="light"] .rateb-portal-stat-card .card-body,
-html[data-bs-theme="light"] .rateb-portal-stat-card .card-body {
-    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-stat-card,
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-panel {
+    background: #eef2f6;
+    border-color: #c5d0dc;
+    box-shadow: none;
 }
 
-html[data-theme="light"] .rateb-portal-stat-num,
-html[data-bs-theme="light"] .rateb-portal-stat-num {
-    color: #1d5fa8;
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-panel-head {
+    background: #e4eaf1;
 }
 
-html[data-theme="light"] .rateb-portal-page .rateb-portal-action-btn,
-html[data-bs-theme="light"] .rateb-portal-page .rateb-portal-action-btn {
-    background: #f1f5f9;
-    border: 1px solid #d5dee8;
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-module-card {
+    background: #e4eaf1;
+}
+
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-action-btn {
+    background: #e4eaf1;
+    border: 1px solid #c5d0dc;
     color: #334155;
 }
 
-html[data-theme="light"] .rateb-portal-page .rateb-portal-action-btn:hover,
-html[data-bs-theme="light"] .rateb-portal-page .rateb-portal-action-btn:hover {
-    background: #ffffff;
-    border-color: #93b4d9;
-    color: #1a5fb4;
-    box-shadow: 0 2px 8px rgba(26, 95, 180, 0.1);
-}
-
-html[data-theme="light"] .rateb-portal-module-card,
-html[data-bs-theme="light"] .rateb-portal-module-card {
-    background: #f8fafc;
-    border-color: #dde5ef;
-}
-
-html[data-theme="light"] .rateb-portal-module-subs,
-html[data-bs-theme="light"] .rateb-portal-module-subs {
-    color: #5c6b7e;
-}
-
-html[data-theme="light"] .rateb-portal-meta dt,
-html[data-bs-theme="light"] .rateb-portal-meta dt {
-    color: #64748b;
-}
-
-html[data-theme="light"] .rateb-portal-nav .nav-link,
-html[data-bs-theme="light"] .rateb-portal-nav .nav-link {
-    color: #475569;
-}
-
-html[data-theme="light"] .rateb-portal-nav .nav-link.active,
-html[data-bs-theme="light"] .rateb-portal-nav .nav-link.active {
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-action-btn:hover {
+    background: #f5f8fb;
+    border-color: #7ba3cc;
     color: #1a5fb4;
 }
 
-html[data-theme="light"] .rateb-portal-page .list-group-item,
-html[data-bs-theme="light"] .rateb-portal-page .list-group-item {
-    background: #fff;
-    border-color: #e2e8f0;
-    color: #334155;
+html[data-theme="dark"] body.rateb-portal-layout .rateb-portal-page,
+html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-page {
+    background: #0f172a;
 }
 
-html[data-theme="light"] .rateb-portal-page .list-group-item-primary,
-html[data-bs-theme="light"] .rateb-portal-page .list-group-item-primary {
-    background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #1e3a5f;
+html[data-theme="dark"] body.rateb-portal-layout .rateb-portal-stat-card,
+html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-panel {
+    background: #1e293b;
+    border-color: #334155;
 }
 
-html[data-theme="light"] .rateb-portal-page .form-control,
-html[data-theme="light"] .rateb-portal-page .form-select,
-html[data-bs-theme="light"] .rateb-portal-page .form-control,
-html[data-bs-theme="light"] .rateb-portal-page .form-select {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-    color: #1e293b;
+html[data-theme="dark"] body.rateb-portal-layout .rateb-portal-panel-head {
+    background: #172033;
 }
 
-html[data-theme="light"] .rateb-portal-page .form-control:focus,
-html[data-theme="light"] .rateb-portal-page .form-select:focus,
-html[data-bs-theme="light"] .rateb-portal-page .form-control:focus,
-html[data-bs-theme="light"] .rateb-portal-page .form-select:focus {
-    background: #fff;
-    border-color: #7eb0e3;
-    box-shadow: 0 0 0 0.2rem rgba(26, 95, 180, 0.12);
+html[data-theme="dark"] body.rateb-portal-layout .rateb-portal-module-card,
+html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-module-card {
+    background: #172033;
+}
+
+html[data-theme="dark"] body.rateb-portal-layout .rateb-portal-action-btn,
+html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-action-btn {
+    background: #172033;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] body.rateb-portal-layout .rateb-portal-action-btn:hover,
+html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-action-btn:hover {
+    border-color: #3b82f6;
+    color: #93c5fd;
+}
+
+html[data-theme="dark"] body.rateb-portal-layout .rateb-portal-page .form-control,
+html[data-theme="dark"] body.rateb-portal-layout .rateb-portal-page .form-select,
+html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-page .form-control,
+html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-page .form-select {
+    background: #172033;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] body.rateb-portal-layout .rateb-portal-page .list-group-item,
+html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-page .list-group-item {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] body.rateb-portal-layout .rateb-portal-page .list-group-item-primary,
+html[data-bs-theme="dark"] body.rateb-portal-layout .rateb-portal-page .list-group-item-primary {
+    background: #1e3a5f;
+    border-color: #2563eb;
+    color: #dbeafe;
 }
 
 @media (max-width: 991.98px) {

@@ -3,6 +3,12 @@
 
     var storageKey = 'rateb_mkt_theme';
 
+    function themeKey() {
+        return document.documentElement.getAttribute('data-portal-layout') === '1'
+            ? 'rateb_portal_theme'
+            : storageKey;
+    }
+
     function applyTheme(mode) {
         var root = document.documentElement;
         var bs = mode === 'dark' ? 'dark' : 'light';
@@ -15,11 +21,13 @@
     }
 
     function initTheme() {
-        var saved = 'light';
+        var isPortal = document.documentElement.getAttribute('data-portal-layout') === '1';
+        var saved = null;
         try {
-            saved = localStorage.getItem(storageKey) || 'light';
+            saved = localStorage.getItem(themeKey());
         } catch (e) {}
-        applyTheme(saved === 'dark' ? 'dark' : 'light');
+        var mode = saved || (isPortal ? 'dark' : 'light');
+        applyTheme(mode === 'dark' ? 'dark' : 'light');
     }
 
     document.addEventListener('click', function (e) {
@@ -27,7 +35,7 @@
         if (!btn) return;
         var mode = btn.getAttribute('data-mkt-theme') === 'dark' ? 'dark' : 'light';
         try {
-            localStorage.setItem(storageKey, mode);
+            localStorage.setItem(themeKey(), mode);
         } catch (err) {}
         applyTheme(mode);
     });

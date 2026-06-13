@@ -8,8 +8,8 @@
         </div>
         <div class="row justify-content-center">
             <div class="col-lg-7">
-                <div class="card shadow-sm">
-                    <div class="card-body p-4">
+                <div class="rateb-portal-panel">
+                    <div class="rateb-portal-panel-body">
                         <form method="post" action="<?php echo rateb_url('site/portal/profile'); ?>" class="rateb-mkt-form">
                             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                             <div class="mb-3">
