@@ -107,6 +107,6 @@ final class CustomerPortalController extends Controller
             'csrf' => Csrf::token(),
             'isPortalPage' => true,
             'portalSection' => $section,
-        ], $extra), 'marketing');
+        ], $extra), 'marketing-portal');
     }
 }

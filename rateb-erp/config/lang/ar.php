@@ -663,4 +663,7 @@ return [
     'portal_notifications_hint' => 'تنبيهات وتحديثات تخص حسابك واشتراكك.',
     'portal_no_notifications' => 'لا توجد إشعارات حالياً.',
     'portal_unread' => 'جديد',
+    'portal_customer_area' => 'منطقة العميل',
+    'portal_unread_count' => ':count إشعارات جديدة',
+    'cms_back_home' => 'العودة للموقع',
 ];

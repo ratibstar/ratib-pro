@@ -5,26 +5,30 @@ use Rateb\App\Services\CmsService;
 
 $portalUser = Auth::user();
 $isCompanyCustomer = $portalUser && !rateb_is_super_admin() && (int) ($_SESSION['rateb_company_id'] ?? 0) > 0;
-$isPortalPage = !empty($isPortalPage);
+$headerContext = (string) ($headerContext ?? 'marketing');
 $portalSection = (string) ($portalSection ?? '');
 $portalNav = [
     'home' => ['label' => __('portal_dashboard'), 'url' => rateb_url('site/portal')],
     'profile' => ['label' => __('profile'), 'url' => rateb_url('site/portal/profile')],
     'notifications' => ['label' => __('notifications'), 'url' => rateb_url('site/portal/notifications')],
 ];
+$brandUrl = $headerContext === 'portal' ? rateb_url('site/portal') : rateb_url('site');
 ?>
-<header class="rateb-mkt-header<?php echo $isPortalPage ? ' rateb-mkt-header-portal' : ''; ?>">
+<header class="rateb-mkt-header rateb-mkt-header-<?php echo Rateb\App\Core\View::escape($headerContext); ?>">
     <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand rateb-mkt-brand" href="<?php echo rateb_url($isCompanyCustomer ? 'site/portal' : 'site'); ?>">
+            <a class="navbar-brand rateb-mkt-brand" href="<?php echo $brandUrl; ?>">
                 <i class="fas fa-hospital"></i>
                 <span><?php echo __('rateb_erp'); ?></span>
+                <?php if ($headerContext === 'portal') { ?>
+                <small class="rateb-mkt-brand-badge"><?php echo __('portal_customer_area'); ?></small>
+                <?php } ?>
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#ratebMktNav" aria-controls="ratebMktNav" aria-expanded="false" aria-label="Menu">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="ratebMktNav">
-                <?php if ($isCompanyCustomer) { ?>
+                <?php if ($headerContext === 'portal') { ?>
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0 rateb-portal-nav">
                     <?php foreach ($portalNav as $key => $nav) { ?>
                     <li class="nav-item">
@@ -34,7 +38,13 @@ $portalNav = [
                     </li>
                     <?php } ?>
                 </ul>
-                <?php } elseif (!$isPortalPage) { ?>
+                <?php } elseif ($headerContext === 'auth') { ?>
+                <div class="me-auto mb-2 mb-lg-0">
+                    <a href="<?php echo rateb_url('site'); ?>" class="nav-link d-inline-block px-0">
+                        <i class="fas fa-arrow-right ms-1"></i><?php echo __('cms_back_home'); ?>
+                    </a>
+                </div>
+                <?php } else { ?>
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <?php foreach ($menuItems ?? [] as $item) {
                         $label = CmsService::pickLocale($item, 'label');
@@ -47,22 +57,23 @@ $portalNav = [
                 </ul>
                 <?php } ?>
                 <div class="d-flex align-items-center gap-2 rateb-mkt-actions">
-                    <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('theme_dark'); ?>">
+                    <?php if ($headerContext !== 'auth') { ?>
+                    <div class="btn-group btn-group-sm d-none d-md-inline-flex" role="group" aria-label="<?php echo __('theme_dark'); ?>">
                         <button type="button" class="btn btn-outline-secondary" data-mkt-theme="light" title="<?php echo __('theme_light'); ?>"><i class="fas fa-sun"></i></button>
                         <button type="button" class="btn btn-outline-secondary" data-mkt-theme="dark" title="<?php echo __('theme_dark'); ?>"><i class="fas fa-moon"></i></button>
                     </div>
+                    <?php } ?>
                     <a href="<?php echo rateb_url('locale/en'); ?>" class="btn btn-sm btn-outline-secondary<?php echo rateb_locale() === 'en' ? ' active' : ''; ?>">EN</a>
                     <a href="<?php echo rateb_url('locale/ar'); ?>" class="btn btn-sm btn-outline-secondary<?php echo rateb_locale() === 'ar' ? ' active' : ''; ?>">عربي</a>
-                    <?php if ($isCompanyCustomer) { ?>
-                    <span class="rateb-mkt-user-chip d-none d-md-inline"><?php echo Rateb\App\Core\View::escape((string) ($portalUser['name'] ?? '')); ?></span>
-                    <?php if (!$isPortalPage) { ?>
+                    <?php if ($isCompanyCustomer && $headerContext === 'marketing') { ?>
                     <a href="<?php echo rateb_url('site/portal'); ?>" class="btn btn-sm btn-primary"><?php echo __('portal_my_account'); ?></a>
-                    <?php } ?>
                     <a href="<?php echo rateb_url('site/portal/logout'); ?>" class="btn btn-sm btn-outline-danger"><?php echo __('logout'); ?></a>
-                    <?php } else { ?>
+                    <?php } elseif ($isCompanyCustomer && $headerContext === 'portal') { ?>
+                    <span class="rateb-mkt-user-chip d-none d-md-inline"><?php echo Rateb\App\Core\View::escape((string) ($portalUser['name'] ?? '')); ?></span>
+                    <a href="<?php echo rateb_url('site/portal/logout'); ?>" class="btn btn-sm btn-outline-danger"><?php echo __('logout'); ?></a>
+                    <?php } elseif ($headerContext !== 'auth') { ?>
                     <a href="<?php echo rateb_url('site/login'); ?>" class="btn btn-sm btn-outline-primary"><?php echo __('cms_customer_login'); ?></a>
-                    <a href="<?php echo rateb_url('site/register'); ?>" class="btn btn-sm btn-outline-secondary"><?php echo __('cms_register'); ?></a>
-                    <a href="<?php echo rateb_url('site/request-demo'); ?>" class="btn btn-sm btn-primary rateb-mkt-cta"><?php echo __('cms_request_demo'); ?></a>
+                    <a href="<?php echo rateb_url('site/register'); ?>" class="btn btn-sm btn-primary"><?php echo __('cms_register'); ?></a>
                     <?php } ?>
                 </div>
             </div>

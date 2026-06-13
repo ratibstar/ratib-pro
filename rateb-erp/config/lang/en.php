@@ -663,4 +663,7 @@ return [
     'portal_notifications_hint' => 'Updates and alerts related to your account and subscription.',
     'portal_no_notifications' => 'No notifications yet.',
     'portal_unread' => 'New',
+    'portal_customer_area' => 'Customer area',
+    'portal_unread_count' => ':count new notifications',
+    'cms_back_home' => 'Back to website',
 ];

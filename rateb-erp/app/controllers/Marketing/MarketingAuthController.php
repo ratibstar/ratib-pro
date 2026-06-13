@@ -235,6 +235,6 @@ final class MarketingAuthController extends Controller
             'menuItems' => $cms->menuItems(),
             'theme' => $cms->theme(),
             'analytics' => $cms->analytics(),
-        ], $extra), 'marketing');
+        ], $extra), 'marketing-auth');
     }
 }
