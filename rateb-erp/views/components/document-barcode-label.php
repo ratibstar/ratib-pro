@@ -6,7 +6,7 @@ if (empty($docBarcode) || empty($docBarcode['barcode'])) {
 $uid = 'docbc-' . preg_replace('/[^a-z0-9]/i', '', (string) ($docBarcode['type'] ?? 'doc')) . '-' . (int) ($docBarcode['recordId'] ?? 0);
 $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($docBarcode['title'] ?? 'label')) ?: 'label';
 ?>
-<link rel="stylesheet" href="<?php echo rateb_asset('css/document-barcodes.css'); ?>?v=3">
+<link rel="stylesheet" href="<?php echo rateb_asset('css/document-barcodes.css'); ?>?v=6">
 <div class="rateb-doc-barcode mt-4" data-rateb-barcodes
     data-barcode="<?php echo Rateb\App\Core\View::escape((string) $docBarcode['barcode']); ?>"
     data-qr="<?php echo Rateb\App\Core\View::escape((string) ($docBarcode['qr_code'] ?? '')); ?>"
@@ -47,4 +47,4 @@ $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($docBarcode['title'
         </div>
     </div>
 </div>
-<script src="<?php echo rateb_asset('js/barcodes.js'); ?>?v=5"></script>
+<script src="<?php echo rateb_asset('js/barcodes.js'); ?>?v=6"></script>

@@ -1,13 +1,15 @@
 .rateb-doc-barcode-print-area {
     padding: 1.25rem;
-    background: #fff;
+    background: var(--rateb-surface-elevated, #1c2940);
+    border: 1px solid var(--rateb-border, #2a3a52);
     border-radius: 8px;
+    color: var(--rateb-text, #e2e8f0);
 }
 
 .rateb-doc-barcode-brand {
     font-size: 0.8rem;
     letter-spacing: 0.04em;
-    color: #6c757d;
+    color: var(--rateb-text-muted, #94a3b8);
 }
 
 .rateb-doc-barcode-print-area[dir='rtl'] .rateb-doc-barcode-brand {
@@ -18,6 +20,11 @@
     font-weight: 700;
     white-space: normal;
     word-break: normal;
+    color: var(--rateb-text, #e2e8f0);
+}
+
+.rateb-doc-barcode-subtitle {
+    color: var(--rateb-text-muted, #94a3b8) !important;
 }
 
 .rateb-doc-barcode-codes {
@@ -27,13 +34,13 @@
 .rateb-doc-barcode .rateb-doc-qr-img {
     max-width: 200px;
     height: auto;
-    border: 1px solid #e9ecef;
+    border: 1px solid var(--rateb-border, #2a3a52);
     border-radius: 4px;
     background: #fff;
 }
 
 .rateb-doc-barcode-code {
-    color: #495057;
+    color: var(--rateb-accent, #2dd4bf);
     font-size: 0.95rem;
 }
 
@@ -53,12 +60,50 @@ body.rateb-printing-doc-barcode .rateb-print-target {
     width: 100%;
     padding: 12mm;
     background: #fff;
+    color: #212529 !important;
+    border: none !important;
+}
+
+body.rateb-printing-doc-barcode .rateb-print-target .rateb-doc-barcode-brand,
+body.rateb-printing-doc-barcode .rateb-print-target .text-muted,
+body.rateb-printing-doc-barcode .rateb-print-target dt {
+    color: #6c757d !important;
+}
+
+body.rateb-printing-doc-barcode .rateb-print-target .rateb-doc-barcode-title,
+body.rateb-printing-doc-barcode .rateb-print-target dd,
+body.rateb-printing-doc-barcode .rateb-print-target .rateb-doc-barcode-code {
+    color: #212529 !important;
+}
+
+body.rateb-printing-doc-barcode .rateb-print-target .rateb-card {
+    background: #fff !important;
+    border-color: #dee2e6 !important;
 }
 
 .rateb-scan-view .rateb-scan-print-area {
-    background: #fff;
-    border-radius: 8px;
-    padding: 1rem;
+    background: var(--rateb-surface-elevated, #1c2940);
+    border: 1px solid var(--rateb-border, #2a3a52);
+    border-radius: var(--rateb-radius, 12px);
+    padding: 1.25rem;
+    color: var(--rateb-text, #e2e8f0);
+}
+
+.rateb-scan-view .rateb-doc-barcode-title {
+    color: var(--rateb-text, #e2e8f0);
+}
+
+.rateb-scan-view .rateb-doc-barcode-code {
+    color: var(--rateb-accent, #2dd4bf);
+}
+
+.rateb-scan-view .rateb-card {
+    background: var(--rateb-surface, #151f32);
+    border-color: var(--rateb-border, #2a3a52);
+}
+
+.rateb-scan-view dl dd {
+    color: var(--rateb-text, #e2e8f0);
 }
 
 .rateb-scan-actions .btn {

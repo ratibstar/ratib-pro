@@ -126,7 +126,7 @@ final class DocumentBarcodeService
             'title' => $title,
             'subtitle' => $subtitle,
             'barcode' => $barcode,
-            'qr_image_url' => $this->qrImageUrl($qrPayload, 160),
+            'qr_image_url' => $this->qrPublicUrl($qrPayload, 160),
             'fields' => $this->publicFields($type, $row),
         ];
     }
@@ -184,6 +184,11 @@ final class DocumentBarcodeService
     public function qrProxyUrl(string $payload, int $size = 280): string
     {
         return rateb_url('barcode/qr?data=' . rawurlencode($payload) . '&size=' . $size);
+    }
+
+    public function qrPublicUrl(string $payload, int $size = 280): string
+    {
+        return rateb_url('scan/qr?data=' . rawurlencode($payload) . '&size=' . $size);
     }
 
     /** @return array{barcode:string,qr_code:string}|null */

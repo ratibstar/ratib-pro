@@ -2,7 +2,7 @@
 /** @var array<string, mixed> $doc */
 $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($doc['title'] ?? 'document')) ?: 'document';
 ?>
-<link rel="stylesheet" href="<?php echo rateb_asset('css/document-barcodes.css'); ?>?v=4">
+<link rel="stylesheet" href="<?php echo rateb_asset('css/document-barcodes.css'); ?>?v=6">
 <div class="rateb-scan-view" data-rateb-scan-view data-label-title="<?php echo Rateb\App\Core\View::escape($safeFilename); ?>">
     <p class="text-muted small text-center mb-3"><?php echo __('scan_view_only_hint'); ?></p>
     <div class="d-flex justify-content-center gap-2 mb-3 rateb-scan-actions">
@@ -39,4 +39,4 @@ $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($doc['title'] ?? 'd
         </div>
     </div>
 </div>
-<script src="<?php echo rateb_asset('js/document-scan.js'); ?>?v=1"></script>
+<script src="<?php echo rateb_asset('js/document-scan.js'); ?>?v=2"></script>

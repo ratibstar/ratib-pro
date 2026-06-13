@@ -41,6 +41,7 @@
         }
         if (qrNode.tagName === 'IMG' && qrNode.src) {
             var img = new Image();
+            img.crossOrigin = 'anonymous';
             img.onload = function () {
                 try {
                     ctx.drawImage(img, x, y, size, size);

@@ -6,13 +6,81 @@
         return name !== '' ? name : 'document';
     }
 
-    function downloadDataUrl(dataUrl, filename) {
+    function isMobile() {
+        return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    }
+
+    function saveBlob(blob, filename) {
+        if (!blob) {
+            return false;
+        }
+        var url = URL.createObjectURL(blob);
+        if (navigator.share && isMobile()) {
+            try {
+                var file = new File([blob], filename, { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    navigator.share({ files: [file], title: filename }).finally(function () {
+                        URL.revokeObjectURL(url);
+                    });
+                    return true;
+                }
+            } catch (e) {}
+        }
         var link = document.createElement('a');
-        link.href = dataUrl;
+        link.href = url;
         link.download = filename;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        if (isMobile()) {
+            setTimeout(function () {
+                window.open(url, '_blank');
+            }, 250);
+        }
+        setTimeout(function () {
+            URL.revokeObjectURL(url);
+        }, 60000);
+        return true;
+    }
+
+    function saveCanvas(canvas, filename, qrImg) {
+        if (!canvas) {
+            if (qrImg && qrImg.src) {
+                fetch(qrImg.src, { credentials: 'same-origin' })
+                    .then(function (response) { return response.blob(); })
+                    .then(function (blob) { saveBlob(blob, filename); })
+                    .catch(function () { window.open(qrImg.src, '_blank'); });
+            }
+            return;
+        }
+        if (canvas.toBlob) {
+            canvas.toBlob(function (blob) {
+                if (!saveBlob(blob, filename) && qrImg && qrImg.src) {
+                    window.open(qrImg.src, '_blank');
+                }
+            }, 'image/png');
+            return;
+        }
+        try {
+            var dataUrl = canvas.toDataURL('image/png');
+            var parts = dataUrl.split(',');
+            if (parts.length < 2) {
+                throw new Error('invalid data url');
+            }
+            var binary = atob(parts[1]);
+            var bytes = new Uint8Array(binary.length);
+            for (var i = 0; i < binary.length; i += 1) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            saveBlob(new Blob([bytes], { type: 'image/png' }), filename);
+        } catch (e) {
+            if (qrImg && qrImg.src) {
+                fetch(qrImg.src, { credentials: 'same-origin' })
+                    .then(function (response) { return response.blob(); })
+                    .then(function (blob) { saveBlob(blob, filename); })
+                    .catch(function () { window.open(qrImg.src, '_blank'); });
+            }
+        }
     }
 
     function drawQr(ctx, img, x, y, size, done) {
@@ -23,6 +91,7 @@
             return;
         }
         var loader = new Image();
+        loader.crossOrigin = 'anonymous';
         loader.onload = function () {
             try {
                 ctx.drawImage(loader, x, y, size, size);
@@ -145,13 +214,9 @@
 
     function downloadView(root) {
         var filename = safeName(root.getAttribute('data-label-title')) + '.png';
+        var qrImg = root.querySelector('[data-qr-img]');
         buildCanvas(root, function (canvas) {
-            if (!canvas) {
-                return;
-            }
-            try {
-                downloadDataUrl(canvas.toDataURL('image/png'), filename);
-            } catch (e) {}
+            saveCanvas(canvas, filename, qrImg);
         });
     }
 
