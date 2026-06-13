@@ -103,4 +103,23 @@ final class TenantGuard
         }
         return $row;
     }
+
+    /** @return array<string, mixed> */
+    public static function assertWarehouseTransfer(int $transferId, ?int $companyId = null): array
+    {
+        $cid = TenantContext::isSuperAdmin() ? null : ($companyId ?? self::requireCompanyId());
+        $db = Database::connection();
+        if ($cid === null) {
+            $stmt = $db->prepare('SELECT * FROM rateb_warehouse_transfers WHERE id = :id LIMIT 1');
+            $stmt->execute(['id' => $transferId]);
+        } else {
+            $stmt = $db->prepare('SELECT * FROM rateb_warehouse_transfers WHERE id = :id AND company_id = :cid LIMIT 1');
+            $stmt->execute(['id' => $transferId, 'cid' => $cid]);
+        }
+        $row = $stmt->fetch();
+        if (!$row) {
+            throw new \RuntimeException('Warehouse transfer not found or access denied.');
+        }
+        return $row;
+    }
 }

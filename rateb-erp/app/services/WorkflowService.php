@@ -98,6 +98,7 @@ final class WorkflowService
         if ($action === 'reject') {
             $db->prepare('UPDATE rateb_approval_instances SET status = :st WHERE id = :id')->execute(['st' => 'rejected', 'id' => $instanceId]);
             $this->syncEntityStatus($entityType, $entityId, 'rejected');
+            (new EmailAlertService())->sendApprovalResult($companyId, $entityType, $entityId, 'rejected');
             return true;
         }
 
@@ -108,9 +109,11 @@ final class WorkflowService
         if ($step >= $totalSteps) {
             $db->prepare('UPDATE rateb_approval_instances SET status = :st WHERE id = :id')->execute(['st' => 'approved', 'id' => $instanceId]);
             $this->syncEntityStatus($entityType, $entityId, 'approved');
+            (new EmailAlertService())->sendApprovalResult($companyId, $entityType, $entityId, 'approved');
         } else {
             $db->prepare('UPDATE rateb_approval_instances SET current_step = current_step + 1 WHERE id = :id')->execute(['id' => $instanceId]);
             (new WorkflowSubmissionService())->notifyStepApprovers($companyId, $workflowId, $step + 1, $entityType, $entityId);
+            (new WorkflowSlaService())->setDueDate($instanceId, $workflowId, $step + 1);
         }
 
         return true;

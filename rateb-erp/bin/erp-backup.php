@@ -9,6 +9,7 @@ define('RATEB_ROOT', dirname(__DIR__));
 require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
 Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
 require_once RATEB_ROOT . '/app/services/Logger.php';
+require_once RATEB_ROOT . '/app/services/AutomationSettings.php';
 
 if (PHP_SAPI !== 'cli') {
     http_response_code(403);
@@ -39,5 +40,37 @@ if ($code !== 0 || !is_file($file)) {
     Rateb\App\Services\Logger::error('Backup failed', ['output' => implode("\n", $output), 'code' => $code]);
     exit(1);
 }
-Rateb\App\Services\Logger::info('Backup created', ['file' => $file]);
+
+$size = filesize($file) ?: 0;
+if ($size < 100) {
+    Rateb\App\Services\Logger::error('Backup verification failed — file too small', ['file' => $file, 'size' => $size]);
+    @unlink($file);
+    exit(1);
+}
+
+$uploadsDir = RATEB_ROOT . '/storage/uploads';
+$filesArchive = $dir . '/erp-files-' . date('Ymd-His') . '.tar.gz';
+if (is_dir($uploadsDir)) {
+    $tarCmd = sprintf('tar -czf %s -C %s uploads 2>&1', escapeshellarg($filesArchive), escapeshellarg(RATEB_ROOT . '/storage'));
+    exec($tarCmd, $tarOut, $tarCode);
+    if ($tarCode !== 0) {
+        Rateb\App\Services\Logger::warning('File backup failed', ['output' => implode("\n", $tarOut)]);
+    }
+}
+
+$retentionDays = Rateb\App\Services\AutomationSettings::backupRetentionDays();
+$cutoff = time() - ($retentionDays * 86400);
+foreach (glob($dir . '/*') ?: [] as $old) {
+    if (is_file($old) && filemtime($old) < $cutoff) {
+        @unlink($old);
+    }
+}
+
+(new Rateb\App\Services\AutomationHealthService())->recordCronRun('erp-backup', [
+    'db_file' => basename($file),
+    'db_size' => $size,
+    'files_archive' => is_file($filesArchive) ? basename($filesArchive) : '',
+], 1440);
+
+Rateb\App\Services\Logger::info('Backup created', ['file' => $file, 'size' => $size]);
 echo 'Backup: ' . $file . PHP_EOL;

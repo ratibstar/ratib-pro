@@ -172,6 +172,13 @@ final class PlanLimitService
         return $count < $limits['user_limit'];
     }
 
+    public function assertCanAddUser(int $companyId): void
+    {
+        if ($companyId > 0 && !$this->canAddUser($companyId)) {
+            throw new \RuntimeException(__('user_limit_reached'));
+        }
+    }
+
     public function syncFromPlan(int $companyId, int $planId): void
     {
         $plan = (new Plan())->find($planId);

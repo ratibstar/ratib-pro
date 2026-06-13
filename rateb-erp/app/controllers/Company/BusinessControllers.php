@@ -607,3 +607,87 @@ final class AnalyticsReportsController extends Controller
         ], $val['rows'], __('inventory_valuation_report'), 'reports/inventory-valuation');
     }
 }
+
+final class WarehouseTransfersController extends Controller
+{
+    public function index(): void
+    {
+        $cid = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        $db = \Rateb\App\Core\Database::connection();
+        $stmt = $db->prepare(
+            'SELECT t.*, i.item_name, sw.name AS source_name, dw.name AS dest_name
+             FROM rateb_warehouse_transfers t
+             JOIN rateb_inventory i ON i.id = t.inventory_id
+             JOIN rateb_warehouses sw ON sw.id = t.source_warehouse_id
+             JOIN rateb_warehouses dw ON dw.id = t.destination_warehouse_id
+             WHERE t.company_id = :cid ORDER BY t.id DESC LIMIT 100'
+        );
+        $stmt->execute(['cid' => $cid]);
+        $this->view('company/warehouse-transfers/index', [
+            'title' => __('warehouse_transfers'),
+            'items' => $stmt->fetchAll(),
+            'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('warehouse-transfers'),
+        ], 'main');
+    }
+
+    public function create(): void
+    {
+        $this->view('company/warehouse-transfers/form', [
+            'title' => __('create') . ' ' . __('warehouse_transfers'),
+            'inventory' => (new \Rateb\App\Models\Inventory())->all(200, 0),
+            'warehouses' => (new \Rateb\App\Models\Warehouse())->all(200, 0),
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        rateb_require_manage('warehouse-transfers');
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_app_url('warehouse-transfers'));
+        }
+        try {
+            $id = (new InventoryWorkflowService())->createTransfer([
+                'source_warehouse_id' => (int) $this->input('source_warehouse_id', 0),
+                'destination_warehouse_id' => (int) $this->input('destination_warehouse_id', 0),
+                'inventory_id' => (int) $this->input('inventory_id', 0),
+                'quantity' => (float) $this->input('quantity', 0),
+                'notes' => trim((string) $this->input('notes', '')),
+            ]);
+            (new AuditService())->log('create', 'warehouse_transfer', $id);
+            SessionManager::flash('success', __('save') . ' OK');
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_app_url('warehouse-transfers'));
+    }
+
+    public function approve(array $params): void
+    {
+        rateb_require_manage('warehouse-transfers');
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_app_url('warehouse-transfers'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if (!(new InventoryWorkflowService())->approveTransfer($id)) {
+            SessionManager::flash('error', __('invalid_request'));
+        } else {
+            SessionManager::flash('success', __('transfer_completed'));
+        }
+        $this->redirect(rateb_app_url('warehouse-transfers'));
+    }
+}
+
+final class InventoryForecastController extends Controller
+{
+    public function index(): void
+    {
+        $rows = (new InventoryWorkflowService())->reorderSuggestions();
+        $this->view('company/inventory-forecast/index', [
+            'title' => __('inventory_forecast'),
+            'rows' => $rows,
+        ], 'main');
+    }
+}
+

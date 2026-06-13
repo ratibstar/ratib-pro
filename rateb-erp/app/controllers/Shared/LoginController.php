@@ -6,14 +6,17 @@ namespace Rateb\App\Controllers\Shared;
 use Rateb\App\Core\Auth;
 use Rateb\App\Core\Controller;
 use Rateb\App\Core\Csrf;
+use Rateb\App\Core\IpRateLimiter;
 use Rateb\App\Core\RateLimiter;
 use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Models\User;
+use Rateb\App\Services\AccountLockoutService;
 use Rateb\App\Services\AuditService;
 use Rateb\App\Services\LoginActivityService;
+use Rateb\App\Services\RememberMeService;
+use Rateb\App\Services\TwoFactorService;
 
-/** Single sign-in — routes users to admin or company by role. */
 final class LoginController extends Controller
 {
     public function showLogin(): void
@@ -35,6 +38,14 @@ final class LoginController extends Controller
             }
         }
 
+        if (SessionManager::get('_rateb_2fa_user_id')) {
+            $this->view('shared/auth/two-factor', [
+                'title' => __('two_factor_verify'),
+                'csrf' => Csrf::token(),
+            ], 'auth');
+            return;
+        }
+
         $this->view('shared/auth/login', [
             'title' => __('login'),
             'csrf' => Csrf::token(),
@@ -52,9 +63,20 @@ final class LoginController extends Controller
 
         $email = trim((string) $this->input('email', ''));
         $password = (string) $this->input('password', '');
+        $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? 'unknown');
 
-        if (!RateLimiter::attempt('erp_login_' . md5($email), 5, 300)) {
+        if (!RateLimiter::attempt('erp_login_' . md5($email), 5, 300)
+            || !IpRateLimiter::attempt('erp_login_ip_' . md5($ip), 20, 900)) {
             SessionManager::flash('error', __('too_many_attempts'));
+            Response::redirect(rateb_url('login'));
+        }
+
+        $userModel = new User();
+        $preUser = $userModel->findByEmail($email);
+        $lockout = new AccountLockoutService();
+        if ($lockout->isLocked($preUser)) {
+            (new LoginActivityService())->record($preUser ? (int) $preUser['id'] : null, $email, false);
+            SessionManager::flash('error', __('account_locked'));
             Response::redirect(rateb_url('login'));
         }
 
@@ -62,14 +84,59 @@ final class LoginController extends Controller
         (new LoginActivityService())->record($user ? (int) $user['id'] : null, $email, $user !== null);
 
         if (!$user) {
+            $lockout->recordFailure($email);
             SessionManager::flash('error', __('invalid_credentials'));
             Response::redirect($next !== '' ? rateb_url('login?next=' . rawurlencode($next)) : rateb_url('login'));
         }
 
+        $lockout->clearLock((int) $user['id']);
+
+        if ((new TwoFactorService())->needsVerification($user)) {
+            SessionManager::forget('rateb_user_id');
+            SessionManager::forget('rateb_company_id');
+            SessionManager::forget('rateb_is_super_admin');
+            SessionManager::forget('rateb_portal');
+            SessionManager::set('_rateb_2fa_user_id', (int) $user['id']);
+            SessionManager::set('_rateb_2fa_next', $next);
+            Response::redirect(rateb_url('login'));
+        }
+
+        $this->finishLogin($user, $next);
+    }
+
+    public function verifyTwoFactor(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_url('login'));
+        }
+        $userId = (int) SessionManager::get('_rateb_2fa_user_id', 0);
+        $user = (new User())->find($userId);
+        if (!$user) {
+            Response::redirect(rateb_url('login'));
+        }
+        $code = (string) $this->input('code', '');
+        if (!(new TwoFactorService())->verifyLogin($user, $code)) {
+            (new LoginActivityService())->record($userId, (string) $user['email'], false);
+            SessionManager::flash('error', __('two_factor_invalid'));
+            Response::redirect(rateb_url('login'));
+        }
+        Auth::loginUser($user);
+        SessionManager::forget('_rateb_2fa_user_id');
+        $next = (string) SessionManager::get('_rateb_2fa_next', '');
+        SessionManager::forget('_rateb_2fa_next');
+        $this->finishLogin($user, $next);
+    }
+
+    /** @param array<string, mixed> $user */
+    private function finishLogin(array $user, string $next): void
+    {
         if (!empty($user['locale']) && in_array($user['locale'], RATEB_SUPPORTED_LOCALES, true)) {
             $_SESSION['rateb_locale'] = $user['locale'];
         }
-
+        if ($this->input('remember')) {
+            (new RememberMeService())->issue((int) $user['id']);
+        }
         (new User())->updateLastLogin((int) $user['id']);
         (new AuditService())->log('login', 'user', (int) $user['id']);
         Response::redirect($next !== '' ? $next : rateb_url(Auth::homePath()));

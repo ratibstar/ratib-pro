@@ -58,8 +58,8 @@ final class NotificationService
     {
         $db = \Rateb\App\Core\Database::connection();
         $db->prepare(
-            'INSERT INTO rateb_notification_queue (company_id, channel, recipient, subject, body, status, sent_at)
-             VALUES (:cid, :ch, :to, :sub, :body, :st, :sent)'
+            'INSERT INTO rateb_notification_queue (company_id, channel, recipient, subject, body, status, sent_at, next_retry_at)
+             VALUES (:cid, :ch, :to, :sub, :body, :st, :sent, :next)'
         )->execute([
             'cid' => TenantContext::companyId(),
             'ch' => 'email',
@@ -68,6 +68,7 @@ final class NotificationService
             'body' => $body,
             'st' => $status === 'sent' ? 'sent' : ($status === 'failed' ? 'failed' : 'pending'),
             'sent' => $status === 'sent' ? date('Y-m-d H:i:s') : null,
+            'next' => $status === 'pending' ? date('Y-m-d H:i:s') : null,
         ]);
     }
 
@@ -83,7 +84,8 @@ final class NotificationService
         }
         $db = \Rateb\App\Core\Database::connection();
         $db->prepare(
-            'INSERT INTO rateb_notification_queue (company_id, channel, recipient, body, status) VALUES (:cid, :ch, :to, :body, :st)'
+            'INSERT INTO rateb_notification_queue (company_id, channel, recipient, body, status, next_retry_at)
+             VALUES (:cid, :ch, :to, :body, :st, NOW())'
         )->execute([
             'cid' => TenantContext::companyId(),
             'ch' => 'sms',
@@ -99,6 +101,7 @@ final class NotificationService
         $title = __('low_stock_alert');
         $msg = __('low_stock_message', ['item' => $itemName, 'qty' => (string) $quantity]);
         $this->notifyCompany($companyId, $title, $msg, 'warning', 'low_stock');
+        (new EmailAlertService())->sendLowStock($companyId, $itemName, $quantity);
     }
 
     public function triggerContractExpiry(int $companyId, string $contractNo, string $endDate, int $contractId = 0): void
@@ -112,15 +115,18 @@ final class NotificationService
             'contract',
             $contractId > 0 ? $contractId : null
         );
+        (new EmailAlertService())->sendContractExpiry($companyId, $contractNo, $endDate);
     }
 
     public function triggerApproval(int $userId, int $companyId, string $entityType, int $entityId): void
     {
         $this->notifyUser($userId, $companyId, __('approval_required'), __('approval_required_message', ['type' => $entityType]), 'info', 'approval', $entityType, $entityId);
+        (new EmailAlertService())->sendApprovalRequest($userId, $companyId, $entityType, $entityId);
     }
 
     public function triggerMaintenanceDue(int $companyId, string $deviceName, string $dueDate): void
     {
         $this->notifyCompany($companyId, __('maintenance_due_alert'), __('maintenance_due_message', ['device' => $deviceName, 'date' => $dueDate]), 'info', 'maintenance_due');
+        (new EmailAlertService())->sendMaintenanceDue($companyId, $deviceName, $dueDate);
     }
 }

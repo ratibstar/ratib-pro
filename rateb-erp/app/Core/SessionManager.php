@@ -71,4 +71,19 @@ final class SessionManager
             session_regenerate_id(true);
         }
     }
+
+    public static function destroy(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return;
+        }
+        $_SESSION = [];
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+        session_destroy();
+        session_name('rateb_erp');
+        session_start();
+        session_regenerate_id(true);
+        $_SESSION['_rateb_init'] = time();
+    }
 }

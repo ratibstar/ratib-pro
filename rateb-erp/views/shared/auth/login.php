@@ -27,6 +27,7 @@
         <label class="form-label" for="password"><?php echo __('password'); ?></label>
         <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
     </div>
+    <?php require __DIR__ . '/_remember.php'; ?>
     <button type="submit" class="btn btn-primary w-100"><?php echo __('login'); ?></button>
     <p class="mt-3 mb-0 text-center"><a href="<?php echo rateb_url('password/forgot'); ?>"><?php echo __('password_forgot'); ?></a></p>
 </form>

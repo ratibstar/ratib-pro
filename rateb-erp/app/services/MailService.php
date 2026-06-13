@@ -15,29 +15,24 @@ final class MailService
         $fromName = $settings->get('smtp_from_name', 'RTAB ERP');
         $host = trim((string) $settings->get('smtp_host', ''));
 
-        $sent = false;
-        if ($host !== '') {
-            $sent = $this->sendSmtp(
-                $host,
-                (int) ($settings->get('smtp_port', '587') ?: 587),
-                (string) $settings->get('smtp_user', ''),
-                (string) $settings->get('smtp_pass', ''),
-                (string) $fromEmail,
-                (string) $fromName,
-                $to,
-                $subject,
-                $htmlBody
-            );
-        } else {
-            $headers = [
-                'MIME-Version: 1.0',
-                'Content-type: text/html; charset=UTF-8',
-                'From: ' . $this->encodeAddress((string) $fromName, (string) $fromEmail),
-                'Reply-To: ' . (string) $fromEmail,
-                'X-Mailer: RTAB-ERP',
-            ];
-            $sent = @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $htmlBody, implode("\r\n", $headers));
+        if ($host === '') {
+            return $this->sendPhpMail((string) $fromEmail, (string) $fromName, $to, $subject, $htmlBody, $recordQueue);
         }
+
+        $port = (int) ($settings->get('smtp_port', '587') ?: 587);
+        $encryption = AutomationSettings::smtpEncryption();
+        $sent = $this->sendSmtp(
+            $host,
+            $port,
+            $encryption,
+            (string) $settings->get('smtp_user', ''),
+            (string) $settings->get('smtp_pass', ''),
+            (string) $fromEmail,
+            (string) $fromName,
+            $to,
+            $subject,
+            $htmlBody
+        );
 
         if ($recordQueue) {
             (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
@@ -48,7 +43,14 @@ final class MailService
         return $sent;
     }
 
-    public function sendTemplate(string $to, string $slug, array $vars = []): bool
+    /** Queue for async delivery by cron worker. */
+    public function queue(string $to, string $subject, string $htmlBody): bool
+    {
+        (new NotificationService())->queueEmail($to, $subject, $htmlBody, 'pending');
+        return true;
+    }
+
+    public function sendTemplate(string $to, string $slug, array $vars = [], bool $async = false): bool
     {
         $tpl = (new EmailTemplate())->queryOne('SELECT * FROM rateb_email_templates WHERE slug = :s AND is_active = 1 LIMIT 1', ['s' => $slug]);
         if (!$tpl) {
@@ -56,17 +58,42 @@ final class MailService
         }
         $subject = $this->replaceVars((string) $tpl['subject'], $vars);
         $body = $this->replaceVars((string) $tpl['body_html'], $vars);
+        if ($async) {
+            return $this->queue($to, $subject, $body);
+        }
         return $this->send($to, $subject, $body);
     }
 
-    private function sendSmtp(string $host, int $port, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body): bool
+    public function sendTemplateAsync(string $to, string $slug, array $vars = []): bool
     {
-        $fp = @fsockopen($host, $port, $errno, $errstr, 15);
+        return $this->sendTemplate($to, $slug, $vars, true);
+    }
+
+    private function sendPhpMail(string $fromEmail, string $fromName, string $to, string $subject, string $htmlBody, bool $recordQueue): bool
+    {
+        $headers = [
+            'MIME-Version: 1.0',
+            'Content-type: text/html; charset=UTF-8',
+            'From: ' . $this->encodeAddress($fromName, $fromEmail),
+            'Reply-To: ' . $fromEmail,
+            'X-Mailer: RTAB-ERP',
+        ];
+        $sent = @mail($to, '=?UTF-8?B?' . base64_encode($subject) . '?=', $htmlBody, implode("\r\n", $headers));
+        if ($recordQueue) {
+            (new NotificationService())->queueEmail($to, $subject, $htmlBody, $sent ? 'sent' : 'failed');
+        }
+        return (bool) $sent;
+    }
+
+    private function sendSmtp(string $host, int $port, string $encryption, string $user, string $pass, string $fromEmail, string $fromName, string $to, string $subject, string $body): bool
+    {
+        $remote = $encryption === 'ssl' ? 'ssl://' . $host . ':' . $port : 'tcp://' . $host . ':' . $port;
+        $fp = @stream_socket_client($remote, $errno, $errstr, 20);
         if (!$fp) {
             Logger::error('SMTP connect failed', ['host' => $host, 'error' => $errstr]);
             return false;
         }
-        stream_set_timeout($fp, 15);
+        stream_set_timeout($fp, 20);
         $read = static function () use ($fp): string {
             $data = '';
             while ($line = fgets($fp, 515)) {
@@ -83,15 +110,31 @@ final class MailService
 
         $read();
         $write('EHLO rateb-erp.local');
-        $read();
+        $ehlo = $read();
+
+        if ($encryption === 'tls' && stripos($ehlo, 'STARTTLS') !== false) {
+            $write('STARTTLS');
+            $tlsResp = $read();
+            if (strpos($tlsResp, '220') === false) {
+                fclose($fp);
+                return false;
+            }
+            if (!stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+                fclose($fp);
+                return false;
+            }
+            $write('EHLO rateb-erp.local');
+            $read();
+        }
+
         if ($user !== '') {
             $write('AUTH LOGIN');
             $read();
             $write(base64_encode($user));
             $read();
             $write(base64_encode($pass));
-            $ehlo = $read();
-            if (strpos($ehlo, '235') === false) {
+            $auth = $read();
+            if (strpos($auth, '235') === false) {
                 fclose($fp);
                 return false;
             }

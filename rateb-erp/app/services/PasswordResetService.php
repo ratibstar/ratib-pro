@@ -26,7 +26,7 @@ final class PasswordResetService
         )->execute(['uid' => (int) $user['id'], 'hash' => $hash, 'exp' => $expires]);
 
         $resetUrl = rateb_url('password/reset/' . $token);
-        (new MailService())->sendTemplate((string) $user['email'], 'password_reset', [
+        (new MailService())->sendTemplateAsync((string) $user['email'], 'password_reset', [
             'name' => (string) ($user['name'] ?? ''),
             'reset_url' => $resetUrl,
             'link' => $resetUrl,

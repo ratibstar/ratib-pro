@@ -32,7 +32,8 @@ final class WorkflowSubmissionService
         }
 
         $workflowId = (int) $workflow['id'];
-        (new WorkflowService())->submit($entityType, $entityId, $companyId, $workflowId);
+        $instanceId = (new WorkflowService())->submit($entityType, $entityId, $companyId, $workflowId);
+        (new WorkflowSlaService())->setDueDate($instanceId, $workflowId, 1);
         $this->notifyStepApprovers($companyId, $workflowId, 1, $entityType, $entityId);
     }
 

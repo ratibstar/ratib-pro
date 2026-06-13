@@ -127,12 +127,22 @@ $router->post($app('notifications/{id}/read'), [NotificationsController::class, 
 $router->get($app('profile'), [ProfileController::class, 'index'], rateb_erp_mw());
 $router->post($app('profile'), [ProfileController::class, 'update'], rateb_erp_mw());
 $router->post($app('profile/regenerate-barcode'), [ProfileController::class, 'regenerateBarcode'], rateb_erp_mw());
+$router->get($app('profile/2fa'), [\Rateb\App\Controllers\Shared\TwoFactorController::class, 'setup'], rateb_erp_mw());
+$router->post($app('profile/2fa/enable'), [\Rateb\App\Controllers\Shared\TwoFactorController::class, 'enable'], rateb_erp_mw());
+$router->post($app('profile/2fa/disable'), [\Rateb\App\Controllers\Shared\TwoFactorController::class, 'disable'], rateb_erp_mw());
 
 $invMw = rateb_erp_mw('inventory', '', 'inventory-batches');
 $router->get($app('inventory-batches'), [InventoryBatchesController::class, 'index'], $invMw);
 $router->get($app('inventory-batches/create'), [InventoryBatchesController::class, 'create'], $invMw);
 $router->post($app('inventory-batches'), [InventoryBatchesController::class, 'store'], $invMw);
 $router->get($app('inventory-batches/export'), [InventoryBatchesController::class, 'export'], rateb_erp_mw('inventory', 'reports.export', 'inventory-batches'));
+
+$wtMw = rateb_erp_mw('inventory', '', 'warehouse-transfers');
+$router->get($app('warehouse-transfers'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'index'], $wtMw);
+$router->get($app('warehouse-transfers/create'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'create'], $wtMw);
+$router->post($app('warehouse-transfers'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'store'], $wtMw);
+$router->post($app('warehouse-transfers/{id}/approve'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'approve'], $wtMw);
+$router->get($app('inventory-forecast'), [\Rateb\App\Controllers\Company\InventoryForecastController::class, 'index'], rateb_erp_mw('inventory', '', 'inventory-forecast'));
 
 $invAuditMw = rateb_erp_mw('inventory', '', 'inventory-audits');
 $router->get($app('inventory-audits'), [InventoryAuditsController::class, 'index'], $invAuditMw);

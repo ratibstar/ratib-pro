@@ -223,6 +223,7 @@ final class InventoryWorkflowService
                 'inventory',
                 (int) $item['id']
             );
+            (new EmailAlertService())->sendExpiry($companyId, (string) ($item['item_name'] ?? ''), $exp);
             $count++;
         }
         return $count;
@@ -282,5 +283,171 @@ final class InventoryWorkflowService
             $count++;
         }
         return $count;
+    }
+
+    public function processBatchExpiryAlerts(int $companyId): int
+    {
+        if ($companyId < 1) {
+            return 0;
+        }
+        TenantContext::setCompanyId($companyId);
+        $rows = (new InventoryBatch())->query(
+            'SELECT b.*, i.item_name FROM rateb_inventory_batches b
+             JOIN rateb_inventory i ON i.id = b.inventory_id
+             WHERE b.company_id = :cid AND b.expiry_date IS NOT NULL
+               AND b.expiry_date <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)',
+            ['cid' => $companyId]
+        );
+        $count = 0;
+        foreach ($rows as $row) {
+            $batchId = (int) ($row['id'] ?? 0);
+            $exists = (new \Rateb\App\Models\Notification())->queryOne(
+                'SELECT id FROM rateb_notifications WHERE company_id = :cid AND trigger_type = :tt
+                 AND entity_type = :et AND entity_id = :eid AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) LIMIT 1',
+                ['cid' => $companyId, 'tt' => 'batch_expiry', 'et' => 'inventory_batch', 'eid' => $batchId]
+            );
+            if ($exists) {
+                continue;
+            }
+            $label = (string) ($row['item_name'] ?? '') . ' [' . (string) ($row['batch_no'] ?? '') . ']';
+            (new NotificationService())->notifyCompany(
+                $companyId,
+                __('expiry_alert'),
+                __('expiry_alert_message', ['item' => $label, 'date' => (string) ($row['expiry_date'] ?? '')]),
+                'warning',
+                'batch_expiry',
+                'inventory_batch',
+                $batchId
+            );
+            (new EmailAlertService())->sendExpiry($companyId, $label, (string) ($row['expiry_date'] ?? ''));
+            $count++;
+        }
+        return $count;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function reorderSuggestions(?int $companyId = null): array
+    {
+        $companyId = $companyId ?? TenantContext::companyId();
+        $sql = 'SELECT i.*, w.name AS warehouse_name,
+                (SELECT COALESCE(SUM(ABS(m.quantity)),0) FROM rateb_stock_movements m
+                 WHERE m.inventory_id = i.id AND m.movement_type IN (\'out\',\'transfer\')
+                   AND m.created_at >= DATE_SUB(NOW(), INTERVAL 90 DAY)) AS consumed_90d
+                FROM rateb_inventory i
+                LEFT JOIN rateb_warehouses w ON w.id = i.warehouse_id WHERE 1=1';
+        $params = [];
+        if ($companyId !== null) {
+            $sql .= ' AND i.company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        $sql .= ' HAVING i.reorder_level > 0 AND (i.quantity <= i.reorder_level OR consumed_90d / 3 > i.quantity)
+                  ORDER BY consumed_90d DESC LIMIT 100';
+        return (new Inventory())->query($sql, $params);
+    }
+
+    public function consumeBatches(int $inventoryId, float $quantity, string $method = 'fefo'): float
+    {
+        $order = $method === 'fifo' ? 'b.created_at ASC' : 'b.expiry_date ASC, b.id ASC';
+        $batches = (new InventoryBatch())->query(
+            "SELECT * FROM rateb_inventory_batches b
+             WHERE b.inventory_id = :iid AND b.quantity > 0
+             ORDER BY {$order}",
+            ['iid' => $inventoryId]
+        );
+        $remaining = $quantity;
+        $db = Database::connection();
+        foreach ($batches as $batch) {
+            if ($remaining <= 0) {
+                break;
+            }
+            $batchQty = (float) ($batch['quantity'] ?? 0);
+            $take = min($batchQty, $remaining);
+            $db->prepare('UPDATE rateb_inventory_batches SET quantity = quantity - :q WHERE id = :id')
+                ->execute(['q' => $take, 'id' => (int) $batch['id']]);
+            $remaining -= $take;
+        }
+        return $quantity - $remaining;
+    }
+
+    /** @param array<string, mixed> $data */
+    public function createTransfer(array $data): int
+    {
+        $cid = TenantGuard::requireCompanyId();
+        $src = (int) ($data['source_warehouse_id'] ?? 0);
+        $dst = (int) ($data['destination_warehouse_id'] ?? 0);
+        $invId = (int) ($data['inventory_id'] ?? 0);
+        $qty = (float) ($data['quantity'] ?? 0);
+        if ($src < 1 || $dst < 1 || $src === $dst || $invId < 1 || $qty <= 0) {
+            throw new \InvalidArgumentException('Invalid transfer');
+        }
+        TenantFkValidator::validate($data, ['inventory_id', 'source_warehouse_id', 'destination_warehouse_id']);
+        $db = Database::connection();
+        $count = (int) ($db->query('SELECT COUNT(*) AS c FROM rateb_warehouse_transfers WHERE company_id = ' . $cid)->fetch()['c'] ?? 0);
+        $transferNo = 'TRF-' . str_pad((string) ($count + 1), 5, '0', STR_PAD_LEFT);
+        $db->prepare(
+            'INSERT INTO rateb_warehouse_transfers
+             (company_id, transfer_no, source_warehouse_id, destination_warehouse_id, inventory_id, quantity, status, notes, created_by)
+             VALUES (:cid, :no, :src, :dst, :inv, :qty, :st, :notes, :uid)'
+        )->execute([
+            'cid' => $cid,
+            'no' => $transferNo,
+            'src' => $src,
+            'dst' => $dst,
+            'inv' => $invId,
+            'qty' => $qty,
+            'st' => 'pending',
+            'notes' => $data['notes'] ?? null,
+            'uid' => SessionManager::get('rateb_user_id'),
+        ]);
+        return (int) $db->lastInsertId();
+    }
+
+    public function completeTransfer(int $transferId): bool
+    {
+        $row = TenantGuard::assertWarehouseTransfer($transferId);
+        if ((string) ($row['status'] ?? '') !== 'approved') {
+            return false;
+        }
+        $invId = (int) $row['inventory_id'];
+        $qty = (float) $row['quantity'];
+        $src = (int) $row['source_warehouse_id'];
+        $dst = (int) $row['destination_warehouse_id'];
+        $companyId = (int) $row['company_id'];
+        (new StockMovementService())->record([
+            'inventory_id' => $invId,
+            'warehouse_id' => $src,
+            'movement_type' => 'transfer',
+            'quantity' => $qty,
+            'reference_type' => 'warehouse_transfer',
+            'reference_id' => $transferId,
+            'notes' => 'Transfer out to WH#' . $dst,
+        ]);
+        (new StockMovementService())->record([
+            'inventory_id' => $invId,
+            'warehouse_id' => $dst,
+            'movement_type' => 'in',
+            'quantity' => $qty,
+            'reference_type' => 'warehouse_transfer',
+            'reference_id' => $transferId,
+            'notes' => 'Transfer in from WH#' . $src,
+        ]);
+        $this->consumeBatches($invId, $qty, 'fefo');
+        Database::connection()->prepare(
+            'UPDATE rateb_warehouse_transfers SET status = :st, completed_at = NOW(), approved_by = :uid WHERE id = :id'
+        )->execute(['st' => 'completed', 'uid' => SessionManager::get('rateb_user_id'), 'id' => $transferId]);
+        (new AuditService())->log('transfer_complete', 'warehouse_transfer', $transferId, ['company_id' => $companyId]);
+        return true;
+    }
+
+    public function approveTransfer(int $transferId): bool
+    {
+        $row = TenantGuard::assertWarehouseTransfer($transferId);
+        if ((string) ($row['status'] ?? '') !== 'pending') {
+            return false;
+        }
+        Database::connection()->prepare(
+            'UPDATE rateb_warehouse_transfers SET status = :st, approved_by = :uid WHERE id = :id'
+        )->execute(['st' => 'approved', 'uid' => SessionManager::get('rateb_user_id'), 'id' => $transferId]);
+        return $this->completeTransfer($transferId);
     }
 }

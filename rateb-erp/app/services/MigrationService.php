@@ -258,4 +258,37 @@ final class MigrationService
             return false;
         }
     }
+
+    /** @return array<int, string> */
+    public function rollbackLast(): array
+    {
+        $log = [];
+        [$pdo, $dbName] = $this->migrationConnection();
+        $log[] = 'Connected to database: ' . $dbName;
+        $this->ensureMigrationsTable($pdo);
+
+        $stmt = $pdo->query('SELECT filename FROM rateb_migrations ORDER BY id DESC LIMIT 1');
+        $row = $stmt !== false ? $stmt->fetch() : false;
+        if (!$row || empty($row['filename'])) {
+            $log[] = 'No migration to rollback.';
+            return $log;
+        }
+        $filename = (string) $row['filename'];
+        $root = defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2);
+        $downFile = $root . '/migrations/' . preg_replace('/\.sql$/', '.down.sql', $filename);
+        if (!is_file($downFile)) {
+            $log[] = 'Rollback file missing: ' . basename($downFile);
+            return $log;
+        }
+        $sql = file_get_contents($downFile);
+        if ($sql === false || trim($sql) === '') {
+            $log[] = 'Rollback file empty.';
+            return $log;
+        }
+        $log[] = 'Rolling back ' . $filename . '…';
+        $this->execSqlFile($pdo, $sql);
+        $pdo->prepare('DELETE FROM rateb_migrations WHERE filename = :f')->execute(['f' => $filename]);
+        $log[] = 'Rolled back: ' . $filename;
+        return $log;
+    }
 }

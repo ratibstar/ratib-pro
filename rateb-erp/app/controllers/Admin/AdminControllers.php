@@ -584,6 +584,19 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         $id = (int) ($params['id'] ?? 0);
         $data = $this->collectData();
         $roleIds = array_map('intval', (array) $this->input('role_ids', []));
+        $companyId = (int) ($data['company_id'] ?? 0);
+        if ($companyId > 0) {
+            $existing = $this->model->find($id);
+            $wasOtherCompany = $existing && (int) ($existing['company_id'] ?? 0) !== $companyId;
+            if ($wasOtherCompany || !$existing) {
+                try {
+                    (new \Rateb\App\Services\PlanLimitService())->assertCanAddUser($companyId);
+                } catch (\RuntimeException $e) {
+                    SessionManager::flash('error', $e->getMessage());
+                    $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
+                }
+            }
+        }
         $this->model->update($id, $data);
         (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
         if ((string) ($data['status'] ?? '') === 'active') {

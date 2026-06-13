@@ -45,6 +45,7 @@ $router->get('/login', [\Rateb\App\Controllers\Shared\LoginController::class, 's
 $router->get('/scan/doc/{code}', [\Rateb\App\Controllers\Shared\DocumentScanController::class, 'show']);
 $router->get('/scan/qr', [\Rateb\App\Controllers\Shared\BarcodeQrController::class, 'image']);
 $router->post('/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'login'], rateb_guest_mw());
+$router->post('/login/2fa', [\Rateb\App\Controllers\Shared\LoginController::class, 'verifyTwoFactor'], rateb_guest_mw());
 $router->post('/login/barcode', [\Rateb\App\Controllers\Shared\BarcodeLoginController::class, 'loginBarcode'], rateb_guest_mw());
 $router->get('/login/scan', [\Rateb\App\Controllers\Shared\BarcodeLoginController::class, 'showScan'], rateb_guest_mw());
 $router->get('/login/badge', [\Rateb\App\Controllers\Shared\QrLoginController::class, 'showBadge'], rateb_guest_mw());
@@ -139,6 +140,10 @@ foreach ($billingCrud as $path => $class) {
 }
 
 $router->get('/admin/audit-logs', [AuditLogsController::class, 'index'], rateb_admin_mw('settings.manage'));
+$router->get('/admin/login-activity', [\Rateb\App\Controllers\Admin\LoginActivityController::class, 'index'], rateb_admin_mw('settings.manage'));
+$router->get('/admin/queue-monitor', [\Rateb\App\Controllers\Admin\QueueMonitorController::class, 'index'], rateb_admin_mw('settings.manage'));
+$router->post('/admin/queue-monitor/retry', [\Rateb\App\Controllers\Admin\QueueMonitorController::class, 'retry'], rateb_admin_mw('settings.manage'));
+$router->get('/admin/automation-health', [\Rateb\App\Controllers\Admin\AutomationDashboardController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/settings', [SettingsController::class, 'index'], rateb_admin_mw('settings.manage'));
 $router->post('/admin/settings', [SettingsController::class, 'save'], rateb_admin_mw('settings.manage'));
 $router->get('/admin/reports', [AdminReportsController::class, 'index'], rateb_admin_mw('reports.view'));

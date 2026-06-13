@@ -65,6 +65,16 @@ return [
         'view' => 'inventory_audit.view',
         'manage' => 'inventory_audit.manage',
     ],
+    'warehouse-transfers' => [
+        'module' => 'inventory',
+        'view' => 'inventory.manage',
+        'manage' => 'inventory.manage',
+    ],
+    'inventory-forecast' => [
+        'module' => 'inventory',
+        'view' => 'inventory.manage',
+        'manage' => 'inventory.manage',
+    ],
     'suppliers' => [
         'module' => 'suppliers',
         'view' => 'suppliers.manage',

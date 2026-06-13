@@ -49,6 +49,10 @@ final class StockMovementService
 
             $invModel->update($inventoryId, ['quantity' => $newQty]);
 
+            if (in_array($movementType, ['out', 'transfer'], true)) {
+                (new InventoryWorkflowService())->consumeBatches($inventoryId, abs($quantity), 'fefo');
+            }
+
             $reorder = (float) ($item['reorder_level'] ?? 0);
             $companyId = (int) ($item['company_id'] ?? TenantContext::companyId() ?? 0);
             if ($newQty <= $reorder && $reorder > 0 && $companyId > 0) {
