@@ -23,21 +23,13 @@ final class InventoryWorkflowService
         $sku = (string) ($item['sku'] ?? '');
         if ($sku === '') {
             $sku = 'INV' . str_pad((string) $inventoryId, 6, '0', STR_PAD_LEFT);
+            (new Inventory())->update($inventoryId, ['sku' => $sku]);
         }
-        $barcode = 'RTB' . $companyId . str_pad((string) $inventoryId, 8, '0', STR_PAD_LEFT);
-        $qrPayload = json_encode([
-            'type' => 'rateb_inventory',
-            'company_id' => $companyId,
-            'inventory_id' => $inventoryId,
-            'sku' => $sku,
-            'barcode' => $barcode,
-        ], JSON_UNESCAPED_UNICODE);
-        (new Inventory())->update($inventoryId, [
-            'sku' => $sku,
-            'barcode' => $barcode,
-            'qr_code' => $qrPayload,
-        ]);
-        return ['barcode' => $barcode, 'qr_code' => $qrPayload, 'sku' => $sku];
+        $codes = (new DocumentBarcodeService())->ensure('inventory', $inventoryId);
+        if (!$codes) {
+            throw new \RuntimeException('Could not generate inventory barcode');
+        }
+        return ['barcode' => $codes['barcode'], 'qr_code' => $codes['qr_code'], 'sku' => $sku];
     }
 
     /** @return array<int, array<string, mixed>> */

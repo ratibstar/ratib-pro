@@ -50,3 +50,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int)$item['id']) : rateb_url
         </form>
     </div>
 </div>
+<?php if ($isEdit) {
+    $docBarcode = (new \Rateb\App\Services\DocumentBarcodeService())->labelData('contract', (int) $item['id']);
+    Rateb\App\Core\View::partial('document-barcode-label', ['docBarcode' => $docBarcode]);
+} ?>

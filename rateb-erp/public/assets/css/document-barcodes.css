@@ -1,0 +1,41 @@
+.rateb-doc-barcode-print-area {
+    padding: 1rem;
+    background: #fff;
+}
+
+.rateb-doc-barcode-brand {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6c757d;
+}
+
+.rateb-doc-barcode svg[data-barcode-svg] {
+    max-width: 100%;
+    height: auto;
+}
+
+.rateb-doc-barcode canvas[data-qr-canvas] {
+    max-width: 180px;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .rateb-doc-barcode-print-area,
+    .rateb-doc-barcode-print-area * {
+        visibility: visible;
+    }
+    .rateb-doc-barcode-print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 12mm;
+    }
+    .rateb-barcode-actions,
+    .rateb-no-print {
+        display: none !important;
+    }
+}

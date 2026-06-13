@@ -177,6 +177,8 @@ final class InventoryCodesController extends Controller
             $this->view('errors/404', ['title' => '404'], 'main');
             return;
         }
+        (new \Rateb\App\Services\DocumentBarcodeService())->ensure('inventory', $id);
+        $item = (new \Rateb\App\Models\Inventory())->find($id);
         $this->view('company/inventory-codes/show', [
             'title' => __('barcode_qr'),
             'item' => $item,

@@ -76,3 +76,7 @@ $subscriptions = $subscriptions ?? [];
         </form>
     </div>
 </div>
+<?php if ($isEdit) {
+    $docBarcode = (new \Rateb\App\Services\DocumentBarcodeService())->labelData('invoice', (int) $item['id']);
+    Rateb\App\Core\View::partial('document-barcode-label', ['docBarcode' => $docBarcode]);
+} ?>

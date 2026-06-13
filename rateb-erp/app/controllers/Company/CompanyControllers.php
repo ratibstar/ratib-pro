@@ -440,6 +440,28 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     {
         return 'main';
     }
+
+    public function store(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+
+        $data = $this->collectData();
+        try {
+            \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
+        $id = $this->model->create($data);
+        (new \Rateb\App\Services\DocumentBarcodeService())->ensure('inventory', $id);
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
 }
 
 final class WarehousesController extends \Rateb\App\Controllers\CrudController
@@ -584,6 +606,7 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
         } elseif (!empty($upload['path'])) {
             $this->model->update($id, ['document_path' => $upload['path']]);
         }
+        (new \Rateb\App\Services\DocumentBarcodeService())->ensure('contract', $id);
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));

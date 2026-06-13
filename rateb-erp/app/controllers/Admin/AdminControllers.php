@@ -1078,6 +1078,7 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $id = $this->model->create($data);
+        (new \Rateb\App\Services\DocumentBarcodeService())->ensure('invoice', $id);
         $row = $this->model->find($id);
         if ($row && ($row['status'] ?? '') === 'paid') {
             (new \Rateb\App\Services\AccountingService())->postInvoice($row);
@@ -1517,6 +1518,7 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
                 $this->model->update($id, ['document_path' => $upload['path']]);
             }
         }
+        (new \Rateb\App\Services\DocumentBarcodeService())->ensure('contract', $id);
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
