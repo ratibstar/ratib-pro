@@ -64,7 +64,12 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
             $this->redirect(rateb_url($this->routePrefix));
         }
         $data = $this->collectData();
-        $id = (new InventoryWorkflowService())->createBatch($data);
+        try {
+            $id = (new InventoryWorkflowService())->createBatch($data);
+        } catch (\RuntimeException $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));

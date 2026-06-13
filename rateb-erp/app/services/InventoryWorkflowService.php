@@ -10,6 +10,7 @@ use Rateb\App\Models\Inventory;
 use Rateb\App\Models\InventoryAudit;
 use Rateb\App\Models\InventoryBatch;
 use Rateb\App\Models\StockMovement;
+use Rateb\App\Services\TenantFkValidator;
 
 final class InventoryWorkflowService
 {
@@ -56,6 +57,26 @@ final class InventoryWorkflowService
     /** @param array<string, mixed> $data */
     public function createBatch(array $data): int
     {
+        $invId = (int) ($data['inventory_id'] ?? 0);
+        if ($invId < 1) {
+            throw new \RuntimeException(__('inventory') . ': ' . __('invalid_request'));
+        }
+        $inv = (new Inventory())->find($invId);
+        if (!$inv) {
+            throw new \RuntimeException(__('inventory') . ': ' . __('no_records'));
+        }
+        $companyId = (int) ($inv['company_id'] ?? 0);
+        if ($companyId < 1) {
+            throw new \RuntimeException('Company context required for tenant-scoped create.');
+        }
+        if (!TenantContext::isSuperAdmin()) {
+            $sessionCompanyId = TenantContext::companyId();
+            if ($sessionCompanyId === null || $sessionCompanyId !== $companyId) {
+                throw new \RuntimeException('Resource not found or access denied.');
+            }
+            TenantFkValidator::validate($data, ['inventory_id', 'warehouse_id']);
+        }
+        $data['company_id'] = $companyId;
         $batchId = (new InventoryBatch())->create($data);
         $invId = (int) ($data['inventory_id'] ?? 0);
         $qty = (float) ($data['quantity'] ?? 0);

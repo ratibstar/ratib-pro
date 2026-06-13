@@ -129,16 +129,35 @@ abstract class Model
 
     public function create(array $data): int
     {
+        $tenantValue = null;
         if ($this->tenantScoped) {
-            $companyId = TenantContext::companyId();
-            if ($companyId !== null) {
-                $data[$this->tenantColumn] = $companyId;
-            } elseif (empty($data[$this->tenantColumn]) && !TenantContext::isSuperAdmin()) {
-                throw new \RuntimeException('Company context required for tenant-scoped create.');
+            if (!empty($data[$this->tenantColumn])) {
+                $tenantValue = (int) $data[$this->tenantColumn];
+            } else {
+                $companyId = TenantContext::companyId();
+                if ($companyId !== null && $companyId > 0) {
+                    $tenantValue = $companyId;
+                    $data[$this->tenantColumn] = $companyId;
+                } elseif (!TenantContext::isSuperAdmin()) {
+                    throw new \RuntimeException('Company context required for tenant-scoped create.');
+                }
             }
         }
 
         $data = $this->filterFillable($data);
+
+        if ($this->tenantScoped) {
+            if ($tenantValue !== null && $tenantValue > 0) {
+                $data[$this->tenantColumn] = $tenantValue;
+            } elseif (empty($data[$this->tenantColumn]) || (int) $data[$this->tenantColumn] < 1) {
+                throw new \RuntimeException('Company context required for tenant-scoped create.');
+            }
+        }
+
+        if ($data === []) {
+            throw new \RuntimeException('No data to insert.');
+        }
+
         $columns = array_keys($data);
         $placeholders = array_map(static fn ($c) => ':' . $c, $columns);
 
