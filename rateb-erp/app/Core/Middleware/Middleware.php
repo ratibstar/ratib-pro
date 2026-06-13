@@ -42,7 +42,9 @@ final class ErpAuthMiddleware implements MiddlewareInterface
             Response::redirect(function_exists('rateb_url') ? rateb_url('login') : (RATEB_BASE_URL . '/login'));
             return false;
         }
-        return true;
+        SessionManager::flash('error', __('portal_erp_blocked'));
+        Response::redirect(function_exists('rateb_url') ? rateb_url('site/portal') : (RATEB_BASE_URL . '/site/portal'));
+        return false;
     }
 }
 

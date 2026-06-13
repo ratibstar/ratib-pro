@@ -22,19 +22,10 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
     <div class="container py-4">
         <div class="card border-0 shadow-sm rateb-portal-welcome mb-4">
             <div class="card-body p-4">
-                <div class="row align-items-center g-3">
-                    <div class="col-md-8">
-                        <p class="text-muted small mb-1"><?php echo __('portal_welcome'); ?></p>
-                        <h1 class="h3 mb-1"><?php echo Rateb\App\Core\View::escape($companyName !== '' ? $companyName : $userName); ?></h1>
-                        <p class="text-muted mb-0"><?php echo Rateb\App\Core\View::escape(__('portal_welcome_user', ['name' => $userName])); ?></p>
-                    </div>
-                    <div class="col-md-4">
-                        <a href="<?php echo rateb_url('admin'); ?>" class="btn btn-primary btn-lg w-100">
-                            <i class="fas fa-grid-2 ms-2"></i><?php echo __('portal_open_erp'); ?>
-                        </a>
-                        <p class="small text-muted text-center mt-2 mb-0"><?php echo __('portal_erp_hint'); ?></p>
-                    </div>
-                </div>
+                <p class="text-muted small mb-1"><?php echo __('portal_welcome'); ?></p>
+                <h1 class="h3 mb-1"><?php echo Rateb\App\Core\View::escape($companyName !== '' ? $companyName : $userName); ?></h1>
+                <p class="text-muted mb-0"><?php echo Rateb\App\Core\View::escape(__('portal_welcome_user', ['name' => $userName])); ?></p>
+                <p class="small mt-2 mb-0 opacity-75"><?php echo __('portal_customer_only_hint'); ?></p>
             </div>
         </div>
 
@@ -79,7 +70,9 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
                     <div class="card-header bg-transparent d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <span class="fw-semibold"><i class="fas fa-bolt text-primary ms-2"></i><?php echo __('portal_quick_links'); ?></span>
                         <?php if ($unreadNotifications > 0) { ?>
-                        <span class="badge text-bg-danger"><?php echo $unreadNotifications; ?> <?php echo __('notifications'); ?></span>
+                        <a href="<?php echo rateb_url('site/portal/notifications'); ?>" class="badge text-bg-danger text-decoration-none">
+                            <?php echo $unreadNotifications; ?> <?php echo __('notifications'); ?>
+                        </a>
                         <?php } ?>
                     </div>
                     <div class="card-body">
@@ -89,6 +82,9 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
                                 <a href="<?php echo Rateb\App\Core\View::escape((string) ($link['url'] ?? '#')); ?>" class="btn btn-outline-secondary w-100 text-start rateb-portal-action-btn">
                                     <i class="fas <?php echo Rateb\App\Core\View::escape((string) ($link['icon'] ?? 'fa-link')); ?> ms-2"></i>
                                     <?php echo Rateb\App\Core\View::escape((string) ($link['label'] ?? '')); ?>
+                                    <?php if (!empty($link['badge'])) { ?>
+                                    <span class="badge text-bg-danger ms-1"><?php echo (int) $link['badge']; ?></span>
+                                    <?php } ?>
                                 </a>
                             </div>
                             <?php } ?>
@@ -98,9 +94,10 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
 
                 <div class="card shadow-sm">
                     <div class="card-header bg-transparent fw-semibold">
-                        <i class="fas fa-puzzle-piece text-primary ms-2"></i><?php echo __('portal_modules'); ?>
+                        <i class="fas fa-puzzle-piece text-primary ms-2"></i><?php echo __('portal_plan_modules'); ?>
                     </div>
                     <div class="card-body">
+                        <p class="text-muted small"><?php echo __('portal_plan_modules_hint'); ?></p>
                         <?php if ($modules === []) { ?>
                         <p class="text-muted mb-0"><?php echo __('portal_no_modules'); ?></p>
                         <?php } else { ?>
@@ -109,18 +106,16 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
                             <div class="col-md-6">
                                 <div class="card h-100 rateb-portal-module-card">
                                     <div class="card-body">
-                                        <a href="<?php echo Rateb\App\Core\View::escape((string) ($mod['url'] ?? '#')); ?>" class="fw-semibold text-decoration-none rateb-portal-module-title">
+                                        <div class="fw-semibold rateb-portal-module-title mb-2">
                                             <i class="fas <?php echo Rateb\App\Core\View::escape((string) ($mod['icon'] ?? 'fa-cube')); ?> text-primary ms-2"></i>
                                             <?php echo Rateb\App\Core\View::escape((string) ($mod['label'] ?? '')); ?>
-                                        </a>
-                                        <?php if (!empty($mod['subs'])) { ?>
-                                        <div class="list-group list-group-flush mt-3 rateb-portal-module-links">
-                                            <?php foreach ($mod['subs'] as $sub) { ?>
-                                            <a href="<?php echo Rateb\App\Core\View::escape((string) ($sub['url'] ?? '#')); ?>" class="list-group-item list-group-item-action border-0 px-0 py-1 small">
-                                                <?php echo Rateb\App\Core\View::escape((string) ($sub['label'] ?? '')); ?>
-                                            </a>
-                                            <?php } ?>
                                         </div>
+                                        <?php if (!empty($mod['subs'])) { ?>
+                                        <ul class="rateb-portal-module-subs mb-0">
+                                            <?php foreach ($mod['subs'] as $subLabel) { ?>
+                                            <li><?php echo Rateb\App\Core\View::escape((string) $subLabel); ?></li>
+                                            <?php } ?>
+                                        </ul>
                                         <?php } ?>
                                     </div>
                                 </div>
@@ -138,7 +133,7 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
                         <i class="fas fa-id-card text-primary ms-2"></i><?php echo __('portal_account'); ?>
                     </div>
                     <div class="card-body">
-                        <dl class="rateb-portal-meta mb-0">
+                        <dl class="rateb-portal-meta mb-3">
                             <dt><?php echo __('name'); ?></dt>
                             <dd><?php echo Rateb\App\Core\View::escape($userName); ?></dd>
                             <dt><?php echo __('login_email'); ?></dt>
@@ -150,6 +145,7 @@ $statusLabel = $subStatus === 'trial' ? __('portal_status_trial') : ($subStatus 
                             <dd class="rateb-ltr-num"><?php echo Rateb\App\Core\View::escape((string) $company['phone']); ?></dd>
                             <?php } ?>
                         </dl>
+                        <a href="<?php echo rateb_url('site/portal/profile'); ?>" class="btn btn-outline-primary btn-sm w-100"><?php echo __('portal_edit_profile'); ?></a>
                     </div>
                 </div>
 

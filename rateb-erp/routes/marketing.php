@@ -16,6 +16,9 @@ $router->get('/site/register', [MarketingAuthController::class, 'showRegister'],
 $router->post('/site/register', [MarketingAuthController::class, 'register'], rateb_guest_mw());
 
 $router->get('/site/portal', [CustomerPortalController::class, 'index'], rateb_portal_mw());
+$router->get('/site/portal/profile', [CustomerPortalController::class, 'profile'], rateb_portal_mw());
+$router->post('/site/portal/profile', [CustomerPortalController::class, 'updateProfile'], rateb_portal_mw());
+$router->get('/site/portal/notifications', [CustomerPortalController::class, 'notifications'], rateb_portal_mw());
 $router->get('/site/portal/logout', [CustomerPortalController::class, 'logout']);
 
 $router->get('/site', [MarketingController::class, 'home']);

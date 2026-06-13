@@ -14,50 +14,33 @@ use Rateb\App\Models\User;
 
 final class CustomerPortalService
 {
-    /** @return array<string, array{route:string,icon:string,subs?:list<array{route:string,label:string}>}> */
+    /** @return array<string, array{icon:string,subs?:list<string>}> */
     public static function moduleCatalog(): array
     {
         return [
             'procurement' => [
-                'route' => 'purchase-requests',
                 'icon' => 'fa-file-circle-plus',
-                'subs' => [
-                    ['route' => 'purchase-orders', 'label' => 'purchase_orders'],
-                    ['route' => 'rfq', 'label' => 'rfq'],
-                    ['route' => 'quotations', 'label' => 'quotations'],
-                ],
+                'subs' => ['purchase_orders', 'rfq', 'quotations'],
             ],
             'inventory' => [
-                'route' => 'inventory',
                 'icon' => 'fa-boxes-stacked',
-                'subs' => [
-                    ['route' => 'warehouses', 'label' => 'warehouses'],
-                    ['route' => 'stock-movements', 'label' => 'stock_movements'],
-                    ['route' => 'product-categories', 'label' => 'product_categories'],
-                ],
+                'subs' => ['warehouses', 'stock_movements', 'product_categories'],
             ],
             'suppliers' => [
-                'route' => 'suppliers',
                 'icon' => 'fa-truck',
-                'subs' => [
-                    ['route' => 'supplier-evaluations', 'label' => 'supplier_evaluations'],
-                ],
+                'subs' => ['supplier_evaluations'],
             ],
-            'assets' => ['route' => 'assets', 'icon' => 'fa-building'],
-            'contracts' => ['route' => 'contracts', 'icon' => 'fa-file-contract'],
-            'tenders' => ['route' => 'tenders', 'icon' => 'fa-gavel'],
-            'reports' => ['route' => 'reports', 'icon' => 'fa-chart-bar'],
-            'medical_devices' => ['route' => 'medical-devices', 'icon' => 'fa-stethoscope'],
+            'assets' => ['icon' => 'fa-building'],
+            'contracts' => ['icon' => 'fa-file-contract'],
+            'tenders' => ['icon' => 'fa-gavel'],
+            'reports' => ['icon' => 'fa-chart-bar'],
+            'medical_devices' => ['icon' => 'fa-stethoscope'],
             'accounting' => [
-                'route' => 'accounting',
                 'icon' => 'fa-calculator',
-                'subs' => [
-                    ['route' => 'chart-of-accounts', 'label' => 'chart_of_accounts'],
-                    ['route' => 'journal-entries', 'label' => 'journal_entries'],
-                ],
+                'subs' => ['chart_of_accounts', 'journal_entries'],
             ],
-            'documents' => ['route' => 'documents', 'icon' => 'fa-folder-open'],
-            'workflows' => ['route' => 'workflows', 'icon' => 'fa-diagram-project'],
+            'documents' => ['icon' => 'fa-folder-open'],
+            'workflows' => ['icon' => 'fa-diagram-project'],
         ];
     }
 
@@ -81,7 +64,7 @@ final class CustomerPortalService
         $userCount = (new User())->count(['company_id' => $companyId]);
         $storageUsed = (new PlanLimitService())->storageUsedBytes($companyId);
         $subscription = $this->latestSubscription($companyId);
-        $modules = $this->enabledModules($companyId, $limits['modules'] ?? []);
+        $modules = $this->planModules($companyId, $limits['modules'] ?? []);
         $unreadNotifications = $this->unreadCount($companyId, (int) $user['id']);
 
         return [
@@ -95,38 +78,42 @@ final class CustomerPortalService
             'trialDaysLeft' => $this->trialDaysLeft($subscription),
             'modules' => $modules,
             'unreadNotifications' => $unreadNotifications,
-            'quickLinks' => $this->quickLinks(),
+            'quickLinks' => $this->quickLinks($unreadNotifications),
         ];
     }
 
+    /** @return list<array<string, mixed>> */
+    public function notifications(int $companyId, int $userId, int $limit = 50): array
+    {
+        return (new Notification())->query(
+            'SELECT * FROM rateb_notifications
+             WHERE company_id = :cid AND (user_id IS NULL OR user_id = :uid)
+             ORDER BY id DESC LIMIT ' . max(1, min(100, $limit)),
+            ['cid' => $companyId, 'uid' => $userId]
+        );
+    }
+
     /** @param list<string> $enabled */
-    /** @return list<array{key:string,label:string,icon:string,url:string,subs:list<array{label:string,url:string}>}> */
-    private function enabledModules(int $companyId, array $enabled): array
+    /** @return list<array{key:string,label:string,icon:string,subs:list<string>}> */
+    private function planModules(int $companyId, array $enabled): array
     {
         $catalog = self::moduleCatalog();
         $planSvc = new PlanLimitService();
         $out = [];
 
         foreach ($enabled as $moduleKey) {
-            if (!isset($catalog[$moduleKey])) {
-                continue;
-            }
-            if (!$planSvc->companyHasModule($companyId, $moduleKey)) {
+            if (!isset($catalog[$moduleKey]) || !$planSvc->companyHasModule($companyId, $moduleKey)) {
                 continue;
             }
             $def = $catalog[$moduleKey];
             $subs = [];
-            foreach ($def['subs'] ?? [] as $sub) {
-                $subs[] = [
-                    'label' => __($sub['label']),
-                    'url' => rateb_app_url($sub['route']),
-                ];
+            foreach ($def['subs'] ?? [] as $subKey) {
+                $subs[] = __($subKey);
             }
             $out[] = [
                 'key' => $moduleKey,
                 'label' => __($moduleKey),
                 'icon' => $def['icon'],
-                'url' => rateb_app_url($def['route']),
                 'subs' => $subs,
             ];
         }
@@ -134,15 +121,25 @@ final class CustomerPortalService
         return $out;
     }
 
-    /** @return list<array{label:string,url:string,icon:string}> */
-    private function quickLinks(): array
+    /** @return list<array{label:string,url:string,icon:string,badge?:int}> */
+    private function quickLinks(int $unreadNotifications): array
     {
-        return [
-            ['label' => __('profile'), 'url' => rateb_app_url('profile'), 'icon' => 'fa-user-gear'],
-            ['label' => __('notifications'), 'url' => rateb_app_url('notifications'), 'icon' => 'fa-bell'],
+        $links = [
+            ['label' => __('profile'), 'url' => rateb_url('site/portal/profile'), 'icon' => 'fa-user-gear'],
             ['label' => __('cms_view_plans'), 'url' => rateb_url('site/pricing'), 'icon' => 'fa-tags'],
             ['label' => __('cms_contact_us'), 'url' => rateb_url('site/contact'), 'icon' => 'fa-headset'],
+            ['label' => __('password_forgot'), 'url' => rateb_url('password/forgot'), 'icon' => 'fa-key'],
         ];
+        $notif = [
+            'label' => __('notifications'),
+            'url' => rateb_url('site/portal/notifications'),
+            'icon' => 'fa-bell',
+        ];
+        if ($unreadNotifications > 0) {
+            $notif['badge'] = $unreadNotifications;
+        }
+        array_splice($links, 1, 0, [$notif]);
+        return $links;
     }
 
     /** @return array<string, mixed>|null */

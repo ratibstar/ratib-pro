@@ -6,6 +6,12 @@ use Rateb\App\Services\CmsService;
 $portalUser = Auth::user();
 $isCompanyCustomer = $portalUser && !rateb_is_super_admin() && (int) ($_SESSION['rateb_company_id'] ?? 0) > 0;
 $isPortalPage = !empty($isPortalPage);
+$portalSection = (string) ($portalSection ?? '');
+$portalNav = [
+    'home' => ['label' => __('portal_dashboard'), 'url' => rateb_url('site/portal')],
+    'profile' => ['label' => __('profile'), 'url' => rateb_url('site/portal/profile')],
+    'notifications' => ['label' => __('notifications'), 'url' => rateb_url('site/portal/notifications')],
+];
 ?>
 <header class="rateb-mkt-header<?php echo $isPortalPage ? ' rateb-mkt-header-portal' : ''; ?>">
     <nav class="navbar navbar-expand-lg">
@@ -18,7 +24,17 @@ $isPortalPage = !empty($isPortalPage);
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="ratebMktNav">
-                <?php if (!$isPortalPage) { ?>
+                <?php if ($isCompanyCustomer) { ?>
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 rateb-portal-nav">
+                    <?php foreach ($portalNav as $key => $nav) { ?>
+                    <li class="nav-item">
+                        <a class="nav-link<?php echo $portalSection === $key ? ' active fw-semibold' : ''; ?>" href="<?php echo Rateb\App\Core\View::escape($nav['url']); ?>">
+                            <?php echo Rateb\App\Core\View::escape($nav['label']); ?>
+                        </a>
+                    </li>
+                    <?php } ?>
+                </ul>
+                <?php } elseif (!$isPortalPage) { ?>
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <?php foreach ($menuItems ?? [] as $item) {
                         $label = CmsService::pickLocale($item, 'label');
@@ -29,10 +45,6 @@ $isPortalPage = !empty($isPortalPage);
                     </li>
                     <?php } ?>
                 </ul>
-                <?php } else { ?>
-                <div class="me-auto mb-2 mb-lg-0">
-                    <span class="navbar-text fw-semibold"><?php echo __('portal_dashboard'); ?></span>
-                </div>
                 <?php } ?>
                 <div class="d-flex align-items-center gap-2 rateb-mkt-actions">
                     <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('theme_dark'); ?>">
@@ -46,7 +58,6 @@ $isPortalPage = !empty($isPortalPage);
                     <?php if (!$isPortalPage) { ?>
                     <a href="<?php echo rateb_url('site/portal'); ?>" class="btn btn-sm btn-primary"><?php echo __('portal_my_account'); ?></a>
                     <?php } ?>
-                    <a href="<?php echo rateb_url('admin'); ?>" class="btn btn-sm btn-outline-primary"><?php echo __('portal_open_erp'); ?></a>
                     <a href="<?php echo rateb_url('site/portal/logout'); ?>" class="btn btn-sm btn-outline-danger"><?php echo __('logout'); ?></a>
                     <?php } else { ?>
                     <a href="<?php echo rateb_url('site/login'); ?>" class="btn btn-sm btn-outline-primary"><?php echo __('cms_customer_login'); ?></a>

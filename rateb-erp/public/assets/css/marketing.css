@@ -327,7 +327,19 @@
     z-index: 2;
 }
 
-.rateb-portal-module-links .list-group-item:hover {
+.rateb-portal-module-subs {
+    list-style: disc;
+    padding-inline-start: 1.5rem;
+    margin: 0;
+    color: var(--cms-muted);
+    font-size: 0.875rem;
+}
+
+.rateb-portal-module-subs li {
+    margin-bottom: 0.2rem;
+}
+
+.rateb-portal-nav .nav-link.active {
     color: var(--cms-primary);
 }
 
