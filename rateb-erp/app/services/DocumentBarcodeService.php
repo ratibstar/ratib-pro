@@ -102,7 +102,10 @@ final class DocumentBarcodeService
             );
         } elseif ($type === 'inventory') {
             $rows = (new Inventory())->query(
-                'SELECT * FROM rateb_inventory WHERE barcode = :code LIMIT 1',
+                'SELECT i.*, w.name AS warehouse_name
+                 FROM rateb_inventory i
+                 LEFT JOIN rateb_warehouses w ON w.id = i.warehouse_id
+                 WHERE i.barcode = :code LIMIT 1',
                 ['code' => $code]
             );
         } else {
@@ -135,33 +138,48 @@ final class DocumentBarcodeService
     /** @return array<int, array{label:string,value:string}> */
     private function publicFields(string $type, array $row): array
     {
-        $fields = [];
-        if ($type === 'inventory') {
-            $fields = [
-                $this->field(__('sku'), (string) ($row['sku'] ?? '')),
-                $this->field(__('quantity'), (string) ($row['quantity'] ?? '')),
-                $this->field(__('status'), (string) ($row['status'] ?? '')),
-            ];
-        } elseif ($type === 'invoice') {
-            $fields = [
-                $this->field(__('invoice_no'), (string) ($row['invoice_no'] ?? '')),
-                $this->field(__('status'), (string) ($row['status'] ?? '')),
-                $this->field(__('issued_at'), (string) ($row['issued_at'] ?? '')),
-            ];
-        } else {
-            $fields = [
-                $this->field(__('contract_no'), (string) ($row['contract_no'] ?? '')),
-                $this->field(__('status'), (string) ($row['status'] ?? '')),
-                $this->field(__('start_date'), (string) ($row['start_date'] ?? '')),
-            ];
-        }
+        $config = $this->scanFieldConfig();
+        $defs = $config[$type] ?? [];
         $out = [];
-        foreach ($fields as $f) {
-            if ($f !== null) {
-                $out[] = $f;
+        foreach ($defs as $def) {
+            $key = (string) ($def['key'] ?? '');
+            if ($key === '') {
+                continue;
+            }
+            $label = __((string) ($def['label'] ?? $key));
+            $value = $this->formatScanValue($row, $key, (string) ($def['format'] ?? ''));
+            $field = $this->field($label, $value);
+            if ($field !== null) {
+                $out[] = $field;
             }
         }
         return $out;
+    }
+
+    /** @return array<string, list<array{key:string,label:string,format?:string}>> */
+    private function scanFieldConfig(): array
+    {
+        $path = dirname(__DIR__, 2) . '/config/document-scan-fields.php';
+        if (!is_file($path)) {
+            return [];
+        }
+        $config = require $path;
+        return is_array($config) ? $config : [];
+    }
+
+    /** @param array<string, mixed> $row */
+    private function formatScanValue(array $row, string $key, string $format): string
+    {
+        $raw = $row[$key] ?? '';
+        if ($format === 'money') {
+            $num = is_numeric($raw) ? (float) $raw : 0.0;
+            if ($num <= 0) {
+                return '';
+            }
+            $currency = trim((string) ($row['currency'] ?? 'SAR'));
+            return number_format($num, 2) . ($currency !== '' ? ' ' . $currency : '');
+        }
+        return trim((string) $raw);
     }
 
     /** @return array{label:string,value:string}|null */
@@ -240,8 +258,8 @@ final class DocumentBarcodeService
             'subtitle' => $subtitle,
             'barcode' => $codes['barcode'],
             'qr_code' => $codes['qr_code'],
-            'qr_image_url' => $this->qrImageUrl($codes['qr_code'], 200),
-            'qr_proxy_url' => $this->qrProxyUrl($codes['qr_code'], 200),
+            'qr_image_url' => $this->qrPublicUrl($codes['qr_code'], 200),
+            'qr_proxy_url' => $this->qrPublicUrl($codes['qr_code'], 200),
         ];
     }
 

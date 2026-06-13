@@ -2,16 +2,11 @@
 /** @var array<string, mixed> $doc */
 $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($doc['title'] ?? 'document')) ?: 'document';
 ?>
-<link rel="stylesheet" href="<?php echo rateb_asset('css/document-barcodes.css'); ?>?v=6">
+<link rel="stylesheet" href="<?php echo rateb_asset('css/document-barcodes.css'); ?>?v=7">
 <div class="rateb-scan-view" data-rateb-scan-view data-label-title="<?php echo Rateb\App\Core\View::escape($safeFilename); ?>">
     <p class="text-muted small text-center mb-3"><?php echo __('scan_view_only_hint'); ?></p>
-    <div class="d-flex justify-content-center gap-2 mb-3 rateb-scan-actions">
-        <button type="button" class="btn btn-sm btn-outline-primary" data-scan-print>
-            <i class="fas fa-print"></i> <?php echo __('print_label'); ?>
-        </button>
-        <button type="button" class="btn btn-sm btn-outline-secondary" data-scan-download>
-            <i class="fas fa-download"></i> <?php echo __('download_png'); ?>
-        </button>
+    <div class="d-flex justify-content-center mb-3 rateb-scan-actions">
+        <?php Rateb\App\Core\View::partial('document-barcode-actions', ['wrapperClass' => 'rateb-scan-actions-dropdown']); ?>
     </div>
     <div class="rateb-scan-print-area rateb-doc-barcode-print-area" dir="<?php echo rateb_locale() === 'ar' ? 'rtl' : 'ltr'; ?>">
         <div class="rateb-doc-barcode-brand text-center mb-2"><?php echo __('rateb_erp'); ?></div>
@@ -39,4 +34,5 @@ $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($doc['title'] ?? 'd
         </div>
     </div>
 </div>
-<script src="<?php echo rateb_asset('js/document-scan.js'); ?>?v=2"></script>
+<script src="<?php echo rateb_asset('js/barcode-canvas.js'); ?>?v=1"></script>
+<script src="<?php echo rateb_asset('js/document-scan.js'); ?>?v=3"></script>

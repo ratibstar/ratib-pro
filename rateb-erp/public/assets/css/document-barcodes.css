@@ -110,8 +110,43 @@ body.rateb-printing-doc-barcode .rateb-print-target .rateb-card {
     min-width: 7rem;
 }
 
+.rateb-attachment-box {
+    background: var(--rateb-surface, #151f32);
+    border-color: var(--rateb-border, #2a3a52) !important;
+    color: var(--rateb-text, #e2e8f0);
+}
+
+.rateb-barcode-cell {
+    white-space: nowrap;
+}
+
+.rateb-barcode-cell .btn {
+    padding: 0.15rem 0.45rem;
+    vertical-align: middle;
+}
+
+.rateb-barcode-actions .dropdown-menu,
+.rateb-scan-actions-dropdown .dropdown-menu {
+    background: var(--rateb-surface-elevated, #1c2940);
+    border-color: var(--rateb-border, #2a3a52);
+}
+
+.rateb-barcode-actions .dropdown-item,
+.rateb-scan-actions-dropdown .dropdown-item {
+    color: var(--rateb-text, #e2e8f0);
+}
+
+.rateb-barcode-actions .dropdown-item:hover,
+.rateb-scan-actions-dropdown .dropdown-item:hover,
+.rateb-barcode-actions .dropdown-item:focus,
+.rateb-scan-actions-dropdown .dropdown-item:focus {
+    background: var(--rateb-surface, #151f32);
+    color: var(--rateb-text, #e2e8f0);
+}
+
 body.rateb-printing-doc-barcode .rateb-barcode-actions,
-body.rateb-printing-doc-barcode .rateb-scan-actions {
+body.rateb-printing-doc-barcode .rateb-scan-actions,
+body.rateb-printing-doc-barcode .rateb-scan-actions-dropdown {
     display: none !important;
 }
 
@@ -120,7 +155,8 @@ body.rateb-printing-doc-barcode .text-muted.small.text-center.mb-3 {
 }
 
 @media print {
-    .rateb-barcode-actions {
+    .rateb-barcode-actions,
+    .rateb-scan-actions-dropdown {
         display: none !important;
     }
 }

@@ -373,6 +373,7 @@ return [
     'scan_view_only_hint' => 'Read-only view — no login required.',
     'document_type' => 'Document type',
     'scan_not_found' => 'No document found for this code',
+    'scan_quick_view' => 'Quick scan view',
     'print_label' => 'Print',
     'download_png' => 'Download PNG',
     'expiry_alerts' => 'Expiry Alerts',

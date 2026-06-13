@@ -424,6 +424,14 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = rateb_app_route('inventory');
         $this->entityName = 'inventory';
         $this->tenantForeignKeys = ['warehouse_id'];
+        $this->indexFields = [
+            ['name' => 'item_name', 'label' => 'item_name'],
+            ['name' => 'sku', 'label' => 'sku'],
+            ['name' => 'barcode', 'label' => 'document_barcode', 'type' => 'barcode'],
+            ['name' => 'quantity', 'label' => 'quantity'],
+            ['name' => 'expiry_date', 'label' => 'expiry_date'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
         $this->fields = [
             ['name' => 'warehouse_id', 'label' => 'Warehouse ID', 'type' => 'number'],
             ['name' => 'item_name', 'label' => 'Item', 'type' => 'text'],
@@ -643,6 +651,14 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = rateb_app_route('contracts');
         $this->entityName = 'contracts';
         $this->tenantForeignKeys = ['supplier_id'];
+        $this->indexFields = [
+            ['name' => 'contract_no', 'label' => 'contract_no'],
+            ['name' => 'title', 'label' => 'title'],
+            ['name' => 'barcode', 'label' => 'document_barcode', 'type' => 'barcode'],
+            ['name' => 'start_date', 'label' => 'start_date'],
+            ['name' => 'end_date', 'label' => 'end_date'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
         $this->fields = [
             ['name' => 'contract_no', 'label' => 'Contract No', 'type' => 'text'],
             ['name' => 'title', 'label' => 'Title', 'type' => 'text'],

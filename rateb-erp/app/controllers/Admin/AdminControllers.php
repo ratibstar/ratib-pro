@@ -1028,6 +1028,7 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             'fields' => [
                 ['name' => 'invoice_no', 'label' => 'invoice_no'],
                 ['name' => 'company_name', 'label' => 'company_name'],
+                ['name' => 'barcode', 'label' => 'document_barcode', 'type' => 'barcode'],
                 ['name' => 'total_amount', 'label' => 'total_amount'],
                 ['name' => 'tax_amount', 'label' => 'tax_amount'],
                 ['name' => 'status', 'label' => 'status'],
@@ -1419,6 +1420,7 @@ final class InventoryController extends Controller
         $itemFields = [
             ['name' => 'item_name', 'label' => 'item_name'],
             ['name' => 'sku', 'label' => 'sku'],
+            ['name' => 'barcode', 'label' => 'document_barcode', 'type' => 'barcode'],
             ['name' => 'quantity', 'label' => 'quantity'],
             ['name' => 'unit_cost', 'label' => 'unit_cost'],
             ['name' => 'expiry_date', 'label' => 'expiry_date'],
@@ -1487,6 +1489,14 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'admin/contracts';
         $this->routePrefix = 'admin/contracts';
         $this->entityName = 'contracts';
+        $this->indexFields = [
+            ['name' => 'contract_no', 'label' => 'contract_no'],
+            ['name' => 'title', 'label' => 'title'],
+            ['name' => 'barcode', 'label' => 'document_barcode', 'type' => 'barcode'],
+            ['name' => 'start_date', 'label' => 'start_date'],
+            ['name' => 'end_date', 'label' => 'end_date'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
         $this->fields = [
             ['name' => 'company_id', 'label' => 'company_id', 'type' => 'number'],
             ['name' => 'contract_no', 'label' => 'Contract No', 'type' => 'text'],

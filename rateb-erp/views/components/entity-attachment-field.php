@@ -31,7 +31,7 @@ if ($doc) {
         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp">
     <small class="text-muted d-block mt-1"><?php echo __('attachment_hint'); ?></small>
     <?php if ($displayName !== '') { ?>
-    <div class="mt-2 p-2 border rounded d-flex flex-wrap align-items-center justify-content-between gap-2 bg-light">
+    <div class="mt-2 p-2 border rounded d-flex flex-wrap align-items-center justify-content-between gap-2 rateb-attachment-box">
         <span class="small">
             <i class="fas fa-file"></i>
             <?php echo Rateb\App\Core\View::escape($displayName); ?>

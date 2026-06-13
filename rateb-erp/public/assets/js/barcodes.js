@@ -63,6 +63,10 @@
         }
     }
 
+    function canvasApi() {
+        return window.RatebBarcodeCanvas || null;
+    }
+
     function buildLabelCanvas(root, onReady) {
         var area = root.querySelector('.rateb-doc-barcode-print-area');
         if (!area) {
@@ -71,6 +75,8 @@
             }
             return;
         }
+        var api = canvasApi();
+        var rtl = api ? api.isRtlNode(area) : false;
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext('2d');
         if (!ctx) {
@@ -85,31 +91,44 @@
         canvas.height = height;
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
-        ctx.fillStyle = '#212529';
-        ctx.textAlign = 'center';
 
         var y = 32;
         var brand = area.querySelector('.rateb-doc-barcode-brand');
         if (brand) {
-            ctx.font = '13px Tahoma, Arial, sans-serif';
-            ctx.fillStyle = '#6c757d';
-            ctx.fillText(brand.textContent || '', width / 2, y);
+            if (api) {
+                api.drawCenteredText(ctx, brand.textContent || '', width / 2, y, rtl, '13px Tahoma, Arial, sans-serif', '#6c757d');
+            } else {
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '13px Tahoma, Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(brand.textContent || '', width / 2, y);
+            }
             y += 28;
         }
 
         var title = area.querySelector('.rateb-doc-barcode-title');
         if (title) {
-            ctx.fillStyle = '#212529';
-            ctx.font = 'bold 18px Tahoma, Arial, sans-serif';
-            ctx.fillText(title.textContent || '', width / 2, y);
+            if (api) {
+                api.drawCenteredText(ctx, title.textContent || '', width / 2, y, rtl, 'bold 18px Tahoma, Arial, sans-serif', '#212529');
+            } else {
+                ctx.fillStyle = '#212529';
+                ctx.font = 'bold 18px Tahoma, Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(title.textContent || '', width / 2, y);
+            }
             y += 24;
         }
 
         var subtitle = area.querySelector('.rateb-doc-barcode-subtitle');
         if (subtitle && subtitle.textContent) {
-            ctx.font = '14px Tahoma, Arial, sans-serif';
-            ctx.fillStyle = '#6c757d';
-            ctx.fillText(subtitle.textContent, width / 2, y);
+            if (api) {
+                api.drawCenteredText(ctx, subtitle.textContent, width / 2, y, rtl, '14px Tahoma, Arial, sans-serif', '#6c757d');
+            } else {
+                ctx.font = '14px Tahoma, Arial, sans-serif';
+                ctx.fillStyle = '#6c757d';
+                ctx.textAlign = 'center';
+                ctx.fillText(subtitle.textContent, width / 2, y);
+            }
             y += 22;
         }
 
@@ -120,9 +139,14 @@
         function finish() {
             var code = area.querySelector('.rateb-doc-barcode-code');
             if (code) {
-                ctx.fillStyle = '#212529';
-                ctx.font = '15px monospace';
-                ctx.fillText(code.textContent || '', width / 2, height - 28);
+                if (api) {
+                    api.drawCenteredText(ctx, code.textContent || '', width / 2, height - 28, rtl, '15px monospace', '#212529');
+                } else {
+                    ctx.fillStyle = '#212529';
+                    ctx.font = '15px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(code.textContent || '', width / 2, height - 28);
+                }
             }
             if (onReady) {
                 onReady(canvas);
@@ -253,7 +277,7 @@
             });
         }
 
-        var printBtn = root.querySelector('[data-barcode-print]');
+        var printBtn = root.querySelector('[data-doc-print]');
         if (printBtn) {
             printBtn.addEventListener('click', function (ev) {
                 ev.preventDefault();
@@ -261,7 +285,7 @@
             });
         }
 
-        var downloadBtn = root.querySelector('[data-barcode-download]');
+        var downloadBtn = root.querySelector('[data-doc-download]');
         if (downloadBtn) {
             downloadBtn.addEventListener('click', function (ev) {
                 ev.preventDefault();

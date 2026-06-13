@@ -87,8 +87,26 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                     <?php } ?>
                     <?php foreach ($columns as $col) {
                         $val = $row[$col['name']] ?? '';
-                        ?>
+                        $colType = (string) ($col['type'] ?? '');
+                        if ($colType === 'barcode') {
+                            $barcode = trim((string) $val);
+                            ?>
+                    <td class="rateb-barcode-cell">
+                        <?php if ($barcode !== '') {
+                            $scanUrl = (new \Rateb\App\Services\DocumentBarcodeService())->publicScanUrl($barcode);
+                            ?>
+                        <span class="font-monospace small"><?php echo Rateb\App\Core\View::escape($barcode); ?></span>
+                        <a href="<?php echo Rateb\App\Core\View::escape($scanUrl); ?>" target="_blank" rel="noopener noreferrer"
+                            class="btn btn-sm btn-outline-info ms-1" title="<?php echo __('scan_quick_view'); ?>">
+                            <i class="fas fa-qrcode"></i>
+                        </a>
+                        <?php } else { ?>
+                        <span class="text-muted">—</span>
+                        <?php } ?>
+                    </td>
+                        <?php } else { ?>
                     <td><?php echo Rateb\App\Core\View::escape($val); ?></td>
+                        <?php } ?>
                     <?php } ?>
                     <?php if ($actionsEnabled) { ?>
                     <td class="rateb-actions">

@@ -6,7 +6,7 @@ if (empty($docBarcode) || empty($docBarcode['barcode'])) {
 $uid = 'docbc-' . preg_replace('/[^a-z0-9]/i', '', (string) ($docBarcode['type'] ?? 'doc')) . '-' . (int) ($docBarcode['recordId'] ?? 0);
 $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($docBarcode['title'] ?? 'label')) ?: 'label';
 ?>
-<link rel="stylesheet" href="<?php echo rateb_asset('css/document-barcodes.css'); ?>?v=6">
+<link rel="stylesheet" href="<?php echo rateb_asset('css/document-barcodes.css'); ?>?v=7">
 <div class="rateb-doc-barcode mt-4" data-rateb-barcodes
     data-barcode="<?php echo Rateb\App\Core\View::escape((string) $docBarcode['barcode']); ?>"
     data-qr="<?php echo Rateb\App\Core\View::escape((string) ($docBarcode['qr_code'] ?? '')); ?>"
@@ -14,14 +14,7 @@ $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($docBarcode['title'
     <div class="rateb-card">
         <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span><i class="fas fa-qrcode"></i> <?php echo __('document_barcode'); ?></span>
-            <div class="d-flex gap-2 rateb-barcode-actions">
-                <button type="button" class="btn btn-sm btn-outline-primary" data-barcode-print>
-                    <i class="fas fa-print"></i> <?php echo __('print_label'); ?>
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-barcode-download>
-                    <i class="fas fa-download"></i> <?php echo __('download_png'); ?>
-                </button>
-            </div>
+            <?php Rateb\App\Core\View::partial('document-barcode-actions'); ?>
         </div>
         <div class="rateb-card-body">
             <p class="text-muted small mb-3"><?php echo __('document_barcode_hint'); ?></p>
@@ -47,4 +40,5 @@ $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($docBarcode['title'
         </div>
     </div>
 </div>
-<script src="<?php echo rateb_asset('js/barcodes.js'); ?>?v=6"></script>
+<script src="<?php echo rateb_asset('js/barcode-canvas.js'); ?>?v=1"></script>
+<script src="<?php echo rateb_asset('js/barcodes.js'); ?>?v=7"></script>

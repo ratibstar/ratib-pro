@@ -373,6 +373,7 @@ return [
     'scan_view_only_hint' => 'عرض المستند فقط — بدون تسجيل دخول.',
     'document_type' => 'نوع المستند',
     'scan_not_found' => 'لم يُعثر على مستند بهذا الرمز',
+    'scan_quick_view' => 'عرض سريع بالمسح',
     'print_label' => 'طباعة',
     'download_png' => 'تحميل PNG',
     'expiry_alerts' => 'تنبيهات انتهاء الصلاحية',

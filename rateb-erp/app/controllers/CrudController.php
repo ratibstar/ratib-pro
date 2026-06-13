@@ -16,6 +16,8 @@ abstract class CrudController extends Controller
     protected string $viewPrefix;
     protected string $routePrefix;
     protected array $fields = [];
+    /** @var array<int, array<string, mixed>> */
+    protected array $indexFields = [];
     protected string $entityName = 'record';
     protected bool $bulkEnabled = true;
     protected bool $createEnabled = true;
@@ -43,7 +45,7 @@ abstract class CrudController extends Controller
             'page' => $page,
             'limit' => $limit,
             'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
+            'fields' => $this->indexFields !== [] ? $this->indexFields : $this->fields,
             'csrf' => Csrf::token(),
             'bulkEnabled' => $this->bulkEnabled,
             'createEnabled' => $this->createEnabled,

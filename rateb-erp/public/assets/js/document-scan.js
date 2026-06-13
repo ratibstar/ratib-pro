@@ -10,6 +10,10 @@
         return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     }
 
+    function canvasApi() {
+        return window.RatebBarcodeCanvas || null;
+    }
+
     function saveBlob(blob, filename) {
         if (!blob) {
             return false;
@@ -116,6 +120,8 @@
             }
             return;
         }
+        var api = canvasApi();
+        var rtl = api ? api.isRtlNode(area) : false;
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext('2d');
         if (!ctx) {
@@ -125,20 +131,24 @@
             return;
         }
         var width = 420;
-        var height = 560;
+        var fieldCount = area.querySelectorAll('dl dt').length;
+        var height = 560 + Math.max(0, fieldCount - 4) * 22;
         canvas.width = width;
         canvas.height = height;
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, width, height);
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#212529';
 
         var y = 28;
         var brand = area.querySelector('.rateb-doc-barcode-brand');
         if (brand) {
-            ctx.font = '13px Tahoma, Arial, sans-serif';
-            ctx.fillStyle = '#6c757d';
-            ctx.fillText(brand.textContent || '', width / 2, y);
+            if (api) {
+                api.drawCenteredText(ctx, brand.textContent || '', width / 2, y, rtl, '13px Tahoma, Arial, sans-serif', '#6c757d');
+            } else {
+                ctx.font = '13px Tahoma, Arial, sans-serif';
+                ctx.fillStyle = '#6c757d';
+                ctx.textAlign = 'center';
+                ctx.fillText(brand.textContent || '', width / 2, y);
+            }
             y += 24;
         }
 
@@ -146,50 +156,69 @@
         if (qrImg) {
             drawQr(ctx, qrImg, (width / 2) - 90, y, 180, function () {
                 y += 200;
-                drawText(area, ctx, width, y, onReady, canvas);
+                drawText(area, ctx, width, y, onReady, canvas, rtl, api);
             });
         } else {
-            drawText(area, ctx, width, y, onReady, canvas);
+            drawText(area, ctx, width, y, onReady, canvas, rtl, api);
         }
     }
 
-    function drawText(area, ctx, width, y, onReady, canvas) {
+    function drawText(area, ctx, width, y, onReady, canvas, rtl, api) {
         var title = area.querySelector('.rateb-doc-barcode-title');
         if (title) {
-            ctx.fillStyle = '#212529';
-            ctx.font = 'bold 17px Tahoma, Arial, sans-serif';
-            ctx.fillText(title.textContent || '', width / 2, y);
+            if (api) {
+                api.drawCenteredText(ctx, title.textContent || '', width / 2, y, rtl, 'bold 17px Tahoma, Arial, sans-serif', '#212529');
+            } else {
+                ctx.fillStyle = '#212529';
+                ctx.font = 'bold 17px Tahoma, Arial, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(title.textContent || '', width / 2, y);
+            }
             y += 22;
         }
         var subtitle = area.querySelector('.rateb-doc-barcode-subtitle');
         if (subtitle && subtitle.textContent) {
-            ctx.font = '14px Tahoma, Arial, sans-serif';
-            ctx.fillStyle = '#6c757d';
-            ctx.fillText(subtitle.textContent, width / 2, y);
+            if (api) {
+                api.drawCenteredText(ctx, subtitle.textContent, width / 2, y, rtl, '14px Tahoma, Arial, sans-serif', '#6c757d');
+            } else {
+                ctx.font = '14px Tahoma, Arial, sans-serif';
+                ctx.fillStyle = '#6c757d';
+                ctx.textAlign = 'center';
+                ctx.fillText(subtitle.textContent, width / 2, y);
+            }
             y += 20;
         }
         var code = area.querySelector('.rateb-doc-barcode-code');
         if (code) {
-            ctx.font = '14px monospace';
-            ctx.fillStyle = '#495057';
-            ctx.fillText(code.textContent || '', width / 2, y);
+            if (api) {
+                api.drawCenteredText(ctx, code.textContent || '', width / 2, y, rtl, '14px monospace', '#495057');
+            } else {
+                ctx.font = '14px monospace';
+                ctx.fillStyle = '#495057';
+                ctx.textAlign = 'center';
+                ctx.fillText(code.textContent || '', width / 2, y);
+            }
             y += 24;
         }
 
-        ctx.textAlign = 'right';
-        ctx.font = '13px Tahoma, Arial, sans-serif';
-        var rows = area.querySelectorAll('dl dt');
-        var vals = area.querySelectorAll('dl dd');
-        for (var i = 0; i < rows.length; i += 1) {
-            var label = rows[i].textContent || '';
-            var value = vals[i] ? (vals[i].textContent || '') : '';
-            ctx.fillStyle = '#6c757d';
-            ctx.fillText(label, width - 30, y);
-            ctx.textAlign = 'left';
-            ctx.fillStyle = '#212529';
-            ctx.fillText(value, 30, y);
+        if (api) {
+            api.drawFieldRows(ctx, area, width, y);
+        } else {
             ctx.textAlign = 'right';
-            y += 20;
+            ctx.font = '13px Tahoma, Arial, sans-serif';
+            var rows = area.querySelectorAll('dl dt');
+            var vals = area.querySelectorAll('dl dd');
+            for (var i = 0; i < rows.length; i += 1) {
+                var label = rows[i].textContent || '';
+                var value = vals[i] ? (vals[i].textContent || '') : '';
+                ctx.fillStyle = '#6c757d';
+                ctx.fillText(label, width - 30, y);
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#212529';
+                ctx.fillText(value, 30, y);
+                ctx.textAlign = 'right';
+                y += 20;
+            }
         }
 
         if (onReady) {
@@ -221,14 +250,14 @@
     }
 
     function initRoot(root) {
-        var printBtn = root.querySelector('[data-scan-print]');
+        var printBtn = root.querySelector('[data-doc-print]');
         if (printBtn) {
             printBtn.addEventListener('click', function (e) {
                 e.preventDefault();
                 printView(root);
             });
         }
-        var downloadBtn = root.querySelector('[data-scan-download]');
+        var downloadBtn = root.querySelector('[data-doc-download]');
         if (downloadBtn) {
             downloadBtn.addEventListener('click', function (e) {
                 e.preventDefault();
