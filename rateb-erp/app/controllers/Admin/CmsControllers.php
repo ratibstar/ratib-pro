@@ -5,6 +5,7 @@ namespace Rateb\App\Controllers\Admin;
 
 use Rateb\App\Core\Controller;
 use Rateb\App\Core\Csrf;
+use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\View;
 use Rateb\App\Models\CmsAbout;
@@ -21,7 +22,9 @@ use Rateb\App\Models\CmsHelpArticle;
 use Rateb\App\Models\CmsKbArticle;
 use Rateb\App\Models\CmsLead;
 use Rateb\App\Models\CmsLeadNote;
-use Rateb\App\Models\CmsMedia;
+use Rateb\App\Models\CmsFooterColumn;
+use Rateb\App\Models\CmsNewsletterCampaign;
+use Rateb\App\Models\CmsOffice;
 use Rateb\App\Models\CmsMediaCategory;
 use Rateb\App\Models\CmsMenu;
 use Rateb\App\Models\CmsMenuItem;
@@ -42,7 +45,9 @@ use Rateb\App\Models\CmsTestimonial;
 use Rateb\App\Models\CmsTheme;
 use Rateb\App\Models\CmsTimeline;
 use Rateb\App\Services\AuditService;
+use Rateb\App\Services\CmsArticleTagService;
 use Rateb\App\Services\CmsMediaService;
+use Rateb\App\Services\CmsNewsletterCampaignService;
 use Rateb\App\Services\CmsService;
 
 final class CmsDashboardController extends Controller
@@ -72,8 +77,8 @@ final class CmsPagesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'title_ar', 'label' => 'title_ar'],
             ['name' => 'template', 'label' => 'template'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'published', 'scheduled']],
-            ['name' => 'content_en', 'label' => 'content_en', 'type' => 'textarea'],
-            ['name' => 'content_ar', 'label' => 'content_ar', 'type' => 'textarea'],
+            ['name' => 'content_en', 'label' => 'content_en', 'type' => 'wysiwyg'],
+            ['name' => 'content_ar', 'label' => 'content_ar', 'type' => 'wysiwyg'],
         ];
     }
 }
@@ -91,8 +96,8 @@ final class CmsSectionsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'section_key', 'label' => 'section_key'],
             ['name' => 'title_en', 'label' => 'title_en'],
             ['name' => 'title_ar', 'label' => 'title_ar'],
-            ['name' => 'body_en', 'label' => 'body_en', 'type' => 'textarea'],
-            ['name' => 'body_ar', 'label' => 'body_ar', 'type' => 'textarea'],
+            ['name' => 'body_en', 'label' => 'body_en', 'type' => 'wysiwyg'],
+            ['name' => 'body_ar', 'label' => 'body_ar', 'type' => 'wysiwyg'],
             ['name' => 'sort_order', 'label' => 'sort_order', 'type' => 'number'],
             ['name' => 'is_active', 'label' => 'is_active', 'type' => 'select', 'options' => ['1', '0']],
         ];
@@ -153,13 +158,92 @@ final class CmsBlogArticlesController extends \Rateb\App\Controllers\CrudControl
             ['name' => 'title_ar', 'label' => 'title_ar'],
             ['name' => 'excerpt_en', 'label' => 'excerpt_en', 'type' => 'textarea'],
             ['name' => 'excerpt_ar', 'label' => 'excerpt_ar', 'type' => 'textarea'],
-            ['name' => 'content_en', 'label' => 'content_en', 'type' => 'textarea'],
-            ['name' => 'content_ar', 'label' => 'content_ar', 'type' => 'textarea'],
+            ['name' => 'content_en', 'label' => 'content_en', 'type' => 'wysiwyg'],
+            ['name' => 'content_ar', 'label' => 'content_ar', 'type' => 'wysiwyg'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'published', 'scheduled']],
             ['name' => 'published_at', 'label' => 'published_at', 'type' => 'datetime-local'],
             ['name' => 'meta_title_en', 'label' => 'meta_title_en'],
             ['name' => 'meta_description_en', 'label' => 'meta_description_en', 'type' => 'textarea'],
         ];
+    }
+
+    public function create(): void
+    {
+        $this->guardManage();
+        $this->view($this->viewPrefix . '/form', $this->formViewData(null), $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $this->guardManage();
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', $this->formViewData($item), $this->layout());
+    }
+
+    public function store(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', 'Invalid CSRF token');
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $data = $this->collectData();
+        $tagIds = $this->tagIdsFromInput();
+        $id = $this->model->create($data);
+        (new CmsArticleTagService())->syncForArticle($id, $tagIds);
+        (new AuditService())->log('create', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function update(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $data = $this->collectData();
+        $this->model->update($id, $data);
+        (new CmsArticleTagService())->syncForArticle($id, $this->tagIdsFromInput());
+        (new AuditService())->log('update', $this->entityName, $id, $data);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    /** @return array<string, mixed> */
+    private function formViewData(?array $item): array
+    {
+        $selectedTags = [];
+        if ($item) {
+            $selectedTags = (new CmsArticleTagService())->tagIdsForArticle((int) $item['id']);
+        }
+        return [
+            'title' => ($item ? __('edit') : __('create')) . ' ' . __('cms_blog'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'allTags' => (new CmsBlogTag())->all(200, 0),
+            'selectedTags' => $selectedTags,
+            'cmsWysiwyg' => true,
+        ];
+    }
+
+    /** @return array<int, int> */
+    private function tagIdsFromInput(): array
+    {
+        $raw = $this->input('tag_ids', []);
+        if (!is_array($raw)) {
+            return [];
+        }
+        return array_values(array_filter(array_map('intval', $raw)));
     }
 }
 
@@ -321,6 +405,26 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
         ];
     }
 
+    public function index(): void
+    {
+        $page = max(1, (int) $this->input('page', 1));
+        $limit = 20;
+        $this->view($this->viewPrefix . '/index', array_merge($this->applyPermissionFlags([
+            'title' => __('cms_newsletter'),
+            'items' => $this->model->all($limit, ($page - 1) * $limit),
+            'total' => $this->model->count(),
+            'page' => $page,
+            'limit' => $limit,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => $this->createEnabled,
+            'actionsEnabled' => $this->actionsEnabled,
+            'campaigns' => (new CmsNewsletterCampaign())->all(20, 0),
+        ]), []), $this->layout());
+    }
+
     public function export(): void
     {
         header('Content-Type: text/csv; charset=UTF-8');
@@ -332,6 +436,82 @@ final class CmsNewsletterController extends \Rateb\App\Controllers\CrudControlle
         }
         fclose($out);
         exit;
+    }
+
+    public function import(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url('admin/cms/newsletter'));
+            return;
+        }
+        $csv = '';
+        if (!empty($_FILES['csv_file']['tmp_name']) && is_uploaded_file($_FILES['csv_file']['tmp_name'])) {
+            $csv = (string) file_get_contents($_FILES['csv_file']['tmp_name']);
+        } else {
+            $csv = (string) $this->input('csv_text', '');
+        }
+        $result = (new CmsNewsletterCampaignService())->importCsv($csv);
+        SessionManager::flash('success', __('cms_import_ok') . ': ' . $result['imported'] . ' / ' . $result['skipped']);
+        $this->redirect(rateb_url('admin/cms/newsletter'));
+    }
+
+    public function campaignForm(): void
+    {
+        $this->guardManage();
+        $id = (int) ($_GET['id'] ?? $this->input('id', 0));
+        $item = $id > 0 ? (new CmsNewsletterCampaign())->find($id) : null;
+        $this->view('admin/cms/newsletter/campaign-form', [
+            'title' => ($item ? __('edit') : __('create')) . ' ' . __('cms_campaign'),
+            'item' => $item,
+            'segments' => (new CmsNewsletterSegment())->all(50, 0),
+            'csrf' => Csrf::token(),
+            'cmsWysiwyg' => true,
+        ], $this->layout());
+    }
+
+    public function campaignSave(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url('admin/cms/newsletter'));
+            return;
+        }
+        $model = new CmsNewsletterCampaign();
+        $id = (int) $this->input('id', 0);
+        $data = [
+            'subject_en' => (string) $this->input('subject_en', ''),
+            'subject_ar' => (string) $this->input('subject_ar', ''),
+            'body_html_en' => (string) $this->input('body_html_en', ''),
+            'body_html_ar' => (string) $this->input('body_html_ar', ''),
+            'segment_slug' => (string) $this->input('segment_slug', 'general'),
+            'status' => (string) $this->input('status', 'draft'),
+            'scheduled_at' => (string) $this->input('scheduled_at', '') ?: null,
+        ];
+        if ($id > 0) {
+            $model->update($id, $data);
+        } else {
+            $id = $model->create($data);
+        }
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url('admin/cms/newsletter/campaign?id=' . $id));
+    }
+
+    public function campaignSend(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url('admin/cms/newsletter'));
+            return;
+        }
+        $id = (int) $this->input('id', 0);
+        try {
+            $result = (new CmsNewsletterCampaignService())->dispatchCampaign($id);
+            SessionManager::flash('success', __('cms_campaign_sent') . ': ' . $result['sent']);
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+        }
+        $this->redirect(rateb_url('admin/cms/newsletter'));
     }
 }
 
@@ -604,6 +784,7 @@ final class CmsContactController extends Controller
         $this->view('admin/cms/contact', [
             'title' => __('cms_contact'),
             'item' => $settings[0] ?? null,
+            'offices' => (new CmsOffice())->all(50, 0),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -632,5 +813,150 @@ final class CmsContactController extends Controller
         }
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url('admin/cms/contact'));
+    }
+}
+
+final class CmsOfficesController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new CmsOffice();
+        $this->viewPrefix = 'admin/cms/offices';
+        $this->routePrefix = 'admin/cms/offices';
+        $this->entityName = 'cms_offices';
+        $this->fields = [
+            ['name' => 'name_en', 'label' => 'name_en'],
+            ['name' => 'name_ar', 'label' => 'name_ar'],
+            ['name' => 'address_en', 'label' => 'address_en', 'type' => 'textarea'],
+            ['name' => 'address_ar', 'label' => 'address_ar', 'type' => 'textarea'],
+            ['name' => 'phone', 'label' => 'phone'],
+            ['name' => 'map_url', 'label' => 'map_url'],
+            ['name' => 'sort_order', 'label' => 'sort_order', 'type' => 'number'],
+        ];
+    }
+}
+
+final class CmsFooterColumnsController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new CmsFooterColumn();
+        $this->viewPrefix = 'admin/cms/footer-columns';
+        $this->routePrefix = 'admin/cms/footer-columns';
+        $this->entityName = 'cms_footer_columns';
+        $this->fields = [
+            ['name' => 'title_en', 'label' => 'title_en'],
+            ['name' => 'title_ar', 'label' => 'title_ar'],
+            ['name' => 'links_lines', 'label' => 'cms_footer_links', 'type' => 'textarea'],
+            ['name' => 'sort_order', 'label' => 'sort_order', 'type' => 'number'],
+        ];
+    }
+
+    public function create(): void
+    {
+        $this->guardManage();
+        $this->view($this->viewPrefix . '/form', $this->formExtras(null), $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $this->guardManage();
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', $this->formExtras($item), $this->layout());
+    }
+
+    /** @param array<string, mixed>|null $item */
+    private function formExtras(?array $item): array
+    {
+        if ($item && !empty($item['links_json'])) {
+            $decoded = json_decode((string) $item['links_json'], true);
+            if (is_array($decoded)) {
+                $lines = [];
+                foreach ($decoded as $link) {
+                    if (!is_array($link)) {
+                        continue;
+                    }
+                    $lines[] = ($link['label_en'] ?? $link['label'] ?? '') . '|' . ($link['url'] ?? '');
+                }
+                $item['links_lines'] = implode("\n", $lines);
+            }
+        }
+        return [
+            'title' => ($item ? __('edit') : __('create')) . ' ' . __('cms_footer_columns'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+        ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        unset($data['links_lines']);
+        $lines = trim((string) $this->input('links_lines', ''));
+        $links = [];
+        foreach (preg_split('/\r\n|\r|\n/', $lines) ?: [] as $line) {
+            $line = trim($line);
+            if ($line === '' || strpos($line, '|') === false) {
+                continue;
+            }
+            [$label, $url] = array_map('trim', explode('|', $line, 2));
+            $links[] = ['label_en' => $label, 'label_ar' => $label, 'url' => $url];
+        }
+        $data['links_json'] = json_encode($links, JSON_UNESCAPED_UNICODE);
+        return $data;
+    }
+}
+
+final class CmsPageBuilderController extends Controller
+{
+    public function index(): void
+    {
+        $pageSlug = trim((string) $this->input('page', 'home'));
+        $cms = new CmsService();
+        $pages = (new CmsPage())->all(100, 0);
+        $this->view('admin/cms/page-builder/index', [
+            'title' => __('cms_page_builder'),
+            'pageSlug' => $pageSlug,
+            'pages' => $pages,
+            'content' => $cms->pageContent($pageSlug),
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function reorder(): void
+    {
+        if (!$this->validateCsrf()) {
+            Response::json(['ok' => false, 'message' => 'CSRF'], 403);
+            return;
+        }
+        $sections = $this->input('sections', []);
+        $blocks = $this->input('blocks', []);
+        if (is_array($sections)) {
+            $stmt = \Rateb\App\Core\Database::connection()->prepare(
+                'UPDATE rateb_cms_sections SET sort_order = :o WHERE id = :id'
+            );
+            foreach ($sections as $order => $id) {
+                $stmt->execute(['o' => (int) $order, 'id' => (int) $id]);
+            }
+        }
+        if (is_array($blocks)) {
+            $stmt = \Rateb\App\Core\Database::connection()->prepare(
+                'UPDATE rateb_cms_blocks SET sort_order = :o WHERE id = :id'
+            );
+            foreach ($blocks as $order => $id) {
+                $stmt->execute(['o' => (int) $order, 'id' => (int) $id]);
+            }
+        }
+        SessionManager::flash('success', __('cms_reorder_ok'));
+        $page = (string) $this->input('page_slug', 'home');
+        $this->redirect(rateb_url('admin/cms/page-builder?page=' . rawurlencode($page)));
     }
 }

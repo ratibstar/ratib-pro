@@ -13,12 +13,15 @@ use Rateb\App\Controllers\Admin\CmsContactController;
 use Rateb\App\Controllers\Admin\CmsDashboardController;
 use Rateb\App\Controllers\Admin\CmsFaqCategoriesController;
 use Rateb\App\Controllers\Admin\CmsFaqsController;
+use Rateb\App\Controllers\Admin\CmsFooterColumnsController;
 use Rateb\App\Controllers\Admin\CmsHelpArticlesController;
 use Rateb\App\Controllers\Admin\CmsKbArticlesController;
 use Rateb\App\Controllers\Admin\CmsLeadsController;
 use Rateb\App\Controllers\Admin\CmsMediaController;
 use Rateb\App\Controllers\Admin\CmsMenuItemsController;
 use Rateb\App\Controllers\Admin\CmsNewsletterController;
+use Rateb\App\Controllers\Admin\CmsOfficesController;
+use Rateb\App\Controllers\Admin\CmsPageBuilderController;
 use Rateb\App\Controllers\Admin\CmsPagesController;
 use Rateb\App\Controllers\Admin\CmsPartnersController;
 use Rateb\App\Controllers\Admin\CmsRedirectsController;
@@ -62,6 +65,8 @@ $cmsCrud = [
     'system-status' => [CmsSystemStatusController::class, 'cms.manage'],
     'team' => [CmsTeamMembersController::class, 'cms.manage'],
     'timeline' => [CmsTimelineController::class, 'cms.manage'],
+    'offices' => [CmsOfficesController::class, 'cms.manage'],
+    'footer-columns' => [CmsFooterColumnsController::class, 'cms.manage'],
     'seo' => [CmsSeoController::class, 'cms.seo'],
     'redirects' => [CmsRedirectsController::class, 'cms.seo'],
     'newsletter' => [CmsNewsletterController::class, 'cms.manage'],
@@ -100,3 +105,10 @@ $router->get('/admin/cms/contact', [CmsContactController::class, 'index'], rateb
 $router->post('/admin/cms/contact', [CmsContactController::class, 'save'], rateb_admin_mw('cms.manage'));
 
 $router->get('/admin/cms/newsletter/export', [CmsNewsletterController::class, 'export'], rateb_admin_mw('cms.manage'));
+$router->post('/admin/cms/newsletter/import', [CmsNewsletterController::class, 'import'], rateb_admin_mw('cms.manage'));
+$router->get('/admin/cms/newsletter/campaign', [CmsNewsletterController::class, 'campaignForm'], rateb_admin_mw('cms.manage'));
+$router->post('/admin/cms/newsletter/campaign/save', [CmsNewsletterController::class, 'campaignSave'], rateb_admin_mw('cms.manage'));
+$router->post('/admin/cms/newsletter/campaign/send', [CmsNewsletterController::class, 'campaignSend'], rateb_admin_mw('cms.manage'));
+
+$router->get('/admin/cms/page-builder', [CmsPageBuilderController::class, 'index'], rateb_admin_mw('cms.manage'));
+$router->post('/admin/cms/page-builder/reorder', [CmsPageBuilderController::class, 'reorder'], rateb_admin_mw('cms.manage'));

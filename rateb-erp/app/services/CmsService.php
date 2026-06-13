@@ -46,6 +46,30 @@ final class CmsService
         return (string) ($row[$fallback] ?? '');
     }
 
+    public static function sanitizeHtml(string $html): string
+    {
+        $allowed = '<p><br><strong><b><em><i><u><ul><ol><li><a><h1><h2><h3><h4><h5><h6><img><blockquote><span><div>';
+        return strip_tags($html, $allowed);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function footerColumns(): array
+    {
+        $stmt = Database::connection()->query(
+            'SELECT * FROM rateb_cms_footer_columns ORDER BY sort_order ASC, id ASC'
+        );
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function offices(): array
+    {
+        $stmt = Database::connection()->query(
+            'SELECT * FROM rateb_cms_offices ORDER BY sort_order ASC, id ASC'
+        );
+        return $stmt ? ($stmt->fetchAll() ?: []) : [];
+    }
+
     public function trackPageView(string $pageSlug): void
     {
         try {

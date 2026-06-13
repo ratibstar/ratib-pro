@@ -15,6 +15,7 @@ use Rateb\App\Models\CmsNewsletterSubscriber;
 use Rateb\App\Models\CmsPartner;
 use Rateb\App\Models\CmsService as CmsServiceItem;
 use Rateb\App\Models\CmsSystemStatus;
+use Rateb\App\Services\CmsArticleTagService;
 use Rateb\App\Services\CmsService;
 
 final class MarketingController extends Controller
@@ -57,6 +58,7 @@ final class MarketingController extends Controller
         $meta = $this->cms->metaTags('blog', $title);
         $this->view('marketing/blog-article', [
             'article' => $stmt,
+            'articleTags' => (new CmsArticleTagService())->tagsForArticle((int) ($stmt['id'] ?? 0)),
             'meta' => $meta,
             'title' => $title,
             'menuItems' => $this->cms->menuItems(),
@@ -129,6 +131,8 @@ final class MarketingController extends Controller
             'plans' => $this->cms->publishedPlans(),
             'about' => $this->cms->about(),
             'contact' => $this->cms->contactSettings(),
+            'offices' => $this->cms->offices(),
+            'footerColumns' => $this->cms->footerColumns(),
         ];
         $data = array_merge($data, $this->pageExtras($slug));
         $tpl = $page ? (string) ($page['template'] ?? $slug) : $slug;

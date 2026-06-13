@@ -23,6 +23,8 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int)$item['id']) : rateb_url
                     </label>
                     <?php if ($type === 'textarea') { ?>
                     <textarea class="form-control rateb-form-control" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>" name="<?php echo Rateb\App\Core\View::escape($name); ?>" rows="4"><?php echo Rateb\App\Core\View::escape($value); ?></textarea>
+                    <?php } elseif ($type === 'wysiwyg') { ?>
+                    <textarea class="form-control rateb-form-control rateb-cms-wysiwyg" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>" name="<?php echo Rateb\App\Core\View::escape($name); ?>" rows="8"><?php echo Rateb\App\Core\View::escape($value); ?></textarea>
                     <?php } elseif ($type === 'select') { ?>
                     <select class="form-select rateb-form-control" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>" name="<?php echo Rateb\App\Core\View::escape($name); ?>">
                         <?php foreach (($field['options'] ?? []) as $opt) { ?>

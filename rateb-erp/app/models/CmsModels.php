@@ -213,6 +213,15 @@ final class CmsNewsletterSegment extends Model
     protected array $fillable = ['slug', 'name_en', 'name_ar', 'description_en', 'description_ar'];
 }
 
+final class CmsNewsletterCampaign extends Model
+{
+    protected string $table = 'rateb_cms_newsletter_campaigns';
+    protected array $fillable = [
+        'subject_en', 'subject_ar', 'body_html_en', 'body_html_ar', 'segment_slug',
+        'status', 'scheduled_at', 'sent_at', 'sent_count',
+    ];
+}
+
 final class CmsSeo extends Model
 {
     protected string $table = 'rateb_cms_seo';

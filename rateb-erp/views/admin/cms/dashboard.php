@@ -11,8 +11,9 @@
 <div class="row g-2">
 <?php
 $links = [
-    ['admin/cms/pages', 'cms_pages'], ['admin/cms/sections', 'cms_sections'], ['admin/cms/blocks', 'cms_blocks'],
-    ['admin/cms/menu-items', 'cms_menu'], ['admin/cms/blog-articles', 'cms_blog'], ['admin/cms/faqs', 'cms_faqs'],
+    ['admin/cms/pages', 'cms_pages'], ['admin/cms/page-builder', 'cms_page_builder'], ['admin/cms/sections', 'cms_sections'], ['admin/cms/blocks', 'cms_blocks'],
+    ['admin/cms/menu-items', 'cms_menu'], ['admin/cms/footer-columns', 'cms_footer_columns'], ['admin/cms/offices', 'cms_offices'],
+    ['admin/cms/blog-articles', 'cms_blog'], ['admin/cms/faqs', 'cms_faqs'],
     ['admin/cms/testimonials', 'cms_testimonials'], ['admin/cms/slides', 'cms_slides'], ['admin/cms/leads', 'cms_leads'],
     ['admin/cms/newsletter', 'cms_newsletter'], ['admin/cms/seo', 'cms_seo'], ['admin/cms/media', 'cms_media'],
     ['admin/cms/theme', 'cms_theme'], ['admin/cms/analytics', 'cms_analytics'], ['admin/cms/about', 'cms_about'],

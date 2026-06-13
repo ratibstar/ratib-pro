@@ -12,4 +12,5 @@
 <div class="col-12"><label class="form-label">Map Embed</label><textarea class="form-control" name="map_embed" rows="3"><?php echo Rateb\App\Core\View::escape($item['map_embed'] ?? ''); ?></textarea></div>
 </div>
 <button type="submit" class="btn btn-primary mt-3"><?php echo __('save'); ?></button>
+<a href="<?php echo rateb_url('admin/cms/offices'); ?>" class="btn btn-outline-secondary mt-3 ms-2"><?php echo __('cms_offices'); ?></a>
 </form></div></div>
