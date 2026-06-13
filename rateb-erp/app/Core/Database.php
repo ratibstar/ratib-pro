@@ -107,6 +107,9 @@ final class Database
         if (defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')) {
             $options[PDO::MYSQL_ATTR_USE_BUFFERED_QUERY] = true;
         }
+        if (defined('PDO::MYSQL_ATTR_INIT_COMMAND')) {
+            $options[PDO::MYSQL_ATTR_INIT_COMMAND] = 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci';
+        }
 
         return new PDO($dsn, RATEB_DB_USER, RATEB_DB_PASS, $options);
     }
