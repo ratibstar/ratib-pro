@@ -1,12 +1,9 @@
 (function () {
     'use strict';
 
-    function svgToDataUrl(svg) {
-        if (!svg) {
-            return '';
-        }
-        var xml = new XMLSerializer().serializeToString(svg);
-        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml);
+    function safeName(raw) {
+        var name = (raw || 'label').replace(/[^\w\.\-\u0600-\u06FF]+/g, '_');
+        return name !== '' ? name : 'label';
     }
 
     function downloadDataUrl(dataUrl, filename) {
@@ -16,6 +13,14 @@
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    }
+
+    function downloadBlob(blob, filename) {
+        var url = URL.createObjectURL(blob);
+        downloadDataUrl(url, filename);
+        setTimeout(function () {
+            URL.revokeObjectURL(url);
+        }, 2000);
     }
 
     function drawQrOnCanvas(ctx, qrNode, x, y, size, done) {
@@ -36,7 +41,6 @@
         }
         if (qrNode.tagName === 'IMG' && qrNode.src) {
             var img = new Image();
-            img.crossOrigin = 'anonymous';
             img.onload = function () {
                 try {
                     ctx.drawImage(img, x, y, size, size);
@@ -74,8 +78,8 @@
             }
             return;
         }
-        var width = 640;
-        var height = 420;
+        var width = 420;
+        var height = 520;
         canvas.width = width;
         canvas.height = height;
         ctx.fillStyle = '#ffffff';
@@ -83,10 +87,10 @@
         ctx.fillStyle = '#212529';
         ctx.textAlign = 'center';
 
-        var y = 36;
+        var y = 32;
         var brand = area.querySelector('.rateb-doc-barcode-brand');
         if (brand) {
-            ctx.font = '12px sans-serif';
+            ctx.font = '13px Tahoma, Arial, sans-serif';
             ctx.fillStyle = '#6c757d';
             ctx.fillText(brand.textContent || '', width / 2, y);
             y += 28;
@@ -95,60 +99,38 @@
         var title = area.querySelector('.rateb-doc-barcode-title');
         if (title) {
             ctx.fillStyle = '#212529';
-            ctx.font = 'bold 20px sans-serif';
+            ctx.font = 'bold 18px Tahoma, Arial, sans-serif';
             ctx.fillText(title.textContent || '', width / 2, y);
-            y += 26;
+            y += 24;
         }
 
         var subtitle = area.querySelector('.rateb-doc-barcode-subtitle');
         if (subtitle && subtitle.textContent) {
-            ctx.font = '14px sans-serif';
+            ctx.font = '14px Tahoma, Arial, sans-serif';
             ctx.fillStyle = '#6c757d';
             ctx.fillText(subtitle.textContent, width / 2, y);
-            y += 24;
+            y += 22;
         }
 
-        var svg = area.querySelector('[data-barcode-svg]');
         var qrNode = area.querySelector('[data-qr-img]') || area.querySelector('[data-qr-canvas]');
-        var barcodeY = y + 10;
-        var pending = 0;
+        var qrY = y + 12;
+        var qrSize = 200;
 
         function finish() {
             var code = area.querySelector('.rateb-doc-barcode-code');
             if (code) {
                 ctx.fillStyle = '#212529';
-                ctx.font = '16px monospace';
-                ctx.fillText(code.textContent || '', width / 2, height - 24);
+                ctx.font = '15px monospace';
+                ctx.fillText(code.textContent || '', width / 2, height - 28);
             }
             if (onReady) {
                 onReady(canvas);
             }
         }
 
-        function done() {
-            pending -= 1;
-            if (pending <= 0) {
-                finish();
-            }
-        }
-
-        if (svg && svg.childNodes.length) {
-            pending += 1;
-            var barcodeImg = new Image();
-            barcodeImg.onload = function () {
-                ctx.drawImage(barcodeImg, (width / 2) - 140, barcodeY, 280, 70);
-                done();
-            };
-            barcodeImg.onerror = done;
-            barcodeImg.src = svgToDataUrl(svg);
-        }
-
         if (qrNode) {
-            pending += 1;
-            drawQrOnCanvas(ctx, qrNode, (width / 2) - 90, barcodeY + 90, 180, done);
-        }
-
-        if (pending === 0) {
+            drawQrOnCanvas(ctx, qrNode, (width / 2) - (qrSize / 2), qrY, qrSize, finish);
+        } else {
             finish();
         }
     }
@@ -159,88 +141,90 @@
             window.print();
             return;
         }
-        var win = window.open('', '_blank', 'width=720,height=560');
-        if (!win) {
-            window.print();
-            return;
-        }
-        var styles = ''
-            + 'body{font-family:system-ui,sans-serif;margin:24px;color:#212529}'
-            + '.text-center{text-align:center}'
-            + '.text-muted{color:#6c757d}'
-            + '.small{font-size:.875rem}'
-            + '.mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:1rem}.mt-3{margin-top:1rem}'
-            + '.font-monospace{font-family:monospace}'
-            + 'svg{max-width:100%}.rateb-doc-qr-img,canvas{max-width:180px;height:auto}';
-        win.document.write('<html><head><title>' + (root.getAttribute('data-label-title') || 'Barcode') + '</title>');
-        win.document.write('<style>' + styles + '</style></head><body>');
-        win.document.write(area.innerHTML);
-        win.document.write('</body></html>');
-        win.document.close();
-        win.focus();
+        document.body.classList.add('rateb-printing-doc-barcode');
+        area.classList.add('rateb-print-target');
+        window.print();
         setTimeout(function () {
-            win.print();
-            win.close();
-        }, 500);
+            document.body.classList.remove('rateb-printing-doc-barcode');
+            area.classList.remove('rateb-print-target');
+        }, 800);
+    }
+
+    function downloadLabel(root) {
+        var filename = safeName(root.getAttribute('data-label-title')) + '.png';
+        var qrImg = root.querySelector('[data-qr-img]');
+
+        buildLabelCanvas(root, function (canvas) {
+            if (!canvas) {
+                if (qrImg && qrImg.src) {
+                    fetch(qrImg.src, { credentials: 'same-origin' })
+                        .then(function (r) { return r.blob(); })
+                        .then(function (blob) { downloadBlob(blob, filename); })
+                        .catch(function () { window.open(qrImg.src, '_blank'); });
+                }
+                return;
+            }
+            try {
+                downloadDataUrl(canvas.toDataURL('image/png'), filename);
+            } catch (e) {
+                if (qrImg && qrImg.src) {
+                    fetch(qrImg.src, { credentials: 'same-origin' })
+                        .then(function (r) { return r.blob(); })
+                        .then(function (blob) { downloadBlob(blob, filename); })
+                        .catch(function () { window.open(qrImg.src, '_blank'); });
+                }
+            }
+        });
     }
 
     function renderClientQr(qrEl, qrValue) {
-        if (!qrEl || !qrValue) {
+        if (!qrEl || !qrValue || !window.QRCode || typeof window.QRCode !== 'function') {
             return;
         }
-        if (window.QRCode && typeof window.QRCode.toCanvas === 'function') {
-            window.QRCode.toCanvas(qrEl, qrValue, { width: 180, margin: 2 }, function () {});
-            return;
-        }
-        if (window.QRCode && typeof window.QRCode === 'function') {
-            qrEl.innerHTML = '';
-            new window.QRCode(qrEl, {
-                text: qrValue,
-                width: 180,
-                height: 180,
-                correctLevel: window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.H : 2
-            });
-        }
+        qrEl.innerHTML = '';
+        new window.QRCode(qrEl, {
+            text: qrValue,
+            width: 200,
+            height: 200,
+            correctLevel: window.QRCode.CorrectLevel ? window.QRCode.CorrectLevel.H : 2
+        });
     }
 
     function initRoot(root) {
-        var barcodeValue = root.getAttribute('data-barcode') || '';
+        if (root.getAttribute('data-rateb-init') === '1') {
+            return;
+        }
+        root.setAttribute('data-rateb-init', '1');
+
         var qrValue = root.getAttribute('data-qr') || '';
-        var barcodeEl = root.querySelector('[data-barcode-svg]');
         var qrCanvas = root.querySelector('[data-qr-canvas]');
         var qrImg = root.querySelector('[data-qr-img]');
 
-        if (barcodeEl && barcodeValue && window.JsBarcode) {
-            try {
-                JsBarcode(barcodeEl, barcodeValue, {
-                    format: 'CODE128',
-                    displayValue: false,
-                    fontSize: 14,
-                    height: 60,
-                    margin: 10
-                });
-            } catch (e) {}
-        }
-
         if (!qrImg && qrCanvas && qrValue) {
-            renderClientQr(qrCanvas, qrValue);
+            if (!window.QRCode) {
+                var s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+                s.crossOrigin = 'anonymous';
+                s.onload = function () { renderClientQr(qrCanvas, qrValue); };
+                document.head.appendChild(s);
+            } else {
+                renderClientQr(qrCanvas, qrValue);
+            }
         }
 
         var printBtn = root.querySelector('[data-barcode-print]');
         if (printBtn) {
-            printBtn.addEventListener('click', function () {
+            printBtn.addEventListener('click', function (ev) {
+                ev.preventDefault();
                 printArea(root);
             });
         }
 
         var downloadBtn = root.querySelector('[data-barcode-download]');
         if (downloadBtn) {
-            downloadBtn.addEventListener('click', function () {
-                buildLabelCanvas(root, function (canvas) {
-                    if (canvas) {
-                        downloadDataUrl(canvas.toDataURL('image/png'), (root.getAttribute('data-label-title') || 'barcode') + '.png');
-                    }
-                });
+            downloadBtn.addEventListener('click', function (ev) {
+                ev.preventDefault();
+                downloadLabel(root);
             });
         }
     }

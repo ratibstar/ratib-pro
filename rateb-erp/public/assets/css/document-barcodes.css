@@ -1,6 +1,7 @@
 .rateb-doc-barcode-print-area {
-    padding: 1rem;
+    padding: 1.25rem;
     background: #fff;
+    border-radius: 8px;
 }
 
 .rateb-doc-barcode-brand {
@@ -15,46 +16,51 @@
 
 .rateb-doc-barcode-title {
     font-weight: 700;
+    white-space: normal;
+    word-break: normal;
 }
 
 .rateb-doc-barcode-codes {
     margin-top: 0.5rem;
 }
 
-.rateb-doc-barcode svg[data-barcode-svg] {
-    max-width: 100%;
-    height: auto;
-}
-
-.rateb-doc-barcode canvas[data-qr-canvas] {
-    max-width: 180px;
-}
-
 .rateb-doc-barcode .rateb-doc-qr-img {
-    max-width: 180px;
+    max-width: 200px;
     height: auto;
     border: 1px solid #e9ecef;
     border-radius: 4px;
     background: #fff;
 }
 
+.rateb-doc-barcode-code {
+    color: #495057;
+    font-size: 0.95rem;
+}
+
+body.rateb-printing-doc-barcode * {
+    visibility: hidden !important;
+}
+
+body.rateb-printing-doc-barcode .rateb-print-target,
+body.rateb-printing-doc-barcode .rateb-print-target * {
+    visibility: visible !important;
+}
+
+body.rateb-printing-doc-barcode .rateb-print-target {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 12mm;
+    background: #fff;
+}
+
+body.rateb-printing-doc-barcode .rateb-barcode-actions {
+    display: none !important;
+}
+
 @media print {
-    body * {
-        visibility: hidden;
-    }
-    .rateb-doc-barcode-print-area,
-    .rateb-doc-barcode-print-area * {
-        visibility: visible;
-    }
-    .rateb-doc-barcode-print-area {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 12mm;
-    }
-    .rateb-barcode-actions,
-    .rateb-no-print {
+    .rateb-barcode-actions {
         display: none !important;
     }
 }

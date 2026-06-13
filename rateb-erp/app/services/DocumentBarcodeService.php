@@ -40,6 +40,11 @@ final class DocumentBarcodeService
             . '&margin=20&ecc=H&format=png&color=000000&bgcolor=ffffff&data=' . rawurlencode($payload);
     }
 
+    public function qrProxyUrl(string $payload, int $size = 280): string
+    {
+        return rateb_url('barcode/qr?data=' . rawurlencode($payload) . '&size=' . $size);
+    }
+
     /** @return array{barcode:string,qr_code:string}|null */
     public function ensure(string $type, int $recordId): ?array
     {
@@ -85,7 +90,7 @@ final class DocumentBarcodeService
             'subtitle' => $subtitle,
             'barcode' => $codes['barcode'],
             'qr_code' => $codes['qr_code'],
-            'qr_image_url' => $this->qrImageUrl($codes['qr_code']),
+            'qr_image_url' => $this->qrProxyUrl($codes['qr_code']),
         ];
     }
 
