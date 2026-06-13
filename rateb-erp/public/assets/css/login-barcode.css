@@ -1,0 +1,119 @@
+/* ERP login barcode — matches main RATEB program */
+.login-method-toggle {
+    display: inline-flex;
+    gap: 0.4rem;
+    padding: 0.25rem;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.login-method-btn {
+    appearance: none;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.5rem 0.95rem;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+}
+
+.login-method-btn i {
+    margin-inline-end: 0.35rem;
+}
+
+.login-method-btn:hover {
+    color: #fff;
+    background: rgba(99, 102, 241, 0.15);
+}
+
+.login-method-btn.active {
+    color: #fff;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.barcode-login-panel {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+.barcode-scan-panel .icon-3em {
+    font-size: 2.2em;
+}
+
+.barcode-open-phone-box {
+    padding: 0.6rem;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.barcode-login-url-qr {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 150px;
+}
+
+.barcode-login-url-qr-img,
+.rateb-login-qr-img {
+    border-radius: 8px;
+    background: #fff;
+    padding: 6px;
+    width: 190px;
+    height: 190px;
+    max-width: 100%;
+}
+
+.barcode-pair-waiting {
+    color: #38bdf8;
+}
+
+.barcode-status {
+    font-size: 0.875rem;
+}
+
+.barcode-status.info-message {
+    color: #38bdf8;
+}
+
+.barcode-status.error-message {
+    color: #f87171;
+}
+
+.rateb-login-qr-wrap {
+    width: 200px;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px;
+    margin: 0 auto;
+}
+
+@media (max-width: 820px) {
+    #barcode-desktop-panel {
+        display: none !important;
+    }
+}
+
+@media (max-width: 420px) {
+    .login-method-toggle {
+        display: flex;
+        width: 100%;
+    }
+
+    .login-method-btn {
+        flex: 1 1 0;
+        padding: 0.5rem 0.4rem;
+        font-size: 0.8rem;
+    }
+}

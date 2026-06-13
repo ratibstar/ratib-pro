@@ -1,12 +1,16 @@
 <?php
 /** @var string $csrf */
 ?>
-<div class="mb-3">
-    <label class="form-label" for="login-method"><?php echo __('login_method'); ?></label>
-    <select class="form-select" id="login-method" name="login_method">
-        <option value="password" selected><?php echo __('login_method_password'); ?></option>
-        <option value="barcode"><?php echo __('login_method_barcode'); ?></option>
-    </select>
+<div class="mb-3 text-center">
+    <p class="text-muted small mb-2"><?php echo __('login_method'); ?></p>
+    <div class="login-method-toggle" role="group" aria-label="<?php echo __('login_method'); ?>">
+        <button type="button" class="login-method-btn active" data-method="password" aria-pressed="true">
+            <i class="fas fa-user-lock" aria-hidden="true"></i> <?php echo __('login_method_password'); ?>
+        </button>
+        <button type="button" class="login-method-btn" data-method="barcode" aria-pressed="false">
+            <i class="fas fa-qrcode" aria-hidden="true"></i> <?php echo __('login_method_barcode'); ?>
+        </button>
+    </div>
 </div>
 
 <form method="post" action="<?php echo rateb_url('login'); ?>" id="password-form" class="login-panel">
@@ -24,31 +28,33 @@
     <p class="mt-3 mb-0 text-center"><a href="<?php echo rateb_url('password/forgot'); ?>"><?php echo __('password_forgot'); ?></a></p>
 </form>
 
-<div id="barcode-form" class="login-panel d-none">
-    <p class="text-center text-muted small mb-3"><?php echo __('barcode_login_hint'); ?></p>
-
-    <div id="barcode-desktop-panel">
-        <div class="text-center mb-3">
-            <div id="barcode-pair-qr" class="rateb-login-qr-wrap mx-auto"></div>
-            <p id="barcode-pair-waiting" class="small text-muted mt-2 d-none"><?php echo __('barcode_pair_waiting'); ?></p>
+<div id="barcode-form" class="login-panel text-center d-none">
+    <div id="barcode-desktop-panel" class="barcode-login-panel">
+        <div class="barcode-scan-panel mb-3">
+            <i class="fas fa-mobile-alt text-info icon-3em mb-2" aria-hidden="true"></i>
+            <h3 class="h5 mb-2"><?php echo __('barcode_scan_with_phone'); ?></h3>
+            <p class="text-muted mb-0 small"><?php echo __('barcode_pair_short_hint'); ?></p>
         </div>
-        <p class="small text-center text-muted"><?php echo __('barcode_pair_hint'); ?></p>
+        <div class="barcode-open-phone-box mb-2" id="barcode-pair-phone-box">
+            <p class="small text-muted mb-2"><?php echo __('barcode_scan_qr_phone'); ?></p>
+            <div id="barcode-pair-qr" class="barcode-login-url-qr" aria-label="QR code to open phone scanner"></div>
+            <p class="barcode-pair-waiting small mt-2 mb-0" id="barcode-pair-waiting">
+                <i class="fas fa-spinner fa-spin" aria-hidden="true"></i> <?php echo __('barcode_pair_waiting'); ?>
+            </p>
+        </div>
     </div>
 
-    <hr class="my-3">
+    <div id="barcode-mobile-hint" class="barcode-login-panel d-none">
+        <p class="text-muted small mb-2"><?php echo __('barcode_mobile_hint'); ?></p>
+        <a id="barcode-mobile-scan-link" class="btn btn-primary btn-sm mb-2" href="#"><?php echo __('barcode_open_scanner'); ?></a>
+        <p class="text-muted small mb-0 mt-2"><?php echo __('barcode_mobile_desktop_hint'); ?></p>
+    </div>
 
-    <form method="post" action="<?php echo rateb_url('login/barcode'); ?>" id="barcode-direct-form">
+    <form method="post" action="<?php echo rateb_url('login/barcode'); ?>" id="barcode-login-form" class="d-none" aria-hidden="true">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-        <div class="mb-3">
-            <label class="form-label" for="barcode-input"><?php echo __('login_barcode'); ?></label>
-            <input type="text" class="form-control font-monospace text-center" id="barcode-input" name="barcode"
-                autocomplete="off" inputmode="text" placeholder="<?php echo __('login_barcode_placeholder'); ?>">
-        </div>
-        <button type="submit" class="btn btn-primary w-100">
-            <i class="fas fa-barcode me-1"></i> <?php echo __('login_with_barcode'); ?>
-        </button>
+        <input type="hidden" name="barcode" id="barcode-input" value="">
     </form>
-    <div id="barcode-status" class="d-none small mt-2"></div>
+    <div id="barcode-status" class="barcode-status d-none mt-2" role="status"></div>
 </div>
 
 <script>

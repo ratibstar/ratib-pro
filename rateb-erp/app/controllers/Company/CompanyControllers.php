@@ -859,7 +859,7 @@ final class ProfileController extends Controller
         $userId = (int) ($user['id'] ?? 0);
         $barcodeSvc = new \Rateb\App\Services\BarcodeLoginService();
         $barcode = $userId > 0 ? $barcodeSvc->ensureUserBarcode($userId) : null;
-        $badgePayload = $barcode ? $barcodeSvc->badgePayload($barcode) : '';
+        $badgePayload = $barcode ? $barcodeSvc->badgeLoginUrl($barcode) : '';
         $this->view('company/profile/index', [
             'title' => __('profile'),
             'user' => $user,

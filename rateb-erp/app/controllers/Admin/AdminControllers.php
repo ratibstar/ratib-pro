@@ -530,7 +530,7 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         if ($userId > 0) {
             $barcode = $barcodeSvc->ensureUserBarcode($userId);
             if ($barcode) {
-                $badgeQrUrl = $barcodeSvc->qrImageUrl($barcodeSvc->badgePayload($barcode), 160);
+                $badgeQrUrl = $barcodeSvc->qrImageUrl($barcodeSvc->badgeLoginUrl($barcode), 160);
             }
         }
         return [

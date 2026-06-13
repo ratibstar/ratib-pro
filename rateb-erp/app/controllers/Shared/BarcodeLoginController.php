@@ -38,18 +38,6 @@ final class BarcodeLoginController extends Controller
             if (!$poll['ok']) {
                 $this->json(['success' => true, 'status' => 'expired']);
             }
-            if (($poll['status'] ?? '') === 'complete') {
-                $user = $svc->pairConsumeUser($token);
-                if ($user && Auth::loginUser($user)) {
-                    $this->finishLogin($user, 'barcode_pair');
-                    $this->json([
-                        'success' => true,
-                        'status' => 'complete',
-                        'redirect' => rateb_url(Auth::homePath()),
-                    ]);
-                }
-                $this->json(['success' => true, 'status' => 'expired', 'message' => __('barcode_invalid')]);
-            }
             $this->json(['success' => true, 'status' => $poll['status'] ?? 'pending']);
         }
 
@@ -73,16 +61,21 @@ final class BarcodeLoginController extends Controller
     {
         $token = preg_replace('/[^a-f0-9]/', '', strtolower((string) ($_GET['token'] ?? ''))) ?? '';
         $valid = strlen($token) === 32;
+        $svc = new BarcodeLoginService();
         if ($valid) {
-            $poll = (new BarcodeLoginService())->pairPoll($token);
+            $poll = $svc->pairPoll($token);
             $valid = $poll['ok'] && ($poll['status'] ?? '') === 'pending';
+            if ($valid) {
+                $svc->setPairCookie($token);
+            }
         }
+        $autoBadge = trim((string) ($_GET['d'] ?? $_GET['badge'] ?? ''));
         $this->view('shared/auth/login-scan', [
             'title' => __('barcode_scan_title'),
             'token' => $token,
             'tokenValid' => $valid,
-            'csrf' => \Rateb\App\Core\Csrf::token(),
-        ], 'auth');
+            'autoBadge' => $autoBadge,
+        ], null);
     }
 
     public function loginBarcode(): void

@@ -21,6 +21,7 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
     <link href="<?php echo rateb_asset('css/main.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/dark.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/rtl.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_asset('css/login-barcode.css'); ?>" rel="stylesheet">
 </head>
 <body class="rateb-auth-page">
     <div class="rateb-auth-card">

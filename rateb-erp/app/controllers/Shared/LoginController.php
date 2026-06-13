@@ -18,6 +18,23 @@ final class LoginController extends Controller
 {
     public function showLogin(): void
     {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $pairToken = isset($_GET['barcode_pair'])
+                ? preg_replace('/[^a-f0-9]/', '', strtolower((string) $_GET['barcode_pair']))
+                : '';
+            if (strlen($pairToken) === 32) {
+                $user = (new \Rateb\App\Services\BarcodeLoginService())->pairConsumeForLogin($pairToken);
+                if ($user && Auth::loginUser($user)) {
+                    if (!empty($user['locale']) && in_array($user['locale'], RATEB_SUPPORTED_LOCALES, true)) {
+                        $_SESSION['rateb_locale'] = $user['locale'];
+                    }
+                    (new User())->updateLastLogin((int) $user['id']);
+                    (new AuditService())->log('login', 'user', (int) $user['id'], ['method' => 'barcode_pair']);
+                    Response::redirect(rateb_url(Auth::homePath()));
+                }
+            }
+        }
+
         $this->view('shared/auth/login', [
             'title' => __('login'),
             'csrf' => Csrf::token(),
