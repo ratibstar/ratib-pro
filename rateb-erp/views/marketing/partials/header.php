@@ -30,7 +30,8 @@ use Rateb\App\Services\CmsService;
                     </div>
                     <a href="<?php echo rateb_url('locale/en'); ?>" class="btn btn-sm btn-outline-secondary<?php echo rateb_locale() === 'en' ? ' active' : ''; ?>">EN</a>
                     <a href="<?php echo rateb_url('locale/ar'); ?>" class="btn btn-sm btn-outline-secondary<?php echo rateb_locale() === 'ar' ? ' active' : ''; ?>">عربي</a>
-                    <a href="<?php echo rateb_url('login'); ?>" class="btn btn-sm btn-outline-primary"><?php echo __('login'); ?></a>
+                    <a href="<?php echo rateb_url('site/login'); ?>" class="btn btn-sm btn-outline-primary"><?php echo __('cms_customer_login'); ?></a>
+                    <a href="<?php echo rateb_url('site/register'); ?>" class="btn btn-sm btn-outline-secondary"><?php echo __('cms_register'); ?></a>
                     <a href="<?php echo rateb_url('site/request-demo'); ?>" class="btn btn-sm btn-primary rateb-mkt-cta"><?php echo __('cms_request_demo'); ?></a>
                 </div>
             </div>

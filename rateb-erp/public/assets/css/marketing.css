@@ -238,6 +238,14 @@
     border-radius: 0.5rem;
 }
 
+.rateb-mkt-auth-card {
+    background: var(--cms-surface);
+    border: 1px solid var(--cms-border);
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+}
+
 .rateb-mkt-cta .btn-light {
     color: var(--cms-primary);
 }
