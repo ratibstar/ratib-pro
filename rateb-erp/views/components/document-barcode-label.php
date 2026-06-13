@@ -47,4 +47,4 @@ $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($docBarcode['title'
         </div>
     </div>
 </div>
-<script src="<?php echo rateb_asset('js/barcodes.js'); ?>?v=4"></script>
+<script src="<?php echo rateb_asset('js/barcodes.js'); ?>?v=5"></script>

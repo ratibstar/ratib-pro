@@ -369,7 +369,7 @@ return [
     'no_barcode_yet' => 'No barcode generated yet.',
     'no_qr_yet' => 'No QR code generated yet.',
     'document_barcode' => 'Document code',
-    'document_barcode_hint' => 'One QR code is enough to scan — the number below is for manual entry.',
+    'document_barcode_hint' => 'Scan the QR with your phone to open this record — or type the code below.',
     'print_label' => 'Print',
     'download_png' => 'Download PNG',
     'expiry_alerts' => 'Expiry Alerts',

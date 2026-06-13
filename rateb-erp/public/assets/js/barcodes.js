@@ -219,6 +219,8 @@
             }
             replaceImgWithCanvas(img, qrValue);
         });
+    }
+
     function renderClientQr(qrEl, qrValue) {
         if (!qrEl || !qrValue || !window.QRCode || typeof window.QRCode !== 'function') {
             return;

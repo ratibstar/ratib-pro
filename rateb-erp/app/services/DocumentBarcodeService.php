@@ -30,7 +30,44 @@ final class DocumentBarcodeService
 
     public function qrPayload(string $barcode, string $type, int $recordId): string
     {
-        return self::PREFIX . strtoupper($type) . ':' . $barcode . ':' . $recordId;
+        $url = $this->documentEditUrl($type, $recordId);
+        if ($url !== '') {
+            return $url;
+        }
+        return $barcode;
+    }
+
+    public function documentEditUrl(string $type, int $recordId): string
+    {
+        if ($recordId < 1) {
+            return '';
+        }
+        if ($type === 'inventory') {
+            return rateb_app_url('inventory/' . $recordId . '/edit');
+        }
+        if ($type === 'invoice') {
+            return rateb_url('admin/invoices/' . $recordId . '/edit');
+        }
+        if ($type === 'contract') {
+            return rateb_app_url('contracts/' . $recordId . '/edit');
+        }
+        return '';
+    }
+
+    private function normalizeStoredQr(string $stored, string $barcode, string $type, int $recordId): string
+    {
+        $expected = $this->qrPayload($barcode, $type, $recordId);
+        $stored = trim($stored);
+        if ($stored === '') {
+            return $expected;
+        }
+        if ($stored[0] === '{' || strpos($stored, self::PREFIX) === 0) {
+            return $expected;
+        }
+        if (strpos($expected, 'http') === 0 && strpos($stored, 'http') !== 0) {
+            return $expected;
+        }
+        return $stored;
     }
 
     public function qrImageUrl(string $payload, int $size = 280): string
@@ -54,9 +91,13 @@ final class DocumentBarcodeService
         }
         $existing = trim((string) ($row['barcode'] ?? ''));
         if ($existing !== '') {
+            $qr = $this->normalizeStoredQr((string) ($row['qr_code'] ?? ''), $existing, $type, $recordId);
+            if ($qr !== (string) ($row['qr_code'] ?? '')) {
+                $this->updateRow($type, $recordId, ['qr_code' => $qr]);
+            }
             return [
                 'barcode' => $existing,
-                'qr_code' => (string) ($row['qr_code'] ?? $this->qrPayload($existing, $type, $recordId)),
+                'qr_code' => $qr,
             ];
         }
         $companyId = (int) ($row['company_id'] ?? 0);

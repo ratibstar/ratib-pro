@@ -369,7 +369,7 @@ return [
     'no_barcode_yet' => 'لم يُنشأ باركود بعد.',
     'no_qr_yet' => 'لم يُنشأ رمز QR بعد.',
     'document_barcode' => 'رمز المستند',
-    'document_barcode_hint' => 'رمز QR واحد يكفي للمسح — الرقم أسفله للإدخال اليدوي.',
+    'document_barcode_hint' => 'امسح رمز QR بالهاتف لفتح المستند — أو استخدم الرقم أسفله يدوياً.',
     'print_label' => 'طباعة',
     'download_png' => 'تحميل PNG',
     'expiry_alerts' => 'تنبيهات انتهاء الصلاحية',
