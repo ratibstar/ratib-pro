@@ -64,4 +64,9 @@ window.RATEB_LOGIN_BARCODE = {
     home: <?php echo json_encode(rateb_url('admin'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>
 };
 </script>
-<script src="<?php echo rateb_asset('js/erp-login-barcode.js'); ?>"></script>
+<?php
+$loginBarcodeJs = defined('RATEB_ROOT') ? RATEB_ROOT . '/public/assets/js/erp-login-barcode.js' : '';
+if ($loginBarcodeJs !== '' && is_file($loginBarcodeJs)) {
+    echo '<script>', file_get_contents($loginBarcodeJs), '</script>';
+}
+?>
