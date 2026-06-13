@@ -36,7 +36,12 @@ $uid = 'docbc-' . preg_replace('/[^a-z0-9]/i', '', (string) ($docBarcode['type']
                     </div>
                     <div class="col-md-6 text-center">
                         <div class="small text-muted mb-1"><?php echo __('qr_code'); ?></div>
-                        <canvas data-qr-canvas></canvas>
+                        <?php if (!empty($docBarcode['qr_image_url'])) { ?>
+                        <img data-qr-img src="<?php echo Rateb\App\Core\View::escape((string) $docBarcode['qr_image_url']); ?>"
+                            alt="<?php echo __('qr_code'); ?>" width="180" height="180" class="rateb-doc-qr-img">
+                        <?php } else { ?>
+                        <canvas data-qr-canvas width="180" height="180"></canvas>
+                        <?php } ?>
                     </div>
                 </div>
                 <p class="font-monospace text-center mt-3 mb-0 rateb-doc-barcode-code"><?php echo Rateb\App\Core\View::escape((string) $docBarcode['barcode']); ?></p>
@@ -45,5 +50,5 @@ $uid = 'docbc-' . preg_replace('/[^a-z0-9]/i', '', (string) ($docBarcode['type']
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-<script src="<?php echo rateb_asset('js/barcodes.js'); ?>"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
+<script src="<?php echo rateb_asset('js/barcodes.js'); ?>?v=2"></script>
