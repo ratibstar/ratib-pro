@@ -1,0 +1,23 @@
+html[data-theme="dark"] .rateb-marketing,
+html[data-bs-theme="dark"] .rateb-marketing {
+    --cms-bg: #0f172a;
+    --cms-surface: #1e293b;
+    --cms-text: #f1f5f9;
+    --cms-muted: #94a3b8;
+    --cms-border: #334155;
+}
+
+html[data-theme="dark"] .rateb-mkt-header,
+html[data-bs-theme="dark"] .rateb-mkt-header {
+    background: var(--cms-surface);
+}
+
+html[data-theme="dark"] .rateb-mkt-page-hero,
+html[data-bs-theme="dark"] .rateb-mkt-page-hero {
+    background: var(--cms-surface);
+}
+
+html[data-theme="dark"] .rateb-mkt-footer,
+html[data-bs-theme="dark"] .rateb-mkt-footer {
+    background: #020617;
+}

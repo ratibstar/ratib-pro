@@ -1,0 +1,8 @@
+.rateb-marketing-rtl .rateb-mkt-hero-cta,
+.rateb-marketing-rtl .rateb-mkt-footer-bottom {
+    direction: rtl;
+}
+
+.rateb-marketing-rtl .navbar-nav {
+    text-align: right;
+}

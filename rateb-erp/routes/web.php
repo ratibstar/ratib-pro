@@ -38,7 +38,7 @@ $router->get('/', static function (): void {
         \Rateb\App\Core\Response::redirect(rateb_url(\Rateb\App\Core\Auth::homePath()));
         return;
     }
-    \Rateb\App\Core\Response::redirect(rateb_url('login'));
+    \Rateb\App\Core\Response::redirect(rateb_url('site'));
 });
 
 $router->get('/login', [\Rateb\App\Controllers\Shared\LoginController::class, 'showLogin'], rateb_guest_mw());

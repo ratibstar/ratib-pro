@@ -33,6 +33,8 @@ try {
     $router = new Rateb\App\Core\Router();
 
     require RATEB_ROOT . '/routes/web.php';
+    require RATEB_ROOT . '/routes/marketing.php';
+    require RATEB_ROOT . '/routes/cms.php';
     require RATEB_ROOT . '/routes/company.php';
     require RATEB_ROOT . '/routes/api.php';
 

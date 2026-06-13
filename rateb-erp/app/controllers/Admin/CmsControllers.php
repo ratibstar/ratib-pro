@@ -1,0 +1,636 @@
+<?php
+declare(strict_types=1);
+
+namespace Rateb\App\Controllers\Admin;
+
+use Rateb\App\Core\Controller;
+use Rateb\App\Core\Csrf;
+use Rateb\App\Core\SessionManager;
+use Rateb\App\Core\View;
+use Rateb\App\Models\CmsAbout;
+use Rateb\App\Models\CmsAnalytics;
+use Rateb\App\Models\CmsBlogArticle;
+use Rateb\App\Models\CmsBlogAuthor;
+use Rateb\App\Models\CmsBlogCategory;
+use Rateb\App\Models\CmsBlogTag;
+use Rateb\App\Models\CmsBlock;
+use Rateb\App\Models\CmsCareer;
+use Rateb\App\Models\CmsFaq;
+use Rateb\App\Models\CmsFaqCategory;
+use Rateb\App\Models\CmsHelpArticle;
+use Rateb\App\Models\CmsKbArticle;
+use Rateb\App\Models\CmsLead;
+use Rateb\App\Models\CmsLeadNote;
+use Rateb\App\Models\CmsMedia;
+use Rateb\App\Models\CmsMediaCategory;
+use Rateb\App\Models\CmsMenu;
+use Rateb\App\Models\CmsMenuItem;
+use Rateb\App\Models\CmsNewsletterSegment;
+use Rateb\App\Models\CmsNewsletterSubscriber;
+use Rateb\App\Models\CmsPage;
+use Rateb\App\Models\CmsPartner;
+use Rateb\App\Models\CmsRedirect;
+use Rateb\App\Models\CmsRobots;
+use Rateb\App\Models\CmsSection;
+use Rateb\App\Models\CmsSeo;
+use Rateb\App\Models\CmsService as CmsServiceModel;
+use Rateb\App\Models\CmsServiceCategory;
+use Rateb\App\Models\CmsSlide;
+use Rateb\App\Models\CmsSystemStatus;
+use Rateb\App\Models\CmsTeamMember;
+use Rateb\App\Models\CmsTestimonial;
+use Rateb\App\Models\CmsTheme;
+use Rateb\App\Models\CmsTimeline;
+use Rateb\App\Services\AuditService;
+use Rateb\App\Services\CmsMediaService;
+use Rateb\App\Services\CmsService;
+
+final class CmsDashboardController extends Controller
+{
+    public function index(): void
+    {
+        $stats = (new CmsService())->dashboardStats();
+        $this->view('admin/cms/dashboard', [
+            'title' => __('cms_dashboard'),
+            'stats' => $stats,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+}
+
+final class CmsPagesController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new CmsPage();
+        $this->viewPrefix = 'admin/cms/pages';
+        $this->routePrefix = 'admin/cms/pages';
+        $this->entityName = 'cms_pages';
+        $this->fields = [
+            ['name' => 'slug', 'label' => 'slug'],
+            ['name' => 'title_en', 'label' => 'title_en'],
+            ['name' => 'title_ar', 'label' => 'title_ar'],
+            ['name' => 'template', 'label' => 'template'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'published', 'scheduled']],
+            ['name' => 'content_en', 'label' => 'content_en', 'type' => 'textarea'],
+            ['name' => 'content_ar', 'label' => 'content_ar', 'type' => 'textarea'],
+        ];
+    }
+}
+
+final class CmsSectionsController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new CmsSection();
+        $this->viewPrefix = 'admin/cms/sections';
+        $this->routePrefix = 'admin/cms/sections';
+        $this->entityName = 'cms_sections';
+        $this->fields = [
+            ['name' => 'page_slug', 'label' => 'page_slug'],
+            ['name' => 'section_key', 'label' => 'section_key'],
+            ['name' => 'title_en', 'label' => 'title_en'],
+            ['name' => 'title_ar', 'label' => 'title_ar'],
+            ['name' => 'body_en', 'label' => 'body_en', 'type' => 'textarea'],
+            ['name' => 'body_ar', 'label' => 'body_ar', 'type' => 'textarea'],
+            ['name' => 'sort_order', 'label' => 'sort_order', 'type' => 'number'],
+            ['name' => 'is_active', 'label' => 'is_active', 'type' => 'select', 'options' => ['1', '0']],
+        ];
+    }
+}
+
+final class CmsBlocksController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new CmsBlock();
+        $this->viewPrefix = 'admin/cms/blocks';
+        $this->routePrefix = 'admin/cms/blocks';
+        $this->entityName = 'cms_blocks';
+        $this->fields = [
+            ['name' => 'section_id', 'label' => 'section_id', 'type' => 'number'],
+            ['name' => 'block_type', 'label' => 'block_type'],
+            ['name' => 'title_en', 'label' => 'title_en'],
+            ['name' => 'title_ar', 'label' => 'title_ar'],
+            ['name' => 'content_en', 'label' => 'content_en', 'type' => 'textarea'],
+            ['name' => 'content_ar', 'label' => 'content_ar', 'type' => 'textarea'],
+            ['name' => 'icon', 'label' => 'icon'],
+            ['name' => 'sort_order', 'label' => 'sort_order', 'type' => 'number'],
+        ];
+    }
+}
+
+final class CmsMenuItemsController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new CmsMenuItem();
+        $this->viewPrefix = 'admin/cms/menu-items';
+        $this->routePrefix = 'admin/cms/menu-items';
+        $this->entityName = 'cms_menu';
+        $this->fields = [
+            ['name' => 'menu_id', 'label' => 'menu_id', 'type' => 'number'],
+            ['name' => 'label_en', 'label' => 'label_en'],
+            ['name' => 'label_ar', 'label' => 'label_ar'],
+            ['name' => 'url', 'label' => 'url'],
+            ['name' => 'sort_order', 'label' => 'sort_order', 'type' => 'number'],
+            ['name' => 'is_active', 'label' => 'is_active', 'type' => 'select', 'options' => ['1', '0']],
+        ];
+    }
+}
+
+final class CmsBlogArticlesController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new CmsBlogArticle();
+        $this->viewPrefix = 'admin/cms/blog-articles';
+        $this->routePrefix = 'admin/cms/blog-articles';
+        $this->entityName = 'cms_blog';
+        $this->fields = [
+            ['name' => 'slug', 'label' => 'slug'],
+            ['name' => 'title_en', 'label' => 'title_en'],
+            ['name' => 'title_ar', 'label' => 'title_ar'],
+            ['name' => 'excerpt_en', 'label' => 'excerpt_en', 'type' => 'textarea'],
+            ['name' => 'excerpt_ar', 'label' => 'excerpt_ar', 'type' => 'textarea'],
+            ['name' => 'content_en', 'label' => 'content_en', 'type' => 'textarea'],
+            ['name' => 'content_ar', 'label' => 'content_ar', 'type' => 'textarea'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'published', 'scheduled']],
+            ['name' => 'published_at', 'label' => 'published_at', 'type' => 'datetime-local'],
+            ['name' => 'meta_title_en', 'label' => 'meta_title_en'],
+            ['name' => 'meta_description_en', 'label' => 'meta_description_en', 'type' => 'textarea'],
+        ];
+    }
+}
+
+final class CmsBlogCategoriesController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->init(new CmsBlogCategory(), 'blog-categories', 'cms_blog_categories', [
+        ['name' => 'slug'], ['name' => 'name_en'], ['name' => 'name_ar'],
+    ]); }
+    private function init($m, string $path, string $entity, array $fields): void {
+        $this->model = $m; $this->viewPrefix = 'admin/cms/' . $path; $this->routePrefix = 'admin/cms/' . $path;
+        $this->entityName = $entity; $this->fields = array_map(static fn($f) => ['name' => $f['name'], 'label' => $f['name']], $fields);
+    }
+}
+
+final class CmsBlogTagsController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsBlogTag(); $this->viewPrefix = 'admin/cms/blog-tags'; $this->routePrefix = 'admin/cms/blog-tags'; $this->entityName = 'cms_blog_tags';
+        $this->fields = [['name' => 'slug'], ['name' => 'name_en'], ['name' => 'name_ar']]; }
+}
+
+final class CmsBlogAuthorsController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsBlogAuthor(); $this->viewPrefix = 'admin/cms/blog-authors'; $this->routePrefix = 'admin/cms/blog-authors'; $this->entityName = 'cms_blog_authors';
+        $this->fields = [['name' => 'name_en'], ['name' => 'name_ar'], ['name' => 'email'], ['name' => 'bio_en', 'type' => 'textarea']]; }
+}
+
+final class CmsFaqsController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new CmsFaq();
+        $this->viewPrefix = 'admin/cms/faqs';
+        $this->routePrefix = 'admin/cms/faqs';
+        $this->entityName = 'cms_faqs';
+        $this->fields = [
+            ['name' => 'category_id', 'type' => 'number'],
+            ['name' => 'question_en'], ['name' => 'question_ar'],
+            ['name' => 'answer_en', 'type' => 'textarea'], ['name' => 'answer_ar', 'type' => 'textarea'],
+            ['name' => 'sort_order', 'type' => 'number'],
+        ];
+    }
+}
+
+final class CmsFaqCategoriesController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsFaqCategory(); $this->viewPrefix = 'admin/cms/faq-categories'; $this->routePrefix = 'admin/cms/faq-categories'; $this->entityName = 'cms_faq_categories';
+        $this->fields = [['name' => 'slug'], ['name' => 'name_en'], ['name' => 'name_ar'], ['name' => 'sort_order', 'type' => 'number']]; }
+}
+
+final class CmsTestimonialsController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new CmsTestimonial();
+        $this->viewPrefix = 'admin/cms/testimonials';
+        $this->routePrefix = 'admin/cms/testimonials';
+        $this->entityName = 'cms_testimonials';
+        $this->fields = [
+            ['name' => 'customer_name_en'], ['name' => 'customer_name_ar'],
+            ['name' => 'position_en'], ['name' => 'company_en'],
+            ['name' => 'quote_en', 'type' => 'textarea'], ['name' => 'quote_ar', 'type' => 'textarea'],
+            ['name' => 'rating', 'type' => 'number'],
+            ['name' => 'status', 'type' => 'select', 'options' => ['pending', 'approved', 'rejected']],
+            ['name' => 'sort_order', 'type' => 'number'],
+        ];
+    }
+}
+
+final class CmsSlidesController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new CmsSlide();
+        $this->viewPrefix = 'admin/cms/slides';
+        $this->routePrefix = 'admin/cms/slides';
+        $this->entityName = 'cms_slides';
+        $this->fields = [
+            ['name' => 'title_en'], ['name' => 'title_ar'],
+            ['name' => 'subtitle_en', 'type' => 'textarea'], ['name' => 'subtitle_ar', 'type' => 'textarea'],
+            ['name' => 'image_path'], ['name' => 'video_url'],
+            ['name' => 'cta_label_en'], ['name' => 'cta_url'],
+            ['name' => 'sort_order', 'type' => 'number'],
+            ['name' => 'is_active', 'type' => 'select', 'options' => ['1', '0']],
+        ];
+    }
+}
+
+final class CmsLeadsController extends Controller
+{
+    public function index(): void
+    {
+        $page = max(1, (int) $this->input('page', 1));
+        $limit = 25;
+        $model = new CmsLead();
+        $this->view('admin/cms/leads/index', [
+            'title' => __('cms_leads'),
+            'items' => $model->all($limit, ($page - 1) * $limit),
+            'total' => $model->count(),
+            'page' => $page,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function show(int $id): void
+    {
+        $model = new CmsLead();
+        $lead = $model->find($id);
+        if ($lead === null) {
+            SessionManager::flash('error', __('not_found'));
+            $this->redirect(rateb_url('admin/cms/leads'));
+            return;
+        }
+        $notes = (new CmsLeadNote())->all(50, 0, ['lead_id' => $id]);
+        $this->view('admin/cms/leads/show', [
+            'title' => __('cms_leads'),
+            'lead' => $lead,
+            'notes' => $notes,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function update(int $id): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url('admin/cms/leads/' . $id));
+            return;
+        }
+        $model = new CmsLead();
+        $model->update($id, [
+            'status' => (string) $this->input('status', 'new'),
+            'assigned_user_id' => (int) $this->input('assigned_user_id', 0) ?: null,
+        ]);
+        $note = trim((string) $this->input('note', ''));
+        if ($note !== '') {
+            (new CmsLeadNote())->create([
+                'lead_id' => $id,
+                'user_id' => (int) ($_SESSION['rateb_user_id'] ?? 0) ?: null,
+                'note' => View::escape($note),
+            ]);
+        }
+        (new AuditService())->log('cms_lead_update', 'cms_lead', $id, []);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url('admin/cms/leads/' . $id));
+    }
+}
+
+final class CmsNewsletterController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new CmsNewsletterSubscriber();
+        $this->viewPrefix = 'admin/cms/newsletter';
+        $this->routePrefix = 'admin/cms/newsletter';
+        $this->entityName = 'cms_newsletter';
+        $this->createEnabled = false;
+        $this->fields = [
+            ['name' => 'email'], ['name' => 'name'],
+            ['name' => 'segment'], ['name' => 'status', 'type' => 'select', 'options' => ['active', 'unsubscribed']],
+        ];
+    }
+
+    public function export(): void
+    {
+        header('Content-Type: text/csv; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="newsletter-subscribers.csv"');
+        $out = fopen('php://output', 'w');
+        fputcsv($out, ['email', 'name', 'segment', 'status', 'subscribed_at']);
+        foreach ((new CmsNewsletterSubscriber())->all(10000, 0) as $row) {
+            fputcsv($out, [$row['email'], $row['name'], $row['segment'], $row['status'], $row['subscribed_at']]);
+        }
+        fclose($out);
+        exit;
+    }
+}
+
+final class CmsSeoController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new CmsSeo();
+        $this->viewPrefix = 'admin/cms/seo';
+        $this->routePrefix = 'admin/cms/seo';
+        $this->entityName = 'cms_seo';
+        $this->fields = [
+            ['name' => 'page_slug'], ['name' => 'meta_title_en'], ['name' => 'meta_title_ar'],
+            ['name' => 'meta_description_en', 'type' => 'textarea'], ['name' => 'meta_description_ar', 'type' => 'textarea'],
+            ['name' => 'og_title_en'], ['name' => 'og_image'], ['name' => 'canonical_url'],
+            ['name' => 'twitter_card'],
+        ];
+    }
+}
+
+final class CmsRedirectsController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsRedirect(); $this->viewPrefix = 'admin/cms/redirects'; $this->routePrefix = 'admin/cms/redirects'; $this->entityName = 'cms_redirects';
+        $this->fields = [['name' => 'from_path'], ['name' => 'to_path'], ['name' => 'status_code', 'type' => 'number'], ['name' => 'is_active', 'type' => 'select', 'options' => ['1', '0']]]; }
+}
+
+final class CmsMediaController extends Controller
+{
+    public function index(): void
+    {
+        $model = new CmsMedia();
+        $this->view('admin/cms/media/index', [
+            'title' => __('cms_media'),
+            'items' => $model->all(50, 0),
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function upload(): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('csrf_invalid'));
+            $this->redirect(rateb_url('admin/cms/media'));
+            return;
+        }
+        $file = $_FILES['file'] ?? [];
+        $result = (new CmsMediaService())->upload($file, (int) ($_SESSION['rateb_user_id'] ?? 0));
+        if (!$result['ok']) {
+            SessionManager::flash('error', $result['error'] ?? 'Upload failed');
+        } else {
+            SessionManager::flash('success', __('cms_upload_ok'));
+        }
+        $this->redirect(rateb_url('admin/cms/media'));
+    }
+}
+
+final class CmsThemeController extends Controller
+{
+    public function index(): void
+    {
+        $model = new CmsTheme();
+        $row = $model->all(1, 0);
+        $this->view('admin/cms/theme', [
+            'title' => __('cms_theme'),
+            'item' => $row[0] ?? null,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function save(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url('admin/cms/theme'));
+            return;
+        }
+        $model = new CmsTheme();
+        $rows = $model->all(1, 0);
+        $data = [
+            'primary_color' => (string) $this->input('primary_color', '#1a5fb4'),
+            'secondary_color' => (string) $this->input('secondary_color', '#3584e4'),
+            'font_family' => (string) $this->input('font_family', 'Tajawal'),
+            'logo_path' => (string) $this->input('logo_path', ''),
+            'favicon_path' => (string) $this->input('favicon_path', ''),
+            'custom_css' => (string) $this->input('custom_css', ''),
+            'custom_js' => (string) $this->input('custom_js', ''),
+        ];
+        if (!empty($rows[0]['id'])) {
+            $model->update((int) $rows[0]['id'], $data);
+        } else {
+            $model->create($data);
+        }
+        (new AuditService())->log('cms_theme_save', 'cms_theme', 1, []);
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url('admin/cms/theme'));
+    }
+}
+
+final class CmsAnalyticsController extends Controller
+{
+    public function index(): void
+    {
+        $model = new CmsAnalytics();
+        $row = $model->all(1, 0);
+        $this->view('admin/cms/analytics', [
+            'title' => __('cms_analytics'),
+            'item' => $row[0] ?? null,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function save(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url('admin/cms/analytics'));
+            return;
+        }
+        $model = new CmsAnalytics();
+        $rows = $model->all(1, 0);
+        $data = [
+            'google_analytics_id' => (string) $this->input('google_analytics_id', ''),
+            'google_tag_manager_id' => (string) $this->input('google_tag_manager_id', ''),
+            'meta_pixel_id' => (string) $this->input('meta_pixel_id', ''),
+            'tiktok_pixel_id' => (string) $this->input('tiktok_pixel_id', ''),
+            'custom_head_code' => (string) $this->input('custom_head_code', ''),
+            'custom_body_code' => (string) $this->input('custom_body_code', ''),
+        ];
+        if (!empty($rows[0]['id'])) {
+            $model->update((int) $rows[0]['id'], $data);
+        } else {
+            $model->create($data);
+        }
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url('admin/cms/analytics'));
+    }
+}
+
+final class CmsRobotsController extends Controller
+{
+    public function index(): void
+    {
+        $model = new CmsRobots();
+        $row = $model->all(1, 0);
+        $this->view('admin/cms/robots', [
+            'title' => __('cms_robots'),
+            'item' => $row[0] ?? null,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function save(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url('admin/cms/robots'));
+            return;
+        }
+        $model = new CmsRobots();
+        $rows = $model->all(1, 0);
+        $content = (string) $this->input('content', '');
+        if (!empty($rows[0]['id'])) {
+            $model->update((int) $rows[0]['id'], ['content' => $content]);
+        } else {
+            $model->create(['content' => $content]);
+        }
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url('admin/cms/robots'));
+    }
+}
+
+final class CmsAboutController extends Controller
+{
+    public function index(): void
+    {
+        $about = (new CmsAbout())->all(1, 0);
+        $team = (new CmsTeamMember())->all(50, 0);
+        $timeline = (new CmsTimeline())->all(50, 0);
+        $this->view('admin/cms/about', [
+            'title' => __('cms_about'),
+            'about' => $about[0] ?? null,
+            'team' => $team,
+            'timeline' => $timeline,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function save(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url('admin/cms/about'));
+            return;
+        }
+        $model = new CmsAbout();
+        $rows = $model->all(1, 0);
+        $data = [
+            'story_en' => (string) $this->input('story_en', ''),
+            'story_ar' => (string) $this->input('story_ar', ''),
+            'vision_en' => (string) $this->input('vision_en', ''),
+            'vision_ar' => (string) $this->input('vision_ar', ''),
+            'mission_en' => (string) $this->input('mission_en', ''),
+            'mission_ar' => (string) $this->input('mission_ar', ''),
+        ];
+        if (!empty($rows[0]['id'])) {
+            $model->update((int) $rows[0]['id'], $data);
+        } else {
+            $model->create($data);
+        }
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url('admin/cms/about'));
+    }
+}
+
+final class CmsServicesController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsServiceModel(); $this->viewPrefix = 'admin/cms/services'; $this->routePrefix = 'admin/cms/services'; $this->entityName = 'cms_services';
+        $this->fields = [['name' => 'slug'], ['name' => 'title_en'], ['name' => 'title_ar'], ['name' => 'summary_en', 'type' => 'textarea'], ['name' => 'content_en', 'type' => 'textarea'], ['name' => 'icon'], ['name' => 'status', 'type' => 'select', 'options' => ['draft', 'published']]]; }
+}
+
+final class CmsServiceCategoriesController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsServiceCategory(); $this->viewPrefix = 'admin/cms/service-categories'; $this->routePrefix = 'admin/cms/service-categories'; $this->entityName = 'cms_service_categories';
+        $this->fields = [['name' => 'slug'], ['name' => 'name_en'], ['name' => 'name_ar'], ['name' => 'icon']]; }
+}
+
+final class CmsPartnersController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsPartner(); $this->viewPrefix = 'admin/cms/partners'; $this->routePrefix = 'admin/cms/partners'; $this->entityName = 'cms_partners';
+        $this->fields = [['name' => 'name_en'], ['name' => 'name_ar'], ['name' => 'logo_path'], ['name' => 'website_url'], ['name' => 'sort_order', 'type' => 'number']]; }
+}
+
+final class CmsCareersController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsCareer(); $this->viewPrefix = 'admin/cms/careers'; $this->routePrefix = 'admin/cms/careers'; $this->entityName = 'cms_careers';
+        $this->fields = [['name' => 'slug'], ['name' => 'title_en'], ['name' => 'title_ar'], ['name' => 'department_en'], ['name' => 'location_en'], ['name' => 'description_en', 'type' => 'textarea'], ['name' => 'status', 'type' => 'select', 'options' => ['open', 'closed']]]; }
+}
+
+final class CmsKbArticlesController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsKbArticle(); $this->viewPrefix = 'admin/cms/kb-articles'; $this->routePrefix = 'admin/cms/kb-articles'; $this->entityName = 'cms_kb';
+        $this->fields = [['name' => 'slug'], ['name' => 'title_en'], ['name' => 'title_ar'], ['name' => 'category'], ['name' => 'content_en', 'type' => 'textarea'], ['name' => 'status', 'type' => 'select', 'options' => ['draft', 'published']]]; }
+}
+
+final class CmsHelpArticlesController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsHelpArticle(); $this->viewPrefix = 'admin/cms/help-articles'; $this->routePrefix = 'admin/cms/help-articles'; $this->entityName = 'cms_help';
+        $this->fields = [['name' => 'slug'], ['name' => 'title_en'], ['name' => 'title_ar'], ['name' => 'content_en', 'type' => 'textarea'], ['name' => 'status', 'type' => 'select', 'options' => ['draft', 'published']]]; }
+}
+
+final class CmsSystemStatusController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsSystemStatus(); $this->viewPrefix = 'admin/cms/system-status'; $this->routePrefix = 'admin/cms/system-status'; $this->entityName = 'cms_system_status';
+        $this->fields = [['name' => 'component_en'], ['name' => 'component_ar'], ['name' => 'status', 'type' => 'select', 'options' => ['operational', 'degraded', 'outage']], ['name' => 'message_en', 'type' => 'textarea']]; }
+}
+
+final class CmsTeamMembersController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsTeamMember(); $this->viewPrefix = 'admin/cms/team'; $this->routePrefix = 'admin/cms/team'; $this->entityName = 'cms_team';
+        $this->fields = [['name' => 'name_en'], ['name' => 'name_ar'], ['name' => 'position_en'], ['name' => 'position_ar'], ['name' => 'bio_en', 'type' => 'textarea'], ['name' => 'photo_path'], ['name' => 'sort_order', 'type' => 'number']]; }
+}
+
+final class CmsTimelineController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct() { $this->model = new CmsTimeline(); $this->viewPrefix = 'admin/cms/timeline'; $this->routePrefix = 'admin/cms/timeline'; $this->entityName = 'cms_timeline';
+        $this->fields = [['name' => 'year_label'], ['name' => 'title_en'], ['name' => 'title_ar'], ['name' => 'body_en', 'type' => 'textarea'], ['name' => 'sort_order', 'type' => 'number']]; }
+}
+
+final class CmsContactController extends Controller
+{
+    public function index(): void
+    {
+        $settings = (new \Rateb\App\Models\CmsContactSettings())->all(1, 0);
+        $this->view('admin/cms/contact', [
+            'title' => __('cms_contact'),
+            'item' => $settings[0] ?? null,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function save(): void
+    {
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_url('admin/cms/contact'));
+            return;
+        }
+        $model = new \Rateb\App\Models\CmsContactSettings();
+        $rows = $model->all(1, 0);
+        $data = [
+            'email' => (string) $this->input('email', ''),
+            'phone' => (string) $this->input('phone', ''),
+            'address_en' => (string) $this->input('address_en', ''),
+            'address_ar' => (string) $this->input('address_ar', ''),
+            'working_hours_en' => (string) $this->input('working_hours_en', ''),
+            'working_hours_ar' => (string) $this->input('working_hours_ar', ''),
+            'map_embed' => (string) $this->input('map_embed', ''),
+        ];
+        if (!empty($rows[0]['id'])) {
+            $model->update((int) $rows[0]['id'], $data);
+        } else {
+            $model->create($data);
+        }
+        SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_url('admin/cms/contact'));
+    }
+}

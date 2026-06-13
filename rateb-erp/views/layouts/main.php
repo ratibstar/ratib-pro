@@ -108,6 +108,28 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
                 echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
             }
             ?>
+            <?php if (rateb_nav_can('cms.view')) { ?>
+            <div class="rateb-nav-section"><?php echo __('cms_section'); ?></div>
+            <?php
+            $cmsLinks = [
+                ['admin/cms', 'cms_dashboard', 'fa-globe', 'cms.view'],
+                ['admin/cms/pages', 'cms_pages', 'fa-file-lines', 'cms.manage'],
+                ['admin/cms/leads', 'cms_leads', 'fa-user-plus', 'cms.leads'],
+                ['admin/cms/blog-articles', 'cms_blog', 'fa-newspaper', 'cms.manage'],
+                ['admin/cms/media', 'cms_media', 'fa-images', 'cms.media'],
+                ['admin/cms/seo', 'cms_seo', 'fa-magnifying-glass', 'cms.seo'],
+                ['admin/cms/theme', 'cms_theme', 'fa-palette', 'cms.manage'],
+            ];
+            foreach ($cmsLinks as $link) {
+                if (!rateb_nav_can($link[3])) {
+                    continue;
+                }
+                $active = $navActive($link[0]) ? ' active' : '';
+                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
+                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
+            }
+            ?>
+            <?php } ?>
             <div class="rateb-nav-section"><?php echo __('access_control'); ?></div>
             <?php
             $accessLinks = [

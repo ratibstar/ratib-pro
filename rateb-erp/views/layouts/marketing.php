@@ -1,0 +1,62 @@
+<?php
+$locale = rateb_locale();
+$dir = rateb_is_rtl() ? 'rtl' : 'ltr';
+$meta = $meta ?? [];
+$theme = $theme ?? [];
+$primary = $theme['primary_color'] ?? '#1a5fb4';
+$secondary = $theme['secondary_color'] ?? '#3584e4';
+?>
+<!DOCTYPE html>
+<html lang="<?php echo Rateb\App\Core\View::escape($locale); ?>" dir="<?php echo $dir; ?>" data-theme="light" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="<?php echo rateb_asset('js/marketing-head.js'); ?>"></script>
+    <title><?php echo Rateb\App\Core\View::escape($meta['title'] ?? ($title ?? 'RATEB ERP')); ?></title>
+    <?php if (!empty($meta['description'])) { ?>
+    <meta name="description" content="<?php echo Rateb\App\Core\View::escape($meta['description']); ?>">
+    <?php } ?>
+    <?php if (!empty($meta['canonical'])) { ?>
+    <link rel="canonical" href="<?php echo Rateb\App\Core\View::escape($meta['canonical']); ?>">
+    <?php } ?>
+    <meta property="og:title" content="<?php echo Rateb\App\Core\View::escape($meta['og_title'] ?? ($title ?? '')); ?>">
+    <meta property="og:description" content="<?php echo Rateb\App\Core\View::escape($meta['og_description'] ?? ''); ?>">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="<?php echo Rateb\App\Core\View::escape($meta['twitter_card'] ?? 'summary_large_image'); ?>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <?php if ($dir === 'rtl') { ?>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <?php } else { ?>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <?php } ?>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+    <link href="<?php echo rateb_asset('css/variables.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_asset('css/marketing.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_asset('css/marketing-dark.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_asset('css/marketing-rtl.css'); ?>" rel="stylesheet">
+    <?php require RATEB_ROOT . '/views/marketing/partials/analytics-head.php'; ?>
+</head>
+<body class="rateb-marketing<?php echo $dir === 'rtl' ? ' rateb-marketing-rtl' : ''; ?>">
+<?php require RATEB_ROOT . '/views/marketing/partials/header.php'; ?>
+<main id="rateb-marketing-main">
+    <?php Rateb\App\Core\View::partial('flash'); ?>
+    <?php echo $pageContent; ?>
+</main>
+<?php require RATEB_ROOT . '/views/marketing/partials/footer.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="<?php echo rateb_asset('js/marketing.js'); ?>"></script>
+<?php
+$analytics = $analytics ?? null;
+if ($analytics) {
+    if (!empty($analytics['google_tag_manager_id'])) {
+        echo '<!-- GTM placeholder -->';
+    }
+    if (!empty($analytics['custom_body_code'])) {
+        echo $analytics['custom_body_code'];
+    }
+}
+?>
+</body>
+</html>
