@@ -14,8 +14,9 @@ final class BarcodeLoginService
     public function normalizeBarcode(string $raw): string
     {
         $raw = strtoupper(trim($raw));
-        if (str_starts_with($raw, self::PREFIX)) {
-            $raw = substr($raw, strlen(self::PREFIX));
+        $prefix = self::PREFIX;
+        if (substr($raw, 0, strlen($prefix)) === $prefix) {
+            $raw = substr($raw, strlen($prefix));
         }
         return preg_replace('/[^A-Z0-9]/', '', $raw) ?? '';
     }
