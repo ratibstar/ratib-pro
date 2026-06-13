@@ -1,0 +1,247 @@
+/* RATEB ERP — Customer portal (self-contained, high contrast) */
+body.rateb-portal-layout.rateb-marketing {
+    background: #0b1220;
+    color: #e8edf4;
+    min-height: 100vh;
+}
+
+html[data-theme="light"] body.rateb-portal-layout.rateb-marketing,
+html[data-bs-theme="light"] body.rateb-portal-layout.rateb-marketing {
+    background: #d4dce6;
+    color: #1a2b42;
+}
+
+body.rateb-portal-layout .rateb-mkt-header {
+    background: #111b2e;
+    border-bottom: 1px solid #2d3f5c;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme="light"] body.rateb-portal-layout .rateb-mkt-header,
+html[data-bs-theme="light"] body.rateb-portal-layout .rateb-mkt-header {
+    background: #eef2f7;
+    border-bottom-color: #b8c5d6;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+body.rateb-portal-layout .rateb-mkt-brand {
+    color: #60a5fa;
+}
+
+body.rateb-portal-layout .rateb-mkt-brand-badge {
+    background: rgba(96, 165, 250, 0.2);
+    color: #bfdbfe;
+    font-size: 0.68rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    margin-inline-start: 0.5rem;
+    vertical-align: middle;
+}
+
+body.rateb-portal-layout .rateb-portal-nav .nav-link {
+    color: #94a3b8;
+    padding: 0.5rem 0.85rem;
+    border-radius: 0.5rem;
+}
+
+body.rateb-portal-layout .rateb-portal-nav .nav-link:hover {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.rateb-portal-layout .rateb-portal-nav .nav-link.active {
+    color: #fff;
+    background: #2563eb;
+}
+
+body.rateb-portal-layout .navbar-toggler {
+    border-color: #475569;
+}
+
+body.rateb-portal-layout .rateb-portal-page {
+    background: transparent;
+    padding-bottom: 2rem;
+}
+
+body.rateb-portal-layout .rateb-portal-hero {
+    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 45%, #3b82f6 100%);
+    border-radius: 14px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 12px 40px rgba(37, 99, 235, 0.28);
+    color: #fff;
+}
+
+body.rateb-portal-layout .rateb-portal-hero h1 {
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.35rem;
+}
+
+body.rateb-portal-layout .rateb-portal-hero p {
+    margin: 0;
+    opacity: 0.92;
+    font-size: 0.95rem;
+}
+
+body.rateb-portal-layout .rateb-portal-card {
+    background: #162032;
+    border: 1px solid #2d3f5c;
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.22);
+    height: 100%;
+    overflow: hidden;
+}
+
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-card,
+html[data-bs-theme="light"] body.rateb-portal-layout .rateb-portal-card {
+    background: #f8fafc;
+    border-color: #c5d0dc;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.07);
+}
+
+body.rateb-portal-layout .rateb-portal-card-head {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #2d3f5c;
+    background: #121c2e;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-card-head,
+html[data-bs-theme="light"] body.rateb-portal-layout .rateb-portal-card-head {
+    background: #eef2f7;
+    border-bottom-color: #d5dee8;
+}
+
+body.rateb-portal-layout .rateb-portal-card-body {
+    padding: 1.15rem 1.25rem 1.25rem;
+}
+
+body.rateb-portal-layout .rateb-portal-kv {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+body.rateb-portal-layout .rateb-portal-kv-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+body.rateb-portal-layout .rateb-portal-kv-row:last-child {
+    border-bottom: none;
+}
+
+body.rateb-portal-layout .rateb-portal-kv-label {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-kv-label,
+html[data-bs-theme="light"] body.rateb-portal-layout .rateb-portal-kv-label {
+    color: #64748b;
+}
+
+body.rateb-portal-layout .rateb-portal-kv-value {
+    font-weight: 600;
+    text-align: end;
+    color: #f1f5f9;
+    word-break: break-word;
+}
+
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-kv-value,
+html[data-bs-theme="light"] body.rateb-portal-layout .rateb-portal-kv-value {
+    color: #1e293b;
+}
+
+body.rateb-portal-layout .rateb-portal-kv-value.rateb-ltr-num {
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+body.rateb-portal-layout .rateb-portal-modules {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+body.rateb-portal-layout .rateb-portal-module-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    background: #1a2740;
+    border: 1px solid #334155;
+    font-size: 0.88rem;
+    color: #cbd5e1;
+}
+
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-module-pill,
+html[data-bs-theme="light"] body.rateb-portal-layout .rateb-portal-module-pill {
+    background: #e8eef5;
+    border-color: #c5d0dc;
+    color: #334155;
+}
+
+body.rateb-portal-layout .rateb-portal-footer {
+    background: #0b1220;
+    border-top: 1px solid #2d3f5c;
+    padding: 1.25rem 0;
+    margin-top: 2rem;
+}
+
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-footer,
+html[data-bs-theme="light"] body.rateb-portal-layout .rateb-portal-footer {
+    background: #d4dce6;
+}
+
+body.rateb-portal-layout .btn-outline-primary {
+    border-color: #3b82f6;
+    color: #93c5fd;
+}
+
+body.rateb-portal-layout .btn-outline-primary:hover {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #fff;
+}
+
+body.rateb-portal-layout .text-muted {
+    color: #94a3b8 !important;
+}
+
+body.rateb-portal-layout .rateb-portal-alert {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    color: #fca5a5;
+}
+
+body.rateb-portal-layout .rateb-portal-alert a {
+    color: #fecaca;
+}
+
+body.rateb-portal-layout .rateb-portal-page .form-control,
+body.rateb-portal-layout .rateb-portal-page .form-select {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-page .form-control,
+html[data-theme="light"] body.rateb-portal-layout .rateb-portal-page .form-select,
+html[data-bs-theme="light"] body.rateb-portal-layout .rateb-portal-page .form-control,
+html[data-bs-theme="light"] body.rateb-portal-layout .rateb-portal-page .form-select {
+    background: #fff;
+    border-color: #c5d0dc;
+    color: #1e293b;
+}

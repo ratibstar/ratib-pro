@@ -23,6 +23,7 @@ $meta = $meta ?? [];
     <link href="<?php echo rateb_asset('css/marketing.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/marketing-dark.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/marketing-rtl.css'); ?>" rel="stylesheet">
+    <link href="<?php echo rateb_asset('css/marketing-portal.css'); ?>" rel="stylesheet">
 </head>
 <body class="rateb-marketing rateb-portal-layout<?php echo $dir === 'rtl' ? ' rateb-marketing-rtl' : ''; ?>">
 <?php
