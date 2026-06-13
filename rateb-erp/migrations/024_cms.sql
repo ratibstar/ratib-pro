@@ -528,9 +528,13 @@ INSERT INTO rateb_cms_menu_items (menu_id, label_en, label_ar, url, sort_order) 
 ((SELECT id FROM rateb_cms_menus WHERE slug='main' LIMIT 1), 'Solutions', 'الحلول', 'site/solutions', 3),
 ((SELECT id FROM rateb_cms_menus WHERE slug='main' LIMIT 1), 'Pricing', 'الأسعار', 'site/pricing', 4),
 ((SELECT id FROM rateb_cms_menus WHERE slug='main' LIMIT 1), 'Blog', 'المدونة', 'site/blog', 5),
-((SELECT id FROM rateb_cms_menus WHERE slug='main' LIMIT 1), 'Contact', 'اتصل بنا', 'site/contact', 6);
+((SELECT id FROM rateb_cms_menus WHERE slug='main' LIMIT 1), 'Contact', 'اتصل بنا', 'site/contact', 6)
+ON DUPLICATE KEY UPDATE
+    label_en = VALUES(label_en),
+    label_ar = VALUES(label_ar),
+    sort_order = VALUES(sort_order);
 
--- Seed home sections
+-- Seed home sections (unique per page_slug + section_key after migration 025)
 INSERT INTO rateb_cms_sections (page_slug, section_key, title_en, title_ar, body_en, body_ar, sort_order) VALUES
 ('home', 'hero', 'RATEB ERP — Smart Operations Platform', 'رتب ERP — منصة العمليات الذكية',
  'Unified procurement, inventory, contracts, and medical device management for healthcare and enterprise.', 
@@ -548,12 +552,19 @@ INSERT INTO rateb_cms_sections (page_slug, section_key, title_en, title_ar, body
 ('home', 'latest_articles', 'Latest Insights', 'أحدث المقالات', '', '', 8),
 ('home', 'faq_preview', 'Common Questions', 'أسئلة شائعة', '', '', 9),
 ('home', 'contact_cta', 'Ready to Transform Operations?', 'جاهز لتحويل عملياتك؟',
- 'Request a demo or talk to our team today.', 'اطلب عرضاً تجريبياً أو تحدث مع فريقنا اليوم.', 10);
+ 'Request a demo or talk to our team today.', 'اطلب عرضاً تجريبياً أو تحدث مع فريقنا اليوم.', 10)
+ON DUPLICATE KEY UPDATE
+    title_en = VALUES(title_en),
+    title_ar = VALUES(title_ar),
+    body_en = VALUES(body_en),
+    body_ar = VALUES(body_ar),
+    sort_order = VALUES(sort_order);
 
--- Features page section
+-- Features page section + blocks (skip if blocks already seeded)
 INSERT INTO rateb_cms_sections (page_slug, section_key, title_en, title_ar, sort_order) VALUES
-('features', 'list', 'Platform Features', 'مميزات المنصة', 1)
-ON DUPLICATE KEY UPDATE title_en = VALUES(title_en);
+('features', 'list', 'Platform Features', 'مميزات المنصة', 1),
+('solutions', 'list', 'Solutions by Industry', 'حلول حسب القطاع', 1)
+ON DUPLICATE KEY UPDATE title_en = VALUES(title_en), title_ar = VALUES(title_ar);
 
 INSERT INTO rateb_cms_blocks (section_id, block_type, title_en, title_ar, content_en, content_ar, icon, sort_order)
 SELECT s.id, 'feature', t.en, t.ar, t.desc_en, t.desc_ar, t.icon, t.ord
@@ -571,11 +582,11 @@ JOIN (
     SELECT 10,'Multi-Tenant SaaS','SaaS متعدد المستأجرين','Isolated tenants with plan limits.','عزل المستأجرين وحدود الباقات.','fa-cloud' UNION ALL
     SELECT 11,'Security','الأمان','RBAC, audit logs, 2FA, lockout.','صلاحيات وسجلات ومصادقة ثنائية.','fa-shield-halved' UNION ALL
     SELECT 12,'API','واجهة API','REST API for integrations.','REST API للتكامل.','fa-plug'
-) t ON s.page_slug='features' AND s.section_key='list';
-
--- Solutions blocks
-INSERT INTO rateb_cms_sections (page_slug, section_key, title_en, title_ar, sort_order) VALUES
-('solutions', 'list', 'Solutions by Industry', 'حلول حسب القطاع', 1);
+) t ON s.page_slug='features' AND s.section_key='list'
+WHERE NOT EXISTS (
+    SELECT 1 FROM rateb_cms_blocks b
+    WHERE b.section_id = s.id AND b.block_type = 'feature' LIMIT 1
+);
 
 INSERT INTO rateb_cms_blocks (section_id, block_type, title_en, title_ar, content_en, content_ar, icon, sort_order)
 SELECT s.id, 'solution', t.en, t.ar, t.desc_en, t.desc_ar, t.icon, t.ord
@@ -587,7 +598,11 @@ JOIN (
     SELECT 4,'Trading Companies','شركات تجارية','Purchase-to-pay automation.','أتمتة من الشراء للدفع.','fa-handshake' UNION ALL
     SELECT 5,'Contracting Companies','شركات مقاولات','Contract and asset lifecycle.','دورة حياة العقود والأصول.','fa-hard-hat' UNION ALL
     SELECT 6,'Government Entities','جهات حكومية','Audit-ready workflows and reporting.','سير عمل وتقارير جاهزة للتدقيق.','fa-landmark'
-) t ON s.page_slug='solutions' AND s.section_key='list';
+) t ON s.page_slug='solutions' AND s.section_key='list'
+WHERE NOT EXISTS (
+    SELECT 1 FROM rateb_cms_blocks b
+    WHERE b.section_id = s.id AND b.block_type = 'solution' LIMIT 1
+);
 
 -- Stats counters on home
 INSERT INTO rateb_cms_blocks (section_id, block_type, title_en, title_ar, content_en, content_ar, sort_order)
@@ -612,29 +627,48 @@ JOIN (
     SELECT 5,'Government','حكومي','fa-landmark'
 ) t ON s.page_slug='home' AND s.section_key='industries';
 
--- Default about, theme, analytics, robots, contact
-INSERT INTO rateb_cms_about (story_en, story_ar, vision_en, vision_ar, mission_en, mission_ar, values_json) VALUES
-('RATEB ERP was built to modernize procurement and inventory for Saudi organizations.',
- 'تم بناء رتب ERP لتحديث المشتريات والمخزون للمؤسسات السعودية.',
- 'To be the leading operations platform for healthcare and enterprise in the region.',
- 'أن نكون المنصة الرائدة للعمليات في القطاع الصحي والمؤسسات بالمنطقة.',
- 'Empower teams with transparent, automated, compliant operations.',
- 'تمكين الفرق بعمليات شفافة ومؤتمتة ومتوافقة.',
- JSON_ARRAY(JSON_OBJECT('en','Innovation','ar','الابتكار'),JSON_OBJECT('en','Trust','ar','الثقة'),JSON_OBJECT('en','Excellence','ar','التميز')));
+-- Default about, theme, analytics, robots, contact (safe to re-run)
+INSERT INTO rateb_cms_about (story_en, story_ar, vision_en, vision_ar, mission_en, mission_ar, values_json)
+SELECT * FROM (
+    SELECT
+        'RATEB ERP was built to modernize procurement and inventory for Saudi organizations.' AS story_en,
+        'تم بناء رتب ERP لتحديث المشتريات والمخزون للمؤسسات السعودية.' AS story_ar,
+        'To be the leading operations platform for healthcare and enterprise in the region.' AS vision_en,
+        'أن نكون المنصة الرائدة للعمليات في القطاع الصحي والمؤسسات بالمنطقة.' AS vision_ar,
+        'Empower teams with transparent, automated, compliant operations.' AS mission_en,
+        'تمكين الفرق بعمليات شفافة ومؤتمتة ومتوافقة.' AS mission_ar,
+        JSON_ARRAY(JSON_OBJECT('en','Innovation','ar','الابتكار'),JSON_OBJECT('en','Trust','ar','الثقة'),JSON_OBJECT('en','Excellence','ar','التميز')) AS values_json
+) AS seed
+WHERE NOT EXISTS (SELECT 1 FROM rateb_cms_about LIMIT 1);
 
-INSERT INTO rateb_cms_theme (primary_color, secondary_color) VALUES ('#1a5fb4', '#3584e4');
-INSERT INTO rateb_cms_analytics (id) VALUES (1);
-INSERT INTO rateb_cms_contact_settings (email, phone, address_en, address_ar, working_hours_en, working_hours_ar, social_json) VALUES
-('info@ratib.sa', '+966 11 000 0000', 'Riyadh, Saudi Arabia', 'الرياض، المملكة العربية السعودية',
- 'Sun–Thu 9:00–18:00', 'الأحد–الخميس ٩:٠٠–١٨:٠٠',
- JSON_OBJECT('linkedin','https://linkedin.com','twitter','https://twitter.com'));
+INSERT INTO rateb_cms_theme (primary_color, secondary_color)
+SELECT '#1a5fb4', '#3584e4'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM rateb_cms_theme LIMIT 1);
 
-INSERT INTO rateb_cms_robots (content) VALUES ('User-agent: *\nAllow: /\nSitemap: /rateb-erp/public/site/sitemap.xml');
+INSERT INTO rateb_cms_analytics (id)
+SELECT 1 FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM rateb_cms_analytics WHERE id = 1);
 
-INSERT INTO rateb_cms_system_status (component_en, component_ar, status) VALUES
-('Web Application', 'تطبيق الويب', 'operational'),
-('API', 'واجهة API', 'operational'),
-('Database', 'قاعدة البيانات', 'operational');
+INSERT INTO rateb_cms_contact_settings (email, phone, address_en, address_ar, working_hours_en, working_hours_ar, social_json)
+SELECT 'info@ratib.sa', '+966 11 000 0000', 'Riyadh, Saudi Arabia', 'الرياض، المملكة العربية السعودية',
+       'Sun–Thu 9:00–18:00', 'الأحد–الخميس ٩:٠٠–١٨:٠٠',
+       JSON_OBJECT('linkedin','https://linkedin.com','twitter','https://twitter.com')
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM rateb_cms_contact_settings LIMIT 1);
+
+INSERT INTO rateb_cms_robots (content)
+SELECT 'User-agent: *\nAllow: /\nSitemap: /rateb-erp/public/site/sitemap.xml'
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM rateb_cms_robots LIMIT 1);
+
+INSERT INTO rateb_cms_system_status (component_en, component_ar, status)
+SELECT t.en, t.ar, t.st FROM (
+    SELECT 'Web Application' en, 'تطبيق الويب' ar, 'operational' st UNION ALL
+    SELECT 'API', 'واجهة API', 'operational' UNION ALL
+    SELECT 'Database', 'قاعدة البيانات', 'operational'
+) t
+WHERE NOT EXISTS (SELECT 1 FROM rateb_cms_system_status LIMIT 1);
 
 INSERT INTO rateb_cms_newsletter_segments (slug, name_en, name_ar) VALUES
 ('general', 'General', 'عام'),
@@ -643,24 +677,34 @@ ON DUPLICATE KEY UPDATE name_en = VALUES(name_en);
 
 -- Sample FAQs
 INSERT INTO rateb_cms_faq_categories (slug, name_en, name_ar, sort_order) VALUES
-('general', 'General', 'عام', 1);
+('general', 'General', 'عام', 1)
+ON DUPLICATE KEY UPDATE name_en = VALUES(name_en), name_ar = VALUES(name_ar);
 
-INSERT INTO rateb_cms_faqs (category_id, question_en, question_ar, answer_en, answer_ar, sort_order) VALUES
-((SELECT id FROM rateb_cms_faq_categories WHERE slug='general' LIMIT 1),
- 'What is RATEB ERP?', 'ما هو رتب ERP?',
- 'A cloud ERP for procurement, inventory, contracts, and medical device management.',
- 'نظام ERP سحابي للمشتريات والمخزون والعقود وإدارة الأجهزة الطبية.', 1),
-((SELECT id FROM rateb_cms_faq_categories WHERE slug='general' LIMIT 1),
- 'Is Arabic supported?', 'هل يدعم العربية?',
- 'Yes — full Arabic RTL interface with English LTR support.',
- 'نعم — واجهة عربية كاملة مع دعم الإنجليزية.', 2);
+INSERT INTO rateb_cms_faqs (category_id, question_en, question_ar, answer_en, answer_ar, sort_order)
+SELECT c.id, t.q_en, t.q_ar, t.a_en, t.a_ar, t.ord
+FROM rateb_cms_faq_categories c
+JOIN (
+    SELECT 1 ord, 'What is RATEB ERP?' q_en, 'ما هو رتب ERP?' q_ar,
+           'A cloud ERP for procurement, inventory, contracts, and medical device management.' a_en,
+           'نظام ERP سحابي للمشتريات والمخزون والعقود وإدارة الأجهزة الطبية.' a_ar
+    UNION ALL
+    SELECT 2, 'Is Arabic supported?', 'هل يدعم العربية?',
+           'Yes — full Arabic RTL interface with English LTR support.',
+           'نعم — واجهة عربية كاملة مع دعم الإنجليزية.'
+) t ON c.slug = 'general'
+WHERE NOT EXISTS (SELECT 1 FROM rateb_cms_faqs LIMIT 1);
 
 -- Sample testimonial
-INSERT INTO rateb_cms_testimonials (customer_name_en, customer_name_ar, position_en, position_ar, company_en, company_ar, quote_en, quote_ar, rating, status, sort_order) VALUES
-('Ahmed Al-Rashid', 'أحمد الراشد', 'Procurement Director', 'مدير المشتريات', 'Health Corp', 'شركة الصحة', 'RATEB ERP transformed our procurement cycle.', 'رتب ERP غيّر دورة المشتريات لدينا.', 5, 'approved', 1);
+INSERT INTO rateb_cms_testimonials (customer_name_en, customer_name_ar, position_en, position_ar, company_en, company_ar, quote_en, quote_ar, rating, status, sort_order)
+SELECT 'Ahmed Al-Rashid', 'أحمد الراشد', 'Procurement Director', 'مدير المشتريات', 'Health Corp', 'شركة الصحة',
+       'RATEB ERP transformed our procurement cycle.', 'رتب ERP غيّر دورة المشتريات لدينا.', 5, 'approved', 1
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM rateb_cms_testimonials LIMIT 1);
 
 -- Sample slide
-INSERT INTO rateb_cms_slides (title_en, title_ar, subtitle_en, subtitle_ar, cta_label_en, cta_label_ar, cta_url, sort_order, is_active) VALUES
-('Smart ERP for Modern Operations', 'نظام ERP ذكي للعمليات الحديثة',
- 'Procurement · Inventory · Contracts · Compliance', 'مشتريات · مخزون · عقود · امتثال',
- 'Request Demo', 'اطلب عرضاً', 'site/request-demo', 1, 1);
+INSERT INTO rateb_cms_slides (title_en, title_ar, subtitle_en, subtitle_ar, cta_label_en, cta_label_ar, cta_url, sort_order, is_active)
+SELECT 'Smart ERP for Modern Operations', 'نظام ERP ذكي للعمليات الحديثة',
+       'Procurement · Inventory · Contracts · Compliance', 'مشتريات · مخزون · عقود · امتثال',
+       'Request Demo', 'اطلب عرضاً', 'site/request-demo', 1, 1
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM rateb_cms_slides LIMIT 1);

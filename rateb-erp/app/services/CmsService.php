@@ -111,10 +111,21 @@ final class CmsService
             'SELECT i.* FROM rateb_cms_menu_items i
              JOIN rateb_cms_menus m ON m.id = i.menu_id
              WHERE m.slug = :slug AND i.is_active = 1
-             ORDER BY i.sort_order ASC'
+             ORDER BY i.sort_order ASC, i.id ASC'
         );
         $stmt->execute(['slug' => $menuSlug]);
-        return $stmt->fetchAll() ?: [];
+        $rows = $stmt->fetchAll() ?: [];
+        $seen = [];
+        $out = [];
+        foreach ($rows as $row) {
+            $key = (string) ($row['url'] ?? '');
+            if ($key === '' || isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $out[] = $row;
+        }
+        return $out;
     }
 
     /** @return array<string, mixed>|null */
