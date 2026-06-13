@@ -64,6 +64,8 @@ return [
     'barcode_stop_camera' => 'إيقاف',
     'barcode_camera_prompt' => 'اضغط تشغيل الكاميرا واسمح بالوصول عند الطلب.',
     'barcode_manual_title' => 'أو أدخل الرمز يدوياً',
+    'badge_scan_this' => 'امسح هذه الشارة بالهاتف (الخطوة 2)',
+    'badge_open_link' => 'فتح رابط الشارة على الهاتف (بدون كاميرا)',
     'barcode_validating' => 'جاري المعالجة…',
     'login_badge' => 'شارة الدخول',
     'login_badge_hint' => 'استخدم هذا الباركود أو رمز QR لتسجيل الدخول دون كلمة مرور.',

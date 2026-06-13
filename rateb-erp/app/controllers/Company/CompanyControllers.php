@@ -859,13 +859,15 @@ final class ProfileController extends Controller
         $userId = (int) ($user['id'] ?? 0);
         $barcodeSvc = new \Rateb\App\Services\BarcodeLoginService();
         $barcode = $userId > 0 ? $barcodeSvc->ensureUserBarcode($userId) : null;
-        $badgePayload = $barcode ? $barcodeSvc->badgeLoginUrl($barcode) : '';
+        $badgeLoginUrl = $barcode ? $barcodeSvc->badgeLoginUrl($barcode) : '';
         $this->view('company/profile/index', [
             'title' => __('profile'),
             'user' => $user,
             'csrf' => Csrf::token(),
             'loginBarcode' => $barcode,
-            'badgeQrUrl' => $badgePayload !== '' ? $barcodeSvc->qrImageUrl($badgePayload, 180) : '',
+            'badgeScanQrUrl' => $barcode ? $barcodeSvc->badgeScanQrUrl($barcode) : '',
+            'badgeLoginUrl' => $badgeLoginUrl,
+            'badgeRegenerateAction' => rateb_app_url('profile/regenerate-barcode'),
         ], 'main');
     }
 

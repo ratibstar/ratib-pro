@@ -233,6 +233,35 @@ body.rateb-app {
     display: block;
 }
 
+.rateb-badge-scan-wrap {
+    display: inline-block;
+    padding: 14px;
+    background: #ffffff;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.rateb-badge-scan-qr {
+    display: block;
+    width: 280px;
+    height: 280px;
+    max-width: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.rateb-badge-scan-label {
+    font-weight: 600;
+    color: var(--rateb-accent, #2563eb);
+    text-align: center;
+}
+
+.rateb-badge-code {
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+}
+
 .rateb-chart-card {
     min-height: 320px;
 }

@@ -29,6 +29,9 @@
             <strong><?php echo __('barcode_scan_no_desktop'); ?></strong><br>
             <?php echo __('barcode_scan_admin_hint'); ?>
         </p>
+        <p class="qr-scan-sub" style="color:#6ee7b7;font-weight:600;">
+            <?php echo __('badge_scan_this'); ?>
+        </p>
         <div id="qr-scan-wrong-banner" class="qr-scan-wrong-banner d-none" role="alert">
             <?php echo __('barcode_pairing_qr_error'); ?>
         </div>

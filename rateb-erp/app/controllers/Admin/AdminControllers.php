@@ -526,11 +526,13 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         $userId = $item ? (int) $item['id'] : 0;
         $barcodeSvc = new \Rateb\App\Services\BarcodeLoginService();
         $barcode = null;
-        $badgeQrUrl = '';
+        $badgeScanQrUrl = '';
+        $badgeLoginUrl = '';
         if ($userId > 0) {
             $barcode = $barcodeSvc->ensureUserBarcode($userId);
             if ($barcode) {
-                $badgeQrUrl = $barcodeSvc->qrImageUrl($barcodeSvc->badgeLoginUrl($barcode), 160);
+                $badgeScanQrUrl = $barcodeSvc->badgeScanQrUrl($barcode);
+                $badgeLoginUrl = $barcodeSvc->badgeLoginUrl($barcode);
             }
         }
         return [
@@ -544,7 +546,9 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'selectedRoles' => $userId > 0 ? $authz->getUserRoleIds($userId) : [],
             'isSuperAdmin' => !empty($item['is_super_admin']),
             'loginBarcode' => $barcode,
-            'badgeQrUrl' => $badgeQrUrl,
+            'badgeScanQrUrl' => $badgeScanQrUrl,
+            'badgeLoginUrl' => $badgeLoginUrl,
+            'badgeRegenerateAction' => $userId > 0 ? rateb_url($this->routePrefix . '/' . $userId . '/regenerate-barcode') : '',
         ];
     }
 

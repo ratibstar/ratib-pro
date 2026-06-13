@@ -64,6 +64,8 @@ return [
     'barcode_stop_camera' => 'Stop',
     'barcode_camera_prompt' => 'Tap Start camera and allow access when prompted.',
     'barcode_manual_title' => 'Or enter code manually',
+    'badge_scan_this' => 'Scan this badge on your phone (step 2)',
+    'badge_open_link' => 'Open badge link on phone (no camera)',
     'barcode_validating' => 'Processing…',
     'login_badge' => 'Login badge',
     'login_badge_hint' => 'Use this barcode or QR code to sign in without a password.',

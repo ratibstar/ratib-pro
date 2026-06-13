@@ -119,11 +119,17 @@ final class BarcodeLoginService
         return rateb_url('login/badge') . '?d=' . rawurlencode($this->badgePayload($barcode));
     }
 
+    /** Large high-contrast QR for phone camera scan (short payload = faster read). */
+    public function badgeScanQrUrl(string $barcode, int $size = 420): string
+    {
+        return $this->qrImageUrl($this->badgePayload($barcode), $size);
+    }
+
     public function qrImageUrl(string $payload, int $size = 200): string
     {
-        $size = max(120, min(400, $size));
+        $size = max(120, min(500, $size));
         return 'https://api.qrserver.com/v1/create-qr-code/?size=' . $size . 'x' . $size
-            . '&margin=18&ecc=H&color=000000&bgcolor=ffffff&data=' . rawurlencode($payload);
+            . '&margin=24&ecc=H&format=png&color=000000&bgcolor=ffffff&qzone=2&data=' . rawurlencode($payload);
     }
 
     public function setPairCookie(string $token): void

@@ -8,31 +8,15 @@
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
 ?>
-<?php if ($isEdit && !empty($loginBarcode)) { ?>
-<div class="rateb-card mb-3">
-    <div class="rateb-card-header"><?php echo __('login_badge'); ?></div>
-    <div class="rateb-card-body">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-4 text-center">
-                <?php if (!empty($badgeQrUrl)) { ?>
-                <img src="<?php echo Rateb\App\Core\View::escape($badgeQrUrl); ?>" alt="<?php echo __('qr_code'); ?>" class="rateb-login-qr-img">
-                <?php } ?>
-            </div>
-            <div class="col-md-8">
-                <p class="text-muted small mb-2"><?php echo __('login_badge_hint'); ?></p>
-                <div class="font-monospace fs-5 text-center p-2 border rounded mb-3"><?php echo Rateb\App\Core\View::escape($loginBarcode); ?></div>
-                <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int) $item['id'] . '/regenerate-barcode'); ?>" class="d-inline"
-                    onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('barcode_regenerate_confirm')); ?>');">
-                    <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                    <button type="submit" class="btn btn-outline-warning btn-sm">
-                        <i class="fas fa-rotate"></i> <?php echo __('barcode_regenerate'); ?>
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-<?php } ?>
+<?php if ($isEdit && !empty($loginBarcode)) {
+    Rateb\App\Core\View::partial('login-badge-card', [
+        'loginBarcode' => $loginBarcode,
+        'badgeScanQrUrl' => $badgeScanQrUrl ?? '',
+        'badgeLoginUrl' => $badgeLoginUrl ?? '',
+        'csrf' => $csrf,
+        'regenerateAction' => $badgeRegenerateAction ?? rateb_url($routePrefix . '/' . (int) $item['id'] . '/regenerate-barcode'),
+    ]);
+} ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
