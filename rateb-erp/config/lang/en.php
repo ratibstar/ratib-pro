@@ -63,6 +63,7 @@ return [
     'barcode_start_camera' => 'Start camera',
     'barcode_stop_camera' => 'Stop',
     'barcode_camera_prompt' => 'Tap Start camera and allow access when prompted.',
+    'barcode_manual_title' => 'Or enter code manually',
     'barcode_validating' => 'Processing…',
     'login_badge' => 'Login badge',
     'login_badge_hint' => 'Use this barcode or QR code to sign in without a password.',

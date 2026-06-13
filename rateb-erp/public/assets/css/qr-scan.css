@@ -301,3 +301,32 @@
     margin: 0;
     font-size: 0.75rem;
 }
+
+.qr-scan-manual-input {
+    width: 100%;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    text-align: center;
+    padding: 0.65rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #e2e8f0;
+    box-sizing: border-box;
+}
+
+.qr-scan-manual-input::placeholder {
+    color: #64748b;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.mt-3 {
+    margin-top: 0.75rem;
+}

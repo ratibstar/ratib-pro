@@ -63,6 +63,7 @@ return [
     'barcode_start_camera' => 'تشغيل الكاميرا',
     'barcode_stop_camera' => 'إيقاف',
     'barcode_camera_prompt' => 'اضغط تشغيل الكاميرا واسمح بالوصول عند الطلب.',
+    'barcode_manual_title' => 'أو أدخل الرمز يدوياً',
     'barcode_validating' => 'جاري المعالجة…',
     'login_badge' => 'شارة الدخول',
     'login_badge_hint' => 'استخدم هذا الباركود أو رمز QR لتسجيل الدخول دون كلمة مرور.',

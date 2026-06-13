@@ -89,22 +89,6 @@
         this.setStatus('Requesting camera…', 'loading');
         this.scanner = new Html5Qrcode(this.elementId);
         var self = this;
-        var config = {
-            fps: 20,
-            disableFlip: false,
-            qrbox: function (vw, vh) {
-                var side = Math.floor(Math.min(vw, vh) * 0.78);
-                return { width: side, height: side };
-            },
-            experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true
-            },
-            videoConstraints: {
-                facingMode: 'environment',
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            }
-        };
         try {
             var cameras = [];
             try {
@@ -116,15 +100,35 @@
             var onDecoded = function (t) {
                 self.handleDecode(t);
             };
+            var scanConfig = {
+                fps: 12,
+                disableFlip: false,
+                qrbox: function (vw, vh) {
+                    var side = Math.floor(Math.min(vw, vh) * 0.78);
+                    return { width: Math.max(180, side), height: Math.max(180, side) };
+                },
+                aspectRatio: 1.0
+            };
             if (camId) {
-                await this.scanner.start(camId, config, onDecoded, function () {});
+                await this.scanner.start(camId, scanConfig, onDecoded, function () {});
             } else {
-                await this.scanner.start({ facingMode: 'environment' }, config, onDecoded, function () {});
+                await this.scanner.start({ facingMode: 'environment' }, scanConfig, onDecoded, function () {});
             }
             this.starting = false;
             this.setStatus('Align the QR code inside the frame.', 'info');
         } catch (err) {
             this.starting = false;
+            try {
+                var onDecoded2 = function (t) { self.handleDecode(t); };
+                await this.scanner.start({ facingMode: 'user' }, {
+                    fps: 12,
+                    qrbox: { width: 220, height: 220 }
+                }, onDecoded2, function () {});
+                this.setStatus('Align the QR code inside the frame.', 'info');
+                return;
+            } catch (err2) {
+                /* fall through */
+            }
             await this.stop();
             var msg = 'Camera blocked. Allow permission and try again.';
             if (err && err.message) {

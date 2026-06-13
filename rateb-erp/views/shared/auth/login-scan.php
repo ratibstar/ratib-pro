@@ -44,6 +44,17 @@
         <div id="qr-scan-status" class="qr-scan-status qr-scan-status--info" role="status">
             <?php echo __('barcode_camera_prompt'); ?>
         </div>
+        <div class="qr-scan-alt-help mt-3">
+            <p class="qr-scan-alt-title"><i class="fas fa-keyboard"></i> <?php echo __('barcode_manual_title'); ?></p>
+            <p class="mb-2"><?php echo __('barcode_scan_hint'); ?></p>
+            <form id="qr-scan-manual-form">
+                <input type="text" id="qr-scan-manual-input" class="qr-scan-manual-input" autocomplete="off"
+                    placeholder="<?php echo Rateb\App\Core\View::escape(__('login_barcode_placeholder')); ?>">
+                <button type="submit" class="qr-scan-btn qr-scan-btn-primary w-100 mt-2">
+                    <i class="fas fa-check"></i> <?php echo __('barcode_scan_submit'); ?>
+                </button>
+            </form>
+        </div>
     </div>
     <script>
     window.RATEB_QR_SCAN = <?php echo json_encode([
@@ -51,11 +62,19 @@
         'apiQr' => rateb_url('api/qr-login'),
         'apiPair' => rateb_url('api/login-barcode-pair'),
         'autoBadge' => $autoBadge ?? '',
+        'cameraPrompt' => __('barcode_camera_prompt'),
     ], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     </script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
-    <script src="<?php echo rateb_asset('js/erp-qr-scanner.js'); ?>"></script>
-    <script src="<?php echo rateb_asset('js/erp-login-scan.js'); ?>"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
+    <?php
+    $scanAssets = ['js/erp-qr-scanner.js', 'js/erp-login-scan.js'];
+    foreach ($scanAssets as $asset) {
+        $path = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/public/assets/' . $asset;
+        if ($path !== '/public/assets/' . $asset && is_file($path)) {
+            echo '<script>', file_get_contents($path), '</script>';
+        }
+    }
+    ?>
 <?php } ?>
 </body>
 </html>
