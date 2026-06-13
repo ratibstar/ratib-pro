@@ -24,20 +24,8 @@ INNER JOIN rateb_cms_blocks b2
     AND b1.sort_order = b2.sort_order
     AND b1.id < b2.id;
 
--- 4) Prevent future duplicate sections
-SET @idx_exists := (
-    SELECT COUNT(*) FROM information_schema.statistics
-    WHERE table_schema = DATABASE()
-      AND table_name = 'rateb_cms_sections'
-      AND index_name = 'uq_cms_section_page_key'
-);
-SET @sql := IF(@idx_exists = 0,
-    'ALTER TABLE rateb_cms_sections ADD UNIQUE KEY uq_cms_section_page_key (page_slug, section_key)',
-    'SELECT 1'
-);
-PREPARE stmt FROM @sql;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+-- 4) Prevent future duplicate sections (ignored if index already exists)
+ALTER TABLE rateb_cms_sections ADD UNIQUE KEY uq_cms_section_page_key (page_slug, section_key);
 
 -- 5) Re-apply correct Arabic for home (safe after dedupe)
 UPDATE rateb_cms_sections SET

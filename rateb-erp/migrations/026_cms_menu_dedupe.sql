@@ -9,19 +9,7 @@ INNER JOIN (
 ) k ON i.menu_id = k.menu_id AND i.url = k.url
 WHERE i.id <> k.keep_id;
 
-SET @idx_exists := (
-    SELECT COUNT(*) FROM information_schema.statistics
-    WHERE table_schema = DATABASE()
-      AND table_name = 'rateb_cms_menu_items'
-      AND index_name = 'uq_cms_menu_item_url'
-);
-SET @sql := IF(@idx_exists = 0,
-    'ALTER TABLE rateb_cms_menu_items ADD UNIQUE KEY uq_cms_menu_item_url (menu_id, url)',
-    'SELECT 1'
-);
-PREPARE stmt FROM @sql;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+ALTER TABLE rateb_cms_menu_items ADD UNIQUE KEY uq_cms_menu_item_url (menu_id, url);
 
 -- Re-seed main menu if empty
 INSERT INTO rateb_cms_menu_items (menu_id, label_en, label_ar, url, sort_order)

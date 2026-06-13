@@ -71,7 +71,9 @@ final class MigrationService
     {
         $stmt = $pdo->prepare('SELECT id FROM rateb_migrations WHERE filename = :f LIMIT 1');
         $stmt->execute(['f' => $filename]);
-        return (bool) $stmt->fetch();
+        $applied = (bool) $stmt->fetch();
+        $this->drainStatement($stmt);
+        return $applied;
     }
 
     private function markApplied(PDO $pdo, string $filename): void
@@ -149,15 +151,15 @@ final class MigrationService
 
     private function execStatement(PDO $pdo, string $statement): void
     {
-        if (preg_match('/\b(PREPARE|EXECUTE|DEALLOCATE)\b/i', $statement)) {
-            $pdo->exec($statement);
-            return;
-        }
-
         $stmt = $pdo->query($statement);
         if ($stmt === false) {
             return;
         }
+        $this->drainStatement($stmt);
+    }
+
+    private function drainStatement(\PDOStatement $stmt): void
+    {
         do {
             $stmt->fetchAll();
         } while ($stmt->nextRowset());
