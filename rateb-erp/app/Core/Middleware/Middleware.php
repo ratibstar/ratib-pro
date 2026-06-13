@@ -156,6 +156,35 @@ final class GuestMiddleware implements MiddlewareInterface
     }
 }
 
+/** Company customer portal — marketing site area for logged-in tenants. */
+final class MarketingCompanyAuthMiddleware implements MiddlewareInterface
+{
+    public function handle(): bool
+    {
+        Auth::bootstrapFromSession();
+        if (!Auth::check() || SessionManager::get('rateb_is_super_admin')) {
+            $next = 'site/portal';
+            Response::redirect(function_exists('rateb_url')
+                ? rateb_url('site/login?next=' . rawurlencode($next))
+                : (RATEB_BASE_URL . '/site/login'));
+            return false;
+        }
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        if ($companyId < 1) {
+            Response::redirect(function_exists('rateb_url') ? rateb_url('site/login') : (RATEB_BASE_URL . '/site/login'));
+            return false;
+        }
+        if (!(new \Rateb\App\Services\PlanLimitService())->companyAccessAllowed($companyId)) {
+            SessionManager::flash('error', __('subscription_expired'));
+            Response::redirect(function_exists('rateb_url') ? rateb_url('site/pricing') : (RATEB_BASE_URL . '/site/pricing'));
+            return false;
+        }
+        \Rateb\App\Core\TenantContext::setCompanyId($companyId);
+        \Rateb\App\Core\TenantContext::setSuperAdmin(false);
+        return true;
+    }
+}
+
 final class RequirePermissionMiddleware implements MiddlewareInterface
 {
     private string $permission;

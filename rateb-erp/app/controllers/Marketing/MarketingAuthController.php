@@ -195,7 +195,7 @@ final class MarketingAuthController extends Controller
             'email' => $email,
         ]);
         SessionManager::flash('success', __('cms_register_ok'));
-        Response::redirect(rateb_url('admin'));
+        Response::redirect(rateb_url(Auth::homePath()));
     }
 
     /** @param array<string, mixed> $user */
@@ -209,7 +209,7 @@ final class MarketingAuthController extends Controller
         }
         (new User())->updateLastLogin((int) $user['id']);
         (new AuditService())->log('login', 'user', (int) $user['id'], ['portal' => 'company']);
-        Response::redirect($next !== '' ? $next : rateb_url('admin'));
+        Response::redirect($next !== '' ? $next : rateb_url(Auth::homePath()));
     }
 
     private function safeNextUrl(string $next): string

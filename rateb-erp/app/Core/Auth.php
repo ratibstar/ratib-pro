@@ -119,6 +119,12 @@ final class Auth
 
     public static function homePath(): string
     {
+        if (SessionManager::get('rateb_is_super_admin')) {
+            return 'admin';
+        }
+        if ((int) SessionManager::get('rateb_company_id', 0) > 0) {
+            return 'site/portal';
+        }
         return 'admin';
     }
 
