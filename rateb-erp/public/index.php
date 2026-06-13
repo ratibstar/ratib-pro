@@ -41,7 +41,15 @@ try {
     require_once RATEB_ROOT . '/app/helpers/Request.php';
 
     $path = \Rateb\App\Helpers\Request::resolvePath();
-    $router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $path);
+    $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if ($method === 'GET') {
+        try {
+            (new \Rateb\App\Services\CmsService())->applyRedirectIfAny($path);
+        } catch (Throwable $redirectEx) {
+            error_log('CMS redirect check: ' . $redirectEx->getMessage());
+        }
+    }
+    $router->dispatch($method, $path);
 } catch (Throwable $e) {
     error_log('RATEB ERP bootstrap error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
     if (!headers_sent()) {

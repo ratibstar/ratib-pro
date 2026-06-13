@@ -1,5 +1,6 @@
 <?php
 /** @var array<string, array<string, mixed>> $content */
+use Rateb\App\Models\Plan;
 use Rateb\App\Services\CmsService;
 $hero = $content['hero']['section'] ?? null;
 $slides = $slides ?? [];
@@ -89,7 +90,7 @@ $slides = $slides ?? [];
 <?php if (!empty($testimonials)) { ?>
 <section class="rateb-mkt-section rateb-mkt-section-alt">
     <div class="container">
-        <h2 class="rateb-mkt-section-title"><?php echo __('cms_testimonials'); ?></h2>
+        <h2 class="rateb-mkt-section-title"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($content['testimonials']['section'] ?? [], 'title') ?: __('cms_testimonials')); ?></h2>
         <div class="row g-3">
             <?php foreach ($testimonials as $t) { ?>
             <div class="col-md-4">
@@ -97,7 +98,13 @@ $slides = $slides ?? [];
                     <p><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($t, 'quote')); ?></p>
                     <footer>
                         <strong><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($t, 'customer_name')); ?></strong>
-                        <span><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($t, 'company')); ?></span>
+                        <?php
+                        $tPos = CmsService::pickLocale($t, 'position');
+                        $tCo = CmsService::pickLocale($t, 'company');
+                        $tMeta = $tPos !== '' && $tCo !== '' ? $tPos . ' — ' . $tCo : ($tPos !== '' ? $tPos : $tCo);
+                        if ($tMeta !== '') { ?>
+                        <span><?php echo Rateb\App\Core\View::escape($tMeta); ?></span>
+                        <?php } ?>
                     </footer>
                 </blockquote>
             </div>
@@ -110,13 +117,13 @@ $slides = $slides ?? [];
 <?php if (!empty($plans)) { ?>
 <section class="rateb-mkt-section">
     <div class="container">
-        <h2 class="rateb-mkt-section-title"><?php echo __('cms_pricing_preview'); ?></h2>
+        <h2 class="rateb-mkt-section-title"><?php echo Rateb\App\Core\View::escape(CmsService::pickLocale($content['pricing_preview']['section'] ?? [], 'title') ?: __('cms_pricing_preview')); ?></h2>
         <div class="row g-3">
             <?php foreach (array_slice($plans, 0, 3) as $plan) { ?>
             <div class="col-md-4">
                 <div class="rateb-mkt-plan-card">
-                    <h3><?php echo Rateb\App\Core\View::escape((string) ($plan['name'] ?? '')); ?></h3>
-                    <p class="rateb-mkt-plan-price"><?php echo Rateb\App\Core\View::escape((string) ($plan['price'] ?? '')); ?> SAR</p>
+                    <h3><?php echo Rateb\App\Core\View::escape(Plan::marketingName($plan)); ?></h3>
+                    <p class="rateb-mkt-plan-price"><?php echo Rateb\App\Core\View::escape(Plan::marketingPrice($plan)); ?> <?php echo __('sar'); ?></p>
                     <a href="<?php echo rateb_url('site/pricing'); ?>" class="btn btn-outline-primary btn-sm"><?php echo __('cms_view_plans'); ?></a>
                 </div>
             </div>

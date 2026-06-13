@@ -42,8 +42,12 @@ final class ErpDatabaseService
         Database::disconnect();
         $log = (new MigrationService())->runAll();
         try {
-            $repair = (new CmsArabicRepairService())->repair();
-            $log[] = 'CMS Arabic repair: ' . $repair['updated'] . ' row(s); hero=' . $repair['hero_title'];
+            if ($this->cmsArabicNeedsRepair()) {
+                $repair = (new CmsArabicRepairService())->repair();
+                $log[] = 'CMS Arabic repair: ' . $repair['updated'] . ' row(s); hero=' . $repair['hero_title'];
+            } else {
+                $log[] = 'CMS Arabic repair: skipped (content OK).';
+            }
         } catch (\Throwable $e) {
             $log[] = 'CMS Arabic repair warning: ' . $e->getMessage();
         }
@@ -63,6 +67,28 @@ final class ErpDatabaseService
             . ', duplicate_role_slugs=' . ($erp['duplicate_role_slugs'] ?? '?');
 
         return $log;
+    }
+
+    private function cmsArabicNeedsRepair(): bool
+    {
+        try {
+            $pdo = Database::connection();
+            $stmt = $pdo->query(
+                "SELECT title_ar FROM rateb_cms_sections WHERE page_slug='home' AND section_key='hero' LIMIT 1"
+            );
+            if ($stmt === false) {
+                return false;
+            }
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt->closeCursor();
+            if (!is_array($row)) {
+                return false;
+            }
+            $title = (string) ($row['title_ar'] ?? '');
+            return $title === '' || strpos($title, '?') !== false;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
   /** @return array<string, int|string> */

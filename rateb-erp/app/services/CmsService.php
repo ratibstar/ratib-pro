@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Core\Database;
+use Rateb\App\Core\Response;
 use Rateb\App\Models\CmsAbout;
 use Rateb\App\Models\CmsAnalytics;
 use Rateb\App\Models\CmsBlock;
@@ -199,6 +200,12 @@ final class CmsService
     /** @return array<int, array<string, mixed>> */
     public function publishedArticles(int $limit = 3): array
     {
+        return $this->queryPublishedArticles($limit);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function queryPublishedArticles(int $limit = 50): array
+    {
         $stmt = Database::connection()->prepare(
             "SELECT * FROM rateb_cms_blog_articles WHERE status = 'published'
              AND (published_at IS NULL OR published_at <= NOW())
@@ -221,11 +228,22 @@ final class CmsService
     }
 
     /** @return array<int, array<string, mixed>> */
+    public function approvedTestimonialsAll(int $limit = 50): array
+    {
+        $stmt = Database::connection()->prepare(
+            'SELECT * FROM rateb_cms_testimonials WHERE status = :s ORDER BY sort_order ASC LIMIT :lim'
+        );
+        $stmt->bindValue(':s', 'approved');
+        $stmt->bindValue(':lim', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll() ?: [];
+    }
+
+    /** @return array<int, array<string, mixed>> */
     public function publishedPlans(): array
     {
         try {
-            $planModel = new Plan();
-            return $planModel->all(20, 0);
+            return (new Plan())->getActive();
         } catch (\Throwable $e) {
             return [];
         }
@@ -321,12 +339,65 @@ final class CmsService
 
     public function checkRedirect(string $path): ?array
     {
-        $path = '/' . ltrim($path, '/');
-        $stmt = Database::connection()->prepare(
-            'SELECT * FROM rateb_cms_redirects WHERE from_path = :p AND is_active = 1 LIMIT 1'
-        );
-        $stmt->execute(['p' => $path]);
-        $row = $stmt->fetch();
-        return $row ?: null;
+        foreach ($this->redirectPathCandidates($path) as $candidate) {
+            $stmt = Database::connection()->prepare(
+                'SELECT * FROM rateb_cms_redirects WHERE from_path = :p AND is_active = 1 LIMIT 1'
+            );
+            $stmt->execute(['p' => $candidate]);
+            $row = $stmt->fetch();
+            if ($row) {
+                return $row;
+            }
+        }
+        return null;
+    }
+
+    public function applyRedirectIfAny(string $path): void
+    {
+        $row = $this->checkRedirect($path);
+        if ($row === null) {
+            return;
+        }
+        $to = trim((string) ($row['to_path'] ?? ''));
+        if ($to === '') {
+            return;
+        }
+        $code = (int) ($row['status_code'] ?? 301);
+        if (!in_array($code, [301, 302, 307, 308], true)) {
+            $code = 301;
+        }
+        if (preg_match('#^https?://#i', $to) === 1) {
+            Response::redirect($to, $code);
+        }
+        Response::redirect(rateb_url(ltrim($to, '/')), $code);
+    }
+
+    /** @return array<int, string> */
+    private function redirectPathCandidates(string $path): array
+    {
+        $path = '/' . trim($path, '/');
+        if ($path === '/') {
+            $path = '/';
+        }
+        $out = [];
+        $add = static function (string $p) use (&$out): void {
+            $p = trim($p);
+            if ($p === '') {
+                return;
+            }
+            if ($p[0] !== '/') {
+                $p = '/' . $p;
+            }
+            $out[$p] = $p;
+            $out[ltrim($p, '/')] = ltrim($p, '/');
+        };
+        $add($path);
+        if (strpos($path, '/site/') === 0) {
+            $add(substr($path, 5));
+        } elseif ($path === '/site') {
+            $add('/');
+            $add('site');
+        }
+        return array_values($out);
     }
 }

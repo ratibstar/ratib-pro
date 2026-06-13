@@ -5,12 +5,9 @@ namespace Rateb\App\Controllers\Marketing;
 
 use Rateb\App\Core\Controller;
 use Rateb\App\Core\Csrf;
-use Rateb\App\Core\Response;
 use Rateb\App\Core\SessionManager;
-use Rateb\App\Core\View;
 use Rateb\App\Models\CmsBlogArticle;
 use Rateb\App\Models\CmsCareer;
-use Rateb\App\Models\CmsFaq;
 use Rateb\App\Models\CmsHelpArticle;
 use Rateb\App\Models\CmsKbArticle;
 use Rateb\App\Models\CmsLead;
@@ -18,7 +15,6 @@ use Rateb\App\Models\CmsNewsletterSubscriber;
 use Rateb\App\Models\CmsPartner;
 use Rateb\App\Models\CmsService as CmsServiceItem;
 use Rateb\App\Models\CmsSystemStatus;
-use Rateb\App\Models\CmsTestimonial;
 use Rateb\App\Services\CmsService;
 
 final class MarketingController extends Controller
@@ -87,6 +83,14 @@ final class MarketingController extends Controller
             $loc = $origin . '/' . ltrim(rateb_url($p), '/');
             echo '  <url><loc>' . htmlspecialchars($loc, ENT_XML1) . '</loc></url>' . "\n";
         }
+        foreach ($this->cms->queryPublishedArticles(500) as $article) {
+            $slug = (string) ($article['slug'] ?? '');
+            if ($slug === '') {
+                continue;
+            }
+            $loc = $origin . '/' . ltrim(rateb_url('site/blog/' . $slug), '/');
+            echo '  <url><loc>' . htmlspecialchars($loc, ENT_XML1) . '</loc></url>' . "\n";
+        }
         echo '</urlset>';
         exit;
     }
@@ -144,16 +148,15 @@ final class MarketingController extends Controller
     /** @return array<string, mixed> */
     private function pageExtras(string $slug): array
     {
-        $db = new CmsService();
         switch ($slug) {
             case 'faq':
-                return ['allFaqs' => (new CmsFaq())->all(200, 0)];
+                return ['allFaqs' => $this->cms->activeFaqs(200)];
             case 'blog':
-                return ['allArticles' => (new CmsBlogArticle())->all(50, 0)];
+                return ['allArticles' => $this->cms->queryPublishedArticles(50)];
             case 'services':
                 return ['allServices' => (new CmsServiceItem())->all(100, 0)];
             case 'reviews':
-                return ['allTestimonials' => (new CmsTestimonial())->all(50, 0)];
+                return ['allTestimonials' => $this->cms->approvedTestimonialsAll(50)];
             case 'partners':
                 return ['allPartners' => (new CmsPartner())->all(50, 0)];
             case 'careers':
@@ -245,7 +248,7 @@ final class MarketingFormsController extends Controller
         $model = new CmsLead();
         $model->create([
             'lead_type' => $type,
-            'name' => View::escape($name),
+            'name' => $name,
             'email' => $email,
             'phone' => $phone,
             'company' => $company,

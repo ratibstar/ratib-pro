@@ -18,4 +18,39 @@ final class Plan extends Model
     {
         return $this->query('SELECT * FROM rateb_plans WHERE is_active = 1 ORDER BY price_monthly ASC');
     }
+
+    /** @param array<string, mixed> $plan */
+    public static function marketingName(array $plan): string
+    {
+        $slug = trim((string) ($plan['slug'] ?? ''));
+        if ($slug !== '') {
+            $key = 'plan_' . $slug . '_name';
+            $label = __($key);
+            if ($label !== $key) {
+                return $label;
+            }
+        }
+        return (string) ($plan['name'] ?? '');
+    }
+
+    /** @param array<string, mixed> $plan */
+    public static function marketingDescription(array $plan): string
+    {
+        $slug = trim((string) ($plan['slug'] ?? ''));
+        if ($slug !== '') {
+            $key = 'plan_' . $slug . '_desc';
+            $label = __($key);
+            if ($label !== $key) {
+                return $label;
+            }
+        }
+        return (string) ($plan['description'] ?? '');
+    }
+
+    /** @param array<string, mixed> $plan */
+    public static function marketingPrice(array $plan): string
+    {
+        $monthly = $plan['price_monthly'] ?? $plan['price'] ?? 0;
+        return number_format((float) $monthly, 0, '.', ',');
+    }
 }

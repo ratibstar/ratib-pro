@@ -22,6 +22,10 @@ $secondary = $theme['secondary_color'] ?? '#3584e4';
     <meta property="og:title" content="<?php echo Rateb\App\Core\View::escape($meta['og_title'] ?? ($title ?? '')); ?>">
     <meta property="og:description" content="<?php echo Rateb\App\Core\View::escape($meta['og_description'] ?? ''); ?>">
     <meta property="og:type" content="website">
+    <?php if (!empty($meta['og_image'])) { ?>
+    <meta property="og:image" content="<?php echo Rateb\App\Core\View::escape($meta['og_image']); ?>">
+    <meta name="twitter:image" content="<?php echo Rateb\App\Core\View::escape($meta['og_image']); ?>">
+    <?php } ?>
     <meta name="twitter:card" content="<?php echo Rateb\App\Core\View::escape($meta['twitter_card'] ?? 'summary_large_image'); ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,6 +43,13 @@ $secondary = $theme['secondary_color'] ?? '#3584e4';
     <?php require RATEB_ROOT . '/views/marketing/partials/analytics-head.php'; ?>
 </head>
 <body class="rateb-marketing<?php echo $dir === 'rtl' ? ' rateb-marketing-rtl' : ''; ?>">
+<?php
+$gtmId = !empty($analytics['google_tag_manager_id']) ? (string) $analytics['google_tag_manager_id'] : '';
+if ($gtmId !== '') {
+    $gtmEsc = Rateb\App\Core\View::escape($gtmId);
+    echo '<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=' . $gtmEsc . '" height="0" width="0" class="rateb-mkt-gtm-noscript" title="GTM"></iframe></noscript>';
+}
+?>
 <?php require RATEB_ROOT . '/views/marketing/partials/header.php'; ?>
 <main id="rateb-marketing-main">
     <?php Rateb\App\Core\View::partial('flash'); ?>
@@ -49,13 +60,8 @@ $secondary = $theme['secondary_color'] ?? '#3584e4';
 <script src="<?php echo rateb_asset('js/marketing.js'); ?>"></script>
 <?php
 $analytics = $analytics ?? null;
-if ($analytics) {
-    if (!empty($analytics['google_tag_manager_id'])) {
-        echo '<!-- GTM placeholder -->';
-    }
-    if (!empty($analytics['custom_body_code'])) {
-        echo $analytics['custom_body_code'];
-    }
+if ($analytics && !empty($analytics['custom_body_code'])) {
+    echo $analytics['custom_body_code'];
 }
 ?>
 </body>
