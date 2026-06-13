@@ -30,11 +30,12 @@ final class DocumentBarcodeService
 
     public function qrPayload(string $barcode, string $type, int $recordId): string
     {
-        $url = $this->documentEditUrl($type, $recordId);
-        if ($url !== '') {
-            return $url;
-        }
-        return $barcode;
+        return $this->publicScanUrl($barcode);
+    }
+
+    public function publicScanUrl(string $barcode): string
+    {
+        return rateb_url('scan/doc/' . rawurlencode(strtoupper(trim($barcode))));
     }
 
     public function documentEditUrl(string $type, int $recordId): string
@@ -56,7 +57,7 @@ final class DocumentBarcodeService
 
     private function normalizeStoredQr(string $stored, string $barcode, string $type, int $recordId): string
     {
-        $expected = $this->qrPayload($barcode, $type, $recordId);
+        $expected = $this->publicScanUrl($barcode);
         $stored = trim($stored);
         if ($stored === '') {
             return $expected;
@@ -64,10 +65,113 @@ final class DocumentBarcodeService
         if ($stored[0] === '{' || strpos($stored, self::PREFIX) === 0) {
             return $expected;
         }
-        if (strpos($expected, 'http') === 0 && strpos($stored, 'http') !== 0) {
+        if (strpos($stored, '/edit') !== false || strpos($stored, 'scan/doc/') === false) {
             return $expected;
         }
         return $stored;
+    }
+
+    /** @return array<string, mixed>|null */
+    public function resolvePublic(string $code): ?array
+    {
+        $code = strtoupper(trim($code));
+        if ($code === '') {
+            return null;
+        }
+        foreach (['inventory', 'invoice', 'contract'] as $type) {
+            $row = $this->findByBarcode($type, $code);
+            if ($row) {
+                return $this->publicCard($type, $row);
+            }
+        }
+        return null;
+    }
+
+    /** @return array<string, mixed>|null */
+    private function findByBarcode(string $type, string $code): ?array
+    {
+        if ($type === 'invoice') {
+            $rows = (new Invoice())->query(
+                'SELECT * FROM rateb_invoices WHERE barcode = :code LIMIT 1',
+                ['code' => $code]
+            );
+        } elseif ($type === 'contract') {
+            $rows = (new Contract())->query(
+                'SELECT * FROM rateb_contracts WHERE barcode = :code LIMIT 1',
+                ['code' => $code]
+            );
+        } elseif ($type === 'inventory') {
+            $rows = (new Inventory())->query(
+                'SELECT * FROM rateb_inventory WHERE barcode = :code LIMIT 1',
+                ['code' => $code]
+            );
+        } else {
+            return null;
+        }
+        return $rows[0] ?? null;
+    }
+
+    /** @param array<string, mixed> $row */
+    private function publicCard(string $type, array $row): array
+    {
+        $recordId = (int) ($row['id'] ?? 0);
+        $barcode = (string) ($row['barcode'] ?? '');
+        $title = $this->defaultTitle($type, $row);
+        $subtitle = $this->defaultSubtitle($type, $row);
+        $qrPayload = $this->publicScanUrl($barcode);
+        return [
+            'type' => $type,
+            'type_label' => __($type === 'inventory' ? 'inventory' : ($type === 'invoice' ? 'invoices' : 'contracts')),
+            'recordId' => $recordId,
+            'title' => $title,
+            'subtitle' => $subtitle,
+            'barcode' => $barcode,
+            'qr_image_url' => $this->qrImageUrl($qrPayload, 160),
+            'fields' => $this->publicFields($type, $row),
+        ];
+    }
+
+    /** @param array<string, mixed> $row */
+    /** @return array<int, array{label:string,value:string}> */
+    private function publicFields(string $type, array $row): array
+    {
+        $fields = [];
+        if ($type === 'inventory') {
+            $fields = [
+                $this->field(__('sku'), (string) ($row['sku'] ?? '')),
+                $this->field(__('quantity'), (string) ($row['quantity'] ?? '')),
+                $this->field(__('status'), (string) ($row['status'] ?? '')),
+            ];
+        } elseif ($type === 'invoice') {
+            $fields = [
+                $this->field(__('invoice_no'), (string) ($row['invoice_no'] ?? '')),
+                $this->field(__('status'), (string) ($row['status'] ?? '')),
+                $this->field(__('issued_at'), (string) ($row['issued_at'] ?? '')),
+            ];
+        } else {
+            $fields = [
+                $this->field(__('contract_no'), (string) ($row['contract_no'] ?? '')),
+                $this->field(__('status'), (string) ($row['status'] ?? '')),
+                $this->field(__('start_date'), (string) ($row['start_date'] ?? '')),
+            ];
+        }
+        $out = [];
+        foreach ($fields as $f) {
+            if ($f !== null) {
+                $out[] = $f;
+            }
+        }
+        return $out;
+    }
+
+    /** @return array{label:string,value:string}|null */
+    private function field(string $label, string $value): ?array
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+        return ['label' => $label, 'value' => $value];
     }
 
     public function qrImageUrl(string $payload, int $size = 280): string

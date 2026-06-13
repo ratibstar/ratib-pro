@@ -15,6 +15,9 @@
 
 <form method="post" action="<?php echo rateb_url('login'); ?>" id="password-form" class="login-panel">
     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+    <?php if (!empty($next)) { ?>
+    <input type="hidden" name="next" value="<?php echo Rateb\App\Core\View::escape((string) $next); ?>">
+    <?php } ?>
     <p class="text-center text-muted small mb-3"><?php echo __('unified_login_hint'); ?></p>
     <div class="mb-3">
         <label class="form-label" for="email"><?php echo __('login_email'); ?></label>

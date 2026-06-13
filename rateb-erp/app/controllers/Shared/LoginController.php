@@ -38,11 +38,13 @@ final class LoginController extends Controller
         $this->view('shared/auth/login', [
             'title' => __('login'),
             'csrf' => Csrf::token(),
+            'next' => $this->safeNextUrl((string) ($_GET['next'] ?? '')),
         ], 'auth');
     }
 
     public function login(): void
     {
+        $next = $this->safeNextUrl((string) $this->input('next', ''));
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('invalid_request'));
             Response::redirect(rateb_url('login'));
@@ -61,7 +63,7 @@ final class LoginController extends Controller
 
         if (!$user) {
             SessionManager::flash('error', __('invalid_credentials'));
-            Response::redirect(rateb_url('login'));
+            Response::redirect($next !== '' ? rateb_url('login?next=' . rawurlencode($next)) : rateb_url('login'));
         }
 
         if (!empty($user['locale']) && in_array($user['locale'], RATEB_SUPPORTED_LOCALES, true)) {
@@ -70,7 +72,20 @@ final class LoginController extends Controller
 
         (new User())->updateLastLogin((int) $user['id']);
         (new AuditService())->log('login', 'user', (int) $user['id']);
-        Response::redirect(rateb_url(Auth::homePath()));
+        Response::redirect($next !== '' ? $next : rateb_url(Auth::homePath()));
+    }
+
+    private function safeNextUrl(string $next): string
+    {
+        $next = trim($next);
+        if ($next === '' || strpos($next, '..') !== false) {
+            return '';
+        }
+        if (preg_match('#^https?://#i', $next)) {
+            $appBase = rateb_public_url('');
+            return strpos($next, $appBase) === 0 ? $next : '';
+        }
+        return rateb_public_url(ltrim($next, '/'));
     }
 
     public function logout(): void
