@@ -33,9 +33,11 @@ $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($docBarcode['title'
                 <p class="text-center text-muted small mb-3 rateb-doc-barcode-subtitle"><?php echo Rateb\App\Core\View::escape((string) $docBarcode['subtitle']); ?></p>
                 <?php } ?>
                 <div class="text-center rateb-doc-barcode-codes">
-                    <?php if (!empty($docBarcode['qr_image_url'])) { ?>
-                    <img data-qr-img src="<?php echo Rateb\App\Core\View::escape((string) $docBarcode['qr_image_url']); ?>"
-                        alt="<?php echo __('qr_code'); ?>" width="200" height="200" class="rateb-doc-qr-img">
+                    <?php if (!empty($docBarcode['qr_code'])) { ?>
+                    <img data-qr-img
+                        src="<?php echo Rateb\App\Core\View::escape((string) ($docBarcode['qr_image_url'] ?? '')); ?>"
+                        data-qr-fallback="<?php echo Rateb\App\Core\View::escape((string) ($docBarcode['qr_proxy_url'] ?? '')); ?>"
+                        alt="<?php echo __('qr_code'); ?>" width="200" height="200" class="rateb-doc-qr-img" loading="lazy" decoding="async">
                     <?php } else { ?>
                     <canvas data-qr-canvas width="200" height="200"></canvas>
                     <?php } ?>
@@ -45,4 +47,4 @@ $safeFilename = preg_replace('/[^\w\.\-]+/u', '_', (string) ($docBarcode['title'
         </div>
     </div>
 </div>
-<script src="<?php echo rateb_asset('js/barcodes.js'); ?>?v=3"></script>
+<script src="<?php echo rateb_asset('js/barcodes.js'); ?>?v=4"></script>

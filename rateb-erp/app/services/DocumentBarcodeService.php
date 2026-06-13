@@ -90,7 +90,8 @@ final class DocumentBarcodeService
             'subtitle' => $subtitle,
             'barcode' => $codes['barcode'],
             'qr_code' => $codes['qr_code'],
-            'qr_image_url' => $this->qrProxyUrl($codes['qr_code']),
+            'qr_image_url' => $this->qrImageUrl($codes['qr_code'], 200),
+            'qr_proxy_url' => $this->qrProxyUrl($codes['qr_code'], 200),
         ];
     }
 

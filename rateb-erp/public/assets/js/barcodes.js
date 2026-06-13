@@ -177,6 +177,48 @@
         });
     }
 
+    function loadQrLib(done) {
+        if (window.QRCode && typeof window.QRCode === 'function') {
+            done();
+            return;
+        }
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+        s.crossOrigin = 'anonymous';
+        s.onload = function () { done(); };
+        s.onerror = function () { done(); };
+        document.head.appendChild(s);
+    }
+
+    function replaceImgWithCanvas(img, qrValue) {
+        if (!img || !img.parentNode) {
+            return;
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = 200;
+        canvas.height = 200;
+        canvas.setAttribute('data-qr-canvas', '');
+        canvas.className = img.className || '';
+        img.parentNode.replaceChild(canvas, img);
+        loadQrLib(function () {
+            renderClientQr(canvas, qrValue);
+        });
+    }
+
+    function bindQrImg(img, qrValue) {
+        if (!img) {
+            return;
+        }
+        var triedFallback = false;
+        img.addEventListener('error', function () {
+            var fallback = img.getAttribute('data-qr-fallback') || '';
+            if (!triedFallback && fallback !== '' && img.src !== fallback) {
+                triedFallback = true;
+                img.src = fallback;
+                return;
+            }
+            replaceImgWithCanvas(img, qrValue);
+        });
     function renderClientQr(qrEl, qrValue) {
         if (!qrEl || !qrValue || !window.QRCode || typeof window.QRCode !== 'function') {
             return;
@@ -200,16 +242,12 @@
         var qrCanvas = root.querySelector('[data-qr-canvas]');
         var qrImg = root.querySelector('[data-qr-img]');
 
-        if (!qrImg && qrCanvas && qrValue) {
-            if (!window.QRCode) {
-                var s = document.createElement('script');
-                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-                s.crossOrigin = 'anonymous';
-                s.onload = function () { renderClientQr(qrCanvas, qrValue); };
-                document.head.appendChild(s);
-            } else {
+        if (qrImg && qrValue) {
+            bindQrImg(qrImg, qrValue);
+        } else if (!qrImg && qrCanvas && qrValue) {
+            loadQrLib(function () {
                 renderClientQr(qrCanvas, qrValue);
-            }
+            });
         }
 
         var printBtn = root.querySelector('[data-barcode-print]');
