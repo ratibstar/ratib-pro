@@ -41,6 +41,12 @@ final class ErpDatabaseService
     {
         Database::disconnect();
         $log = (new MigrationService())->runAll();
+        try {
+            $repair = (new CmsArabicRepairService())->repair();
+            $log[] = 'CMS Arabic repair: ' . $repair['updated'] . ' row(s); hero=' . $repair['hero_title'];
+        } catch (\Throwable $e) {
+            $log[] = 'CMS Arabic repair warning: ' . $e->getMessage();
+        }
         Database::disconnect();
         try {
             $removed = (new AuthorizationService())->dedupeDuplicateRoles();
