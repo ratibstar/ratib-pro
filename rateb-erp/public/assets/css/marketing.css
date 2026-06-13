@@ -255,138 +255,95 @@
     white-space: nowrap;
 }
 
-.rateb-mkt-portal-hero {
-    padding: 2.5rem 0;
+.rateb-mkt-header-portal {
+    border-bottom-width: 2px;
+}
+
+/* Customer portal */
+.rateb-portal-page {
+    background: var(--cms-bg);
+    min-height: 60vh;
+}
+
+.rateb-portal-welcome {
     background: linear-gradient(135deg, var(--cms-primary), var(--cms-secondary));
     color: #fff;
 }
 
-.rateb-mkt-portal-eyebrow {
-    opacity: 0.9;
-    font-size: 0.95rem;
+.rateb-portal-welcome .text-muted {
+    color: rgba(255, 255, 255, 0.82) !important;
 }
 
-.rateb-mkt-portal-title {
-    font-size: clamp(1.5rem, 3vw, 2.25rem);
-    font-weight: 700;
+.rateb-portal-welcome h1,
+.rateb-portal-welcome .h3 {
+    color: #fff;
 }
 
-.rateb-mkt-portal-sub {
-    opacity: 0.92;
-}
-
-.rateb-mkt-portal-erp-btn {
-    font-weight: 600;
-}
-
-.rateb-mkt-portal-body {
-    padding-top: 2rem;
-    padding-bottom: 3rem;
-}
-
-.rateb-mkt-portal-card {
-    background: var(--cms-surface);
-    border: 1px solid var(--cms-border);
-    border-radius: 1rem;
-    padding: 1.5rem;
-}
-
-.rateb-mkt-portal-dl dt {
-    font-size: 0.8rem;
-    color: var(--cms-muted);
-    margin-bottom: 0.15rem;
-}
-
-.rateb-mkt-portal-dl dd {
-    font-weight: 600;
-    margin-bottom: 0.85rem;
-}
-
-.rateb-mkt-portal-stat {
-    background: var(--cms-surface);
-    border: 1px solid var(--cms-border);
-    border-radius: 0.75rem;
-    padding: 1rem;
-    text-align: center;
-    height: 100%;
-}
-
-.rateb-mkt-portal-stat-value {
-    font-size: 1.5rem;
+.rateb-portal-stat-num {
+    font-size: 1.75rem;
     font-weight: 700;
     color: var(--cms-primary);
+    direction: ltr;
+    unicode-bidi: isolate;
 }
 
-.rateb-mkt-portal-stat-label {
+.rateb-portal-meta dt {
     font-size: 0.8rem;
     color: var(--cms-muted);
+    margin-bottom: 0.1rem;
 }
 
-.rateb-mkt-portal-quick-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.85rem 1rem;
+.rateb-portal-meta dd {
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.rateb-ltr-num {
+    direction: ltr;
+    unicode-bidi: isolate;
+    display: inline-block;
+}
+
+.rateb-portal-module-card {
     border: 1px solid var(--cms-border);
-    border-radius: 0.75rem;
-    text-decoration: none;
-    color: var(--cms-text);
     background: var(--cms-surface);
-    transition: border-color 0.15s, box-shadow 0.15s;
+    position: relative;
 }
 
-.rateb-mkt-portal-quick-link:hover {
-    border-color: var(--cms-primary);
-    box-shadow: 0 4px 16px rgba(26, 95, 180, 0.12);
-    color: var(--cms-primary);
+.rateb-portal-module-card .card-body {
+    position: relative;
 }
 
-.rateb-mkt-portal-quick-link .rateb-mkt-portal-quick-arrow {
-    margin-inline-start: auto;
-    opacity: 0.5;
-    font-size: 0.85rem;
-}
-
-.rateb-mkt-portal-module {
-    border: 1px solid var(--cms-border);
-    border-radius: 0.75rem;
-    padding: 1rem;
-    height: 100%;
-    background: var(--cms-surface);
-}
-
-.rateb-mkt-portal-module-head {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    text-decoration: none;
+.rateb-portal-module-title {
     color: var(--cms-text);
-    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 2;
 }
 
-.rateb-mkt-portal-module-head:hover {
-    color: var(--cms-primary);
-}
-
-.rateb-mkt-portal-module-subs {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    padding-inline-start: 1.75rem;
-}
-
-.rateb-mkt-portal-module-subs li {
-    margin-bottom: 0.25rem;
-}
-
-.rateb-mkt-portal-module-subs a {
-    font-size: 0.875rem;
+.rateb-portal-module-links .list-group-item {
+    background: transparent;
     color: var(--cms-muted);
-    text-decoration: none;
+    position: relative;
+    z-index: 2;
 }
 
-.rateb-mkt-portal-module-subs a:hover {
+.rateb-portal-module-links .list-group-item:hover {
     color: var(--cms-primary);
+}
+
+.rateb-portal-action-btn {
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+}
+
+.rateb-portal-page .card {
+    background: var(--cms-surface);
+    border-color: var(--cms-border);
+    color: var(--cms-text);
+}
+
+.rateb-portal-page .card-header {
+    border-color: var(--cms-border);
 }
 
 .rateb-mkt-cta .btn-light {

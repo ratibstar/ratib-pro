@@ -21,3 +21,14 @@ html[data-theme="dark"] .rateb-mkt-footer,
 html[data-bs-theme="dark"] .rateb-mkt-footer {
     background: #020617;
 }
+
+html[data-theme="dark"] .rateb-portal-page .btn-outline-secondary,
+html[data-bs-theme="dark"] .rateb-portal-page .btn-outline-secondary {
+    color: var(--cms-text);
+    border-color: var(--cms-border);
+}
+
+html[data-theme="dark"] .rateb-portal-module-links .list-group-item,
+html[data-bs-theme="dark"] .rateb-portal-module-links .list-group-item {
+    color: var(--cms-muted);
+}

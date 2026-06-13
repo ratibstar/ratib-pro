@@ -644,4 +644,10 @@ return [
     'portal_trial_days' => 'Trial days left',
     'portal_days' => 'days',
     'logout_ok' => 'You have been logged out.',
+    'portal_erp_hint' => 'Manage procurement, inventory, and daily operations.',
+    'portal_status_trial' => 'Trial',
+    'portal_status_active' => 'Active',
+    'portal_users_usage' => ':used of :max users',
+    'portal_storage_usage' => ':used MB of :max MB',
+    'portal_days_left' => ':days days remaining',
 ];

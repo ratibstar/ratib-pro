@@ -27,6 +27,7 @@ final class CustomerPortalController extends Controller
             'analytics' => $cms->analytics(),
             'csrf' => Csrf::token(),
             'portal' => $data,
+            'isPortalPage' => true,
         ], 'marketing');
     }
 

@@ -644,4 +644,10 @@ return [
     'portal_trial_days' => 'أيام التجربة المتبقية',
     'portal_days' => 'يوم',
     'logout_ok' => 'تم تسجيل الخروج.',
+    'portal_erp_hint' => 'لإدارة المشتريات والمخزون والعمليات اليومية.',
+    'portal_status_trial' => 'تجريبي',
+    'portal_status_active' => 'نشط',
+    'portal_users_usage' => ':used من :max مستخدم',
+    'portal_storage_usage' => ':used ميجابايت من :max',
+    'portal_days_left' => 'متبقي :days يوم',
 ];

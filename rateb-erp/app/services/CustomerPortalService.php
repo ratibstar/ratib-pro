@@ -138,7 +138,6 @@ final class CustomerPortalService
     private function quickLinks(): array
     {
         return [
-            ['label' => __('portal_open_erp'), 'url' => rateb_url('admin'), 'icon' => 'fa-grid-2'],
             ['label' => __('profile'), 'url' => rateb_app_url('profile'), 'icon' => 'fa-user-gear'],
             ['label' => __('notifications'), 'url' => rateb_app_url('notifications'), 'icon' => 'fa-bell'],
             ['label' => __('cms_view_plans'), 'url' => rateb_url('site/pricing'), 'icon' => 'fa-tags'],
