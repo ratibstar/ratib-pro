@@ -23,18 +23,15 @@ $uid = 'docbc-' . preg_replace('/[^a-z0-9]/i', '', (string) ($docBarcode['type']
             </div>
         </div>
         <div class="rateb-card-body">
-            <div class="rateb-doc-barcode-print-area" id="<?php echo Rateb\App\Core\View::escape($uid); ?>">
+            <div class="rateb-doc-barcode-print-area" id="<?php echo Rateb\App\Core\View::escape($uid); ?>"
+                dir="<?php echo rateb_locale() === 'ar' ? 'rtl' : 'ltr'; ?>" lang="<?php echo Rateb\App\Core\View::escape(rateb_locale()); ?>">
                 <div class="rateb-doc-barcode-brand text-center mb-2"><?php echo __('rateb_erp'); ?></div>
                 <h5 class="text-center mb-1 rateb-doc-barcode-title"><?php echo Rateb\App\Core\View::escape((string) ($docBarcode['title'] ?? '')); ?></h5>
                 <?php if (!empty($docBarcode['subtitle'])) { ?>
                 <p class="text-center text-muted small mb-3 rateb-doc-barcode-subtitle"><?php echo Rateb\App\Core\View::escape((string) $docBarcode['subtitle']); ?></p>
                 <?php } ?>
-                <div class="row g-3 align-items-center justify-content-center">
-                    <div class="col-md-6 text-center">
-                        <div class="small text-muted mb-1"><?php echo __('barcode'); ?></div>
-                        <svg data-barcode-svg></svg>
-                    </div>
-                    <div class="col-md-6 text-center">
+                <div class="row g-3 align-items-center justify-content-center rateb-doc-barcode-codes">
+                    <div class="col-6 col-md-5 text-center">
                         <div class="small text-muted mb-1"><?php echo __('qr_code'); ?></div>
                         <?php if (!empty($docBarcode['qr_image_url'])) { ?>
                         <img data-qr-img src="<?php echo Rateb\App\Core\View::escape((string) $docBarcode['qr_image_url']); ?>"
@@ -43,10 +40,13 @@ $uid = 'docbc-' . preg_replace('/[^a-z0-9]/i', '', (string) ($docBarcode['type']
                         <canvas data-qr-canvas width="180" height="180"></canvas>
                         <?php } ?>
                     </div>
+                    <div class="col-6 col-md-5 text-center">
+                        <div class="small text-muted mb-1"><?php echo __('barcode'); ?></div>
+                        <svg data-barcode-svg></svg>
+                    </div>
                 </div>
                 <p class="font-monospace text-center mt-3 mb-0 rateb-doc-barcode-code"><?php echo Rateb\App\Core\View::escape((string) $docBarcode['barcode']); ?></p>
-            </div>
-        </div>
+            </div>        </div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>

@@ -4,10 +4,21 @@
 }
 
 .rateb-doc-barcode-brand {
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
     color: #6c757d;
+}
+
+.rateb-doc-barcode-print-area[dir='rtl'] .rateb-doc-barcode-brand {
+    letter-spacing: 0;
+}
+
+.rateb-doc-barcode-title {
+    font-weight: 700;
+}
+
+.rateb-doc-barcode-codes {
+    margin-top: 0.5rem;
 }
 
 .rateb-doc-barcode svg[data-barcode-svg] {

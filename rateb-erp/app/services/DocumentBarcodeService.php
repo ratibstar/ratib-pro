@@ -141,7 +141,13 @@ final class DocumentBarcodeService
             return (string) ($row['title'] ?? __('contracts'));
         }
         if ($type === 'inventory') {
-            return (string) ($row['sku'] ?? '');
+            $sku = trim((string) ($row['sku'] ?? ''));
+            $name = trim((string) ($row['item_name'] ?? ''));
+            if ($sku !== '' && strcasecmp($sku, $name) !== 0) {
+                return __('sku') . ': ' . $sku;
+            }
+            $category = trim((string) ($row['category'] ?? ''));
+            return $category !== '' ? $category : '';
         }
         return '';
     }
