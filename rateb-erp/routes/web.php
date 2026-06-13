@@ -115,6 +115,8 @@ foreach ($crudRoutes as $path => [$class, $perm]) {
     $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw($perm));
 }
 
+$router->post('/admin/users/{id}/regenerate-barcode', [UsersController::class, 'regenerateBarcode'], rateb_admin_mw('access.manage'));
+
 $billingCrud = [
     'payments' => PaymentsController::class,
     'invoices' => InvoicesController::class,

@@ -524,6 +524,15 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
     {
         $authz = new \Rateb\App\Services\AuthorizationService();
         $userId = $item ? (int) $item['id'] : 0;
+        $barcodeSvc = new \Rateb\App\Services\BarcodeLoginService();
+        $barcode = null;
+        $badgeQrUrl = '';
+        if ($userId > 0) {
+            $barcode = $barcodeSvc->ensureUserBarcode($userId);
+            if ($barcode) {
+                $badgeQrUrl = $barcodeSvc->qrImageUrl($barcodeSvc->badgePayload($barcode), 160);
+            }
+        }
         return [
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('users'),
             'item' => $item,
@@ -534,6 +543,8 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
             'selectedRoles' => $userId > 0 ? $authz->getUserRoleIds($userId) : [],
             'isSuperAdmin' => !empty($item['is_super_admin']),
+            'loginBarcode' => $barcode,
+            'badgeQrUrl' => $badgeQrUrl,
         ];
     }
 
@@ -552,6 +563,9 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         }
         $id = $this->model->create($data);
         (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
+        if ((string) ($data['status'] ?? '') === 'active') {
+            (new \Rateb\App\Services\BarcodeLoginService())->ensureUserBarcode($id);
+        }
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
@@ -568,6 +582,9 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
         $roleIds = array_map('intval', (array) $this->input('role_ids', []));
         $this->model->update($id, $data);
         (new \Rateb\App\Services\AuthorizationService())->syncUserRoles($id, $roleIds);
+        if ((string) ($data['status'] ?? '') === 'active') {
+            (new \Rateb\App\Services\BarcodeLoginService())->ensureUserBarcode($id);
+        }
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
@@ -589,6 +606,26 @@ final class UsersController extends \Rateb\App\Controllers\CrudController
             $data['company_id'] = $company ? $companyId : null;
         }
         return $data;
+    }
+
+    public function regenerateBarcode(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $user = $this->model->find($id);
+        if (!$user) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $svc = new \Rateb\App\Services\BarcodeLoginService();
+        $newCode = $svc->generateBarcodeValue($id, bin2hex(random_bytes(4)));
+        $this->model->update($id, ['login_barcode' => $newCode]);
+        (new AuditService())->log('regenerate', 'login_barcode', $id);
+        SessionManager::flash('success', __('barcode_regenerated'));
+        $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
     }
 }
 
