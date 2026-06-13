@@ -55,7 +55,22 @@ body.rateb-printing-doc-barcode .rateb-print-target {
     background: #fff;
 }
 
-body.rateb-printing-doc-barcode .rateb-barcode-actions {
+.rateb-scan-view .rateb-scan-print-area {
+    background: #fff;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.rateb-scan-actions .btn {
+    min-width: 7rem;
+}
+
+body.rateb-printing-doc-barcode .rateb-barcode-actions,
+body.rateb-printing-doc-barcode .rateb-scan-actions {
+    display: none !important;
+}
+
+body.rateb-printing-doc-barcode .text-muted.small.text-center.mb-3 {
     display: none !important;
 }
 
