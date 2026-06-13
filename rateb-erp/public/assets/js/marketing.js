@@ -16,7 +16,9 @@
         root.setAttribute('data-bs-theme', bs);
         var buttons = document.querySelectorAll('[data-mkt-theme]');
         buttons.forEach(function (btn) {
-            btn.classList.toggle('active', btn.getAttribute('data-mkt-theme') === mode);
+            var active = btn.getAttribute('data-mkt-theme') === mode;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
         });
     }
 

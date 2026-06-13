@@ -128,7 +128,6 @@ final class CustomerPortalService
             ['label' => __('profile'), 'url' => rateb_url('site/portal/profile'), 'icon' => 'fa-user-gear'],
             ['label' => __('cms_view_plans'), 'url' => rateb_url('site/pricing'), 'icon' => 'fa-tags'],
             ['label' => __('cms_contact_us'), 'url' => rateb_url('site/contact'), 'icon' => 'fa-headset'],
-            ['label' => __('password_forgot'), 'url' => rateb_url('password/forgot'), 'icon' => 'fa-key'],
         ];
         $notif = [
             'label' => __('notifications'),
