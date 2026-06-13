@@ -87,7 +87,9 @@ $router->get('/admin/cms/leads/{id}', [CmsLeadsController::class, 'show'], rateb
 $router->post('/admin/cms/leads/{id}', [CmsLeadsController::class, 'update'], rateb_admin_mw('cms.leads'));
 
 $router->get('/admin/cms/media', [CmsMediaController::class, 'index'], rateb_admin_mw('cms.media'));
+$router->get('/admin/cms/media/json', [CmsMediaController::class, 'listJson'], rateb_admin_mw('cms.media'));
 $router->post('/admin/cms/media/upload', [CmsMediaController::class, 'upload'], rateb_admin_mw('cms.media'));
+$router->post('/admin/cms/media/tinymce-upload', [CmsMediaController::class, 'tinymceUpload'], rateb_admin_mw('cms.media'));
 
 $router->get('/admin/cms/theme', [CmsThemeController::class, 'index'], rateb_admin_mw('cms.manage'));
 $router->post('/admin/cms/theme', [CmsThemeController::class, 'save'], rateb_admin_mw('cms.manage'));

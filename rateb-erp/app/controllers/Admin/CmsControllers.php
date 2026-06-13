@@ -543,11 +543,52 @@ final class CmsMediaController extends Controller
     public function index(): void
     {
         $model = new CmsMedia();
+        $mediaSvc = new CmsMediaService();
+        $items = $model->all(50, 0);
+        foreach ($items as &$row) {
+            $row['public_url'] = $mediaSvc->publicUrl((string) ($row['file_path'] ?? ''));
+        }
+        unset($row);
         $this->view('admin/cms/media/index', [
             'title' => __('cms_media'),
-            'items' => $model->all(50, 0),
+            'items' => $items,
             'csrf' => Csrf::token(),
         ], 'main');
+    }
+
+    public function listJson(): void
+    {
+        $model = new CmsMedia();
+        $mediaSvc = new CmsMediaService();
+        $out = [];
+        foreach ($model->all(200, 0) as $row) {
+            $mime = (string) ($row['mime_type'] ?? '');
+            if (strpos($mime, 'image/') !== 0) {
+                continue;
+            }
+            $out[] = [
+                'id' => (int) ($row['id'] ?? 0),
+                'name' => (string) ($row['file_name'] ?? ''),
+                'url' => $mediaSvc->publicUrl((string) ($row['file_path'] ?? '')),
+            ];
+        }
+        Response::json(['ok' => true, 'items' => $out]);
+    }
+
+    public function tinymceUpload(): void
+    {
+        if (!$this->validateCsrf()) {
+            Response::json(['error' => 'CSRF'], 403);
+            return;
+        }
+        $file = $_FILES['file'] ?? [];
+        $result = (new CmsMediaService())->upload($file, (int) ($_SESSION['rateb_user_id'] ?? 0));
+        if (!$result['ok']) {
+            Response::json(['error' => $result['error'] ?? 'Upload failed'], 400);
+            return;
+        }
+        $url = (new CmsMediaService())->publicUrl((string) ($result['path'] ?? ''));
+        Response::json(['location' => $url]);
     }
 
     public function upload(): void
@@ -927,6 +968,7 @@ final class CmsPageBuilderController extends Controller
             'pageSlug' => $pageSlug,
             'pages' => $pages,
             'content' => $cms->pageContent($pageSlug),
+            'previewUrl' => $pageSlug === 'home' ? rateb_url('site') : rateb_url('site/' . $pageSlug),
             'csrf' => Csrf::token(),
         ], 'main');
     }

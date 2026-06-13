@@ -614,4 +614,6 @@ return [
     'subject_ar' => 'الموضوع (عربي)',
     'content_en' => 'المحتوى (إنجليزي)',
     'content_ar' => 'المحتوى (عربي)',
+    'cms_preview' => 'معاينة الصفحة',
+    'cms_scheduled_publish' => 'نشر مجدول',
 ];

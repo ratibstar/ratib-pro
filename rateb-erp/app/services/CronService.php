@@ -34,7 +34,13 @@ final class CronService
             'warranty_alerts' => (new AssetDeviceAutomationService())->processWarrantyExpiryAlerts(),
             'spare_part_alerts' => (new AssetDeviceAutomationService())->processSparePartsLowStock(),
             'batch_expiry_alerts' => 0,
+            'cms_pages_published' => 0,
+            'cms_articles_published' => 0,
         ];
+
+        $cmsPublish = (new CmsCronService())->publishScheduled();
+        $stats['cms_pages_published'] = $cmsPublish['pages'];
+        $stats['cms_articles_published'] = $cmsPublish['articles'];
 
         $companies = (new Company())->query(
             "SELECT id FROM rateb_companies WHERE status = 'active' ORDER BY id"

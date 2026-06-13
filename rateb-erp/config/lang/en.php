@@ -614,4 +614,6 @@ return [
     'subject_ar' => 'Subject (AR)',
     'content_en' => 'Content (EN)',
     'content_ar' => 'Content (AR)',
+    'cms_preview' => 'Preview Page',
+    'cms_scheduled_publish' => 'Scheduled publish',
 ];

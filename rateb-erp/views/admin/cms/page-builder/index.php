@@ -18,6 +18,13 @@
                     <?php } ?>
                 </select>
             </div>
+            <div class="col-md-6 text-md-end">
+                <?php if (!empty($previewUrl)) { ?>
+                <a href="<?php echo Rateb\App\Core\View::escape($previewUrl); ?>" class="btn btn-outline-primary" target="_blank" rel="noopener">
+                    <i class="fas fa-external-link-alt"></i> <?php echo __('cms_preview'); ?>
+                </a>
+                <?php } ?>
+            </div>
         </form>
     </div>
 </div>

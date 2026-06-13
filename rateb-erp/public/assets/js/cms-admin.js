@@ -6,6 +6,41 @@
         document.head.appendChild(s);
     }
 
+    function csrfToken() {
+        var meta = document.querySelector('meta[name="rateb-csrf"]');
+        return meta ? meta.getAttribute('content') : '';
+    }
+
+    function mediaJsonUrl() {
+        return document.body.getAttribute('data-rateb-media-json') || '/admin/cms/media/json';
+    }
+
+    function tinymceUploadUrl() {
+        return document.body.getAttribute('data-rateb-tinymce-upload') || '/admin/cms/media/tinymce-upload';
+    }
+
+    function openMediaPicker(callback) {
+        fetch(mediaJsonUrl(), { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data || !data.items || !data.items.length) {
+                    window.alert('No images in media library.');
+                    return;
+                }
+                var list = data.items.map(function (it, i) {
+                    return (i + 1) + '. ' + it.name;
+                }).join('\n');
+                var pick = window.prompt('Enter image number:\n' + list, '1');
+                var idx = parseInt(pick, 10) - 1;
+                if (idx >= 0 && data.items[idx]) {
+                    callback(data.items[idx].url, { alt: data.items[idx].name });
+                }
+            })
+            .catch(function () {
+                window.alert('Could not load media library.');
+            });
+    }
+
     function initWysiwyg() {
         var areas = document.querySelectorAll('.rateb-cms-wysiwyg');
         if (!areas.length || typeof window.tinymce === 'undefined') return;
@@ -14,8 +49,47 @@
             height: 320,
             menubar: false,
             plugins: 'lists link image code table',
-            toolbar: 'undo redo | bold italic | bullist numlist | link image | code',
-            branding: false
+            toolbar: 'undo redo | bold italic | bullist numlist | link image media_lib | code',
+            branding: false,
+            relative_urls: false,
+            remove_script_host: false,
+            images_upload_handler: function (blobInfo, progress) {
+                return new Promise(function (resolve, reject) {
+                    var fd = new FormData();
+                    fd.append('file', blobInfo.blob(), blobInfo.filename());
+                    fd.append('_csrf', csrfToken());
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', tinymceUploadUrl());
+                    xhr.onload = function () {
+                        if (xhr.status < 200 || xhr.status >= 300) {
+                            reject('Upload failed');
+                            return;
+                        }
+                        try {
+                            var json = JSON.parse(xhr.responseText);
+                            if (json.location) {
+                                resolve(json.location);
+                            } else {
+                                reject(json.error || 'Upload failed');
+                            }
+                        } catch (e) {
+                            reject('Invalid response');
+                        }
+                    };
+                    xhr.onerror = function () { reject('Network error'); };
+                    xhr.send(fd);
+                });
+            },
+            setup: function (editor) {
+                editor.ui.registry.addButton('media_lib', {
+                    text: 'Media',
+                    onAction: function () {
+                        openMediaPicker(function (url, meta) {
+                            editor.insertContent('<img src="' + url + '" alt="' + (meta.alt || '') + '">');
+                        });
+                    }
+                });
+            }
         });
     }
 

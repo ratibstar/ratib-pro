@@ -22,6 +22,7 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="rateb-csrf" content="<?php echo Rateb\App\Core\View::escape(\Rateb\App\Core\Csrf::token()); ?>">
     <script>
     (function () {
         try {
@@ -51,7 +52,9 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
     <link href="<?php echo rateb_asset('css/rtl.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/light.css'); ?>" rel="stylesheet">
 </head>
-<body class="rateb-app<?php echo $dir === 'rtl' ? ' rateb-rtl' : ''; ?>">
+<body class="rateb-app<?php echo $dir === 'rtl' ? ' rateb-rtl' : ''; ?>"
+    data-rateb-media-json="<?php echo Rateb\App\Core\View::escape(rateb_url('admin/cms/media/json')); ?>"
+    data-rateb-tinymce-upload="<?php echo Rateb\App\Core\View::escape(rateb_url('admin/cms/media/tinymce-upload')); ?>">
 <div class="rateb-wrapper">
     <aside class="rateb-sidebar" id="rateb-sidebar">
         <div class="rateb-sidebar-brand">
