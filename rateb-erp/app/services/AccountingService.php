@@ -946,7 +946,7 @@ final class AccountingService
                        COALESCE(SUM(l.debit), 0) AS total_debit,
                        COALESCE(SUM(l.credit), 0) AS total_credit
                 FROM rateb_chart_of_accounts a
-                LEFT JOIN rateb_budget_lines b ON b.account_id = a.id AND b.company_id = :cid AND b.fiscal_year = :yr
+                LEFT JOIN rateb_budget_lines b ON b.account_id = a.id AND b.company_id = :cid_b AND b.fiscal_year = :yr
                 LEFT JOIN rateb_journal_lines l ON l.account_id = a.id
                 LEFT JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted
                     AND e.entry_date >= :from AND e.entry_date <= :to
@@ -957,7 +957,7 @@ final class AccountingService
                 HAVING budget_amount > 0 OR total_debit > 0 OR total_credit > 0
                 ORDER BY a.code';
         $rows = (new ChartOfAccount())->query($sql, [
-            'cid' => $companyId, 'yr' => $fiscalYear, 'posted' => 'posted', 'from' => $from, 'to' => $to,
+            'cid' => $companyId, 'cid_b' => $companyId, 'yr' => $fiscalYear, 'posted' => 'posted', 'from' => $from, 'to' => $to,
         ]);
         $budgetTotal = 0.0;
         $actualTotal = 0.0;

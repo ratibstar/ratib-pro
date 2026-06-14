@@ -237,15 +237,46 @@ abstract class Model
     public function query(string $sql, array $params = []): array
     {
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        $this->executePrepared($stmt, $sql, $params);
         return $stmt->fetchAll();
     }
 
     public function queryOne(string $sql, array $params = []): ?array
     {
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        $this->executePrepared($stmt, $sql, $params);
         $row = $stmt->fetch();
         return $row ?: null;
+    }
+
+    /** @param array<string, mixed> $params */
+    private function executePrepared(\PDOStatement $stmt, string $sql, array $params): void
+    {
+        if (!preg_match_all('/:(\w+)/', $sql, $matches) || $matches[1] === []) {
+            $stmt->execute();
+            return;
+        }
+        $pos = 1;
+        foreach ($matches[1] as $name) {
+            if (!array_key_exists($name, $params)) {
+                throw new \InvalidArgumentException("Missing SQL parameter :{$name}");
+            }
+            $stmt->bindValue($pos++, $params[$name], $this->pdoParamType($params[$name]));
+        }
+        $stmt->execute();
+    }
+
+    private function pdoParamType(mixed $value): int
+    {
+        if (is_int($value)) {
+            return PDO::PARAM_INT;
+        }
+        if (is_bool($value)) {
+            return PDO::PARAM_BOOL;
+        }
+        if ($value === null) {
+            return PDO::PARAM_NULL;
+        }
+        return PDO::PARAM_STR;
     }
 }
