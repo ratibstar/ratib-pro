@@ -1,28 +1,24 @@
 <?php
 use Rateb\App\Services\FormLookupService;
 
-$formFields = FormLookupService::assetAssignmentFormFields();
-$lookups = (new FormLookupService())->forFields($formFields);
-?>
-<div class="rateb-card">
-    <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? __('asset_assignments')); ?></div>
-    <div class="rateb-card-body">
-        <?php if ($canManage ?? rateb_can_manage_entity('asset-assignments')) { ?>
-        <?php Rateb\App\Core\View::partial('workflow-form', [
-            'formFields' => $formFields,
-            'formAction' => rateb_app_url('asset-assignments'),
-            'csrf' => $csrf,
-            'lookups' => $lookups,
-        ]); ?>
-        <?php } ?>
-        <?php Rateb\App\Core\View::partial('workflow-list', [
-            'items' => $items ?? [],
-            'columns' => [
-                ['name' => 'asset_name', 'label' => 'assets'],
-                ['name' => 'assigned_to', 'label' => 'assigned_to'],
-                ['name' => 'department', 'label' => 'department'],
-                ['name' => 'assigned_at', 'label' => 'assigned_at'],
-            ],
-        ]); ?>
-    </div>
-</div>
+Rateb\App\Core\View::partial('workflow-index', [
+    'title' => $title ?? __('asset_assignments'),
+    'entitySlug' => 'asset-assignments',
+    'routePrefix' => rateb_app_route('asset-assignments'),
+    'formFields' => FormLookupService::assetAssignmentFormFields(),
+    'formAction' => rateb_app_url('asset-assignments'),
+    'items' => $items ?? [],
+    'columns' => [
+        ['name' => 'assignment_no', 'label' => 'record_id', 'type' => 'id'],
+        ['name' => 'asset_name', 'label' => 'assets'],
+        ['name' => 'assigned_to', 'label' => 'assigned_to'],
+        ['name' => 'department', 'label' => 'department'],
+        ['name' => 'assigned_at', 'label' => 'assigned_at'],
+        ['name' => 'returned_at', 'label' => 'returned_at'],
+        ['name' => 'notes', 'label' => 'notes', 'type' => 'notes'],
+    ],
+    'exportRoute' => $exportRoute ?? rateb_app_url('asset-assignments/export'),
+    'exportEnabled' => $exportEnabled ?? true,
+    'csrf' => $csrf,
+    'canManage' => $canManage ?? null,
+]);

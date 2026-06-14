@@ -16,6 +16,11 @@ final class DocumentCodeService
     public const PREFIX_TENDER = 'TN-';
     public const PREFIX_INVENTORY = 'IN-';
     public const PREFIX_BATCH = 'IB';
+    public const PREFIX_ASSET_MAINTENANCE = 'AM';
+    public const PREFIX_ASSET_ASSIGNMENT = 'AA';
+    public const PREFIX_ASSET_DEPRECIATION = 'AD';
+    public const PREFIX_DEVICE_SERVICE = 'DS';
+    public const PREFIX_CONTRACT_RENEWAL = 'CR';
     public const PREFIX_AUDIT = 'IA-';
     public const PREFIX_MOVEMENT = 'SM-';
     public const PREFIX_WAREHOUSE = 'WH-';

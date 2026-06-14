@@ -315,23 +315,52 @@ $router->post($app('supplier-comms/{id}/delete'), [\Rateb\App\Controllers\Compan
 $router->post($app('supplier-comms/bulk-delete'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'bulkDestroy'], $scMw);
 
 $ctrMw = rateb_erp_mw('contracts', '', 'contract-renewals');
+$ctrWriteMw = rateb_erp_mw('contracts', 'contracts.manage', 'contract-renewals');
 $router->get($app('contract-renewals'), [ContractRenewalsController::class, 'index'], $ctrMw);
-$router->post($app('contract-renewals'), [ContractRenewalsController::class, 'store'], $ctrMw);
+$router->post($app('contract-renewals'), [ContractRenewalsController::class, 'store'], $ctrWriteMw);
+$router->post($app('contract-renewals/{id}/delete'), [ContractRenewalsController::class, 'destroy'], $ctrWriteMw);
+$router->post($app('contract-renewals/bulk-delete'), [ContractRenewalsController::class, 'bulkDestroy'], $ctrWriteMw);
+$router->get($app('contract-renewals/export'), [ContractRenewalsController::class, 'export'], rateb_erp_mw('contracts', 'reports.export', 'contract-renewals'));
 
 $astMw = rateb_erp_mw('assets', '', 'asset-maintenance');
+$astWriteMw = rateb_erp_mw('assets', 'asset_maintenance.manage', 'asset-maintenance');
 $router->get($app('asset-maintenance'), [AssetMaintenanceController::class, 'index'], $astMw);
-$router->post($app('asset-maintenance'), [AssetMaintenanceController::class, 'store'], $astMw);
-$router->get($app('asset-assignments'), [AssetAssignmentsController::class, 'index'], rateb_erp_mw('assets', '', 'asset-assignments'));
-$router->post($app('asset-assignments'), [AssetAssignmentsController::class, 'store'], rateb_erp_mw('assets', '', 'asset-assignments'));
-$router->get($app('asset-depreciation'), [AssetDepreciationController::class, 'index'], rateb_erp_mw('assets', '', 'asset-depreciation'));
-$router->post($app('asset-depreciation'), [AssetDepreciationController::class, 'store'], rateb_erp_mw('assets', '', 'asset-depreciation'));
+$router->post($app('asset-maintenance'), [AssetMaintenanceController::class, 'store'], $astWriteMw);
+$router->post($app('asset-maintenance/{id}/delete'), [AssetMaintenanceController::class, 'destroy'], $astWriteMw);
+$router->post($app('asset-maintenance/bulk-delete'), [AssetMaintenanceController::class, 'bulkDestroy'], $astWriteMw);
+$router->get($app('asset-maintenance/export'), [AssetMaintenanceController::class, 'export'], rateb_erp_mw('assets', 'reports.export', 'asset-maintenance'));
+
+$aaMw = rateb_erp_mw('assets', '', 'asset-assignments');
+$aaWriteMw = rateb_erp_mw('assets', 'asset_assignments.manage', 'asset-assignments');
+$router->get($app('asset-assignments'), [AssetAssignmentsController::class, 'index'], $aaMw);
+$router->post($app('asset-assignments'), [AssetAssignmentsController::class, 'store'], $aaWriteMw);
+$router->post($app('asset-assignments/{id}/delete'), [AssetAssignmentsController::class, 'destroy'], $aaWriteMw);
+$router->post($app('asset-assignments/bulk-delete'), [AssetAssignmentsController::class, 'bulkDestroy'], $aaWriteMw);
+$router->get($app('asset-assignments/export'), [AssetAssignmentsController::class, 'export'], rateb_erp_mw('assets', 'reports.export', 'asset-assignments'));
+
+$adMw = rateb_erp_mw('assets', '', 'asset-depreciation');
+$adWriteMw = rateb_erp_mw('assets', 'asset_depreciation.manage', 'asset-depreciation');
+$router->get($app('asset-depreciation'), [AssetDepreciationController::class, 'index'], $adMw);
+$router->post($app('asset-depreciation'), [AssetDepreciationController::class, 'store'], $adWriteMw);
+$router->post($app('asset-depreciation/{id}/delete'), [AssetDepreciationController::class, 'destroy'], $adWriteMw);
+$router->post($app('asset-depreciation/bulk-delete'), [AssetDepreciationController::class, 'bulkDestroy'], $adWriteMw);
+$router->get($app('asset-depreciation/export'), [AssetDepreciationController::class, 'export'], rateb_erp_mw('assets', 'reports.export', 'asset-depreciation'));
 
 $devMw = rateb_erp_mw('medical_devices', '', 'device-maintenance');
 $devWriteMw = rateb_erp_mw('medical_devices', 'device_service.manage', 'device-maintenance');
 $router->get($app('device-maintenance'), [DeviceMaintenanceController::class, 'index'], $devMw);
 $router->post($app('device-maintenance'), [DeviceMaintenanceController::class, 'store'], $devWriteMw);
-$router->get($app('device-spare-parts'), [DeviceSparePartsController::class, 'index'], rateb_erp_mw('medical_devices', '', 'device-spare-parts'));
-$router->post($app('device-spare-parts'), [DeviceSparePartsController::class, 'store'], rateb_erp_mw('medical_devices', 'device_spare_parts.manage', 'device-spare-parts'));
+$router->post($app('device-maintenance/{id}/delete'), [DeviceMaintenanceController::class, 'destroy'], $devWriteMw);
+$router->post($app('device-maintenance/bulk-delete'), [DeviceMaintenanceController::class, 'bulkDestroy'], $devWriteMw);
+$router->get($app('device-maintenance/export'), [DeviceMaintenanceController::class, 'export'], rateb_erp_mw('medical_devices', 'reports.export', 'device-maintenance'));
+
+$dspMw = rateb_erp_mw('medical_devices', '', 'device-spare-parts');
+$dspWriteMw = rateb_erp_mw('medical_devices', 'device_spare_parts.manage', 'device-spare-parts');
+$router->get($app('device-spare-parts'), [DeviceSparePartsController::class, 'index'], $dspMw);
+$router->post($app('device-spare-parts'), [DeviceSparePartsController::class, 'store'], $dspWriteMw);
+$router->post($app('device-spare-parts/{id}/delete'), [DeviceSparePartsController::class, 'destroy'], $dspWriteMw);
+$router->post($app('device-spare-parts/bulk-delete'), [DeviceSparePartsController::class, 'bulkDestroy'], $dspWriteMw);
+$router->get($app('device-spare-parts/export'), [DeviceSparePartsController::class, 'export'], rateb_erp_mw('medical_devices', 'reports.export', 'device-spare-parts'));
 $router->get($app('device-warranty'), [DeviceWarrantyController::class, 'index'], rateb_erp_mw('medical_devices', '', 'device-warranty'));
 $router->post($app('device-warranty/{id}'), [DeviceWarrantyController::class, 'update'], rateb_erp_mw('medical_devices', 'device_service.manage', 'device-warranty'));
 

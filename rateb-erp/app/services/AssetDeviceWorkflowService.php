@@ -12,17 +12,24 @@ final class AssetDeviceWorkflowService
     {
         $cid = TenantGuard::requireCompanyId();
         $db = \Rateb\App\Core\Database::connection();
+        $wf = new WorkflowTableService();
         if ($table === 'rateb_asset_maintenance') {
             $assetId = (int) ($data['asset_id'] ?? 0);
             TenantGuard::assertAsset($assetId, $cid);
+            $no = (string) ($data['maintenance_no'] ?? '');
+            if ($no === '') {
+                $no = $wf->generateRecordNo('asset-maintenance');
+            }
             $db->prepare(
-                'INSERT INTO rateb_asset_maintenance (company_id, asset_id, maintenance_type, scheduled_date, cost, status, notes)
-                 VALUES (:cid, :aid, :mt, :sd, :cost, :st, :notes)'
+                'INSERT INTO rateb_asset_maintenance (company_id, maintenance_no, asset_id, maintenance_type, scheduled_date, completed_date, cost, status, notes)
+                 VALUES (:cid, :no, :aid, :mt, :sd, :cd, :cost, :st, :notes)'
             )->execute([
                 'cid' => $cid,
+                'no' => $no,
                 'aid' => $assetId,
                 'mt' => $data['maintenance_type'] ?? 'general',
                 'sd' => $data['scheduled_date'] ?? null,
+                'cd' => $data['completed_date'] ?? null,
                 'cost' => (float) ($data['cost'] ?? 0),
                 'st' => $data['status'] ?? 'scheduled',
                 'notes' => $data['notes'] ?? null,
@@ -30,11 +37,16 @@ final class AssetDeviceWorkflowService
         } else {
             $deviceId = (int) ($data['device_id'] ?? 0);
             TenantGuard::assertDevice($deviceId, $cid);
+            $no = (string) ($data['service_no'] ?? '');
+            if ($no === '') {
+                $no = $wf->generateRecordNo('device-maintenance');
+            }
             $db->prepare(
-                'INSERT INTO rateb_device_service_history (company_id, device_id, service_date, service_type, provider, cost, notes)
-                 VALUES (:cid, :did, :sd, :st, :pr, :cost, :notes)'
+                'INSERT INTO rateb_device_service_history (company_id, service_no, device_id, service_date, service_type, provider, cost, notes)
+                 VALUES (:cid, :no, :did, :sd, :st, :pr, :cost, :notes)'
             )->execute([
                 'cid' => $cid,
+                'no' => $no,
                 'did' => $deviceId,
                 'sd' => $data['service_date'] ?? date('Y-m-d'),
                 'st' => $data['service_type'] ?? 'maintenance',
@@ -53,11 +65,13 @@ final class AssetDeviceWorkflowService
         $assetId = (int) ($data['asset_id'] ?? 0);
         TenantGuard::assertAsset($assetId, $cid);
         $db = \Rateb\App\Core\Database::connection();
+        $no = (new WorkflowTableService())->generateRecordNo('asset-assignments');
         $db->prepare(
-            'INSERT INTO rateb_asset_assignments (company_id, asset_id, assigned_to, department, assigned_at, notes)
-             VALUES (:cid, :aid, :to, :dept, :at, :notes)'
+            'INSERT INTO rateb_asset_assignments (company_id, assignment_no, asset_id, assigned_to, department, assigned_at, notes)
+             VALUES (:cid, :no, :aid, :to, :dept, :at, :notes)'
         )->execute([
             'cid' => $cid,
+            'no' => $no,
             'aid' => $assetId,
             'to' => $data['assigned_to'] ?? '',
             'dept' => $data['department'] ?? null,
@@ -81,11 +95,13 @@ final class AssetDeviceWorkflowService
         $amount = (float) ($data['amount'] ?? 0);
         $book = (float) ($data['book_value'] ?? 0);
         $db = \Rateb\App\Core\Database::connection();
+        $no = (new WorkflowTableService())->generateRecordNo('asset-depreciation');
         $db->prepare(
-            'INSERT INTO rateb_asset_depreciation (company_id, asset_id, period_date, amount, book_value)
-             VALUES (:cid, :aid, :pd, :amt, :bv)'
+            'INSERT INTO rateb_asset_depreciation (company_id, depreciation_no, asset_id, period_date, amount, book_value)
+             VALUES (:cid, :no, :aid, :pd, :amt, :bv)'
         )->execute([
             'cid' => $cid,
+            'no' => $no,
             'aid' => $assetId,
             'pd' => $data['period_date'] ?? date('Y-m-d'),
             'amt' => $amount,
@@ -105,6 +121,10 @@ final class AssetDeviceWorkflowService
         $deviceId = (int) ($data['device_id'] ?? 0);
         TenantGuard::assertDevice($deviceId, $cid);
         $db = \Rateb\App\Core\Database::connection();
+        $partNo = trim((string) ($data['part_no'] ?? ''));
+        if ($partNo === '') {
+            $partNo = (new WorkflowTableService())->generateRecordNo('device-spare-parts');
+        }
         $db->prepare(
             'INSERT INTO rateb_device_spare_parts (company_id, device_id, part_name, part_no, quantity, reorder_level)
              VALUES (:cid, :did, :name, :pn, :qty, :rl)'
@@ -112,7 +132,7 @@ final class AssetDeviceWorkflowService
             'cid' => $cid,
             'did' => $deviceId,
             'name' => $data['part_name'] ?? '',
-            'pn' => $data['part_no'] ?? null,
+            'pn' => $partNo,
             'qty' => (float) ($data['quantity'] ?? 0),
             'rl' => (float) ($data['reorder_level'] ?? 0),
         ]);

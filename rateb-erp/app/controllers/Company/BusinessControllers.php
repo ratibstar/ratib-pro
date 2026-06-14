@@ -260,11 +260,16 @@ final class SupplierKpiController extends Controller
 {
     public function index(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id');
-        TenantContext::setCompanyId($companyId);
+        rateb_bootstrap_ops_tenant();
+        $companyId = function_exists('rateb_resolve_ops_company_id')
+            ? rateb_resolve_ops_company_id()
+            : (int) SessionManager::get('rateb_company_id');
+        if ($companyId > 0) {
+            TenantContext::setCompanyId($companyId);
+        }
         $this->view('company/supplier-kpi/index', [
             'title' => __('supplier_kpi'),
-            'suppliers' => (new ErpAnalyticsService())->supplierPerformance($companyId),
+            'suppliers' => (new ErpAnalyticsService())->supplierPerformance($companyId > 0 ? $companyId : null),
             'csrf' => Csrf::token(),
             'exportRoute' => rateb_app_url('supplier-kpi/export'),
             'exportEnabled' => rateb_can_export_entity('supplier-kpi'),
@@ -273,19 +278,29 @@ final class SupplierKpiController extends Controller
 
     public function export(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id');
+        rateb_bootstrap_ops_tenant();
+        $companyId = function_exists('rateb_resolve_ops_company_id')
+            ? rateb_resolve_ops_company_id()
+            : (int) SessionManager::get('rateb_company_id');
         ExportController::send('supplier_kpi', [
+            ['name' => 'code', 'label' => __('record_id')],
             ['name' => 'name', 'label' => __('suppliers')],
+            ['name' => 'classification_name', 'label' => __('supplier_classifications')],
             ['name' => 'rating', 'label' => __('rating')],
             ['name' => 'avg_eval', 'label' => __('overall_score')],
             ['name' => 'po_count', 'label' => __('purchase_orders')],
-            ['name' => 'classification_name', 'label' => __('supplier_classifications')],
-        ], (new ErpAnalyticsService())->supplierPerformance($companyId), __('supplier_kpi'), 'supplier-kpi');
+            ['name' => 'performance_kpi', 'label' => __('performance_kpi')],
+        ], (new ErpAnalyticsService())->supplierPerformance($companyId > 0 ? $companyId : null), __('supplier_kpi'), 'supplier-kpi');
     }
 }
 
 final class ContractRenewalsController extends Controller
 {
+    use WorkflowOpsTrait;
+
+    protected function workflowSlug(): string { return 'contract-renewals'; }
+    protected function workflowRedirect(): void { $this->redirect(rateb_app_url('contract-renewals')); }
+
     public function index(): void
     {
         rateb_bootstrap_ops_tenant();
@@ -299,6 +314,8 @@ final class ContractRenewalsController extends Controller
             'expiring' => (new ContractWorkflowService())->expiringContracts(60),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('contract-renewals'),
+            'exportRoute' => rateb_app_url('contract-renewals/export'),
+            'exportEnabled' => rateb_can_export_entity('contract-renewals'),
         ], 'main');
     }
 
@@ -320,13 +337,32 @@ final class ContractRenewalsController extends Controller
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_app_url('contract-renewals'));
     }
+
+    public function export(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        ExportController::send('contract_renewals', [
+            ['name' => 'renewal_no', 'label' => __('record_id')],
+            ['name' => 'contract_no', 'label' => __('contract_no')],
+            ['name' => 'renewal_date', 'label' => __('renewal_date')],
+            ['name' => 'new_end_date', 'label' => __('new_end_date')],
+            ['name' => 'new_value', 'label' => __('new_value')],
+            ['name' => 'status', 'label' => __('status')],
+            ['name' => 'notes', 'label' => __('notes')],
+        ], (new ContractWorkflowService())->listRenewals(500), __('contract_renewals'), 'contract-renewals');
+    }
 }
 
 final class AssetMaintenanceController extends Controller
 {
+    use WorkflowOpsTrait;
+
     private AssetDeviceWorkflowService $svc;
 
     public function __construct() { $this->svc = new AssetDeviceWorkflowService(); }
+
+    protected function workflowSlug(): string { return 'asset-maintenance'; }
+    protected function workflowRedirect(): void { $this->redirect(rateb_app_url('asset-maintenance')); }
 
     public function index(): void
     {
@@ -336,6 +372,8 @@ final class AssetMaintenanceController extends Controller
             'items' => $this->svc->listAssetMaintenance(),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('asset-maintenance'),
+            'exportRoute' => rateb_app_url('asset-maintenance/export'),
+            'exportEnabled' => rateb_can_export_entity('asset-maintenance'),
         ], 'main');
     }
 
@@ -349,6 +387,7 @@ final class AssetMaintenanceController extends Controller
             'asset_id' => (int) $this->input('asset_id', 0),
             'maintenance_type' => (string) $this->input('maintenance_type', 'general'),
             'scheduled_date' => (string) $this->input('scheduled_date', ''),
+            'completed_date' => (string) $this->input('completed_date', ''),
             'cost' => (float) $this->input('cost', 0),
             'status' => (string) $this->input('status', 'scheduled'),
             'notes' => trim((string) $this->input('notes', '')),
@@ -357,10 +396,30 @@ final class AssetMaintenanceController extends Controller
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_app_url('asset-maintenance'));
     }
+
+    public function export(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        ExportController::send('asset_maintenance', [
+            ['name' => 'maintenance_no', 'label' => __('record_id')],
+            ['name' => 'asset_name', 'label' => __('assets')],
+            ['name' => 'maintenance_type', 'label' => __('maintenance_type')],
+            ['name' => 'scheduled_date', 'label' => __('scheduled_date')],
+            ['name' => 'completed_date', 'label' => __('completed_date')],
+            ['name' => 'cost', 'label' => __('cost')],
+            ['name' => 'status', 'label' => __('status')],
+            ['name' => 'notes', 'label' => __('notes')],
+        ], (new AssetDeviceWorkflowService())->listAssetMaintenance(), __('asset_maintenance'), 'asset-maintenance');
+    }
 }
 
 final class AssetAssignmentsController extends Controller
 {
+    use WorkflowOpsTrait;
+
+    protected function workflowSlug(): string { return 'asset-assignments'; }
+    protected function workflowRedirect(): void { $this->redirect(rateb_app_url('asset-assignments')); }
+
     public function index(): void
     {
         rateb_bootstrap_ops_tenant();
@@ -370,6 +429,8 @@ final class AssetAssignmentsController extends Controller
             'items' => $svc->listAssignments(),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('asset-assignments'),
+            'exportRoute' => rateb_app_url('asset-assignments/export'),
+            'exportEnabled' => rateb_can_export_entity('asset-assignments'),
         ], 'main');
     }
 
@@ -397,10 +458,29 @@ final class AssetAssignmentsController extends Controller
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_app_url('asset-assignments'));
     }
+
+    public function export(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        ExportController::send('asset_assignments', [
+            ['name' => 'assignment_no', 'label' => __('record_id')],
+            ['name' => 'asset_name', 'label' => __('assets')],
+            ['name' => 'assigned_to', 'label' => __('assigned_to')],
+            ['name' => 'department', 'label' => __('department')],
+            ['name' => 'assigned_at', 'label' => __('assigned_at')],
+            ['name' => 'returned_at', 'label' => __('returned_at')],
+            ['name' => 'notes', 'label' => __('notes')],
+        ], (new AssetDeviceWorkflowService())->listAssignments(), __('asset_assignments'), 'asset-assignments');
+    }
 }
 
 final class AssetDepreciationController extends Controller
 {
+    use WorkflowOpsTrait;
+
+    protected function workflowSlug(): string { return 'asset-depreciation'; }
+    protected function workflowRedirect(): void { $this->redirect(rateb_app_url('asset-depreciation')); }
+
     public function index(): void
     {
         rateb_bootstrap_ops_tenant();
@@ -409,6 +489,8 @@ final class AssetDepreciationController extends Controller
             'items' => (new AssetDeviceWorkflowService())->listDepreciation(),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('asset-depreciation'),
+            'exportRoute' => rateb_app_url('asset-depreciation/export'),
+            'exportEnabled' => rateb_can_export_entity('asset-depreciation'),
         ], 'main');
     }
 
@@ -428,10 +510,27 @@ final class AssetDepreciationController extends Controller
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_app_url('asset-depreciation'));
     }
+
+    public function export(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        ExportController::send('asset_depreciation', [
+            ['name' => 'depreciation_no', 'label' => __('record_id')],
+            ['name' => 'asset_name', 'label' => __('assets')],
+            ['name' => 'period_date', 'label' => __('period_date')],
+            ['name' => 'amount', 'label' => __('depreciation_amount')],
+            ['name' => 'book_value', 'label' => __('book_value')],
+        ], (new AssetDeviceWorkflowService())->listDepreciation(), __('asset_depreciation'), 'asset-depreciation');
+    }
 }
 
 final class DeviceMaintenanceController extends Controller
 {
+    use WorkflowOpsTrait;
+
+    protected function workflowSlug(): string { return 'device-maintenance'; }
+    protected function workflowRedirect(): void { $this->redirect(rateb_app_url('device-maintenance')); }
+
     public function index(): void
     {
         rateb_bootstrap_ops_tenant();
@@ -440,6 +539,8 @@ final class DeviceMaintenanceController extends Controller
             'items' => (new AssetDeviceWorkflowService())->listDeviceService(),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('device-maintenance'),
+            'exportRoute' => rateb_app_url('device-maintenance/export'),
+            'exportEnabled' => rateb_can_export_entity('device-maintenance'),
         ], 'main');
     }
 
@@ -460,10 +561,29 @@ final class DeviceMaintenanceController extends Controller
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_app_url('device-maintenance'));
     }
+
+    public function export(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        ExportController::send('device_maintenance', [
+            ['name' => 'service_no', 'label' => __('record_id')],
+            ['name' => 'device_name', 'label' => __('medical_devices')],
+            ['name' => 'service_date', 'label' => __('service_date')],
+            ['name' => 'service_type', 'label' => __('service_type')],
+            ['name' => 'provider', 'label' => __('provider')],
+            ['name' => 'cost', 'label' => __('cost')],
+            ['name' => 'notes', 'label' => __('notes')],
+        ], (new AssetDeviceWorkflowService())->listDeviceService(), __('device_maintenance'), 'device-maintenance');
+    }
 }
 
 final class DeviceSparePartsController extends Controller
 {
+    use WorkflowOpsTrait;
+
+    protected function workflowSlug(): string { return 'device-spare-parts'; }
+    protected function workflowRedirect(): void { $this->redirect(rateb_app_url('device-spare-parts')); }
+
     public function index(): void
     {
         rateb_bootstrap_ops_tenant();
@@ -472,6 +592,8 @@ final class DeviceSparePartsController extends Controller
             'items' => (new AssetDeviceWorkflowService())->listSpareParts(),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('device-spare-parts'),
+            'exportRoute' => rateb_app_url('device-spare-parts/export'),
+            'exportEnabled' => rateb_can_export_entity('device-spare-parts'),
         ], 'main');
     }
 
@@ -490,6 +612,18 @@ final class DeviceSparePartsController extends Controller
         ]);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_app_url('device-spare-parts'));
+    }
+
+    public function export(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        ExportController::send('device_spare_parts', [
+            ['name' => 'part_no', 'label' => __('record_id')],
+            ['name' => 'device_name', 'label' => __('medical_devices')],
+            ['name' => 'part_name', 'label' => __('part_name')],
+            ['name' => 'quantity', 'label' => __('quantity')],
+            ['name' => 'reorder_level', 'label' => __('reorder_level')],
+        ], (new AssetDeviceWorkflowService())->listSpareParts(), __('device_spare_parts'), 'device-spare-parts');
     }
 }
 

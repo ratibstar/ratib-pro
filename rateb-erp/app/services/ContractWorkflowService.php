@@ -30,11 +30,13 @@ final class ContractWorkflowService
         $contractId = (int) ($data['contract_id'] ?? 0);
         TenantGuard::assertContract($contractId, $cid);
         $db = \Rateb\App\Core\Database::connection();
+        $no = (new WorkflowTableService())->generateRecordNo('contract-renewals');
         $db->prepare(
-            'INSERT INTO rateb_contract_renewals (company_id, contract_id, renewal_date, new_end_date, new_value, status, notes)
-             VALUES (:cid, :contract_id, :rd, :ned, :nv, :st, :notes)'
+            'INSERT INTO rateb_contract_renewals (company_id, renewal_no, contract_id, renewal_date, new_end_date, new_value, status, notes)
+             VALUES (:cid, :no, :contract_id, :rd, :ned, :nv, :st, :notes)'
         )->execute([
             'cid' => $cid,
+            'no' => $no,
             'contract_id' => $contractId,
             'rd' => $data['renewal_date'] ?? date('Y-m-d'),
             'ned' => $data['new_end_date'] ?? null,

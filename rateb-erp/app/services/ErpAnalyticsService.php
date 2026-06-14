@@ -102,13 +102,22 @@ final class ErpAnalyticsService
 
     public function supplierPerformance(?int $companyId = null): array
     {
-        if ($companyId !== null) {
+        if ($companyId !== null && $companyId > 0) {
             TenantContext::setCompanyId($companyId);
         }
         $cid = TenantContext::companyId();
+        if (($cid === null || $cid < 1) && function_exists('rateb_resolve_ops_company_id')) {
+            $cid = rateb_resolve_ops_company_id();
+            if ($cid > 0) {
+                TenantContext::setCompanyId($cid);
+            }
+        }
+        if ($cid === null || $cid < 1) {
+            return [];
+        }
         return (new Supplier())->query(
-            'SELECT s.id, s.name, s.rating, s.performance_kpi, sc.name AS classification_name,
-                    (SELECT COUNT(*) FROM rateb_purchase_orders po WHERE po.supplier_id = s.id) AS po_count,
+            'SELECT s.id, s.code, s.name, s.rating, s.performance_kpi, sc.name AS classification_name,
+                    (SELECT COUNT(*) FROM rateb_purchase_orders po WHERE po.supplier_id = s.id AND po.company_id = s.company_id) AS po_count,
                     (SELECT COALESCE(AVG(overall_score),0) FROM rateb_supplier_evaluations e WHERE e.supplier_id = s.id) AS avg_eval
              FROM rateb_suppliers s
              LEFT JOIN rateb_supplier_classifications sc ON sc.id = s.classification_id
