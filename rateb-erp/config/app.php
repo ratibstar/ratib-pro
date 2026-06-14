@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260614-acctfix1');
+define('RATEB_ASSET_BUILD', '20260614-acctfix2');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -196,6 +196,21 @@ if (!function_exists('rateb_resolve_company_id')) {
     }
 }
 
+if (!function_exists('rateb_url_with_ops_company')) {
+    function rateb_url_with_ops_company(string $path): string
+    {
+        $url = rateb_url($path);
+        if (!rateb_is_super_admin()) {
+            return $url;
+        }
+        $id = rateb_resolve_ops_company_id();
+        if ($id < 1) {
+            return $url;
+        }
+        return $url . (strpos($url, '?') === false ? '?' : '&') . 'company_id=' . $id;
+    }
+}
+
 /** Company operational route under unified /admin shell (ops/ prefix avoids oversight URL clashes). */
 if (!function_exists('rateb_app_route')) {
     function rateb_app_route(string $path): string
@@ -218,7 +233,7 @@ if (!function_exists('rateb_app_route')) {
 if (!function_exists('rateb_app_url')) {
     function rateb_app_url(string $path): string
     {
-        return rateb_url(rateb_app_route($path));
+        return rateb_url_with_ops_company(rateb_app_route($path));
     }
 }
 

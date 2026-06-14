@@ -7,7 +7,12 @@ final class Request
 {
     public static function resolvePath(): string
     {
-        // Set by root .htaccess: rateb-erp/public/index.php?route=admin/settings
+        $uriPath = self::extractUriPath();
+        if ($uriPath !== '/' && $uriPath !== '') {
+            return self::normalize($uriPath);
+        }
+
+        // Control Panel / legacy front controller: ?route=admin/ops/...
         if (isset($_GET['route']) && is_string($_GET['route']) && $_GET['route'] !== '') {
             return self::normalize('/' . ltrim($_GET['route'], '/'));
         }
@@ -16,6 +21,11 @@ final class Request
             return self::normalize((string) $_SERVER['PATH_INFO']);
         }
 
+        return '/';
+    }
+
+    private static function extractUriPath(): string
+    {
         $uri = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
 
         $scriptName = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
@@ -40,7 +50,7 @@ final class Request
             return '/';
         }
 
-        return self::normalize($uri);
+        return $uri;
     }
 
     private static function normalize(string $path): string

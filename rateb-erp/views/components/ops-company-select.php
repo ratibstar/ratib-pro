@@ -5,15 +5,19 @@ if (!rateb_is_super_admin()) {
 }
 $companies = $companies ?? (new \Rateb\App\Models\Company())->all(200, 0);
 $selectedId = (int) ($selectedCompanyId ?? rateb_resolve_ops_company_id());
-$currentPath = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : trim((string) ($_GET['route'] ?? ''), '/');
-if ($currentPath === '') {
-    $currentPath = 'accounting';
-}
+$cpMode = defined('RATEB_CP_MODE') && RATEB_CP_MODE;
+$cpRoute = $cpMode && defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : '';
 ?>
 <div class="rateb-card mb-3">
     <div class="rateb-card-body py-3">
-        <form method="get" class="row g-2 align-items-end">
-            <input type="hidden" name="route" value="<?php echo Rateb\App\Core\View::escape($currentPath); ?>">
+        <form method="get" class="row g-2 align-items-end"<?php
+            if ($cpMode && defined('RATEB_CP_APP_URL')) {
+                echo ' action="' . Rateb\App\Core\View::escape((string) RATEB_CP_APP_URL) . '"';
+            }
+        ?>>
+            <?php if ($cpMode && $cpRoute !== '') { ?>
+            <input type="hidden" name="route" value="<?php echo Rateb\App\Core\View::escape($cpRoute); ?>">
+            <?php } ?>
             <div class="col-md-5">
                 <label class="form-label mb-1"><?php echo __('select_company'); ?></label>
                 <select class="form-select" name="company_id" required onchange="this.form.submit()">

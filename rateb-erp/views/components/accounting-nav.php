@@ -20,10 +20,7 @@ if ($accountingActive === 'admin' || rateb_is_super_admin()) {
     $tabs[] = ['path' => 'admin/subscriptions', 'label' => __('subscriptions'), 'match' => ['admin/subscriptions']];
 }
 
-$route = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : (string) ($_GET['route'] ?? '');
-if (is_array($_GET['route'] ?? null)) {
-    $route = (string) end($_GET['route']);
-}
+$route = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : rateb_current_public_path('admin/ops/accounting');
 
 $isActive = static function (array $tab) use ($route): bool {
     foreach ($tab['match'] as $m) {
@@ -59,7 +56,7 @@ $isActive = static function (array $tab) use ($route): bool {
             }
             $active = $isActive($tab) ? ' active' : '';
             ?>
-        <a href="<?php echo rateb_url($tab['path']); ?>" class="rateb-accounting-tab<?php echo $active; ?>">
+        <a href="<?php echo rateb_url_with_ops_company($tab['path']); ?>" class="rateb-accounting-tab<?php echo $active; ?>">
             <?php echo Rateb\App\Core\View::escape($tab['label']); ?>
         </a>
         <?php } ?>
