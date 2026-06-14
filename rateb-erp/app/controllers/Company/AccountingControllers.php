@@ -759,14 +759,55 @@ final class JournalEntriesController extends Controller
     public function index(): void
     {
         $companyId = rateb_resolve_ops_company_id();
-        $items = (new JournalEntry())->query(
-            'SELECT * FROM rateb_journal_entries WHERE company_id = :cid ORDER BY id DESC LIMIT 100',
-            ['cid' => $companyId]
-        );
+        $statusFilter = trim((string) ($_GET['status'] ?? 'all'));
+        $dateFrom = trim((string) ($_GET['from'] ?? ''));
+        $dateTo = trim((string) ($_GET['to'] ?? ''));
+        $perPage = max(10, min(100, (int) ($_GET['show'] ?? 10)));
+
+        $sql = 'SELECT * FROM rateb_journal_entries WHERE company_id = :cid';
+        $params = ['cid' => $companyId];
+        if ($statusFilter === 'pending') {
+            $sql .= ' AND status = :st';
+            $params['st'] = 'draft';
+        } elseif ($statusFilter === 'approved') {
+            $sql .= ' AND status = :st';
+            $params['st'] = 'posted';
+        } elseif ($statusFilter === 'void') {
+            $sql .= ' AND status = :st';
+            $params['st'] = 'void';
+        }
+        if ($dateFrom !== '') {
+            $sql .= ' AND entry_date >= :from';
+            $params['from'] = $dateFrom;
+        }
+        if ($dateTo !== '') {
+            $sql .= ' AND entry_date <= :to';
+            $params['to'] = $dateTo;
+        }
+        $sql .= ' ORDER BY id DESC LIMIT ' . $perPage;
+
+        $model = new JournalEntry();
+        $items = $companyId > 0 ? $model->query($sql, $params) : [];
+        $statsRow = $companyId > 0 ? $model->queryOne(
+            'SELECT COUNT(*) AS total,
+                    SUM(status = :draft) AS pending,
+                    SUM(status = :posted) AS approved
+             FROM rateb_journal_entries WHERE company_id = :cid',
+            ['cid' => $companyId, 'draft' => 'draft', 'posted' => 'posted']
+        ) : null;
 
         $this->view('company/journal-entries/index', [
-            'title' => __('journal_entries'),
+            'title' => __('entry_approval'),
             'items' => $items,
+            'stats' => [
+                'total' => (int) ($statsRow['total'] ?? 0),
+                'pending' => (int) ($statsRow['pending'] ?? 0),
+                'approved' => (int) ($statsRow['approved'] ?? 0),
+            ],
+            'statusFilter' => $statusFilter,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+            'perPage' => $perPage,
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('journal-entries'),
             'canApprove' => rateb_can_approve_entity('journal-entries'),
@@ -814,8 +855,8 @@ final class JournalEntriesController extends Controller
                 (int) SessionManager::get('rateb_user_id', 0) ?: null
             );
             (new AuditService())->log('create', 'journal_entry', $id, ['status' => 'draft']);
-            SessionManager::flash('success', __('journal_review_saved'));
-            Response::redirect(rateb_app_url('journal-entries/' . $id));
+            SessionManager::flash('success', __('journal_draft_saved'));
+            Response::redirect(rateb_app_url('journal-entries'));
         } catch (\InvalidArgumentException $e) {
             SessionManager::flash('error', __('journal_not_balanced'));
             Response::redirect(rateb_app_url('journal-entries/create'));
@@ -888,7 +929,7 @@ final class JournalEntriesController extends Controller
             }
             (new AuditService())->log('update', 'journal_entry', $id, ['status' => 'draft']);
             SessionManager::flash('success', __('journal_draft_saved'));
-            Response::redirect(rateb_app_url('journal-entries/' . $id));
+            Response::redirect(rateb_app_url('journal-entries'));
         } catch (\InvalidArgumentException $e) {
             SessionManager::flash('error', __('journal_not_balanced'));
             Response::redirect(rateb_app_url('journal-entries/' . $id . '/edit'));
@@ -911,7 +952,7 @@ final class JournalEntriesController extends Controller
         $service = new AccountingService();
         if ($entry && $service->periodBlocksPosting($companyId, (string) ($entry['entry_date'] ?? ''))) {
             SessionManager::flash('error', __('fiscal_period_closed_block'));
-            Response::redirect(rateb_app_url('journal-entries/' . $id));
+            Response::redirect(rateb_app_url('journal-entries'));
         }
         if ($entry && $service->postDraftEntry($id, $companyId)) {
             (new AuditService())->log('post', 'journal_entry', $id, []);
@@ -919,7 +960,7 @@ final class JournalEntriesController extends Controller
         } else {
             SessionManager::flash('error', __('journal_post_failed'));
         }
-        Response::redirect(rateb_app_url('journal-entries/' . $id));
+        Response::redirect(rateb_app_url('journal-entries'));
     }
 
     public function voidEntry(array $params): void
@@ -937,7 +978,7 @@ final class JournalEntriesController extends Controller
         } else {
             SessionManager::flash('error', __('journal_void_failed'));
         }
-        Response::redirect(rateb_app_url('journal-entries/' . $id));
+        Response::redirect(rateb_app_url('journal-entries'));
     }
 
     public function destroy(array $params): void
@@ -1190,8 +1231,8 @@ final class CashVouchersController extends Controller
             'bank_account_id' => (int) ($_POST['bank_account_id'] ?? 0) ?: null,
         ], (int) SessionManager::get('rateb_user_id', 0) ?: null);
         (new AuditService())->log('create', 'cash_voucher', $id, ['status' => 'draft']);
-        SessionManager::flash('success', __('voucher_review_saved'));
-        Response::redirect(rateb_app_url('cash-vouchers/' . $id));
+        SessionManager::flash('success', __('voucher_saved'));
+        Response::redirect(rateb_app_url('cash-vouchers'));
     }
 
     public function edit(array $params): void
@@ -1248,8 +1289,8 @@ final class CashVouchersController extends Controller
             'bank_account_id' => (int) ($_POST['bank_account_id'] ?? 0) ?: null,
         ])) {
             (new AuditService())->log('update', 'cash_voucher', $id, ['status' => 'draft']);
-            SessionManager::flash('success', __('voucher_review_saved'));
-            Response::redirect(rateb_app_url('cash-vouchers/' . $id));
+            SessionManager::flash('success', __('voucher_saved'));
+            Response::redirect(rateb_app_url('cash-vouchers'));
         }
         SessionManager::flash('error', __('voucher_edit_denied'));
         Response::redirect(rateb_app_url('cash-vouchers/' . $id . '/edit'));

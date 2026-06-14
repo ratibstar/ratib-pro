@@ -70,11 +70,8 @@ $vType = (string) ($voucher['voucher_type'] ?? 'receipt');
             </div>
         </div>
     </div>
-    <div class="rateb-card-footer d-flex flex-wrap gap-2 align-items-center">
+    <div class="rateb-card-footer d-flex gap-2">
         <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
-        <a href="<?php echo rateb_app_url($isEdit ? 'cash-vouchers/' . (int) $voucher['id'] : 'cash-vouchers'); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
-        <?php if (!$isEdit) { ?>
-        <span class="text-muted small ms-1"><i class="fas fa-info-circle me-1"></i><?php echo __('accounting_form_draft_hint'); ?></span>
-        <?php } ?>
+        <a href="<?php echo rateb_app_url('cash-vouchers'); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
     </div>
 </form>
