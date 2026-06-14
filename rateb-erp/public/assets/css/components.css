@@ -119,6 +119,15 @@
     opacity: 0.6;
 }
 
+.rateb-coa-tree tr.rateb-coa-child.rateb-coa-hidden {
+    display: none;
+}
+
+.rateb-coa-toggle {
+    line-height: 1;
+    vertical-align: middle;
+}
+
 .rateb-coa-tree .rateb-coa-name {
     white-space: nowrap;
 }

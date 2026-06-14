@@ -133,6 +133,7 @@ $router->post($app('accounting/bank-reconciliation/{id}/import'), [CompanyAccoun
 $router->post($app('accounting/bank-reconciliation/lines/{line_id}/reconcile'), [CompanyAccountingDashboardController::class, 'reconcileStatementLine'], rateb_erp_mw('accounting', 'accounting.manage', 'bank-reconciliation'));
 $router->post($app('accounting/bank-reconciliation/lines/{line_id}/delete'), [CompanyAccountingDashboardController::class, 'destroyBankStatementLine'], rateb_erp_mw('accounting', 'accounting.manage', 'bank-reconciliation'));
 $router->post($app('accounting/bank-reconciliation/bulk-delete-lines'), [CompanyAccountingDashboardController::class, 'bulkDestroyBankStatementLines'], rateb_erp_mw('accounting', 'accounting.manage', 'bank-reconciliation'));
+$router->get($app('accounting/coa-tree'), [CompanyChartOfAccountsController::class, 'coaTree'], rateb_erp_mw('accounting', '', 'coa-tree'));
 $router->get($app('chart-of-accounts'), [CompanyChartOfAccountsController::class, 'index'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->get($app('chart-of-accounts/create'), [CompanyChartOfAccountsController::class, 'create'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->post($app('chart-of-accounts'), [CompanyChartOfAccountsController::class, 'store'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));

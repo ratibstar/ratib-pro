@@ -92,6 +92,7 @@ return [
         'admin/accounting' => 'accounting.view',
         'admin/accounting/sync' => 'accounting.post',
         'admin/chart-of-accounts' => 'accounting.view',
+        'admin/coa-tree' => 'accounting.view',
         'admin/journal-entries' => 'accounting.view',
         'admin/subscriptions' => 'subscriptions.manage',
         'admin/plans' => 'plans.manage',

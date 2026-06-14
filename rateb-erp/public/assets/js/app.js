@@ -179,5 +179,84 @@
         initBulkTables();
         initPermissionMatrix();
         initSidebarNavGroups();
+        initCoaFullTree();
     });
+
+    function initCoaFullTree() {
+        var wrap = document.querySelector('[data-rateb-coa-full-tree="1"]');
+        if (!wrap) {
+            return;
+        }
+        var table = wrap.querySelector('.rateb-coa-tree');
+        if (!table) {
+            return;
+        }
+
+        function setChildrenVisible(parentId, visible) {
+            table.querySelectorAll('[data-coa-child-of="' + parentId + '"]').forEach(function (row) {
+                if (visible) {
+                    row.classList.remove('rateb-coa-hidden');
+                } else {
+                    row.classList.add('rateb-coa-hidden');
+                }
+                var nodeId = row.getAttribute('data-coa-node');
+                if (nodeId && !visible) {
+                    setChildrenVisible(nodeId, false);
+                    var btn = table.querySelector('[data-coa-toggle="' + nodeId + '"]');
+                    if (btn) {
+                        btn.setAttribute('aria-expanded', 'false');
+                        var icon = btn.querySelector('i');
+                        if (icon) {
+                            icon.className = 'fas fa-chevron-left';
+                        }
+                    }
+                }
+            });
+        }
+
+        table.querySelectorAll('[data-coa-toggle]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var parentId = btn.getAttribute('data-coa-toggle');
+                var expanded = btn.getAttribute('aria-expanded') !== 'false';
+                setChildrenVisible(parentId, !expanded);
+                btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                var icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = expanded ? 'fas fa-chevron-left' : 'fas fa-chevron-down';
+                }
+            });
+        });
+
+        var expandAll = wrap.querySelector('[data-coa-expand-all]');
+        if (expandAll) {
+            expandAll.addEventListener('click', function () {
+                table.querySelectorAll('.rateb-coa-child').forEach(function (row) {
+                    row.classList.remove('rateb-coa-hidden');
+                });
+                table.querySelectorAll('[data-coa-toggle]').forEach(function (btn) {
+                    btn.setAttribute('aria-expanded', 'true');
+                    var icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.className = 'fas fa-chevron-down';
+                    }
+                });
+            });
+        }
+
+        var collapseAll = wrap.querySelector('[data-coa-collapse-all]');
+        if (collapseAll) {
+            collapseAll.addEventListener('click', function () {
+                table.querySelectorAll('.rateb-coa-child').forEach(function (row) {
+                    row.classList.add('rateb-coa-hidden');
+                });
+                table.querySelectorAll('[data-coa-toggle]').forEach(function (btn) {
+                    btn.setAttribute('aria-expanded', 'false');
+                    var icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.className = 'fas fa-chevron-left';
+                    }
+                });
+            });
+        }
+    }
 })();

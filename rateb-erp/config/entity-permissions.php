@@ -162,6 +162,11 @@ return [
         'view' => 'accounting.view',
         'manage' => 'accounting.manage',
     ],
+    'coa-tree' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+    ],
     'journal-entries' => [
         'module' => 'accounting',
         'view' => 'accounting.view',

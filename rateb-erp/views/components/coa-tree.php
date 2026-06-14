@@ -4,8 +4,11 @@
 /** @var string $csrf */
 /** @var bool $actionsEnabled */
 /** @var bool $bulkEnabled */
+/** @var bool $fullTreeMode */
 $actionsEnabled = $actionsEnabled ?? false;
-$bulkEnabled = $bulkEnabled ?? false;
+$bulkEnabled = $bulkEnabled && !($fullTreeMode ?? false);
+$fullTreeMode = $fullTreeMode ?? false;
+$treeTitle = $treeTitle ?? __('coa_tree');
 $bulkUrl = strpos($routePrefix, 'admin/ops/') === 0
     ? rateb_app_url(preg_replace('#^admin/ops/#', '', $routePrefix) . '/bulk-delete')
     : rateb_url($routePrefix . '/bulk-delete');
@@ -26,7 +29,7 @@ $deleteUrl = static function (int $id) use ($routePrefix): string {
 $createUrl = strpos($routePrefix, 'admin/ops/') === 0
     ? rateb_app_url(preg_replace('#^admin/ops/#', '', $routePrefix) . '/create')
     : rateb_url($routePrefix . '/create');
-$render = static function (array $nodes, int $depth = 0) use (&$render, $editUrl, $deleteUrl, $actionsEnabled, $bulkEnabled, $csrf): void {
+$render = static function (array $nodes, int $depth = 0, ?int $parentNodeId = null) use (&$render, $editUrl, $deleteUrl, $actionsEnabled, $bulkEnabled, $csrf, $fullTreeMode): void {
     foreach ($nodes as $node) {
         $name = rateb_locale() === 'ar' && !empty($node['name_ar']) ? $node['name_ar'] : ($node['name'] ?? '');
         $type = (string) ($node['account_type'] ?? '');
@@ -34,8 +37,10 @@ $render = static function (array $nodes, int $depth = 0) use (&$render, $editUrl
         $isGroup = !empty($node['children']);
         $isHeader = substr((string) ($node['code'] ?? ''), -3) === '000';
         $nodeId = (int) ($node['id'] ?? 0);
+        $childAttr = $parentNodeId !== null ? ' data-coa-child-of="' . $parentNodeId . '"' : '';
         ?>
-        <tr class="<?php echo $isGroup ? 'rateb-coa-group' : ''; ?><?php echo $isHeader ? ' rateb-coa-header' : ''; ?>" data-depth="<?php echo $depth; ?>">
+        <tr class="<?php echo $isGroup ? 'rateb-coa-group' : ''; ?><?php echo $isHeader ? ' rateb-coa-header' : ''; ?><?php echo $parentNodeId !== null ? ' rateb-coa-child' : ''; ?>"
+            data-depth="<?php echo $depth; ?>"<?php echo $childAttr; ?><?php echo $isGroup && $fullTreeMode ? ' data-coa-node="' . $nodeId . '"' : ''; ?>>
             <?php if ($bulkEnabled) { ?>
             <td class="rateb-bulk-td">
                 <?php if (!$isGroup) { ?>
@@ -44,7 +49,13 @@ $render = static function (array $nodes, int $depth = 0) use (&$render, $editUrl
             </td>
             <?php } ?>
             <td class="rateb-coa-name" style="padding-inline-start: <?php echo (12 + $depth * 24); ?>px">
-                <?php if ($depth > 0) { ?><span class="rateb-coa-branch text-muted me-1">└</span><?php } ?>
+                <?php if ($fullTreeMode && $isGroup) { ?>
+                <button type="button" class="btn btn-link btn-sm p-0 me-1 text-warning rateb-coa-toggle" data-coa-toggle="<?php echo $nodeId; ?>" aria-expanded="true">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <?php } elseif ($depth > 0) { ?>
+                <span class="rateb-coa-branch text-muted me-1">└</span>
+                <?php } ?>
                 <?php if ($isGroup || $isHeader) { ?><i class="fas fa-folder-open text-warning me-1"></i><?php } else { ?><i class="fas fa-file-invoice text-muted me-1"></i><?php } ?>
                 <span class="fw-semibold"><?php echo Rateb\App\Core\View::escape($node['code'] ?? ''); ?></span>
                 <span class="ms-1"><?php echo Rateb\App\Core\View::escape($name); ?></span>
@@ -54,7 +65,7 @@ $render = static function (array $nodes, int $depth = 0) use (&$render, $editUrl
             <td class="text-end"><?php echo number_format((float) ($node['total_debit'] ?? 0), 2); ?></td>
             <td class="text-end"><?php echo number_format((float) ($node['total_credit'] ?? 0), 2); ?></td>
             <td class="text-end fw-semibold"><?php echo number_format($balance, 2); ?></td>
-            <?php if ($actionsEnabled) { ?>
+            <?php if ($actionsEnabled && !$fullTreeMode) { ?>
             <td class="text-end text-nowrap">
                 <a href="<?php echo $editUrl($nodeId); ?>" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit"></i></a>
                 <?php if (!$isGroup) { ?>
@@ -65,24 +76,34 @@ $render = static function (array $nodes, int $depth = 0) use (&$render, $editUrl
                 </form>
                 <?php } ?>
             </td>
+            <?php } elseif ($actionsEnabled && $fullTreeMode) { ?>
+            <td class="text-end text-nowrap">
+                <a href="<?php echo $editUrl($nodeId); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
+            </td>
             <?php } ?>
         </tr>
         <?php
         if ($isGroup) {
-            $render($node['children'], $depth + 1);
+            $render($node['children'], $depth + 1, $nodeId);
         }
     }
 };
 $colspan = 5 + ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0);
 ?>
-<div class="rateb-card">
+<div class="rateb-card"<?php echo $fullTreeMode ? ' data-rateb-coa-full-tree="1"' : ''; ?>>
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span><i class="fas fa-sitemap me-2"></i><?php echo __('coa_tree'); ?></span>
-        <?php if ($createEnabled ?? false) { ?>
-        <a href="<?php echo $createUrl; ?>" class="btn btn-primary btn-sm">
-            <i class="fas fa-plus"></i> <?php echo __('add_account'); ?>
-        </a>
-        <?php } ?>
+        <span><i class="fas fa-sitemap me-2"></i><?php echo Rateb\App\Core\View::escape($treeTitle); ?></span>
+        <div class="d-flex flex-wrap gap-2">
+            <?php if ($fullTreeMode && !empty($tree)) { ?>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-coa-expand-all><i class="fas fa-expand-alt"></i> <?php echo __('expand_all'); ?></button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-coa-collapse-all><i class="fas fa-compress-alt"></i> <?php echo __('collapse_all'); ?></button>
+            <?php } ?>
+            <?php if (($createEnabled ?? false) && !$fullTreeMode) { ?>
+            <a href="<?php echo $createUrl; ?>" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> <?php echo __('add_account'); ?>
+            </a>
+            <?php } ?>
+        </div>
     </div>
     <?php if ($bulkEnabled && !empty($tree)) { ?>
     <div class="rateb-bulk-bar d-none" data-rateb-bulk-bar>

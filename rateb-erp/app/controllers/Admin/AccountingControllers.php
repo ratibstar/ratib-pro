@@ -103,13 +103,49 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
     public function index(): void
     {
         $canManage = rateb_can('accounting.manage');
-        $tree = (new AccountingService())->coaTreeWithBalances(null);
+        $service = new AccountingService();
+        $service->ensureDefaultAccounts(null);
+        $balanceMap = [];
+        foreach ($service->trialBalance(null) as $row) {
+            $balanceMap[(int) $row['id']] = (float) $row['total_debit'] - (float) $row['total_credit'];
+        }
+        $items = $this->model->query(
+            'SELECT a.*, p.code AS parent_code, p.name AS parent_name, p.name_ar AS parent_name_ar
+             FROM rateb_chart_of_accounts a
+             LEFT JOIN rateb_chart_of_accounts p ON p.id = a.parent_id
+             WHERE a.company_id IS NULL AND a.is_active = 1
+             ORDER BY a.code'
+        );
+        foreach ($items as &$item) {
+            $item['balance'] = $balanceMap[(int) $item['id']] ?? 0.0;
+        }
+        unset($item);
         $this->view($this->viewPrefix . '/index', [
             'title' => __('chart_of_accounts'),
+            'items' => $items,
+            'createEnabled' => $canManage,
+            'actionsEnabled' => $canManage,
+        ], $this->layout());
+    }
+
+    public function coaTree(): void
+    {
+        $canManage = rateb_can('accounting.manage');
+        $service = new AccountingService();
+        $tree = $service->coaTreeWithBalances(null);
+        $typeTotals = [];
+        foreach ($tree as $root) {
+            $type = (string) ($root['account_type'] ?? '');
+            if ($type !== '') {
+                $typeTotals[$type] = (float) ($root['balance'] ?? 0);
+            }
+        }
+        $this->view('admin/coa-tree/index', [
+            'title' => __('coa_full_tree'),
             'tree' => $tree,
+            'typeTotals' => $typeTotals,
             'routePrefix' => $this->routePrefix,
             'csrf' => Csrf::token(),
-            'bulkEnabled' => $canManage,
             'createEnabled' => $canManage,
             'actionsEnabled' => $canManage,
         ], $this->layout());

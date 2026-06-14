@@ -5,6 +5,7 @@ $accountingActive = $accountingActive ?? 'admin';
 $tabs = [
     ['path' => rateb_app_route('accounting'), 'label' => __('accounting_overview'), 'match' => [rateb_app_route('accounting')]],
     ['path' => rateb_app_route('chart-of-accounts'), 'label' => __('chart_of_accounts'), 'match' => [rateb_app_route('chart-of-accounts')]],
+    ['path' => rateb_app_route('accounting/coa-tree'), 'label' => __('coa_full_tree'), 'match' => [rateb_app_route('accounting/coa-tree')]],
     ['path' => rateb_app_route('journal-entries'), 'label' => __('journal_entries'), 'match' => [rateb_app_route('journal-entries')]],
     ['path' => rateb_app_route('accounting/entry-approval'), 'label' => __('entry_approval'), 'match' => [rateb_app_route('accounting/entry-approval')]],
     ['path' => rateb_app_route('accounting/accounts-payable'), 'label' => __('accounts_payable'), 'match' => [rateb_app_route('accounting/accounts-payable')]],

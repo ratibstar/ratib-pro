@@ -93,6 +93,7 @@ $router->get('/admin/accounting', [AccountingDashboardController::class, 'index'
 $router->post('/admin/accounting/sync', [AccountingDashboardController::class, 'sync'], rateb_admin_mw('accounting.post'));
 
 $router->get('/admin/chart-of-accounts', [ChartOfAccountsController::class, 'index'], rateb_admin_mw('accounting.view'));
+$router->get('/admin/coa-tree', [ChartOfAccountsController::class, 'coaTree'], rateb_admin_mw('accounting.view'));
 $router->get('/admin/chart-of-accounts/create', [ChartOfAccountsController::class, 'create'], rateb_admin_mw('accounting.manage'));
 $router->post('/admin/chart-of-accounts', [ChartOfAccountsController::class, 'store'], rateb_admin_mw('accounting.manage'));
 $router->get('/admin/chart-of-accounts/{id}/edit', [ChartOfAccountsController::class, 'edit'], rateb_admin_mw('accounting.manage'));

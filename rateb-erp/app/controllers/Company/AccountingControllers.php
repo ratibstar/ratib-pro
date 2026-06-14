@@ -627,17 +627,55 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
         $companyId = rateb_resolve_ops_company_id();
         TenantContext::setCompanyId($companyId);
         $service = new AccountingService();
-        $tree = $service->coaTreeWithBalances($companyId);
+        $service->ensureDefaultAccounts($companyId);
+        $balanceMap = [];
+        foreach ($service->trialBalance($companyId) as $row) {
+            $balanceMap[(int) $row['id']] = (float) $row['total_debit'] - (float) $row['total_credit'];
+        }
+        $items = $companyId > 0 ? $this->model->query(
+            'SELECT a.*, p.code AS parent_code, p.name AS parent_name, p.name_ar AS parent_name_ar
+             FROM rateb_chart_of_accounts a
+             LEFT JOIN rateb_chart_of_accounts p ON p.id = a.parent_id
+             WHERE a.company_id = :cid AND a.is_active = 1
+             ORDER BY a.code',
+            ['cid' => $companyId]
+        ) : [];
+        foreach ($items as &$item) {
+            $item['balance'] = $balanceMap[(int) $item['id']] ?? 0.0;
+        }
+        unset($item);
         $canManage = rateb_can_manage_entity('chart-of-accounts');
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __('chart_of_accounts'),
+            'items' => $items,
+            'canManage' => $canManage,
+            'routePrefix' => $this->routePrefix,
+        ]), $this->layout());
+    }
+
+    public function coaTree(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        TenantContext::setCompanyId($companyId);
+        $service = new AccountingService();
+        $tree = $service->coaTreeWithBalances($companyId);
+        $typeTotals = [];
+        foreach ($tree as $root) {
+            $type = (string) ($root['account_type'] ?? '');
+            if ($type !== '') {
+                $typeTotals[$type] = (float) ($root['balance'] ?? 0);
+            }
+        }
+        $canManage = rateb_can_manage_entity('chart-of-accounts');
+        $this->view('company/accounting/coa-tree', [
+            'title' => __('coa_full_tree'),
             'tree' => $tree,
+            'typeTotals' => $typeTotals,
             'routePrefix' => $this->routePrefix,
             'csrf' => Csrf::token(),
-            'bulkEnabled' => $canManage,
-            'createEnabled' => $this->createEnabled,
-            'actionsEnabled' => $this->actionsEnabled,
-        ]), $this->layout());
+            'createEnabled' => $canManage,
+            'actionsEnabled' => $canManage,
+        ], $this->layout());
     }
 
     public function create(): void
