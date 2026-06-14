@@ -3,15 +3,18 @@ use Rateb\App\Services\FormLookupService;
 
 $formFields = FormLookupService::stockMovementFormFields();
 $lookups = (new FormLookupService())->forFields($formFields);
+$canManage = $canManage ?? rateb_can_manage_entity('stock-movements');
 ?>
 <div class="rateb-card">
-    <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? __('stock_movements')); ?></div>
-    <div class="rateb-card-body">
+    <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><?php echo Rateb\App\Core\View::escape($title ?? __('stock_movements')); ?></span>
         <?php Rateb\App\Core\View::partial('export-toolbar', [
             'exportRoute' => rateb_app_url('stock-movements/export'),
             'exportEnabled' => $exportEnabled ?? true,
         ]); ?>
-        <?php if ($canManage ?? rateb_can_manage_entity('stock-movements')) { ?>
+    </div>
+    <div class="rateb-card-body">
+        <?php if ($canManage) { ?>
         <?php Rateb\App\Core\View::partial('workflow-form', [
             'formFields' => $formFields,
             'formAction' => rateb_app_url('stock-movements'),
@@ -23,7 +26,7 @@ $lookups = (new FormLookupService())->forFields($formFields);
             'title' => '',
             'items' => $items ?? [],
             'fields' => [
-                ['name' => 'movement_no', 'label' => 'movement_no'],
+                ['name' => 'movement_no', 'label' => 'movement_no', 'type' => 'id'],
                 ['name' => 'movement_type', 'label' => 'movement_type'],
                 ['name' => 'item_name', 'label' => 'item_name'],
                 ['name' => 'quantity', 'label' => 'quantity'],
@@ -31,9 +34,11 @@ $lookups = (new FormLookupService())->forFields($formFields);
                 ['name' => 'created_at', 'label' => 'created_at'],
             ],
             'routePrefix' => rateb_app_route('stock-movements'),
-            'canManage' => false,
-            'canDelete' => $canManage ?? rateb_can_manage_entity('stock-movements'),
-            'bulkDeleteRoute' => rateb_app_url('stock-movements/bulk-delete'),
+            'permissionResource' => 'stock-movements',
+            'bulkEnabled' => true,
+            'createEnabled' => false,
+            'actionsEnabled' => false,
+            'exportEnabled' => false,
             'csrf' => $csrf,
         ]); ?>
     </div>

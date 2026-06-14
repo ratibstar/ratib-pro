@@ -30,8 +30,9 @@ $lookups = (new FormLookupService())->forFields($docFields);
             </div>
         </form>
         <?php } ?>
-        <div class="table-responsive">
-            <table class="table rateb-table">
+        <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
+        <div class="table-responsive" data-rateb-table-search-host="1">
+            <table class="table rateb-table mb-0">
                 <thead><tr><th><?php echo __('title'); ?></th><th><?php echo __('entity_type'); ?></th><th><?php echo __('file_name'); ?></th><th><?php echo __('created_at'); ?></th><th><?php echo __('actions'); ?></th></tr></thead>
                 <tbody>
                 <?php if (empty($items)) { ?>

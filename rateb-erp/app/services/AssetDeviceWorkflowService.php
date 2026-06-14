@@ -67,8 +67,8 @@ final class AssetDeviceWorkflowService
         $db = \Rateb\App\Core\Database::connection();
         $no = (new WorkflowTableService())->generateRecordNo('asset-assignments');
         $db->prepare(
-            'INSERT INTO rateb_asset_assignments (company_id, assignment_no, asset_id, assigned_to, department, assigned_at, notes)
-             VALUES (:cid, :no, :aid, :to, :dept, :at, :notes)'
+            'INSERT INTO rateb_asset_assignments (company_id, assignment_no, asset_id, assigned_to, department, assigned_at, returned_at, notes)
+             VALUES (:cid, :no, :aid, :to, :dept, :at, :ret, :notes)'
         )->execute([
             'cid' => $cid,
             'no' => $no,
@@ -76,6 +76,7 @@ final class AssetDeviceWorkflowService
             'to' => $data['assigned_to'] ?? '',
             'dept' => $data['department'] ?? null,
             'at' => $data['assigned_at'] ?? date('Y-m-d'),
+            'ret' => ($data['returned_at'] ?? '') !== '' ? $data['returned_at'] : null,
             'notes' => $data['notes'] ?? null,
         ]);
         $id = (int) $db->lastInsertId();

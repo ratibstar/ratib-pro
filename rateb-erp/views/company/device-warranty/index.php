@@ -1,8 +1,12 @@
 <div class="rateb-card mb-4">
-    <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? __('device_warranty')); ?></div>
+    <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <span><?php echo Rateb\App\Core\View::escape($title ?? __('device_warranty')); ?></span>
+    </div>
     <div class="rateb-card-body">
         <?php if (!empty($due)) { ?>
         <div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> <?php echo __('warranty_expiring_soon'); ?></div>
+        <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
+        <div data-rateb-table-search-host="1">
         <?php Rateb\App\Core\View::partial('workflow-list', [
             'items' => $due,
             'columns' => [
@@ -11,6 +15,7 @@
                 ['name' => 'warranty_expiry', 'label' => 'warranty_expiry'],
             ],
         ]); ?>
+        </div>
         <hr>
         <?php } ?>
         <h6 class="mb-3"><?php echo __('update_warranty'); ?></h6>

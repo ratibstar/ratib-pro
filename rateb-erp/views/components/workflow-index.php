@@ -11,6 +11,7 @@
 /** @var string|null $exportRoute */
 /** @var bool|null $exportEnabled */
 /** @var array<string, list<array{value: string|int, label: string}>>|null $lookups */
+/** @var string|null $createUrl */
 $entitySlug = (string) ($entitySlug ?? '');
 $routePrefix = (string) ($routePrefix ?? rateb_app_route($entitySlug));
 $canManage = $canManage ?? rateb_can_manage_entity($entitySlug);
@@ -23,12 +24,19 @@ if ($formFields !== null && $lookups === []) {
 <div class="rateb-card mb-4">
     <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
         <span><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></span>
-        <?php if (!empty($exportRoute) && $exportEnabled) {
-            Rateb\App\Core\View::partial('export-toolbar', [
-                'exportRoute' => $exportRoute,
-                'exportEnabled' => true,
-            ]);
-        } ?>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <?php if (!empty($exportRoute) && $exportEnabled) {
+                Rateb\App\Core\View::partial('export-toolbar', [
+                    'exportRoute' => $exportRoute,
+                    'exportEnabled' => true,
+                ]);
+            } ?>
+            <?php if ($canManage && !empty($createUrl)) { ?>
+            <a href="<?php echo rateb_url((string) $createUrl); ?>" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> <?php echo __('create'); ?>
+            </a>
+            <?php } ?>
+        </div>
     </div>
     <div class="rateb-card-body">
         <?php if ($canManage && !empty($formFields) && !empty($formAction)) { ?>
@@ -42,8 +50,8 @@ if ($formFields !== null && $lookups === []) {
         <?php Rateb\App\Core\View::partial('workflow-list', [
             'items' => $items ?? [],
             'columns' => $columns,
-            'bulkEnabled' => $canManage,
-            'actionsEnabled' => $canManage,
+            'bulkEnabled' => $canManage && !empty($formFields),
+            'actionsEnabled' => $canManage && !empty($formFields),
             'routePrefix' => $routePrefix,
             'csrf' => $csrf,
         ]); ?>

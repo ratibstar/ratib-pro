@@ -10,6 +10,13 @@ $actionsEnabled = !empty($actionsEnabled);
 $routePrefix = (string) ($routePrefix ?? '');
 $csrf = (string) ($csrf ?? '');
 $colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0);
+$hasActionLink = false;
+foreach ($columns as $c) {
+    if (($c['type'] ?? '') === 'action_link') {
+        $hasActionLink = true;
+        break;
+    }
+}
 $formatCell = static function (mixed $val, array $col): string {
     $type = (string) ($col['type'] ?? '');
     if ($type === 'notes') {
@@ -50,7 +57,7 @@ $formatCell = static function (mixed $val, array $col): string {
                 <?php foreach ($columns as $col) { ?>
                 <th><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
                 <?php } ?>
-                <?php if ($actionsEnabled && $routePrefix !== '') { ?>
+                <?php if ($actionsEnabled && $routePrefix !== '' && !$hasActionLink) { ?>
                 <th><?php echo __('actions'); ?></th>
                 <?php } ?>
             </tr>
@@ -67,13 +74,27 @@ $formatCell = static function (mixed $val, array $col): string {
                 </td>
                 <?php } ?>
                 <?php foreach ($columns as $col) {
+                    $type = (string) ($col['type'] ?? '');
+                    if ($type === 'action_link') {
+                        $path = str_replace('{id}', (string) ($row['id'] ?? ''), (string) ($col['url'] ?? ''));
+                        $href = str_starts_with($path, 'http') ? $path : rateb_url($path);
+                        $text = rateb_label((string) ($col['text'] ?? 'view'));
+                        ?>
+                <td class="rateb-actions text-nowrap">
+                    <a href="<?php echo Rateb\App\Core\View::escape($href); ?>" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> <?php echo Rateb\App\Core\View::escape($text); ?>
+                    </a>
+                </td>
+                        <?php
+                        continue;
+                    }
                     $val = $row[$col['name']] ?? '';
                     $display = $formatCell($val, $col);
-                    $class = in_array((string) ($col['type'] ?? ''), ['money', 'id'], true) ? ' rateb-ltr-num' : '';
+                    $class = in_array($type, ['money', 'id'], true) ? ' rateb-ltr-num' : '';
                     ?>
                 <td class="<?php echo trim($class); ?>"><?php echo Rateb\App\Core\View::escape($display); ?></td>
                 <?php } ?>
-                <?php if ($actionsEnabled && $routePrefix !== '') { ?>
+                <?php if ($actionsEnabled && $routePrefix !== '' && !$hasActionLink) { ?>
                 <td class="rateb-actions text-nowrap">
                     <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int) ($row['id'] ?? 0) . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">

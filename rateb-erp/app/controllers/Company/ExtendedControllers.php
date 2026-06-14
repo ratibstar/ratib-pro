@@ -102,7 +102,13 @@ final class DocumentsController extends Controller
 {
     public function index(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id');
+        rateb_bootstrap_ops_tenant();
+        $companyId = function_exists('rateb_resolve_ops_company_id')
+            ? rateb_resolve_ops_company_id()
+            : (int) SessionManager::get('rateb_company_id');
+        if ($companyId > 0) {
+            TenantContext::setCompanyId($companyId);
+        }
         $db = \Rateb\App\Core\Database::connection();
         $stmt = $db->prepare('SELECT * FROM rateb_documents WHERE company_id = :cid ORDER BY id DESC LIMIT 100');
         $stmt->execute(['cid' => $companyId]);

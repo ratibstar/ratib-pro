@@ -276,6 +276,7 @@ $router->get($app('warehouse-transfers'), [\Rateb\App\Controllers\Company\Wareho
 $router->get($app('warehouse-transfers/create'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'create'], $wtMw);
 $router->post($app('warehouse-transfers'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'store'], $wtMw);
 $router->post($app('warehouse-transfers/{id}/approve'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'approve'], $wtMw);
+$router->get($app('warehouse-transfers/export'), [\Rateb\App\Controllers\Company\WarehouseTransfersController::class, 'export'], rateb_erp_mw('inventory', 'reports.export', 'warehouse-transfers'));
 $router->get($app('inventory-forecast'), [\Rateb\App\Controllers\Company\InventoryForecastController::class, 'index'], rateb_erp_mw('inventory', '', 'inventory-forecast'));
 
 $invAuditMw = rateb_erp_mw('inventory', '', 'inventory-audits');
@@ -284,6 +285,7 @@ $router->get($app('inventory-audits/create'), [InventoryAuditsController::class,
 $router->post($app('inventory-audits'), [InventoryAuditsController::class, 'store'], $invAuditMw);
 $router->get($app('inventory-audits/{id}'), [InventoryAuditsController::class, 'show'], $invAuditMw);
 $router->post($app('inventory-audits/{id}/reconcile'), [InventoryAuditsController::class, 'reconcile'], $invAuditMw);
+$router->get($app('inventory-audits/export'), [InventoryAuditsController::class, 'export'], rateb_erp_mw('inventory', 'reports.export', 'inventory-audits'));
 
 $invCodesMw = rateb_erp_mw('inventory', '', 'inventory-codes');
 $router->get($app('inventory/{id}/codes'), [InventoryCodesController::class, 'show'], $invCodesMw);

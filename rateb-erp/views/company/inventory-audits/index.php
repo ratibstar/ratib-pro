@@ -1,26 +1,21 @@
-<div class="rateb-card">
-    <div class="rateb-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <span><?php echo Rateb\App\Core\View::escape($title ?? __('inventory_audits')); ?></span>
-        <?php if ($canManage ?? rateb_can_manage_entity('inventory-audits')) { ?>
-        <a href="<?php echo rateb_app_url('inventory-audits/create'); ?>" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> <?php echo __('create'); ?></a>
-        <?php } ?>
-    </div>
-    <div class="rateb-card-body">
-        <?php Rateb\App\Core\View::partial('workflow-list', [
-            'items' => $items ?? [],
-            'columns' => [
-                ['name' => 'audit_no', 'label' => 'audit_no'],
-                ['name' => 'audit_date', 'label' => 'audit_date'],
-                ['name' => 'status', 'label' => 'status'],
-                ['name' => 'created_at', 'label' => 'created_at'],
-            ],
-        ]); ?>
-        <?php if (!empty($items)) { ?>
-        <div class="mt-3 d-flex flex-wrap gap-1">
-            <?php foreach ($items as $row) { ?>
-            <a class="btn btn-sm btn-outline-primary" href="<?php echo rateb_app_url('inventory-audits/' . (int) $row['id']); ?>"><?php echo __('view'); ?> <?php echo Rateb\App\Core\View::escape($row['audit_no'] ?? ''); ?></a>
-            <?php } ?>
-        </div>
-        <?php } ?>
-    </div>
-</div>
+<?php
+Rateb\App\Core\View::partial('workflow-index', [
+    'title' => $title ?? __('inventory_audits'),
+    'entitySlug' => 'inventory-audits',
+    'routePrefix' => rateb_app_route('inventory-audits'),
+    'createUrl' => rateb_app_url('inventory-audits/create'),
+    'formFields' => null,
+    'items' => $items ?? [],
+    'columns' => [
+        ['name' => 'audit_no', 'label' => 'record_id', 'type' => 'id'],
+        ['name' => 'audit_date', 'label' => 'audit_date'],
+        ['name' => 'status', 'label' => 'status'],
+        ['name' => 'created_at', 'label' => 'created_at'],
+        ['name' => 'id', 'label' => 'actions', 'type' => 'action_link', 'url' => rateb_app_route('inventory-audits') . '/{id}', 'text' => 'view'],
+    ],
+    'exportRoute' => $exportRoute ?? rateb_app_url('inventory-audits/export'),
+    'exportEnabled' => $exportEnabled ?? true,
+    'csrf' => $csrf,
+    'canManage' => $canManage ?? null,
+]);
+?>

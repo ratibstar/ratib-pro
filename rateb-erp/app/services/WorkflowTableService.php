@@ -31,12 +31,6 @@ final class WorkflowTableService
                 'prefix' => 'AD',
                 'entity' => 'asset_depreciation',
             ],
-            'asset-depreciation' => [
-                'table' => 'rateb_asset_depreciation',
-                'no_column' => 'depreciation_no',
-                'prefix' => 'AD',
-                'entity' => 'asset_depreciation',
-            ],
             'device-maintenance' => [
                 'table' => 'rateb_device_service_history',
                 'no_column' => 'service_no',

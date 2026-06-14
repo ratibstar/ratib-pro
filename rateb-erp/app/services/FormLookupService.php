@@ -364,6 +364,7 @@ final class FormLookupService
             ['name' => 'assigned_to', 'label' => 'assigned_to', 'type' => 'hybrid', 'lookup' => 'company_users', 'required' => true, 'col' => 'col-md-4'],
             ['name' => 'department', 'label' => 'department', 'type' => 'hybrid', 'lookup' => 'departments', 'col' => 'col-md-4'],
             ['name' => 'assigned_at', 'label' => 'assigned_at', 'type' => 'date', 'col' => 'col-md-4', 'default' => date('Y-m-d')],
+            ['name' => 'returned_at', 'label' => 'returned_at', 'type' => 'date', 'col' => 'col-md-4'],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 2],
         ];
     }

@@ -119,12 +119,15 @@ final class InventoryAuditsController extends Controller
 {
     public function index(): void
     {
+        rateb_bootstrap_ops_tenant();
         $model = new \Rateb\App\Models\InventoryAudit();
         $this->view('company/inventory-audits/index', [
             'title' => __('inventory_audits'),
             'items' => $model->all(50, 0),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('inventory-audits'),
+            'exportRoute' => rateb_app_url('inventory-audits/export'),
+            'exportEnabled' => rateb_can_export_entity('inventory-audits'),
         ], 'main');
     }
 
@@ -197,6 +200,19 @@ final class InventoryAuditsController extends Controller
             SessionManager::flash('error', $e->getMessage());
         }
         $this->redirect(rateb_app_url('inventory-audits/' . $id));
+    }
+
+    public function export(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $items = (new \Rateb\App\Models\InventoryAudit())->all(500, 0);
+        ExportController::send('inventory_audits', [
+            ['name' => 'audit_no', 'label' => __('record_id')],
+            ['name' => 'audit_date', 'label' => __('audit_date')],
+            ['name' => 'status', 'label' => __('status')],
+            ['name' => 'notes', 'label' => __('notes')],
+            ['name' => 'created_at', 'label' => __('created_at')],
+        ], $items, __('inventory_audits'), 'inventory-audits');
     }
 }
 
@@ -452,6 +468,7 @@ final class AssetAssignmentsController extends Controller
             'assigned_to' => $assignedTo,
             'department' => trim((string) $this->input('department', '')),
             'assigned_at' => (string) $this->input('assigned_at', date('Y-m-d')),
+            'returned_at' => trim((string) $this->input('returned_at', '')),
             'notes' => trim((string) $this->input('notes', '')),
         ]);
         (new AuditService())->log('create', 'asset_assignment', $id);
@@ -658,8 +675,13 @@ final class AnalyticsReportsController extends Controller
 {
     private function companyId(): int
     {
-        $id = (int) SessionManager::get('rateb_company_id');
-        TenantContext::setCompanyId($id);
+        rateb_bootstrap_ops_tenant();
+        $id = function_exists('rateb_resolve_ops_company_id')
+            ? rateb_resolve_ops_company_id()
+            : (int) SessionManager::get('rateb_company_id');
+        if ($id > 0) {
+            TenantContext::setCompanyId($id);
+        }
         return $id;
     }
 
@@ -762,10 +784,13 @@ final class AnalyticsReportsController extends Controller
     public function exportSupplierPerformance(): void
     {
         ExportController::send('supplier_performance', [
+            ['name' => 'code', 'label' => __('record_id')],
             ['name' => 'name', 'label' => __('suppliers')],
+            ['name' => 'classification_name', 'label' => __('supplier_classifications')],
             ['name' => 'rating', 'label' => __('rating')],
             ['name' => 'avg_eval', 'label' => __('overall_score')],
             ['name' => 'po_count', 'label' => __('purchase_orders')],
+            ['name' => 'performance_kpi', 'label' => __('performance_kpi')],
         ], (new ErpAnalyticsService())->supplierPerformance($this->companyId()), __('supplier_performance_report'), 'reports/supplier-performance');
     }
 
@@ -785,7 +810,13 @@ final class WarehouseTransfersController extends Controller
 {
     public function index(): void
     {
-        $cid = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        rateb_bootstrap_ops_tenant();
+        $cid = function_exists('rateb_resolve_ops_company_id')
+            ? rateb_resolve_ops_company_id()
+            : (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        if ($cid < 1) {
+            $cid = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        }
         $db = \Rateb\App\Core\Database::connection();
         $stmt = $db->prepare(
             'SELECT t.*, i.item_name, sw.name AS source_name, dw.name AS dest_name
@@ -801,6 +832,8 @@ final class WarehouseTransfersController extends Controller
             'items' => $stmt->fetchAll(),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('warehouse-transfers'),
+            'exportRoute' => rateb_app_url('warehouse-transfers/export'),
+            'exportEnabled' => rateb_can_export_entity('warehouse-transfers'),
         ], 'main');
     }
 
@@ -852,6 +885,35 @@ final class WarehouseTransfersController extends Controller
             SessionManager::flash('success', __('transfer_completed'));
         }
         $this->redirect(rateb_app_url('warehouse-transfers'));
+    }
+
+    public function export(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $cid = function_exists('rateb_resolve_ops_company_id')
+            ? rateb_resolve_ops_company_id()
+            : (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        $db = \Rateb\App\Core\Database::connection();
+        $stmt = $db->prepare(
+            'SELECT t.transfer_no, i.item_name, sw.name AS source_name, dw.name AS dest_name,
+                    t.quantity, t.status, t.notes, t.created_at
+             FROM rateb_warehouse_transfers t
+             JOIN rateb_inventory i ON i.id = t.inventory_id
+             JOIN rateb_warehouses sw ON sw.id = t.source_warehouse_id
+             JOIN rateb_warehouses dw ON dw.id = t.destination_warehouse_id
+             WHERE t.company_id = :cid ORDER BY t.id DESC LIMIT 500'
+        );
+        $stmt->execute(['cid' => $cid]);
+        ExportController::send('warehouse_transfers', [
+            ['name' => 'transfer_no', 'label' => __('record_id')],
+            ['name' => 'item_name', 'label' => __('item_name')],
+            ['name' => 'source_name', 'label' => __('from')],
+            ['name' => 'dest_name', 'label' => __('to')],
+            ['name' => 'quantity', 'label' => __('quantity')],
+            ['name' => 'status', 'label' => __('status')],
+            ['name' => 'notes', 'label' => __('notes')],
+            ['name' => 'created_at', 'label' => __('created_at')],
+        ], $stmt->fetchAll(), __('warehouse_transfers'), 'warehouse-transfers');
     }
 }
 

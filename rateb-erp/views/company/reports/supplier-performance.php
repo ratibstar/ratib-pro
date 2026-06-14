@@ -7,11 +7,13 @@
         <?php Rateb\App\Core\View::partial('workflow-list', [
             'items' => $rows ?? [],
             'columns' => [
+                ['name' => 'code', 'label' => 'record_id', 'type' => 'id'],
                 ['name' => 'name', 'label' => 'suppliers'],
                 ['name' => 'classification_name', 'label' => 'supplier_classifications'],
                 ['name' => 'rating', 'label' => 'rating'],
-                ['name' => 'avg_eval', 'label' => 'overall_score'],
+                ['name' => 'avg_eval', 'label' => 'overall_score', 'type' => 'money'],
                 ['name' => 'po_count', 'label' => 'purchase_orders'],
+                ['name' => 'performance_kpi', 'label' => 'performance_kpi', 'type' => 'money'],
             ],
         ]); ?>
     </div>
