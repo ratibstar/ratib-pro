@@ -67,6 +67,7 @@ $router->get('/admin/logout', [AdminAuthController::class, 'logout'], [ErpAuthMi
 $router->get('/locale/{locale}', [LocaleController::class, 'switch']);
 
 $router->get('/documents/download/{id}', [\Rateb\App\Controllers\Shared\DocumentDownloadController::class, 'download'], [ErpAuthMiddleware::class]);
+$router->get('/documents/view/{id}', [\Rateb\App\Controllers\Shared\DocumentDownloadController::class, 'view'], [ErpAuthMiddleware::class]);
 $router->get('/barcode/qr', [\Rateb\App\Controllers\Shared\BarcodeQrController::class, 'image'], [ErpAuthMiddleware::class]);
 
 $router->get('/admin', [AdminDashboardController::class, 'index'], [ErpAuthMiddleware::class]);
@@ -123,6 +124,8 @@ foreach ($crudRoutes as $path => [$class, $perm]) {
     $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw($perm));
     $router->get('/admin/' . $path . '/{id}/documents', [$class, 'documents'], rateb_admin_mw($perm));
     $router->post('/admin/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_admin_mw($perm));
+    $router->post('/admin/' . $path . '/{id}/documents/{docId}', [$class, 'updateDocument'], rateb_admin_mw($perm));
+    $router->post('/admin/' . $path . '/{id}/documents/{docId}/delete', [$class, 'destroyDocument'], rateb_admin_mw($perm));
 }
 
 $router->post('/admin/users/{id}/regenerate-barcode', [UsersController::class, 'regenerateBarcode'], rateb_admin_mw('access.manage'));
@@ -141,6 +144,8 @@ foreach ($billingCrud as $path => $class) {
     $router->post('/admin/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw('billing.manage'));
     $router->get('/admin/' . $path . '/{id}/documents', [$class, 'documents'], rateb_admin_mw('billing.manage'));
     $router->post('/admin/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_admin_mw('billing.manage'));
+    $router->post('/admin/' . $path . '/{id}/documents/{docId}', [$class, 'updateDocument'], rateb_admin_mw('billing.manage'));
+    $router->post('/admin/' . $path . '/{id}/documents/{docId}/delete', [$class, 'destroyDocument'], rateb_admin_mw('billing.manage'));
 }
 
 $router->get('/admin/audit-logs', [AuditLogsController::class, 'index'], rateb_admin_mw('settings.manage'));

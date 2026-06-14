@@ -131,6 +131,140 @@ final class DocumentService
 
     public function sendDownload(int $documentId): void
     {
+        $this->sendFile($documentId, false);
+    }
+
+    public function sendView(int $documentId): void
+    {
+        $this->sendFile($documentId, true);
+    }
+
+    /** @return array{success:bool,error?:string} */
+    public function updateDocument(int $documentId, string $title, ?array $file = null): array
+    {
+        $doc = $this->findById($documentId);
+        if (!$doc) {
+            return ['success' => false, 'error' => __('no_records')];
+        }
+        if (!$this->canDownload($doc)) {
+            return ['success' => false, 'error' => __('access_denied')];
+        }
+
+        $title = trim($title);
+        if ($title === '') {
+            return ['success' => false, 'error' => __('title_required')];
+        }
+
+        $db = \Rateb\App\Core\Database::connection();
+        $db->prepare('UPDATE rateb_documents SET title = :title WHERE id = :id')
+            ->execute(['title' => $title, 'id' => $documentId]);
+
+        if ($file !== null && ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            $replace = $this->replaceDocumentFile($documentId, $file, $doc);
+            if (!($replace['success'] ?? false)) {
+                return $replace;
+            }
+        }
+
+        return ['success' => true];
+    }
+
+    /** @param array<string, mixed> $doc */
+    /** @return array{success:bool,error?:string} */
+    private function replaceDocumentFile(int $documentId, array $file, array $doc): array
+    {
+        $uploadError = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($uploadError !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'error' => __('upload_failed')];
+        }
+
+        $size = (int) ($file['size'] ?? 0);
+        if ($size < 1) {
+            return ['success' => false, 'error' => __('upload_failed')];
+        }
+        if ($size > 10 * 1024 * 1024) {
+            return ['success' => false, 'error' => __('file_too_large')];
+        }
+
+        $companyId = (int) ($doc['company_id'] ?? 0);
+        if ($companyId < 1) {
+            return ['success' => false, 'error' => __('billing_company_required')];
+        }
+        if (!(new PlanLimitService())->canUploadBytes($companyId, $size)) {
+            return ['success' => false, 'error' => __('storage_limit_exceeded')];
+        }
+
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            return ['success' => false, 'error' => __('upload_failed')];
+        }
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmpName) ?: '';
+        if (!in_array($mime, self::ALLOWED_MIMES, true)) {
+            return ['success' => false, 'error' => __('file_type_not_allowed')];
+        }
+
+        $entityType = (string) ($doc['entity_type'] ?? '');
+        $ext = pathinfo((string) ($file['name'] ?? 'file'), PATHINFO_EXTENSION);
+        $safeName = bin2hex(random_bytes(8)) . ($ext !== '' ? '.' . preg_replace('/[^a-zA-Z0-9]/', '', $ext) : '');
+        $subdir = 'company_' . $companyId . '/' . preg_replace('/[^a-z0-9_\-]/i', '_', $entityType);
+        $destDir = StorageHelper::uploadsRoot() . '/' . $subdir;
+        $dirError = StorageHelper::ensureWritableDir($destDir);
+        if ($dirError !== null) {
+            return ['success' => false, 'error' => $dirError];
+        }
+
+        $relative = 'uploads/' . $subdir . '/' . $safeName;
+        $full = $destDir . '/' . $safeName;
+        if (!move_uploaded_file($tmpName, $full)) {
+            return ['success' => false, 'error' => __('upload_save_failed')];
+        }
+
+        $oldPath = StorageHelper::resolveFilePath((string) ($doc['file_path'] ?? ''));
+        $db = \Rateb\App\Core\Database::connection();
+        $db->prepare(
+            'UPDATE rateb_documents SET file_name = :fn, file_path = :fp, mime_type = :mime, file_size = :sz WHERE id = :id'
+        )->execute([
+            'fn' => (string) ($file['name'] ?? $safeName),
+            'fp' => $relative,
+            'mime' => $mime,
+            'sz' => $size,
+            'id' => $documentId,
+        ]);
+
+        if ($oldPath !== '' && is_file($oldPath)) {
+            @unlink($oldPath);
+        }
+
+        return ['success' => true];
+    }
+
+    public function deleteDocument(int $documentId): bool
+    {
+        $doc = $this->findById($documentId);
+        if (!$doc || !$this->canDownload($doc)) {
+            return false;
+        }
+        $path = StorageHelper::resolveFilePath((string) ($doc['file_path'] ?? ''));
+        if ($path !== '' && is_file($path)) {
+            @unlink($path);
+        }
+        $db = \Rateb\App\Core\Database::connection();
+        $db->prepare('DELETE FROM rateb_documents WHERE id = :id')->execute(['id' => $documentId]);
+
+        return true;
+    }
+
+    /** @param array<string, mixed> $doc */
+    public function belongsToEntity(array $doc, string $entityType, int $entityId): bool
+    {
+        return (string) ($doc['entity_type'] ?? '') === $entityType
+            && (int) ($doc['entity_id'] ?? 0) === $entityId;
+    }
+
+    private function sendFile(int $documentId, bool $inline): void
+    {
         $doc = $this->findById($documentId);
         if (!$doc) {
             http_response_code(404);
@@ -157,7 +291,8 @@ final class DocumentService
         $mime = (string) ($doc['mime_type'] ?? 'application/octet-stream');
         $name = (string) ($doc['file_name'] ?? basename($full));
         header('Content-Type: ' . $mime);
-        header('Content-Disposition: attachment; filename="' . $this->safeFilename($name) . '"');
+        $disposition = $inline ? 'inline' : 'attachment';
+        header('Content-Disposition: ' . $disposition . '; filename="' . $this->safeFilename($name) . '"');
         header('Content-Length: ' . (string) filesize($full));
         readfile($full);
         exit;

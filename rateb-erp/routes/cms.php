@@ -82,6 +82,8 @@ foreach ($cmsCrud as $path => [$class, $perm]) {
     $router->post('/admin/cms/' . $path . '/bulk-delete', [$class, 'bulkDestroy'], rateb_admin_mw($perm));
     $router->get('/admin/cms/' . $path . '/{id}/documents', [$class, 'documents'], rateb_admin_mw($perm));
     $router->post('/admin/cms/' . $path . '/{id}/documents', [$class, 'storeDocument'], rateb_admin_mw($perm));
+    $router->post('/admin/cms/' . $path . '/{id}/documents/{docId}', [$class, 'updateDocument'], rateb_admin_mw($perm));
+    $router->post('/admin/cms/' . $path . '/{id}/documents/{docId}/delete', [$class, 'destroyDocument'], rateb_admin_mw($perm));
 }
 
 $router->get('/admin/cms/leads', [CmsLeadsController::class, 'index'], rateb_admin_mw('cms.leads'));

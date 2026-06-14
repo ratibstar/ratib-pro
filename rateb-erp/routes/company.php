@@ -89,6 +89,8 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
     $router->post($app($path . '/bulk-delete'), [$class, 'bulkDestroy'], $mw);
     $router->get($app($path . '/{id}/documents'), [$class, 'documents'], $mw);
     $router->post($app($path . '/{id}/documents'), [$class, 'storeDocument'], $mw);
+    $router->post($app($path . '/{id}/documents/{docId}'), [$class, 'updateDocument'], $mw);
+    $router->post($app($path . '/{id}/documents/{docId}/delete'), [$class, 'destroyDocument'], $mw);
 }
 
 $router->get($app('purchase-requests/{id}'), [PurchaseRequestsController::class, 'show'], rateb_erp_mw('procurement', '', 'purchase-requests'));
@@ -218,6 +220,8 @@ $router->post($app('product-categories/{id}/delete'), [ProductCategoriesControll
 $router->post($app('product-categories/bulk-delete'), [ProductCategoriesController::class, 'bulkDestroy'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->get($app('product-categories/{id}/documents'), [ProductCategoriesController::class, 'documents'], rateb_erp_mw('inventory', '', 'product-categories'));
 $router->post($app('product-categories/{id}/documents'), [ProductCategoriesController::class, 'storeDocument'], rateb_erp_mw('inventory', '', 'product-categories'));
+$router->post($app('product-categories/{id}/documents/{docId}'), [ProductCategoriesController::class, 'updateDocument'], rateb_erp_mw('inventory', '', 'product-categories'));
+$router->post($app('product-categories/{id}/documents/{docId}/delete'), [ProductCategoriesController::class, 'destroyDocument'], rateb_erp_mw('inventory', '', 'product-categories'));
 
 $router->get($app('notifications'), [NotificationsController::class, 'index'], rateb_erp_mw('', '', 'notifications'));
 $router->post($app('notifications/{id}/read'), [NotificationsController::class, 'markRead'], rateb_erp_mw('', '', 'notifications'));
@@ -236,6 +240,8 @@ $router->post($app('inventory-batches/{id}/delete'), [InventoryBatchesController
 $router->post($app('inventory-batches/bulk-delete'), [InventoryBatchesController::class, 'bulkDestroy'], $invMw);
 $router->get($app('inventory-batches/{id}/documents'), [InventoryBatchesController::class, 'documents'], $invMw);
 $router->post($app('inventory-batches/{id}/documents'), [InventoryBatchesController::class, 'storeDocument'], $invMw);
+$router->post($app('inventory-batches/{id}/documents/{docId}'), [InventoryBatchesController::class, 'updateDocument'], $invMw);
+$router->post($app('inventory-batches/{id}/documents/{docId}/delete'), [InventoryBatchesController::class, 'destroyDocument'], $invMw);
 $router->get($app('inventory-batches/export'), [InventoryBatchesController::class, 'export'], rateb_erp_mw('inventory', 'reports.export', 'inventory-batches'));
 
 $wtMw = rateb_erp_mw('inventory', '', 'warehouse-transfers');
@@ -266,6 +272,8 @@ $router->post($app('supplier-classifications/{id}/delete'), [SupplierClassificat
 $router->post($app('supplier-classifications/bulk-delete'), [SupplierClassificationsController::class, 'bulkDestroy'], $supMw);
 $router->get($app('supplier-classifications/{id}/documents'), [SupplierClassificationsController::class, 'documents'], $supMw);
 $router->post($app('supplier-classifications/{id}/documents'), [SupplierClassificationsController::class, 'storeDocument'], $supMw);
+$router->post($app('supplier-classifications/{id}/documents/{docId}'), [SupplierClassificationsController::class, 'updateDocument'], $supMw);
+$router->post($app('supplier-classifications/{id}/documents/{docId}/delete'), [SupplierClassificationsController::class, 'destroyDocument'], $supMw);
 
 $router->get($app('supplier-kpi'), [SupplierKpiController::class, 'index'], rateb_erp_mw('suppliers', '', 'supplier-kpi'));
 $router->get($app('supplier-kpi/export'), [SupplierKpiController::class, 'export'], rateb_erp_mw('suppliers', 'reports.export', 'supplier-kpi'));

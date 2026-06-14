@@ -274,6 +274,67 @@ abstract class CrudController extends Controller
         $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/documents'));
     }
 
+    public function updateDocument(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $entityId = (int) ($params['id'] ?? 0);
+        $docId = (int) ($params['docId'] ?? 0);
+        $item = $this->model->find($entityId);
+        if (!$item || $docId < 1) {
+            SessionManager::flash('error', __('no_records'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $svc = new \Rateb\App\Services\DocumentService();
+        $doc = $svc->findById($docId);
+        if (!$doc || !$svc->belongsToEntity($doc, $this->resolveDocumentEntityType(), $entityId)) {
+            SessionManager::flash('error', __('no_records'));
+            $this->redirect(rateb_url($this->routePrefix . '/' . $entityId . '/documents'));
+        }
+        $title = trim((string) $this->input('doc_title', ''));
+        $file = isset($_FILES['entity_attachment']) ? $_FILES['entity_attachment'] : null;
+        $result = $svc->updateDocument($docId, $title, $file);
+        if (!($result['success'] ?? false)) {
+            SessionManager::flash('error', (string) ($result['error'] ?? __('upload_failed')));
+        } else {
+            (new AuditService())->log('update_document', $this->entityName, $entityId, ['document_id' => $docId]);
+            SessionManager::flash('success', __('file_updated'));
+        }
+        $this->redirect(rateb_url($this->routePrefix . '/' . $entityId . '/documents'));
+    }
+
+    public function destroyDocument(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $entityId = (int) ($params['id'] ?? 0);
+        $docId = (int) ($params['docId'] ?? 0);
+        $item = $this->model->find($entityId);
+        if (!$item || $docId < 1) {
+            SessionManager::flash('error', __('no_records'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $svc = new \Rateb\App\Services\DocumentService();
+        $doc = $svc->findById($docId);
+        if (!$doc || !$svc->belongsToEntity($doc, $this->resolveDocumentEntityType(), $entityId)) {
+            SessionManager::flash('error', __('no_records'));
+            $this->redirect(rateb_url($this->routePrefix . '/' . $entityId . '/documents'));
+        }
+        if ($svc->deleteDocument($docId)) {
+            (new AuditService())->log('delete_document', $this->entityName, $entityId, ['document_id' => $docId]);
+            SessionManager::flash('success', __('file_deleted'));
+        } else {
+            SessionManager::flash('error', __('access_denied'));
+        }
+        $this->redirect(rateb_url($this->routePrefix . '/' . $entityId . '/documents'));
+    }
+
     protected function resolveDocumentEntityType(): string
     {
         if ($this->documentEntityType !== '') {
