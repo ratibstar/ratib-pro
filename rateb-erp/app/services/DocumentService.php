@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Core\SessionManager;
+use Rateb\App\Core\TenantContext;
 use Rateb\App\Helpers\StorageHelper;
 
 final class DocumentService
@@ -62,14 +63,15 @@ final class DocumentService
         $ext = pathinfo((string) ($file['name'] ?? 'file'), PATHINFO_EXTENSION);
         $safeName = bin2hex(random_bytes(8)) . ($ext !== '' ? '.' . preg_replace('/[^a-zA-Z0-9]/', '', $ext) : '');
         $subdir = 'company_' . $companyId . '/' . preg_replace('/[^a-z0-9_\-]/i', '_', $entityType);
-        $destDir = RATEB_STORAGE_PATH . '/uploads/' . $subdir;
+        $uploadsRoot = StorageHelper::uploadsRoot();
+        $destDir = $uploadsRoot . '/' . $subdir;
         $dirError = StorageHelper::ensureWritableDir($destDir);
         if ($dirError !== null) {
             return ['success' => false, 'error' => $dirError];
         }
 
         $relative = 'uploads/' . $subdir . '/' . $safeName;
-        $full = RATEB_STORAGE_PATH . '/' . $relative;
+        $full = $destDir . '/' . $safeName;
         if (!move_uploaded_file($tmpName, $full)) {
             return ['success' => false, 'error' => __('upload_save_failed')];
         }
@@ -146,8 +148,8 @@ final class DocumentService
             echo 'Not found';
             return;
         }
-        $full = RATEB_STORAGE_PATH . '/' . ltrim($relative, '/');
-        if (!is_file($full)) {
+        $full = StorageHelper::resolveFilePath($relative);
+        if ($full === '' || !is_file($full)) {
             http_response_code(404);
             echo 'File missing';
             return;
