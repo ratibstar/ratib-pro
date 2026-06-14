@@ -2,6 +2,9 @@
 $trial = $trial ?? [];
 $summary = $summary ?? [];
 Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']);
+if (rateb_is_super_admin() || rateb_can('access.manage')) {
+    Rateb\App\Core\View::partial('accounting-permissions-note');
+}
 ?>
 <div class="row g-3 mb-4">
     <div class="col-md-4">

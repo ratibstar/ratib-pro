@@ -38,4 +38,7 @@ $st = (string) ($voucher['status'] ?? '');
         <i class="fas fa-book"></i> <?php echo __('journal_entry'); ?>
     </a>
     <?php } ?>
+    <?php if ($st === 'draft' && !($canApprove ?? false)) { ?>
+    <p class="text-muted small mb-0 align-self-center"><i class="fas fa-lock me-1"></i><?php echo __('accounting_perm_approve_hint'); ?></p>
+    <?php } ?>
 </div>

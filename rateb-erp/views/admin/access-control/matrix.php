@@ -42,6 +42,11 @@
                             <button type="button" class="btn btn-link btn-sm p-0 ms-2" data-matrix-module="<?php echo Rateb\App\Core\View::escape($module); ?>"><?php echo __('toggle_module'); ?></button>
                             <?php if ($module === 'accounting') { ?>
                             <div class="text-muted small fw-normal mt-1"><?php echo __('accounting_permissions_matrix_note'); ?></div>
+                            <ul class="text-muted small fw-normal mt-1 mb-0">
+                                <li><?php echo __('accounting_perm_approve_hint'); ?></li>
+                                <li><?php echo __('accounting_perm_post_supplier_hint'); ?></li>
+                                <li><?php echo __('accounting_perm_bank_import_hint'); ?></li>
+                            </ul>
                             <?php } ?>
                         </td>
                     </tr>

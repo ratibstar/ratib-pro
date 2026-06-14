@@ -67,5 +67,7 @@ $status = (string) ($entry['status'] ?? '');
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <button type="submit" class="btn btn-outline-danger"><i class="fas fa-ban"></i> <?php echo __('void_entry'); ?></button>
     </form>
+    <?php } elseif ($status === 'draft') { ?>
+    <p class="text-muted small mb-0"><i class="fas fa-lock me-1"></i><?php echo __('accounting_perm_approve_hint'); ?></p>
     <?php } ?>
 </div>

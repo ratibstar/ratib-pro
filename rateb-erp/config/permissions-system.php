@@ -51,6 +51,15 @@ return [
         'accounting.post',
     ],
 
+    /** Key accounting operations and required permission slugs. */
+    'accounting_permission_ops' => [
+        'approve_journals_vouchers' => 'accounting.approve',
+        'supplier_payment' => 'accounting.post',
+        'bank_statement_import' => 'accounting.manage',
+        'fiscal_period_close' => 'accounting.post',
+        'accounting_sync' => 'accounting.post',
+    ],
+
     /**
      * Permission slugs that must never be assigned to company-full-access
      * (even when module is shared, e.g. reports.executive).

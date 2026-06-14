@@ -1,4 +1,7 @@
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
+<?php if (!($canPay ?? false)) { ?>
+<p class="text-muted small mb-2"><i class="fas fa-lock me-1"></i><?php echo __('accounting_perm_post_supplier_hint'); ?></p>
+<?php } ?>
 <div class="row g-3 mb-4">
     <div class="col-md-6">
         <div class="rateb-stat-card">

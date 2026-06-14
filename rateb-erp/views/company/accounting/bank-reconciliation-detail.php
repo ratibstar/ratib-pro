@@ -28,6 +28,9 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
         </div>
     </div>
 </div>
+<?php if (!($canManage ?? false)) { ?>
+<p class="text-muted small mb-2"><i class="fas fa-lock me-1"></i><?php echo __('accounting_perm_bank_import_hint'); ?></p>
+<?php } ?>
 <?php if ($canManage ?? false) { ?>
 <div class="rateb-card mb-3">
     <div class="rateb-card-header"><?php echo __('import_bank_statement'); ?></div>
