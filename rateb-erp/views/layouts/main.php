@@ -175,8 +175,9 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
                     <i class="fas fa-sign-out-alt"></i><span class="d-none d-md-inline ms-1"><?php echo __('logout'); ?></span>
                 </a>
                 <div class="btn-group btn-group-sm" role="group" aria-label="<?php echo __('language'); ?>">
-                    <a href="<?php echo rateb_url('locale/en'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>" data-locale="en">EN</a>
-                    <a href="<?php echo rateb_url('locale/ar'); ?>" class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>" data-locale="ar">عربي</a>
+                    <?php $localeReturn = rawurlencode(rateb_current_public_path('admin')); ?>
+                    <a href="<?php echo rateb_url('locale/en?next=' . $localeReturn); ?>" class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>" data-locale="en">EN</a>
+                    <a href="<?php echo rateb_url('locale/ar?next=' . $localeReturn); ?>" class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>" data-locale="ar">عربي</a>
                 </div>
             </div>
         </header>

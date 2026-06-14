@@ -1662,10 +1662,50 @@ final class LocaleController extends Controller
         if (in_array($locale, RATEB_SUPPORTED_LOCALES, true)) {
             $_SESSION['rateb_locale'] = $locale;
         }
-        $ref = (string) ($_SERVER['HTTP_REFERER'] ?? '');
-        if ($ref === '' || strpos($ref, 'rateb-erp-app') === false) {
-            $ref = rateb_url('admin');
+        Response::redirect($this->localeRedirectTarget());
+    }
+
+    private function localeRedirectTarget(): string
+    {
+        $next = trim((string) ($_GET['next'] ?? ''));
+        if ($next !== '' && $this->isSafeInternalPath($next)) {
+            return rateb_url($next);
         }
-        Response::redirect($ref);
+
+        $ref = (string) ($_SERVER['HTTP_REFERER'] ?? '');
+        if ($ref !== '' && $this->isSameSiteUrl($ref) && !str_contains($ref, '/locale/')) {
+            return $ref;
+        }
+
+        if (Auth::check()) {
+            return rateb_url(Auth::homePath());
+        }
+
+        return rateb_url('site');
+    }
+
+    private function isSafeInternalPath(string $path): bool
+    {
+        if ($path === '' || str_contains($path, '://') || str_starts_with($path, '//')) {
+            return false;
+        }
+        $path = ltrim($path, '/');
+        return $path !== '' && !str_starts_with($path, 'locale/');
+    }
+
+    private function isSameSiteUrl(string $url): bool
+    {
+        $parsed = parse_url($url);
+        if (!is_array($parsed)) {
+            return false;
+        }
+        $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
+        $refHost = (string) ($parsed['host'] ?? '');
+        if ($refHost === '' || strcasecmp($refHost, $host) !== 0) {
+            return false;
+        }
+        $path = (string) ($parsed['path'] ?? '');
+        $base = defined('RATEB_BASE_URL') ? rtrim((string) RATEB_BASE_URL, '/') : '/rateb-erp/public';
+        return str_contains($path, $base);
     }
 }

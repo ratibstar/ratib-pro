@@ -63,8 +63,9 @@ $brandUrl = $headerContext === 'portal' ? rateb_url('site/portal') : rateb_url('
                         <button type="button" class="btn btn-outline-secondary" data-mkt-theme="dark" title="<?php echo __('theme_dark'); ?>"><i class="fas fa-moon"></i></button>
                     </div>
                     <?php } ?>
-                    <a href="<?php echo rateb_url('locale/en'); ?>" class="btn btn-sm btn-outline-secondary<?php echo rateb_locale() === 'en' ? ' active' : ''; ?>">EN</a>
-                    <a href="<?php echo rateb_url('locale/ar'); ?>" class="btn btn-sm btn-outline-secondary<?php echo rateb_locale() === 'ar' ? ' active' : ''; ?>">عربي</a>
+                    <?php $localeReturn = rawurlencode(rateb_current_public_path('site')); ?>
+                    <a href="<?php echo rateb_url('locale/en?next=' . $localeReturn); ?>" class="btn btn-sm btn-outline-secondary<?php echo rateb_locale() === 'en' ? ' active' : ''; ?>">EN</a>
+                    <a href="<?php echo rateb_url('locale/ar?next=' . $localeReturn); ?>" class="btn btn-sm btn-outline-secondary<?php echo rateb_locale() === 'ar' ? ' active' : ''; ?>">عربي</a>
                     <?php if ($isCompanyCustomer && $headerContext === 'marketing') { ?>
                     <a href="<?php echo rateb_url('site/portal'); ?>" class="btn btn-sm btn-primary"><?php echo __('portal_my_account'); ?></a>
                     <a href="<?php echo rateb_url('site/portal/logout'); ?>" class="btn btn-sm btn-outline-danger"><?php echo __('logout'); ?></a>
