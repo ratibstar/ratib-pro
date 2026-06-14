@@ -392,14 +392,15 @@ final class AccountingDashboardController extends Controller
             'data' => $data,
             'bankId' => $bankId,
             'csrf' => Csrf::token(),
-            'canManage' => rateb_can_manage_entity('accounting'),
+            'canManage' => rateb_can_manage_entity('bank-reconciliation'),
+            'bulkEnabled' => rateb_can_manage_entity('bank-reconciliation'),
         ], 'main');
     }
 
     public function importBankStatement(array $params): void
     {
-        rateb_require_post('accounting');
-        if (!rateb_can_manage_entity('accounting') || !$this->validateCsrf()) {
+        rateb_require_post('bank-reconciliation');
+        if (!rateb_can_manage_entity('bank-reconciliation') || !$this->validateCsrf()) {
             Response::redirect(rateb_app_url('accounting/bank-reconciliation'));
         }
         $companyId = rateb_require_ops_company();
@@ -412,8 +413,8 @@ final class AccountingDashboardController extends Controller
 
     public function reconcileStatementLine(array $params): void
     {
-        rateb_require_post('accounting');
-        if (!rateb_can_manage_entity('accounting') || !$this->validateCsrf()) {
+        rateb_require_post('bank-reconciliation');
+        if (!rateb_can_manage_entity('bank-reconciliation') || !$this->validateCsrf()) {
             Response::redirect(rateb_app_url('accounting/bank-reconciliation'));
         }
         $companyId = rateb_require_ops_company();
@@ -424,6 +425,104 @@ final class AccountingDashboardController extends Controller
             SessionManager::flash('success', __('bank_line_reconciled'));
         }
         Response::redirect(rateb_app_url('accounting/bank-reconciliation/' . $bankId));
+    }
+
+    public function supplierPayments(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $this->view('company/accounting/supplier-payments', [
+            'title' => __('supplier_payments'),
+            'items' => $companyId > 0 ? (new AccountingService())->listSupplierPayments($companyId) : [],
+            'csrf' => Csrf::token(),
+            'canPost' => rateb_can_post_entity('accounting'),
+            'bulkEnabled' => rateb_can_post_entity('accounting'),
+        ], 'main');
+    }
+
+    public function voidSupplierPayment(array $params): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/supplier-payments'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (int) ($params['id'] ?? 0);
+        if ((new AccountingService())->voidSupplierPayment($id, $companyId)) {
+            (new AuditService())->log('void', 'supplier_payment', $id, []);
+            SessionManager::flash('success', __('supplier_payment_voided'));
+        } else {
+            SessionManager::flash('error', __('supplier_payment_void_failed'));
+        }
+        Response::redirect(rateb_app_url('accounting/supplier-payments'));
+    }
+
+    public function bulkVoidSupplierPayments(): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/supplier-payments'));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            Response::redirect(rateb_app_url('accounting/supplier-payments'));
+        }
+        $companyId = rateb_require_ops_company();
+        $count = (new AccountingService())->bulkVoidSupplierPayments($ids, $companyId);
+        foreach ($ids as $id) {
+            (new AuditService())->log('bulk_void', 'supplier_payment', $id);
+        }
+        SessionManager::flash('success', __('bulk_voided', ['count' => $count]));
+        Response::redirect(rateb_app_url('accounting/supplier-payments'));
+    }
+
+    public function destroyBankStatementLine(array $params): void
+    {
+        rateb_require_post('bank-reconciliation');
+        if (!rateb_can_manage_entity('bank-reconciliation') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/bank-reconciliation'));
+        }
+        $companyId = rateb_require_ops_company();
+        $lineId = (int) ($params['line_id'] ?? 0);
+        $bankId = (int) ($_POST['bank_account_id'] ?? 0);
+        if ((new AccountingService())->deleteUnreconciledBankLine($lineId, $companyId)) {
+            (new AuditService())->log('delete', 'bank_statement_line', $lineId);
+            SessionManager::flash('success', __('bank_line_deleted'));
+        } else {
+            SessionManager::flash('error', __('bank_line_delete_denied'));
+        }
+        Response::redirect(rateb_app_url('accounting/bank-reconciliation/' . $bankId));
+    }
+
+    public function bulkDestroyBankStatementLines(): void
+    {
+        rateb_require_post('bank-reconciliation');
+        if (!rateb_can_manage_entity('bank-reconciliation') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/bank-reconciliation'));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            Response::redirect(rateb_app_url('accounting/bank-reconciliation'));
+        }
+        $companyId = rateb_require_ops_company();
+        $bankId = (int) ($_POST['bank_account_id'] ?? 0);
+        $count = (new AccountingService())->bulkDeleteUnreconciledBankLines($ids, $companyId);
+        foreach ($ids as $id) {
+            (new AuditService())->log('bulk_delete', 'bank_statement_line', $id);
+        }
+        SessionManager::flash('success', __('bulk_deleted', ['count' => $count]));
+        Response::redirect(rateb_app_url('accounting/bank-reconciliation/' . $bankId));
+    }
+
+    /** @return array<int, int> */
+    private function parseBulkIds(): array
+    {
+        $raw = $this->input('ids', []);
+        if (!is_array($raw)) {
+            return [];
+        }
+        return array_values(array_unique(array_filter(array_map('intval', $raw), static fn (int $id): bool => $id > 0)));
     }
 
     public function exportProfitLoss(): void
@@ -529,12 +628,13 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
         TenantContext::setCompanyId($companyId);
         $service = new AccountingService();
         $tree = $service->coaTreeWithBalances($companyId);
+        $canManage = rateb_can_manage_entity('chart-of-accounts');
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __('chart_of_accounts'),
             'tree' => $tree,
             'routePrefix' => $this->routePrefix,
             'csrf' => Csrf::token(),
-            'bulkEnabled' => false,
+            'bulkEnabled' => $canManage,
             'createEnabled' => $this->createEnabled,
             'actionsEnabled' => $this->actionsEnabled,
         ]), $this->layout());
@@ -603,6 +703,49 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
         $parentId = (int) ($data['parent_id'] ?? 0);
         $data['parent_id'] = $parentId > 0 ? $parentId : null;
         return $data;
+    }
+
+    public function destroy(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        $service = new AccountingService();
+        if ($service->destroyChartAccount($id, $companyId)) {
+            (new AuditService())->log('delete', $this->entityName, $id);
+            SessionManager::flash('success', __('delete') . ' OK');
+        } elseif ($service->deactivateChartAccount($id, $companyId)) {
+            (new AuditService())->log('deactivate', $this->entityName, $id);
+            SessionManager::flash('success', __('account_deactivated'));
+        } else {
+            SessionManager::flash('error', __('account_delete_denied'));
+        }
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function bulkDestroy(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        $deactivated = (new AccountingService())->bulkDeactivateChartAccounts($ids, $companyId);
+        foreach ($ids as $id) {
+            (new AuditService())->log('bulk_deactivate', $this->entityName, $id);
+        }
+        SessionManager::flash('success', __('bulk_deactivated', ['count' => $deactivated]));
+        $this->redirect(rateb_url($this->routePrefix));
     }
 
     protected function layout(): string
@@ -789,6 +932,72 @@ final class JournalEntriesController extends Controller
         Response::redirect(rateb_app_url('journal-entries/' . $id));
     }
 
+    public function destroy(array $params): void
+    {
+        rateb_require_post('journal-entries');
+        if (!rateb_can_manage_entity('journal-entries') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('journal-entries'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (int) ($params['id'] ?? 0);
+        if ((new AccountingService())->deleteManualDraft($id, $companyId)) {
+            (new AuditService())->log('delete', 'journal_entry', $id);
+            SessionManager::flash('success', __('journal_draft_deleted'));
+        } else {
+            SessionManager::flash('error', __('journal_delete_denied'));
+        }
+        Response::redirect(rateb_app_url('journal-entries'));
+    }
+
+    public function bulkDestroy(): void
+    {
+        rateb_require_post('journal-entries');
+        if (!rateb_can_manage_entity('journal-entries') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('journal-entries'));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            Response::redirect(rateb_app_url('journal-entries'));
+        }
+        $companyId = rateb_require_ops_company();
+        $deleted = (new AccountingService())->bulkDeleteManualDrafts($ids, $companyId);
+        foreach ($ids as $id) {
+            (new AuditService())->log('bulk_delete', 'journal_entry', $id);
+        }
+        SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
+        Response::redirect(rateb_app_url('journal-entries'));
+    }
+
+    public function bulkApprove(): void
+    {
+        rateb_require_approve('journal-entries');
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('journal-entries'));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            Response::redirect(rateb_app_url('journal-entries'));
+        }
+        $companyId = rateb_require_ops_company();
+        $service = new AccountingService();
+        $approved = 0;
+        foreach ($ids as $id) {
+            $entry = (new JournalEntry())->queryOne(
+                'SELECT entry_date FROM rateb_journal_entries WHERE id = :id AND company_id = :cid',
+                ['id' => $id, 'cid' => $companyId]
+            );
+            if ($entry && !$service->periodBlocksPosting($companyId, (string) ($entry['entry_date'] ?? ''))
+                && $service->postDraftEntry((int) $id, $companyId)) {
+                $approved++;
+                (new AuditService())->log('post', 'journal_entry', (int) $id, []);
+            }
+        }
+        SessionManager::flash('success', __('bulk_approved', ['count' => $approved]));
+        Response::redirect(rateb_app_url('journal-entries'));
+    }
+
     public function show(array $params): void
     {
         $companyId = rateb_resolve_ops_company_id();
@@ -878,6 +1087,16 @@ final class JournalEntriesController extends Controller
     {
         return trim((string) ($_POST['description_ar'] ?? '')) ?: 'قيد يدوي';
     }
+
+    /** @return array<int, int> */
+    private function parseBulkIds(): array
+    {
+        $raw = $this->input('ids', []);
+        if (!is_array($raw)) {
+            return [];
+        }
+        return array_values(array_unique(array_filter(array_map('intval', $raw), static fn (int $id): bool => $id > 0)));
+    }
 }
 
 final class CashVouchersController extends Controller
@@ -947,6 +1166,133 @@ final class CashVouchersController extends Controller
         Response::redirect(rateb_app_url('cash-vouchers/' . $id));
     }
 
+    public function edit(array $params): void
+    {
+        if (!rateb_can_manage_entity('cash-vouchers')) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(rateb_app_url('cash-vouchers'));
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        $voucher = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        if (!$voucher || ($voucher['status'] ?? '') !== 'draft') {
+            SessionManager::flash('error', __('voucher_edit_denied'));
+            Response::redirect(rateb_app_url('cash-vouchers/' . $id));
+        }
+        (new AccountingService())->ensureDefaultAccounts($companyId);
+        $accounts = (new ChartOfAccount())->query(
+            'SELECT id, code, name, name_ar FROM rateb_chart_of_accounts WHERE company_id = :cid AND is_active = 1 ORDER BY code',
+            ['cid' => $companyId]
+        );
+        $this->view('company/cash-vouchers/form', [
+            'title' => __('edit_cash_voucher'),
+            'voucher' => $voucher,
+            'accounts' => $accounts,
+            'bankAccounts' => (new AccountingService())->listBankAccounts($companyId),
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function update(array $params): void
+    {
+        rateb_require_post('cash-vouchers');
+        if (!rateb_can_manage_entity('cash-vouchers') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('cash-vouchers'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (int) ($params['id'] ?? 0);
+        $type = (string) ($_POST['voucher_type'] ?? 'receipt');
+        if (!in_array($type, ['receipt', 'payment'], true)) {
+            $type = 'receipt';
+        }
+        $service = new AccountingService();
+        if ($service->updateCashVoucherDraft($id, $companyId, [
+            'voucher_type' => $type,
+            'voucher_date' => trim((string) ($_POST['voucher_date'] ?? '')) ?: date('Y-m-d'),
+            'amount' => (float) ($_POST['amount'] ?? 0),
+            'party_name' => trim((string) ($_POST['party_name'] ?? '')),
+            'description' => trim((string) ($_POST['description'] ?? '')),
+            'description_ar' => trim((string) ($_POST['description_ar'] ?? '')),
+            'counter_account_id' => (int) ($_POST['counter_account_id'] ?? 0),
+            'bank_account_id' => (int) ($_POST['bank_account_id'] ?? 0) ?: null,
+        ])) {
+            (new AuditService())->log('update', 'cash_voucher', $id, ['status' => 'draft']);
+            SessionManager::flash('success', __('voucher_saved'));
+            Response::redirect(rateb_app_url('cash-vouchers/' . $id));
+        }
+        SessionManager::flash('error', __('voucher_edit_denied'));
+        Response::redirect(rateb_app_url('cash-vouchers/' . $id . '/edit'));
+    }
+
+    public function destroy(array $params): void
+    {
+        rateb_require_post('cash-vouchers');
+        if (!rateb_can_manage_entity('cash-vouchers') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('cash-vouchers'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (int) ($params['id'] ?? 0);
+        if ((new AccountingService())->deleteCashVoucherDraft($id, $companyId)) {
+            (new AuditService())->log('delete', 'cash_voucher', $id);
+            SessionManager::flash('success', __('voucher_deleted'));
+        } else {
+            SessionManager::flash('error', __('voucher_delete_denied'));
+        }
+        Response::redirect(rateb_app_url('cash-vouchers'));
+    }
+
+    public function bulkDestroy(): void
+    {
+        rateb_require_post('cash-vouchers');
+        if (!rateb_can_manage_entity('cash-vouchers') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('cash-vouchers'));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            Response::redirect(rateb_app_url('cash-vouchers'));
+        }
+        $companyId = rateb_require_ops_company();
+        $deleted = (new AccountingService())->bulkDeleteCashVoucherDrafts($ids, $companyId);
+        foreach ($ids as $bid) {
+            (new AuditService())->log('bulk_delete', 'cash_voucher', $bid);
+        }
+        SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
+        Response::redirect(rateb_app_url('cash-vouchers'));
+    }
+
+    public function bulkApprove(): void
+    {
+        rateb_require_approve('cash-vouchers');
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('cash-vouchers'));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            Response::redirect(rateb_app_url('cash-vouchers'));
+        }
+        $companyId = rateb_require_ops_company();
+        $service = new AccountingService();
+        $approved = 0;
+        foreach ($ids as $id) {
+            $voucher = (new JournalEntry())->queryOne(
+                'SELECT voucher_date FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid',
+                ['id' => $id, 'cid' => $companyId]
+            );
+            if ($voucher && !$service->periodBlocksPosting($companyId, (string) ($voucher['voucher_date'] ?? ''))
+                && $service->postCashVoucher((int) $id, $companyId)) {
+                $approved++;
+                (new AuditService())->log('post', 'cash_voucher', (int) $id, []);
+            }
+        }
+        SessionManager::flash('success', __('bulk_approved', ['count' => $approved]));
+        Response::redirect(rateb_app_url('cash-vouchers'));
+    }
+
     public function show(array $params): void
     {
         $companyId = rateb_resolve_ops_company_id();
@@ -967,6 +1313,7 @@ final class CashVouchersController extends Controller
             'title' => __('cash_vouchers'),
             'voucher' => $voucher,
             'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('cash-vouchers'),
             'canApprove' => rateb_can_approve_entity('cash-vouchers'),
         ], 'main');
     }
@@ -1013,6 +1360,16 @@ final class CashVouchersController extends Controller
         }
         Response::redirect(rateb_app_url('cash-vouchers/' . $id));
     }
+
+    /** @return array<int, int> */
+    private function parseBulkIds(): array
+    {
+        $raw = $this->input('ids', []);
+        if (!is_array($raw)) {
+            return [];
+        }
+        return array_values(array_unique(array_filter(array_map('intval', $raw), static fn (int $id): bool => $id > 0)));
+    }
 }
 
 final class FiscalPeriodsController extends Controller
@@ -1024,8 +1381,61 @@ final class FiscalPeriodsController extends Controller
             'title' => __('fiscal_periods'),
             'items' => (new AccountingService())->listFiscalPeriods($companyId),
             'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('fiscal-periods'),
             'canPost' => rateb_can_post_entity('fiscal-periods'),
         ], 'main');
+    }
+
+    public function create(): void
+    {
+        if (!rateb_can_manage_entity('fiscal-periods')) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(rateb_app_url('fiscal-periods'));
+        }
+        $this->view('company/fiscal-periods/form', [
+            'title' => __('new_fiscal_period'),
+            'item' => null,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        rateb_require_post('fiscal-periods');
+        if (!rateb_can_manage_entity('fiscal-periods') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('fiscal-periods'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (new AccountingService())->createFiscalPeriod(
+            $companyId,
+            trim((string) ($_POST['name'] ?? '')),
+            trim((string) ($_POST['start_date'] ?? '')),
+            trim((string) ($_POST['end_date'] ?? ''))
+        );
+        if ($id) {
+            (new AuditService())->log('create', 'fiscal_period', $id, []);
+            SessionManager::flash('success', __('fiscal_period_created'));
+        } else {
+            SessionManager::flash('error', __('fiscal_period_create_failed'));
+        }
+        Response::redirect(rateb_app_url('fiscal-periods'));
+    }
+
+    public function destroy(array $params): void
+    {
+        rateb_require_post('fiscal-periods');
+        if (!rateb_can_manage_entity('fiscal-periods') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('fiscal-periods'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (int) ($params['id'] ?? 0);
+        if ((new AccountingService())->deleteOpenFiscalPeriod($id, $companyId)) {
+            (new AuditService())->log('delete', 'fiscal_period', $id);
+            SessionManager::flash('success', __('fiscal_period_deleted'));
+        } else {
+            SessionManager::flash('error', __('fiscal_period_delete_denied'));
+        }
+        Response::redirect(rateb_app_url('fiscal-periods'));
     }
 
     public function close(array $params): void
@@ -1077,14 +1487,16 @@ final class BankAccountsController extends Controller
             'title' => __('bank_accounts'),
             'items' => (new AccountingService())->listBankAccounts($companyId > 0 ? $companyId : null),
             'csrf' => Csrf::token(),
-            'canManage' => rateb_can_manage_entity('accounting'),
-            'createEnabled' => $companyId > 0 && rateb_can_manage_entity('accounting'),
+            'canManage' => rateb_can_manage_entity('bank-accounts'),
+            'createEnabled' => $companyId > 0 && rateb_can_manage_entity('bank-accounts'),
+            'bulkEnabled' => $companyId > 0 && rateb_can_manage_entity('bank-accounts'),
+            'actionsEnabled' => rateb_can_manage_entity('bank-accounts'),
         ], 'main');
     }
 
     public function create(): void
     {
-        if (!rateb_can_manage_entity('accounting')) {
+        if (!rateb_can_manage_entity('bank-accounts')) {
             SessionManager::flash('error', __('access_denied'));
             Response::redirect(rateb_app_url('bank-accounts'));
         }
@@ -1097,8 +1509,8 @@ final class BankAccountsController extends Controller
 
     public function store(): void
     {
-        rateb_require_post('accounting');
-        if (!rateb_can_manage_entity('accounting') || !$this->validateCsrf()) {
+        rateb_require_post('bank-accounts');
+        if (!rateb_can_manage_entity('bank-accounts') || !$this->validateCsrf()) {
             Response::redirect(rateb_app_url('bank-accounts'));
         }
         $companyId = rateb_require_ops_company();
@@ -1117,6 +1529,99 @@ final class BankAccountsController extends Controller
         (new AuditService())->log('create', 'bank_account', $id, []);
         SessionManager::flash('success', __('bank_account_saved'));
         Response::redirect(rateb_app_url('bank-accounts'));
+    }
+
+    public function edit(array $params): void
+    {
+        if (!rateb_can_manage_entity('bank-accounts')) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(rateb_app_url('bank-accounts'));
+        }
+        $companyId = rateb_resolve_ops_company_id();
+        $id = (int) ($params['id'] ?? 0);
+        $item = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_bank_accounts WHERE id = :id AND company_id = :cid AND is_active = 1',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view('company/bank-accounts/form', [
+            'title' => __('edit_bank_account'),
+            'item' => $item,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function update(array $params): void
+    {
+        rateb_require_post('bank-accounts');
+        if (!rateb_can_manage_entity('bank-accounts') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('bank-accounts'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (int) ($params['id'] ?? 0);
+        if ((new AccountingService())->updateBankAccount($id, $companyId, [
+            'name' => trim((string) ($_POST['name'] ?? '')),
+            'bank_name' => trim((string) ($_POST['bank_name'] ?? '')),
+            'account_number' => trim((string) ($_POST['account_number'] ?? '')),
+            'is_default' => !empty($_POST['is_default']),
+        ])) {
+            (new AuditService())->log('update', 'bank_account', $id, []);
+            SessionManager::flash('success', __('bank_account_saved'));
+        } else {
+            SessionManager::flash('error', __('invalid_request'));
+        }
+        Response::redirect(rateb_app_url('bank-accounts'));
+    }
+
+    public function destroy(array $params): void
+    {
+        rateb_require_post('bank-accounts');
+        if (!rateb_can_manage_entity('bank-accounts') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('bank-accounts'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (int) ($params['id'] ?? 0);
+        if ((new AccountingService())->deactivateBankAccount($id, $companyId)) {
+            (new AuditService())->log('deactivate', 'bank_account', $id);
+            SessionManager::flash('success', __('bank_account_deactivated'));
+        } else {
+            SessionManager::flash('error', __('bank_account_delete_denied'));
+        }
+        Response::redirect(rateb_app_url('bank-accounts'));
+    }
+
+    public function bulkDestroy(): void
+    {
+        rateb_require_post('bank-accounts');
+        if (!rateb_can_manage_entity('bank-accounts') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('bank-accounts'));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            Response::redirect(rateb_app_url('bank-accounts'));
+        }
+        $companyId = rateb_require_ops_company();
+        $count = (new AccountingService())->bulkDeactivateBankAccounts($ids, $companyId);
+        foreach ($ids as $bid) {
+            (new AuditService())->log('bulk_deactivate', 'bank_account', $bid);
+        }
+        SessionManager::flash('success', __('bulk_deactivated', ['count' => $count]));
+        Response::redirect(rateb_app_url('bank-accounts'));
+    }
+
+    /** @return array<int, int> */
+    private function parseBulkIds(): array
+    {
+        $raw = $this->input('ids', []);
+        if (!is_array($raw)) {
+            return [];
+        }
+        return array_values(array_unique(array_filter(array_map('intval', $raw), static fn (int $id): bool => $id > 0)));
     }
 }
 

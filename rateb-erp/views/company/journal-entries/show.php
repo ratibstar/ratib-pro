@@ -54,6 +54,11 @@ $status = (string) ($entry['status'] ?? '');
     <a href="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/edit'); ?>" class="btn btn-outline-primary">
         <i class="fas fa-edit"></i> <?php echo __('edit'); ?>
     </a>
+    <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/delete'); ?>" class="d-inline"
+          onsubmit="return confirm('<?php echo __('bulk_confirm_delete_drafts'); ?>');">
+        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+        <button type="submit" class="btn btn-outline-danger"><i class="fas fa-trash"></i> <?php echo __('delete'); ?></button>
+    </form>
     <?php } ?>
     <?php if (($canApprove ?? false) && $status === 'draft') { ?>
     <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/post'); ?>" class="d-inline">

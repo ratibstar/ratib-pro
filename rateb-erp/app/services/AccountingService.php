@@ -1701,4 +1701,384 @@ final class AccountingService
         $n = (int) ($row['c'] ?? 0) + 1;
         return 'JE-' . ($companyId ?? '0') . '-' . str_pad((string) $n, 5, '0', STR_PAD_LEFT);
     }
+
+    public function deleteManualDraft(int $entryId, ?int $companyId): bool
+    {
+        $entry = $this->findEntryForCompany($entryId, $companyId);
+        if (!$entry || ($entry['source_type'] ?? '') !== 'manual' || ($entry['status'] ?? '') !== 'draft') {
+            return false;
+        }
+        $pdo = Database::connection();
+        $pdo->prepare('DELETE FROM rateb_journal_lines WHERE journal_entry_id = :id')->execute(['id' => $entryId]);
+        return (new JournalEntry())->delete($entryId);
+    }
+
+    /** @param array<int, int> $ids */
+    public function bulkDeleteManualDrafts(array $ids, ?int $companyId): int
+    {
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->deleteManualDraft((int) $id, $companyId)) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /** @param array<int, int> $ids */
+    public function bulkPostDraftEntries(array $ids, ?int $companyId): int
+    {
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->postDraftEntry((int) $id, $companyId)) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /** @param array<string, mixed> $data */
+    public function updateCashVoucherDraft(int $voucherId, ?int $companyId, array $data): bool
+    {
+        $v = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $voucherId, 'cid' => $companyId]
+        );
+        if (!$v || ($v['status'] ?? '') !== 'draft') {
+            return false;
+        }
+        $amount = (float) ($data['amount'] ?? 0);
+        $counter = (int) ($data['counter_account_id'] ?? 0);
+        if ($amount <= 0 || $counter < 1) {
+            return false;
+        }
+        $type = (string) ($data['voucher_type'] ?? 'receipt');
+        if (!in_array($type, ['receipt', 'payment'], true)) {
+            $type = 'receipt';
+        }
+        (new JournalEntry())->update($voucherId, [
+            'voucher_type' => $type,
+            'voucher_date' => (string) ($data['voucher_date'] ?? date('Y-m-d')),
+            'amount' => $amount,
+            'party_name' => trim((string) ($data['party_name'] ?? '')) ?: null,
+            'description' => trim((string) ($data['description'] ?? '')) ?: ($type === 'receipt' ? 'Cash receipt' : 'Cash payment'),
+            'description_ar' => trim((string) ($data['description_ar'] ?? '')) ?: null,
+            'counter_account_id' => $counter,
+            'bank_account_id' => isset($data['bank_account_id']) && (int) $data['bank_account_id'] > 0
+                ? (int) $data['bank_account_id'] : null,
+        ]);
+        return true;
+    }
+
+    public function deleteCashVoucherDraft(int $voucherId, ?int $companyId): bool
+    {
+        $v = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid AND status = :st LIMIT 1',
+            ['id' => $voucherId, 'cid' => $companyId, 'st' => 'draft']
+        );
+        if (!$v) {
+            return false;
+        }
+        return Database::connection()
+            ->prepare('DELETE FROM rateb_cash_vouchers WHERE id = :id')
+            ->execute(['id' => $voucherId]);
+    }
+
+    /** @param array<int, int> $ids */
+    public function bulkDeleteCashVoucherDrafts(array $ids, ?int $companyId): int
+    {
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->deleteCashVoucherDraft((int) $id, $companyId)) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /** @param array<int, int> $ids */
+    public function bulkPostCashVouchers(array $ids, ?int $companyId): int
+    {
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->postCashVoucher((int) $id, $companyId)) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /** @param array<string, mixed> $data */
+    public function updateBankAccount(int $bankId, ?int $companyId, array $data): bool
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null) {
+            return false;
+        }
+        $row = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_bank_accounts WHERE id = :id AND company_id = :cid AND is_active = 1 LIMIT 1',
+            ['id' => $bankId, 'cid' => $companyId]
+        );
+        if (!$row) {
+            return false;
+        }
+        $name = trim((string) ($data['name'] ?? ''));
+        if ($name === '') {
+            return false;
+        }
+        $pdo = Database::connection();
+        if (!empty($data['is_default'])) {
+            $pdo->prepare('UPDATE rateb_bank_accounts SET is_default = 0 WHERE company_id = :cid')->execute(['cid' => $companyId]);
+        }
+        $pdo->prepare(
+            'UPDATE rateb_bank_accounts SET name = :name, bank_name = :bank, account_number = :acct_no, is_default = :def WHERE id = :id'
+        )->execute([
+            'name' => $name,
+            'bank' => trim((string) ($data['bank_name'] ?? '')),
+            'acct_no' => trim((string) ($data['account_number'] ?? '')),
+            'def' => !empty($data['is_default']) ? 1 : 0,
+            'id' => $bankId,
+        ]);
+        $coaId = (int) ($row['chart_account_id'] ?? 0);
+        if ($coaId > 0) {
+            (new ChartOfAccount())->update($coaId, [
+                'name' => $name,
+                'name_ar' => trim((string) ($data['name_ar'] ?? $name)),
+            ]);
+        }
+        return true;
+    }
+
+    public function deactivateBankAccount(int $bankId, ?int $companyId): bool
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null) {
+            return false;
+        }
+        $row = (new JournalEntry())->queryOne(
+            'SELECT id, chart_account_id FROM rateb_bank_accounts WHERE id = :id AND company_id = :cid AND is_active = 1 LIMIT 1',
+            ['id' => $bankId, 'cid' => $companyId]
+        );
+        if (!$row) {
+            return false;
+        }
+        Database::connection()->prepare(
+            'UPDATE rateb_bank_accounts SET is_active = 0, is_default = 0 WHERE id = :id'
+        )->execute(['id' => $bankId]);
+        $coaId = (int) ($row['chart_account_id'] ?? 0);
+        if ($coaId > 0) {
+            $this->deactivateChartAccount($coaId, $companyId);
+        }
+        return true;
+    }
+
+    /** @param array<int, int> $ids */
+    public function bulkDeactivateBankAccounts(array $ids, ?int $companyId): int
+    {
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->deactivateBankAccount((int) $id, $companyId)) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    public function chartAccountHasPostedLines(int $accountId, ?int $companyId): bool
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        $row = (new JournalEntry())->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_journal_lines l
+             INNER JOIN rateb_journal_entries e ON e.id = l.journal_entry_id
+             WHERE l.account_id = :aid AND e.company_id <=> :cid AND e.status = :st',
+            ['aid' => $accountId, 'cid' => $companyId, 'st' => 'posted']
+        );
+        return (int) ($row['c'] ?? 0) > 0;
+    }
+
+    public function deactivateChartAccount(int $accountId, ?int $companyId): bool
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null) {
+            return false;
+        }
+        $row = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_chart_of_accounts WHERE id = :id AND company_id = :cid AND is_active = 1 LIMIT 1',
+            ['id' => $accountId, 'cid' => $companyId]
+        );
+        if (!$row) {
+            return false;
+        }
+        $child = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_chart_of_accounts WHERE parent_id = :pid AND is_active = 1 LIMIT 1',
+            ['pid' => $accountId]
+        );
+        if ($child) {
+            return false;
+        }
+        (new ChartOfAccount())->update($accountId, ['is_active' => 0]);
+        return true;
+    }
+
+    public function destroyChartAccount(int $accountId, ?int $companyId): bool
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null) {
+            return false;
+        }
+        $row = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_chart_of_accounts WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $accountId, 'cid' => $companyId]
+        );
+        if (!$row) {
+            return false;
+        }
+        $child = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_chart_of_accounts WHERE parent_id = :pid LIMIT 1',
+            ['pid' => $accountId]
+        );
+        if ($child) {
+            return false;
+        }
+        if ($this->chartAccountHasPostedLines($accountId, $companyId)) {
+            return false;
+        }
+        $bank = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_bank_accounts WHERE chart_account_id = :aid LIMIT 1',
+            ['aid' => $accountId]
+        );
+        if ($bank) {
+            return false;
+        }
+        $pdo = Database::connection();
+        $pdo->prepare('DELETE FROM rateb_journal_lines WHERE account_id = :aid')->execute(['aid' => $accountId]);
+        return (new ChartOfAccount())->delete($accountId);
+    }
+
+    /** @param array<int, int> $ids */
+    public function bulkDeactivateChartAccounts(array $ids, ?int $companyId): int
+    {
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->deactivateChartAccount((int) $id, $companyId)) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    public function createFiscalPeriod(?int $companyId, string $name, string $startDate, string $endDate): ?int
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null || $name === '' || $startDate === '' || $endDate === '') {
+            return null;
+        }
+        if ($startDate > $endDate) {
+            return null;
+        }
+        $overlap = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_fiscal_periods
+             WHERE company_id = :cid AND start_date <= :end AND end_date >= :start LIMIT 1',
+            ['cid' => $companyId, 'start' => $startDate, 'end' => $endDate]
+        );
+        if ($overlap) {
+            return null;
+        }
+        $pdo = Database::connection();
+        $pdo->prepare(
+            'INSERT INTO rateb_fiscal_periods (company_id, name, start_date, end_date, status) VALUES (:cid, :n, :s, :e, :st)'
+        )->execute(['cid' => $companyId, 'n' => $name, 's' => $startDate, 'e' => $endDate, 'st' => 'open']);
+        return (int) $pdo->lastInsertId();
+    }
+
+    public function deleteOpenFiscalPeriod(int $periodId, ?int $companyId): bool
+    {
+        $row = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_fiscal_periods WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $periodId, 'cid' => $companyId]
+        );
+        if (!$row || ($row['status'] ?? '') !== 'open') {
+            return false;
+        }
+        return Database::connection()
+            ->prepare('DELETE FROM rateb_fiscal_periods WHERE id = :id')
+            ->execute(['id' => $periodId]);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listSupplierPayments(?int $companyId, int $limit = 200): array
+    {
+        if ($companyId === null || $companyId < 1) {
+            return [];
+        }
+        return (new JournalEntry())->query(
+            'SELECT sp.*, s.name AS supplier_name, po.order_no, je.entry_no
+             FROM rateb_supplier_payments sp
+             LEFT JOIN rateb_suppliers s ON s.id = sp.supplier_id
+             LEFT JOIN rateb_purchase_orders po ON po.id = sp.purchase_order_id
+             LEFT JOIN rateb_journal_entries je ON je.id = sp.journal_entry_id
+             WHERE sp.company_id = :cid
+             ORDER BY sp.id DESC LIMIT ' . (int) $limit,
+            ['cid' => $companyId]
+        );
+    }
+
+    public function voidSupplierPayment(int $paymentId, ?int $companyId): bool
+    {
+        $row = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_supplier_payments WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $paymentId, 'cid' => $companyId]
+        );
+        if (!$row || ($row['status'] ?? '') !== 'posted') {
+            return false;
+        }
+        $jid = (int) ($row['journal_entry_id'] ?? 0);
+        if ($jid > 0) {
+            $this->voidPostedEntry($jid, $companyId, ['supplier_payment']);
+        }
+        Database::connection()->prepare(
+            'UPDATE rateb_supplier_payments SET status = :st WHERE id = :id'
+        )->execute(['st' => 'void', 'id' => $paymentId]);
+        return true;
+    }
+
+    /** @param array<int, int> $ids */
+    public function bulkVoidSupplierPayments(array $ids, ?int $companyId): int
+    {
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->voidSupplierPayment((int) $id, $companyId)) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    public function deleteUnreconciledBankLine(int $lineId, ?int $companyId): bool
+    {
+        $row = (new JournalEntry())->queryOne(
+            'SELECT l.id FROM rateb_bank_statement_lines l
+             INNER JOIN rateb_bank_accounts b ON b.id = l.bank_account_id
+             WHERE l.id = :id AND b.company_id = :cid AND l.is_reconciled = 0 LIMIT 1',
+            ['id' => $lineId, 'cid' => $companyId]
+        );
+        if (!$row) {
+            return false;
+        }
+        return Database::connection()
+            ->prepare('DELETE FROM rateb_bank_statement_lines WHERE id = :id')
+            ->execute(['id' => $lineId]);
+    }
+
+    /** @param array<int, int> $ids */
+    public function bulkDeleteUnreconciledBankLines(array $ids, ?int $companyId): int
+    {
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->deleteUnreconciledBankLine((int) $id, $companyId)) {
+                $count++;
+            }
+        }
+        return $count;
+    }
 }

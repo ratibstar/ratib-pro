@@ -20,6 +20,16 @@ $st = (string) ($voucher['status'] ?? '');
 </div>
 <div class="d-flex flex-wrap gap-2">
     <a href="<?php echo rateb_app_url('cash-vouchers'); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
+    <?php if (($canManage ?? false) && $st === 'draft') { ?>
+    <a href="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/edit'); ?>" class="btn btn-outline-primary">
+        <i class="fas fa-edit"></i> <?php echo __('edit'); ?>
+    </a>
+    <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/delete'); ?>" class="d-inline"
+          onsubmit="return confirm('<?php echo __('bulk_confirm_delete_drafts'); ?>');">
+        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+        <button type="submit" class="btn btn-outline-danger"><i class="fas fa-trash"></i> <?php echo __('delete'); ?></button>
+    </form>
+    <?php } ?>
     <?php if (($canApprove ?? false) && $st === 'draft') { ?>
     <form method="post" action="<?php echo rateb_app_url('cash-vouchers/' . (int) $voucher['id'] . '/post'); ?>" class="d-inline">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">

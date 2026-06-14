@@ -204,7 +204,7 @@ return [
     'fiscal-periods' => [
         'module' => 'accounting',
         'view' => 'accounting.view',
-        'manage' => 'accounting.view',
+        'manage' => 'accounting.manage',
         'post' => 'accounting.post',
     ],
     'cost-centers' => [
@@ -230,7 +230,13 @@ return [
     'bank-reconciliation' => [
         'module' => 'accounting',
         'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+    ],
+    'supplier-payments' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
         'manage' => 'accounting.view',
+        'post' => 'accounting.post',
     ],
     'budget-report' => [
         'module' => 'accounting',

@@ -55,8 +55,11 @@ return [
     'accounting_permission_ops' => [
         'approve_journals_vouchers' => 'accounting.approve',
         'supplier_payment' => 'accounting.post',
+        'supplier_payment_void' => 'accounting.post',
         'bank_statement_import' => 'accounting.manage',
+        'bank_statement_delete' => 'accounting.manage',
         'fiscal_period_close' => 'accounting.post',
+        'fiscal_period_manage' => 'accounting.manage',
         'accounting_sync' => 'accounting.post',
     ],
 
