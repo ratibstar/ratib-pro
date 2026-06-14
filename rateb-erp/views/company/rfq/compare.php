@@ -17,9 +17,10 @@
                         <th><?php echo __('amount'); ?></th>
                         <th><?php echo __('status'); ?></th>
                         <th><?php echo __('valid_until'); ?></th>
+                        <th></th>
                     </tr>
-                </thead>
-                <tbody>
+                    </thead>
+                    <tbody>
                     <?php
                     $best = null;
                     foreach ($quotations as $q) {
@@ -38,6 +39,12 @@
                         <td><strong><?php echo number_format($amt, 2); ?></strong> <?php if ($isBest) { ?><span class="badge bg-success"><?php echo __('best_price'); ?></span><?php } ?></td>
                         <td><?php echo Rateb\App\Core\View::escape($q['status'] ?? ''); ?></td>
                         <td><?php echo Rateb\App\Core\View::escape($q['valid_until'] ?? ''); ?></td>
+                        <td>
+                            <form method="post" action="<?php echo rateb_app_url('quotations/' . (int) ($q['id'] ?? 0) . '/create-po'); ?>" class="d-inline">
+                                <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf ?? \Rateb\App\Core\Csrf::token()); ?>">
+                                <button type="submit" class="btn btn-sm btn-primary"><?php echo __('create_po_from_quote'); ?></button>
+                            </form>
+                        </td>
                     </tr>
                     <?php } ?>
                 </tbody>

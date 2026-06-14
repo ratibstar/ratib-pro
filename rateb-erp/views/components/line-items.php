@@ -3,11 +3,13 @@
 /** @var bool $showDeliveryCols */
 $lineItems = $lineItems ?? [];
 $showDeliveryCols = !empty($showDeliveryCols);
+$inventoryItems = $inventoryItems ?? [];
 $unitOptions = \Rateb\App\Helpers\LineItems::unitOptions();
 $taxPresets = \Rateb\App\Helpers\LineItems::taxPresets();
+$colSpan = ($showDeliveryCols ? 11 : 9);
 if ($lineItems === []) {
     $lineItems = [[
-        'item_name' => '', 'description' => '', 'sku' => '', 'quantity' => 1,
+        'inventory_id' => '', 'item_name' => '', 'description' => '', 'sku' => '', 'quantity' => 1,
         'delivered_qty' => 0, 'invoiced_qty' => 0, 'unit' => 'each',
         'unit_price' => 0, 'tax_name' => 'Local Sales 0%', 'tax_rate' => 0, 'excluding_tax' => 1,
     ]];
@@ -24,6 +26,7 @@ if ($lineItems === []) {
                 <table class="table rateb-table mb-0" data-line-items-table>
                     <thead>
                     <tr>
+                        <th><?php echo __('inventory'); ?></th>
                         <th><?php echo __('item_name'); ?></th>
                         <th><?php echo __('description'); ?></th>
                         <th><?php echo __('sku'); ?></th>
@@ -49,8 +52,26 @@ if ($lineItems === []) {
                         $totals = \Rateb\App\Helpers\LineItems::lineTotals($qty, $price, $taxRate, $excluding);
                         $unit = (string) ($line['unit'] ?? 'each');
                         $taxName = (string) ($line['tax_name'] ?? 'Local Sales 0%');
+                        $invId = (int) ($line['inventory_id'] ?? 0);
                         ?>
                     <tr data-line-items-row>
+                        <td>
+                            <select class="form-select form-select-sm" name="line_inventory_id[]" data-line-inventory>
+                                <option value="">—</option>
+                                <?php foreach ($inventoryItems as $inv) {
+                                    $invLabel = trim((string) ($inv['sku'] ?? '')) !== ''
+                                        ? ($inv['sku'] . ' — ' . ($inv['item_name'] ?? ''))
+                                        : (string) ($inv['item_name'] ?? '');
+                                    ?>
+                                <option value="<?php echo (int) $inv['id']; ?>"
+                                        data-name="<?php echo Rateb\App\Core\View::escape($inv['item_name'] ?? ''); ?>"
+                                        data-sku="<?php echo Rateb\App\Core\View::escape($inv['sku'] ?? ''); ?>"
+                                        data-unit="<?php echo Rateb\App\Core\View::escape($inv['unit'] ?? 'unit'); ?>"
+                                        data-price="<?php echo Rateb\App\Core\View::escape($inv['unit_cost'] ?? 0); ?>"
+                                    <?php echo $invId === (int) $inv['id'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($invLabel); ?></option>
+                                <?php } ?>
+                            </select>
+                        </td>
                         <td><input class="form-control form-control-sm" name="line_item_name[]" value="<?php echo Rateb\App\Core\View::escape($line['item_name'] ?? ''); ?>" required data-line-calc></td>
                         <td><input class="form-control form-control-sm" name="line_description[]" value="<?php echo Rateb\App\Core\View::escape($line['description'] ?? ''); ?>"></td>
                         <td><input class="form-control form-control-sm" name="line_sku[]" value="<?php echo Rateb\App\Core\View::escape($line['sku'] ?? ''); ?>"></td>
@@ -70,7 +91,7 @@ if ($lineItems === []) {
                         <td>
                             <select class="form-select form-select-sm" name="line_tax_name[]" data-line-tax-preset>
                                 <?php foreach ($taxPresets as $preset) {
-                                    $presetRate = str_contains($preset, '15%') ? 15 : (str_contains($preset, '5%') ? 5 : 0);
+                                    $presetRate = strpos($preset, '15%') !== false ? 15 : (strpos($preset, '5%') !== false ? 5 : 0);
                                     ?>
                                 <option value="<?php echo Rateb\App\Core\View::escape($preset); ?>" data-tax-rate="<?php echo $presetRate; ?>"<?php echo $taxName === $preset ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($preset); ?></option>
                                 <?php } ?>
@@ -90,17 +111,17 @@ if ($lineItems === []) {
                     </tbody>
                     <tfoot>
                     <tr>
-                        <td colspan="<?php echo $showDeliveryCols ? 10 : 8; ?>" class="text-end fw-semibold"><?php echo __('subtotal'); ?></td>
+                        <td colspan="<?php echo $colSpan; ?>" class="text-end fw-semibold"><?php echo __('subtotal'); ?></td>
                         <td class="text-end" data-procurement-subtotal>0.00</td>
                         <td></td>
                     </tr>
                     <tr>
-                        <td colspan="<?php echo $showDeliveryCols ? 10 : 8; ?>" class="text-end fw-semibold"><?php echo __('tax_amount'); ?></td>
+                        <td colspan="<?php echo $colSpan; ?>" class="text-end fw-semibold"><?php echo __('tax_amount'); ?></td>
                         <td class="text-end" data-procurement-tax>0.00</td>
                         <td></td>
                     </tr>
                     <tr class="table-primary">
-                        <td colspan="<?php echo $showDeliveryCols ? 10 : 8; ?>" class="text-end fw-bold"><?php echo __('total'); ?></td>
+                        <td colspan="<?php echo $colSpan; ?>" class="text-end fw-bold"><?php echo __('total'); ?></td>
                         <td class="text-end fw-bold" data-procurement-grand-total>0.00</td>
                         <td></td>
                     </tr>

@@ -25,7 +25,9 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
             ['name' => 'title', 'label' => 'title', 'type' => 'text'],
             ['name' => 'department', 'label' => 'department', 'type' => 'text'],
             ['name' => 'priority', 'label' => 'priority', 'type' => 'select', 'options' => ['low', 'medium', 'high', 'urgent']],
+            ['name' => 'expected_date', 'label' => 'expected_date', 'type' => 'date'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'submitted', 'approved', 'rejected', 'cancelled']],
+            ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'options' => ['SAR', 'USD', 'EUR']],
             ['name' => 'total_estimated', 'label' => 'estimated_total', 'type' => 'number'],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea'],
         ];
@@ -42,19 +44,33 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         if (empty($data['request_no'])) {
             $data['request_no'] = $this->model->generateRequestNo();
         }
+        (new \Rateb\App\Services\ProcurementService())->stampRequestedBy($data);
+        if (($data['currency'] ?? '') === '') {
+            $data['currency'] = 'SAR';
+        }
         return $data;
+    }
+
+    /** @return array<string, mixed> */
+    protected function formViewData(array $extra = []): array
+    {
+        $proc = new \Rateb\App\Services\ProcurementService();
+        return array_merge([
+            'departments' => $proc->departmentOptions(),
+            'inventoryItems' => (new \Rateb\App\Models\Inventory())->all(300, 0),
+        ], $extra);
     }
 
     public function create(): void
     {
-        $this->view($this->viewPrefix . '/form', [
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __($this->entityName),
             'item' => null,
             'lineItems' => [],
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
-        ], $this->layout());
+        ]), $this->layout());
     }
 
     public function edit(array $params): void
@@ -66,14 +82,69 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
             $this->view('errors/404', ['title' => '404'], $this->layout());
             return;
         }
-        $this->view($this->viewPrefix . '/form', [
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('edit') . ' ' . __($this->entityName),
             'item' => $item,
             'lineItems' => \Rateb\App\Helpers\LineItems::loadPurchaseRequestItems($id),
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
+        ]), $this->layout());
+    }
+
+    public function show(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], $this->layout());
+            return;
+        }
+        $this->view('company/purchase-requests/show', [
+            'title' => __('purchase_requests'),
+            'request' => $item,
+            'items' => \Rateb\App\Helpers\LineItems::loadPurchaseRequestItems($id),
+            'csrf' => Csrf::token(),
         ], $this->layout());
+    }
+
+    public function convertToPo(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $poId = (new \Rateb\App\Services\ProcurementService())->convertRequestToOrder($id);
+            SessionManager::flash('success', __('po_created_from_pr'));
+            $this->redirect(rateb_url(rateb_app_route('purchase-orders') . '/' . $poId));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id));
+        }
+    }
+
+    public function submit(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $old = $this->model->find($id);
+        if (!$old) {
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $this->model->update($id, ['status' => 'submitted']);
+        (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseRequestStatus(
+            $id,
+            'submitted',
+            (string) ($old['status'] ?? '')
+        );
+        SessionManager::flash('success', __('submitted_for_approval'));
+        $this->redirect(rateb_url($this->routePrefix . '/' . $id));
     }
 
     public function store(): void
@@ -165,20 +236,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
 
     protected function saveQuoteAttachment(int $id): void
     {
-        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
-        if ($companyId < 1) {
-            return;
-        }
-        $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
-            'quote_attachment',
-            $companyId,
-            'purchase_request',
-            $id,
-            __('quote_attachment')
-        );
-        if (!($upload['success'] ?? false) && !empty($upload['error'])) {
-            SessionManager::flash('error', (string) $upload['error']);
-        }
+        (new \Rateb\App\Services\ProcurementService())->saveQuoteAttachments('purchase_request', $id);
     }
 }
 
@@ -194,9 +252,13 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->fields = [
             ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'number'],
             ['name' => 'cost_center_id', 'label' => 'cost_center', 'type' => 'number'],
+            ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'number'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled']],
             ['name' => 'order_date', 'label' => 'order_date', 'type' => 'date'],
             ['name' => 'expected_date', 'label' => 'expected_date', 'type' => 'date'],
+            ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'options' => ['SAR', 'USD', 'EUR']],
+            ['name' => 'discount_amount', 'label' => 'discount', 'type' => 'number'],
+            ['name' => 'shipping_amount', 'label' => 'shipping', 'type' => 'number'],
             ['name' => 'total_amount', 'label' => 'total', 'type' => 'number'],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea'],
         ];
@@ -216,12 +278,26 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         if (empty($data['order_date'])) {
             $data['order_date'] = date('Y-m-d');
         }
+        if (($data['currency'] ?? '') === '') {
+            $data['currency'] = 'SAR';
+        }
         return $data;
+    }
+
+    /** @return array<string, mixed> */
+    protected function formViewData(array $extra = []): array
+    {
+        $proc = new \Rateb\App\Services\ProcurementService();
+        return array_merge([
+            'departments' => $proc->departmentOptions(),
+            'inventoryItems' => (new \Rateb\App\Models\Inventory())->all(300, 0),
+            'warehouses' => (new \Rateb\App\Models\Warehouse())->all(200, 0),
+        ], $extra);
     }
 
     public function create(): void
     {
-        $this->view($this->viewPrefix . '/form', [
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __($this->entityName),
             'item' => null,
             'lineItems' => [],
@@ -230,7 +306,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
-        ], $this->layout());
+        ]), $this->layout());
     }
 
     public function edit(array $params): void
@@ -242,7 +318,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             $this->view('errors/404', ['title' => '404'], $this->layout());
             return;
         }
-        $this->view($this->viewPrefix . '/form', [
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('edit') . ' ' . __($this->entityName),
             'item' => $item,
             'lineItems' => \Rateb\App\Helpers\LineItems::loadPurchaseOrderItems($id),
@@ -251,7 +327,45 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
-        ], $this->layout());
+        ]), $this->layout());
+    }
+
+    public function createFromQuotation(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_app_url('rfq'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        try {
+            $poId = (new \Rateb\App\Services\ProcurementService())->createOrderFromQuotation($id);
+            SessionManager::flash('success', __('po_created_from_quote'));
+            $this->redirect(rateb_url(rateb_app_route('purchase-orders') . '/' . $poId . '/edit'));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_app_url('rfq'));
+        }
+    }
+
+    public function submit(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $old = $this->model->find($id);
+        if (!$old) {
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $this->model->update($id, ['status' => 'sent']);
+        (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseOrderStatus(
+            $id,
+            'sent',
+            (string) ($old['status'] ?? '')
+        );
+        SessionManager::flash('success', __('po_sent'));
+        $this->redirect(rateb_url($this->routePrefix . '/' . $id));
     }
 
     public function store(): void
@@ -272,6 +386,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $id = $this->model->create($data);
         \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
         $this->saveQuoteAttachment($id);
+        (new \Rateb\App\Services\DocumentBarcodeService())->ensure('purchase_order', $id);
         (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseOrderStatus(
             $id,
             (string) ($data['status'] ?? 'draft')
@@ -338,12 +453,65 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             return;
         }
         $items = \Rateb\App\Helpers\LineItems::loadPurchaseOrderItems($id);
+        $docBarcode = (new \Rateb\App\Services\DocumentBarcodeService())->labelData('purchase_order', $id);
+        $supplierName = '';
+        if (!empty($item['supplier_id'])) {
+            $sup = (new \Rateb\App\Models\Supplier())->find((int) $item['supplier_id']);
+            $supplierName = (string) ($sup['name'] ?? '');
+        }
         $this->view('company/purchase-orders/show', [
             'title' => __('purchase_orders'),
             'order' => $item,
             'items' => $items,
+            'supplierName' => $supplierName,
+            'warehouses' => (new \Rateb\App\Models\Warehouse())->all(200, 0),
+            'docBarcode' => $docBarcode,
             'csrf' => Csrf::token(),
         ], 'main');
+    }
+
+    public function print(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], 'main');
+            return;
+        }
+        $items = \Rateb\App\Helpers\LineItems::loadPurchaseOrderItems($id);
+        $docBarcode = (new \Rateb\App\Services\DocumentBarcodeService())->labelData('purchase_order', $id);
+        $supplierName = '';
+        if (!empty($item['supplier_id'])) {
+            $sup = (new \Rateb\App\Models\Supplier())->find((int) $item['supplier_id']);
+            $supplierName = (string) ($sup['name'] ?? '');
+        }
+        $this->view('company/purchase-orders/print', [
+            'title' => __('purchase_orders'),
+            'order' => $item,
+            'items' => $items,
+            'supplierName' => $supplierName,
+            'docBarcode' => $docBarcode,
+        ], 'print');
+    }
+
+    public function receive(array $params): void
+    {
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $receiveQtys = $_POST['receive_qty'] ?? [];
+        $warehouseId = (int) ($_POST['warehouse_id'] ?? 0) ?: null;
+        try {
+            (new \Rateb\App\Services\ProcurementService())->receiveOrder($id, is_array($receiveQtys) ? $receiveQtys : [], $warehouseId);
+            SessionManager::flash('success', __('grn_received'));
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id));
+        } catch (\Throwable $e) {
+            SessionManager::flash('error', $e->getMessage());
+            $this->redirect(rateb_url($this->routePrefix . '/' . $id));
+        }
     }
 
     private function tryAutoPostPurchaseOrder(int $id, string $status): void
@@ -370,13 +538,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
     /** @param array<string, mixed> $data */
     protected function applyLineTotals(array &$data, array $lines): void
     {
-        if ($lines === []) {
-            return;
-        }
-        $agg = \Rateb\App\Helpers\LineItems::aggregateTotals($lines);
-        $data['subtotal'] = $agg['subtotal'];
-        $data['tax_amount'] = $agg['tax'];
-        $data['total_amount'] = $agg['total'];
+        (new \Rateb\App\Services\ProcurementService())->applyOrderTotals($data, $lines);
     }
 
     /** @param array<string, mixed> $data */
@@ -396,20 +558,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
 
     protected function saveQuoteAttachment(int $id): void
     {
-        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
-        if ($companyId < 1) {
-            return;
-        }
-        $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
-            'quote_attachment',
-            $companyId,
-            'purchase_order',
-            $id,
-            __('quote_attachment')
-        );
-        if (!($upload['success'] ?? false) && !empty($upload['error'])) {
-            SessionManager::flash('error', (string) $upload['error']);
-        }
+        (new \Rateb\App\Services\ProcurementService())->saveQuoteAttachments('purchase_order', $id);
     }
 }
 

@@ -6,6 +6,7 @@ namespace Rateb\App\Services;
 use Rateb\App\Models\Contract;
 use Rateb\App\Models\Inventory;
 use Rateb\App\Models\Invoice;
+use Rateb\App\Models\PurchaseOrder;
 
 final class DocumentBarcodeService
 {
@@ -21,6 +22,8 @@ final class DocumentBarcodeService
             $prefix = 'CTR';
         } elseif ($type === 'inventory') {
             $prefix = 'RTB';
+        } elseif ($type === 'purchase_order') {
+            $prefix = 'PO';
         } else {
             $prefix = 'DOC';
         }
@@ -52,6 +55,9 @@ final class DocumentBarcodeService
         if ($type === 'contract') {
             return rateb_app_url('contracts/' . $recordId . '/edit');
         }
+        if ($type === 'purchase_order') {
+            return rateb_app_url('purchase-orders/' . $recordId);
+        }
         return '';
     }
 
@@ -78,7 +84,7 @@ final class DocumentBarcodeService
         if ($code === '') {
             return null;
         }
-        foreach (['inventory', 'invoice', 'contract'] as $type) {
+        foreach (['inventory', 'invoice', 'contract', 'purchase_order'] as $type) {
             $row = $this->findByBarcode($type, $code);
             if ($row) {
                 return $this->publicCard($type, $row);
@@ -108,6 +114,14 @@ final class DocumentBarcodeService
                  WHERE i.barcode = :code LIMIT 1',
                 ['code' => $code]
             );
+        } elseif ($type === 'purchase_order') {
+            $rows = (new PurchaseOrder())->query(
+                'SELECT po.*, s.name AS supplier_name
+                 FROM rateb_purchase_orders po
+                 LEFT JOIN rateb_suppliers s ON s.id = po.supplier_id
+                 WHERE po.barcode = :code LIMIT 1',
+                ['code' => $code]
+            );
         } else {
             return null;
         }
@@ -124,7 +138,7 @@ final class DocumentBarcodeService
         $qrPayload = $this->publicScanUrl($barcode);
         return [
             'type' => $type,
-            'type_label' => __($type === 'inventory' ? 'inventory' : ($type === 'invoice' ? 'invoices' : 'contracts')),
+            'type_label' => __($type === 'inventory' ? 'inventory' : ($type === 'invoice' ? 'invoices' : ($type === 'purchase_order' ? 'purchase_orders' : 'contracts'))),
             'recordId' => $recordId,
             'title' => $title,
             'subtitle' => $subtitle,
@@ -275,6 +289,9 @@ final class DocumentBarcodeService
         if ($type === 'inventory') {
             return (new Inventory())->find($recordId);
         }
+        if ($type === 'purchase_order') {
+            return (new PurchaseOrder())->find($recordId);
+        }
         return null;
     }
 
@@ -287,6 +304,8 @@ final class DocumentBarcodeService
             (new Contract())->update($recordId, $data);
         } elseif ($type === 'inventory') {
             (new Inventory())->update($recordId, $data);
+        } elseif ($type === 'purchase_order') {
+            (new PurchaseOrder())->update($recordId, $data);
         }
     }
 
@@ -301,6 +320,9 @@ final class DocumentBarcodeService
         }
         if ($type === 'inventory') {
             return (string) ($row['item_name'] ?? __('inventory'));
+        }
+        if ($type === 'purchase_order') {
+            return (string) ($row['order_no'] ?? __('purchase_orders'));
         }
         return __('barcode');
     }
@@ -322,6 +344,9 @@ final class DocumentBarcodeService
             }
             $category = trim((string) ($row['category'] ?? ''));
             return $category !== '' ? $category : '';
+        }
+        if ($type === 'purchase_order') {
+            return (string) ($row['supplier_name'] ?? __('supplier'));
         }
         return '';
     }

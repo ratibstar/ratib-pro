@@ -89,7 +89,14 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
     $router->post($app($path . '/bulk-delete'), [$class, 'bulkDestroy'], $mw);
 }
 
+$router->get($app('purchase-requests/{id}'), [PurchaseRequestsController::class, 'show'], rateb_erp_mw('procurement', '', 'purchase-requests'));
+$router->post($app('purchase-requests/{id}/convert-to-po'), [PurchaseRequestsController::class, 'convertToPo'], rateb_erp_mw('procurement', '', 'purchase-requests'));
+$router->post($app('purchase-requests/{id}/submit'), [PurchaseRequestsController::class, 'submit'], rateb_erp_mw('procurement', '', 'purchase-requests'));
 $router->get($app('purchase-orders/{id}'), [PurchaseOrdersController::class, 'show'], rateb_erp_mw('procurement', '', 'purchase-orders'));
+$router->get($app('purchase-orders/{id}/print'), [PurchaseOrdersController::class, 'print'], rateb_erp_mw('procurement', '', 'purchase-orders'));
+$router->post($app('purchase-orders/{id}/receive'), [PurchaseOrdersController::class, 'receive'], rateb_erp_mw('procurement', '', 'purchase-orders'));
+$router->post($app('purchase-orders/{id}/submit'), [PurchaseOrdersController::class, 'submit'], rateb_erp_mw('procurement', '', 'purchase-orders'));
+$router->post($app('quotations/{id}/create-po'), [PurchaseOrdersController::class, 'createFromQuotation'], rateb_erp_mw('procurement', '', 'purchase-orders'));
 $router->get($app('rfq/{id}/compare'), [RfqController::class, 'compare'], rateb_erp_mw('procurement', '', 'rfq'));
 $router->get($app('accounting'), [CompanyAccountingDashboardController::class, 'index'], rateb_erp_mw('accounting', '', 'accounting'));
 $router->post($app('accounting/sync'), [CompanyAccountingDashboardController::class, 'sync'], rateb_erp_mw('accounting', 'accounting.post'));

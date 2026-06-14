@@ -55,8 +55,10 @@ final class LineItems
             $price = (float) ($_POST['line_unit_price'][$i] ?? 0);
             $taxRate = (float) ($_POST['line_tax_rate'][$i] ?? 0);
             $excludingTax = (int) ($_POST['line_excluding_tax'][$i] ?? 1) === 1;
+            $inventoryId = (int) ($_POST['line_inventory_id'][$i] ?? 0);
             $totals = self::lineTotals(max(0.001, $qty), $price, $taxRate, $excludingTax);
             $lines[] = [
+                'inventory_id' => $inventoryId > 0 ? $inventoryId : null,
                 'item_name' => $name,
                 'description' => trim((string) ($_POST['line_description'][$i] ?? '')),
                 'sku' => trim((string) ($_POST['line_sku'][$i] ?? '')),

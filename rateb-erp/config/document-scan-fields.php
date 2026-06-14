@@ -28,4 +28,11 @@ return [
         ['key' => 'end_date', 'label' => 'end_date'],
         ['key' => 'value', 'label' => 'value', 'format' => 'money'],
     ],
+    'purchase_order' => [
+        ['key' => 'order_no', 'label' => 'order_no'],
+        ['key' => 'supplier_name', 'label' => 'supplier'],
+        ['key' => 'total_amount', 'label' => 'total_amount', 'format' => 'money'],
+        ['key' => 'status', 'label' => 'status'],
+        ['key' => 'order_date', 'label' => 'order_date'],
+    ],
 ];

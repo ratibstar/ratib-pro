@@ -47,6 +47,15 @@
             grand += t.total;
         });
         var form = table.closest('[data-procurement-form]');
+        var discount = 0;
+        var shipping = 0;
+        if (form) {
+            var discEl = form.querySelector('[name="discount_amount"]');
+            var shipEl = form.querySelector('[name="shipping_amount"]');
+            if (discEl) { discount = parseNum(discEl.value); }
+            if (shipEl) { shipping = parseNum(shipEl.value); }
+        }
+        grand = Math.round((grand - discount + shipping) * 100) / 100;
         var subEl = table.querySelector('[data-procurement-subtotal]');
         var taxEl = table.querySelector('[data-procurement-tax]');
         var grandEl = table.querySelector('[data-procurement-grand-total]');
@@ -92,6 +101,8 @@
         });
         clone.querySelectorAll('select').forEach(function (sel) {
             if (sel.name === 'line_unit[]') {
+                sel.selectedIndex = 0;
+            } else if (sel.name === 'line_inventory_id[]') {
                 sel.selectedIndex = 0;
             } else if (sel.name === 'line_tax_name[]') {
                 sel.selectedIndex = 0;
@@ -176,8 +187,43 @@
         });
     }
 
+    function fillFromInventory(select) {
+        var opt = select.options[select.selectedIndex];
+        var row = select.closest('[data-line-items-row]');
+        if (!row || !opt || !opt.value) {
+            return;
+        }
+        var nameInput = row.querySelector('[name="line_item_name[]"]');
+        var skuInput = row.querySelector('[name="line_sku[]"]');
+        var unitSelect = row.querySelector('[name="line_unit[]"]');
+        var priceInput = row.querySelector('[name="line_unit_price[]"]');
+        if (nameInput) { nameInput.value = opt.getAttribute('data-name') || ''; }
+        if (skuInput) { skuInput.value = opt.getAttribute('data-sku') || ''; }
+        if (unitSelect && opt.getAttribute('data-unit')) {
+            unitSelect.value = opt.getAttribute('data-unit');
+        }
+        if (priceInput) { priceInput.value = opt.getAttribute('data-price') || '0'; }
+        var table = row.closest('[data-line-items-table]');
+        if (table) { updateTableTotals(table); }
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-line-items-table]').forEach(bindTable);
         bindNotes();
+        document.addEventListener('change', function (e) {
+            if (e.target.matches('[data-line-inventory]')) {
+                fillFromInventory(e.target);
+            }
+            if (e.target.matches('[data-procurement-adjust]')) {
+                var table = document.querySelector('[data-line-items-table]');
+                if (table) { updateTableTotals(table); }
+            }
+        });
+        document.addEventListener('input', function (e) {
+            if (e.target.matches('[data-procurement-adjust]')) {
+                var table = document.querySelector('[data-line-items-table]');
+                if (table) { updateTableTotals(table); }
+            }
+        });
     });
 })();
