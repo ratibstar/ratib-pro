@@ -191,6 +191,25 @@ final class Bootstrap
             $configRoot = self::erpRootFromBootstrapFile();
         }
         require_once $configRoot . '/config/app.php';
+        if (!function_exists('rateb_current_public_path')) {
+            function rateb_current_public_path(string $fallback = 'site'): string
+            {
+                $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+                $base = defined('RATEB_BASE_URL') ? rtrim((string) RATEB_BASE_URL, '/') : '/rateb-erp/public';
+                $prefix = $base . '/';
+                $pos = strpos($uri, $prefix);
+                if ($pos === false) {
+                    return $fallback;
+                }
+                $rest = substr($uri, $pos + strlen($prefix));
+                $path = strtok($rest, '?') ?: '';
+                $path = ltrim((string) $path, '/');
+                if ($path === '' || str_starts_with($path, 'locale/')) {
+                    return $fallback;
+                }
+                return $path;
+            }
+        }
         require_once $configRoot . '/config/database.php';
     }
 

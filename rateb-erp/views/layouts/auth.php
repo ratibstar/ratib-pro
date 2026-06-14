@@ -28,7 +28,12 @@ $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
         <div class="text-center mb-3">
             <div class="d-flex justify-content-center gap-2 mb-3">
                 <div class="btn-group btn-group-sm">
-                    <?php $localeReturn = rawurlencode(rateb_current_public_path('login')); ?>
+                    <?php
+                    $localeReturnPath = function_exists('rateb_current_public_path')
+                        ? rateb_current_public_path('login')
+                        : 'login';
+                    $localeReturn = rawurlencode($localeReturnPath);
+                    ?>
                     <a href="<?php echo rateb_url('locale/en?next=' . $localeReturn); ?>" class="btn btn-outline-secondary<?php echo $locale === 'en' ? ' active' : ''; ?>">EN</a>
                     <a href="<?php echo rateb_url('locale/ar?next=' . $localeReturn); ?>" class="btn btn-outline-secondary<?php echo $locale === 'ar' ? ' active' : ''; ?>">عربي</a>
                 </div>
