@@ -21,6 +21,7 @@ final class ErpArabicRepairService
         $updated = 0;
         $updated += $this->repairPermissions($pdo);
         $updated += $this->repairChartOfAccounts($pdo);
+        $updated += $this->repairEmailTemplates($pdo);
         $updated += $this->repairDemoOperational($pdo);
 
         $sample = '';
@@ -87,6 +88,27 @@ final class ErpArabicRepairService
         );
         foreach ($labels as $code => [$nameEn, $nameAr]) {
             $stmt->execute(['en' => $nameEn, 'ar' => $nameAr, 'code' => $code]);
+            $updated += $stmt->rowCount();
+        }
+        return $updated;
+    }
+
+    private function repairEmailTemplates(PDO $pdo): int
+    {
+        $file = (defined('RATEB_ROOT') ? RATEB_ROOT : dirname(__DIR__, 2)) . '/config/email-templates-ar.php';
+        $templates = is_file($file) ? require $file : [];
+        if (!is_array($templates)) {
+            return 0;
+        }
+        $updated = 0;
+        $stmt = $pdo->prepare(
+            'UPDATE rateb_email_templates SET subject = :s, body_html = :b WHERE slug = :slug'
+        );
+        foreach ($templates as $slug => $pair) {
+            if (!is_array($pair) || !isset($pair[0], $pair[1])) {
+                continue;
+            }
+            $stmt->execute(['s' => $pair[0], 'b' => $pair[1], 'slug' => $slug]);
             $updated += $stmt->rowCount();
         }
         return $updated;

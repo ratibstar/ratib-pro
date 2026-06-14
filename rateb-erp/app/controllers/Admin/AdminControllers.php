@@ -1282,6 +1282,16 @@ final class SettingsController extends Controller
         SessionManager::flash('success', __('save') . ' OK');
         Response::redirect(rateb_url('admin/settings'));
     }
+
+    public function fixArabic(): void
+    {
+        $result = (new \Rateb\App\Services\ErpArabicRepairService())->repair();
+        SessionManager::flash(
+            'success',
+            'إصلاح العربية: ' . $result['updated'] . ' صف؛ عينة: ' . $result['permissions_sample']
+        );
+        Response::redirect(rateb_url('admin/permissions'));
+    }
 }
 
 final class EmailTemplatesController extends \Rateb\App\Controllers\CrudController
