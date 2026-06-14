@@ -291,6 +291,8 @@ return [
     'platform' => 'Platform',
     'accounting' => 'Accounting',
     'accounting_module' => 'Accounting',
+    'platform_billing' => 'Platform billing',
+    'platform_accounting' => 'Platform accounting',
     'accounting_overview' => 'Overview',
     'invoices_paid' => 'Paid invoices',
     'invoices_open' => 'Open invoices',

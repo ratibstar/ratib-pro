@@ -17,6 +17,9 @@ $tabs = [
     ['path' => rateb_app_route('accounting/zatca-settings'), 'label' => __('zatca_settings'), 'match' => [rateb_app_route('accounting/zatca-settings')]],
     ['path' => rateb_app_route('bank-accounts'), 'label' => __('bank_accounts'), 'match' => [rateb_app_route('bank-accounts')]],
     ['path' => rateb_app_route('accounting/bank-reconciliation'), 'label' => __('bank_reconciliation'), 'match' => [rateb_app_route('accounting/bank-reconciliation')]],
+    ['path' => rateb_app_route('reports/cost-analysis'), 'label' => __('cost_analysis'), 'match' => [rateb_app_route('reports/cost-analysis')]],
+    ['path' => rateb_app_route('reports/inventory-valuation'), 'label' => __('inventory_valuation_report'), 'match' => [rateb_app_route('reports/inventory-valuation')]],
+    ['path' => rateb_app_route('asset-depreciation'), 'label' => __('asset_depreciation'), 'match' => [rateb_app_route('asset-depreciation')]],
 ];
 if ($accountingActive === 'admin' || rateb_is_super_admin()) {
     $tabs[] = ['path' => 'admin/invoices', 'label' => __('invoices'), 'match' => ['admin/invoices']];

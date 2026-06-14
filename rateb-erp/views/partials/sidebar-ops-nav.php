@@ -31,9 +31,25 @@ $opsSection(__('suppliers'), [
     ['supplier-classifications', 'supplier_classifications', 'fa-tags', 'suppliers'],
     ['supplier-kpi', 'supplier_kpi', 'fa-chart-line', 'suppliers'],
 ], 'fa-truck-field');
-if (!rateb_is_super_admin()) {
-    $opsLink('accounting', 'accounting_module', 'fa-calculator', 'accounting');
-}
+$opsSection(__('accounting_module'), [
+    ['accounting', 'accounting_overview', 'fa-gauge-high', 'accounting'],
+    ['accounting/reports', 'accounting_reports', 'fa-chart-pie', 'accounting', 'accounting.view'],
+    ['chart-of-accounts', 'chart_of_accounts', 'fa-list', 'accounting'],
+    ['accounting/coa-tree', 'coa_full_tree', 'fa-sitemap', 'accounting', 'accounting.view'],
+    ['journal-entries', 'journal_entries', 'fa-book', 'accounting'],
+    ['accounting/entry-approval', 'entry_approval', 'fa-check-double', 'accounting', 'accounting.view'],
+    ['accounting/supplier-payments', 'supplier_payments', 'fa-hand-holding-dollar', 'accounting', 'accounting.view'],
+    ['cash-vouchers', 'cash_vouchers', 'fa-money-bill-wave', 'accounting'],
+    ['accounting/voucher-approval', 'voucher_approval', 'fa-stamp', 'accounting', 'accounting.view'],
+    ['fiscal-periods', 'fiscal_periods', 'fa-calendar-days', 'accounting'],
+    ['cost-centers', 'cost_centers', 'fa-diagram-project', 'accounting'],
+    ['bank-accounts', 'bank_accounts', 'fa-building-columns', 'accounting'],
+    ['accounting/bank-reconciliation', 'bank_reconciliation', 'fa-scale-balanced', 'accounting', 'accounting.view'],
+    ['accounting/zatca-settings', 'zatca_settings', 'fa-file-invoice', 'accounting', 'accounting.view'],
+    ['reports/cost-analysis', 'cost_analysis', 'fa-coins', 'reports'],
+    ['reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked', 'inventory'],
+    ['asset-depreciation', 'asset_depreciation', 'fa-chart-line', 'assets'],
+], 'fa-calculator');
 $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['contracts', 'contracts', 'fa-file-contract', 'contracts'],
     ['contract-renewals', 'contract_renewals', 'fa-rotate', 'contracts'],
@@ -41,7 +57,6 @@ $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['assets', 'assets', 'fa-toolbox', 'assets'],
     ['asset-maintenance', 'asset_maintenance', 'fa-wrench', 'assets'],
     ['asset-assignments', 'asset_assignments', 'fa-user-check', 'assets'],
-    ['asset-depreciation', 'asset_depreciation', 'fa-chart-line', 'assets'],
     ['medical-devices', 'medical_devices', 'fa-stethoscope', 'medical_devices'],
     ['device-maintenance', 'device_maintenance', 'fa-screwdriver-wrench', 'medical_devices'],
     ['device-spare-parts', 'device_spare_parts', 'fa-gears', 'medical_devices'],
@@ -49,9 +64,7 @@ $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['reports', 'reports', 'fa-chart-pie', 'reports'],
     ['reports/procurement', 'procurement_analytics', 'fa-cart-shopping', 'procurement'],
     ['reports/kpi', 'company_kpi', 'fa-gauge-high', 'reports'],
-    ['reports/cost-analysis', 'cost_analysis', 'fa-coins', 'reports'],
     ['reports/supplier-performance', 'supplier_performance_report', 'fa-truck-field', 'reports'],
-    ['reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked', 'inventory'],
     ['documents', 'documents', 'fa-folder-open', 'documents'],
 ], 'fa-briefcase');
 $opsLink('notifications', 'notifications', 'fa-bell');

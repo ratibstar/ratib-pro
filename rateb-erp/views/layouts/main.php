@@ -3,7 +3,7 @@ $locale = rateb_locale();
 $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $erpRoute = rateb_current_erp_route();
-$accountingActive = $erpRoute !== '' && preg_match('#(accounting|chart-of-accounts|coa-tree|journal-entries|entry-approval|voucher-approval|cash-vouchers|fiscal-periods|bank-accounts|cost-centers|cost-of-sales|trial-balance|journal-register|invoices|payments|subscriptions)#', $erpRoute);
+$accountingActive = $erpRoute !== '' && preg_match('#(accounting|chart-of-accounts|coa-tree|journal-entries|entry-approval|voucher-approval|cash-vouchers|fiscal-periods|bank-accounts|cost-centers|cost-of-sales|trial-balance|journal-register|invoices|payments|subscriptions|reports/cost-analysis|reports/inventory-valuation|asset-depreciation)#', $erpRoute);
 $navActive = static function (string $route) use ($erpRoute, $currentPath): bool {
     if ($erpRoute !== '') {
         if ($route === 'admin') {
@@ -89,15 +89,11 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
                 ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view'],
                 ['admin/settings', 'settings', 'fa-gear', 'settings.manage'],
             ], 'fa-shield-halved');
-            $adminSection(__('accounting_module'), [
-                ['admin/accounting', 'accounting_overview', 'fa-gauge-high', 'accounting.view'],
-                ['admin/ops/accounting/reports', 'accounting_reports', 'fa-chart-pie', 'accounting.view'],
-                ['admin/chart-of-accounts', 'chart_of_accounts', 'fa-list', 'accounting.view'],
-                ['admin/coa-tree', 'coa_full_tree', 'fa-sitemap', 'accounting.view'],
-                ['admin/journal-entries', 'journal_entries', 'fa-book', 'accounting.view'],
+            $adminSection(__('platform_billing'), [
+                ['admin/accounting', 'platform_accounting', 'fa-gauge-high', 'accounting.view'],
                 ['admin/invoices', 'invoices', 'fa-file-invoice', 'accounting.view'],
                 ['admin/payments', 'payments', 'fa-money-bill-wave', 'accounting.view'],
-            ], 'fa-calculator');
+            ], 'fa-file-invoice-dollar');
             if (rateb_nav_can('cms.view')) {
                 $adminSection(__('cms_section'), [
                     ['admin/cms', 'cms_dashboard', 'fa-globe', 'cms.view'],

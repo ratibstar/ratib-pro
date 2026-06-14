@@ -4,6 +4,7 @@ use Rateb\App\Services\FormLookupService;
 $formFields = FormLookupService::assetDepreciationFormFields();
 $lookups = (new FormLookupService())->forFields($formFields);
 ?>
+<?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? __('asset_depreciation')); ?></div>
     <div class="rateb-card-body">

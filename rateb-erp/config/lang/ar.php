@@ -290,6 +290,8 @@ return [
     'platform' => 'المنصة',
     'accounting' => 'الحسابات',
     'accounting_module' => 'قسم الحسابات',
+    'platform_billing' => 'فوترة المنصة',
+    'platform_accounting' => 'محاسبة المنصة',
     'accounting_overview' => 'نظرة عامة',
     'invoices_paid' => 'فواتير مدفوعة',
     'invoices_open' => 'فواتير مفتوحة',
