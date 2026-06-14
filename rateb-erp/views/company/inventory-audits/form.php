@@ -1,3 +1,9 @@
+<?php
+use Rateb\App\Services\FormLookupService;
+
+$formFields = FormLookupService::inventoryAuditFormFields();
+$lookups = (new FormLookupService())->forFields($formFields);
+?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
@@ -8,19 +14,13 @@
                     <label class="form-label"><?php echo __('audit_no'); ?></label>
                     <input class="form-control" type="text" name="audit_no" value="<?php echo Rateb\App\Core\View::escape($auditNo ?? ''); ?>" readonly>
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label"><?php echo __('warehouses'); ?></label>
-                    <select class="form-select" name="warehouse_id">
-                        <option value="">—</option>
-                        <?php foreach ($warehouses ?? [] as $wh) { ?>
-                        <option value="<?php echo (int) $wh['id']; ?>"><?php echo Rateb\App\Core\View::escape($wh['name'] ?? ''); ?></option>
-                        <?php } ?>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label"><?php echo __('notes'); ?></label>
-                    <input class="form-control" type="text" name="notes">
-                </div>
+                <?php foreach ($formFields as $field) {
+                    Rateb\App\Core\View::partial('form-field', [
+                        'field' => $field,
+                        'value' => '',
+                        'lookups' => $lookups,
+                    ]);
+                } ?>
             </div>
             <h6 class="mb-3"><?php echo __('cycle_count_lines'); ?></h6>
             <div class="table-responsive">

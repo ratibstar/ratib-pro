@@ -678,8 +678,8 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
             ['name' => 'code', 'label' => 'code', 'type' => 'text'],
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
             ['name' => 'name_ar', 'label' => 'name_ar', 'type' => 'text'],
-            ['name' => 'account_type', 'label' => 'account_type', 'type' => 'select', 'options' => ['asset', 'liability', 'equity', 'revenue', 'expense']],
-            ['name' => 'parent_id', 'label' => 'parent_account', 'type' => 'parent_select'],
+            ['name' => 'account_type', 'label' => 'account_type', 'type' => 'select', 'lookup' => 'account_types'],
+            ['name' => 'parent_id', 'label' => 'parent_account', 'type' => 'fk', 'lookup' => 'coa_parents'],
         ];
     }
 
@@ -742,16 +742,12 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
     public function create(): void
     {
         $this->guardManage();
-        $companyId = rateb_resolve_ops_company_id();
-        (new AccountingService())->ensureDefaultAccounts($companyId);
-        $this->view($this->viewPrefix . '/form', [
+        rateb_resolve_ops_company_id();
+        (new AccountingService())->ensureDefaultAccounts((int) TenantContext::companyId());
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __('chart_of_accounts'),
             'item' => null,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'parentOptions' => $this->parentOptions($companyId),
-            'csrf' => Csrf::token(),
-        ], $this->layout());
+        ]), $this->layout());
     }
 
     public function edit(array $params): void
@@ -768,18 +764,20 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
             $this->view('errors/404', ['title' => '404']);
             return;
         }
-        $this->view($this->viewPrefix . '/form', [
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('edit') . ' ' . __('chart_of_accounts'),
             'item' => $item,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'parentOptions' => $this->parentOptions($companyId, $id),
-            'csrf' => Csrf::token(),
-        ], $this->layout());
+        ]), $this->layout());
+    }
+
+    /** @return array<string, mixed> */
+    protected function formViewData(array $extra = []): array
+    {
+        return parent::formViewData($extra);
     }
 
     /** @return array<int|string, string> */
-    private function parentOptions(int $companyId, int $excludeId = 0): array
+    private function parentOptionsLegacy(int $companyId, int $excludeId = 0): array
     {
         $tree = (new AccountingService())->coaTreeWithBalances($companyId);
         $options = ['' => '—'];

@@ -1,3 +1,9 @@
+<?php
+use Rateb\App\Services\FormLookupService;
+
+$docFields = FormLookupService::documentUploadFormFields();
+$lookups = (new FormLookupService())->forFields($docFields);
+?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? __('documents')); ?></div>
     <div class="rateb-card-body">
@@ -6,24 +12,18 @@
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="col-md-4">
                 <label class="form-label"><?php echo __('title'); ?></label>
-                <input class="form-control" name="title" required>
+                <input class="form-control rateb-form-control" name="title" required>
             </div>
-            <div class="col-md-3">
-                <label class="form-label"><?php echo __('entity_type'); ?></label>
-                <select class="form-select" name="entity_type">
-                    <option value="general">general</option>
-                    <option value="contract">contract</option>
-                    <option value="supplier">supplier</option>
-                    <option value="device">device</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label"><?php echo __('entity_id'); ?></label>
-                <input class="form-control" type="number" name="entity_id" value="0">
-            </div>
+            <?php foreach ($docFields as $field) {
+                Rateb\App\Core\View::partial('form-field', [
+                    'field' => $field,
+                    'value' => $field['default'] ?? '',
+                    'lookups' => $lookups,
+                ]);
+            } ?>
             <div class="col-md-3">
                 <label class="form-label"><?php echo __('file'); ?></label>
-                <input class="form-control" type="file" name="document" required accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx">
+                <input class="form-control rateb-form-control" type="file" name="document" required accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx">
             </div>
             <div class="col-12">
                 <button type="submit" class="btn btn-primary"><?php echo __('upload'); ?></button>
@@ -39,7 +39,7 @@
                 <?php } else { foreach ($items as $row) { ?>
                 <tr>
                     <td><?php echo Rateb\App\Core\View::escape($row['title'] ?? ''); ?></td>
-                    <td><?php echo Rateb\App\Core\View::escape($row['entity_type'] ?? ''); ?></td>
+                    <td><?php echo Rateb\App\Core\View::escape(__($row['entity_type'] ?? 'general')); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($row['file_name'] ?? ''); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($row['created_at'] ?? ''); ?></td>
                     <td>

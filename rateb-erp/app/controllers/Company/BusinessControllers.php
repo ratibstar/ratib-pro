@@ -30,9 +30,10 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
             ['name' => 'warehouse_name', 'label' => 'warehouses'],
         ];
         $this->fields = [
-            ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses', 'required' => true],
-            ['name' => 'inventory_id', 'label' => 'inventory', 'type' => 'fk', 'lookup' => 'inventory', 'required' => true],
-            ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number'],
+            ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'inventory_id', 'label' => 'inventory', 'type' => 'fk', 'lookup' => 'inventory', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'batch_no', 'label' => 'batch_no', 'type' => 'hybrid', 'lookup' => 'batch_numbers', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number', 'step' => '0.001', 'min' => '0'],
             ['name' => 'expiry_date', 'label' => 'expiry_date', 'type' => 'date'],
         ];
     }
@@ -41,14 +42,12 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
 
     public function create(): void
     {
+        rateb_bootstrap_ops_tenant();
         rateb_require_manage('inventory-batches');
-        $this->view($this->viewPrefix . '/form', [
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __('inventory_batches'),
-            'routePrefix' => $this->routePrefix,
-            'csrf' => Csrf::token(),
-            'inventory' => (new \Rateb\App\Models\Inventory())->all(200, 0),
-            'warehouses' => (new \Rateb\App\Models\Warehouse())->all(100, 0),
-        ], 'main');
+            'item' => null,
+        ]), 'main');
     }
 
     public function index(): void
@@ -115,11 +114,11 @@ final class InventoryAuditsController extends Controller
 
     public function create(): void
     {
+        rateb_bootstrap_ops_tenant();
         rateb_require_manage('inventory-audits');
         $this->view('company/inventory-audits/form', [
             'title' => __('create') . ' ' . __('inventory_audits'),
             'auditNo' => (new InventoryWorkflowService())->nextAuditNo(),
-            'warehouses' => (new \Rateb\App\Models\Warehouse())->all(100, 0),
             'inventory' => (new \Rateb\App\Models\Inventory())->all(200, 0),
             'csrf' => Csrf::token(),
         ], 'main');
@@ -657,10 +656,13 @@ final class WarehouseTransfersController extends Controller
 
     public function create(): void
     {
+        rateb_bootstrap_ops_tenant();
+        $formFields = \Rateb\App\Services\FormLookupService::warehouseTransferFormFields();
+        $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($formFields);
         $this->view('company/warehouse-transfers/form', [
             'title' => __('create') . ' ' . __('warehouse_transfers'),
-            'inventory' => (new \Rateb\App\Models\Inventory())->all(200, 0),
-            'warehouses' => (new \Rateb\App\Models\Warehouse())->all(200, 0),
+            'formFields' => $formFields,
+            'lookups' => $lookups,
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -808,13 +810,10 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
     public function create(): void
     {
         $this->guardManage();
-        $this->view($this->viewPrefix . '/form', [
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __('supplier_comms'),
             'item' => null,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'csrf' => Csrf::token(),
-        ], $this->layout());
+        ]), $this->layout());
     }
 
     public function edit(array $params): void
@@ -827,13 +826,10 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             $this->view('errors/404', ['title' => '404']);
             return;
         }
-        $this->view($this->viewPrefix . '/form', [
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('edit') . ' ' . __('supplier_comms'),
             'item' => $item,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'csrf' => Csrf::token(),
-        ], $this->layout());
+        ]), $this->layout());
     }
 }
 

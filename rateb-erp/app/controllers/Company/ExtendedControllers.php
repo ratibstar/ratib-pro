@@ -204,7 +204,7 @@ final class ProductCategoriesController extends \Rateb\App\Controllers\CrudContr
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
             ['name' => 'name_ar', 'label' => 'name_ar', 'type' => 'text'],
-            ['name' => 'is_active', 'label' => 'active', 'type' => 'select', 'options' => ['1', '0']],
+            ['name' => 'is_active', 'label' => 'active', 'type' => 'select', 'lookup' => 'yes_no'],
         ];
     }
 

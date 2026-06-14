@@ -1123,4 +1123,10 @@ return [
     'disposed' => 'Disposed',
     'retired' => 'Retired',
     'awarded' => 'Awarded',
+    'manual_entry' => 'Other — manual entry',
+    'type_manually' => 'Type value manually',
+    'yes' => 'Yes',
+    'no' => 'No',
+    'sandbox' => 'Sandbox',
+    'production' => 'Production',
 ];

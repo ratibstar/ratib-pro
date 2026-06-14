@@ -13,12 +13,7 @@ $totalField = (string) ($totalField ?? 'total_estimated');
 $defaultVat15 = !empty($defaultVat15);
 $workflow = $workflow ?? null;
 $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
-$suppliers = $suppliers ?? [];
-$costCenters = $costCenters ?? [];
-$warehouses = $warehouses ?? [];
-$departments = $departments ?? [];
-$inventoryItems = $inventoryItems ?? [];
-$currencies = ['SAR', 'USD', 'EUR'];
+$lookups = (new \Rateb\App\Services\FormLookupService())->forFields($fields);
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
@@ -31,8 +26,7 @@ $currencies = ['SAR', 'USD', 'EUR'];
                 } ?>
                 <?php foreach ($fields as $field) {
                     $name = $field['name'];
-                    $type = $field['type'] ?? 'text';
-                    $value = $item[$name] ?? '';
+                    $value = $item[$name] ?? ($field['default'] ?? '');
                     if ($name === 'notes') {
                         Rateb\App\Core\View::partial('procurement-notes-field', [
                             'item' => $item,
@@ -50,7 +44,7 @@ $currencies = ['SAR', 'USD', 'EUR'];
                     <input class="form-control rateb-form-control" type="number" step="0.01" min="0"
                            id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
                            name="<?php echo Rateb\App\Core\View::escape($name); ?>"
-                           value="<?php echo Rateb\App\Core\View::escape($value); ?>"
+                           value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"
                            readonly data-procurement-total-field>
                 </div>
                         <?php
@@ -65,76 +59,23 @@ $currencies = ['SAR', 'USD', 'EUR'];
                     <input class="form-control rateb-form-control" type="number" step="0.01" min="0"
                            id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
                            name="<?php echo Rateb\App\Core\View::escape($name); ?>"
-                           value="<?php echo Rateb\App\Core\View::escape($value ?: 0); ?>"
+                           value="<?php echo Rateb\App\Core\View::escape((string) ($value ?: 0)); ?>"
                            data-procurement-adjust>
                 </div>
                         <?php
                         continue;
                     }
-                    ?>
-                <div class="col-md-6">
-                    <label class="form-label rateb-form-label" for="f_<?php echo Rateb\App\Core\View::escape($name); ?>">
-                        <?php echo Rateb\App\Core\View::escape(rateb_label((string) ($field['label'] ?? $name))); ?>
-                    </label>
-                    <?php                     if ($name === 'department') { ?>
-                    <select class="form-select rateb-form-control" id="f_department" name="department">
-                        <option value=""><?php echo __('select'); ?></option>
-                        <?php foreach ($departments as $dept) { ?>
-                        <option value="<?php echo Rateb\App\Core\View::escape($dept); ?>"<?php echo (string)$value === (string)$dept ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($dept); ?></option>
-                        <?php } ?>
-                    </select>
-                    <?php } elseif ($name === 'supplier_id' && $suppliers !== []) { ?>
-                    <select class="form-select rateb-form-control" id="f_supplier_id" name="supplier_id">
-                        <option value="">—</option>
-                        <?php foreach ($suppliers as $s) { ?>
-                        <option value="<?php echo (int) $s['id']; ?>"<?php echo (int)$value === (int)$s['id'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($s['name'] ?? ''); ?></option>
-                        <?php } ?>
-                    </select>
-                    <?php } elseif ($name === 'cost_center_id' && $costCenters !== []) { ?>
-                    <select class="form-select rateb-form-control" id="f_cost_center_id" name="cost_center_id">
-                        <option value="">—</option>
-                        <?php foreach ($costCenters as $cc) {
-                            $ccLabel = ($cc['code'] ?? '') . ' — ' . (rateb_locale() === 'ar' && !empty($cc['name_ar']) ? $cc['name_ar'] : ($cc['name'] ?? ''));
-                            ?>
-                        <option value="<?php echo (int) $cc['id']; ?>"<?php echo (int)$value === (int)$cc['id'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($ccLabel); ?></option>
-                        <?php } ?>
-                    </select>
-                    <?php } elseif ($name === 'warehouse_id' && $warehouses !== []) { ?>
-                    <select class="form-select rateb-form-control" id="f_warehouse_id" name="warehouse_id">
-                        <option value="">—</option>
-                        <?php foreach ($warehouses as $wh) { ?>
-                        <option value="<?php echo (int) $wh['id']; ?>"<?php echo (int)$value === (int)$wh['id'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($wh['name'] ?? ''); ?></option>
-                        <?php } ?>
-                    </select>
-                    <?php } elseif ($name === 'currency') { ?>
-                    <select class="form-select rateb-form-control" id="f_currency" name="currency">
-                        <?php foreach ($currencies as $cur) { ?>
-                        <option value="<?php echo $cur; ?>"<?php echo (string)($value ?: 'SAR') === $cur ? ' selected' : ''; ?>><?php echo $cur; ?></option>
-                        <?php } ?>
-                    </select>
-                    <?php } elseif ($type === 'select') { ?>
-                    <select class="form-select rateb-form-control" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>" name="<?php echo Rateb\App\Core\View::escape($name); ?>">
-                        <?php foreach (($field['options'] ?? []) as $opt) { ?>
-                        <option value="<?php echo Rateb\App\Core\View::escape($opt); ?>"<?php echo (string)$value === (string)$opt ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape(__($opt)); ?></option>
-                        <?php } ?>
-                    </select>
-                    <?php } elseif ($type === 'date') { ?>
-                    <input class="form-control rateb-form-control" type="date" dir="ltr"
-                           id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
-                           name="<?php echo Rateb\App\Core\View::escape($name); ?>"
-                           value="<?php echo Rateb\App\Core\View::escape($value); ?>">
-                    <?php } else { ?>
-                    <input class="form-control rateb-form-control" type="<?php echo Rateb\App\Core\View::escape($type); ?>"
-                           id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
-                           name="<?php echo Rateb\App\Core\View::escape($name); ?>"
-                           value="<?php echo Rateb\App\Core\View::escape($value); ?>">
-                    <?php } ?>
-                </div>
-                <?php } ?>
+                    Rateb\App\Core\View::partial('form-field', [
+                        'field' => $field,
+                        'value' => $value,
+                        'lookups' => $lookups,
+                    ]);
+                } ?>
                 <?php Rateb\App\Core\View::partial('line-items', [
                     'lineItems' => $lineItems ?? [],
-                    'inventoryItems' => $inventoryItems,
+                    'inventoryItems' => $inventoryItems ?? [],
                     'defaultVat15' => $defaultVat15,
+                    'lookups' => $lookups,
                 ]); ?>
                 <?php if ($entityType === 'purchase_order') {
                     Rateb\App\Core\View::partial('procurement-summary', [

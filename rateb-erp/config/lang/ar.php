@@ -1123,4 +1123,10 @@ return [
     'disposed' => 'مستبعد',
     'retired' => 'متقاعد',
     'awarded' => 'مُرسى',
+    'manual_entry' => 'أخرى — إدخال يدوي',
+    'type_manually' => 'اكتب القيمة يدوياً',
+    'yes' => 'نعم',
+    'no' => 'لا',
+    'sandbox' => 'تجريبي',
+    'production' => 'إنتاج',
 ];

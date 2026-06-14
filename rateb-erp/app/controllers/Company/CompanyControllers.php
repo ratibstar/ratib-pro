@@ -33,7 +33,7 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         ];
         $this->fields = [
             ['name' => 'title', 'label' => 'title', 'type' => 'text'],
-            ['name' => 'department', 'label' => 'department', 'type' => 'fk', 'lookup' => 'departments'],
+            ['name' => 'department', 'label' => 'department', 'type' => 'hybrid', 'lookup' => 'departments'],
             ['name' => 'priority', 'label' => 'priority', 'type' => 'select', 'lookup' => 'priority_levels'],
             ['name' => 'expected_date', 'label' => 'expected_date', 'type' => 'date'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'pr_statuses'],
@@ -1069,9 +1069,9 @@ final class WarehousesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'status', 'label' => 'status'],
         ];
         $this->fields = [
-            ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
-            ['name' => 'location', 'label' => 'Location', 'type' => 'text'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'inactive']],
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'location', 'label' => 'location', 'type' => 'hybrid', 'lookup' => 'warehouse_locations'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'warehouse_statuses'],
         ];
     }
 
@@ -1105,8 +1105,8 @@ final class AssetsController extends \Rateb\App\Controllers\CrudController
         ];
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
-            ['name' => 'category', 'label' => 'Category', 'type' => 'fk', 'lookup' => 'asset_categories'],
-            ['name' => 'location', 'label' => 'location', 'type' => 'text'],
+            ['name' => 'category', 'label' => 'Category', 'type' => 'hybrid', 'lookup' => 'asset_categories'],
+            ['name' => 'location', 'label' => 'location', 'type' => 'hybrid', 'lookup' => 'asset_locations'],
             ['name' => 'purchase_date', 'label' => 'purchase_date', 'type' => 'date'],
             ['name' => 'purchase_cost', 'label' => 'purchase_cost', 'type' => 'number'],
             ['name' => 'current_value', 'label' => 'Value', 'type' => 'number'],
@@ -1138,8 +1138,8 @@ final class MedicalDevicesController extends \Rateb\App\Controllers\CrudControll
         $this->fields = [
             ['name' => 'asset_id', 'label' => 'assets', 'type' => 'fk', 'lookup' => 'assets'],
             ['name' => 'device_name', 'label' => 'Device', 'type' => 'text', 'required' => true],
-            ['name' => 'manufacturer', 'label' => 'Manufacturer', 'type' => 'text'],
-            ['name' => 'model_no', 'label' => 'Model', 'type' => 'text'],
+            ['name' => 'manufacturer', 'label' => 'Manufacturer', 'type' => 'hybrid', 'lookup' => 'manufacturers'],
+            ['name' => 'model_no', 'label' => 'Model', 'type' => 'hybrid', 'lookup' => 'model_numbers'],
             ['name' => 'serial_no', 'label' => 'Serial', 'type' => 'text'],
             ['name' => 'calibration_due', 'label' => 'Calibration Due', 'type' => 'date'],
             ['name' => 'regulatory_status', 'label' => 'regulatory_status', 'type' => 'select', 'lookup' => 'regulatory_statuses'],
@@ -1411,14 +1411,14 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
         $this->entityName = 'supplier_evaluations';
         $this->tenantForeignKeys = ['supplier_id'];
         $this->fields = [
-            ['name' => 'supplier_id', 'label' => 'supplier_id', 'type' => 'number'],
-            ['name' => 'evaluation_date', 'label' => 'evaluation_date', 'type' => 'date'],
-            ['name' => 'quality_score', 'label' => 'quality_score', 'type' => 'number'],
-            ['name' => 'delivery_score', 'label' => 'delivery_score', 'type' => 'number'],
-            ['name' => 'price_score', 'label' => 'price_score', 'type' => 'number'],
-            ['name' => 'service_score', 'label' => 'service_score', 'type' => 'number'],
+            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers', 'required' => true],
+            ['name' => 'evaluation_date', 'label' => 'evaluation_date', 'type' => 'date', 'default' => date('Y-m-d')],
+            ['name' => 'quality_score', 'label' => 'quality_score', 'type' => 'score_select'],
+            ['name' => 'delivery_score', 'label' => 'delivery_score', 'type' => 'score_select'],
+            ['name' => 'price_score', 'label' => 'price_score', 'type' => 'score_select'],
+            ['name' => 'service_score', 'label' => 'service_score', 'type' => 'score_select'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'evaluation_statuses', 'default' => 'published'],
             ['name' => 'comments', 'label' => 'comments', 'type' => 'textarea'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'published', 'archived']],
         ];
     }
 
@@ -1455,7 +1455,10 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
     public function create(): void
     {
         $this->guardManage();
-        $this->view($this->viewPrefix . '/form', $this->evalFormData(null), $this->layout());
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
+            'title' => __('create') . ' ' . __('supplier_evaluations'),
+            'item' => null,
+        ]), $this->layout());
     }
 
     public function edit(array $params): void
@@ -1468,20 +1471,10 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             $this->view('errors/404', ['title' => '404']);
             return;
         }
-        $this->view($this->viewPrefix . '/form', $this->evalFormData($item), $this->layout());
-    }
-
-    /** @return array<string, mixed> */
-    private function evalFormData(?array $item): array
-    {
-        return [
-            'title' => ($item ? __('edit') : __('create')) . ' ' . __('supplier_evaluations'),
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
+            'title' => __('edit') . ' ' . __('supplier_evaluations'),
             'item' => $item,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'csrf' => Csrf::token(),
-            'suppliers' => (new \Rateb\App\Models\Supplier())->all(200, 0),
-        ];
+        ]), $this->layout());
     }
 
     public function store(): void

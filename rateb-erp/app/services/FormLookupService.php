@@ -21,6 +21,7 @@ use Rateb\App\Models\FiscalPeriod;
 use Rateb\App\Models\Inventory;
 use Rateb\App\Models\ProductCategory;
 use Rateb\App\Models\PurchaseOrder;
+use Rateb\App\Models\PurchaseRequest;
 use Rateb\App\Models\Rfq;
 use Rateb\App\Models\Supplier;
 use Rateb\App\Models\SupplierClassification;
@@ -255,6 +256,66 @@ final class FormLookupService
             case 'warranty_statuses':
                 $options = $this->staticOptions(['active', 'expired', 'void', 'pending'], true);
                 break;
+            case 'warehouse_statuses':
+                $options = $this->staticOptions(['active', 'inactive'], true);
+                break;
+            case 'account_types':
+                $options = $this->staticOptions(['asset', 'liability', 'equity', 'revenue', 'expense'], true);
+                break;
+            case 'voucher_types':
+                $options = [
+                    ['value' => 'receipt', 'label' => __('receipt_voucher')],
+                    ['value' => 'payment', 'label' => __('payment_voucher')],
+                ];
+                break;
+            case 'document_entity_types':
+                $options = $this->staticOptions(['general', 'contract', 'supplier', 'asset', 'device', 'inventory', 'purchase_order'], true);
+                break;
+            case 'yes_no':
+                $options = [
+                    ['value' => '1', 'label' => __('yes')],
+                    ['value' => '0', 'label' => __('no')],
+                ];
+                break;
+            case 'zatca_environments':
+                $options = $this->staticOptions(['sandbox', 'production'], true);
+                break;
+            case 'manufacturers':
+                $options = $this->distinctTenantOptions('rateb_medical_devices', 'manufacturer', ['GE', 'Siemens', 'Philips', 'Medtronic', 'Drager', 'Other']);
+                break;
+            case 'asset_locations':
+                $options = $this->distinctTenantOptions('rateb_assets', 'location', ['HQ', 'Warehouse', 'Clinic', 'Lab', 'Office']);
+                break;
+            case 'warehouse_locations':
+                $options = $this->distinctTenantOptions('rateb_warehouses', 'location', ['Main', 'Branch', 'Cold storage']);
+                break;
+            case 'batch_numbers':
+                $options = $this->distinctTenantOptions('rateb_inventory_batches', 'batch_no');
+                break;
+            case 'party_names':
+                $options = $this->partyNameOptions();
+                break;
+            case 'supplier_names':
+                $options = $this->supplierNameOptions();
+                break;
+            case 'purchase_requests':
+                $options = $this->purchaseRequestOptions();
+                break;
+            case 'coa_parents':
+                $options = $this->coaParentOptions();
+                break;
+            case 'model_numbers':
+                $options = $this->distinctTenantOptions('rateb_medical_devices', 'model_no');
+                break;
+            case 'part_names':
+                $options = $this->distinctTenantOptions('rateb_device_spare_parts', 'part_name');
+                break;
+            case 'tax_presets':
+                $options = [];
+                foreach (LineItems::taxPresets() as $pct) {
+                    $options[] = ['value' => (string) $pct, 'label' => $pct . '%'];
+                }
+                break;
             default:
                 $options = [];
         }
@@ -287,8 +348,8 @@ final class FormLookupService
     {
         return [
             ['name' => 'asset_id', 'label' => 'assets', 'type' => 'fk', 'lookup' => 'assets', 'required' => true, 'col' => 'col-md-4'],
-            ['name' => 'assigned_to', 'label' => 'assigned_to', 'type' => 'fk', 'lookup' => 'company_users', 'col' => 'col-md-4'],
-            ['name' => 'department', 'label' => 'department', 'type' => 'select', 'lookup' => 'departments', 'col' => 'col-md-4'],
+            ['name' => 'assigned_to', 'label' => 'assigned_to', 'type' => 'hybrid', 'lookup' => 'company_users', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'department', 'label' => 'department', 'type' => 'hybrid', 'lookup' => 'departments', 'col' => 'col-md-4'],
             ['name' => 'assigned_at', 'label' => 'assigned_at', 'type' => 'date', 'col' => 'col-md-4', 'default' => date('Y-m-d')],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 2],
         ];
@@ -312,7 +373,7 @@ final class FormLookupService
             ['name' => 'device_id', 'label' => 'medical_devices', 'type' => 'fk', 'lookup' => 'medical_devices', 'required' => true, 'col' => 'col-md-4'],
             ['name' => 'service_date', 'label' => 'service_date', 'type' => 'date', 'col' => 'col-md-2', 'default' => date('Y-m-d')],
             ['name' => 'service_type', 'label' => 'service_type', 'type' => 'select', 'lookup' => 'service_types', 'col' => 'col-md-2'],
-            ['name' => 'provider', 'label' => 'provider', 'type' => 'text', 'col' => 'col-md-2'],
+            ['name' => 'provider', 'label' => 'provider', 'type' => 'hybrid', 'lookup' => 'supplier_names', 'col' => 'col-md-2'],
             ['name' => 'cost', 'label' => 'cost', 'type' => 'number', 'step' => '0.01', 'col' => 'col-md-2'],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 2],
         ];
@@ -323,8 +384,8 @@ final class FormLookupService
     {
         return [
             ['name' => 'device_id', 'label' => 'medical_devices', 'type' => 'fk', 'lookup' => 'medical_devices', 'required' => true, 'col' => 'col-md-4'],
-            ['name' => 'part_name', 'label' => 'part_name', 'type' => 'text', 'required' => true, 'col' => 'col-md-3'],
-            ['name' => 'part_no', 'label' => 'part_no', 'type' => 'text', 'col' => 'col-md-2'],
+            ['name' => 'part_name', 'label' => 'part_name', 'type' => 'hybrid', 'lookup' => 'part_names', 'required' => true, 'col' => 'col-md-3'],
+            ['name' => 'part_no', 'label' => 'part_no', 'type' => 'datalist', 'lookup' => 'part_names', 'col' => 'col-md-2'],
             ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number', 'step' => '0.001', 'col' => 'col-md-2'],
             ['name' => 'reorder_level', 'label' => 'reorder_level', 'type' => 'number', 'step' => '0.001', 'col' => 'col-md-1'],
         ];
@@ -339,6 +400,78 @@ final class FormLookupService
             ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number', 'step' => '0.001', 'min' => '0.001', 'required' => true, 'col' => 'col-md-2'],
             ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses', 'col' => 'col-md-3'],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 2],
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public static function warehouseTransferFormFields(): array
+    {
+        return [
+            ['name' => 'inventory_id', 'label' => 'inventory', 'type' => 'fk', 'lookup' => 'inventory', 'required' => true, 'col' => 'col-md-6'],
+            ['name' => 'source_warehouse_id', 'label' => 'from', 'type' => 'fk', 'lookup' => 'warehouses', 'required' => true, 'col' => 'col-md-3'],
+            ['name' => 'destination_warehouse_id', 'label' => 'to', 'type' => 'fk', 'lookup' => 'warehouses', 'required' => true, 'col' => 'col-md-3'],
+            ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number', 'step' => '0.001', 'min' => '0.001', 'required' => true, 'col' => 'col-md-3'],
+            ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 2],
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public static function inventoryBatchFormFields(): array
+    {
+        return [
+            ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'inventory_id', 'label' => 'inventory', 'type' => 'fk', 'lookup' => 'inventory', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'batch_no', 'label' => 'batch_no', 'type' => 'hybrid', 'lookup' => 'batch_numbers', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number', 'step' => '0.001', 'min' => '0', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'expiry_date', 'label' => 'expiry_date', 'type' => 'date', 'col' => 'col-md-4'],
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public static function inventoryAuditFormFields(): array
+    {
+        return [
+            ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses', 'col' => 'col-md-4'],
+            ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 2],
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public static function cashVoucherFormFields(): array
+    {
+        return [
+            ['name' => 'voucher_type', 'label' => 'voucher_type', 'type' => 'select', 'lookup' => 'voucher_types', 'translate_options' => false, 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'voucher_date', 'label' => 'voucher_date', 'type' => 'date', 'required' => true, 'col' => 'col-md-4', 'default' => date('Y-m-d')],
+            ['name' => 'amount', 'label' => 'amount', 'type' => 'number', 'step' => '0.01', 'min' => '0.01', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'party_name', 'label' => 'party_name', 'type' => 'hybrid', 'lookup' => 'party_names', 'col' => 'col-md-6'],
+            ['name' => 'counter_account_id', 'label' => 'counter_account', 'type' => 'fk', 'lookup' => 'chart_of_accounts', 'required' => true, 'col' => 'col-md-6'],
+            ['name' => 'bank_account_id', 'label' => 'bank_account', 'type' => 'fk', 'lookup' => 'bank_accounts', 'col' => 'col-md-6'],
+            ['name' => 'description', 'label' => 'description', 'type' => 'text', 'col' => 'col-md-6'],
+            ['name' => 'description_ar', 'label' => 'description_ar', 'type' => 'text', 'col' => 'col-md-6'],
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public static function documentUploadFormFields(): array
+    {
+        return [
+            ['name' => 'entity_type', 'label' => 'entity_type', 'type' => 'select', 'lookup' => 'document_entity_types', 'col' => 'col-md-3', 'default' => 'general'],
+            ['name' => 'entity_id', 'label' => 'entity_id', 'type' => 'number', 'col' => 'col-md-2', 'min' => '0'],
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public static function supplierEvaluationFormFields(): array
+    {
+        return [
+            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers', 'required' => true, 'col' => 'col-md-6'],
+            ['name' => 'evaluation_date', 'label' => 'evaluation_date', 'type' => 'date', 'required' => true, 'col' => 'col-md-6', 'default' => date('Y-m-d')],
+            ['name' => 'quality_score', 'label' => 'quality_score', 'type' => 'score_select', 'col' => 'col-md-3'],
+            ['name' => 'delivery_score', 'label' => 'delivery_score', 'type' => 'score_select', 'col' => 'col-md-3'],
+            ['name' => 'price_score', 'label' => 'price_score', 'type' => 'score_select', 'col' => 'col-md-3'],
+            ['name' => 'service_score', 'label' => 'service_score', 'type' => 'score_select', 'col' => 'col-md-3'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'evaluation_statuses', 'col' => 'col-md-6', 'default' => 'published'],
+            ['name' => 'comments', 'label' => 'comments', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 4],
         ];
     }
 
@@ -526,6 +659,117 @@ final class FormLookupService
             $name = rateb_locale() === 'ar' && !empty($row['name_ar']) ? $row['name_ar'] : ($row['name'] ?? '');
             $out[] = ['value' => (int) $row['id'], 'label' => trim(($row['code'] ?? '') . ' — ' . $name)];
         }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function distinctTenantOptions(string $table, string $column, array $presets = []): array
+    {
+        $safeTable = preg_replace('/[^a-z_]/', '', $table);
+        $safeCol = preg_replace('/[^a-z_]/', '', $column);
+        $cid = TenantContext::companyId() ?? 0;
+        if ($cid < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $cid = rateb_resolve_ops_company_id();
+        }
+        $distinct = [];
+        if ($cid > 0) {
+            $db = \Rateb\App\Core\Database::connection();
+            $stmt = $db->prepare(
+                'SELECT DISTINCT `' . $safeCol . '` AS v FROM `' . $safeTable . '`
+                 WHERE company_id = :cid AND `' . $safeCol . '` IS NOT NULL AND `' . $safeCol . '` <> \'\'
+                 ORDER BY v LIMIT 200'
+            );
+            $stmt->execute(['cid' => $cid]);
+            foreach ($stmt->fetchAll() ?: [] as $row) {
+                $distinct[] = (string) ($row['v'] ?? '');
+            }
+        }
+        $merged = array_values(array_unique(array_merge($presets, $distinct)));
+        $out = [];
+        foreach ($merged as $val) {
+            if ($val !== '') {
+                $out[] = ['value' => $val, 'label' => $val];
+            }
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function supplierNameOptions(): array
+    {
+        $out = [];
+        foreach ((new Supplier())->all(300, 0) as $row) {
+            $name = trim((string) ($row['name'] ?? ''));
+            if ($name !== '') {
+                $out[] = ['value' => $name, 'label' => $name];
+            }
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function partyNameOptions(): array
+    {
+        $out = [];
+        foreach ((new Supplier())->all(300, 0) as $row) {
+            $name = trim((string) ($row['name'] ?? ''));
+            if ($name !== '') {
+                $out[] = ['value' => $name, 'label' => $name];
+            }
+        }
+        foreach ($this->distinctTenantOptions('rateb_cash_vouchers', 'party_name') as $opt) {
+            $out[] = $opt;
+        }
+        $seen = [];
+        $deduped = [];
+        foreach ($out as $opt) {
+            $k = (string) $opt['value'];
+            if (!isset($seen[$k])) {
+                $seen[$k] = true;
+                $deduped[] = $opt;
+            }
+        }
+        return $deduped;
+    }
+
+    /** @return list<FormOption> */
+    private function purchaseRequestOptions(): array
+    {
+        $out = [];
+        $rows = (new PurchaseRequest())->all(200, 0);
+        foreach ($rows as $row) {
+            $out[] = ['value' => (int) $row['id'], 'label' => trim(($row['request_no'] ?? '') . ' — ' . ($row['title'] ?? ''))];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function coaParentOptions(): array
+    {
+        $cid = TenantContext::companyId() ?? 0;
+        if ($cid < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $cid = rateb_resolve_ops_company_id();
+        }
+        if ($cid < 1) {
+            return [['value' => '', 'label' => '—']];
+        }
+        $tree = (new AccountingService())->coaTreeWithBalances($cid);
+        $out = [['value' => '', 'label' => '—']];
+        $walk = static function (array $nodes, int $depth) use (&$walk, &$out): void {
+            foreach ($nodes as $node) {
+                $id = (int) ($node['id'] ?? 0);
+                if ($id < 1) {
+                    continue;
+                }
+                $code = (string) ($node['code'] ?? '');
+                $name = rateb_locale() === 'ar' && !empty($node['name_ar']) ? $node['name_ar'] : ($node['name'] ?? '');
+                $out[] = ['value' => $id, 'label' => str_repeat('— ', $depth) . $code . ' — ' . $name];
+                if (!empty($node['children'])) {
+                    $walk($node['children'], $depth + 1);
+                }
+            }
+        };
+        $walk($tree, 0);
         return $out;
     }
 

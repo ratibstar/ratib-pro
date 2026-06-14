@@ -1,9 +1,14 @@
 <?php
+use Rateb\App\Services\FormLookupService;
+
+/** @var array<string, mixed>|null $voucher */
 $isEdit = !empty($voucher);
 $action = $isEdit
     ? rateb_app_url('cash-vouchers/' . (int) $voucher['id'])
     : rateb_app_url('cash-vouchers');
-$vType = (string) ($voucher['voucher_type'] ?? 'receipt');
+$formFields = FormLookupService::cashVoucherFormFields();
+$lookups = (new FormLookupService())->forFields($formFields);
+$item = $voucher;
 ?>
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
 <form method="post" action="<?php echo $action; ?>" class="rateb-card">
@@ -11,63 +16,18 @@ $vType = (string) ($voucher['voucher_type'] ?? 'receipt');
     <div class="rateb-card-body">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('voucher_type'); ?></label>
-                <select name="voucher_type" class="form-select" required>
-                    <option value="receipt"<?php echo $vType === 'receipt' ? ' selected' : ''; ?>><?php echo __('receipt_voucher'); ?></option>
-                    <option value="payment"<?php echo $vType === 'payment' ? ' selected' : ''; ?>><?php echo __('payment_voucher'); ?></option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('evaluation_date'); ?></label>
-                <input type="date" name="voucher_date" class="form-control" required
-                       value="<?php echo Rateb\App\Core\View::escape((string) ($voucher['voucher_date'] ?? date('Y-m-d'))); ?>">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('amount'); ?></label>
-                <input type="number" step="0.01" min="0.01" name="amount" class="form-control" required
-                       value="<?php echo Rateb\App\Core\View::escape((string) ($voucher['amount'] ?? '')); ?>">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label"><?php echo __('party_name'); ?></label>
-                <input type="text" name="party_name" class="form-control" maxlength="200"
-                       value="<?php echo Rateb\App\Core\View::escape((string) ($voucher['party_name'] ?? '')); ?>">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label"><?php echo __('counter_account'); ?></label>
-                <select name="counter_account_id" class="form-select" required>
-                    <option value=""><?php echo __('select_account'); ?></option>
-                    <?php foreach ($accounts as $acc) {
-                        $label = $acc['code'] . ' — ' . (rateb_locale() === 'ar' && !empty($acc['name_ar']) ? $acc['name_ar'] : $acc['name']);
-                        $sel = $isEdit && (int) ($voucher['counter_account_id'] ?? 0) === (int) $acc['id'] ? ' selected' : '';
-                        ?>
-                    <option value="<?php echo (int) $acc['id']; ?>"<?php echo $sel; ?>><?php echo Rateb\App\Core\View::escape($label); ?></option>
-                    <?php } ?>
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label"><?php echo __('bank_account'); ?></label>
-                <select name="bank_account_id" class="form-select">
-                    <option value=""><?php echo __('petty_cash_default'); ?></option>
-                    <?php foreach ($bankAccounts ?? [] as $ba) {
-                        $sel = $isEdit && (int) ($voucher['bank_account_id'] ?? 0) === (int) $ba['id'] ? ' selected' : '';
-                        ?>
-                    <option value="<?php echo (int) $ba['id']; ?>"<?php echo $sel; ?>>
-                        <?php echo Rateb\App\Core\View::escape($ba['name'] . ' (' . ($ba['account_code'] ?? '') . ')'); ?>
-                    </option>
-                    <?php } ?>
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label"><?php echo __('description'); ?> (EN)</label>
-                <input type="text" name="description" class="form-control" maxlength="500"
-                       value="<?php echo Rateb\App\Core\View::escape((string) ($voucher['description'] ?? '')); ?>">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label"><?php echo __('description'); ?> (AR)</label>
-                <input type="text" name="description_ar" class="form-control" maxlength="500"
-                       value="<?php echo Rateb\App\Core\View::escape((string) ($voucher['description_ar'] ?? '')); ?>">
-            </div>
+            <?php foreach ($formFields as $field) {
+                $name = (string) $field['name'];
+                $value = $item[$name] ?? ($field['default'] ?? '');
+                if ($name === 'voucher_type' && $value === '') {
+                    $value = 'receipt';
+                }
+                Rateb\App\Core\View::partial('form-field', [
+                    'field' => $field,
+                    'value' => $value,
+                    'lookups' => $lookups,
+                ]);
+            } ?>
         </div>
     </div>
     <div class="rateb-card-footer d-flex gap-2">
