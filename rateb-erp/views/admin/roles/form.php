@@ -49,7 +49,7 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                             <div class="form-check<?php echo $highlight; ?>">
                                 <input class="form-check-input rateb-matrix-check" type="checkbox" name="permission_ids[]" value="<?php echo (int) $perm['id']; ?>" id="perm_<?php echo (int) $perm['id']; ?>" data-module="<?php echo Rateb\App\Core\View::escape($module); ?>"
                                     <?php echo in_array((int) $perm['id'], $selectedPermissions, true) ? ' checked' : ''; ?>>
-                                <label class="form-check-label" for="perm_<?php echo (int) $perm['id']; ?>">
+                                <label class="form-check-label rateb-ar-text" for="perm_<?php echo (int) $perm['id']; ?>">
                                     <strong><?php echo Rateb\App\Core\View::escape(rateb_permission_label($perm)); ?></strong>
                                     <small class="text-muted d-block"><?php echo Rateb\App\Core\View::escape($slug); ?></small>
                                 </label>

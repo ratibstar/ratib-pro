@@ -1,0 +1,25 @@
+/**
+ * Arabic typography — must load last in RTL.
+ * text-transform:uppercase breaks meem (م) in المخزون، المستودعات، اعتماد، etc.
+ */
+html[dir="rtl"] .rateb-app,
+html[dir="rtl"] .rateb-app *,
+html[dir="rtl"] body.rateb-app,
+html[dir="rtl"] body.rateb-app * {
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    font-feature-settings: normal !important;
+    font-variant: normal !important;
+}
+
+html[dir="rtl"] .rateb-ar-text,
+html[dir="rtl"] .rateb-table td,
+html[dir="rtl"] .rateb-table th,
+html[dir="rtl"] .rateb-matrix-sticky,
+html[dir="rtl"] .form-check-label,
+html[dir="rtl"] .rateb-widget-label,
+html[dir="rtl"] .rateb-card-header,
+html[dir="rtl"] .rateb-topbar h1 {
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}

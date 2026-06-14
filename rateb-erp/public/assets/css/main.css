@@ -53,10 +53,13 @@ body.rateb-app {
     padding: 0.9rem 1.15rem 0.3rem;
     font-size: 0.68rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
     opacity: 0.55;
     color: var(--rateb-sidebar-text);
+}
+
+[dir="ltr"] .rateb-nav-section {
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
 .rateb-nav-group {

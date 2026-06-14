@@ -111,7 +111,7 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                         <?php } ?>
                     </td>
                         <?php } else { ?>
-                    <td><?php echo Rateb\App\Core\View::escape($val); ?></td>
+                    <td class="rateb-ar-text"><?php echo Rateb\App\Core\View::escape($val); ?></td>
                         <?php } ?>
                     <?php } ?>
                     <?php if ($actionsEnabled) { ?>

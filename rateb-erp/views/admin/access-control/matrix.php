@@ -54,7 +54,7 @@
                         $permId = (int) $perm['id'];
                         ?>
                     <tr data-module="<?php echo Rateb\App\Core\View::escape($module); ?>"<?php echo ($perm['slug'] ?? '') === 'accounting.approve' ? ' class="table-warning"' : ''; ?>>
-                        <td class="rateb-matrix-sticky">
+                        <td class="rateb-matrix-sticky rateb-ar-text">
                             <div class="fw-semibold"><?php echo Rateb\App\Core\View::escape(rateb_permission_label($perm)); ?></div>
                             <small class="text-muted"><?php echo Rateb\App\Core\View::escape($perm['slug']); ?></small>
                         </td>

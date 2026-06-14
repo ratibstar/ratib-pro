@@ -1,22 +1,18 @@
 /* RATEB ERP — Arabic / RTL layout */
 
-[dir="rtl"] body.rateb-app {
-    text-align: right;
-    text-transform: none;
-    letter-spacing: 0;
+/*
+ * Arabic + text-transform:uppercase breaks meem (م) in words like المخزون، اعتماد.
+ * Force normal casing across the whole app shell in RTL.
+ */
+[dir="rtl"] .rateb-app,
+[dir="rtl"] .rateb-app * {
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    font-feature-settings: normal !important;
 }
 
-[dir="rtl"] .rateb-table th,
-[dir="rtl"] .rateb-table td,
-[dir="rtl"] .form-check-label,
-[dir="rtl"] .rateb-matrix-table td,
-[dir="rtl"] .rateb-card,
-[dir="rtl"] .rateb-card-header,
-[dir="rtl"] .rateb-approval-stat-label,
-[dir="rtl"] .rateb-approval-table thead th,
-[dir="rtl"] .rateb-nav-group-label {
-    text-transform: none !important;
-    letter-spacing: 0 !important;
+[dir="rtl"] body.rateb-app {
+    text-align: right;
 }
 
 [dir="rtl"] .rateb-sidebar {

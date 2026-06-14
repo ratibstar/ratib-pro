@@ -51,6 +51,10 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
     <link href="<?php echo rateb_asset('css/dark.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/rtl.css'); ?>" rel="stylesheet">
     <link href="<?php echo rateb_asset('css/light.css'); ?>" rel="stylesheet">
+    <?php if ($dir === 'rtl') { ?>
+    <link href="<?php echo rateb_asset('css/ar-typography.css'); ?>" rel="stylesheet">
+    <style id="rateb-rtl-ar-fix">html[dir="rtl"] .rateb-app,html[dir="rtl"] .rateb-app *,html[dir="rtl"] body.rateb-app *{text-transform:none!important;letter-spacing:normal!important;font-feature-settings:normal!important}</style>
+    <?php } ?>
 </head>
 <body class="rateb-app<?php echo $dir === 'rtl' ? ' rateb-rtl' : ''; ?>"
     data-rateb-media-json="<?php echo Rateb\App\Core\View::escape(rateb_url('admin/cms/media/json')); ?>"
