@@ -25,6 +25,7 @@ use Rateb\App\Models\CmsLeadNote;
 use Rateb\App\Models\CmsFooterColumn;
 use Rateb\App\Models\CmsNewsletterCampaign;
 use Rateb\App\Models\CmsOffice;
+use Rateb\App\Models\CmsMedia;
 use Rateb\App\Models\CmsMediaCategory;
 use Rateb\App\Models\CmsMenu;
 use Rateb\App\Models\CmsMenuItem;
