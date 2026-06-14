@@ -128,6 +128,72 @@ final class AccountingDashboardController extends Controller
             'csrf' => Csrf::token(),
         ], 'main');
     }
+
+    public function costCenterReport(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $from = trim((string) ($_GET['from'] ?? ''));
+        $to = trim((string) ($_GET['to'] ?? ''));
+        $report = (new AccountingService())->costCenterReport(
+            $companyId > 0 ? $companyId : null,
+            $from !== '' ? $from : null,
+            $to !== '' ? $to : null
+        );
+        $this->view('company/accounting/cost-center-report', [
+            'title' => __('cost_center_report'),
+            'report' => $report,
+            'from' => $from,
+            'to' => $to,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function zatcaSettings(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1) {
+            SessionManager::flash('error', __('select_company_ops'));
+            Response::redirect(rateb_app_url('accounting'));
+        }
+        $zatca = new \Rateb\App\Services\ZatcaService();
+        $this->view('company/accounting/zatca-settings', [
+            'title' => __('zatca_settings'),
+            'profile' => $zatca->getTaxProfile($companyId),
+            'readiness' => $zatca->readinessStatus($companyId),
+            'invoices' => $zatca->listInvoicesWithQr($companyId),
+            'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('accounting'),
+        ], 'main');
+    }
+
+    public function saveZatcaSettings(): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_manage_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/zatca-settings'));
+        }
+        $companyId = rateb_require_ops_company();
+        (new \Rateb\App\Services\ZatcaService())->saveTaxProfile($companyId, $_POST);
+        (new AuditService())->log('update', 'zatca_profile', $companyId, []);
+        SessionManager::flash('success', __('save') . ' OK');
+        Response::redirect(rateb_app_url('accounting/zatca-settings'));
+    }
+
+    public function generateZatcaQr(array $params): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_manage_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/zatca-settings'));
+        }
+        $companyId = rateb_require_ops_company();
+        $invoiceId = (int) ($params['id'] ?? 0);
+        if ((new \Rateb\App\Services\ZatcaService())->generateInvoiceQr($companyId, $invoiceId)) {
+            SessionManager::flash('success', __('zatca_qr_generated'));
+        } else {
+            SessionManager::flash('error', __('zatca_qr_failed'));
+        }
+        Response::redirect(rateb_app_url('accounting/zatca-settings'));
+    }
 }
 
 final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudController
@@ -220,6 +286,7 @@ final class JournalEntriesController extends Controller
             'entry' => null,
             'lines' => [],
             'accounts' => $accounts,
+            'costCenters' => $this->loadCostCenters($companyId),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -280,6 +347,7 @@ final class JournalEntriesController extends Controller
             'entry' => $entry,
             'lines' => $lines,
             'accounts' => $accounts,
+            'costCenters' => $this->loadCostCenters($companyId),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -324,7 +392,16 @@ final class JournalEntriesController extends Controller
         }
         $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
-        if ((new AccountingService())->postDraftEntry($id, $companyId)) {
+        $entry = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_journal_entries WHERE id = :id AND company_id = :cid',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        $service = new AccountingService();
+        if ($entry && $service->periodBlocksPosting($companyId, (string) ($entry['entry_date'] ?? ''))) {
+            SessionManager::flash('error', __('fiscal_period_closed_block'));
+            Response::redirect(rateb_app_url('journal-entries/' . $id));
+        }
+        if ($entry && $service->postDraftEntry($id, $companyId)) {
             (new AuditService())->log('post', 'journal_entry', $id, []);
             SessionManager::flash('success', __('journal_posted'));
         } else {
@@ -366,8 +443,10 @@ final class JournalEntriesController extends Controller
         }
 
         $lines = (new JournalEntry())->query(
-            'SELECT l.*, a.code, a.name, a.name_ar FROM rateb_journal_lines l
+            'SELECT l.*, a.code, a.name, a.name_ar, cc.code AS cc_code, cc.name AS cc_name, cc.name_ar AS cc_name_ar
+             FROM rateb_journal_lines l
              JOIN rateb_chart_of_accounts a ON a.id = l.account_id
+             LEFT JOIN rateb_cost_centers cc ON cc.id = l.cost_center_id
              WHERE l.journal_entry_id = :id ORDER BY l.id',
             ['id' => $id]
         );
@@ -389,6 +468,7 @@ final class JournalEntriesController extends Controller
         $debits = $_POST['line_debit'] ?? [];
         $credits = $_POST['line_credit'] ?? [];
         $memos = $_POST['line_memo'] ?? [];
+        $costCenters = $_POST['line_cost_center_id'] ?? [];
         $lines = [];
         $count = max(count($accountIds), count($debits), count($credits));
         for ($i = 0; $i < $count; $i++) {
@@ -398,14 +478,28 @@ final class JournalEntriesController extends Controller
             if ($accountId <= 0 || ($debit <= 0 && $credit <= 0)) {
                 continue;
             }
+            $ccId = (int) ($costCenters[$i] ?? 0);
             $lines[] = [
                 'account_id' => $accountId,
                 'debit' => $debit,
                 'credit' => $credit,
                 'memo' => trim((string) ($memos[$i] ?? '')) ?: null,
+                'cost_center_id' => $ccId > 0 ? $ccId : null,
             ];
         }
         return $lines;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function loadCostCenters(int $companyId): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        return (new \Rateb\App\Models\CostCenter())->query(
+            'SELECT id, code, name, name_ar FROM rateb_cost_centers WHERE company_id = :cid AND is_active = 1 ORDER BY code',
+            ['cid' => $companyId]
+        );
     }
 
     private function entryDate(): string
@@ -522,7 +616,16 @@ final class CashVouchersController extends Controller
         }
         $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
-        if ((new AccountingService())->postCashVoucher($id, $companyId)) {
+        $voucher = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        $service = new AccountingService();
+        if ($voucher && $service->periodBlocksPosting($companyId, (string) ($voucher['voucher_date'] ?? ''))) {
+            SessionManager::flash('error', __('fiscal_period_closed_block'));
+            Response::redirect(rateb_app_url('cash-vouchers/' . $id));
+        }
+        if ($voucher && $service->postCashVoucher($id, $companyId)) {
             (new AuditService())->log('post', 'cash_voucher', $id, []);
             SessionManager::flash('success', __('voucher_posted'));
         } else {
@@ -577,5 +680,58 @@ final class FiscalPeriodsController extends Controller
             SessionManager::flash('error', __('fiscal_period_close_failed'));
         }
         Response::redirect(rateb_app_url('fiscal-periods'));
+    }
+}
+
+final class CostCentersController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new \Rateb\App\Models\CostCenter();
+        $this->viewPrefix = 'company/cost-centers';
+        $this->routePrefix = rateb_app_route('cost-centers');
+        $this->entityName = 'cost_centers';
+        $this->fields = [
+            ['name' => 'code', 'label' => 'code', 'type' => 'text'],
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
+            ['name' => 'name_ar', 'label' => 'name_ar', 'type' => 'text'],
+        ];
+    }
+
+    public function index(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId > 0) {
+            TenantContext::setCompanyId($companyId);
+        }
+        $items = $companyId > 0
+            ? $this->model->query('SELECT * FROM rateb_cost_centers WHERE company_id = :cid ORDER BY code', ['cid' => $companyId])
+            : [];
+        $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
+            'title' => __($this->entityName),
+            'items' => $items,
+            'total' => count($items),
+            'page' => 1,
+            'limit' => 100,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => $this->createEnabled && $companyId > 0,
+            'actionsEnabled' => $this->actionsEnabled,
+        ]), $this->layout());
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $data['company_id'] = rateb_require_ops_company();
+        $data['is_active'] = 1;
+        return $data;
+    }
+
+    protected function layout(): string
+    {
+        return 'main';
     }
 }

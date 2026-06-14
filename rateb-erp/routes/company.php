@@ -25,6 +25,7 @@ use Rateb\App\Controllers\Company\WorkflowsController;
 use Rateb\App\Controllers\Company\JournalEntriesController as CompanyJournalEntriesController;
 use Rateb\App\Controllers\Company\CashVouchersController as CompanyCashVouchersController;
 use Rateb\App\Controllers\Company\FiscalPeriodsController as CompanyFiscalPeriodsController;
+use Rateb\App\Controllers\Company\CostCentersController as CompanyCostCentersController;
 use Rateb\App\Controllers\Company\InventoryBatchesController;
 use Rateb\App\Controllers\Company\InventoryAuditsController;
 use Rateb\App\Controllers\Company\InventoryCodesController;
@@ -96,6 +97,10 @@ $router->get($app('accounting/accounts-receivable'), [CompanyAccountingDashboard
 $router->get($app('accounting/profit-loss'), [CompanyAccountingDashboardController::class, 'profitLoss'], rateb_erp_mw('accounting', '', 'profit-loss'));
 $router->get($app('accounting/balance-sheet'), [CompanyAccountingDashboardController::class, 'balanceSheet'], rateb_erp_mw('accounting', '', 'balance-sheet'));
 $router->get($app('accounting/vat-report'), [CompanyAccountingDashboardController::class, 'vatReport'], rateb_erp_mw('accounting', '', 'vat-report'));
+$router->get($app('accounting/cost-center-report'), [CompanyAccountingDashboardController::class, 'costCenterReport'], rateb_erp_mw('accounting', '', 'cost-center-report'));
+$router->get($app('accounting/zatca-settings'), [CompanyAccountingDashboardController::class, 'zatcaSettings'], rateb_erp_mw('accounting', '', 'zatca-settings'));
+$router->post($app('accounting/zatca-settings'), [CompanyAccountingDashboardController::class, 'saveZatcaSettings'], rateb_erp_mw('accounting', 'accounting.manage', 'zatca-settings'));
+$router->post($app('accounting/zatca-qr/{id}'), [CompanyAccountingDashboardController::class, 'generateZatcaQr'], rateb_erp_mw('accounting', 'accounting.manage', 'zatca-settings'));
 $router->get($app('chart-of-accounts'), [CompanyChartOfAccountsController::class, 'index'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->get($app('chart-of-accounts/create'), [CompanyChartOfAccountsController::class, 'create'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->post($app('chart-of-accounts'), [CompanyChartOfAccountsController::class, 'store'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
@@ -121,6 +126,14 @@ $router->post($app('cash-vouchers/{id}/void'), [CompanyCashVouchersController::c
 
 $router->get($app('fiscal-periods'), [CompanyFiscalPeriodsController::class, 'index'], rateb_erp_mw('accounting', '', 'fiscal-periods'));
 $router->post($app('fiscal-periods/{id}/close'), [CompanyFiscalPeriodsController::class, 'close'], rateb_erp_mw('accounting', 'accounting.post', 'fiscal-periods'));
+
+$router->get($app('cost-centers'), [CompanyCostCentersController::class, 'index'], rateb_erp_mw('accounting', '', 'cost-centers'));
+$router->get($app('cost-centers/create'), [CompanyCostCentersController::class, 'create'], rateb_erp_mw('accounting', 'accounting.manage', 'cost-centers'));
+$router->post($app('cost-centers'), [CompanyCostCentersController::class, 'store'], rateb_erp_mw('accounting', 'accounting.manage', 'cost-centers'));
+$router->get($app('cost-centers/{id}/edit'), [CompanyCostCentersController::class, 'edit'], rateb_erp_mw('accounting', 'accounting.manage', 'cost-centers'));
+$router->post($app('cost-centers/{id}'), [CompanyCostCentersController::class, 'update'], rateb_erp_mw('accounting', 'accounting.manage', 'cost-centers'));
+$router->post($app('cost-centers/{id}/delete'), [CompanyCostCentersController::class, 'destroy'], rateb_erp_mw('accounting', 'accounting.manage', 'cost-centers'));
+$router->post($app('cost-centers/bulk-delete'), [CompanyCostCentersController::class, 'bulkDestroy'], rateb_erp_mw('accounting', 'accounting.manage', 'cost-centers'));
 
 $router->get($app('reports'), [ReportsController::class, 'index'], rateb_erp_mw('reports', '', 'reports'));
 $router->get($app('reports/export'), [ReportsController::class, 'export'], rateb_erp_mw('reports', 'reports.export', 'reports'));

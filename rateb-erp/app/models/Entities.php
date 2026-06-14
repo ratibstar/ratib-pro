@@ -115,7 +115,14 @@ final class JournalLine extends Model
 {
     protected string $table = 'rateb_journal_lines';
     protected bool $tenantScoped = false;
-    protected array $fillable = ['journal_entry_id', 'account_id', 'debit', 'credit', 'memo'];
+    protected array $fillable = ['journal_entry_id', 'account_id', 'cost_center_id', 'debit', 'credit', 'memo'];
+}
+
+final class CostCenter extends Model
+{
+    protected string $table = 'rateb_cost_centers';
+    protected bool $tenantScoped = true;
+    protected array $fillable = ['company_id', 'code', 'name', 'name_ar', 'parent_id', 'is_active'];
 }
 
 final class FiscalPeriod extends Model

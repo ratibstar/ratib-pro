@@ -23,6 +23,7 @@ $status = (string) ($entry['status'] ?? '');
             <tr>
                 <th><?php echo __('code'); ?></th>
                 <th><?php echo __('name'); ?></th>
+                <th><?php echo __('cost_center'); ?></th>
                 <th class="text-end"><?php echo __('debit'); ?></th>
                 <th class="text-end"><?php echo __('credit'); ?></th>
             </tr>
@@ -30,10 +31,15 @@ $status = (string) ($entry['status'] ?? '');
             <tbody>
             <?php foreach ($lines as $line) {
                 $name = rateb_locale() === 'ar' && !empty($line['name_ar']) ? $line['name_ar'] : $line['name'];
+                $ccName = '';
+                if (!empty($line['cc_code'])) {
+                    $ccName = $line['cc_code'] . ' — ' . (rateb_locale() === 'ar' && !empty($line['cc_name_ar']) ? $line['cc_name_ar'] : ($line['cc_name'] ?? ''));
+                }
                 ?>
             <tr>
                 <td><?php echo Rateb\App\Core\View::escape($line['code']); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape($name); ?></td>
+                <td><?php echo $ccName !== '' ? Rateb\App\Core\View::escape($ccName) : '—'; ?></td>
                 <td class="text-end"><?php echo number_format((float) $line['debit'], 2); ?></td>
                 <td class="text-end"><?php echo number_format((float) $line['credit'], 2); ?></td>
             </tr>

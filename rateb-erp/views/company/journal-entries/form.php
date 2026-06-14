@@ -9,8 +9,9 @@ $action = $isEdit
     : rateb_app_url('journal-entries');
 $rows = $lines;
 if (empty($rows)) {
-    $rows = [['account_id' => '', 'debit' => '', 'credit' => '', 'memo' => '']];
+    $rows = [['account_id' => '', 'cost_center_id' => '', 'debit' => '', 'credit' => '', 'memo' => '']];
 }
+$costCenters = $costCenters ?? [];
 ?>
 <form method="post" action="<?php echo $action; ?>" class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
@@ -44,8 +45,9 @@ if (empty($rows)) {
                 <thead>
                 <tr>
                     <th><?php echo __('account'); ?></th>
-                    <th class="text-end" style="width:140px"><?php echo __('debit'); ?></th>
-                    <th class="text-end" style="width:140px"><?php echo __('credit'); ?></th>
+                    <th><?php echo __('cost_center'); ?></th>
+                    <th class="text-end" style="width:120px"><?php echo __('debit'); ?></th>
+                    <th class="text-end" style="width:120px"><?php echo __('credit'); ?></th>
                     <th><?php echo __('memo'); ?></th>
                     <th style="width:50px"></th>
                 </tr>
@@ -61,6 +63,17 @@ if (empty($rows)) {
                                 $sel = (int) ($line['account_id'] ?? 0) === (int) $acc['id'] ? ' selected' : '';
                                 ?>
                             <option value="<?php echo (int) $acc['id']; ?>"<?php echo $sel; ?>><?php echo Rateb\App\Core\View::escape($label); ?></option>
+                            <?php } ?>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="line_cost_center_id[]" class="form-select form-select-sm">
+                            <option value=""><?php echo __('optional'); ?></option>
+                            <?php foreach ($costCenters as $cc) {
+                                $ccLabel = $cc['code'] . ' — ' . (rateb_locale() === 'ar' && !empty($cc['name_ar']) ? $cc['name_ar'] : $cc['name']);
+                                $ccSel = (int) ($line['cost_center_id'] ?? 0) === (int) $cc['id'] ? ' selected' : '';
+                                ?>
+                            <option value="<?php echo (int) $cc['id']; ?>"<?php echo $ccSel; ?>><?php echo Rateb\App\Core\View::escape($ccLabel); ?></option>
                             <?php } ?>
                         </select>
                     </td>
@@ -97,6 +110,7 @@ if (empty($rows)) {
         last.querySelectorAll('input').forEach(function (el) { el.value = ''; });
         var sel = last.querySelector('select');
         if (sel) sel.selectedIndex = 0;
+        last.querySelectorAll('select').forEach(function (el) { if (el.name.indexOf('cost_center') === -1 && el.selectedIndex !== undefined) el.selectedIndex = 0; });
     });
     tbody.addEventListener('click', function (e) {
         var btn = e.target.closest('[data-journal-lines-remove]');

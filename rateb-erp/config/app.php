@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260614-acctfix2');
+define('RATEB_ASSET_BUILD', '20260614-acct3');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -220,6 +220,7 @@ if (!function_exists('rateb_app_route')) {
             'inventory', 'suppliers', 'assets', 'contracts', 'stock-movements',
             'supplier-evaluations', 'workflows', 'medical-devices', 'reports',
             'notifications', 'accounting', 'chart-of-accounts', 'journal-entries',
+            'cost-centers', 'cash-vouchers', 'fiscal-periods',
             'rfq', 'quotations',
         ];
         $root = explode('/', $path)[0];

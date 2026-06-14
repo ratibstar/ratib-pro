@@ -243,6 +243,9 @@ final class AccountingService
         if (!$this->isBalanced($lines)) {
             return null;
         }
+        if (!$this->isPeriodOpen($companyId, $entryDate)) {
+            return null;
+        }
 
         $entryModel = new JournalEntry();
         $entryNo = $this->nextEntryNo($companyId);
@@ -261,12 +264,14 @@ final class AccountingService
 
         $pdo = Database::connection();
         $stmt = $pdo->prepare(
-            'INSERT INTO rateb_journal_lines (journal_entry_id, account_id, debit, credit, memo) VALUES (:eid, :aid, :dr, :cr, :memo)'
+            'INSERT INTO rateb_journal_lines (journal_entry_id, account_id, cost_center_id, debit, credit, memo) VALUES (:eid, :aid, :cc, :dr, :cr, :memo)'
         );
         foreach ($lines as $line) {
+            $cc = isset($line['cost_center_id']) && (int) $line['cost_center_id'] > 0 ? (int) $line['cost_center_id'] : null;
             $stmt->execute([
                 'eid' => $entryId,
                 'aid' => (int) $line['account_id'],
+                'cc' => $cc,
                 'dr' => $line['debit'],
                 'cr' => $line['credit'],
                 'memo' => $line['memo'] ?? null,
@@ -415,6 +420,9 @@ final class AccountingService
         }
         $lines = $this->loadEntryLines($entryId);
         if (!$this->isBalanced($lines)) {
+            return false;
+        }
+        if (!$this->isPeriodOpen($companyId, (string) ($entry['entry_date'] ?? date('Y-m-d')))) {
             return false;
         }
         (new JournalEntry())->update($entryId, [
@@ -596,12 +604,14 @@ final class AccountingService
         $pdo = Database::connection();
         $pdo->prepare('DELETE FROM rateb_journal_lines WHERE journal_entry_id = :id')->execute(['id' => $entryId]);
         $stmt = $pdo->prepare(
-            'INSERT INTO rateb_journal_lines (journal_entry_id, account_id, debit, credit, memo) VALUES (:eid, :aid, :dr, :cr, :memo)'
+            'INSERT INTO rateb_journal_lines (journal_entry_id, account_id, cost_center_id, debit, credit, memo) VALUES (:eid, :aid, :cc, :dr, :cr, :memo)'
         );
         foreach ($lines as $line) {
+            $cc = isset($line['cost_center_id']) && (int) $line['cost_center_id'] > 0 ? (int) $line['cost_center_id'] : null;
             $stmt->execute([
                 'eid' => $entryId,
                 'aid' => (int) $line['account_id'],
+                'cc' => $cc,
                 'dr' => $line['debit'],
                 'cr' => $line['credit'],
                 'memo' => $line['memo'] ?? null,
@@ -918,6 +928,51 @@ final class AccountingService
              WHERE v.company_id = :cid ORDER BY v.id DESC LIMIT ' . max(1, min(500, $limit)),
             ['cid' => $companyId]
         );
+    }
+
+    public function periodBlocksPosting(?int $companyId, string $entryDate): bool
+    {
+        return !$this->isPeriodOpen($companyId, $entryDate);
+    }
+
+    /** @return array{lines: array<int, array<string, mixed>>} */
+    public function costCenterReport(?int $companyId, ?string $fromDate = null, ?string $toDate = null): array
+    {
+        if ($companyId === null || $companyId < 1) {
+            return ['lines' => []];
+        }
+        $sql = 'SELECT cc.id, cc.code, cc.name, cc.name_ar,
+                       COALESCE(SUM(l.debit), 0) AS total_debit,
+                       COALESCE(SUM(l.credit), 0) AS total_credit
+                FROM rateb_cost_centers cc
+                INNER JOIN rateb_journal_lines l ON l.cost_center_id = cc.id
+                INNER JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted
+                WHERE cc.company_id = :cid AND cc.is_active = 1';
+        $params = ['cid' => $companyId, 'posted' => 'posted'];
+        if ($fromDate) {
+            $sql .= ' AND e.entry_date >= :from';
+            $params['from'] = $fromDate;
+        }
+        if ($toDate) {
+            $sql .= ' AND e.entry_date <= :to';
+            $params['to'] = $toDate;
+        }
+        $sql .= ' GROUP BY cc.id ORDER BY cc.code';
+        return ['lines' => (new JournalEntry())->query($sql, $params)];
+    }
+
+    private function isPeriodOpen(?int $companyId, string $entryDate): bool
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null) {
+            return true;
+        }
+        $row = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_fiscal_periods
+             WHERE company_id = :cid AND :dt BETWEEN start_date AND end_date AND status = :st LIMIT 1',
+            ['cid' => $companyId, 'dt' => $entryDate, 'st' => 'closed']
+        );
+        return $row === null;
     }
 
     private function nextVoucherNo(?int $companyId, string $type): string

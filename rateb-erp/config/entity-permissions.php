@@ -205,6 +205,21 @@ return [
         'manage' => 'accounting.view',
         'post' => 'accounting.post',
     ],
+    'cost-centers' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+    ],
+    'cost-center-report' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
+    'zatca-settings' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+    ],
     'reports' => [
         'module' => 'reports',
         'view' => 'reports.view',
