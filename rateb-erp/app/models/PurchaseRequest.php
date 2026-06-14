@@ -12,7 +12,7 @@ final class PurchaseRequest extends Model
     protected bool $tenantScoped = true;
     protected array $fillable = [
         'request_no', 'title', 'department', 'priority', 'status',
-        'requested_by', 'approved_by', 'total_estimated', 'notes',
+        'requested_by', 'approved_by', 'total_estimated', 'notes', 'notes_history',
     ];
 
     public function generateRequestNo(): string

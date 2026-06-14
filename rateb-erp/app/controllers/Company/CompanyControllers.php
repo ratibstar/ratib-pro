@@ -22,12 +22,12 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         $this->routePrefix = rateb_app_route('purchase-requests');
         $this->entityName = 'purchase_requests';
         $this->fields = [
-            ['name' => 'title', 'label' => 'Title', 'type' => 'text'],
-            ['name' => 'department', 'label' => 'Department', 'type' => 'text'],
-            ['name' => 'priority', 'label' => 'Priority', 'type' => 'select', 'options' => ['low', 'medium', 'high', 'urgent']],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'submitted', 'approved', 'rejected', 'cancelled']],
-            ['name' => 'total_estimated', 'label' => 'Estimated Total', 'type' => 'number'],
-            ['name' => 'notes', 'label' => 'Notes', 'type' => 'textarea'],
+            ['name' => 'title', 'label' => 'title', 'type' => 'text'],
+            ['name' => 'department', 'label' => 'department', 'type' => 'text'],
+            ['name' => 'priority', 'label' => 'priority', 'type' => 'select', 'options' => ['low', 'medium', 'high', 'urgent']],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'submitted', 'approved', 'rejected', 'cancelled']],
+            ['name' => 'total_estimated', 'label' => 'estimated_total', 'type' => 'number'],
+            ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea'],
         ];
     }
 
@@ -84,13 +84,12 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         }
         $data = $this->collectData();
         $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
-        if ($lines !== []) {
-            $data['total_estimated'] = array_sum(array_column($lines, 'total_price'));
-        }
+        $this->applyLineTotals($data, $lines);
         $id = $this->model->create($data);
         if ($lines !== []) {
             \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($id, $lines);
         }
+        $this->saveQuoteAttachment($id);
         (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseRequestStatus(
             $id,
             (string) ($data['status'] ?? 'draft')
@@ -110,11 +109,13 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         $old = $this->model->find($id);
         $data = $this->collectData();
         $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
-        if ($lines !== []) {
-            $data['total_estimated'] = array_sum(array_column($lines, 'total_price'));
+        $this->applyLineTotals($data, $lines);
+        if ($old) {
+            $this->applyNotesHistory($data, $old);
         }
         $this->model->update($id, $data);
         \Rateb\App\Helpers\LineItems::syncPurchaseRequestItems($id, $lines);
+        $this->saveQuoteAttachment($id);
         (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseRequestStatus(
             $id,
             (string) ($data['status'] ?? ''),
@@ -136,6 +137,49 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         ];
         \Rateb\App\Controllers\Shared\ExportController::send('purchase_requests', $columns, $items, __('purchase_requests'), 'purchase-requests');
     }
+
+    /** @param array<string, mixed> $data */
+    protected function applyLineTotals(array &$data, array $lines): void
+    {
+        if ($lines === []) {
+            return;
+        }
+        $agg = \Rateb\App\Helpers\LineItems::aggregateTotals($lines);
+        $data['total_estimated'] = $agg['total'];
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function applyNotesHistory(array &$data, ?array $old): void
+    {
+        $history = \Rateb\App\Helpers\ProcurementNotes::decodeHistory(
+            isset($old['notes_history']) ? (string) $old['notes_history'] : null
+        );
+        $data['notes_history'] = \Rateb\App\Helpers\ProcurementNotes::encodeHistory(
+            \Rateb\App\Helpers\ProcurementNotes::appendHistory(
+                $history,
+                (string) ($old['notes'] ?? ''),
+                (string) ($data['notes'] ?? '')
+            )
+        );
+    }
+
+    protected function saveQuoteAttachment(int $id): void
+    {
+        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        if ($companyId < 1) {
+            return;
+        }
+        $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
+            'quote_attachment',
+            $companyId,
+            'purchase_request',
+            $id,
+            __('quote_attachment')
+        );
+        if (!($upload['success'] ?? false) && !empty($upload['error'])) {
+            SessionManager::flash('error', (string) $upload['error']);
+        }
+    }
 }
 
 final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudController
@@ -148,13 +192,13 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->entityName = 'purchase_orders';
         $this->tenantForeignKeys = ['supplier_id'];
         $this->fields = [
-            ['name' => 'supplier_id', 'label' => 'Supplier ID', 'type' => 'number'],
+            ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'number'],
             ['name' => 'cost_center_id', 'label' => 'cost_center', 'type' => 'number'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled']],
-            ['name' => 'order_date', 'label' => 'Order Date', 'type' => 'date'],
-            ['name' => 'expected_date', 'label' => 'Expected Date', 'type' => 'date'],
-            ['name' => 'total_amount', 'label' => 'Total', 'type' => 'number'],
-            ['name' => 'notes', 'label' => 'Notes', 'type' => 'textarea'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled']],
+            ['name' => 'order_date', 'label' => 'order_date', 'type' => 'date'],
+            ['name' => 'expected_date', 'label' => 'expected_date', 'type' => 'date'],
+            ['name' => 'total_amount', 'label' => 'total', 'type' => 'number'],
+            ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea'],
         ];
     }
 
@@ -182,6 +226,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             'item' => null,
             'lineItems' => [],
             'suppliers' => (new \Rateb\App\Models\Supplier())->all(200, 0),
+            'costCenters' => $this->loadCostCenters(),
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
@@ -202,6 +247,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             'item' => $item,
             'lineItems' => \Rateb\App\Helpers\LineItems::loadPurchaseOrderItems($id),
             'suppliers' => (new \Rateb\App\Models\Supplier())->all(200, 0),
+            'costCenters' => $this->loadCostCenters(),
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
@@ -222,11 +268,10 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
+        $this->applyLineTotals($data, $lines);
         $id = $this->model->create($data);
-        $total = \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
-        if ($total > 0) {
-            $this->model->update($id, ['total_amount' => $total, 'subtotal' => $total]);
-        }
+        \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
+        $this->saveQuoteAttachment($id);
         (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseOrderStatus(
             $id,
             (string) ($data['status'] ?? 'draft')
@@ -253,12 +298,13 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
         $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
-        $total = \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
-        if ($total > 0) {
-            $data['total_amount'] = $total;
-            $data['subtotal'] = $total;
+        $this->applyLineTotals($data, $lines);
+        if ($old) {
+            $this->applyNotesHistory($data, $old);
         }
         $this->model->update($id, $data);
+        \Rateb\App\Helpers\LineItems::syncPurchaseOrderItems($id, $lines);
+        $this->saveQuoteAttachment($id);
         (new \Rateb\App\Services\WorkflowSubmissionService())->handlePurchaseOrderStatus(
             $id,
             (string) ($data['status'] ?? ''),
@@ -306,6 +352,64 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             return;
         }
         (new \Rateb\App\Services\AccountingService())->autoPostPurchaseOrder($id);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function loadCostCenters(): array
+    {
+        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        if ($companyId < 1) {
+            return [];
+        }
+        return (new \Rateb\App\Models\CostCenter())->query(
+            'SELECT id, code, name, name_ar FROM rateb_cost_centers WHERE company_id = :cid AND is_active = 1 ORDER BY code',
+            ['cid' => $companyId]
+        );
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function applyLineTotals(array &$data, array $lines): void
+    {
+        if ($lines === []) {
+            return;
+        }
+        $agg = \Rateb\App\Helpers\LineItems::aggregateTotals($lines);
+        $data['subtotal'] = $agg['subtotal'];
+        $data['tax_amount'] = $agg['tax'];
+        $data['total_amount'] = $agg['total'];
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function applyNotesHistory(array &$data, ?array $old): void
+    {
+        $history = \Rateb\App\Helpers\ProcurementNotes::decodeHistory(
+            isset($old['notes_history']) ? (string) $old['notes_history'] : null
+        );
+        $data['notes_history'] = \Rateb\App\Helpers\ProcurementNotes::encodeHistory(
+            \Rateb\App\Helpers\ProcurementNotes::appendHistory(
+                $history,
+                (string) ($old['notes'] ?? ''),
+                (string) ($data['notes'] ?? '')
+            )
+        );
+    }
+
+    protected function saveQuoteAttachment(int $id): void
+    {
+        $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
+        if ($companyId < 1) {
+            return;
+        }
+        $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
+            'quote_attachment',
+            $companyId,
+            'purchase_order',
+            $id,
+            __('quote_attachment')
+        );
+        if (!($upload['success'] ?? false) && !empty($upload['error'])) {
+            SessionManager::flash('error', (string) $upload['error']);
+        }
     }
 }
 
