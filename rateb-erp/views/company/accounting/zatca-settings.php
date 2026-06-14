@@ -1,7 +1,11 @@
 <?php
+use Rateb\App\Services\FormLookupService;
+
 $profile = $profile ?? [];
 $readiness = $readiness ?? ['checks' => [], 'ready' => false];
 $invoices = $invoices ?? [];
+$formFields = FormLookupService::zatcaSettingsFormFields();
+$lookups = (new FormLookupService())->forFields($formFields);
 Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']);
 ?>
 <div class="row g-3 mb-4">
@@ -17,58 +21,11 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
     <div class="rateb-card-header"><?php echo __('zatca_settings'); ?></div>
     <div class="rateb-card-body">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('vat_number'); ?></label>
-                <input type="text" name="vat_number" class="form-control" maxlength="15"
-                       value="<?php echo Rateb\App\Core\View::escape((string) ($profile['vat_number'] ?? '')); ?>">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('cr_number'); ?></label>
-                <input type="text" name="cr_number" class="form-control" maxlength="20"
-                       value="<?php echo Rateb\App\Core\View::escape((string) ($profile['cr_number'] ?? '')); ?>">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('zatca_environment'); ?></label>
-                <select name="zatca_environment" class="form-select">
-                    <option value="sandbox"<?php echo ($profile['zatca_environment'] ?? '') === 'sandbox' ? ' selected' : ''; ?>><?php echo __('sandbox'); ?></option>
-                    <option value="production"<?php echo ($profile['zatca_environment'] ?? '') === 'production' ? ' selected' : ''; ?>><?php echo __('production'); ?></option>
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label"><?php echo __('legal_name_ar'); ?></label>
-                <input type="text" name="legal_name_ar" class="form-control"
-                       value="<?php echo Rateb\App\Core\View::escape((string) ($profile['legal_name_ar'] ?? '')); ?>">
-            </div>
-            <div class="col-md-6">
-                <label class="form-label"><?php echo __('legal_name_en'); ?></label>
-                <input type="text" name="legal_name_en" class="form-control"
-                       value="<?php echo Rateb\App\Core\View::escape((string) ($profile['legal_name_en'] ?? '')); ?>">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('street'); ?></label>
-                <input type="text" name="street" class="form-control" value="<?php echo Rateb\App\Core\View::escape((string) ($profile['street'] ?? '')); ?>">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label"><?php echo __('building_no'); ?></label>
-                <input type="text" name="building_no" class="form-control" value="<?php echo Rateb\App\Core\View::escape((string) ($profile['building_no'] ?? '')); ?>">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label"><?php echo __('city'); ?></label>
-                <input type="text" name="city" class="form-control" value="<?php echo Rateb\App\Core\View::escape((string) ($profile['city'] ?? '')); ?>">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label"><?php echo __('postal_code'); ?></label>
-                <input type="text" name="postal_code" class="form-control" value="<?php echo Rateb\App\Core\View::escape((string) ($profile['postal_code'] ?? '')); ?>">
-            </div>
-            <div class="col-12">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="zatca_enabled" value="1" id="zatca_enabled"
-                           <?php echo !empty($profile['zatca_enabled']) ? 'checked' : ''; ?>>
-                    <label class="form-check-label" for="zatca_enabled"><?php echo __('zatca_enabled'); ?></label>
-                </div>
-            </div>
-        </div>
+        <?php Rateb\App\Core\View::partial('accounting-form', [
+            'formFields' => $formFields,
+            'item' => $profile,
+            'lookups' => $lookups,
+        ]); ?>
     </div>
     <div class="rateb-card-footer">
         <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>

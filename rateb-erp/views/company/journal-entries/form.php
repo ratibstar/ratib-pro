@@ -1,5 +1,6 @@
 <?php
-/** @var array<int, array<string, mixed>> $accounts */
+use Rateb\App\Services\FormLookupService;
+
 /** @var array<string, mixed>|null $entry */
 /** @var array<int, array<string, mixed>> $lines */
 Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']);
@@ -11,28 +12,25 @@ $rows = $lines;
 if (empty($rows)) {
     $rows = [['account_id' => '', 'cost_center_id' => '', 'debit' => '', 'credit' => '', 'memo' => '']];
 }
-$costCenters = $costCenters ?? [];
+$headerFields = FormLookupService::journalEntryHeaderFormFields();
+$lookupSvc = new FormLookupService();
+$lookups = $lookupSvc->forFields(array_merge($headerFields, [
+    ['lookup' => 'chart_of_accounts'],
+    ['lookup' => 'cost_centers'],
+]));
+$coaOptions = $lookups['chart_of_accounts'] ?? [];
+$ccOptions = $lookups['cost_centers'] ?? [];
 ?>
 <form method="post" action="<?php echo $action; ?>" class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('evaluation_date'); ?></label>
-                <input type="date" name="entry_date" class="form-control" required
-                       value="<?php echo Rateb\App\Core\View::escape((string) ($entry['entry_date'] ?? date('Y-m-d'))); ?>">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('description'); ?> (EN)</label>
-                <input type="text" name="description" class="form-control" maxlength="500"
-                       value="<?php echo Rateb\App\Core\View::escape((string) ($entry['description'] ?? '')); ?>">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('description'); ?> (AR)</label>
-                <input type="text" name="description_ar" class="form-control" maxlength="500"
-                       value="<?php echo Rateb\App\Core\View::escape((string) ($entry['description_ar'] ?? '')); ?>">
-            </div>
+        <div class="mb-4">
+            <?php Rateb\App\Core\View::partial('accounting-form', [
+                'formFields' => $headerFields,
+                'item' => $entry,
+                'lookups' => $lookups,
+            ]); ?>
         </div>
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h6 class="mb-0"><?php echo __('journal_lines'); ?></h6>
@@ -58,22 +56,20 @@ $costCenters = $costCenters ?? [];
                     <td>
                         <select name="line_account_id[]" class="form-select form-select-sm" required>
                             <option value=""><?php echo __('select_account'); ?></option>
-                            <?php foreach ($accounts as $acc) {
-                                $label = $acc['code'] . ' — ' . (rateb_locale() === 'ar' && !empty($acc['name_ar']) ? $acc['name_ar'] : $acc['name']);
-                                $sel = (int) ($line['account_id'] ?? 0) === (int) $acc['id'] ? ' selected' : '';
+                            <?php foreach ($coaOptions as $opt) {
+                                $sel = (int) ($line['account_id'] ?? 0) === (int) $opt['value'] ? ' selected' : '';
                                 ?>
-                            <option value="<?php echo (int) $acc['id']; ?>"<?php echo $sel; ?>><?php echo Rateb\App\Core\View::escape($label); ?></option>
+                            <option value="<?php echo (int) $opt['value']; ?>"<?php echo $sel; ?>><?php echo Rateb\App\Core\View::escape($opt['label']); ?></option>
                             <?php } ?>
                         </select>
                     </td>
                     <td>
                         <select name="line_cost_center_id[]" class="form-select form-select-sm">
                             <option value=""><?php echo __('optional'); ?></option>
-                            <?php foreach ($costCenters as $cc) {
-                                $ccLabel = $cc['code'] . ' — ' . (rateb_locale() === 'ar' && !empty($cc['name_ar']) ? $cc['name_ar'] : $cc['name']);
-                                $ccSel = (int) ($line['cost_center_id'] ?? 0) === (int) $cc['id'] ? ' selected' : '';
+                            <?php foreach ($ccOptions as $opt) {
+                                $ccSel = (int) ($line['cost_center_id'] ?? 0) === (int) $opt['value'] ? ' selected' : '';
                                 ?>
-                            <option value="<?php echo (int) $cc['id']; ?>"<?php echo $ccSel; ?>><?php echo Rateb\App\Core\View::escape($ccLabel); ?></option>
+                            <option value="<?php echo (int) $opt['value']; ?>"<?php echo $ccSel; ?>><?php echo Rateb\App\Core\View::escape($opt['label']); ?></option>
                             <?php } ?>
                         </select>
                     </td>
@@ -108,9 +104,7 @@ $costCenters = $costCenters ?? [];
         tbody.appendChild(row.cloneNode(true));
         var last = tbody.lastElementChild;
         last.querySelectorAll('input').forEach(function (el) { el.value = ''; });
-        var sel = last.querySelector('select');
-        if (sel) sel.selectedIndex = 0;
-        last.querySelectorAll('select').forEach(function (el) { if (el.name.indexOf('cost_center') === -1 && el.selectedIndex !== undefined) el.selectedIndex = 0; });
+        last.querySelectorAll('select').forEach(function (el) { el.selectedIndex = 0; });
     });
     tbody.addEventListener('click', function (e) {
         var btn = e.target.closest('[data-journal-lines-remove]');

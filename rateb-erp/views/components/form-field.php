@@ -12,6 +12,10 @@ $allowManual = !empty($field['allow_manual']) || $type === 'hybrid';
 $lookups = $lookups ?? [];
 $label = rateb_label((string) ($field['label'] ?? $name));
 $isHybrid = $allowManual && $lookup !== '';
+$fieldAttrs = '';
+foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
+    $fieldAttrs .= ' ' . Rateb\App\Core\View::escape((string) $attrKey) . '="' . Rateb\App\Core\View::escape((string) $attrVal) . '"';
+}
 ?>
 <div class="<?php echo Rateb\App\Core\View::escape($col); ?>">
     <label class="form-label rateb-form-label" for="f_<?php echo Rateb\App\Core\View::escape($name); ?>">
@@ -30,7 +34,7 @@ $isHybrid = $allowManual && $lookup !== '';
         $min = (int) ($field['min'] ?? 0);
         ?>
     <select class="form-select rateb-form-control" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
-            name="<?php echo Rateb\App\Core\View::escape($name); ?>"<?php echo $required ? ' required' : ''; ?>>
+            name="<?php echo Rateb\App\Core\View::escape($name); ?>"<?php echo $fieldAttrs; ?><?php echo $required ? ' required' : ''; ?>>
         <?php for ($s = $min; $s <= $max; $s++) { ?>
         <option value="<?php echo $s; ?>"<?php echo (string) $value === (string) $s ? ' selected' : ''; ?>><?php echo $s; ?>/<?php echo $max; ?></option>
         <?php } ?>
@@ -55,7 +59,7 @@ $isHybrid = $allowManual && $lookup !== '';
         ?>
     <div class="rateb-hybrid-field">
         <select class="form-select rateb-form-control rateb-hybrid-select" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>_pick"
-                <?php echo $required ? ' required' : ''; ?>>
+                <?php echo $fieldAttrs; ?><?php echo $required ? ' required' : ''; ?>>
             <option value=""><?php echo __('select'); ?></option>
             <?php foreach ($options as $opt) { ?>
             <option value="<?php echo Rateb\App\Core\View::escape((string) $opt['value']); ?>"<?php echo $pickValue === (string) $opt['value'] ? ' selected' : ''; ?>>
@@ -88,7 +92,7 @@ $isHybrid = $allowManual && $lookup !== '';
     </datalist>
     <?php } elseif ($type === 'fk' || ($lookup !== '' && in_array($type, ['number', 'text'], true))) { ?>
     <select class="form-select rateb-form-control" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
-            name="<?php echo Rateb\App\Core\View::escape($name); ?>"<?php echo $required ? ' required' : ''; ?>>
+            name="<?php echo Rateb\App\Core\View::escape($name); ?>"<?php echo $fieldAttrs; ?><?php echo $required ? ' required' : ''; ?>>
         <option value=""><?php echo __('select'); ?></option>
         <?php foreach (($lookups[$lookup] ?? []) as $opt) { ?>
         <option value="<?php echo Rateb\App\Core\View::escape((string) $opt['value']); ?>"<?php echo (string) $value === (string) $opt['value'] ? ' selected' : ''; ?>>
@@ -104,7 +108,7 @@ $isHybrid = $allowManual && $lookup !== '';
         $translate = !isset($field['translate_options']) || $field['translate_options'] !== false;
         ?>
     <select class="form-select rateb-form-control" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
-            name="<?php echo Rateb\App\Core\View::escape($name); ?>"<?php echo $required ? ' required' : ''; ?><?php echo $readonly ? ' disabled' : ''; ?>>
+            name="<?php echo Rateb\App\Core\View::escape($name); ?>"<?php echo $fieldAttrs; ?><?php echo $required ? ' required' : ''; ?><?php echo $readonly ? ' disabled' : ''; ?>>
         <?php if (!empty($field['placeholder'])) { ?>
         <option value=""><?php echo Rateb\App\Core\View::escape((string) $field['placeholder']); ?></option>
         <?php } ?>

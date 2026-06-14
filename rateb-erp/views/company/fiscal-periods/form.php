@@ -1,23 +1,20 @@
+<?php
+use Rateb\App\Services\FormLookupService;
+
+$formFields = FormLookupService::fiscalPeriodFormFields();
+$lookups = (new FormLookupService())->forFields($formFields);
+?>
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
-<form method="post" action="<?php echo rateb_app_url('fiscal-periods'); ?>" class="rateb-card">
+<form method="post" action="<?php echo rateb_app_url('fiscal-periods'); ?>" class="rateb-card" data-fiscal-period-form>
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
     <div class="rateb-card-body">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('name'); ?></label>
-                <input type="text" name="name" class="form-control" required maxlength="50"
-                       placeholder="<?php echo date('Y'); ?>">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('date_from'); ?></label>
-                <input type="date" name="start_date" class="form-control" required>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('date_to'); ?></label>
-                <input type="date" name="end_date" class="form-control" required>
-            </div>
-        </div>
+        <?php Rateb\App\Core\View::partial('accounting-form', [
+            'formFields' => $formFields,
+            'item' => $item ?? null,
+            'lookups' => $lookups,
+        ]); ?>
+        <p class="text-muted small mb-0"><?php echo __('fiscal_year_auto_dates_hint'); ?></p>
     </div>
     <div class="rateb-card-footer d-flex gap-2">
         <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>

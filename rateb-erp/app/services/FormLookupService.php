@@ -280,6 +280,18 @@ final class FormLookupService
             case 'zatca_environments':
                 $options = $this->staticOptions(['sandbox', 'production'], true);
                 break;
+            case 'saudi_banks':
+                $options = $this->saudiBankOptions();
+                break;
+            case 'fiscal_years':
+                $options = $this->fiscalYearOptions();
+                break;
+            case 'saudi_cities':
+                $options = $this->saudiCityOptions();
+                break;
+            case 'payment_bank_accounts':
+                $options = $this->paymentBankAccountOptions();
+                break;
             case 'manufacturers':
                 $options = $this->distinctTenantOptions('rateb_medical_devices', 'manufacturer', ['GE', 'Siemens', 'Philips', 'Medtronic', 'Drager', 'Other']);
                 break;
@@ -437,10 +449,74 @@ final class FormLookupService
     }
 
     /** @return array<int, array<string, mixed>> */
+    public static function bankAccountFormFields(bool $isEdit = false): array
+    {
+        $fields = [
+            ['name' => 'name', 'label' => 'name', 'type' => 'text', 'required' => true, 'col' => 'col-md-6'],
+            ['name' => 'bank_name', 'label' => 'bank_name', 'type' => 'hybrid', 'lookup' => 'saudi_banks', 'col' => 'col-md-6'],
+            ['name' => 'account_number', 'label' => 'account_number', 'type' => 'text', 'col' => 'col-md-6'],
+        ];
+        if (!$isEdit) {
+            $fields[] = ['name' => 'opening_balance', 'label' => 'opening_balance', 'type' => 'number', 'step' => '0.01', 'col' => 'col-md-6', 'default' => '0'];
+        }
+        $fields[] = ['name' => 'is_default', 'label' => 'default_bank_account', 'type' => 'checkbox', 'col' => 'col-12'];
+        return $fields;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public static function fiscalPeriodFormFields(): array
+    {
+        return [
+            ['name' => 'name', 'label' => 'fiscal_year', 'type' => 'hybrid', 'lookup' => 'fiscal_years', 'required' => true, 'col' => 'col-md-4', 'attrs' => ['data-fiscal-year-picker' => '1']],
+            ['name' => 'start_date', 'label' => 'date_from', 'type' => 'date', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'end_date', 'label' => 'date_to', 'type' => 'date', 'required' => true, 'col' => 'col-md-4'],
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public static function journalEntryHeaderFormFields(): array
+    {
+        return [
+            ['name' => 'entry_date', 'label' => 'entry_date', 'type' => 'date', 'required' => true, 'col' => 'col-md-4', 'default' => date('Y-m-d')],
+            ['name' => 'description', 'label' => 'description', 'type' => 'text', 'col' => 'col-md-4'],
+            ['name' => 'description_ar', 'label' => 'description_ar', 'type' => 'text', 'col' => 'col-md-4'],
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public static function zatcaSettingsFormFields(): array
+    {
+        return [
+            ['name' => 'vat_number', 'label' => 'vat_number', 'type' => 'text', 'col' => 'col-md-4'],
+            ['name' => 'cr_number', 'label' => 'cr_number', 'type' => 'text', 'col' => 'col-md-4'],
+            ['name' => 'zatca_environment', 'label' => 'zatca_environment', 'type' => 'select', 'lookup' => 'zatca_environments', 'col' => 'col-md-4', 'default' => 'sandbox'],
+            ['name' => 'legal_name_ar', 'label' => 'legal_name_ar', 'type' => 'text', 'col' => 'col-md-6'],
+            ['name' => 'legal_name_en', 'label' => 'legal_name_en', 'type' => 'text', 'col' => 'col-md-6'],
+            ['name' => 'street', 'label' => 'street', 'type' => 'text', 'col' => 'col-md-4'],
+            ['name' => 'building_no', 'label' => 'building_no', 'type' => 'text', 'col' => 'col-md-2'],
+            ['name' => 'city', 'label' => 'city', 'type' => 'hybrid', 'lookup' => 'saudi_cities', 'col' => 'col-md-3'],
+            ['name' => 'postal_code', 'label' => 'postal_code', 'type' => 'text', 'col' => 'col-md-3'],
+            ['name' => 'zatca_enabled', 'label' => 'zatca_enabled', 'type' => 'checkbox', 'col' => 'col-12'],
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public static function supplierPaymentFormFields(float $maxAmount = 0): array
+    {
+        return [
+            ['name' => 'amount', 'label' => 'amount', 'type' => 'number', 'step' => '0.01', 'min' => '0.01', 'max' => (string) max(0.01, $maxAmount), 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'payment_date', 'label' => 'payment_date', 'type' => 'date', 'required' => true, 'col' => 'col-md-4', 'default' => date('Y-m-d')],
+            ['name' => 'bank_account_id', 'label' => 'bank_account', 'type' => 'fk', 'lookup' => 'payment_bank_accounts', 'col' => 'col-md-4'],
+            ['name' => 'reference_no', 'label' => 'reference_no', 'type' => 'text', 'col' => 'col-md-6'],
+            ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 2],
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
     public static function cashVoucherFormFields(): array
     {
         return [
-            ['name' => 'voucher_type', 'label' => 'voucher_type', 'type' => 'select', 'lookup' => 'voucher_types', 'translate_options' => false, 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'voucher_type', 'label' => 'voucher_type', 'type' => 'select', 'lookup' => 'voucher_types', 'translate_options' => false, 'required' => true, 'col' => 'col-md-4', 'default' => 'receipt'],
             ['name' => 'voucher_date', 'label' => 'voucher_date', 'type' => 'date', 'required' => true, 'col' => 'col-md-4', 'default' => date('Y-m-d')],
             ['name' => 'amount', 'label' => 'amount', 'type' => 'number', 'step' => '0.01', 'min' => '0.01', 'required' => true, 'col' => 'col-md-4'],
             ['name' => 'party_name', 'label' => 'party_name', 'type' => 'hybrid', 'lookup' => 'party_names', 'col' => 'col-md-6'],
@@ -689,6 +765,80 @@ final class FormLookupService
         foreach ($merged as $val) {
             if ($val !== '') {
                 $out[] = ['value' => $val, 'label' => $val];
+            }
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function saudiBankOptions(): array
+    {
+        $preset = [
+            'مصرف الراجحي',
+            'البنك الأهلي السعودي',
+            'بنك الرياض',
+            'بنك البلاد',
+            'بنك الجزيرة',
+            'البنك العربي الوطني',
+            'بنك الإنماء',
+            'البنك السعودي للاستثمار',
+            'بنك الخليج الدولي - السعودية',
+            'بنك آخر',
+        ];
+        $existing = $this->distinctTenantOptions('rateb_bank_accounts', 'bank_name', $preset);
+        $seen = [];
+        $out = [];
+        foreach ($existing as $opt) {
+            $k = (string) $opt['value'];
+            if ($k !== '' && !isset($seen[$k])) {
+                $seen[$k] = true;
+                $out[] = $opt;
+            }
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function fiscalYearOptions(): array
+    {
+        $current = (int) date('Y');
+        $out = [];
+        for ($y = $current - 2; $y <= $current + 3; $y++) {
+            $label = rateb_locale() === 'ar'
+                ? ('السنة المالية ' . $y)
+                : ('FY ' . $y);
+            $out[] = ['value' => (string) $y, 'label' => $label];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function saudiCityOptions(): array
+    {
+        $cities = [
+            'الرياض', 'جدة', 'مكة المكرمة', 'المدينة المنورة', 'الدمام', 'الخبر', 'الظهران',
+            'تبوك', 'أبها', 'خميس مشيط', 'بريدة', 'حائل', 'نجران', 'جازان', 'الطائف', 'القطيف',
+        ];
+        $existing = $this->distinctTenantOptions('rateb_company_tax_profiles', 'city', $cities);
+        return $existing;
+    }
+
+    /** @return list<FormOption> */
+    private function paymentBankAccountOptions(): array
+    {
+        $out = [['value' => 0, 'label' => __('petty_cash') . ' (1100)']];
+        $companyId = TenantContext::companyId() ?? 0;
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
+        if ($companyId > 0) {
+            $rows = (new BankAccount())->query(
+                'SELECT id, name, account_code FROM rateb_bank_accounts WHERE company_id = :cid AND is_active = 1 ORDER BY name',
+                ['cid' => $companyId]
+            );
+            foreach ($rows as $row) {
+                $label = trim(($row['name'] ?? '') . ' — ' . ($row['account_code'] ?? ''));
+                $out[] = ['value' => (int) $row['id'], 'label' => $label];
             }
         }
         return $out;

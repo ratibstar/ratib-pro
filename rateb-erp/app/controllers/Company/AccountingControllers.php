@@ -383,6 +383,8 @@ final class AccountingDashboardController extends Controller
             SessionManager::flash('error', __('select_company_ops'));
             Response::redirect(rateb_app_url('accounting/accounts-payable'));
         }
+        rateb_bootstrap_ops_tenant();
+        TenantContext::setCompanyId($companyId);
         $poId = (int) ($_GET['purchase_order_id'] ?? 0);
         $po = null;
         if ($poId > 0) {
@@ -1865,7 +1867,6 @@ final class BankAccountsController extends Controller
             'title' => __('new_bank_account'),
             'item' => null,
             'csrf' => Csrf::token(),
-            'lookups' => (new \Rateb\App\Services\FormLookupService())->get('chart_of_accounts'),
         ], 'main');
     }
 
@@ -1914,7 +1915,6 @@ final class BankAccountsController extends Controller
             'title' => __('edit_bank_account'),
             'item' => $item,
             'csrf' => Csrf::token(),
-            'lookups' => (new \Rateb\App\Services\FormLookupService())->get('chart_of_accounts'),
         ], 'main');
     }
 

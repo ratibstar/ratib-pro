@@ -1129,4 +1129,9 @@ return [
     'no' => 'No',
     'sandbox' => 'Sandbox',
     'production' => 'Production',
+    'fiscal_year' => 'Fiscal year',
+    'fiscal_year_auto_dates_hint' => 'Selecting a fiscal year auto-fills start/end dates (Jan–Dec). You can edit them manually.',
+    'entry_date' => 'Entry date',
+    'payment_date' => 'Payment date',
+    'description_ar' => 'Description (AR)',
 ];
