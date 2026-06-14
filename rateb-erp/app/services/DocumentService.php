@@ -308,7 +308,53 @@ final class DocumentService
             return true;
         }
         $sessionCompany = (int) SessionManager::get('rateb_company_id', 0);
-        return $sessionCompany > 0 && $sessionCompany === (int) ($doc['company_id'] ?? 0);
+        if ($sessionCompany < 1 || $sessionCompany !== (int) ($doc['company_id'] ?? 0)) {
+            return false;
+        }
+        if (function_exists('rateb_can_view_entity') && rateb_can_view_entity('documents')) {
+            return true;
+        }
+        $resource = $this->resourceForEntityType((string) ($doc['entity_type'] ?? ''));
+        if ($resource !== '' && function_exists('rateb_can_view_entity')) {
+            return rateb_can_view_entity($resource);
+        }
+        return function_exists('rateb_can') && rateb_can('documents.view');
+    }
+
+    private function resourceForEntityType(string $entityType): string
+    {
+        static $map = [
+            'purchase_request' => 'purchase-requests',
+            'purchase_order' => 'purchase-orders',
+            'supplier_evaluation' => 'supplier-evaluations',
+            'supplier_classification' => 'supplier-classifications',
+            'product_category' => 'product-categories',
+            'inventory_batch' => 'inventory-batches',
+            'inventory_audit' => 'inventory-audits',
+            'stock_movement' => 'stock-movements',
+            'warehouse_transfer' => 'warehouse-transfers',
+            'medical_device' => 'medical-devices',
+            'chart_of_account' => 'chart-of-accounts',
+            'journal_entry' => 'journal-entries',
+            'cash_voucher' => 'cash-vouchers',
+            'bank_account' => 'bank-accounts',
+            'cost_center' => 'cost-centers',
+            'fiscal_period' => 'fiscal-periods',
+            'contract' => 'contracts',
+            'asset' => 'assets',
+            'supplier' => 'suppliers',
+            'inventory' => 'inventory',
+            'rfq' => 'rfq',
+            'quotation' => 'quotations',
+            'tender' => 'tenders',
+        ];
+        if (isset($map[$entityType])) {
+            return $map[$entityType];
+        }
+        if ($entityType === '') {
+            return '';
+        }
+        return str_replace('_', '-', $entityType);
     }
 
     private function safeFilename(string $name): string

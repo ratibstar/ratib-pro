@@ -70,7 +70,7 @@ $router->get('/documents/download/{id}', [\Rateb\App\Controllers\Shared\Document
 $router->get('/documents/view/{id}', [\Rateb\App\Controllers\Shared\DocumentDownloadController::class, 'view'], [ErpAuthMiddleware::class]);
 $router->get('/barcode/qr', [\Rateb\App\Controllers\Shared\BarcodeQrController::class, 'image'], [ErpAuthMiddleware::class]);
 
-$router->get('/admin', [AdminDashboardController::class, 'index'], [ErpAuthMiddleware::class]);
+$router->get('/admin', [AdminDashboardController::class, 'index'], [ErpAuthMiddleware::class, [RequirePermissionMiddleware::class, 'dashboard.view']]);
 $router->get('/admin/executive-dashboard', [ExecutiveDashboardController::class, 'index'], rateb_admin_mw('executive.dashboard.view'));
 
 $router->get('/admin/companies', [CompaniesController::class, 'index'], rateb_admin_mw('companies.view'));

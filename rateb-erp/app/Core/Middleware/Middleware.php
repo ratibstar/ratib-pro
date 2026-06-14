@@ -342,7 +342,7 @@ final class EntityPermissionMiddleware implements MiddlewareInterface
         $isMutation = in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true);
         if ($isMutation) {
             $allowed = rateb_can_manage_entity($this->resource);
-            if (!$allowed && $this->isAccountingApproveAction()) {
+            if (!$allowed && $this->isApproveAction()) {
                 $allowed = function_exists('rateb_can_approve_entity')
                     && rateb_can_approve_entity($this->resource);
             }
@@ -362,10 +362,13 @@ final class EntityPermissionMiddleware implements MiddlewareInterface
         return false;
     }
 
-    private function isAccountingApproveAction(): bool
+    private function isApproveAction(): bool
     {
         $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? '');
-        return preg_match('#/(post|void|reject|bulk-approve|bulk-void|bulk-reject)(/|$)#', $path) === 1;
+        if (preg_match('#/(post|void|reject|bulk-approve|bulk-void|bulk-reject)(/|$)#', $path) === 1) {
+            return true;
+        }
+        return preg_match('#/warehouse-transfers/\d+/approve$#', $path) === 1;
     }
 
     private function isAccountingPostAction(): bool

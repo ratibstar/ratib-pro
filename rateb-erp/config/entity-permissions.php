@@ -6,6 +6,11 @@ declare(strict_types=1);
  * view = list/read, manage = create/edit/delete, export = optional export action.
  */
 return [
+    'dashboard' => [
+        'module' => 'dashboard',
+        'view' => 'dashboard.view',
+        'manage' => 'dashboard.view',
+    ],
     'purchase-requests' => [
         'module' => 'procurement',
         'view' => 'procurement.manage',
@@ -67,13 +72,14 @@ return [
     ],
     'warehouse-transfers' => [
         'module' => 'inventory',
-        'view' => 'inventory.manage',
-        'manage' => 'inventory.manage',
+        'view' => 'warehouse_transfers.view',
+        'manage' => 'warehouse_transfers.manage',
+        'approve' => 'warehouse_transfers.manage',
     ],
     'inventory-forecast' => [
         'module' => 'inventory',
-        'view' => 'inventory.manage',
-        'manage' => 'inventory.manage',
+        'view' => 'inventory_forecast.view',
+        'manage' => 'inventory_forecast.view',
     ],
     'suppliers' => [
         'module' => 'suppliers',
@@ -95,6 +101,11 @@ return [
         'view' => 'supplier_kpi.view',
         'manage' => 'supplier_kpi.view',
         'export' => 'reports.export',
+    ],
+    'supplier-comms' => [
+        'module' => 'suppliers',
+        'view' => 'supplier_comms.view',
+        'manage' => 'supplier_comms.manage',
     ],
     'contracts' => [
         'module' => 'contracts',

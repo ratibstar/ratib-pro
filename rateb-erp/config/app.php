@@ -315,6 +315,20 @@ if (!function_exists('rateb_entity_perms')) {
     }
 }
 
+if (!function_exists('rateb_entity_view_slugs')) {
+    /** @return array<int, string> */
+    function rateb_entity_view_slugs(string $resource): array
+    {
+        $p = rateb_entity_perms($resource);
+        return array_values(array_unique(array_filter([
+            $p['view'],
+            $p['manage'],
+            $p['approve'],
+            $p['post'],
+        ])));
+    }
+}
+
 if (!function_exists('rateb_user_has_perm')) {
     function rateb_user_has_perm(string $slug): bool
     {
@@ -347,11 +361,11 @@ if (!function_exists('rateb_can_view_entity')) {
         if (rateb_is_super_admin()) {
             return true;
         }
-        $p = rateb_entity_perms($resource);
-        if ($p['view'] === '' && $p['manage'] === '') {
+        $slugs = rateb_entity_view_slugs($resource);
+        if ($slugs === []) {
             return true;
         }
-        return rateb_user_has_any_perm(array_values(array_unique(array_filter([$p['view'], $p['manage']]))));
+        return rateb_user_has_any_perm($slugs);
     }
 }
 

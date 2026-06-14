@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 /** Default permission slug enforced per company module when RBAC roles are assigned. */
 return [
+    'dashboard' => 'dashboard.view',
     'procurement' => 'procurement.manage',
     'inventory' => 'inventory.manage',
     'suppliers' => 'suppliers.manage',

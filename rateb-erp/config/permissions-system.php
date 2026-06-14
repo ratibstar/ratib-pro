@@ -21,6 +21,7 @@ return [
 
     /** Plan modules enabled for tenant company operations. */
     'company_modules' => [
+        'dashboard',
         'procurement',
         'inventory',
         'suppliers',
@@ -32,6 +33,7 @@ return [
         'accounting',
         'documents',
         'workflows',
+        'notifications',
     ],
 
     /** Default role slug for demo / full company ERP access. */
@@ -63,6 +65,23 @@ return [
         'accounting_sync' => 'accounting.post',
     ],
 
+    /** Inventory-related permission slugs (company matrix). */
+    'inventory_permission_slugs' => [
+        'inventory.manage',
+        'stock_movements.view',
+        'stock_movements.manage',
+        'inventory_batches.view',
+        'inventory_batches.manage',
+        'inventory_audit.view',
+        'inventory_audit.manage',
+        'categories.view',
+        'categories.manage',
+        'warehouse_transfers.view',
+        'warehouse_transfers.manage',
+        'inventory_forecast.view',
+        'reports.inventory_valuation.view',
+    ],
+
     /**
      * Permission slugs that must never be assigned to company-full-access
      * (even when module is shared, e.g. reports.executive).
@@ -84,6 +103,7 @@ return [
 
     /** Platform /admin routes → permission slug (SuperAdminMiddleware + RequirePermission). */
     'platform_routes' => [
+        'admin' => 'dashboard.view',
         'admin/executive-dashboard' => 'executive.dashboard.view',
         'admin/companies' => 'companies.view',
         'admin/companies/create' => 'companies.manage',
@@ -110,6 +130,9 @@ return [
         'admin/payments' => 'accounting.view',
         'admin/invoices' => 'accounting.view',
         'admin/audit-logs' => 'settings.manage',
+        'admin/login-activity' => 'settings.manage',
+        'admin/queue-monitor' => 'settings.manage',
+        'admin/automation-health' => 'settings.manage',
         'admin/settings' => 'settings.manage',
         'admin/reports' => 'reports.view',
         'admin/oversight/procurement' => 'procurement.manage',

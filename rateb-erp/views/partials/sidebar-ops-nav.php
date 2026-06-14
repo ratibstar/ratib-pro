@@ -19,6 +19,8 @@ $opsSection(__('inventory'), [
     ['inventory-batches', 'inventory_batches', 'fa-layer-group', 'inventory'],
     ['inventory-audits', 'inventory_audits', 'fa-clipboard-check', 'inventory'],
     ['warehouses', 'warehouses', 'fa-warehouse', 'inventory'],
+    ['warehouse-transfers', 'warehouse_transfers', 'fa-truck-ramp-box', 'inventory'],
+    ['inventory-forecast', 'inventory_forecast', 'fa-chart-line', 'inventory'],
     ['stock-movements', 'stock_movements', 'fa-arrows-rotate', 'inventory'],
     ['product-categories', 'product_categories', 'fa-tags', 'inventory'],
 ], 'fa-boxes-stacked');
