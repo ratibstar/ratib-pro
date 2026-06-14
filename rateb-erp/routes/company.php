@@ -59,7 +59,8 @@ $router->get('/company/logout', static function (): void {
 $router->get('/company', static function (): void {
     Response::redirect(rateb_url('admin'), 301);
 });
-$router->get('/company/{legacy:.+}', static function (string $legacy): void {
+$router->get('/company/{legacy:.+}', static function (array $params): void {
+    $legacy = (string) ($params['legacy'] ?? '');
     Response::redirect(rateb_url(rateb_app_route($legacy)), 301);
 });
 
@@ -72,7 +73,8 @@ $router->get('/accounting', static function (): void {
     }
     Response::redirect($target, 301);
 });
-$router->get('/accounting/{legacy:.+}', static function (string $legacy): void {
+$router->get('/accounting/{legacy:.+}', static function (array $params): void {
+    $legacy = (string) ($params['legacy'] ?? '');
     $target = rateb_url(rateb_app_route('accounting/' . $legacy));
     $qs = (string) ($_SERVER['QUERY_STRING'] ?? '');
     if ($qs !== '') {
