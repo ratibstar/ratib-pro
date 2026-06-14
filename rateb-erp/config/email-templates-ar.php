@@ -20,7 +20,7 @@ return [
         '<p>مرحباً {name}، تنتهي تجربتك في {date}.</p>',
     ],
     'approval_request' => [
-        'اعتماد مطلوب: {type}',
+        'طلب اعتماد — {type}',
         '<p>لديك طلب اعتماد معلق لـ {type} رقم {id}.</p>',
     ],
     'approval_completed' => [
@@ -32,23 +32,23 @@ return [
         '<p>تم رفض {type} رقم {id}.</p>',
     ],
     'low_stock_alert' => [
-        'مخزون منخفض: {item}',
-        '<p>المخزون منخفض لـ {item} ({qty} متبقي).</p>',
+        'تنبيه مخزون منخفض — {item}',
+        '<p>الكمية المتبقية من {item} هي {qty} فقط.</p>',
     ],
     'expiry_alert' => [
-        'تنبيه انتهاء الصلاحية: {item}',
+        'تنبيه انتهاء صلاحية — {item}',
         '<p>تنتهي صلاحية {item} في {date}.</p>',
     ],
     'contract_expiry_alert' => [
-        'انتهاء العقد: {no}',
+        'تنبيه انتهاء عقد — {no}',
         '<p>ينتهي العقد {no} في {date}.</p>',
     ],
     'maintenance_due_alert' => [
-        'صيانة مستحقة: {device}',
+        'تنبيه صيانة مستحقة — {device}',
         '<p>صيانة {device} مستحقة في {date}.</p>',
     ],
     'warranty_expiry_alert' => [
-        'انتهاء الضمان: {device}',
+        'تنبيه انتهاء ضمان — {device}',
         '<p>ينتهي ضمان {device} في {date}.</p>',
     ],
 ];
