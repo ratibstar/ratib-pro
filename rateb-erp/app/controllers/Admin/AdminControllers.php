@@ -1313,6 +1313,30 @@ final class EmailTemplatesController extends \Rateb\App\Controllers\CrudControll
             ['name' => 'body_html', 'label' => 'body_preview', 'type' => 'html_preview'],
         ];
     }
+
+    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
+    {
+        $data = parent::indexViewData($limit, $offset, $page, $search);
+        $samples = rateb_email_template_sample_vars();
+
+        foreach ($data['items'] as &$row) {
+            $subject = (string) ($row['subject'] ?? '');
+            $bodyPlain = rateb_html_preview((string) ($row['body_html'] ?? ''), 220);
+            $row['slug_label'] = rateb_email_template_slug_label((string) ($row['slug'] ?? ''));
+            $row['subject_display'] = rateb_bidi_cell_text(rateb_email_template_render_preview($subject, $samples));
+            $row['body_display'] = rateb_bidi_cell_text(rateb_email_template_render_preview($bodyPlain, $samples));
+        }
+        unset($row);
+
+        $data['fields'] = [
+            ['name' => 'slug_label', 'label' => 'template_name', 'type' => 'bidi_text'],
+            ['name' => 'subject_display', 'label' => 'subject', 'type' => 'bidi_text'],
+            ['name' => 'body_display', 'label' => 'body_preview', 'type' => 'bidi_text'],
+        ];
+        $data['listHelp'] = __('email_templates_list_help');
+
+        return $data;
+    }
 }
 
 final class SmsTemplatesController extends \Rateb\App\Controllers\CrudController

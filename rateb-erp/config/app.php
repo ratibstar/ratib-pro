@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260614-email-templates-bidi');
+define('RATEB_ASSET_BUILD', '20260614-email-templates-preview');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -138,6 +138,45 @@ if (!function_exists('rateb_bidi_cell_text')) {
     function rateb_bidi_cell_text(string $text): string
     {
         return preg_replace('/\{[^}]+\}/u', "\u{200E}$0\u{200E}", $text) ?? $text;
+    }
+}
+
+if (!function_exists('rateb_email_template_sample_vars')) {
+    /** @return array<string, string> */
+    function rateb_email_template_sample_vars(): array
+    {
+        static $samples = null;
+        if ($samples === null) {
+            $file = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/email-template-samples.php';
+            $samples = is_file($file) ? require $file : [];
+            if (!is_array($samples)) {
+                $samples = [];
+            }
+        }
+        return $samples;
+    }
+}
+
+if (!function_exists('rateb_email_template_render_preview')) {
+    /** @param array<string, string> $vars */
+    function rateb_email_template_render_preview(string $text, ?array $vars = null): string
+    {
+        $vars = $vars ?? rateb_email_template_sample_vars();
+        foreach ($vars as $key => $value) {
+            $text = str_replace('{' . $key . '}', $value, $text);
+        }
+        return $text;
+    }
+}
+
+if (!function_exists('rateb_email_template_slug_label')) {
+    function rateb_email_template_slug_label(string $slug): string
+    {
+        if ($slug === '') {
+            return '';
+        }
+        $translated = __($slug);
+        return $translated !== $slug ? $translated : $slug;
     }
 }
 
