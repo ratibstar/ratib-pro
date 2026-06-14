@@ -263,6 +263,7 @@ return [
     'bulk_confirm_delete_drafts' => 'حذف المسودات المحددة؟',
     'bulk_confirm_deactivate' => 'إلغاء تفعيل السجلات المحددة؟',
     'bulk_confirm_void' => 'إلغاء السجلات المرحّلة المحددة؟',
+    'bulk_select_rows_hint' => 'حدّد الصفوف للإجراءات الجماعية',
     'bulk_suspended' => 'تم تعليق :count شركة.',
     'bulk_activated' => 'تم تفعيل :count شركة.',
     'manage' => 'إدارة',

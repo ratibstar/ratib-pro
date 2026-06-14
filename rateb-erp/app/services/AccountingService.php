@@ -1737,6 +1737,18 @@ final class AccountingService
         return $count;
     }
 
+    /** @param array<int, int> $ids */
+    public function bulkVoidPostedManual(array $ids, ?int $companyId): int
+    {
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->voidPostedEntry((int) $id, $companyId, ['manual'])) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
     /** @param array<string, mixed> $data */
     public function updateCashVoucherDraft(int $voucherId, ?int $companyId, array $data): bool
     {

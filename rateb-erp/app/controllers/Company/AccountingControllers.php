@@ -998,6 +998,26 @@ final class JournalEntriesController extends Controller
         Response::redirect(rateb_app_url('journal-entries'));
     }
 
+    public function bulkVoid(): void
+    {
+        rateb_require_approve('journal-entries');
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('journal-entries'));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            Response::redirect(rateb_app_url('journal-entries'));
+        }
+        $companyId = rateb_require_ops_company();
+        $voided = (new AccountingService())->bulkVoidPostedManual($ids, $companyId);
+        foreach ($ids as $id) {
+            (new AuditService())->log('bulk_void', 'journal_entry', $id);
+        }
+        SessionManager::flash('success', __('bulk_voided', ['count' => $voided]));
+        Response::redirect(rateb_app_url('journal-entries'));
+    }
+
     public function show(array $params): void
     {
         $companyId = rateb_resolve_ops_company_id();

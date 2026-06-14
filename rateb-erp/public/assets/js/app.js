@@ -31,7 +31,13 @@
                     bar.classList.remove('d-none');
                     countEl.textContent = ids.length + ' ' + (countEl.getAttribute('data-label') || 'selected');
                 } else {
-                    bar.classList.add('d-none');
+                    var hint = countEl.getAttribute('data-hint');
+                    if (hint && rowChecks.length > 0) {
+                        bar.classList.remove('d-none');
+                        countEl.textContent = hint;
+                    } else {
+                        bar.classList.add('d-none');
+                    }
                 }
                 if (selectAll) {
                     selectAll.indeterminate = ids.length > 0 && ids.length < rowChecks.length;
@@ -78,6 +84,8 @@
                     });
                 });
             }
+
+            updateBar();
         });
     }
 

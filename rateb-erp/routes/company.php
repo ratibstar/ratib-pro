@@ -138,6 +138,7 @@ $router->post($app('journal-entries/{id}/void'), [CompanyJournalEntriesControlle
 $router->post($app('journal-entries/{id}/delete'), [CompanyJournalEntriesController::class, 'destroy'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
 $router->post($app('journal-entries/bulk-delete'), [CompanyJournalEntriesController::class, 'bulkDestroy'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
 $router->post($app('journal-entries/bulk-approve'), [CompanyJournalEntriesController::class, 'bulkApprove'], rateb_erp_mw('accounting', 'accounting.approve', 'journal-entries'));
+$router->post($app('journal-entries/bulk-void'), [CompanyJournalEntriesController::class, 'bulkVoid'], rateb_erp_mw('accounting', 'accounting.approve', 'journal-entries'));
 $router->get($app('journal-entries/{id}'), [CompanyJournalEntriesController::class, 'show'], rateb_erp_mw('accounting', '', 'journal-entries'));
 
 $router->get($app('cash-vouchers'), [CompanyCashVouchersController::class, 'index'], rateb_erp_mw('accounting', '', 'cash-vouchers'));

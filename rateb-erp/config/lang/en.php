@@ -264,6 +264,7 @@ return [
     'bulk_confirm_delete_drafts' => 'Delete selected draft records?',
     'bulk_confirm_deactivate' => 'Deactivate selected records?',
     'bulk_confirm_void' => 'Void selected posted records?',
+    'bulk_select_rows_hint' => 'Select rows for bulk actions',
     'bulk_suspended' => ':count company(ies) suspended.',
     'bulk_activated' => ':count company(ies) activated.',
     'manage' => 'Manage',
