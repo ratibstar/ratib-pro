@@ -22,6 +22,13 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
         $this->viewPrefix = 'company/inventory-batches';
         $this->routePrefix = rateb_app_route('inventory-batches');
         $this->entityName = 'inventory_batches';
+        $this->indexFields = [
+            ['name' => 'batch_no', 'label' => 'batch_no'],
+            ['name' => 'item_name', 'label' => 'item_name'],
+            ['name' => 'quantity', 'label' => 'quantity'],
+            ['name' => 'expiry_date', 'label' => 'expiry_date'],
+            ['name' => 'warehouse_name', 'label' => 'warehouses'],
+        ];
         $this->fields = [
             ['name' => 'inventory_id', 'label' => 'inventory', 'type' => 'number'],
             ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number'],
@@ -46,14 +53,22 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
 
     public function index(): void
     {
-        $this->view($this->viewPrefix . '/index', [
+        $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
             'title' => __('inventory_batches'),
             'items' => (new InventoryWorkflowService())->listBatches(100),
+            'total' => count((new InventoryWorkflowService())->listBatches(500)),
+            'page' => 1,
+            'limit' => 100,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->indexFields,
             'csrf' => Csrf::token(),
             'exportRoute' => rateb_app_url('inventory-batches/export'),
             'exportEnabled' => rateb_can_export_entity('inventory-batches'),
-            'canManage' => rateb_can_manage_entity('inventory-batches'),
-        ], 'main');
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => $this->createEnabled,
+            'actionsEnabled' => $this->actionsEnabled,
+            'documentEntityType' => $this->resolveDocumentEntityType(),
+        ]), 'main');
     }
 
     public function store(): void

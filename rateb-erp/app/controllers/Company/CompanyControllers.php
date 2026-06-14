@@ -1295,6 +1295,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
                 ['name' => 'quality_score', 'label' => 'quality_score'],
                 ['name' => 'status', 'label' => 'status'],
             ],
+            'documentEntityType' => $this->resolveDocumentEntityType(),
             'csrf' => Csrf::token(),
         ]), $this->layout());
     }

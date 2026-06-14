@@ -71,6 +71,32 @@ final class StockMovementsController extends Controller
             ['name' => 'created_at', 'label' => __('created_at')],
         ], $items, __('stock_movements'), 'stock-movements');
     }
+
+    public function bulkDestroy(): void
+    {
+        if (!rateb_can_manage_entity('stock-movements')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_app_url('stock-movements'));
+        }
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_app_url('stock-movements'));
+        }
+        $raw = $this->input('ids', []);
+        $ids = is_array($raw)
+            ? array_values(array_unique(array_filter(array_map('intval', $raw), static fn (int $id): bool => $id > 0)))
+            : [];
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            $this->redirect(rateb_app_url('stock-movements'));
+        }
+        $deleted = (new \Rateb\App\Models\StockMovement())->deleteMany($ids);
+        foreach ($ids as $id) {
+            (new AuditService())->log('bulk_delete', 'stock_movement', $id);
+        }
+        SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
+        $this->redirect(rateb_app_url('stock-movements'));
+    }
 }
 
 final class DocumentsController extends Controller

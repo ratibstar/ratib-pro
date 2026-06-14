@@ -22,6 +22,8 @@ abstract class CrudController extends Controller
     protected bool $bulkEnabled = true;
     protected bool $createEnabled = true;
     protected bool $actionsEnabled = true;
+    protected bool $filesEnabled = true;
+    protected string $documentEntityType = '';
     protected string $permissionResource = '';
     /** @var array<int, string> */
     protected array $tenantForeignKeys = [];
@@ -50,6 +52,7 @@ abstract class CrudController extends Controller
             'bulkEnabled' => $this->bulkEnabled,
             'createEnabled' => $this->createEnabled,
             'actionsEnabled' => $this->actionsEnabled,
+            'documentEntityType' => $this->filesEnabled ? $this->resolveDocumentEntityType() : '',
         ];
     }
 
@@ -205,6 +208,104 @@ abstract class CrudController extends Controller
         }
         SessionManager::flash('success', __('bulk_deleted', ['count' => $deleted]));
         $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function documents(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], $this->layout());
+            return;
+        }
+        $entityType = $this->resolveDocumentEntityType();
+        $companyId = (int) ($item['company_id'] ?? \Rateb\App\Core\TenantContext::companyId() ?? 0);
+        $canManage = function_exists('rateb_can_manage_entity')
+            ? rateb_can_manage_entity($this->permissionResourceKey())
+            : true;
+        $this->view('shared/entity-documents', [
+            'title' => __('entity_documents') . ' — ' . $this->recordLabel($item),
+            'entityName' => $this->entityName,
+            'item' => $item,
+            'entityType' => $entityType,
+            'entityId' => $id,
+            'companyId' => $companyId,
+            'documents' => $companyId > 0
+                ? (new \Rateb\App\Services\DocumentService())->listForEntity($entityType, $id, $companyId)
+                : [],
+            'routePrefix' => $this->routePrefix,
+            'backLabel' => __($this->entityName),
+            'csrf' => Csrf::token(),
+            'canManage' => $canManage,
+        ], $this->layout());
+    }
+
+    public function storeDocument(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            SessionManager::flash('error', __('no_records'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $companyId = (int) ($item['company_id'] ?? \Rateb\App\Core\TenantContext::companyId() ?? 0);
+        $title = trim((string) $this->input('doc_title', $this->recordLabel($item)));
+        $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
+            'entity_attachment',
+            $companyId,
+            $this->resolveDocumentEntityType(),
+            $id,
+            $title !== '' ? $title : __('attachment')
+        );
+        if (!($upload['success'] ?? false)) {
+            SessionManager::flash('error', (string) ($upload['error'] ?? __('upload_failed')));
+        } elseif (!empty($upload['path']) && array_key_exists('document_path', $item)) {
+            $this->model->update($id, ['document_path' => (string) $upload['path']]);
+            SessionManager::flash('success', __('file_uploaded'));
+        } else {
+            SessionManager::flash('success', __('file_uploaded'));
+        }
+        $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/documents'));
+    }
+
+    protected function resolveDocumentEntityType(): string
+    {
+        if ($this->documentEntityType !== '') {
+            return $this->documentEntityType;
+        }
+        static $map = [
+            'purchase_requests' => 'purchase_request',
+            'purchase_orders' => 'purchase_order',
+            'supplier_evaluations' => 'supplier_evaluation',
+            'supplier_classifications' => 'supplier_classification',
+            'product_categories' => 'product_category',
+            'inventory_batches' => 'inventory_batch',
+            'medical_devices' => 'medical_device',
+            'chart_of_accounts' => 'chart_of_account',
+            'journal_entries' => 'journal_entry',
+            'cash_vouchers' => 'cash_voucher',
+            'bank_accounts' => 'bank_account',
+            'cost_centers' => 'cost_center',
+            'fiscal_periods' => 'fiscal_period',
+        ];
+        return $map[$this->entityName] ?? $this->entityName;
+    }
+
+    /** @param array<string, mixed> $item */
+    protected function recordLabel(array $item): string
+    {
+        foreach (['title', 'name', 'item_name', 'request_no', 'order_no', 'contract_no', 'code', 'item_code', 'evaluation_no'] as $key) {
+            if (!empty($item[$key])) {
+                return (string) $item[$key];
+            }
+        }
+        return '#' . (int) ($item['id'] ?? 0);
     }
 
     /** @return array<int, int> */

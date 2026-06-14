@@ -62,9 +62,10 @@
             'csrf' => $csrf,
             'routePrefix' => rateb_app_route('stock-movements'),
             'permissionResource' => 'stock-movements',
-            'bulkEnabled' => false,
+            'bulkEnabled' => $canManage ?? rateb_can_manage_entity('stock-movements'),
             'createEnabled' => false,
             'actionsEnabled' => false,
+            'documentEntityType' => '',
         ]); ?>
     </div>
 </div>
