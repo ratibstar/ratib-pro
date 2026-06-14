@@ -830,13 +830,17 @@ final class JournalEntriesController extends Controller
         }
         $companyId = rateb_resolve_ops_company_id();
         $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_app_url('journal-entries'));
+        }
         $entry = (new JournalEntry())->queryOne(
             'SELECT * FROM rateb_journal_entries WHERE id = :id AND company_id = :cid',
             ['id' => $id, 'cid' => $companyId]
         );
         if (!$entry || ($entry['source_type'] ?? '') !== 'manual' || ($entry['status'] ?? '') !== 'draft') {
             SessionManager::flash('error', __('journal_edit_denied'));
-            Response::redirect(rateb_app_url('journal-entries/' . $id));
+            Response::redirect(rateb_app_url('journal-entries'));
         }
         $lines = (new JournalEntry())->query(
             'SELECT * FROM rateb_journal_lines WHERE journal_entry_id = :id ORDER BY id',
@@ -865,6 +869,10 @@ final class JournalEntriesController extends Controller
         }
         $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
+        if ($id < 1) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_app_url('journal-entries'));
+        }
         $service = new AccountingService();
         try {
             if (!$service->updateManualDraft(
