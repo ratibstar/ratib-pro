@@ -14,6 +14,7 @@ $tabs = [
     ['path' => rateb_app_route('accounting/balance-sheet'), 'label' => __('balance_sheet'), 'match' => [rateb_app_route('accounting/balance-sheet')]],
     ['path' => rateb_app_route('accounting/vat-report'), 'label' => __('vat_report'), 'match' => [rateb_app_route('accounting/vat-report')]],
     ['path' => rateb_app_route('cash-vouchers'), 'label' => __('cash_vouchers'), 'match' => [rateb_app_route('cash-vouchers')]],
+    ['path' => rateb_app_route('accounting/voucher-approval'), 'label' => __('voucher_approval'), 'match' => [rateb_app_route('accounting/voucher-approval')]],
     ['path' => rateb_app_route('fiscal-periods'), 'label' => __('fiscal_periods'), 'match' => [rateb_app_route('fiscal-periods')]],
     ['path' => rateb_app_route('cost-centers'), 'label' => __('cost_centers'), 'match' => [rateb_app_route('cost-centers')]],
     ['path' => rateb_app_route('accounting/cost-center-report'), 'label' => __('cost_center_report'), 'match' => [rateb_app_route('accounting/cost-center-report')]],

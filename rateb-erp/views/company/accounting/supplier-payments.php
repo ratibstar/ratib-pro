@@ -56,7 +56,15 @@ $canPost = $canPost ?? false;
                 <td><?php echo Rateb\App\Core\View::escape($row['payment_no'] ?? ''); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape($row['payment_date'] ?? ''); ?></td>
                 <td><?php echo Rateb\App\Core\View::escape($row['supplier_name'] ?? '—'); ?></td>
-                <td><?php echo Rateb\App\Core\View::escape($row['order_no'] ?? '—'); ?></td>
+                <td>
+                    <?php if (!empty($row['purchase_order_id'])) { ?>
+                    <a href="<?php echo rateb_app_url('purchase-orders/' . (int) $row['purchase_order_id']); ?>">
+                        <?php echo Rateb\App\Core\View::escape($row['order_no'] ?? '—'); ?>
+                    </a>
+                    <?php } else { ?>
+                    <?php echo Rateb\App\Core\View::escape($row['order_no'] ?? '—'); ?>
+                    <?php } ?>
+                </td>
                 <td class="text-end"><?php echo number_format((float) ($row['amount'] ?? 0), 2); ?></td>
                 <td><span class="badge bg-<?php echo $st === 'posted' ? 'success' : 'secondary'; ?>"><?php echo __($st); ?></span></td>
                 <td class="text-nowrap">

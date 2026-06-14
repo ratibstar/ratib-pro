@@ -1238,6 +1238,68 @@ final class CashVouchersController extends Controller
         $this->view('company/cash-vouchers/index', [
             'title' => __('cash_vouchers'),
             'items' => (new AccountingService())->listCashVouchers($companyId),
+            'canManage' => rateb_can_manage_entity('cash-vouchers'),
+        ], 'main');
+    }
+
+    public function voucherApproval(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $statusFilter = trim((string) ($_GET['status'] ?? 'all'));
+        $dateFrom = trim((string) ($_GET['from'] ?? ''));
+        $dateTo = trim((string) ($_GET['to'] ?? ''));
+        $perPage = max(10, min(100, (int) ($_GET['show'] ?? 10)));
+
+        $sql = 'SELECT v.*, a.code AS counter_code, a.name AS counter_name, a.name_ar AS counter_name_ar
+                FROM rateb_cash_vouchers v
+                JOIN rateb_chart_of_accounts a ON a.id = v.counter_account_id
+                WHERE v.company_id = :cid';
+        $params = ['cid' => $companyId];
+        if ($statusFilter === 'pending') {
+            $sql .= ' AND v.status = :st';
+            $params['st'] = 'draft';
+        } elseif ($statusFilter === 'approved') {
+            $sql .= ' AND v.status = :st';
+            $params['st'] = 'posted';
+        } elseif ($statusFilter === 'rejected') {
+            $sql .= ' AND v.status = :st';
+            $params['st'] = 'rejected';
+        } elseif ($statusFilter === 'void') {
+            $sql .= ' AND v.status = :st';
+            $params['st'] = 'void';
+        }
+        if ($dateFrom !== '') {
+            $sql .= ' AND v.voucher_date >= :from';
+            $params['from'] = $dateFrom;
+        }
+        if ($dateTo !== '') {
+            $sql .= ' AND v.voucher_date <= :to';
+            $params['to'] = $dateTo;
+        }
+        $sql .= ' ORDER BY v.id DESC LIMIT ' . $perPage;
+
+        $model = new JournalEntry();
+        $items = $companyId > 0 ? $model->query($sql, $params) : [];
+        $statsRow = $companyId > 0 ? $model->queryOne(
+            'SELECT COUNT(*) AS total,
+                    SUM(status = :draft) AS pending,
+                    SUM(status = :posted) AS approved
+             FROM rateb_cash_vouchers WHERE company_id = :cid',
+            ['cid' => $companyId, 'draft' => 'draft', 'posted' => 'posted']
+        ) : null;
+
+        $this->view('company/accounting/voucher-approval', [
+            'title' => __('voucher_approval'),
+            'items' => $items,
+            'stats' => [
+                'total' => (int) ($statsRow['total'] ?? 0),
+                'pending' => (int) ($statsRow['pending'] ?? 0),
+                'approved' => (int) ($statsRow['approved'] ?? 0),
+            ],
+            'statusFilter' => $statusFilter,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+            'perPage' => $perPage,
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('cash-vouchers'),
             'canApprove' => rateb_can_approve_entity('cash-vouchers'),
@@ -1294,7 +1356,7 @@ final class CashVouchersController extends Controller
         ], (int) SessionManager::get('rateb_user_id', 0) ?: null);
         (new AuditService())->log('create', 'cash_voucher', $id, ['status' => 'draft']);
         SessionManager::flash('success', __('voucher_saved'));
-        Response::redirect(rateb_app_url('cash-vouchers'));
+        Response::redirect(rateb_app_url('accounting/voucher-approval'));
     }
 
     public function edit(array $params): void
@@ -1352,7 +1414,7 @@ final class CashVouchersController extends Controller
         ])) {
             (new AuditService())->log('update', 'cash_voucher', $id, ['status' => 'draft']);
             SessionManager::flash('success', __('voucher_saved'));
-            Response::redirect(rateb_app_url('cash-vouchers'));
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
         }
         SessionManager::flash('error', __('voucher_edit_denied'));
         Response::redirect(rateb_app_url('cash-vouchers/' . $id . '/edit'));
@@ -1399,12 +1461,12 @@ final class CashVouchersController extends Controller
     {
         rateb_require_approve('cash-vouchers');
         if (!$this->validateCsrf()) {
-            Response::redirect(rateb_app_url('cash-vouchers'));
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
         }
         $ids = $this->parseBulkIds();
         if ($ids === []) {
             SessionManager::flash('error', __('bulk_none_selected'));
-            Response::redirect(rateb_app_url('cash-vouchers'));
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
         }
         $companyId = rateb_require_ops_company();
         $service = new AccountingService();
@@ -1421,7 +1483,49 @@ final class CashVouchersController extends Controller
             }
         }
         SessionManager::flash('success', __('bulk_approved', ['count' => $approved]));
-        Response::redirect(rateb_app_url('cash-vouchers'));
+        Response::redirect(rateb_app_url('accounting/voucher-approval'));
+    }
+
+    public function bulkReject(): void
+    {
+        rateb_require_approve('cash-vouchers');
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        }
+        $companyId = rateb_require_ops_company();
+        $reason = trim((string) ($_POST['reject_reason'] ?? ''));
+        $userId = (int) SessionManager::get('rateb_user_id', 0) ?: null;
+        $rejected = (new AccountingService())->bulkRejectCashVoucherDrafts($ids, $companyId, $reason, $userId);
+        foreach ($ids as $bid) {
+            (new AuditService())->log('bulk_reject', 'cash_voucher', $bid, ['reason' => $reason]);
+        }
+        SessionManager::flash('success', __('bulk_rejected', ['count' => $rejected]));
+        Response::redirect(rateb_app_url('accounting/voucher-approval'));
+    }
+
+    public function bulkVoid(): void
+    {
+        rateb_require_approve('cash-vouchers');
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        }
+        $companyId = rateb_require_ops_company();
+        $voided = (new AccountingService())->bulkVoidCashVouchers($ids, $companyId);
+        foreach ($ids as $bid) {
+            (new AuditService())->log('bulk_void', 'cash_voucher', $bid);
+        }
+        SessionManager::flash('success', __('bulk_voided', ['count' => $voided]));
+        Response::redirect(rateb_app_url('accounting/voucher-approval'));
     }
 
     public function show(array $params): void
@@ -1453,7 +1557,7 @@ final class CashVouchersController extends Controller
     {
         rateb_require_approve('cash-vouchers');
         if (!$this->validateCsrf()) {
-            Response::redirect(rateb_app_url('cash-vouchers'));
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
         }
         $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
@@ -1464,7 +1568,7 @@ final class CashVouchersController extends Controller
         $service = new AccountingService();
         if ($voucher && $service->periodBlocksPosting($companyId, (string) ($voucher['voucher_date'] ?? ''))) {
             SessionManager::flash('error', __('fiscal_period_closed_block'));
-            Response::redirect(rateb_app_url('cash-vouchers/' . $id));
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
         }
         if ($voucher && $service->postCashVoucher($id, $companyId)) {
             (new AuditService())->log('post', 'cash_voucher', $id, []);
@@ -1472,14 +1576,33 @@ final class CashVouchersController extends Controller
         } else {
             SessionManager::flash('error', __('voucher_post_failed'));
         }
-        Response::redirect(rateb_app_url('cash-vouchers/' . $id));
+        Response::redirect(rateb_app_url('accounting/voucher-approval'));
+    }
+
+    public function rejectVoucher(array $params): void
+    {
+        rateb_require_approve('cash-vouchers');
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (int) ($params['id'] ?? 0);
+        $reason = trim((string) ($_POST['reject_reason'] ?? ''));
+        $userId = (int) SessionManager::get('rateb_user_id', 0) ?: null;
+        if ((new AccountingService())->rejectCashVoucherDraft($id, $companyId, $reason, $userId)) {
+            (new AuditService())->log('reject', 'cash_voucher', $id, ['reason' => $reason]);
+            SessionManager::flash('success', __('voucher_rejected'));
+        } else {
+            SessionManager::flash('error', __('voucher_reject_failed'));
+        }
+        Response::redirect(rateb_app_url('accounting/voucher-approval'));
     }
 
     public function voidVoucher(array $params): void
     {
         rateb_require_approve('cash-vouchers');
         if (!$this->validateCsrf()) {
-            Response::redirect(rateb_app_url('cash-vouchers'));
+            Response::redirect(rateb_app_url('accounting/voucher-approval'));
         }
         $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
@@ -1489,7 +1612,7 @@ final class CashVouchersController extends Controller
         } else {
             SessionManager::flash('error', __('voucher_void_failed'));
         }
-        Response::redirect(rateb_app_url('cash-vouchers/' . $id));
+        Response::redirect(rateb_app_url('accounting/voucher-approval'));
     }
 
     /** @return array<int, int> */

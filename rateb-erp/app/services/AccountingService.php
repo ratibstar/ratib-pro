@@ -1569,6 +1569,9 @@ final class AccountingService
         if (!$v || ($v['status'] ?? '') !== 'draft') {
             return false;
         }
+        if (!$this->isPeriodOpen($companyId, (string) ($v['voucher_date'] ?? date('Y-m-d')))) {
+            return false;
+        }
         $amount = (float) ($v['amount'] ?? 0);
         if ($amount <= 0) {
             return false;
@@ -1615,6 +1618,9 @@ final class AccountingService
             ['id' => $voucherId, 'cid' => $companyId]
         );
         if (!$v || ($v['status'] ?? '') !== 'posted') {
+            return false;
+        }
+        if (!$this->isPeriodOpen($companyId, (string) ($v['voucher_date'] ?? date('Y-m-d')))) {
             return false;
         }
         $jid = (int) ($v['journal_entry_id'] ?? 0);
@@ -1836,6 +1842,46 @@ final class AccountingService
         $count = 0;
         foreach ($ids as $id) {
             if ($this->deleteCashVoucherDraft((int) $id, $companyId)) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    public function rejectCashVoucherDraft(int $voucherId, ?int $companyId, ?string $reason, ?int $userId): bool
+    {
+        $v = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid AND status = :st LIMIT 1',
+            ['id' => $voucherId, 'cid' => $companyId, 'st' => 'draft']
+        );
+        if (!$v) {
+            return false;
+        }
+        $reason = $reason !== null && $reason !== '' ? mb_substr($reason, 0, 500) : null;
+        Database::connection()->prepare(
+            'UPDATE rateb_cash_vouchers SET status = :st, reject_reason = :reason, rejected_at = NOW(), rejected_by = :uid WHERE id = :id'
+        )->execute(['st' => 'rejected', 'reason' => $reason, 'uid' => $userId, 'id' => $voucherId]);
+        return true;
+    }
+
+    /** @param array<int, int> $ids */
+    public function bulkRejectCashVoucherDrafts(array $ids, ?int $companyId, ?string $reason, ?int $userId): int
+    {
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->rejectCashVoucherDraft((int) $id, $companyId, $reason, $userId)) {
+                $count++;
+            }
+        }
+        return $count;
+    }
+
+    /** @param array<int, int> $ids */
+    public function bulkVoidCashVouchers(array $ids, ?int $companyId): int
+    {
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->voidCashVoucher((int) $id, $companyId)) {
                 $count++;
             }
         }

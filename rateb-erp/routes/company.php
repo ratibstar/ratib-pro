@@ -144,15 +144,19 @@ $router->post($app('journal-entries/{id}/void'), [CompanyJournalEntriesControlle
 $router->post($app('journal-entries/{id}/delete'), [CompanyJournalEntriesController::class, 'destroy'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
 $router->get($app('journal-entries/{id}'), [CompanyJournalEntriesController::class, 'show'], rateb_erp_mw('accounting', '', 'journal-entries'));
 
+$router->get($app('accounting/voucher-approval'), [CompanyCashVouchersController::class, 'voucherApproval'], rateb_erp_mw('accounting', '', 'voucher-approval'));
 $router->get($app('cash-vouchers'), [CompanyCashVouchersController::class, 'index'], rateb_erp_mw('accounting', '', 'cash-vouchers'));
 $router->get($app('cash-vouchers/create'), [CompanyCashVouchersController::class, 'create'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
 $router->post($app('cash-vouchers'), [CompanyCashVouchersController::class, 'store'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
-$router->post($app('cash-vouchers/bulk-delete'), [CompanyCashVouchersController::class, 'bulkDestroy'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
 $router->post($app('cash-vouchers/bulk-approve'), [CompanyCashVouchersController::class, 'bulkApprove'], rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
+$router->post($app('cash-vouchers/bulk-reject'), [CompanyCashVouchersController::class, 'bulkReject'], rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
+$router->post($app('cash-vouchers/bulk-void'), [CompanyCashVouchersController::class, 'bulkVoid'], rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
+$router->post($app('cash-vouchers/bulk-delete'), [CompanyCashVouchersController::class, 'bulkDestroy'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
 $router->get($app('cash-vouchers/{id}/edit'), [CompanyCashVouchersController::class, 'edit'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
 $router->post($app('cash-vouchers/{id}'), [CompanyCashVouchersController::class, 'update'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
 $router->get($app('cash-vouchers/{id}'), [CompanyCashVouchersController::class, 'show'], rateb_erp_mw('accounting', '', 'cash-vouchers'));
 $router->post($app('cash-vouchers/{id}/post'), [CompanyCashVouchersController::class, 'postVoucher'], rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
+$router->post($app('cash-vouchers/{id}/reject'), [CompanyCashVouchersController::class, 'rejectVoucher'], rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
 $router->post($app('cash-vouchers/{id}/void'), [CompanyCashVouchersController::class, 'voidVoucher'], rateb_erp_mw('accounting', 'accounting.approve', 'cash-vouchers'));
 $router->post($app('cash-vouchers/{id}/delete'), [CompanyCashVouchersController::class, 'destroy'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
 

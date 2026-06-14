@@ -208,6 +208,13 @@ return [
         'approve' => 'accounting.approve',
         'post' => 'accounting.post',
     ],
+    'voucher-approval' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+        'approve' => 'accounting.approve',
+        'post' => 'accounting.post',
+    ],
     'fiscal-periods' => [
         'module' => 'accounting',
         'view' => 'accounting.view',

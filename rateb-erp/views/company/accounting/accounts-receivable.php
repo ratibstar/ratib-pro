@@ -34,7 +34,15 @@
                 <tr><td colspan="6" class="text-center text-muted py-4"><?php echo __('no_records'); ?></td></tr>
                 <?php } else { foreach ($rows as $row) { ?>
                 <tr>
-                    <td><?php echo Rateb\App\Core\View::escape($row['invoice_no']); ?></td>
+                    <td>
+                        <?php if (rateb_is_super_admin() && !empty($row['id'])) { ?>
+                        <a href="<?php echo rateb_url('admin/invoices/' . (int) $row['id'] . '/edit'); ?>">
+                            <?php echo Rateb\App\Core\View::escape($row['invoice_no']); ?>
+                        </a>
+                        <?php } else { ?>
+                        <?php echo Rateb\App\Core\View::escape($row['invoice_no']); ?>
+                        <?php } ?>
+                    </td>
                     <td><?php echo Rateb\App\Core\View::escape($row['issued_at']); ?></td>
                     <td><?php echo Rateb\App\Core\View::escape($row['due_date'] ?? '—'); ?></td>
                     <td><?php echo __((string) ($row['status'] ?? '')); ?></td>
