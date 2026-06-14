@@ -24,9 +24,9 @@ final class AccountingReportsService
                     'desc' => __((string) ($item['desc'] ?? '')),
                     'icon' => (string) ($item['icon'] ?? 'fa-file-lines'),
                     'export' => isset($item['export']) ? (string) $item['export'] : '',
-                    'url' => rateb_url_with_ops_company((string) ($item['route'] ?? '')),
+                    'url' => rateb_app_url((string) ($item['route'] ?? '')),
                     'exportUrl' => isset($item['export']) && (string) $item['export'] !== ''
-                        ? rateb_url_with_ops_company((string) $item['export'])
+                        ? rateb_app_url((string) $item['export'])
                         : '',
                     'canExport' => function_exists('rateb_can_export_entity') && rateb_can_export_entity('accounting'),
                 ];

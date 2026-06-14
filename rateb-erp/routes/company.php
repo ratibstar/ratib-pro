@@ -63,6 +63,24 @@ $router->get('/company/{legacy:.+}', static function (string $legacy): void {
     Response::redirect(rateb_url(rateb_app_route($legacy)), 301);
 });
 
+// Legacy /accounting URLs (without admin/ops prefix) → unified ops shell
+$router->get('/accounting', static function (): void {
+    $target = rateb_url(rateb_app_route('accounting'));
+    $qs = (string) ($_SERVER['QUERY_STRING'] ?? '');
+    if ($qs !== '') {
+        $target .= (strpos($target, '?') === false ? '?' : '&') . $qs;
+    }
+    Response::redirect($target, 301);
+});
+$router->get('/accounting/{legacy:.+}', static function (string $legacy): void {
+    $target = rateb_url(rateb_app_route('accounting/' . $legacy));
+    $qs = (string) ($_SERVER['QUERY_STRING'] ?? '');
+    if ($qs !== '') {
+        $target .= (strpos($target, '?') === false ? '?' : '&') . $qs;
+    }
+    Response::redirect($target, 301);
+});
+
 $moduleRoutes = [
     'purchase-requests' => [PurchaseRequestsController::class, 'procurement'],
     'purchase-orders' => [PurchaseOrdersController::class, 'procurement'],
