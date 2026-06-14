@@ -194,20 +194,20 @@ final class Bootstrap
         if (!function_exists('rateb_current_public_path')) {
             function rateb_current_public_path(string $fallback = 'site'): string
             {
+                if (class_exists(\Rateb\App\Helpers\Request::class)) {
+                    $path = ltrim(\Rateb\App\Helpers\Request::resolvePath(), '/');
+                    if ($path !== '' && strpos($path, 'locale/') !== 0) {
+                        return $path;
+                    }
+                }
                 $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
-                $base = defined('RATEB_BASE_URL') ? rtrim((string) RATEB_BASE_URL, '/') : '/rateb-erp/public';
-                $prefix = $base . '/';
-                $pos = strpos($uri, $prefix);
-                if ($pos === false) {
-                    return $fallback;
+                if (preg_match('#/rateb-erp/public/([^?]+)#', $uri, $m)) {
+                    $path = ltrim($m[1], '/');
+                    if ($path !== '' && strpos($path, 'locale/') !== 0) {
+                        return $path;
+                    }
                 }
-                $rest = substr($uri, $pos + strlen($prefix));
-                $path = strtok($rest, '?') ?: '';
-                $path = ltrim((string) $path, '/');
-                if ($path === '' || strpos($path, 'locale/') === 0) {
-                    return $fallback;
-                }
-                return $path;
+                return $fallback;
             }
         }
         require_once $configRoot . '/config/database.php';

@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260614-table-fixed-columns');
+define('RATEB_ASSET_BUILD', '20260614-ops-company-select');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -67,27 +67,50 @@ if (!function_exists('rateb_url')) {
     }
 }
 
+if (!function_exists('rateb_normalize_erp_route')) {
+    function rateb_normalize_erp_route(string $route): string
+    {
+        $route = ltrim($route, '/');
+        if (strpos($route, 'public/') === 0) {
+            $route = substr($route, strlen('public/'));
+        }
+        return $route;
+    }
+}
+
 if (!function_exists('rateb_current_public_path')) {
     /** Path under /public/ for locale switch return (e.g. site, site/faq). */
     function rateb_current_public_path(string $fallback = 'site'): string
     {
-        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
-        $base = defined('RATEB_BASE_URL') ? rtrim((string) RATEB_BASE_URL, '/') : '/rateb-erp/public';
-        $prefix = $base . '/';
-        $pos = strpos($uri, $prefix);
-        if ($pos === false) {
-            if (preg_match('#/rateb-erp/public/(.+?)(?:\?|$)#', $uri, $m)) {
-                return ltrim((string) strtok($m[1], '?'), '/');
+        if (class_exists(\Rateb\App\Helpers\Request::class)) {
+            $path = ltrim(\Rateb\App\Helpers\Request::resolvePath(), '/');
+            if ($path !== '' && strpos($path, 'locale/') !== 0) {
+                return $path;
             }
-            return $fallback;
         }
-        $rest = substr($uri, $pos + strlen($prefix));
-        $path = strtok($rest, '?') ?: '';
-        $path = ltrim((string) $path, '/');
-        if ($path === '' || strpos($path, 'locale/') === 0) {
-            return $fallback;
+
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        if (preg_match('#/rateb-erp/public/([^?]+)#', $uri, $m)) {
+            $path = ltrim($m[1], '/');
+            if ($path !== '' && strpos($path, 'locale/') !== 0) {
+                return $path;
+            }
         }
-        return $path;
+
+        $base = defined('RATEB_BASE_URL') ? rtrim((string) RATEB_BASE_URL, '/') : '/rateb-erp/public';
+        foreach ([$base . '/public/', $base . '/', '/rateb-erp/public/'] as $prefix) {
+            $pos = strpos($uri, $prefix);
+            if ($pos === false) {
+                continue;
+            }
+            $rest = substr($uri, $pos + strlen($prefix));
+            $path = ltrim((string) strtok($rest, '?'), '/');
+            if ($path !== '' && strpos($path, 'locale/') !== 0) {
+                return $path;
+            }
+        }
+
+        return $fallback;
     }
 }
 
@@ -96,21 +119,30 @@ if (!function_exists('rateb_current_erp_route')) {
     function rateb_current_erp_route(string $fallback = ''): string
     {
         if (defined('RATEB_CP_ROUTE') && (string) RATEB_CP_ROUTE !== '') {
-            return ltrim((string) RATEB_CP_ROUTE, '/');
+            return rateb_normalize_erp_route((string) RATEB_CP_ROUTE);
         }
         $route = trim((string) ($_GET['route'] ?? ''), '/');
         if ($route !== '') {
-            return $route;
+            return rateb_normalize_erp_route($route);
         }
-        $path = rateb_current_public_path($fallback);
-        return $path === $fallback ? '' : $path;
+        if (class_exists(\Rateb\App\Helpers\Request::class)) {
+            $path = ltrim(\Rateb\App\Helpers\Request::resolvePath(), '/');
+            if ($path !== '') {
+                return rateb_normalize_erp_route($path);
+            }
+        }
+        $path = rateb_current_public_path($fallback === '' ? '__none__' : $fallback);
+        if ($path === $fallback || $path === '__none__') {
+            return $fallback;
+        }
+        return rateb_normalize_erp_route($path);
     }
 }
 
 if (!function_exists('rateb_is_ops_route')) {
     function rateb_is_ops_route(?string $route = null): bool
     {
-        $route = $route ?? rateb_current_erp_route();
+        $route = rateb_normalize_erp_route($route ?? rateb_current_erp_route());
         return $route === 'admin/ops' || strpos($route, 'admin/ops/') === 0;
     }
 }
@@ -264,7 +296,13 @@ if (!function_exists('rateb_label')) {
 if (!function_exists('rateb_is_super_admin')) {
     function rateb_is_super_admin(): bool
     {
-        return !empty($_SESSION['rateb_is_super_admin']);
+        if (!empty($_SESSION['rateb_is_super_admin'])) {
+            return true;
+        }
+        if (class_exists(\Rateb\App\Core\SessionManager::class)) {
+            return (bool) \Rateb\App\Core\SessionManager::get('rateb_is_super_admin');
+        }
+        return false;
     }
 }
 
