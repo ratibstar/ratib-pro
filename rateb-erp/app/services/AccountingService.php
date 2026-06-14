@@ -469,6 +469,9 @@ final class AccountingService
         if (!$entry || ($entry['status'] ?? '') !== 'draft') {
             return false;
         }
+        if ((string) ($entry['source_type'] ?? '') !== 'manual') {
+            return false;
+        }
         $lines = $this->loadEntryLines($entryId);
         if (!$this->isBalanced($lines)) {
             return false;
@@ -491,6 +494,9 @@ final class AccountingService
         }
         $allowed = $allowedSourceTypes ?? ['manual'];
         if (!in_array((string) ($entry['source_type'] ?? ''), $allowed, true)) {
+            return false;
+        }
+        if (!$this->isPeriodOpen($companyId, (string) ($entry['entry_date'] ?? date('Y-m-d')))) {
             return false;
         }
         (new JournalEntry())->update($entryId, ['status' => 'void']);
@@ -1711,6 +1717,34 @@ final class AccountingService
         $pdo = Database::connection();
         $pdo->prepare('DELETE FROM rateb_journal_lines WHERE journal_entry_id = :id')->execute(['id' => $entryId]);
         return (new JournalEntry())->delete($entryId);
+    }
+
+    public function rejectManualDraft(int $entryId, ?int $companyId, ?string $reason, ?int $userId): bool
+    {
+        $entry = $this->findEntryForCompany($entryId, $companyId);
+        if (!$entry || ($entry['source_type'] ?? '') !== 'manual' || ($entry['status'] ?? '') !== 'draft') {
+            return false;
+        }
+        $reason = $reason !== null && $reason !== '' ? mb_substr($reason, 0, 500) : null;
+        (new JournalEntry())->update($entryId, [
+            'status' => 'rejected',
+            'reject_reason' => $reason,
+            'rejected_at' => date('Y-m-d H:i:s'),
+            'rejected_by' => $userId,
+        ]);
+        return true;
+    }
+
+    /** @param array<int, int> $ids */
+    public function bulkRejectManualDrafts(array $ids, ?int $companyId, ?string $reason, ?int $userId): int
+    {
+        $count = 0;
+        foreach ($ids as $id) {
+            if ($this->rejectManualDraft((int) $id, $companyId, $reason, $userId)) {
+                $count++;
+            }
+        }
+        return $count;
     }
 
     /** @param array<int, int> $ids */

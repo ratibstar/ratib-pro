@@ -169,6 +169,13 @@ return [
         'approve' => 'accounting.approve',
         'post' => 'accounting.post',
     ],
+    'entry-approval' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+        'approve' => 'accounting.approve',
+        'post' => 'accounting.post',
+    ],
     'accounts-payable' => [
         'module' => 'accounting',
         'view' => 'accounting.view',

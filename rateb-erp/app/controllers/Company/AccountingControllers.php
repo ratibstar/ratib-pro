@@ -759,19 +759,38 @@ final class JournalEntriesController extends Controller
     public function index(): void
     {
         $companyId = rateb_resolve_ops_company_id();
+        $model = new JournalEntry();
+        $items = $companyId > 0 ? $model->query(
+            'SELECT * FROM rateb_journal_entries WHERE company_id = :cid ORDER BY id DESC LIMIT 100',
+            ['cid' => $companyId]
+        ) : [];
+
+        $this->view('company/journal-entries/index', [
+            'title' => __('journal_entries'),
+            'items' => $items,
+            'canManage' => rateb_can_manage_entity('journal-entries'),
+        ], 'main');
+    }
+
+    public function entryApproval(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
         $statusFilter = trim((string) ($_GET['status'] ?? 'all'));
         $dateFrom = trim((string) ($_GET['from'] ?? ''));
         $dateTo = trim((string) ($_GET['to'] ?? ''));
         $perPage = max(10, min(100, (int) ($_GET['show'] ?? 10)));
 
-        $sql = 'SELECT * FROM rateb_journal_entries WHERE company_id = :cid';
-        $params = ['cid' => $companyId];
+        $sql = 'SELECT * FROM rateb_journal_entries WHERE company_id = :cid AND source_type = :manual';
+        $params = ['cid' => $companyId, 'manual' => 'manual'];
         if ($statusFilter === 'pending') {
             $sql .= ' AND status = :st';
             $params['st'] = 'draft';
         } elseif ($statusFilter === 'approved') {
             $sql .= ' AND status = :st';
             $params['st'] = 'posted';
+        } elseif ($statusFilter === 'rejected') {
+            $sql .= ' AND status = :st';
+            $params['st'] = 'rejected';
         } elseif ($statusFilter === 'void') {
             $sql .= ' AND status = :st';
             $params['st'] = 'void';
@@ -792,11 +811,12 @@ final class JournalEntriesController extends Controller
             'SELECT COUNT(*) AS total,
                     SUM(status = :draft) AS pending,
                     SUM(status = :posted) AS approved
-             FROM rateb_journal_entries WHERE company_id = :cid',
-            ['cid' => $companyId, 'draft' => 'draft', 'posted' => 'posted']
+             FROM rateb_journal_entries
+             WHERE company_id = :cid AND source_type = :manual',
+            ['cid' => $companyId, 'manual' => 'manual', 'draft' => 'draft', 'posted' => 'posted']
         ) : null;
 
-        $this->view('company/journal-entries/index', [
+        $this->view('company/accounting/entry-approval', [
             'title' => __('entry_approval'),
             'items' => $items,
             'stats' => [
@@ -856,7 +876,7 @@ final class JournalEntriesController extends Controller
             );
             (new AuditService())->log('create', 'journal_entry', $id, ['status' => 'draft']);
             SessionManager::flash('success', __('journal_draft_saved'));
-            Response::redirect(rateb_app_url('journal-entries'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
         } catch (\InvalidArgumentException $e) {
             SessionManager::flash('error', __('journal_not_balanced'));
             Response::redirect(rateb_app_url('journal-entries/create'));
@@ -929,7 +949,7 @@ final class JournalEntriesController extends Controller
             }
             (new AuditService())->log('update', 'journal_entry', $id, ['status' => 'draft']);
             SessionManager::flash('success', __('journal_draft_saved'));
-            Response::redirect(rateb_app_url('journal-entries'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
         } catch (\InvalidArgumentException $e) {
             SessionManager::flash('error', __('journal_not_balanced'));
             Response::redirect(rateb_app_url('journal-entries/' . $id . '/edit'));
@@ -941,7 +961,7 @@ final class JournalEntriesController extends Controller
         rateb_require_approve('journal-entries');
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('access_denied'));
-            Response::redirect(rateb_app_url('journal-entries'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
         }
         $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
@@ -952,7 +972,7 @@ final class JournalEntriesController extends Controller
         $service = new AccountingService();
         if ($entry && $service->periodBlocksPosting($companyId, (string) ($entry['entry_date'] ?? ''))) {
             SessionManager::flash('error', __('fiscal_period_closed_block'));
-            Response::redirect(rateb_app_url('journal-entries'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
         }
         if ($entry && $service->postDraftEntry($id, $companyId)) {
             (new AuditService())->log('post', 'journal_entry', $id, []);
@@ -960,7 +980,7 @@ final class JournalEntriesController extends Controller
         } else {
             SessionManager::flash('error', __('journal_post_failed'));
         }
-        Response::redirect(rateb_app_url('journal-entries'));
+        Response::redirect(rateb_app_url('accounting/entry-approval'));
     }
 
     public function voidEntry(array $params): void
@@ -968,7 +988,7 @@ final class JournalEntriesController extends Controller
         rateb_require_approve('journal-entries');
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('access_denied'));
-            Response::redirect(rateb_app_url('journal-entries'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
         }
         $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
@@ -978,7 +998,49 @@ final class JournalEntriesController extends Controller
         } else {
             SessionManager::flash('error', __('journal_void_failed'));
         }
-        Response::redirect(rateb_app_url('journal-entries'));
+        Response::redirect(rateb_app_url('accounting/entry-approval'));
+    }
+
+    public function rejectEntry(array $params): void
+    {
+        rateb_require_approve('journal-entries');
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (int) ($params['id'] ?? 0);
+        $reason = trim((string) ($_POST['reject_reason'] ?? ''));
+        $userId = (int) SessionManager::get('rateb_user_id', 0) ?: null;
+        if ((new AccountingService())->rejectManualDraft($id, $companyId, $reason, $userId)) {
+            (new AuditService())->log('reject', 'journal_entry', $id, ['reason' => $reason]);
+            SessionManager::flash('success', __('journal_rejected'));
+        } else {
+            SessionManager::flash('error', __('journal_reject_failed'));
+        }
+        Response::redirect(rateb_app_url('accounting/entry-approval'));
+    }
+
+    public function bulkReject(): void
+    {
+        rateb_require_approve('journal-entries');
+        if (!$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
+        }
+        $companyId = rateb_require_ops_company();
+        $reason = trim((string) ($_POST['reject_reason'] ?? ''));
+        $userId = (int) SessionManager::get('rateb_user_id', 0) ?: null;
+        $rejected = (new AccountingService())->bulkRejectManualDrafts($ids, $companyId, $reason, $userId);
+        foreach ($ids as $id) {
+            (new AuditService())->log('bulk_reject', 'journal_entry', $id, ['reason' => $reason]);
+        }
+        SessionManager::flash('success', __('bulk_rejected', ['count' => $rejected]));
+        Response::redirect(rateb_app_url('accounting/entry-approval'));
     }
 
     public function destroy(array $params): void
@@ -1022,12 +1084,12 @@ final class JournalEntriesController extends Controller
     {
         rateb_require_approve('journal-entries');
         if (!$this->validateCsrf()) {
-            Response::redirect(rateb_app_url('journal-entries'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
         }
         $ids = $this->parseBulkIds();
         if ($ids === []) {
             SessionManager::flash('error', __('bulk_none_selected'));
-            Response::redirect(rateb_app_url('journal-entries'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
         }
         $companyId = rateb_require_ops_company();
         $service = new AccountingService();
@@ -1044,19 +1106,19 @@ final class JournalEntriesController extends Controller
             }
         }
         SessionManager::flash('success', __('bulk_approved', ['count' => $approved]));
-        Response::redirect(rateb_app_url('journal-entries'));
+        Response::redirect(rateb_app_url('accounting/entry-approval'));
     }
 
     public function bulkVoid(): void
     {
         rateb_require_approve('journal-entries');
         if (!$this->validateCsrf()) {
-            Response::redirect(rateb_app_url('journal-entries'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
         }
         $ids = $this->parseBulkIds();
         if ($ids === []) {
             SessionManager::flash('error', __('bulk_none_selected'));
-            Response::redirect(rateb_app_url('journal-entries'));
+            Response::redirect(rateb_app_url('accounting/entry-approval'));
         }
         $companyId = rateb_require_ops_company();
         $voided = (new AccountingService())->bulkVoidPostedManual($ids, $companyId);
@@ -1064,7 +1126,7 @@ final class JournalEntriesController extends Controller
             (new AuditService())->log('bulk_void', 'journal_entry', $id);
         }
         SessionManager::flash('success', __('bulk_voided', ['count' => $voided]));
-        Response::redirect(rateb_app_url('journal-entries'));
+        Response::redirect(rateb_app_url('accounting/entry-approval'));
     }
 
     public function show(array $params): void

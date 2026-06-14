@@ -6,6 +6,7 @@ $tabs = [
     ['path' => rateb_app_route('accounting'), 'label' => __('accounting_overview'), 'match' => [rateb_app_route('accounting')]],
     ['path' => rateb_app_route('chart-of-accounts'), 'label' => __('chart_of_accounts'), 'match' => [rateb_app_route('chart-of-accounts')]],
     ['path' => rateb_app_route('journal-entries'), 'label' => __('journal_entries'), 'match' => [rateb_app_route('journal-entries')]],
+    ['path' => rateb_app_route('accounting/entry-approval'), 'label' => __('entry_approval'), 'match' => [rateb_app_route('accounting/entry-approval')]],
     ['path' => rateb_app_route('accounting/accounts-payable'), 'label' => __('accounts_payable'), 'match' => [rateb_app_route('accounting/accounts-payable')]],
     ['path' => rateb_app_route('accounting/supplier-payments'), 'label' => __('supplier_payments'), 'match' => [rateb_app_route('accounting/supplier-payments')]],
     ['path' => rateb_app_route('accounting/accounts-receivable'), 'label' => __('accounts_receivable'), 'match' => [rateb_app_route('accounting/accounts-receivable')]],

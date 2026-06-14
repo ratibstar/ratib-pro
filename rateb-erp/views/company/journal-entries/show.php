@@ -1,18 +1,51 @@
 <?php
 $desc = rateb_locale() === 'ar' && !empty($entry['description_ar']) ? $entry['description_ar'] : $entry['description'];
 $status = (string) ($entry['status'] ?? '');
+$sourceType = (string) ($entry['source_type'] ?? '');
+$sourceId = (int) ($entry['source_id'] ?? 0);
+$sourceUrl = null;
+$sourceLabel = '';
+if ($sourceId > 0) {
+    switch ($sourceType) {
+        case 'cash_voucher':
+            $sourceUrl = rateb_app_url('cash-vouchers/' . $sourceId);
+            $sourceLabel = __('cash_vouchers');
+            break;
+        case 'purchase_order':
+            $sourceUrl = rateb_app_url('purchase-orders/' . $sourceId);
+            $sourceLabel = __('purchase_orders');
+            break;
+        case 'supplier_payment':
+            $sourceUrl = rateb_app_url('accounting/supplier-payments');
+            $sourceLabel = __('supplier_payments');
+            break;
+        case 'invoice':
+            $sourceLabel = __('invoices');
+            break;
+    }
+}
+$displayStatus = $status === 'draft' ? 'pending' : ($status === 'posted' ? 'approved' : $status);
 ?>
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
 <div class="rateb-card mb-3">
     <div class="rateb-card-header d-flex justify-content-between align-items-center">
         <span><?php echo Rateb\App\Core\View::escape($entry['entry_no'] ?? ''); ?></span>
-        <span class="badge bg-<?php echo $status === 'posted' ? 'success' : ($status === 'void' ? 'secondary' : 'warning'); ?>">
-            <?php echo __($status === 'draft' ? 'pending' : ($status === 'posted' ? 'approved' : $status)); ?>
+        <span class="badge bg-<?php echo $status === 'posted' ? 'success' : ($status === 'rejected' ? 'danger' : ($status === 'void' ? 'secondary' : 'warning')); ?>">
+            <?php echo __($displayStatus); ?>
         </span>
     </div>
     <div class="rateb-card-body">
         <p class="mb-1"><strong><?php echo __('evaluation_date'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($entry['entry_date'] ?? ''); ?></p>
-        <p class="mb-1"><strong><?php echo __('source_type'); ?>:</strong> <?php echo __((string) ($entry['source_type'] ?? '')); ?></p>
+        <p class="mb-1"><strong><?php echo __('source_type'); ?>:</strong> <?php echo __($sourceType); ?>
+            <?php if ($sourceUrl) { ?>
+            — <a href="<?php echo $sourceUrl; ?>"><?php echo Rateb\App\Core\View::escape($sourceLabel); ?> #<?php echo $sourceId; ?></a>
+            <?php } elseif ($sourceId > 0 && $sourceLabel !== '') { ?>
+            — <?php echo Rateb\App\Core\View::escape($sourceLabel); ?> #<?php echo $sourceId; ?>
+            <?php } ?>
+        </p>
+        <?php if (!empty($entry['reject_reason'])) { ?>
+        <p class="mb-1"><strong><?php echo __('reject_reason'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($entry['reject_reason']); ?></p>
+        <?php } ?>
         <p class="mb-0"><?php echo Rateb\App\Core\View::escape($desc); ?></p>
     </div>
 </div>
@@ -49,22 +82,24 @@ $status = (string) ($entry['status'] ?? '');
     </div>
 </div>
 <div class="d-flex flex-wrap gap-2 mt-3">
-    <a href="<?php echo rateb_app_url('journal-entries'); ?>" class="btn btn-outline-secondary"><i class="fas fa-list"></i> <?php echo __('back_to_list'); ?></a>
-    <?php if (($canManage ?? false) && $status === 'draft' && ($entry['source_type'] ?? '') === 'manual') { ?>
+    <a href="<?php echo rateb_app_url('journal-entries'); ?>" class="btn btn-outline-secondary"><i class="fas fa-list"></i> <?php echo __('journal_entries'); ?></a>
+    <a href="<?php echo rateb_app_url('accounting/entry-approval'); ?>" class="btn btn-outline-secondary"><i class="fas fa-check-double"></i> <?php echo __('entry_approval'); ?></a>
+    <?php if (($canManage ?? false) && $status === 'draft' && $sourceType === 'manual') { ?>
     <a href="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/edit'); ?>" class="btn btn-outline-primary"><i class="fas fa-edit"></i> <?php echo __('edit'); ?></a>
     <?php } ?>
-    <?php if (($canApprove ?? false) && $status === 'draft' && ($entry['source_type'] ?? '') === 'manual') { ?>
+    <?php if (($canApprove ?? false) && $status === 'draft' && $sourceType === 'manual') { ?>
     <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/post'); ?>" class="d-inline">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> <?php echo __('approve'); ?></button>
     </form>
-    <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/delete'); ?>" class="d-inline"
+    <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/reject'); ?>" class="d-inline"
           onsubmit="return confirm('<?php echo __('bulk_confirm_reject'); ?>');">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+        <input type="text" name="reject_reason" class="form-control form-control-sm d-inline-block" style="width:10rem" placeholder="<?php echo Rateb\App\Core\View::escape(__('reject_reason')); ?>">
         <button type="submit" class="btn btn-danger"><i class="fas fa-times"></i> <?php echo __('reject'); ?></button>
     </form>
     <?php } ?>
-    <?php if (($canApprove ?? false) && $status === 'posted' && ($entry['source_type'] ?? '') === 'manual') { ?>
+    <?php if (($canApprove ?? false) && $status === 'posted' && $sourceType === 'manual') { ?>
     <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/void'); ?>" class="d-inline"
           onsubmit="return confirm('<?php echo __('bulk_confirm_undo'); ?>');">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">

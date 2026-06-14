@@ -365,7 +365,7 @@ final class EntityPermissionMiddleware implements MiddlewareInterface
     private function isAccountingApproveAction(): bool
     {
         $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? '');
-        return preg_match('#/(post|void)(/|$)#', $path) === 1;
+        return preg_match('#/(post|void|reject|bulk-approve|bulk-void|bulk-reject)(/|$)#', $path) === 1;
     }
 
     private function isAccountingPostAction(): bool

@@ -57,7 +57,11 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
                         ?>
                     <tr>
                         <td><?php echo Rateb\App\Core\View::escape($line['entry_date']); ?></td>
-                        <td><?php echo Rateb\App\Core\View::escape($line['entry_no']); ?></td>
+                        <td>
+                            <a href="<?php echo rateb_app_url('journal-entries/' . (int) $line['id']); ?>">
+                                <?php echo Rateb\App\Core\View::escape($line['entry_no']); ?>
+                            </a>
+                        </td>
                         <td class="text-end"><?php echo number_format($amt, 2); ?></td>
                     </tr>
                     <?php } ?>
@@ -110,9 +114,15 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
                         <td class="text-end"><?php echo number_format((float) ($line['amount'] ?? 0), 2); ?></td>
                         <td class="text-nowrap">
                             <?php if (($canManage ?? false) && empty($line['is_reconciled'])) { ?>
-                            <form method="post" action="<?php echo rateb_app_url('accounting/bank-reconciliation/lines/' . (int) $line['id'] . '/reconcile'); ?>" class="d-inline">
+                            <form method="post" action="<?php echo rateb_app_url('accounting/bank-reconciliation/lines/' . (int) $line['id'] . '/reconcile'); ?>" class="d-inline-flex flex-wrap gap-1 align-items-center">
                                 <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                                 <input type="hidden" name="bank_account_id" value="<?php echo (int) $bankId; ?>">
+                                <select name="journal_entry_id" class="form-select form-select-sm" style="width:8rem">
+                                    <option value=""><?php echo __('entry_no'); ?>…</option>
+                                    <?php foreach (($d['book_lines'] ?? []) as $bl) { ?>
+                                    <option value="<?php echo (int) $bl['id']; ?>"><?php echo Rateb\App\Core\View::escape($bl['entry_no']); ?></option>
+                                    <?php } ?>
+                                </select>
                                 <button type="submit" class="btn btn-xs btn-outline-success btn-sm"><?php echo __('mark_reconciled'); ?></button>
                             </form>
                             <form method="post" action="<?php echo rateb_app_url('accounting/bank-reconciliation/lines/' . (int) $line['id'] . '/delete'); ?>" class="d-inline"
@@ -123,6 +133,11 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
                             </form>
                             <?php } elseif (!empty($line['is_reconciled'])) { ?>
                             <span class="badge bg-success"><?php echo __('reconciled'); ?></span>
+                            <?php if (!empty($line['journal_entry_id'])) { ?>
+                            <a href="<?php echo rateb_app_url('journal-entries/' . (int) $line['journal_entry_id']); ?>" class="btn btn-xs btn-outline-primary btn-sm ms-1">
+                                <?php echo __('entry_no'); ?> #<?php echo (int) $line['journal_entry_id']; ?>
+                            </a>
+                            <?php } ?>
                             <?php } ?>
                         </td>
                     </tr>
