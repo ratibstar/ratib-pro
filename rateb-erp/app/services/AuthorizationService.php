@@ -124,6 +124,44 @@ final class AuthorizationService
             $mod = (string) ($row['module'] ?? 'general');
             $grouped[$mod][] = $row;
         }
+
+        $accountingOrder = [
+            'accounting.view' => 1,
+            'accounting.manage' => 2,
+            'accounting.approve' => 3,
+            'accounting.post' => 4,
+        ];
+        foreach ($grouped as $mod => &$perms) {
+            if ($mod === 'accounting') {
+                usort($perms, static function (array $a, array $b) use ($accountingOrder): int {
+                    $sa = (string) ($a['slug'] ?? '');
+                    $sb = (string) ($b['slug'] ?? '');
+                    return ($accountingOrder[$sa] ?? 99) <=> ($accountingOrder[$sb] ?? 99);
+                });
+            }
+        }
+        unset($perms);
+
+        $moduleOrder = [
+            'dashboard' => 0,
+            'accounting' => 1,
+            'procurement' => 2,
+            'inventory' => 3,
+            'suppliers' => 4,
+            'assets' => 5,
+            'contracts' => 6,
+            'tenders' => 7,
+            'reports' => 8,
+            'medical_devices' => 9,
+            'documents' => 10,
+            'workflows' => 11,
+            'notifications' => 12,
+            'cms' => 13,
+        ];
+        uksort($grouped, static function (string $a, string $b) use ($moduleOrder): int {
+            return ($moduleOrder[$a] ?? 99) <=> ($moduleOrder[$b] ?? 99);
+        });
+
         return $grouped;
     }
 

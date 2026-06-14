@@ -2,6 +2,21 @@
 
 [dir="rtl"] body.rateb-app {
     text-align: right;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+[dir="rtl"] .rateb-table th,
+[dir="rtl"] .rateb-table td,
+[dir="rtl"] .form-check-label,
+[dir="rtl"] .rateb-matrix-table td,
+[dir="rtl"] .rateb-card,
+[dir="rtl"] .rateb-card-header,
+[dir="rtl"] .rateb-approval-stat-label,
+[dir="rtl"] .rateb-approval-table thead th,
+[dir="rtl"] .rateb-nav-group-label {
+    text-transform: none !important;
+    letter-spacing: 0 !important;
 }
 
 [dir="rtl"] .rateb-sidebar {

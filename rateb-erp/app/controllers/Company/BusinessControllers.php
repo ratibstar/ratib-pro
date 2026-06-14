@@ -705,3 +705,122 @@ final class InventoryForecastController extends Controller
     }
 }
 
+final class SupplierCommsController extends \Rateb\App\Controllers\CrudController
+{
+    public function __construct()
+    {
+        $this->model = new \Rateb\App\Models\SupplierCommunication();
+        $this->viewPrefix = 'company/supplier-comms';
+        $this->routePrefix = rateb_app_route('supplier-comms');
+        $this->entityName = 'supplier_comms';
+        $this->permissionResource = 'supplier-comms';
+        $this->filesEnabled = false;
+        $this->indexFields = [
+            ['name' => 'supplier_name', 'label' => 'suppliers'],
+            ['name' => 'channel', 'label' => 'comm_channel'],
+            ['name' => 'subject', 'label' => 'subject'],
+            ['name' => 'created_at', 'label' => 'created_at'],
+        ];
+        $this->fields = [
+            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers'],
+            ['name' => 'channel', 'label' => 'comm_channel', 'type' => 'select', 'options' => ['email', 'phone', 'meeting', 'note']],
+            ['name' => 'subject', 'label' => 'subject', 'type' => 'text'],
+            ['name' => 'body', 'label' => 'notes', 'type' => 'textarea'],
+        ];
+        $this->tenantForeignKeys = ['supplier_id'];
+    }
+
+    protected function layout(): string
+    {
+        return 'main';
+    }
+
+    public function index(): void
+    {
+        $page = max(1, (int) $this->input('page', 1));
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+        $search = trim((string) $this->input('q', ''));
+        $companyId = rateb_resolve_ops_company_id();
+        TenantContext::setCompanyId($companyId);
+
+        $sql = 'SELECT c.*, s.name AS supplier_name
+                FROM rateb_supplier_communications c
+                LEFT JOIN rateb_suppliers s ON s.id = c.supplier_id
+                WHERE c.company_id = :cid';
+        $params = ['cid' => $companyId];
+        if ($search !== '') {
+            $sql .= ' AND (s.name LIKE :q OR c.subject LIKE :q OR c.body LIKE :q OR c.channel LIKE :q)';
+            $params['q'] = '%' . $search . '%';
+        }
+        $countSql = 'SELECT COUNT(*) AS c FROM rateb_supplier_communications c
+                     LEFT JOIN rateb_suppliers s ON s.id = c.supplier_id
+                     WHERE c.company_id = :cid';
+        $countParams = ['cid' => $companyId];
+        if ($search !== '') {
+            $countSql .= ' AND (s.name LIKE :q OR c.subject LIKE :q OR c.body LIKE :q OR c.channel LIKE :q)';
+            $countParams['q'] = '%' . $search . '%';
+        }
+        $total = (int) (($this->model->queryOne($countSql, $countParams)['c'] ?? 0));
+        $sql .= ' ORDER BY c.id DESC LIMIT ' . $limit . ' OFFSET ' . $offset;
+        $items = $this->model->query($sql, $params);
+
+        $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
+            'title' => __('supplier_comms'),
+            'items' => $items,
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+            'search' => $search,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->indexFields,
+            'csrf' => Csrf::token(),
+            'bulkEnabled' => $this->bulkEnabled,
+            'createEnabled' => $this->createEnabled,
+            'actionsEnabled' => $this->actionsEnabled,
+        ]), $this->layout());
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $data['company_id'] = rateb_resolve_ops_company_id();
+        $uid = (int) SessionManager::get('rateb_user_id', 0);
+        if ($uid > 0) {
+            $data['created_by'] = $uid;
+        }
+        return $data;
+    }
+
+    public function create(): void
+    {
+        $this->guardManage();
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('create') . ' ' . __('supplier_comms'),
+            'item' => null,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+        ], $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $this->guardManage();
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('edit') . ' ' . __('supplier_comms'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'csrf' => Csrf::token(),
+        ], $this->layout());
+    }
+}
+

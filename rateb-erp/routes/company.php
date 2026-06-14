@@ -281,6 +281,15 @@ $router->post($app('supplier-classifications/{id}/documents/{docId}/delete'), [S
 $router->get($app('supplier-kpi'), [SupplierKpiController::class, 'index'], rateb_erp_mw('suppliers', '', 'supplier-kpi'));
 $router->get($app('supplier-kpi/export'), [SupplierKpiController::class, 'export'], rateb_erp_mw('suppliers', 'reports.export', 'supplier-kpi'));
 
+$scMw = rateb_erp_mw('suppliers', '', 'supplier-comms');
+$router->get($app('supplier-comms'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'index'], $scMw);
+$router->get($app('supplier-comms/create'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'create'], $scMw);
+$router->post($app('supplier-comms'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'store'], $scMw);
+$router->get($app('supplier-comms/{id}/edit'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'edit'], $scMw);
+$router->post($app('supplier-comms/{id}'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'update'], $scMw);
+$router->post($app('supplier-comms/{id}/delete'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'destroy'], $scMw);
+$router->post($app('supplier-comms/bulk-delete'), [\Rateb\App\Controllers\Company\SupplierCommsController::class, 'bulkDestroy'], $scMw);
+
 $ctrMw = rateb_erp_mw('contracts', '', 'contract-renewals');
 $router->get($app('contract-renewals'), [ContractRenewalsController::class, 'index'], $ctrMw);
 $router->post($app('contract-renewals'), [ContractRenewalsController::class, 'store'], $ctrMw);

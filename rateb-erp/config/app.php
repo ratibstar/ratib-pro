@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260614-table-search');
+define('RATEB_ASSET_BUILD', '20260614-ar-perms-fix');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -202,7 +202,7 @@ if (!function_exists('rateb_list_url')) {
         if ($query === []) {
             return $url;
         }
-        $sep = str_contains($url, '?') ? '&' : '?';
+        $sep = strpos($url, '?') !== false ? '&' : '?';
         return $url . $sep . http_build_query($query);
     }
 }

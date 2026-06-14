@@ -7,11 +7,14 @@
     background: var(--rateb-bg);
     font-weight: 600;
     font-size: 0.8125rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
     color: var(--rateb-text-muted);
     border-bottom: 2px solid var(--rateb-border);
     white-space: nowrap;
+}
+
+[dir="ltr"] .rateb-table th {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 .rateb-table td,
@@ -164,10 +167,13 @@
 .rateb-approval-stat-label {
     font-size: 0.75rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
     color: var(--rateb-text-muted);
     margin-bottom: 0.35rem;
+}
+
+[dir="ltr"] .rateb-approval-stat-label {
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .rateb-approval-stat-value {
@@ -182,6 +188,9 @@
 
 .rateb-approval-table thead th {
     font-size: 0.75rem;
+}
+
+[dir="ltr"] .rateb-approval-table thead th {
     text-transform: uppercase;
     letter-spacing: 0.03em;
 }

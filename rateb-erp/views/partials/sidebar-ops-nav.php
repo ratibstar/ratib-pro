@@ -26,6 +26,7 @@ $opsSection(__('inventory'), [
 ], 'fa-boxes-stacked');
 $opsSection(__('suppliers'), [
     ['suppliers', 'suppliers', 'fa-truck-field', 'suppliers'],
+    ['supplier-comms', 'supplier_comms', 'fa-comments', 'suppliers'],
     ['supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke', 'suppliers'],
     ['supplier-classifications', 'supplier_classifications', 'fa-tags', 'suppliers'],
     ['supplier-kpi', 'supplier_kpi', 'fa-chart-line', 'suppliers'],

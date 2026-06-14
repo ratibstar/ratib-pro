@@ -290,6 +290,14 @@ final class SupplierClassification extends Model
     protected array $fillable = ['name', 'slug', 'color'];
 }
 
+final class SupplierCommunication extends Model
+{
+    protected string $table = 'rateb_supplier_communications';
+    protected bool $tenantScoped = true;
+    protected array $fillable = ['company_id', 'supplier_id', 'channel', 'subject', 'body', 'created_by'];
+    protected array $searchable = ['channel', 'subject', 'body'];
+}
+
 final class AuditLog extends Model
 {
     protected string $table = 'rateb_audit_logs';

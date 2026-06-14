@@ -37,14 +37,21 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_ur
                     <button type="button" class="btn btn-link btn-sm p-0" data-matrix-module="<?php echo Rateb\App\Core\View::escape($module); ?>"><?php echo __('toggle_module'); ?></button>
                 </div>
                 <div class="rateb-card-body">
+                    <?php if ($module === 'accounting') { ?>
+                    <p class="text-muted small mb-3"><?php echo __('accounting_permissions_role_note'); ?></p>
+                    <?php } ?>
                     <div class="row g-2">
-                        <?php foreach ($perms as $perm) { ?>
+                        <?php foreach ($perms as $perm) {
+                            $slug = (string) ($perm['slug'] ?? '');
+                            $highlight = $slug === 'accounting.approve' ? ' border border-warning rounded p-2 bg-warning bg-opacity-10' : '';
+                            ?>
                         <div class="col-md-6 col-lg-4">
-                            <div class="form-check">
+                            <div class="form-check<?php echo $highlight; ?>">
                                 <input class="form-check-input rateb-matrix-check" type="checkbox" name="permission_ids[]" value="<?php echo (int) $perm['id']; ?>" id="perm_<?php echo (int) $perm['id']; ?>" data-module="<?php echo Rateb\App\Core\View::escape($module); ?>"
                                     <?php echo in_array((int) $perm['id'], $selectedPermissions, true) ? ' checked' : ''; ?>>
                                 <label class="form-check-label" for="perm_<?php echo (int) $perm['id']; ?>">
-                                    <?php echo Rateb\App\Core\View::escape(rateb_permission_label($perm)); ?>
+                                    <strong><?php echo Rateb\App\Core\View::escape(rateb_permission_label($perm)); ?></strong>
+                                    <small class="text-muted d-block"><?php echo Rateb\App\Core\View::escape($slug); ?></small>
                                 </label>
                             </div>
                         </div>

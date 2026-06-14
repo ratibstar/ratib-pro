@@ -53,9 +53,9 @@
                     <?php foreach ($perms as $perm) {
                         $permId = (int) $perm['id'];
                         ?>
-                    <tr data-module="<?php echo Rateb\App\Core\View::escape($module); ?>">
+                    <tr data-module="<?php echo Rateb\App\Core\View::escape($module); ?>"<?php echo ($perm['slug'] ?? '') === 'accounting.approve' ? ' class="table-warning"' : ''; ?>>
                         <td class="rateb-matrix-sticky">
-                            <div><?php echo Rateb\App\Core\View::escape(rateb_permission_label($perm)); ?></div>
+                            <div class="fw-semibold"><?php echo Rateb\App\Core\View::escape(rateb_permission_label($perm)); ?></div>
                             <small class="text-muted"><?php echo Rateb\App\Core\View::escape($perm['slug']); ?></small>
                         </td>
                         <?php foreach ($roles as $role) {
