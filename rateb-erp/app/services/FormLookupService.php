@@ -1,0 +1,293 @@
+<?php
+declare(strict_types=1);
+
+namespace Rateb\App\Services;
+
+use Rateb\App\Core\TenantContext;
+use Rateb\App\Helpers\LineItems;
+use Rateb\App\Models\Asset;
+use Rateb\App\Models\BankAccount;
+use Rateb\App\Models\ChartOfAccount;
+use Rateb\App\Models\CmsBlogAuthor;
+use Rateb\App\Models\CmsBlogCategory;
+use Rateb\App\Models\CmsFaqCategory;
+use Rateb\App\Models\CmsMenu;
+use Rateb\App\Models\CmsPage;
+use Rateb\App\Models\CmsSection;
+use Rateb\App\Models\CmsServiceCategory;
+use Rateb\App\Models\Contract;
+use Rateb\App\Models\CostCenter;
+use Rateb\App\Models\FiscalPeriod;
+use Rateb\App\Models\Inventory;
+use Rateb\App\Models\ProductCategory;
+use Rateb\App\Models\Rfq;
+use Rateb\App\Models\Supplier;
+use Rateb\App\Models\SupplierClassification;
+use Rateb\App\Models\Warehouse;
+
+/** @phpstan-type FormOption array{value: string|int, label: string} */
+final class FormLookupService
+{
+    /** @var array<string, list<FormOption>> */
+    private array $cache = [];
+
+    /**
+     * @param array<int, array<string, mixed>> $fields
+     * @return array<string, list<FormOption>>
+     */
+    public function forFields(array $fields): array
+    {
+        $needed = [];
+        foreach ($fields as $field) {
+            $lookup = (string) ($field['lookup'] ?? '');
+            if ($lookup !== '') {
+                $needed[$lookup] = true;
+            }
+        }
+        $out = [];
+        foreach (array_keys($needed) as $key) {
+            $out[$key] = $this->get($key);
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    public function get(string $lookup): array
+    {
+        if (isset($this->cache[$lookup])) {
+            return $this->cache[$lookup];
+        }
+        $options = match ($lookup) {
+            'companies' => $this->mapRows((new BillingService())->companyOptions(), 'id', 'name'),
+            'suppliers' => $this->mapRows((new Supplier())->all(500, 0), 'id', 'name'),
+            'warehouses' => $this->warehouseOptions(),
+            'cost_centers' => $this->costCenterOptions(),
+            'inventory' => $this->inventoryOptions(),
+            'product_categories' => $this->mapRows((new ProductCategory())->all(300, 0), 'id', 'name'),
+            'supplier_classifications' => $this->mapRows((new SupplierClassification())->all(200, 0), 'id', 'name'),
+            'rfq' => $this->rfqOptions(),
+            'contracts' => $this->contractOptions(),
+            'assets' => $this->assetOptions(),
+            'chart_of_accounts' => $this->coaOptions(),
+            'bank_accounts' => $this->mapRows((new BankAccount())->all(200, 0), 'id', 'name'),
+            'fiscal_periods' => $this->mapRows((new FiscalPeriod())->all(100, 0), 'id', 'name'),
+            'departments' => $this->departmentOptions(),
+            'permission_modules' => $this->moduleOptions(),
+            'asset_categories' => $this->assetCategoryOptions(),
+            'units' => $this->unitOptions(),
+            'currencies' => $this->staticOptions(['SAR', 'USD', 'EUR']),
+            'locales' => $this->staticOptions(['ar', 'en'], true),
+            'page_templates' => $this->staticOptions(['default', 'landing', 'blog', 'contact'], true),
+            'contract_types' => $this->staticOptions(['supply', 'service', 'lease', 'maintenance', 'other'], true),
+            'approval_statuses' => $this->staticOptions(['pending', 'approved', 'rejected'], true),
+            'maintenance_types' => $this->staticOptions(['preventive', 'corrective', 'calibration', 'inspection'], true),
+            'regulatory_statuses' => $this->staticOptions(['compliant', 'pending', 'non_compliant'], true),
+            'payment_methods' => $this->staticOptions(['bank_transfer', 'card', 'cash', 'cheque', 'online'], true),
+            'redirect_status_codes' => $this->staticOptions(['301', '302', '307', '308']),
+            'cms_pages' => $this->cmsPageOptions(),
+            'cms_sections' => $this->mapRows((new CmsSection())->all(500, 0), 'id', 'section_key'),
+            'cms_menus' => $this->mapRows((new CmsMenu())->all(100, 0), 'id', 'name_en'),
+            'cms_faq_categories' => $this->mapRows((new CmsFaqCategory())->all(200, 0), 'id', 'name_en'),
+            'cms_blog_categories' => $this->mapRows((new CmsBlogCategory())->all(200, 0), 'id', 'name_en'),
+            'cms_blog_authors' => $this->mapRows((new CmsBlogAuthor())->all(200, 0), 'id', 'name_en'),
+            'cms_service_categories' => $this->mapRows((new CmsServiceCategory())->all(200, 0), 'id', 'name_en'),
+            'kb_categories' => $this->distinctCategoryOptions('rateb_cms_kb_articles', 'category'),
+            'help_categories' => $this->distinctCategoryOptions('rateb_cms_help_articles', 'category'),
+            'career_departments' => $this->distinctCategoryOptions('rateb_cms_careers', 'department_en'),
+            'newsletter_segments' => $this->distinctCategoryOptions('rateb_cms_newsletter_segments', 'name_en'),
+            'setting_groups' => $this->staticOptions(['general', 'billing', 'email', 'sms', 'security', 'cms'], true),
+            default => [],
+        };
+        $this->cache[$lookup] = $options;
+        return $options;
+    }
+
+    /** @return list<FormOption> */
+    private function warehouseOptions(): array
+    {
+        $out = [];
+        foreach ((new Warehouse())->all(300, 0) as $row) {
+            $label = trim((string) ($row['code'] ?? '')) !== ''
+                ? ($row['code'] . ' — ' . ($row['name'] ?? ''))
+                : (string) ($row['name'] ?? '');
+            $out[] = ['value' => (int) $row['id'], 'label' => $label];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function costCenterOptions(): array
+    {
+        $out = [];
+        foreach ((new CostCenter())->all(300, 0) as $row) {
+            $name = rateb_locale() === 'ar' && !empty($row['name_ar']) ? $row['name_ar'] : ($row['name'] ?? '');
+            $out[] = ['value' => (int) $row['id'], 'label' => trim(($row['code'] ?? '') . ' — ' . $name)];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function inventoryOptions(): array
+    {
+        $out = [];
+        foreach ((new Inventory())->all(500, 0) as $row) {
+            $sku = trim((string) ($row['sku'] ?? ''));
+            $label = $sku !== '' ? ($sku . ' — ' . ($row['item_name'] ?? '')) : (string) ($row['item_name'] ?? '');
+            $out[] = ['value' => (int) $row['id'], 'label' => $label];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function rfqOptions(): array
+    {
+        $out = [];
+        foreach ((new Rfq())->all(300, 0) as $row) {
+            $out[] = ['value' => (int) $row['id'], 'label' => trim(($row['rfq_no'] ?? '') . ' — ' . ($row['title'] ?? ''))];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function contractOptions(): array
+    {
+        $out = [];
+        foreach ((new Contract())->all(300, 0) as $row) {
+            $out[] = ['value' => (int) $row['id'], 'label' => trim(($row['contract_no'] ?? '') . ' — ' . ($row['title'] ?? ''))];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function assetOptions(): array
+    {
+        $out = [];
+        foreach ((new Asset())->all(300, 0) as $row) {
+            $out[] = ['value' => (int) $row['id'], 'label' => trim(($row['asset_tag'] ?? '') . ' — ' . ($row['name'] ?? ''))];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function coaOptions(): array
+    {
+        $out = [];
+        foreach ((new ChartOfAccount())->all(500, 0) as $row) {
+            $name = rateb_locale() === 'ar' && !empty($row['name_ar']) ? $row['name_ar'] : ($row['name'] ?? '');
+            $out[] = ['value' => (int) $row['id'], 'label' => trim(($row['code'] ?? '') . ' — ' . $name)];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function departmentOptions(): array
+    {
+        $out = [];
+        foreach ((new ProcurementService())->departmentOptions() as $dept) {
+            $out[] = ['value' => $dept, 'label' => $dept];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function moduleOptions(): array
+    {
+        $out = [];
+        foreach (array_keys(PlanLimitService::moduleCatalog()) as $module) {
+            $out[] = ['value' => $module, 'label' => __($module)];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function assetCategoryOptions(): array
+    {
+        $preset = ['equipment', 'furniture', 'vehicle', 'it', 'medical', 'building', 'other'];
+        $cid = TenantContext::companyId() ?? 0;
+        $distinct = [];
+        if ($cid > 0) {
+            $rows = (new Asset())->query(
+                'SELECT DISTINCT category FROM rateb_assets WHERE company_id = :cid AND category IS NOT NULL AND category <> \'\' ORDER BY category',
+                ['cid' => $cid]
+            );
+            foreach ($rows as $row) {
+                $distinct[] = (string) $row['category'];
+            }
+        }
+        $merged = array_values(array_unique(array_merge($preset, $distinct)));
+        return $this->staticOptions($merged, true);
+    }
+
+    /** @return list<FormOption> */
+    private function unitOptions(): array
+    {
+        $out = [];
+        foreach (LineItems::unitOptions() as $unit) {
+            $out[] = ['value' => $unit, 'label' => __('unit_' . $unit)];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function cmsPageOptions(): array
+    {
+        $out = [];
+        foreach ((new CmsPage())->all(300, 0) as $row) {
+            $slug = (string) ($row['slug'] ?? '');
+            $title = rateb_locale() === 'ar' ? ($row['title_ar'] ?? $row['title_en'] ?? $slug) : ($row['title_en'] ?? $slug);
+            $out[] = ['value' => $slug, 'label' => $slug . ' — ' . $title];
+        }
+        return $out;
+    }
+
+    /** @return list<FormOption> */
+    private function distinctCategoryOptions(string $table, string $column): array
+    {
+        $db = \Rateb\App\Core\Database::connection();
+        $stmt = $db->query(
+            'SELECT DISTINCT `' . preg_replace('/[^a-z_]/', '', $column) . '` AS cat
+             FROM `' . preg_replace('/[^a-z_]/', '', $table) . '`
+             WHERE `' . preg_replace('/[^a-z_]/', '', $column) . '` IS NOT NULL
+               AND `' . preg_replace('/[^a-z_]/', '', $column) . '` <> \'\'
+             ORDER BY cat LIMIT 200'
+        );
+        $out = [];
+        foreach ($stmt->fetchAll() ?: [] as $row) {
+            $val = (string) ($row['cat'] ?? '');
+            if ($val !== '') {
+                $out[] = ['value' => $val, 'label' => $val];
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $rows
+     * @return list<FormOption>
+     */
+    private function mapRows(array $rows, string $valueKey, string $labelKey): array
+    {
+        $out = [];
+        foreach ($rows as $row) {
+            $label = (string) ($row[$labelKey] ?? '');
+            if ($label === '' && isset($row['id'])) {
+                $label = '#' . $row['id'];
+            }
+            $out[] = ['value' => $row[$valueKey] ?? '', 'label' => $label];
+        }
+        return $out;
+    }
+
+    /**
+     * @param list<string> $values
+     * @return list<FormOption>
+     */
+    private function staticOptions(array $values, bool $translate = false): array
+    {
+        $out = [];
+        foreach ($values as $value) {
+            $out[] = ['value' => $value, 'label' => $translate ? __($value) : $value];
+        }
+        return $out;
+    }
+}

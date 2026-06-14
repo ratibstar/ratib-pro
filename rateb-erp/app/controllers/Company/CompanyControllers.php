@@ -23,12 +23,12 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         $this->entityName = 'purchase_requests';
         $this->fields = [
             ['name' => 'title', 'label' => 'title', 'type' => 'text'],
-            ['name' => 'department', 'label' => 'department', 'type' => 'text'],
+            ['name' => 'department', 'label' => 'department', 'type' => 'fk', 'lookup' => 'departments'],
             ['name' => 'priority', 'label' => 'priority', 'type' => 'select', 'options' => ['low', 'medium', 'high', 'urgent']],
             ['name' => 'expected_date', 'label' => 'expected_date', 'type' => 'date'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'submitted', 'approved', 'rejected', 'cancelled']],
-            ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'options' => ['SAR', 'USD', 'EUR']],
-            ['name' => 'total_estimated', 'label' => 'estimated_total', 'type' => 'number'],
+            ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'lookup' => 'currencies'],
+            ['name' => 'total_estimated', 'label' => 'estimated_total', 'type' => 'number', 'readonly' => true],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea'],
         ];
     }
@@ -250,10 +250,10 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->entityName = 'purchase_orders';
         $this->tenantForeignKeys = ['supplier_id'];
         $this->fields = [
-            ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'number'],
-            ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'number'],
-            ['name' => 'cost_center_id', 'label' => 'cost_center', 'type' => 'number'],
-            ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'options' => ['SAR', 'USD', 'EUR']],
+            ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
+            ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses'],
+            ['name' => 'cost_center_id', 'label' => 'cost_center', 'type' => 'fk', 'lookup' => 'cost_centers'],
+            ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'lookup' => 'currencies'],
             ['name' => 'order_date', 'label' => 'order_date', 'type' => 'date'],
             ['name' => 'expected_date', 'label' => 'expected_date', 'type' => 'date'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled']],
@@ -647,8 +647,8 @@ final class QuotationsController extends \Rateb\App\Controllers\CrudController
         $this->entityName = 'quotations';
         $this->tenantForeignKeys = ['rfq_id', 'supplier_id'];
         $this->fields = [
-            ['name' => 'rfq_id', 'label' => 'RFQ ID', 'type' => 'number'],
-            ['name' => 'supplier_id', 'label' => 'Supplier ID', 'type' => 'number'],
+            ['name' => 'rfq_id', 'label' => 'rfq', 'type' => 'fk', 'lookup' => 'rfq'],
+            ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
             ['name' => 'quotation_no', 'label' => 'Quotation No', 'type' => 'text'],
             ['name' => 'amount', 'label' => 'Amount', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['submitted', 'under_review', 'accepted', 'rejected']],
@@ -674,8 +674,7 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
             ['name' => 'code', 'label' => 'Code', 'type' => 'text'],
             ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
             ['name' => 'phone', 'label' => 'Phone', 'type' => 'text'],
-            ['name' => 'classification_id', 'label' => 'supplier_classifications', 'type' => 'number'],
-            ['name' => 'performance_kpi', 'label' => 'performance_kpi', 'type' => 'number'],
+            ['name' => 'classification_id', 'label' => 'supplier_classifications', 'type' => 'fk', 'lookup' => 'supplier_classifications'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'inactive', 'blacklisted']],
         ];
     }
@@ -704,10 +703,12 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             ['name' => 'status', 'label' => 'status'],
         ];
         $this->fields = [
-            ['name' => 'warehouse_id', 'label' => 'Warehouse ID', 'type' => 'number'],
-            ['name' => 'item_name', 'label' => 'Item', 'type' => 'text'],
+            ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses', 'required' => true],
+            ['name' => 'category_id', 'label' => 'product_categories', 'type' => 'fk', 'lookup' => 'product_categories'],
+            ['name' => 'item_name', 'label' => 'Item', 'type' => 'text', 'required' => true],
             ['name' => 'sku', 'label' => 'SKU', 'type' => 'text'],
             ['name' => 'quantity', 'label' => 'Quantity', 'type' => 'number'],
+            ['name' => 'unit', 'label' => 'unit_of_measure', 'type' => 'select', 'lookup' => 'units', 'translate_options' => true],
             ['name' => 'unit_cost', 'label' => 'Unit Cost', 'type' => 'number'],
             ['name' => 'reorder_level', 'label' => 'reorder_level', 'type' => 'number'],
             ['name' => 'expiry_date', 'label' => 'expiry_date', 'type' => 'date'],
@@ -723,15 +724,12 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     public function create(): void
     {
         $this->guardManage();
-        $this->view($this->viewPrefix . '/form', [
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __($this->entityName),
             'item' => null,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'csrf' => Csrf::token(),
             'multipart' => true,
             'attachment' => $this->attachmentFieldData(null),
-        ], $this->layout());
+        ]), $this->layout());
     }
 
     public function edit(array $params): void
@@ -745,15 +743,12 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             return;
         }
 
-        $this->view($this->viewPrefix . '/form', [
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('edit') . ' ' . __($this->entityName),
             'item' => $item,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'csrf' => Csrf::token(),
             'multipart' => true,
             'attachment' => $this->attachmentFieldData($item),
-        ], $this->layout());
+        ]), $this->layout());
     }
 
     public function store(): void
@@ -876,8 +871,11 @@ final class AssetsController extends \Rateb\App\Controllers\CrudController
         $this->entityName = 'assets';
         $this->fields = [
             ['name' => 'asset_tag', 'label' => 'Tag', 'type' => 'text'],
-            ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
-            ['name' => 'category', 'label' => 'Category', 'type' => 'text'],
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'category', 'label' => 'Category', 'type' => 'fk', 'lookup' => 'asset_categories'],
+            ['name' => 'location', 'label' => 'location', 'type' => 'text'],
+            ['name' => 'purchase_date', 'label' => 'purchase_date', 'type' => 'date'],
+            ['name' => 'purchase_cost', 'label' => 'purchase_cost', 'type' => 'number'],
             ['name' => 'current_value', 'label' => 'Value', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'maintenance', 'retired', 'disposed']],
         ];
@@ -898,11 +896,13 @@ final class MedicalDevicesController extends \Rateb\App\Controllers\CrudControll
         $this->routePrefix = rateb_app_route('medical-devices');
         $this->entityName = 'medical_devices';
         $this->fields = [
-            ['name' => 'device_name', 'label' => 'Device', 'type' => 'text'],
+            ['name' => 'asset_id', 'label' => 'assets', 'type' => 'fk', 'lookup' => 'assets'],
+            ['name' => 'device_name', 'label' => 'Device', 'type' => 'text', 'required' => true],
             ['name' => 'manufacturer', 'label' => 'Manufacturer', 'type' => 'text'],
             ['name' => 'model_no', 'label' => 'Model', 'type' => 'text'],
             ['name' => 'serial_no', 'label' => 'Serial', 'type' => 'text'],
             ['name' => 'calibration_due', 'label' => 'Calibration Due', 'type' => 'date'],
+            ['name' => 'regulatory_status', 'label' => 'regulatory_status', 'type' => 'select', 'lookup' => 'regulatory_statuses'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['operational', 'maintenance', 'out_of_service']],
         ];
     }
@@ -932,8 +932,10 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
         ];
         $this->fields = [
             ['name' => 'contract_no', 'label' => 'Contract No', 'type' => 'text'],
-            ['name' => 'title', 'label' => 'Title', 'type' => 'text'],
-            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'number'],
+            ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true],
+            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers'],
+            ['name' => 'contract_type', 'label' => 'contract_type', 'type' => 'select', 'lookup' => 'contract_types'],
+            ['name' => 'approval_status', 'label' => 'approval_status', 'type' => 'select', 'lookup' => 'approval_statuses'],
             ['name' => 'start_date', 'label' => 'Start', 'type' => 'date'],
             ['name' => 'end_date', 'label' => 'End', 'type' => 'date'],
             ['name' => 'renewal_date', 'label' => 'renewal_date', 'type' => 'date'],
@@ -962,16 +964,12 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
     /** @return array<string, mixed> */
     private function contractFormData(?array $item): array
     {
-        return [
+        return $this->formViewData([
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('contracts'),
             'item' => $item,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'csrf' => Csrf::token(),
-            'suppliers' => (new \Rateb\App\Models\Supplier())->all(200, 0),
             'multipart' => true,
             'attachment' => $this->attachmentFieldData($item),
-        ];
+        ]);
     }
 
     /** @param array<string, mixed>|null $item */

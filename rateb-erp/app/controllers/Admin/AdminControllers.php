@@ -782,7 +782,7 @@ final class PermissionsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
             ['name' => 'name_ar', 'label' => 'name_ar', 'type' => 'text'],
             ['name' => 'slug', 'label' => 'Slug', 'type' => 'text'],
-            ['name' => 'module', 'label' => 'Module', 'type' => 'text'],
+            ['name' => 'module', 'label' => 'Module', 'type' => 'select', 'lookup' => 'permission_modules'],
             ['name' => 'description', 'label' => 'description', 'type' => 'textarea'],
             ['name' => 'description_ar', 'label' => 'description_ar', 'type' => 'textarea'],
         ];
@@ -840,8 +840,8 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'company_id', 'label' => 'company_id', 'type' => 'company_select'],
             ['name' => 'subscription_id', 'label' => 'subscriptions', 'type' => 'subscription_select'],
             ['name' => 'amount', 'label' => 'amount', 'type' => 'number'],
-            ['name' => 'currency', 'label' => 'currency', 'type' => 'text'],
-            ['name' => 'method', 'label' => 'payment_method', 'type' => 'text'],
+            ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'lookup' => 'currencies'],
+            ['name' => 'method', 'label' => 'payment_method', 'type' => 'select', 'lookup' => 'payment_methods'],
             ['name' => 'reference_no', 'label' => 'reference_no', 'type' => 'text'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['pending', 'completed', 'failed', 'refunded']],
             ['name' => 'paid_at', 'label' => 'paid_at', 'type' => 'datetime-local'],
@@ -1467,7 +1467,7 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = 'admin/suppliers';
         $this->entityName = 'suppliers';
         $this->fields = [
-            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'number'],
+            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'fk', 'lookup' => 'companies', 'required' => true],
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
             ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
             ['name' => 'phone', 'label' => 'Phone', 'type' => 'text'],
@@ -1485,10 +1485,10 @@ final class AssetsController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = 'admin/assets';
         $this->entityName = 'assets';
         $this->fields = [
-            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'number'],
+            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'fk', 'lookup' => 'companies', 'required' => true],
             ['name' => 'asset_tag', 'label' => 'Tag', 'type' => 'text'],
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
-            ['name' => 'category', 'label' => 'Category', 'type' => 'text'],
+            ['name' => 'category', 'label' => 'Category', 'type' => 'fk', 'lookup' => 'asset_categories'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'maintenance', 'retired', 'disposed']],
         ];
     }
@@ -1511,10 +1511,12 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'status', 'label' => 'status'],
         ];
         $this->fields = [
-            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'number'],
+            ['name' => 'company_id', 'label' => 'company_id', 'type' => 'fk', 'lookup' => 'companies', 'required' => true],
             ['name' => 'contract_no', 'label' => 'Contract No', 'type' => 'text'],
             ['name' => 'title', 'label' => 'Title', 'type' => 'text'],
-            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'number'],
+            ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers'],
+            ['name' => 'contract_type', 'label' => 'contract_type', 'type' => 'select', 'lookup' => 'contract_types'],
+            ['name' => 'approval_status', 'label' => 'approval_status', 'type' => 'select', 'lookup' => 'approval_statuses'],
             ['name' => 'start_date', 'label' => 'Start', 'type' => 'date'],
             ['name' => 'end_date', 'label' => 'End', 'type' => 'date'],
             ['name' => 'renewal_date', 'label' => 'renewal_date', 'type' => 'date'],
@@ -1551,16 +1553,13 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
                 ['cid' => $companyId]
             );
         }
-        return [
+        return array_merge($this->formViewData([
             'title' => ($item ? __('edit') : __('create')) . ' ' . __('contracts'),
             'item' => $item,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'csrf' => Csrf::token(),
             'suppliers' => $suppliers,
             'multipart' => true,
             'attachment' => $this->attachmentFieldData($item),
-        ];
+        ]), []);
     }
 
     /** @param array<string, mixed>|null $item */

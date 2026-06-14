@@ -3,6 +3,7 @@ $isEdit = !empty($item);
 $action = $isEdit
     ? rateb_app_url('bank-accounts/' . (int) $item['id'])
     : rateb_app_url('bank-accounts');
+$coaOptions = $lookups ?? [];
 ?>
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
 <form method="post" action="<?php echo $action; ?>" class="rateb-card">
@@ -11,7 +12,7 @@ $action = $isEdit
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label"><?php echo __('name'); ?></label>
+                <label class="form-label"><?php echo __('name'); ?> <span class="text-danger">*</span></label>
                 <input type="text" name="name" class="form-control" required maxlength="120"
                        value="<?php echo Rateb\App\Core\View::escape((string) ($item['name'] ?? '')); ?>">
             </div>
@@ -25,6 +26,19 @@ $action = $isEdit
                 <input type="text" name="account_number" class="form-control" maxlength="50"
                        value="<?php echo Rateb\App\Core\View::escape((string) ($item['account_number'] ?? '')); ?>">
             </div>
+            <?php if ($isEdit && $coaOptions !== []) { ?>
+            <div class="col-md-6">
+                <label class="form-label"><?php echo __('chart_of_accounts'); ?></label>
+                <select name="chart_account_id" class="form-select" disabled>
+                    <option value=""><?php echo __('select'); ?></option>
+                    <?php foreach ($coaOptions as $opt) { ?>
+                    <option value="<?php echo (int) $opt['value']; ?>"<?php echo (int)($item['chart_account_id'] ?? 0) === (int)$opt['value'] ? ' selected' : ''; ?>>
+                        <?php echo Rateb\App\Core\View::escape($opt['label']); ?>
+                    </option>
+                    <?php } ?>
+                </select>
+            </div>
+            <?php } ?>
             <?php if (!$isEdit) { ?>
             <div class="col-md-6">
                 <label class="form-label"><?php echo __('opening_balance'); ?></label>

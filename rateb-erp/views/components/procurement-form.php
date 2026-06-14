@@ -76,14 +76,13 @@ $currencies = ['SAR', 'USD', 'EUR'];
                     <label class="form-label rateb-form-label" for="f_<?php echo Rateb\App\Core\View::escape($name); ?>">
                         <?php echo Rateb\App\Core\View::escape(rateb_label((string) ($field['label'] ?? $name))); ?>
                     </label>
-                    <?php if ($name === 'department') { ?>
-                    <input class="form-control rateb-form-control" type="text" list="rateb_departments"
-                           id="f_department" name="department" value="<?php echo Rateb\App\Core\View::escape($value); ?>">
-                    <datalist id="rateb_departments">
+                    <?php                     if ($name === 'department') { ?>
+                    <select class="form-select rateb-form-control" id="f_department" name="department">
+                        <option value=""><?php echo __('select'); ?></option>
                         <?php foreach ($departments as $dept) { ?>
-                        <option value="<?php echo Rateb\App\Core\View::escape($dept); ?>"></option>
+                        <option value="<?php echo Rateb\App\Core\View::escape($dept); ?>"<?php echo (string)$value === (string)$dept ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($dept); ?></option>
                         <?php } ?>
-                    </datalist>
+                    </select>
                     <?php } elseif ($name === 'supplier_id' && $suppliers !== []) { ?>
                     <select class="form-select rateb-form-control" id="f_supplier_id" name="supplier_id">
                         <option value="">—</option>

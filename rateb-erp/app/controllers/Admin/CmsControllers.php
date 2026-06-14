@@ -75,7 +75,7 @@ final class CmsPagesController extends \Rateb\App\Controllers\CrudController
             ['name' => 'slug', 'label' => 'slug'],
             ['name' => 'title_en', 'label' => 'title_en'],
             ['name' => 'title_ar', 'label' => 'title_ar'],
-            ['name' => 'template', 'label' => 'template'],
+            ['name' => 'template', 'label' => 'template', 'type' => 'select', 'lookup' => 'page_templates'],
             ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'published', 'scheduled']],
             ['name' => 'content_en', 'label' => 'content_en', 'type' => 'wysiwyg'],
             ['name' => 'content_ar', 'label' => 'content_ar', 'type' => 'wysiwyg'],
@@ -92,7 +92,7 @@ final class CmsSectionsController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = 'admin/cms/sections';
         $this->entityName = 'cms_sections';
         $this->fields = [
-            ['name' => 'page_slug', 'label' => 'page_slug'],
+            ['name' => 'page_slug', 'label' => 'page_slug', 'type' => 'fk', 'lookup' => 'cms_pages'],
             ['name' => 'section_key', 'label' => 'section_key'],
             ['name' => 'title_en', 'label' => 'title_en'],
             ['name' => 'title_ar', 'label' => 'title_ar'],
@@ -113,8 +113,8 @@ final class CmsBlocksController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = 'admin/cms/blocks';
         $this->entityName = 'cms_blocks';
         $this->fields = [
-            ['name' => 'section_id', 'label' => 'section_id', 'type' => 'number'],
-            ['name' => 'block_type', 'label' => 'block_type'],
+            ['name' => 'section_id', 'label' => 'section_id', 'type' => 'fk', 'lookup' => 'cms_sections'],
+            ['name' => 'block_type', 'label' => 'block_type', 'type' => 'select', 'options' => ['text', 'image', 'cta', 'features', 'stats', 'html'], 'translate_options' => false],
             ['name' => 'title_en', 'label' => 'title_en'],
             ['name' => 'title_ar', 'label' => 'title_ar'],
             ['name' => 'content_en', 'label' => 'content_en', 'type' => 'textarea'],
@@ -134,7 +134,7 @@ final class CmsMenuItemsController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = 'admin/cms/menu-items';
         $this->entityName = 'cms_menu';
         $this->fields = [
-            ['name' => 'menu_id', 'label' => 'menu_id', 'type' => 'number'],
+            ['name' => 'menu_id', 'label' => 'menu_id', 'type' => 'fk', 'lookup' => 'cms_menus'],
             ['name' => 'label_en', 'label' => 'label_en'],
             ['name' => 'label_ar', 'label' => 'label_ar'],
             ['name' => 'url', 'label' => 'url'],
@@ -279,7 +279,7 @@ final class CmsFaqsController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = 'admin/cms/faqs';
         $this->entityName = 'cms_faqs';
         $this->fields = [
-            ['name' => 'category_id', 'type' => 'number'],
+            ['name' => 'category_id', 'label' => 'cms_faq_categories', 'type' => 'fk', 'lookup' => 'cms_faq_categories'],
             ['name' => 'question_en'], ['name' => 'question_ar'],
             ['name' => 'answer_en', 'type' => 'textarea'], ['name' => 'answer_ar', 'type' => 'textarea'],
             ['name' => 'sort_order', 'type' => 'number'],
@@ -535,7 +535,7 @@ final class CmsSeoController extends \Rateb\App\Controllers\CrudController
 final class CmsRedirectsController extends \Rateb\App\Controllers\CrudController
 {
     public function __construct() { $this->model = new CmsRedirect(); $this->viewPrefix = 'admin/cms/redirects'; $this->routePrefix = 'admin/cms/redirects'; $this->entityName = 'cms_redirects';
-        $this->fields = [['name' => 'from_path'], ['name' => 'to_path'], ['name' => 'status_code', 'type' => 'number'], ['name' => 'is_active', 'type' => 'select', 'options' => ['1', '0']]]; }
+        $this->fields = [['name' => 'from_path'], ['name' => 'to_path'], ['name' => 'status_code', 'type' => 'select', 'lookup' => 'redirect_status_codes'], ['name' => 'is_active', 'type' => 'select', 'options' => ['1', '0']]]; }
 }
 
 final class CmsMediaController extends Controller
@@ -784,19 +784,19 @@ final class CmsPartnersController extends \Rateb\App\Controllers\CrudController
 final class CmsCareersController extends \Rateb\App\Controllers\CrudController
 {
     public function __construct() { $this->model = new CmsCareer(); $this->viewPrefix = 'admin/cms/careers'; $this->routePrefix = 'admin/cms/careers'; $this->entityName = 'cms_careers';
-        $this->fields = [['name' => 'slug'], ['name' => 'title_en'], ['name' => 'title_ar'], ['name' => 'department_en'], ['name' => 'location_en'], ['name' => 'description_en', 'type' => 'textarea'], ['name' => 'status', 'type' => 'select', 'options' => ['open', 'closed']]]; }
+        $this->fields = [['name' => 'slug'], ['name' => 'title_en'], ['name' => 'title_ar'], ['name' => 'department_en', 'type' => 'fk', 'lookup' => 'career_departments'], ['name' => 'location_en'], ['name' => 'description_en', 'type' => 'textarea'], ['name' => 'status', 'type' => 'select', 'options' => ['open', 'closed']]]; }
 }
 
 final class CmsKbArticlesController extends \Rateb\App\Controllers\CrudController
 {
     public function __construct() { $this->model = new CmsKbArticle(); $this->viewPrefix = 'admin/cms/kb-articles'; $this->routePrefix = 'admin/cms/kb-articles'; $this->entityName = 'cms_kb';
-        $this->fields = [['name' => 'slug'], ['name' => 'title_en'], ['name' => 'title_ar'], ['name' => 'category'], ['name' => 'content_en', 'type' => 'textarea'], ['name' => 'status', 'type' => 'select', 'options' => ['draft', 'published']]]; }
+        $this->fields = [['name' => 'slug'], ['name' => 'title_en'], ['name' => 'title_ar'], ['name' => 'category', 'type' => 'fk', 'lookup' => 'kb_categories'], ['name' => 'content_en', 'type' => 'textarea'], ['name' => 'status', 'type' => 'select', 'options' => ['draft', 'published']]]; }
 }
 
 final class CmsHelpArticlesController extends \Rateb\App\Controllers\CrudController
 {
     public function __construct() { $this->model = new CmsHelpArticle(); $this->viewPrefix = 'admin/cms/help-articles'; $this->routePrefix = 'admin/cms/help-articles'; $this->entityName = 'cms_help';
-        $this->fields = [['name' => 'slug'], ['name' => 'title_en'], ['name' => 'title_ar'], ['name' => 'content_en', 'type' => 'textarea'], ['name' => 'status', 'type' => 'select', 'options' => ['draft', 'published']]]; }
+        $this->fields = [['name' => 'slug'], ['name' => 'title_en'], ['name' => 'title_ar'], ['name' => 'category', 'type' => 'fk', 'lookup' => 'help_categories'], ['name' => 'content_en', 'type' => 'textarea'], ['name' => 'status', 'type' => 'select', 'options' => ['draft', 'published']]]; }
 }
 
 final class CmsSystemStatusController extends \Rateb\App\Controllers\CrudController

@@ -85,16 +85,25 @@ abstract class CrudController extends Controller
         }
     }
 
+    /** @return array<string, mixed> */
+    protected function formViewData(array $extra = []): array
+    {
+        $fields = $extra['fields'] ?? $this->fields;
+        return array_merge([
+            'routePrefix' => $this->routePrefix,
+            'fields' => $fields,
+            'csrf' => Csrf::token(),
+            'lookups' => (new \Rateb\App\Services\FormLookupService())->forFields($fields),
+        ], $extra);
+    }
+
     public function create(): void
     {
         $this->guardManage();
-        $this->view($this->viewPrefix . '/form', [
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('create') . ' ' . __($this->entityName),
             'item' => null,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'csrf' => Csrf::token(),
-        ], $this->layout());
+        ]), $this->layout());
     }
 
     public function store(): void
@@ -129,13 +138,10 @@ abstract class CrudController extends Controller
             return;
         }
 
-        $this->view($this->viewPrefix . '/form', [
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
             'title' => __('edit') . ' ' . __($this->entityName),
             'item' => $item,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'csrf' => Csrf::token(),
-        ], $this->layout());
+        ]), $this->layout());
     }
 
     public function update(array $params): void

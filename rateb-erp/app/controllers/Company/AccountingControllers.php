@@ -1758,6 +1758,7 @@ final class BankAccountsController extends Controller
             'title' => __('new_bank_account'),
             'item' => null,
             'csrf' => Csrf::token(),
+            'lookups' => (new \Rateb\App\Services\FormLookupService())->get('chart_of_accounts'),
         ], 'main');
     }
 
@@ -1806,6 +1807,7 @@ final class BankAccountsController extends Controller
             'title' => __('edit_bank_account'),
             'item' => $item,
             'csrf' => Csrf::token(),
+            'lookups' => (new \Rateb\App\Services\FormLookupService())->get('chart_of_accounts'),
         ], 'main');
     }
 
@@ -1891,6 +1893,7 @@ final class CostCentersController extends \Rateb\App\Controllers\CrudController
             ['name' => 'code', 'label' => 'code', 'type' => 'text'],
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
             ['name' => 'name_ar', 'label' => 'name_ar', 'type' => 'text'],
+            ['name' => 'parent_id', 'label' => 'parent', 'type' => 'fk', 'lookup' => 'cost_centers'],
         ];
     }
 

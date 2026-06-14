@@ -1,6 +1,7 @@
 ﻿<?php
 $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int)$item['id']) : rateb_url($routePrefix);
+$lookups = $lookups ?? (new \Rateb\App\Services\FormLookupService())->forFields($fields);
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
@@ -10,31 +11,13 @@ $action = $isEdit ? rateb_url($routePrefix . '/' . (int)$item['id']) : rateb_url
             <div class="row g-3">
                 <?php foreach ($fields as $field) {
                     $name = $field['name'];
-                    $type = $field['type'] ?? 'text';
-                    $value = $item[$name] ?? '';
-                    ?>
-                <div class="col-md-6">
-                    <label class="form-label rateb-form-label" for="f_<?php echo Rateb\App\Core\View::escape($name); ?>">
-                        <?php echo Rateb\App\Core\View::escape(rateb_label((string) ($field['label'] ?? $name))); ?>
-                    </label>
-                    <?php if ($name === 'supplier_id' && !empty($suppliers)) { ?>
-                    <select class="form-select rateb-form-control" id="f_supplier_id" name="supplier_id">
-                        <option value="">—</option>
-                        <?php foreach ($suppliers as $s) { ?>
-                        <option value="<?php echo (int) $s['id']; ?>"<?php echo (int)$value === (int)$s['id'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($s['name'] ?? ''); ?></option>
-                        <?php } ?>
-                    </select>
-                    <?php } elseif ($type === 'select') { ?>
-                    <select class="form-select rateb-form-control" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>" name="<?php echo Rateb\App\Core\View::escape($name); ?>">
-                        <?php foreach (($field['options'] ?? []) as $opt) { ?>
-                        <option value="<?php echo Rateb\App\Core\View::escape($opt); ?>"<?php echo (string)$value === (string)$opt ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($opt); ?></option>
-                        <?php } ?>
-                    </select>
-                    <?php } else { ?>
-                    <input class="form-control rateb-form-control" type="<?php echo Rateb\App\Core\View::escape($type); ?>" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>" name="<?php echo Rateb\App\Core\View::escape($name); ?>" value="<?php echo Rateb\App\Core\View::escape($value); ?>">
-                    <?php } ?>
-                </div>
-                <?php } ?>
+                    $value = $item[$name] ?? ($field['default'] ?? '');
+                    Rateb\App\Core\View::partial('form-field', [
+                        'field' => $field,
+                        'value' => $value,
+                        'lookups' => $lookups,
+                    ]);
+                } ?>
                 <?php if (!empty($attachment) && is_array($attachment)) {
                     Rateb\App\Core\View::partial('entity-attachment-field', $attachment);
                 } ?>
