@@ -1307,6 +1307,11 @@ final class EmailTemplatesController extends \Rateb\App\Controllers\CrudControll
             ['name' => 'subject', 'label' => 'Subject', 'type' => 'text'],
             ['name' => 'body_html', 'label' => 'HTML Body', 'type' => 'textarea'],
         ];
+        $this->indexFields = [
+            ['name' => 'slug', 'label' => 'slug', 'type' => 'slug'],
+            ['name' => 'subject', 'label' => 'subject', 'type' => 'bidi_text'],
+            ['name' => 'body_html', 'label' => 'body_preview', 'type' => 'html_preview'],
+        ];
     }
 }
 

@@ -94,6 +94,7 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                     <?php foreach ($columns as $col) {
                         $val = $row[$col['name']] ?? '';
                         $colType = (string) ($col['type'] ?? '');
+                        $colName = (string) ($col['name'] ?? '');
                         if ($colType === 'barcode') {
                             $barcode = trim((string) $val);
                             ?>
@@ -110,6 +111,12 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                         <span class="text-muted">—</span>
                         <?php } ?>
                     </td>
+                        <?php } elseif ($colType === 'slug' || $colName === 'slug') { ?>
+                    <td dir="ltr" class="font-monospace small text-muted"><?php echo Rateb\App\Core\View::escape($val); ?></td>
+                        <?php } elseif ($colType === 'html_preview') { ?>
+                    <td class="rateb-ar-text rateb-bidi-mixed text-muted small"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_html_preview') ? rateb_html_preview((string) $val) : $val); ?></td>
+                        <?php } elseif ($colType === 'bidi_text') { ?>
+                    <td class="rateb-ar-text rateb-bidi-mixed"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_bidi_cell_text') ? rateb_bidi_cell_text((string) $val) : $val); ?></td>
                         <?php } else { ?>
                     <td class="rateb-ar-text"><?php echo Rateb\App\Core\View::escape($val); ?></td>
                         <?php } ?>

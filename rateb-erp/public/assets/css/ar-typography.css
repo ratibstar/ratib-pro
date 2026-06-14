@@ -30,3 +30,8 @@ html[dir="rtl"] input[type="datetime-local"] {
     text-align: left;
     unicode-bidi: isolate;
 }
+
+.rateb-bidi-mixed {
+    unicode-bidi: plaintext;
+    white-space: normal;
+}

@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260614-accounting-reports-fix');
+define('RATEB_ASSET_BUILD', '20260614-email-templates-bidi');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -118,6 +118,26 @@ if (!function_exists('rateb_can')) {
             $cache[$userId] = (new \Rateb\App\Services\AuthorizationService())->userPermissionSlugs($userId);
         }
         return in_array($slug, $cache[$userId], true);
+    }
+}
+
+if (!function_exists('rateb_html_preview')) {
+    function rateb_html_preview(string $html, int $max = 100): string
+    {
+        $text = trim(html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
+        if (mb_strlen($text) > $max) {
+            return mb_substr($text, 0, $max) . '…';
+        }
+        return $text;
+    }
+}
+
+if (!function_exists('rateb_bidi_cell_text')) {
+    /** Keeps {placeholders} readable in RTL/LTR table cells. */
+    function rateb_bidi_cell_text(string $text): string
+    {
+        return preg_replace('/\{[^}]+\}/u', "\u{200E}$0\u{200E}", $text) ?? $text;
     }
 }
 

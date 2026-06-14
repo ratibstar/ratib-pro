@@ -14,6 +14,7 @@ return [
     'audit_logs' => 'Audit Logs',
     'settings' => 'Settings',
     'email_templates' => 'Email Templates',
+    'body_preview' => 'Body preview',
     'sms_templates' => 'SMS Templates',
     'notifications' => 'Notifications',
     'support_tickets' => 'Support Tickets',

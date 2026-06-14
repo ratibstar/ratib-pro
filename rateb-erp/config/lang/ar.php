@@ -14,6 +14,7 @@ return [
     'audit_logs' => 'سجل التدقيق',
     'settings' => 'الإعدادات',
     'email_templates' => 'قوالب البريد',
+    'body_preview' => 'معاينة النص',
     'sms_templates' => 'قوالب الرسائل',
     'notifications' => 'الإشعارات',
     'support_tickets' => 'تذاكر الدعم',
