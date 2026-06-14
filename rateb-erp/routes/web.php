@@ -28,6 +28,7 @@ use Rateb\App\Controllers\Admin\AdminWorkflowsController;
 use Rateb\App\Controllers\Admin\JournalEntriesController as AdminJournalEntriesController;
 use Rateb\App\Controllers\Admin\ExecutiveDashboardController;
 use Rateb\App\Core\Middleware\ErpAuthMiddleware;
+use Rateb\App\Core\Middleware\RequirePermissionMiddleware;
 
 require_once RATEB_ROOT . '/routes/middleware-helpers.php';
 

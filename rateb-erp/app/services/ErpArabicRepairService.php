@@ -20,6 +20,7 @@ final class ErpArabicRepairService
 
         $updated = 0;
         $updated += $this->repairPermissions($pdo);
+        $updated += $this->repairChartOfAccounts($pdo);
         $updated += $this->repairDemoOperational($pdo);
 
         $sample = '';
@@ -41,6 +42,7 @@ final class ErpArabicRepairService
                 "SELECT name_ar AS v FROM rateb_permissions WHERE slug = 'dashboard.view' LIMIT 1",
                 "SELECT name_ar AS v FROM rateb_permissions WHERE slug = 'inventory.manage' LIMIT 1",
                 "SELECT name AS v FROM rateb_warehouses WHERE code = 'WH-MAIN' LIMIT 1",
+                "SELECT name_ar AS v FROM rateb_chart_of_accounts WHERE code = '1220' LIMIT 1",
             ];
             foreach ($checks as $sql) {
                 $stmt = $pdo->query($sql);
@@ -76,6 +78,20 @@ final class ErpArabicRepairService
         return $updated;
     }
 
+    private function repairChartOfAccounts(PDO $pdo): int
+    {
+        $labels = $this->chartOfAccountLabels();
+        $updated = 0;
+        $stmt = $pdo->prepare(
+            'UPDATE rateb_chart_of_accounts SET name = :en, name_ar = :ar WHERE code = :code'
+        );
+        foreach ($labels as $code => [$nameEn, $nameAr]) {
+            $stmt->execute(['en' => $nameEn, 'ar' => $nameAr, 'code' => $code]);
+            $updated += $stmt->rowCount();
+        }
+        return $updated;
+    }
+
     private function repairDemoOperational(PDO $pdo): int
     {
         $updated = 0;
@@ -90,6 +106,10 @@ final class ErpArabicRepairService
         $patch(
             'UPDATE rateb_warehouses SET name = :n, location = :l WHERE code = :c',
             ['n' => 'المستودع الرئيسي', 'l' => 'الرياض', 'c' => 'WH-MAIN']
+        );
+        $patch(
+            'UPDATE rateb_warehouses SET name = :n WHERE name LIKE :bad',
+            ['n' => 'المستودع الرئيسي', 'bad' => '%?%']
         );
 
         $patch(
@@ -131,6 +151,52 @@ final class ErpArabicRepairService
         );
 
         return $updated;
+    }
+
+    /** @return array<string, array{0: string, 1: string}> */
+    private function chartOfAccountLabels(): array
+    {
+        return [
+            '1000' => ['Assets', 'الأصول'],
+            '1100' => ['Cash on Hand', 'النقدية / الصندوق'],
+            '1150' => ['Bank Accounts', 'الحسابات البنكية'],
+            '1200' => ['Accounts Receivable', 'ذمم مدينة'],
+            '1210' => ['VAT Recoverable', 'ضريبة قابلة للاسترداد'],
+            '1220' => ['Advances to Suppliers', 'سلف موردين'],
+            '1300' => ['Inventory', 'المخزون'],
+            '1400' => ['Prepaid Expenses', 'مصروفات مقدمة'],
+            '1500' => ['Fixed Assets', 'الأصول الثابتة'],
+            '1510' => ['Equipment', 'معدات'],
+            '1520' => ['Vehicles', 'مركبات'],
+            '1530' => ['Buildings', 'مباني'],
+            '1590' => ['Accumulated Depreciation', 'مجمع الإهلاك'],
+            '2000' => ['Liabilities', 'الخصوم'],
+            '2100' => ['Accounts Payable', 'ذمم دائنة'],
+            '2110' => ['Customer Advances', 'دفعات مقدمة من العملاء'],
+            '2200' => ['VAT Payable', 'ضريبة مستحقة'],
+            '2300' => ['Accrued Expenses', 'مصروفات مستحقة'],
+            '2400' => ['Salaries Payable', 'رواتب مستحقة'],
+            '2500' => ['Short-term Loans', 'قروض قصيرة الأجل'],
+            '3000' => ['Equity', 'حقوق الملكية'],
+            '3100' => ['Retained Earnings', 'أرباح محتجزة'],
+            '3200' => ['Share Capital', 'رأس المال'],
+            '3300' => ['Current Year Profit/Loss', 'أرباح/خسائر العام الحالي'],
+            '4000' => ['Revenue', 'الإيرادات'],
+            '4100' => ['Sales Revenue', 'إيرادات المبيعات'],
+            '4200' => ['Service Revenue', 'إيرادات الخدمات'],
+            '4300' => ['Other Income', 'إيرادات أخرى'],
+            '4900' => ['Sales Returns & Allowances', 'مردودات ومسموحات المبيعات'],
+            '5000' => ['Expenses', 'المصروفات'],
+            '5100' => ['Procurement Expense', 'مصروفات المشتريات'],
+            '5200' => ['Cost of Goods Sold', 'تكلفة البضاعة المباعة'],
+            '5300' => ['Salaries & Wages', 'الرواتب والأجور'],
+            '5400' => ['Rent Expense', 'مصروف الإيجار'],
+            '5500' => ['Utilities', 'مرافق (كهرباء، ماء، …)'],
+            '5600' => ['Depreciation Expense', 'مصروف الإهلاك'],
+            '5700' => ['Bank & Finance Charges', 'عمولات بنكية ومالية'],
+            '5800' => ['General & Administrative', 'مصروفات عمومية وإدارية'],
+            '5900' => ['Marketing & Sales', 'مصروفات تسويق ومبيعات'],
+        ];
     }
 
     /** @return array<string, array{0: string, 1: string}> */

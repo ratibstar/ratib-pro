@@ -52,12 +52,8 @@ final class ErpDatabaseService
             $log[] = 'CMS Arabic repair warning: ' . $e->getMessage();
         }
         try {
-            if ((new ErpArabicRepairService())->needsRepair()) {
-                $repair = (new ErpArabicRepairService())->repair();
-                $log[] = 'ERP Arabic repair: ' . $repair['updated'] . ' row(s); dashboard.view=' . $repair['permissions_sample'];
-            } else {
-                $log[] = 'ERP Arabic repair: skipped (permissions OK).';
-            }
+            $repair = (new ErpArabicRepairService())->repair();
+            $log[] = 'ERP Arabic repair: ' . $repair['updated'] . ' row(s); dashboard.view=' . $repair['permissions_sample'];
         } catch (\Throwable $e) {
             $log[] = 'ERP Arabic repair warning: ' . $e->getMessage();
         }

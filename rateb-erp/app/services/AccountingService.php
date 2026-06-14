@@ -85,7 +85,11 @@ final class AccountingService
             if ($exists) {
                 $id = (int) $exists['id'];
                 $codeToId[$def['code']] = $id;
-                $coa->update($id, ['is_active' => 1]);
+                $coa->update($id, [
+                    'is_active' => 1,
+                    'name' => $def['name'],
+                    'name_ar' => $def['name_ar'],
+                ]);
                 continue;
             }
             $parentId = null;
