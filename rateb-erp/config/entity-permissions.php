@@ -188,6 +188,23 @@ return [
         'view' => 'accounting.view',
         'manage' => 'accounting.view',
     ],
+    'vat-report' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
+    'cash-vouchers' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+        'post' => 'accounting.post',
+    ],
+    'fiscal-periods' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+        'post' => 'accounting.post',
+    ],
     'reports' => [
         'module' => 'reports',
         'view' => 'reports.view',

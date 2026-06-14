@@ -60,6 +60,13 @@ final class StockMovementService
             }
 
             $db->commit();
+            if (in_array($movementType, ['in', 'out'], true)) {
+                try {
+                    (new AccountingService())->autoPostStockMovement($movementId);
+                } catch (\Throwable $e) {
+                    // Accounting post is best-effort; stock movement already saved.
+                }
+            }
             return $movementId;
         } catch (\Throwable $e) {
             $db->rollBack();

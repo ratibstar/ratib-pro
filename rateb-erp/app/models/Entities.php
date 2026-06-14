@@ -118,6 +118,24 @@ final class JournalLine extends Model
     protected array $fillable = ['journal_entry_id', 'account_id', 'debit', 'credit', 'memo'];
 }
 
+final class FiscalPeriod extends Model
+{
+    protected string $table = 'rateb_fiscal_periods';
+    protected bool $tenantScoped = true;
+    protected array $fillable = ['company_id', 'name', 'start_date', 'end_date', 'status', 'closed_at', 'closed_by'];
+}
+
+final class CashVoucher extends Model
+{
+    protected string $table = 'rateb_cash_vouchers';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'company_id', 'voucher_no', 'voucher_type', 'voucher_date', 'amount', 'party_name',
+        'description', 'description_ar', 'counter_account_id', 'status', 'journal_entry_id',
+        'created_by', 'posted_at',
+    ];
+}
+
 final class SupplierEvaluation extends Model
 {
     protected string $table = 'rateb_supplier_evaluations';

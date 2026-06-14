@@ -105,6 +105,25 @@ final class AccountingDashboardController extends Controller
             'csrf' => Csrf::token(),
         ], 'main');
     }
+
+    public function vatReport(): void
+    {
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $from = trim((string) ($_GET['from'] ?? ''));
+        $to = trim((string) ($_GET['to'] ?? ''));
+        $report = (new AccountingService())->vatReport(
+            $companyId,
+            $from !== '' ? $from : null,
+            $to !== '' ? $to : null
+        );
+        $this->view('company/accounting/vat-report', [
+            'title' => __('vat_report'),
+            'report' => $report,
+            'from' => $from,
+            'to' => $to,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
 }
 
 final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudController
@@ -399,5 +418,160 @@ final class JournalEntriesController extends Controller
     private function descriptionAr(): string
     {
         return trim((string) ($_POST['description_ar'] ?? '')) ?: 'قيد يدوي';
+    }
+}
+
+final class CashVouchersController extends Controller
+{
+    public function index(): void
+    {
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $this->view('company/cash-vouchers/index', [
+            'title' => __('cash_vouchers'),
+            'items' => (new AccountingService())->listCashVouchers($companyId),
+            'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('cash-vouchers'),
+            'canPost' => rateb_can_post_entity('accounting'),
+        ], 'main');
+    }
+
+    public function create(): void
+    {
+        if (!rateb_can_manage_entity('cash-vouchers')) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(rateb_app_url('cash-vouchers'));
+        }
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        (new AccountingService())->ensureDefaultAccounts($companyId);
+        $accounts = (new ChartOfAccount())->query(
+            'SELECT id, code, name, name_ar FROM rateb_chart_of_accounts WHERE company_id = :cid AND is_active = 1 ORDER BY code',
+            ['cid' => $companyId]
+        );
+        $this->view('company/cash-vouchers/form', [
+            'title' => __('new_cash_voucher'),
+            'voucher' => null,
+            'accounts' => $accounts,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        rateb_require_post('cash-vouchers');
+        if (!rateb_can_manage_entity('cash-vouchers') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('cash-vouchers'));
+        }
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $type = (string) ($_POST['voucher_type'] ?? 'receipt');
+        if (!in_array($type, ['receipt', 'payment'], true)) {
+            $type = 'receipt';
+        }
+        $amount = (float) ($_POST['amount'] ?? 0);
+        $counter = (int) ($_POST['counter_account_id'] ?? 0);
+        if ($amount <= 0 || $counter < 1) {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_app_url('cash-vouchers/create'));
+        }
+        $id = (new AccountingService())->createCashVoucherDraft($companyId, [
+            'voucher_type' => $type,
+            'voucher_date' => trim((string) ($_POST['voucher_date'] ?? '')) ?: date('Y-m-d'),
+            'amount' => $amount,
+            'party_name' => trim((string) ($_POST['party_name'] ?? '')),
+            'description' => trim((string) ($_POST['description'] ?? '')) ?: ($type === 'receipt' ? 'Cash receipt' : 'Cash payment'),
+            'description_ar' => trim((string) ($_POST['description_ar'] ?? '')),
+            'counter_account_id' => $counter,
+        ], (int) SessionManager::get('rateb_user_id', 0) ?: null);
+        (new AuditService())->log('create', 'cash_voucher', $id, ['status' => 'draft']);
+        SessionManager::flash('success', __('voucher_saved'));
+        Response::redirect(rateb_app_url('cash-vouchers/' . $id));
+    }
+
+    public function show(array $params): void
+    {
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $id = (int) ($params['id'] ?? 0);
+        $voucher = (new JournalEntry())->queryOne(
+            'SELECT v.*, a.code AS counter_code, a.name AS counter_name, a.name_ar AS counter_name_ar
+             FROM rateb_cash_vouchers v
+             JOIN rateb_chart_of_accounts a ON a.id = v.counter_account_id
+             WHERE v.id = :id AND v.company_id = :cid',
+            ['id' => $id, 'cid' => $companyId]
+        );
+        if (!$voucher) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view('company/cash-vouchers/show', [
+            'title' => __('cash_vouchers'),
+            'voucher' => $voucher,
+            'csrf' => Csrf::token(),
+            'canPost' => rateb_can_post_entity('accounting'),
+        ], 'main');
+    }
+
+    public function postVoucher(array $params): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('cash-vouchers'));
+        }
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $id = (int) ($params['id'] ?? 0);
+        if ((new AccountingService())->postCashVoucher($id, $companyId)) {
+            (new AuditService())->log('post', 'cash_voucher', $id, []);
+            SessionManager::flash('success', __('voucher_posted'));
+        } else {
+            SessionManager::flash('error', __('voucher_post_failed'));
+        }
+        Response::redirect(rateb_app_url('cash-vouchers/' . $id));
+    }
+
+    public function voidVoucher(array $params): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('cash-vouchers'));
+        }
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $id = (int) ($params['id'] ?? 0);
+        if ((new AccountingService())->voidCashVoucher($id, $companyId)) {
+            (new AuditService())->log('void', 'cash_voucher', $id, []);
+            SessionManager::flash('success', __('voucher_voided'));
+        } else {
+            SessionManager::flash('error', __('voucher_void_failed'));
+        }
+        Response::redirect(rateb_app_url('cash-vouchers/' . $id));
+    }
+}
+
+final class FiscalPeriodsController extends Controller
+{
+    public function index(): void
+    {
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $this->view('company/fiscal-periods/index', [
+            'title' => __('fiscal_periods'),
+            'items' => (new AccountingService())->listFiscalPeriods($companyId),
+            'csrf' => Csrf::token(),
+            'canPost' => rateb_can_post_entity('accounting'),
+        ], 'main');
+    }
+
+    public function close(array $params): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('fiscal-periods'));
+        }
+        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $id = (int) ($params['id'] ?? 0);
+        if ((new AccountingService())->closeFiscalPeriod($id, $companyId, (int) SessionManager::get('rateb_user_id', 0) ?: null)) {
+            (new AuditService())->log('close', 'fiscal_period', $id, []);
+            SessionManager::flash('success', __('fiscal_period_closed'));
+        } else {
+            SessionManager::flash('error', __('fiscal_period_close_failed'));
+        }
+        Response::redirect(rateb_app_url('fiscal-periods'));
     }
 }

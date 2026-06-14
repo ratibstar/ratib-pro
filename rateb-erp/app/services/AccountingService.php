@@ -19,6 +19,8 @@ final class AccountingService
         'revenue' => ['code' => '4100', 'name' => 'Revenue', 'name_ar' => 'الإيرادات', 'type' => 'revenue'],
         'procurement' => ['code' => '5100', 'name' => 'Procurement Expense', 'name_ar' => 'مصروفات المشتريات', 'type' => 'expense'],
         'inventory' => ['code' => '1300', 'name' => 'Inventory', 'name_ar' => 'المخزون', 'type' => 'asset'],
+        'vat_input' => ['code' => '1210', 'name' => 'VAT Recoverable', 'name_ar' => 'ضريبة قابلة للاسترداد', 'type' => 'asset'],
+        'cogs' => ['code' => '5200', 'name' => 'Cost of Goods Sold', 'name_ar' => 'تكلفة البضاعة المباعة', 'type' => 'expense'],
     ];
 
     public function normalizeCompanyId($companyId): ?int
@@ -140,7 +142,7 @@ final class AccountingService
             'Invoice ' . ($invoice['invoice_no'] ?? ''),
             'فاتورة ' . ($invoice['invoice_no'] ?? ''),
             (string) ($invoice['issued_at'] ?? date('Y-m-d'))
-        );
+        ) !== null;
     }
 
     public function postPayment(array $payment): bool
@@ -167,7 +169,7 @@ final class AccountingService
         ], 'Payment ' . ($payment['reference_no'] ?? $payment['id']),
             'دفعة ' . ($payment['reference_no'] ?? $payment['id']),
             date('Y-m-d', strtotime((string) ($payment['paid_at'] ?? $payment['created_at'] ?? 'now')))
-        );
+        ) !== null;
     }
 
     public function autoPostPurchaseOrder(int $purchaseOrderId): bool
@@ -194,6 +196,8 @@ final class AccountingService
         }
 
         $total = (float) ($po['total_amount'] ?? 0);
+        $tax = (float) ($po['tax_amount'] ?? 0);
+        $net = max(0, $total - $tax);
         if ($total <= 0) {
             return false;
         }
@@ -202,19 +206,25 @@ final class AccountingService
         $debitCode = $status === 'received' ? '1300' : '5100';
         $debitAccount = $this->accountIdByCode($companyId, $debitCode);
         $ap = $this->accountIdByCode($companyId, '2100');
+        $vatInput = $this->accountIdByCode($companyId, '1210');
         if (!$debitAccount || !$ap) {
             return false;
         }
 
         $debitMemo = $status === 'received' ? 'Inventory' : 'Procurement expense';
+        $lines = [
+            ['account_id' => $debitAccount, 'debit' => $net > 0 ? $net : $total, 'credit' => 0, 'memo' => $debitMemo . ' PO ' . ($po['order_no'] ?? '')],
+        ];
+        if ($tax > 0 && $vatInput) {
+            $lines[] = ['account_id' => $vatInput, 'debit' => $tax, 'credit' => 0, 'memo' => 'Input VAT'];
+        }
+        $lines[] = ['account_id' => $ap, 'debit' => 0, 'credit' => $total, 'memo' => 'AP'];
 
-        return $this->createPostedEntry($companyId, 'purchase_order', (int) $po['id'], [
-            ['account_id' => $debitAccount, 'debit' => $total, 'credit' => 0, 'memo' => $debitMemo . ' PO ' . ($po['order_no'] ?? '')],
-            ['account_id' => $ap, 'debit' => 0, 'credit' => $total, 'memo' => 'AP'],
-        ], 'Purchase order ' . ($po['order_no'] ?? ''),
+        return $this->createPostedEntry($companyId, 'purchase_order', (int) $po['id'], $lines,
+            'Purchase order ' . ($po['order_no'] ?? ''),
             'أمر شراء ' . ($po['order_no'] ?? ''),
             (string) ($po['order_date'] ?? date('Y-m-d'))
-        );
+        ) !== null;
     }
 
     /** @param array<int, array{account_id:int,debit:float,credit:float,memo?:string}> $lines */
@@ -226,9 +236,9 @@ final class AccountingService
         string $description,
         string $descriptionAr,
         string $entryDate
-    ): bool {
+    ): ?int {
         if (!$this->isBalanced($lines)) {
-            return false;
+            return null;
         }
 
         $entryModel = new JournalEntry();
@@ -260,7 +270,82 @@ final class AccountingService
             ]);
         }
 
-        return true;
+        return (int) $entryId;
+    }
+
+    public function autoPostStockMovement(int $movementId): bool
+    {
+        $row = (new JournalEntry())->queryOne(
+            'SELECT m.*, i.item_name, i.unit_cost, i.company_id
+             FROM rateb_stock_movements m
+             JOIN rateb_inventory i ON i.id = m.inventory_id
+             WHERE m.id = :id LIMIT 1',
+            ['id' => $movementId]
+        );
+        if (!$row) {
+            return false;
+        }
+        return $this->postStockMovement((array) $row);
+    }
+
+    public function postStockMovement(array $movement): bool
+    {
+        $companyId = (int) ($movement['company_id'] ?? 0);
+        $type = (string) ($movement['movement_type'] ?? '');
+        if (!in_array($type, ['in', 'out'], true)) {
+            return false;
+        }
+        if ($this->entryExists('stock_movement', (int) $movement['id'])) {
+            return false;
+        }
+
+        $qty = (float) ($movement['quantity'] ?? 0);
+        $unitCost = (float) ($movement['unit_cost'] ?? 0);
+        $amount = round($qty * $unitCost, 2);
+        if ($amount <= 0) {
+            return false;
+        }
+
+        $inventory = $this->accountIdByCode($companyId, '1300');
+        $ap = $this->accountIdByCode($companyId, '2100');
+        $cogs = $this->accountIdByCode($companyId, '5200');
+        if (!$inventory) {
+            return false;
+        }
+
+        $itemName = (string) ($movement['item_name'] ?? 'Item');
+        if ($type === 'in') {
+            if (!$ap) {
+                return false;
+            }
+            $lines = [
+                ['account_id' => $inventory, 'debit' => $amount, 'credit' => 0, 'memo' => 'Stock in ' . $itemName],
+                ['account_id' => $ap, 'debit' => 0, 'credit' => $amount, 'memo' => 'GRN'],
+            ];
+            $desc = 'Stock receipt ' . $itemName;
+            $descAr = 'استلام مخزون ' . $itemName;
+        } else {
+            $expense = $cogs ?: $this->accountIdByCode($companyId, '5100');
+            if (!$expense) {
+                return false;
+            }
+            $lines = [
+                ['account_id' => $expense, 'debit' => $amount, 'credit' => 0, 'memo' => 'Stock out ' . $itemName],
+                ['account_id' => $inventory, 'debit' => 0, 'credit' => $amount, 'memo' => 'Issue'],
+            ];
+            $desc = 'Stock issue ' . $itemName;
+            $descAr = 'صرف مخزون ' . $itemName;
+        }
+
+        return $this->createPostedEntry(
+            $companyId,
+            'stock_movement',
+            (int) $movement['id'],
+            $lines,
+            $desc,
+            $descAr,
+            date('Y-m-d', strtotime((string) ($movement['created_at'] ?? 'now')))
+        ) !== null;
     }
 
     /** @param array<int, array{account_id:int,debit:float,credit:float,memo?:string}> $lines */
@@ -600,6 +685,247 @@ final class AccountingService
             $cr += (float) $line['credit'];
         }
         return abs($dr - $cr) < 0.01 && $dr > 0;
+    }
+
+    /** @return array{output_vat:float,input_vat:float,net_vat:float,invoice_tax:float,po_tax:float} */
+    public function vatReport(?int $companyId, ?string $fromDate = null, ?string $toDate = null): array
+    {
+        $this->ensureDefaultAccounts($companyId);
+        $output = $this->accountBalanceInPeriod($companyId, '2200', $fromDate, $toDate, 'credit');
+        $input = $this->accountBalanceInPeriod($companyId, '1210', $fromDate, $toDate, 'debit');
+        $pdo = Database::connection();
+        $invSql = "SELECT COALESCE(SUM(tax_amount), 0) AS t FROM rateb_invoices WHERE status IN ('paid','sent','overdue')";
+        $poSql = "SELECT COALESCE(SUM(tax_amount), 0) AS t FROM rateb_purchase_orders WHERE status IN ('received','confirmed','partial')";
+        $params = [];
+        if ($companyId !== null) {
+            $invSql .= ' AND company_id = :cid';
+            $poSql .= ' AND company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        if ($fromDate) {
+            $invSql .= ' AND issued_at >= :from';
+            $poSql .= ' AND order_date >= :from';
+            $params['from'] = $fromDate;
+        }
+        if ($toDate) {
+            $invSql .= ' AND issued_at <= :to';
+            $poSql .= ' AND order_date <= :to';
+            $params['to'] = $toDate;
+        }
+        $invStmt = $pdo->prepare($invSql);
+        $invStmt->execute($params);
+        $poStmt = $pdo->prepare($poSql);
+        $poStmt->execute($params);
+        $invoiceTax = (float) (($invStmt->fetch(PDO::FETCH_ASSOC) ?: [])['t'] ?? 0);
+        $poTax = (float) (($poStmt->fetch(PDO::FETCH_ASSOC) ?: [])['t'] ?? 0);
+        return [
+            'output_vat' => $output,
+            'input_vat' => $input,
+            'net_vat' => $output - $input,
+            'invoice_tax' => $invoiceTax,
+            'po_tax' => $poTax,
+        ];
+    }
+
+    private function accountBalanceInPeriod(?int $companyId, string $code, ?string $from, ?string $to, string $side): float
+    {
+        $accountId = $this->accountIdByCode($companyId, $code);
+        if (!$accountId) {
+            return 0.0;
+        }
+        $sql = "SELECT COALESCE(SUM(l.debit), 0) AS dr, COALESCE(SUM(l.credit), 0) AS cr
+                FROM rateb_journal_lines l
+                JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = 'posted'
+                WHERE l.account_id = :aid AND e.company_id <=> :cid";
+        $params = ['aid' => $accountId, 'cid' => $companyId];
+        if ($from) {
+            $sql .= ' AND e.entry_date >= :from';
+            $params['from'] = $from;
+        }
+        if ($to) {
+            $sql .= ' AND e.entry_date <= :to';
+            $params['to'] = $to;
+        }
+        $row = (new JournalEntry())->queryOne($sql, $params) ?: ['dr' => 0, 'cr' => 0];
+        $dr = (float) ($row['dr'] ?? 0);
+        $cr = (float) ($row['cr'] ?? 0);
+        return $side === 'credit' ? $cr - $dr : $dr - $cr;
+    }
+
+    public function ensureCurrentFiscalPeriod(?int $companyId): void
+    {
+        if ($companyId === null || $companyId < 1) {
+            return;
+        }
+        $year = (int) date('Y');
+        $start = $year . '-01-01';
+        $end = $year . '-12-31';
+        $exists = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_fiscal_periods WHERE company_id = :cid AND start_date = :s AND end_date = :e LIMIT 1',
+            ['cid' => $companyId, 's' => $start, 'e' => $end]
+        );
+        if ($exists) {
+            return;
+        }
+        $pdo = Database::connection();
+        $pdo->prepare(
+            'INSERT INTO rateb_fiscal_periods (company_id, name, start_date, end_date, status) VALUES (:cid, :n, :s, :e, :st)'
+        )->execute([
+            'cid' => $companyId,
+            'n' => (string) $year,
+            's' => $start,
+            'e' => $end,
+            'st' => 'open',
+        ]);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listFiscalPeriods(?int $companyId): array
+    {
+        if ($companyId === null) {
+            return [];
+        }
+        $this->ensureCurrentFiscalPeriod($companyId);
+        return (new JournalEntry())->query(
+            'SELECT * FROM rateb_fiscal_periods WHERE company_id = :cid ORDER BY start_date DESC',
+            ['cid' => $companyId]
+        );
+    }
+
+    public function closeFiscalPeriod(int $periodId, ?int $companyId, ?int $userId): bool
+    {
+        $row = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_fiscal_periods WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $periodId, 'cid' => $companyId]
+        );
+        if (!$row || ($row['status'] ?? '') !== 'open') {
+            return false;
+        }
+        (new JournalEntry())->query(
+            'UPDATE rateb_fiscal_periods SET status = :st, closed_at = NOW(), closed_by = :uid WHERE id = :id',
+            ['st' => 'closed', 'uid' => $userId, 'id' => $periodId]
+        );
+        return true;
+    }
+
+    /** @param array<string, mixed> $data */
+    public function createCashVoucherDraft(?int $companyId, array $data, ?int $createdBy): int
+    {
+        $this->ensureDefaultAccounts($companyId);
+        $pdo = Database::connection();
+        $no = $this->nextVoucherNo($companyId, (string) ($data['voucher_type'] ?? 'receipt'));
+        $stmt = $pdo->prepare(
+            'INSERT INTO rateb_cash_vouchers
+             (company_id, voucher_no, voucher_type, voucher_date, amount, party_name, description, description_ar, counter_account_id, status, created_by)
+             VALUES (:cid, :no, :type, :dt, :amt, :party, :desc, :desc_ar, :acct, :st, :uid)'
+        );
+        $stmt->execute([
+            'cid' => $companyId,
+            'no' => $no,
+            'type' => $data['voucher_type'],
+            'dt' => $data['voucher_date'],
+            'amt' => $data['amount'],
+            'party' => $data['party_name'] ?? null,
+            'desc' => $data['description'],
+            'desc_ar' => $data['description_ar'] ?? null,
+            'acct' => $data['counter_account_id'],
+            'st' => 'draft',
+            'uid' => $createdBy,
+        ]);
+        return (int) $pdo->lastInsertId();
+    }
+
+    public function postCashVoucher(int $voucherId, ?int $companyId): bool
+    {
+        $v = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $voucherId, 'cid' => $companyId]
+        );
+        if (!$v || ($v['status'] ?? '') !== 'draft') {
+            return false;
+        }
+        $amount = (float) ($v['amount'] ?? 0);
+        if ($amount <= 0) {
+            return false;
+        }
+        $cash = $this->accountIdByCode($companyId, '1100');
+        $counter = (int) ($v['counter_account_id'] ?? 0);
+        if (!$cash || $counter < 1) {
+            return false;
+        }
+        $type = (string) ($v['voucher_type'] ?? 'receipt');
+        if ($type === 'receipt') {
+            $lines = [
+                ['account_id' => $cash, 'debit' => $amount, 'credit' => 0, 'memo' => 'Receipt'],
+                ['account_id' => $counter, 'debit' => 0, 'credit' => $amount, 'memo' => 'Receipt offset'],
+            ];
+        } else {
+            $lines = [
+                ['account_id' => $counter, 'debit' => $amount, 'credit' => 0, 'memo' => 'Payment'],
+                ['account_id' => $cash, 'debit' => 0, 'credit' => $amount, 'memo' => 'Cash out'],
+            ];
+        }
+        $entryId = $this->createPostedEntry(
+            $companyId,
+            'cash_voucher',
+            $voucherId,
+            $lines,
+            (string) $v['description'],
+            (string) ($v['description_ar'] ?? $v['description']),
+            (string) $v['voucher_date']
+        );
+        if ($entryId === null) {
+            return false;
+        }
+        Database::connection()->prepare(
+            'UPDATE rateb_cash_vouchers SET status = :st, journal_entry_id = :jid, posted_at = NOW() WHERE id = :id'
+        )->execute(['st' => 'posted', 'jid' => $entryId, 'id' => $voucherId]);
+        return true;
+    }
+
+    public function voidCashVoucher(int $voucherId, ?int $companyId): bool
+    {
+        $v = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_cash_vouchers WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $voucherId, 'cid' => $companyId]
+        );
+        if (!$v || ($v['status'] ?? '') !== 'posted') {
+            return false;
+        }
+        $jid = (int) ($v['journal_entry_id'] ?? 0);
+        if ($jid > 0) {
+            $this->voidPostedEntry($jid, $companyId);
+        }
+        Database::connection()->prepare(
+            'UPDATE rateb_cash_vouchers SET status = :st WHERE id = :id'
+        )->execute(['st' => 'void', 'id' => $voucherId]);
+        return true;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listCashVouchers(?int $companyId, int $limit = 100): array
+    {
+        if ($companyId === null) {
+            return [];
+        }
+        return (new JournalEntry())->query(
+            'SELECT v.*, a.code AS counter_code, a.name AS counter_name, a.name_ar AS counter_name_ar
+             FROM rateb_cash_vouchers v
+             JOIN rateb_chart_of_accounts a ON a.id = v.counter_account_id
+             WHERE v.company_id = :cid ORDER BY v.id DESC LIMIT ' . max(1, min(500, $limit)),
+            ['cid' => $companyId]
+        );
+    }
+
+    private function nextVoucherNo(?int $companyId, string $type): string
+    {
+        $prefix = $type === 'payment' ? 'PV' : 'RV';
+        $row = (new JournalEntry())->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_cash_vouchers WHERE company_id = :cid AND voucher_type = :t',
+            ['cid' => $companyId, 't' => $type]
+        );
+        $n = (int) ($row['c'] ?? 0) + 1;
+        return $prefix . '-' . ($companyId ?? '0') . '-' . str_pad((string) $n, 5, '0', STR_PAD_LEFT);
     }
 
     private function nextEntryNo(?int $companyId): string

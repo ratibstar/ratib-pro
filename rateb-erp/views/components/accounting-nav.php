@@ -10,6 +10,9 @@ $tabs = [
     ['path' => rateb_app_route('accounting/accounts-receivable'), 'label' => __('accounts_receivable'), 'match' => [rateb_app_route('accounting/accounts-receivable')]],
     ['path' => rateb_app_route('accounting/profit-loss'), 'label' => __('profit_loss'), 'match' => [rateb_app_route('accounting/profit-loss')]],
     ['path' => rateb_app_route('accounting/balance-sheet'), 'label' => __('balance_sheet'), 'match' => [rateb_app_route('accounting/balance-sheet')]],
+    ['path' => rateb_app_route('accounting/vat-report'), 'label' => __('vat_report'), 'match' => [rateb_app_route('accounting/vat-report')]],
+    ['path' => rateb_app_route('cash-vouchers'), 'label' => __('cash_vouchers'), 'match' => [rateb_app_route('cash-vouchers')]],
+    ['path' => rateb_app_route('fiscal-periods'), 'label' => __('fiscal_periods'), 'match' => [rateb_app_route('fiscal-periods')]],
 ];
 if ($accountingActive === 'admin' || rateb_is_super_admin()) {
     $tabs[] = ['path' => 'admin/invoices', 'label' => __('invoices'), 'match' => ['admin/invoices']];
@@ -41,6 +44,9 @@ $isActive = static function (array $tab) use ($route): bool {
             if (!rateb_is_super_admin() && $accountingActive !== 'admin') {
                 $pathKey = str_replace('admin/ops/', '', $tab['path']);
                 $pathKey = preg_replace('#^admin/#', '', $pathKey);
+                if (strpos($pathKey, 'accounting/') === 0) {
+                    $pathKey = substr($pathKey, strlen('accounting/'));
+                }
                 if (!rateb_can_view_entity($pathKey)) {
                     continue;
                 }

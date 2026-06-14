@@ -23,6 +23,8 @@ use Rateb\App\Controllers\Company\StockMovementsController;
 use Rateb\App\Controllers\Company\DocumentsController;
 use Rateb\App\Controllers\Company\WorkflowsController;
 use Rateb\App\Controllers\Company\JournalEntriesController as CompanyJournalEntriesController;
+use Rateb\App\Controllers\Company\CashVouchersController as CompanyCashVouchersController;
+use Rateb\App\Controllers\Company\FiscalPeriodsController as CompanyFiscalPeriodsController;
 use Rateb\App\Controllers\Company\InventoryBatchesController;
 use Rateb\App\Controllers\Company\InventoryAuditsController;
 use Rateb\App\Controllers\Company\InventoryCodesController;
@@ -93,6 +95,7 @@ $router->get($app('accounting/accounts-payable'), [CompanyAccountingDashboardCon
 $router->get($app('accounting/accounts-receivable'), [CompanyAccountingDashboardController::class, 'accountsReceivable'], rateb_erp_mw('accounting', '', 'accounts-receivable'));
 $router->get($app('accounting/profit-loss'), [CompanyAccountingDashboardController::class, 'profitLoss'], rateb_erp_mw('accounting', '', 'profit-loss'));
 $router->get($app('accounting/balance-sheet'), [CompanyAccountingDashboardController::class, 'balanceSheet'], rateb_erp_mw('accounting', '', 'balance-sheet'));
+$router->get($app('accounting/vat-report'), [CompanyAccountingDashboardController::class, 'vatReport'], rateb_erp_mw('accounting', '', 'vat-report'));
 $router->get($app('chart-of-accounts'), [CompanyChartOfAccountsController::class, 'index'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->get($app('chart-of-accounts/create'), [CompanyChartOfAccountsController::class, 'create'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->post($app('chart-of-accounts'), [CompanyChartOfAccountsController::class, 'store'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
@@ -108,6 +111,16 @@ $router->post($app('journal-entries/{id}'), [CompanyJournalEntriesController::cl
 $router->post($app('journal-entries/{id}/post'), [CompanyJournalEntriesController::class, 'postEntry'], rateb_erp_mw('accounting', 'accounting.post', 'journal-entries'));
 $router->post($app('journal-entries/{id}/void'), [CompanyJournalEntriesController::class, 'voidEntry'], rateb_erp_mw('accounting', 'accounting.post', 'journal-entries'));
 $router->get($app('journal-entries/{id}'), [CompanyJournalEntriesController::class, 'show'], rateb_erp_mw('accounting', '', 'journal-entries'));
+
+$router->get($app('cash-vouchers'), [CompanyCashVouchersController::class, 'index'], rateb_erp_mw('accounting', '', 'cash-vouchers'));
+$router->get($app('cash-vouchers/create'), [CompanyCashVouchersController::class, 'create'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
+$router->post($app('cash-vouchers'), [CompanyCashVouchersController::class, 'store'], rateb_erp_mw('accounting', 'accounting.manage', 'cash-vouchers'));
+$router->get($app('cash-vouchers/{id}'), [CompanyCashVouchersController::class, 'show'], rateb_erp_mw('accounting', '', 'cash-vouchers'));
+$router->post($app('cash-vouchers/{id}/post'), [CompanyCashVouchersController::class, 'postVoucher'], rateb_erp_mw('accounting', 'accounting.post', 'cash-vouchers'));
+$router->post($app('cash-vouchers/{id}/void'), [CompanyCashVouchersController::class, 'voidVoucher'], rateb_erp_mw('accounting', 'accounting.post', 'cash-vouchers'));
+
+$router->get($app('fiscal-periods'), [CompanyFiscalPeriodsController::class, 'index'], rateb_erp_mw('accounting', '', 'fiscal-periods'));
+$router->post($app('fiscal-periods/{id}/close'), [CompanyFiscalPeriodsController::class, 'close'], rateb_erp_mw('accounting', 'accounting.post', 'fiscal-periods'));
 
 $router->get($app('reports'), [ReportsController::class, 'index'], rateb_erp_mw('reports', '', 'reports'));
 $router->get($app('reports/export'), [ReportsController::class, 'export'], rateb_erp_mw('reports', 'reports.export', 'reports'));
