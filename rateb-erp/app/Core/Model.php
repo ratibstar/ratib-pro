@@ -130,8 +130,15 @@ abstract class Model
     public function create(array $data): int
     {
         $tenantValue = null;
+        $tenantExplicitNull = false;
         if ($this->tenantScoped) {
-            if (!empty($data[$this->tenantColumn])) {
+            if (array_key_exists($this->tenantColumn, $data)
+                && ($data[$this->tenantColumn] === null || $data[$this->tenantColumn] === '')) {
+                if (!TenantContext::isSuperAdmin()) {
+                    throw new \RuntimeException('Company context required for tenant-scoped create.');
+                }
+                $tenantExplicitNull = true;
+            } elseif (!empty($data[$this->tenantColumn])) {
                 $tenantValue = (int) $data[$this->tenantColumn];
             } else {
                 $companyId = TenantContext::companyId();
@@ -147,7 +154,9 @@ abstract class Model
         $data = $this->filterFillable($data);
 
         if ($this->tenantScoped) {
-            if ($tenantValue !== null && $tenantValue > 0) {
+            if ($tenantExplicitNull) {
+                $data[$this->tenantColumn] = null;
+            } elseif ($tenantValue !== null && $tenantValue > 0) {
                 $data[$this->tenantColumn] = $tenantValue;
             } elseif (empty($data[$this->tenantColumn]) || (int) $data[$this->tenantColumn] < 1) {
                 throw new \RuntimeException('Company context required for tenant-scoped create.');
