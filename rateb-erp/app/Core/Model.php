@@ -12,6 +12,8 @@ abstract class Model
     protected string $primaryKey = 'id';
     /** @var array<int, string> */
     protected array $fillable = [];
+    /** @var array<int, string> Columns used for list text search (defaults to fillable). */
+    protected array $searchable = [];
     protected bool $tenantScoped = false;
     protected string $tenantColumn = 'company_id';
 
@@ -77,7 +79,7 @@ abstract class Model
         return $row ?: null;
     }
 
-    public function all(int $limit = 100, int $offset = 0, array $filters = []): array
+    public function all(int $limit = 100, int $offset = 0, array $filters = [], string $search = ''): array
     {
         $sql = "SELECT * FROM {$this->table} WHERE 1=1";
         $params = [];
@@ -90,9 +92,14 @@ abstract class Model
             if ($value === null || $value === '') {
                 continue;
             }
+            if (!preg_match('/^[a-z_]+$/', (string) $column)) {
+                continue;
+            }
             $sql .= " AND {$column} = :f_{$column}";
             $params["f_{$column}"] = $value;
         }
+
+        $sql .= $this->buildSearchClause($search, $params);
 
         $sql .= " ORDER BY {$this->primaryKey} DESC LIMIT :limit OFFSET :offset";
         $stmt = $this->db->prepare($sql);
@@ -105,7 +112,7 @@ abstract class Model
         return $stmt->fetchAll();
     }
 
-    public function count(array $filters = []): int
+    public function count(array $filters = [], string $search = ''): int
     {
         $sql = "SELECT COUNT(*) AS c FROM {$this->table} WHERE 1=1";
         $params = [];
@@ -118,13 +125,58 @@ abstract class Model
             if ($value === null || $value === '') {
                 continue;
             }
+            if (!preg_match('/^[a-z_]+$/', (string) $column)) {
+                continue;
+            }
             $sql .= " AND {$column} = :f_{$column}";
             $params["f_{$column}"] = $value;
         }
 
+        $sql .= $this->buildSearchClause($search, $params);
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return (int) ($stmt->fetch()['c'] ?? 0);
+    }
+
+    /** @return array<int, string> */
+    protected function searchableColumns(): array
+    {
+        if ($this->searchable !== []) {
+            return $this->searchable;
+        }
+        $skip = ['password', 'password_hash', 'token', 'payload', 'remember_token', 'api_token'];
+        $cols = ['id'];
+        foreach ($this->fillable as $col) {
+            if (!in_array($col, $skip, true)) {
+                $cols[] = $col;
+            }
+        }
+        return array_values(array_unique($cols));
+    }
+
+    /** @param array<string, mixed> $params */
+    protected function buildSearchClause(string $search, array &$params, string $alias = ''): string
+    {
+        $term = trim($search);
+        if ($term === '') {
+            return '';
+        }
+        $cols = $this->searchableColumns();
+        if ($cols === []) {
+            return '';
+        }
+        $prefix = $alias !== '' ? $alias . '.' : '';
+        $parts = [];
+        foreach ($cols as $col) {
+            if (!preg_match('/^[a-z_]+$/', $col)) {
+                continue;
+            }
+            $key = 'search_' . $col;
+            $parts[] = "CAST({$prefix}{$col} AS CHAR) LIKE :{$key}";
+            $params[$key] = '%' . $term . '%';
+        }
+        return $parts === [] ? '' : ' AND (' . implode(' OR ', $parts) . ')';
     }
 
     public function create(array $data): int

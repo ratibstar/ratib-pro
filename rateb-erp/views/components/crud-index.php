@@ -58,7 +58,12 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
         <?php } ?>
     </div>
     <?php } ?>
-    <div class="rateb-card-body p-0">
+    <div class="rateb-card-body p-0" data-rateb-server-search="1">
+        <?php Rateb\App\Core\View::partial('table-search', [
+            'mode' => 'server',
+            'search' => $search ?? '',
+            'routePrefix' => $routePrefix ?? '',
+        ]); ?>
         <div class="table-responsive">
             <table class="table rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
                 <thead>

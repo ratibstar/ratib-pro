@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260614-coa-full-standard');
+define('RATEB_ASSET_BUILD', '20260614-table-search');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -172,6 +172,38 @@ if (!function_exists('rateb_resolve_ops_company_id')) {
 
         $ctx = \Rateb\App\Core\TenantContext::companyId();
         return $ctx !== null && $ctx > 0 ? (int) $ctx : 0;
+    }
+}
+
+/** Query params preserved across paginated list links (search, filters). */
+if (!function_exists('rateb_list_query_except')) {
+    /** @return array<string, string> */
+    function rateb_list_query_except(array $except = []): array
+    {
+        $except = array_merge($except, ['page']);
+        $keep = ['q', 'company_id', 'status', 'date_from', 'date_to', 'from', 'to'];
+        $out = [];
+        foreach ($keep as $key) {
+            if (in_array($key, $except, true)) {
+                continue;
+            }
+            if (isset($_GET[$key]) && (string) $_GET[$key] !== '') {
+                $out[$key] = (string) $_GET[$key];
+            }
+        }
+        return $out;
+    }
+}
+
+if (!function_exists('rateb_list_url')) {
+    function rateb_list_url(string $path, array $query = []): string
+    {
+        $url = rateb_url($path);
+        if ($query === []) {
+            return $url;
+        }
+        $sep = str_contains($url, '?') ? '&' : '?';
+        return $url . $sep . http_build_query($query);
     }
 }
 

@@ -61,6 +61,28 @@
     margin-top: 1rem;
 }
 
+.rateb-table-search {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--rateb-border);
+    background: var(--rateb-bg);
+}
+
+.rateb-table-search-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+}
+
+.rateb-table-search-input {
+    flex: 1 1 220px;
+    max-width: 420px;
+}
+
+.rateb-table-search-meta {
+    white-space: nowrap;
+}
+
 .rateb-toolbar {
     display: flex;
     flex-wrap: wrap;

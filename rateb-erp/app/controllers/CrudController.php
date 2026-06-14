@@ -33,19 +33,20 @@ abstract class CrudController extends Controller
         $page = max(1, (int) $this->input('page', 1));
         $limit = 20;
         $offset = ($page - 1) * $limit;
+        $search = trim((string) $this->input('q', ''));
 
-        $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags($this->indexViewData($limit, $offset, $page)), $this->layout());
+        $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags($this->indexViewData($limit, $offset, $page, $search)), $this->layout());
     }
 
-    /** @return array<string, mixed> */
-    protected function indexViewData(int $limit, int $offset, int $page): array
+    protected function indexViewData(int $limit, int $offset, int $page, string $search = ''): array
     {
         return [
             'title' => __($this->entityName),
-            'items' => $this->model->all($limit, $offset),
-            'total' => $this->model->count(),
+            'items' => $this->model->all($limit, $offset, [], $search),
+            'total' => $this->model->count([], $search),
             'page' => $page,
             'limit' => $limit,
+            'search' => $search,
             'routePrefix' => $this->routePrefix,
             'fields' => $this->indexFields !== [] ? $this->indexFields : $this->fields,
             'csrf' => Csrf::token(),

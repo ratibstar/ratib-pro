@@ -2,7 +2,8 @@
 /** @var array<int, array<string, mixed>> $items */
 /** @var array<int, array{name:string,label:string}> $columns */
 ?>
-<div class="table-responsive">
+<?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
+<div class="table-responsive" data-rateb-table-search-host="1">
     <table class="table table-hover rateb-table mb-0">
         <thead>
             <tr>

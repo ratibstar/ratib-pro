@@ -140,6 +140,139 @@
         });
     }
 
+    function initTableSearch() {
+        var isAr = document.documentElement.lang === 'ar';
+        var placeholder = isAr ? 'بحث في الجدول…' : 'Search table…';
+        var noResults = isAr ? 'لا توجد نتائج مطابقة' : 'No matching rows';
+        var resultsLabel = isAr ? 'نتيجة' : 'results';
+
+        function isEmptyStateRow(tr) {
+            return tr.querySelectorAll('td').length === 1 && tr.querySelector('td[colspan]') !== null;
+        }
+
+        function attachSearch(wrapEl, table) {
+            if (!wrapEl || !table || table.getAttribute('data-rateb-search-bound') === '1') {
+                return;
+            }
+            table.setAttribute('data-rateb-search-bound', '1');
+
+            var input = wrapEl.querySelector('[data-rateb-table-search-field], input[type="search"]');
+            if (!input) {
+                return;
+            }
+
+            var clearBtn = wrapEl.querySelector('[data-rateb-table-search-clear]');
+            var meta = wrapEl.querySelector('[data-rateb-search-meta]');
+            var tbody = table.querySelector('tbody');
+            if (!tbody) {
+                return;
+            }
+
+            var emptyRow = null;
+
+            function filterRows() {
+                var q = input.value.trim().toLowerCase();
+                var visible = 0;
+                var dataRows = 0;
+
+                if (emptyRow) {
+                    emptyRow.remove();
+                    emptyRow = null;
+                }
+
+                tbody.querySelectorAll('tr').forEach(function (tr) {
+                    if (tr.getAttribute('data-rateb-search-empty') === '1') {
+                        return;
+                    }
+                    if (isEmptyStateRow(tr)) {
+                        tr.style.display = q === '' ? '' : 'none';
+                        return;
+                    }
+                    dataRows++;
+                    var text = (tr.textContent || '').toLowerCase();
+                    var show = q === '' || text.indexOf(q) !== -1;
+                    tr.style.display = show ? '' : 'none';
+                    if (show) {
+                        visible++;
+                    }
+                });
+
+                if (clearBtn) {
+                    clearBtn.classList.toggle('d-none', q === '');
+                }
+
+                if (meta) {
+                    if (q === '') {
+                        meta.classList.add('d-none');
+                    } else {
+                        meta.classList.remove('d-none');
+                        meta.textContent = visible + ' ' + resultsLabel;
+                    }
+                }
+
+                if (q !== '' && visible === 0 && dataRows > 0) {
+                    var colCount = table.querySelectorAll('thead th').length || 1;
+                    emptyRow = document.createElement('tr');
+                    emptyRow.setAttribute('data-rateb-search-empty', '1');
+                    emptyRow.innerHTML = '<td colspan="' + colCount + '" class="text-center text-muted py-3">' + noResults + '</td>';
+                    tbody.appendChild(emptyRow);
+                }
+            }
+
+            input.addEventListener('input', filterRows);
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function () {
+                    input.value = '';
+                    filterRows();
+                    input.focus();
+                });
+            }
+        }
+
+        document.querySelectorAll('[data-rateb-table-search-wrap]:not([data-rateb-server-search="1"])').forEach(function (wrap) {
+            var host = wrap.nextElementSibling;
+            var table = host && host.querySelector ? host.querySelector('table.rateb-table') : null;
+            if (!table && wrap.parentElement) {
+                table = wrap.parentElement.querySelector('table.rateb-table');
+            }
+            attachSearch(wrap, table);
+        });
+
+        document.querySelectorAll('table.rateb-table').forEach(function (table) {
+            if (table.getAttribute('data-rateb-search-skip') === '1') {
+                return;
+            }
+            if (table.closest('[data-rateb-server-search]')) {
+                return;
+            }
+            if (table.closest('[data-rateb-table-search-wrap]')) {
+                return;
+            }
+            var responsive = table.closest('.table-responsive');
+            var container = responsive || table.parentElement;
+            if (!container || !container.parentElement) {
+                return;
+            }
+            if (container.parentElement.querySelector('[data-rateb-table-search-wrap]')) {
+                return;
+            }
+
+            var wrap = document.createElement('div');
+            wrap.className = 'rateb-table-search';
+            wrap.setAttribute('data-rateb-table-search-wrap', '1');
+            wrap.innerHTML =
+                '<div class="rateb-table-search-row">' +
+                '<div class="input-group input-group-sm rateb-table-search-input">' +
+                '<span class="input-group-text"><i class="fas fa-search" aria-hidden="true"></i></span>' +
+                '<input type="search" class="form-control" data-rateb-table-search-field="1" placeholder="' + placeholder + '" autocomplete="off">' +
+                '<button type="button" class="btn btn-outline-secondary d-none" data-rateb-table-search-clear="1" title="' + (isAr ? 'مسح' : 'Clear') + '">' +
+                '<i class="fas fa-times" aria-hidden="true"></i></button></div>' +
+                '<span class="rateb-table-search-meta small text-muted d-none" data-rateb-search-meta="1"></span></div>';
+            container.parentElement.insertBefore(wrap, container);
+            attachSearch(wrap, table);
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         var toggle = document.getElementById('rateb-sidebar-toggle');
         var sidebar = document.getElementById('rateb-sidebar');
@@ -177,6 +310,7 @@
         });
 
         initBulkTables();
+        initTableSearch();
         initPermissionMatrix();
         initSidebarNavGroups();
         initCoaFullTree();
