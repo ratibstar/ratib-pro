@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260614-headerfix1');
+define('RATEB_ASSET_BUILD', '20260614-hotfix2');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -81,7 +81,7 @@ if (!function_exists('rateb_current_public_path')) {
         $rest = substr($uri, $pos + strlen($prefix));
         $path = strtok($rest, '?') ?: '';
         $path = ltrim((string) $path, '/');
-        if ($path === '' || str_starts_with($path, 'locale/')) {
+        if ($path === '' || strpos($path, 'locale/') === 0) {
             return $fallback;
         }
         return $path;

@@ -1673,7 +1673,7 @@ final class LocaleController extends Controller
         }
 
         $ref = (string) ($_SERVER['HTTP_REFERER'] ?? '');
-        if ($ref !== '' && $this->isSameSiteUrl($ref) && !str_contains($ref, '/locale/')) {
+        if ($ref !== '' && $this->isSameSiteUrl($ref) && strpos($ref, '/locale/') === false) {
             return $ref;
         }
 
@@ -1686,11 +1686,11 @@ final class LocaleController extends Controller
 
     private function isSafeInternalPath(string $path): bool
     {
-        if ($path === '' || str_contains($path, '://') || str_starts_with($path, '//')) {
+        if ($path === '' || strpos($path, '://') !== false || strpos($path, '//') === 0) {
             return false;
         }
         $path = ltrim($path, '/');
-        return $path !== '' && !str_starts_with($path, 'locale/');
+        return $path !== '' && strpos($path, 'locale/') !== 0;
     }
 
     private function isSameSiteUrl(string $url): bool
@@ -1706,6 +1706,6 @@ final class LocaleController extends Controller
         }
         $path = (string) ($parsed['path'] ?? '');
         $base = defined('RATEB_BASE_URL') ? rtrim((string) RATEB_BASE_URL, '/') : '/rateb-erp/public';
-        return str_contains($path, $base);
+        return strpos($path, $base) !== false;
     }
 }

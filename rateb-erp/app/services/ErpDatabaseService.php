@@ -89,7 +89,7 @@ final class ErpDatabaseService
                     continue;
                 }
                 $value = (string) ($row['v'] ?? '');
-                if ($value === '' || str_contains($value, '?')) {
+                if ($value === '' || strpos($value, '?') !== false) {
                     return true;
                 }
             }

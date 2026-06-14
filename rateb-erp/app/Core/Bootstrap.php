@@ -204,7 +204,7 @@ final class Bootstrap
                 $rest = substr($uri, $pos + strlen($prefix));
                 $path = strtok($rest, '?') ?: '';
                 $path = ltrim((string) $path, '/');
-                if ($path === '' || str_starts_with($path, 'locale/')) {
+                if ($path === '' || strpos($path, 'locale/') === 0) {
                     return $fallback;
                 }
                 return $path;
