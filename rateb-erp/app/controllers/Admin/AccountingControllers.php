@@ -102,15 +102,25 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
 
     public function index(): void
     {
+        $canManage = rateb_can('accounting.manage');
         $tree = (new AccountingService())->coaTreeWithBalances(null);
         $this->view($this->viewPrefix . '/index', [
             'title' => __('chart_of_accounts'),
             'tree' => $tree,
             'routePrefix' => $this->routePrefix,
             'csrf' => Csrf::token(),
-            'createEnabled' => rateb_can('accounting.manage'),
-            'actionsEnabled' => rateb_can('accounting.manage'),
+            'bulkEnabled' => $canManage,
+            'createEnabled' => $canManage,
+            'actionsEnabled' => $canManage,
         ], $this->layout());
+    }
+
+    protected function guardManage(): void
+    {
+        if (!rateb_can('accounting.manage')) {
+            SessionManager::flash('error', __('access_denied'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
     }
 
     public function create(): void
@@ -173,6 +183,52 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
         $parentId = (int) ($data['parent_id'] ?? 0);
         $data['parent_id'] = $parentId > 0 ? $parentId : null;
         return $data;
+    }
+
+    public function destroy(array $params): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $service = new AccountingService();
+        if ($service->destroyChartAccount($id, null)) {
+            (new AuditService())->log('delete', $this->entityName, $id);
+            SessionManager::flash('success', __('delete') . ' OK');
+        } elseif ($service->deactivateChartAccount($id, null)) {
+            (new AuditService())->log('deactivate', $this->entityName, $id);
+            SessionManager::flash('success', __('account_deactivated'));
+        } else {
+            SessionManager::flash('error', __('account_delete_denied'));
+        }
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function bulkDestroy(): void
+    {
+        $this->guardManage();
+        if (!$this->validateCsrf()) {
+            SessionManager::flash('error', __('invalid_request'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $ids = $this->parseBulkIds();
+        if ($ids === []) {
+            SessionManager::flash('error', __('bulk_none_selected'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $deactivated = (new AccountingService())->bulkDeactivateChartAccounts($ids, null);
+        foreach ($ids as $id) {
+            (new AuditService())->log('bulk_deactivate', $this->entityName, $id);
+        }
+        SessionManager::flash('success', __('bulk_deactivated', ['count' => $deactivated]));
+        $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    protected function layout(): string
+    {
+        return 'main';
     }
 }
 

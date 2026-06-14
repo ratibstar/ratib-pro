@@ -1899,11 +1899,8 @@ final class AccountingService
     public function deactivateChartAccount(int $accountId, ?int $companyId): bool
     {
         $companyId = $this->normalizeCompanyId($companyId);
-        if ($companyId === null) {
-            return false;
-        }
         $row = (new JournalEntry())->queryOne(
-            'SELECT id FROM rateb_chart_of_accounts WHERE id = :id AND company_id = :cid AND is_active = 1 LIMIT 1',
+            'SELECT id FROM rateb_chart_of_accounts WHERE id = :id AND company_id <=> :cid AND is_active = 1 LIMIT 1',
             ['id' => $accountId, 'cid' => $companyId]
         );
         if (!$row) {
@@ -1923,11 +1920,8 @@ final class AccountingService
     public function destroyChartAccount(int $accountId, ?int $companyId): bool
     {
         $companyId = $this->normalizeCompanyId($companyId);
-        if ($companyId === null) {
-            return false;
-        }
         $row = (new JournalEntry())->queryOne(
-            'SELECT id FROM rateb_chart_of_accounts WHERE id = :id AND company_id = :cid LIMIT 1',
+            'SELECT id FROM rateb_chart_of_accounts WHERE id = :id AND company_id <=> :cid LIMIT 1',
             ['id' => $accountId, 'cid' => $companyId]
         );
         if (!$row) {
