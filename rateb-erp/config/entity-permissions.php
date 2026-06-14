@@ -165,6 +165,27 @@ return [
     'journal-entries' => [
         'module' => 'accounting',
         'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+        'post' => 'accounting.post',
+    ],
+    'accounts-payable' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
+    'accounts-receivable' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
+    'profit-loss' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
+    'balance-sheet' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
         'manage' => 'accounting.view',
     ],
     'reports' => [

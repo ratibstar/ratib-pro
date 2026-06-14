@@ -170,6 +170,22 @@ final class AccountingService
         );
     }
 
+    public function autoPostPurchaseOrder(int $purchaseOrderId): bool
+    {
+        $row = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_purchase_orders WHERE id = :id LIMIT 1',
+            ['id' => $purchaseOrderId]
+        );
+        if (!$row) {
+            return false;
+        }
+        $status = (string) ($row['status'] ?? '');
+        if (!in_array($status, ['received', 'confirmed'], true)) {
+            return false;
+        }
+        return $this->postPurchaseOrder((array) $row);
+    }
+
     public function postPurchaseOrder(array $po): bool
     {
         $companyId = (int) ($po['company_id'] ?? 0);
@@ -182,14 +198,18 @@ final class AccountingService
             return false;
         }
 
-        $expense = $this->accountIdByCode($companyId, '5100');
+        $status = (string) ($po['status'] ?? '');
+        $debitCode = $status === 'received' ? '1300' : '5100';
+        $debitAccount = $this->accountIdByCode($companyId, $debitCode);
         $ap = $this->accountIdByCode($companyId, '2100');
-        if (!$expense || !$ap) {
+        if (!$debitAccount || !$ap) {
             return false;
         }
 
+        $debitMemo = $status === 'received' ? 'Inventory' : 'Procurement expense';
+
         return $this->createPostedEntry($companyId, 'purchase_order', (int) $po['id'], [
-            ['account_id' => $expense, 'debit' => $total, 'credit' => 0, 'memo' => 'PO ' . ($po['order_no'] ?? '')],
+            ['account_id' => $debitAccount, 'debit' => $total, 'credit' => 0, 'memo' => $debitMemo . ' PO ' . ($po['order_no'] ?? '')],
             ['account_id' => $ap, 'debit' => 0, 'credit' => $total, 'memo' => 'AP'],
         ], 'Purchase order ' . ($po['order_no'] ?? ''),
             'أمر شراء ' . ($po['order_no'] ?? ''),
@@ -241,6 +261,264 @@ final class AccountingService
         }
 
         return true;
+    }
+
+    /** @param array<int, array{account_id:int,debit:float,credit:float,memo?:string}> $lines */
+    public function createManualDraft(
+        ?int $companyId,
+        string $entryDate,
+        string $description,
+        string $descriptionAr,
+        array $lines,
+        ?int $createdBy = null
+    ): int {
+        if (!$this->isBalanced($lines)) {
+            throw new \InvalidArgumentException('Journal entry is not balanced.');
+        }
+        $this->ensureDefaultAccounts($companyId);
+        $companyId = $this->normalizeCompanyId($companyId);
+        $entryModel = new JournalEntry();
+        $entryId = $entryModel->create([
+            'company_id' => $companyId,
+            'entry_no' => $this->nextEntryNo($companyId),
+            'entry_date' => $entryDate,
+            'description' => $description,
+            'description_ar' => $descriptionAr,
+            'source_type' => 'manual',
+            'source_id' => null,
+            'status' => 'draft',
+            'created_by' => $createdBy,
+            'posted_at' => null,
+        ]);
+        $this->replaceJournalLines($entryId, $lines);
+        return $entryId;
+    }
+
+    /** @param array<int, array{account_id:int,debit:float,credit:float,memo?:string}> $lines */
+    public function updateManualDraft(
+        int $entryId,
+        ?int $companyId,
+        string $entryDate,
+        string $description,
+        string $descriptionAr,
+        array $lines
+    ): bool {
+        if (!$this->isBalanced($lines)) {
+            throw new \InvalidArgumentException('Journal entry is not balanced.');
+        }
+        $entry = $this->findEntryForCompany($entryId, $companyId);
+        if (!$entry || ($entry['source_type'] ?? '') !== 'manual' || ($entry['status'] ?? '') !== 'draft') {
+            return false;
+        }
+        (new JournalEntry())->update($entryId, [
+            'entry_date' => $entryDate,
+            'description' => $description,
+            'description_ar' => $descriptionAr,
+        ]);
+        $this->replaceJournalLines($entryId, $lines);
+        return true;
+    }
+
+    public function postDraftEntry(int $entryId, ?int $companyId): bool
+    {
+        $entry = $this->findEntryForCompany($entryId, $companyId);
+        if (!$entry || ($entry['status'] ?? '') !== 'draft') {
+            return false;
+        }
+        $lines = $this->loadEntryLines($entryId);
+        if (!$this->isBalanced($lines)) {
+            return false;
+        }
+        (new JournalEntry())->update($entryId, [
+            'status' => 'posted',
+            'posted_at' => date('Y-m-d H:i:s'),
+        ]);
+        return true;
+    }
+
+    public function voidPostedEntry(int $entryId, ?int $companyId): bool
+    {
+        $entry = $this->findEntryForCompany($entryId, $companyId);
+        if (!$entry || ($entry['status'] ?? '') !== 'posted') {
+            return false;
+        }
+        if (($entry['source_type'] ?? '') !== 'manual') {
+            return false;
+        }
+        (new JournalEntry())->update($entryId, ['status' => 'void']);
+        return true;
+    }
+
+    /** @return array{rows: array<int, array<string, mixed>>, total_open: float, total_posted: float} */
+    public function accountsPayable(?int $companyId): array
+    {
+        $pdo = Database::connection();
+        $sql = "SELECT po.id, po.order_no, po.order_date, po.status, po.total_amount,
+                       s.name AS supplier_name, s.code AS supplier_code,
+                       je.id AS journal_id, je.entry_no
+                FROM rateb_purchase_orders po
+                LEFT JOIN rateb_suppliers s ON s.id = po.supplier_id
+                LEFT JOIN rateb_journal_entries je ON je.source_type = 'purchase_order'
+                    AND je.source_id = po.id AND je.status = 'posted'
+                WHERE po.status IN ('sent','confirmed','partial','received')";
+        $params = [];
+        if ($companyId !== null) {
+            $sql .= ' AND po.company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        $sql .= ' ORDER BY po.order_date DESC, po.id DESC LIMIT 200';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $totalOpen = 0.0;
+        $totalPosted = 0.0;
+        foreach ($rows as $row) {
+            $amt = (float) ($row['total_amount'] ?? 0);
+            if (!empty($row['journal_id'])) {
+                $totalPosted += $amt;
+            } else {
+                $totalOpen += $amt;
+            }
+        }
+        return ['rows' => $rows, 'total_open' => $totalOpen, 'total_posted' => $totalPosted];
+    }
+
+    /** @return array{rows: array<int, array<string, mixed>>, total_open: float, total_paid: float} */
+    public function accountsReceivable(?int $companyId): array
+    {
+        if ($companyId === null) {
+            return ['rows' => [], 'total_open' => 0.0, 'total_paid' => 0.0];
+        }
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare(
+            "SELECT i.*, je.id AS journal_id, je.entry_no
+             FROM rateb_invoices i
+             LEFT JOIN rateb_journal_entries je ON je.source_type = 'invoice'
+                 AND je.source_id = i.id AND je.status = 'posted'
+             WHERE i.company_id = :cid AND i.status != 'cancelled'
+             ORDER BY i.issued_at DESC, i.id DESC LIMIT 200"
+        );
+        $stmt->execute(['cid' => $companyId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $totalOpen = 0.0;
+        $totalPaid = 0.0;
+        foreach ($rows as $row) {
+            $amt = (float) ($row['total_amount'] ?? 0);
+            if (($row['status'] ?? '') === 'paid') {
+                $totalPaid += $amt;
+            } elseif (in_array((string) ($row['status'] ?? ''), ['sent', 'overdue', 'draft'], true)) {
+                $totalOpen += $amt;
+            }
+        }
+        return ['rows' => $rows, 'total_open' => $totalOpen, 'total_paid' => $totalPaid];
+    }
+
+    /** @return array{revenue: float, expenses: float, net: float, lines: array<int, array<string, mixed>>} */
+    public function profitAndLoss(?int $companyId, ?string $fromDate = null, ?string $toDate = null): array
+    {
+        $sql = "SELECT a.id, a.code, a.name, a.name_ar, a.account_type,
+                       COALESCE(SUM(l.debit), 0) AS total_debit,
+                       COALESCE(SUM(l.credit), 0) AS total_credit
+                FROM rateb_chart_of_accounts a
+                INNER JOIN rateb_journal_lines l ON l.account_id = a.id
+                INNER JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = 'posted'
+                WHERE a.company_id <=> :cid AND a.account_type IN ('revenue','expense') AND a.is_active = 1";
+        $params = ['cid' => $companyId];
+        if ($fromDate) {
+            $sql .= ' AND e.entry_date >= :from';
+            $params['from'] = $fromDate;
+        }
+        if ($toDate) {
+            $sql .= ' AND e.entry_date <= :to';
+            $params['to'] = $toDate;
+        }
+        $sql .= ' GROUP BY a.id ORDER BY a.code';
+        $lines = (new ChartOfAccount())->query($sql, $params);
+        $revenue = 0.0;
+        $expenses = 0.0;
+        foreach ($lines as $line) {
+            $dr = (float) ($line['total_debit'] ?? 0);
+            $cr = (float) ($line['total_credit'] ?? 0);
+            if (($line['account_type'] ?? '') === 'revenue') {
+                $revenue += $cr - $dr;
+            } else {
+                $expenses += $dr - $cr;
+            }
+        }
+        return ['revenue' => $revenue, 'expenses' => $expenses, 'net' => $revenue - $expenses, 'lines' => $lines];
+    }
+
+    /** @return array{assets: float, liabilities: float, equity: float, lines: array<int, array<string, mixed>>} */
+    public function balanceSheet(?int $companyId, ?string $asOfDate = null): array
+    {
+        $sql = "SELECT a.id, a.code, a.name, a.name_ar, a.account_type,
+                       COALESCE(SUM(l.debit), 0) AS total_debit,
+                       COALESCE(SUM(l.credit), 0) AS total_credit
+                FROM rateb_chart_of_accounts a
+                LEFT JOIN rateb_journal_lines l ON l.account_id = a.id
+                LEFT JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = 'posted'";
+        $params = ['cid' => $companyId];
+        if ($asOfDate) {
+            $sql .= ' AND (e.id IS NULL OR e.entry_date <= :asof)';
+            $params['asof'] = $asOfDate;
+        }
+        $sql .= ' WHERE a.company_id <=> :cid AND a.is_active = 1
+                  GROUP BY a.id ORDER BY a.code';
+        $lines = (new ChartOfAccount())->query($sql, $params);
+        $assets = 0.0;
+        $liabilities = 0.0;
+        $equity = 0.0;
+        foreach ($lines as $line) {
+            $dr = (float) ($line['total_debit'] ?? 0);
+            $cr = (float) ($line['total_credit'] ?? 0);
+            $type = (string) ($line['account_type'] ?? '');
+            if ($type === 'asset') {
+                $assets += $dr - $cr;
+            } elseif ($type === 'liability') {
+                $liabilities += $cr - $dr;
+            } elseif ($type === 'equity') {
+                $equity += $cr - $dr;
+            }
+        }
+        return ['assets' => $assets, 'liabilities' => $liabilities, 'equity' => $equity, 'lines' => $lines];
+    }
+
+    /** @return array<string, mixed>|null */
+    private function findEntryForCompany(int $entryId, ?int $companyId): ?array
+    {
+        $row = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_journal_entries WHERE id = :id AND company_id <=> :cid LIMIT 1',
+            ['id' => $entryId, 'cid' => $companyId]
+        );
+        return $row ? (array) $row : null;
+    }
+
+    /** @return array<int, array{debit:float,credit:float}> */
+    private function loadEntryLines(int $entryId): array
+    {
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare('SELECT debit, credit FROM rateb_journal_lines WHERE journal_entry_id = :id');
+        $stmt->execute(['id' => $entryId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** @param array<int, array{account_id:int,debit:float,credit:float,memo?:string}> $lines */
+    private function replaceJournalLines(int $entryId, array $lines): void
+    {
+        $pdo = Database::connection();
+        $pdo->prepare('DELETE FROM rateb_journal_lines WHERE journal_entry_id = :id')->execute(['id' => $entryId]);
+        $stmt = $pdo->prepare(
+            'INSERT INTO rateb_journal_lines (journal_entry_id, account_id, debit, credit, memo) VALUES (:eid, :aid, :dr, :cr, :memo)'
+        );
+        foreach ($lines as $line) {
+            $stmt->execute([
+                'eid' => $entryId,
+                'aid' => (int) $line['account_id'],
+                'dr' => $line['debit'],
+                'cr' => $line['credit'],
+                'memo' => $line['memo'] ?? null,
+            ]);
+        }
     }
 
     /** @return array<string, mixed> */

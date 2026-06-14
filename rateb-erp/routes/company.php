@@ -89,6 +89,10 @@ $router->get($app('purchase-orders/{id}'), [PurchaseOrdersController::class, 'sh
 $router->get($app('rfq/{id}/compare'), [RfqController::class, 'compare'], rateb_erp_mw('procurement', '', 'rfq'));
 $router->get($app('accounting'), [CompanyAccountingDashboardController::class, 'index'], rateb_erp_mw('accounting', '', 'accounting'));
 $router->post($app('accounting/sync'), [CompanyAccountingDashboardController::class, 'sync'], rateb_erp_mw('accounting', 'accounting.post'));
+$router->get($app('accounting/accounts-payable'), [CompanyAccountingDashboardController::class, 'accountsPayable'], rateb_erp_mw('accounting', '', 'accounts-payable'));
+$router->get($app('accounting/accounts-receivable'), [CompanyAccountingDashboardController::class, 'accountsReceivable'], rateb_erp_mw('accounting', '', 'accounts-receivable'));
+$router->get($app('accounting/profit-loss'), [CompanyAccountingDashboardController::class, 'profitLoss'], rateb_erp_mw('accounting', '', 'profit-loss'));
+$router->get($app('accounting/balance-sheet'), [CompanyAccountingDashboardController::class, 'balanceSheet'], rateb_erp_mw('accounting', '', 'balance-sheet'));
 $router->get($app('chart-of-accounts'), [CompanyChartOfAccountsController::class, 'index'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->get($app('chart-of-accounts/create'), [CompanyChartOfAccountsController::class, 'create'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->post($app('chart-of-accounts'), [CompanyChartOfAccountsController::class, 'store'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
@@ -97,6 +101,12 @@ $router->post($app('chart-of-accounts/{id}'), [CompanyChartOfAccountsController:
 $router->post($app('chart-of-accounts/{id}/delete'), [CompanyChartOfAccountsController::class, 'destroy'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->post($app('chart-of-accounts/bulk-delete'), [CompanyChartOfAccountsController::class, 'bulkDestroy'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->get($app('journal-entries'), [CompanyJournalEntriesController::class, 'index'], rateb_erp_mw('accounting', '', 'journal-entries'));
+$router->get($app('journal-entries/create'), [CompanyJournalEntriesController::class, 'create'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
+$router->post($app('journal-entries'), [CompanyJournalEntriesController::class, 'store'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
+$router->get($app('journal-entries/{id}/edit'), [CompanyJournalEntriesController::class, 'edit'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
+$router->post($app('journal-entries/{id}'), [CompanyJournalEntriesController::class, 'update'], rateb_erp_mw('accounting', 'accounting.manage', 'journal-entries'));
+$router->post($app('journal-entries/{id}/post'), [CompanyJournalEntriesController::class, 'postEntry'], rateb_erp_mw('accounting', 'accounting.post', 'journal-entries'));
+$router->post($app('journal-entries/{id}/void'), [CompanyJournalEntriesController::class, 'voidEntry'], rateb_erp_mw('accounting', 'accounting.post', 'journal-entries'));
 $router->get($app('journal-entries/{id}'), [CompanyJournalEntriesController::class, 'show'], rateb_erp_mw('accounting', '', 'journal-entries'));
 
 $router->get($app('reports'), [ReportsController::class, 'index'], rateb_erp_mw('reports', '', 'reports'));

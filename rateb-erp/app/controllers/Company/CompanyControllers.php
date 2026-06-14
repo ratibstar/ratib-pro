@@ -230,6 +230,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             $id,
             (string) ($data['status'] ?? 'draft')
         );
+        $this->tryAutoPostPurchaseOrder($id, (string) ($data['status'] ?? ''));
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
@@ -262,6 +263,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             (string) ($data['status'] ?? ''),
             $old ? (string) ($old['status'] ?? '') : null
         );
+        $this->tryAutoPostPurchaseOrder($id, (string) ($data['status'] ?? ''));
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
         $this->redirect(rateb_url($this->routePrefix));
@@ -295,6 +297,14 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             'items' => $items,
             'csrf' => Csrf::token(),
         ], 'main');
+    }
+
+    private function tryAutoPostPurchaseOrder(int $id, string $status): void
+    {
+        if (!in_array($status, ['received', 'confirmed'], true)) {
+            return;
+        }
+        (new \Rateb\App\Services\AccountingService())->autoPostPurchaseOrder($id);
     }
 }
 

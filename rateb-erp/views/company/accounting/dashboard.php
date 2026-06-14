@@ -31,7 +31,7 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
     </form>
     <?php } ?>
 </div>
-<p class="text-muted small mb-3"><?php echo __('accounting_sync_help'); ?></p>
+<p class="text-muted small mb-3"><?php echo __('accounting_auto_post_help'); ?></p>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo __('trial_balance'); ?></div>
     <div class="rateb-card-body p-0">

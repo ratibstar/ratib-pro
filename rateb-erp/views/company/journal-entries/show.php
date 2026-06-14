@@ -1,10 +1,18 @@
 <?php
 $desc = rateb_locale() === 'ar' && !empty($entry['description_ar']) ? $entry['description_ar'] : $entry['description'];
+$status = (string) ($entry['status'] ?? '');
 ?>
+<?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
 <div class="rateb-card mb-3">
-    <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($entry['entry_no'] ?? ''); ?></div>
+    <div class="rateb-card-header d-flex justify-content-between align-items-center">
+        <span><?php echo Rateb\App\Core\View::escape($entry['entry_no'] ?? ''); ?></span>
+        <span class="badge bg-<?php echo $status === 'posted' ? 'success' : ($status === 'void' ? 'secondary' : 'warning'); ?>">
+            <?php echo __($status); ?>
+        </span>
+    </div>
     <div class="rateb-card-body">
         <p class="mb-1"><strong><?php echo __('evaluation_date'); ?>:</strong> <?php echo Rateb\App\Core\View::escape($entry['entry_date'] ?? ''); ?></p>
+        <p class="mb-1"><strong><?php echo __('source_type'); ?>:</strong> <?php echo __((string) ($entry['source_type'] ?? '')); ?></p>
         <p class="mb-0"><?php echo Rateb\App\Core\View::escape($desc); ?></p>
     </div>
 </div>
@@ -34,4 +42,24 @@ $desc = rateb_locale() === 'ar' && !empty($entry['description_ar']) ? $entry['de
         </table>
     </div>
 </div>
-<a href="<?php echo rateb_app_url('journal-entries'); ?>" class="btn btn-outline-secondary mt-3"><?php echo __('cancel'); ?></a>
+<div class="d-flex flex-wrap gap-2 mt-3">
+    <a href="<?php echo rateb_app_url('journal-entries'); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
+    <?php if (($canManage ?? false) && $status === 'draft' && ($entry['source_type'] ?? '') === 'manual') { ?>
+    <a href="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/edit'); ?>" class="btn btn-outline-primary">
+        <i class="fas fa-edit"></i> <?php echo __('edit'); ?>
+    </a>
+    <?php } ?>
+    <?php if (($canPost ?? false) && $status === 'draft') { ?>
+    <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/post'); ?>" class="d-inline">
+        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+        <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> <?php echo __('post_entry'); ?></button>
+    </form>
+    <?php } ?>
+    <?php if (($canPost ?? false) && $status === 'posted' && ($entry['source_type'] ?? '') === 'manual') { ?>
+    <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/void'); ?>" class="d-inline"
+          onsubmit="return confirm('<?php echo __('journal_void_confirm'); ?>');">
+        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+        <button type="submit" class="btn btn-outline-danger"><i class="fas fa-ban"></i> <?php echo __('void_entry'); ?></button>
+    </form>
+    <?php } ?>
+</div>
