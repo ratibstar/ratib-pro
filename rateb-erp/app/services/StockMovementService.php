@@ -31,8 +31,17 @@ final class StockMovementService
         }
 
         $currentQty = (float) ($item['quantity'] ?? 0);
-        $delta = in_array($movementType, ['out', 'transfer'], true) ? -abs($quantity) : abs($quantity);
-        $newQty = max(0, $currentQty + $delta);
+        if ($movementType === 'adjustment') {
+            $newQty = max(0, abs($quantity));
+        } else {
+            $delta = in_array($movementType, ['out', 'transfer'], true) ? -abs($quantity) : abs($quantity);
+            $newQty = max(0, $currentQty + $delta);
+        }
+
+        $maxStock = isset($item['max_stock']) ? (float) $item['max_stock'] : 0;
+        if ($maxStock > 0 && $newQty > $maxStock) {
+            throw new \InvalidArgumentException(__('max_stock_exceeded'));
+        }
 
         $db = Database::connection();
         $db->beginTransaction();

@@ -73,6 +73,13 @@ final class FormLookupService
             case 'inventory':
                 $options = $this->inventoryOptions();
                 break;
+            case 'inventory_movement_types':
+                $options = [
+                    ['value' => 'in', 'label' => __('movement_in')],
+                    ['value' => 'out', 'label' => __('movement_out')],
+                    ['value' => 'adjustment', 'label' => __('movement_adjustment')],
+                ];
+                break;
             case 'product_categories':
                 $options = $this->mapRows((new ProductCategory())->all(300, 0), 'id', 'name');
                 break;
@@ -216,6 +223,45 @@ final class FormLookupService
             $out[] = ['value' => (int) $row['id'], 'label' => trim(($row['code'] ?? '') . ' — ' . $name)];
         }
         return $out;
+    }
+
+    /** @return list<FormOption> */
+    public function inventoryByWarehouse(int $warehouseId): array
+    {
+        if ($warehouseId < 1) {
+            return [];
+        }
+        $out = [];
+        $rows = (new Inventory())->query(
+            'SELECT id, item_name, sku, quantity, unit, unit_cost, reorder_level, max_stock, category_id
+             FROM rateb_inventory WHERE warehouse_id = :wid ORDER BY item_name ASC LIMIT 500',
+            ['wid' => $warehouseId]
+        );
+        foreach ($rows as $row) {
+            $sku = trim((string) ($row['sku'] ?? ''));
+            $label = $sku !== '' ? ($sku . ' — ' . ($row['item_name'] ?? '')) : (string) ($row['item_name'] ?? '');
+            $out[] = ['value' => (int) $row['id'], 'label' => $label];
+        }
+        return $out;
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function inventoryRowsByWarehouse(int $warehouseId): array
+    {
+        if ($warehouseId < 1) {
+            return [];
+        }
+        $params = ['wid' => $warehouseId];
+        $sql = 'SELECT id, item_name, sku, quantity, unit, unit_cost, reorder_level, max_stock, category_id
+             FROM rateb_inventory WHERE warehouse_id = :wid';
+        $companyId = \Rateb\App\Core\TenantContext::companyId();
+        if ($companyId !== null && $companyId > 0) {
+            $sql .= ' AND company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        $sql .= ' ORDER BY item_name ASC LIMIT 500';
+
+        return (new Inventory())->query($sql, $params);
     }
 
     /** @return list<FormOption> */
