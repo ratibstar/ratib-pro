@@ -29,7 +29,11 @@
                     <form method="post" action="<?php echo rateb_app_url('fiscal-periods/' . (int) $row['id'] . '/close'); ?>" class="d-inline"
                           onsubmit="return confirm('<?php echo __('fiscal_period_close_confirm'); ?>');">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                        <button type="submit" class="btn btn-sm btn-outline-warning"><?php echo __('close_period'); ?></button>
+                        <div class="form-check form-check-inline mb-1">
+                            <input class="form-check-input" type="checkbox" name="with_closing_entry" value="1" id="close_<?php echo (int) $row['id']; ?>">
+                            <label class="form-check-label small" for="close_<?php echo (int) $row['id']; ?>"><?php echo __('year_end_closing_entry'); ?></label>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-warning d-block"><?php echo __('close_period'); ?></button>
                     </form>
                     <?php } elseif (($canPost ?? false) && $st === 'closed') { ?>
                     <form method="post" action="<?php echo rateb_app_url('fiscal-periods/' . (int) $row['id'] . '/reopen'); ?>" class="d-inline"

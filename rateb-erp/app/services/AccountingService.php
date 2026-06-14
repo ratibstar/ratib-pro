@@ -501,13 +501,20 @@ final class AccountingService
     public function accountsPayable(?int $companyId): array
     {
         $pdo = Database::connection();
-        $sql = "SELECT po.id, po.order_no, po.order_date, po.status, po.total_amount,
+        $sql = "SELECT po.id, po.order_no, po.order_date, po.status, po.total_amount, po.supplier_id,
                        s.name AS supplier_name, s.code AS supplier_code,
-                       je.id AS journal_id, je.entry_no
+                       je.id AS journal_id, je.entry_no,
+                       COALESCE(sp.paid, 0) AS paid_amount
                 FROM rateb_purchase_orders po
                 LEFT JOIN rateb_suppliers s ON s.id = po.supplier_id
                 LEFT JOIN rateb_journal_entries je ON je.source_type = 'purchase_order'
                     AND je.source_id = po.id AND je.status = 'posted'
+                LEFT JOIN (
+                    SELECT purchase_order_id, SUM(amount) AS paid
+                    FROM rateb_supplier_payments
+                    WHERE status = 'posted'
+                    GROUP BY purchase_order_id
+                ) sp ON sp.purchase_order_id = po.id
                 WHERE po.status IN ('sent','confirmed','partial','received')";
         $params = [];
         if ($companyId !== null) {
@@ -922,7 +929,7 @@ final class AccountingService
         );
     }
 
-    public function closeFiscalPeriod(int $periodId, ?int $companyId, ?int $userId): bool
+    public function closeFiscalPeriod(int $periodId, ?int $companyId, ?int $userId, bool $withClosingEntry = false): bool
     {
         $row = (new JournalEntry())->queryOne(
             'SELECT * FROM rateb_fiscal_periods WHERE id = :id AND company_id = :cid LIMIT 1',
@@ -931,9 +938,20 @@ final class AccountingService
         if (!$row || ($row['status'] ?? '') !== 'open') {
             return false;
         }
+        $closingEntryId = null;
+        if ($withClosingEntry) {
+            $closingEntryId = $this->createYearEndClosingEntry(
+                $companyId,
+                (string) ($row['start_date'] ?? ''),
+                (string) ($row['end_date'] ?? '')
+            );
+            if ($closingEntryId === null) {
+                return false;
+            }
+        }
         (new JournalEntry())->query(
-            'UPDATE rateb_fiscal_periods SET status = :st, closed_at = NOW(), closed_by = :uid WHERE id = :id',
-            ['st' => 'closed', 'uid' => $userId, 'id' => $periodId]
+            'UPDATE rateb_fiscal_periods SET status = :st, closed_at = NOW(), closed_by = :uid, closing_entry_id = :jid WHERE id = :id',
+            ['st' => 'closed', 'uid' => $userId, 'jid' => $closingEntryId, 'id' => $periodId]
         );
         return true;
     }
@@ -1014,16 +1032,315 @@ final class AccountingService
         return $rows;
     }
 
-    /** @return array{accounts: array<int, array<string, mixed>>, total_cash: float} */
+    /** @return array{accounts: array<int, array<string, mixed>>, total_cash: float, petty_cash: float} */
     public function bankReconciliation(?int $companyId): array
     {
         $accounts = $this->listBankAccounts($companyId);
+        foreach ($accounts as &$acc) {
+            $bankId = (int) ($acc['id'] ?? 0);
+            $acc['statement_balance'] = $this->bankStatementBalance($companyId, $bankId);
+            $acc['unreconciled_count'] = $this->countUnreconciledStatementLines($companyId, $bankId);
+        }
+        unset($acc);
         $total = 0.0;
         foreach ($accounts as $acc) {
             $total += (float) ($acc['book_balance'] ?? 0);
         }
         $petty = $this->chartAccountBalance($companyId, $this->accountIdByCode($companyId, '1100') ?? 0, 0.0);
         return ['accounts' => $accounts, 'total_cash' => $total + $petty, 'petty_cash' => $petty];
+    }
+
+    /** @return array<string, mixed>|null */
+    public function bankAccountReconciliation(?int $companyId, int $bankAccountId): ?array
+    {
+        if ($companyId === null || $companyId < 1) {
+            return null;
+        }
+        $bank = (new JournalEntry())->queryOne(
+            'SELECT b.*, a.code AS account_code
+             FROM rateb_bank_accounts b
+             JOIN rateb_chart_of_accounts a ON a.id = b.chart_account_id
+             WHERE b.id = :id AND b.company_id = :cid LIMIT 1',
+            ['id' => $bankAccountId, 'cid' => $companyId]
+        );
+        if (!$bank) {
+            return null;
+        }
+        $coaId = (int) ($bank['chart_account_id'] ?? 0);
+        $bookBalance = $this->chartAccountBalance($companyId, $coaId, (float) ($bank['opening_balance'] ?? 0));
+        $bookLines = (new JournalEntry())->query(
+            'SELECT e.id, e.entry_no, e.entry_date, e.description, e.source_type,
+                    SUM(l.debit) AS debit, SUM(l.credit) AS credit
+             FROM rateb_journal_lines l
+             JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted
+             WHERE l.account_id = :aid AND e.company_id = :cid
+             GROUP BY e.id
+             ORDER BY e.entry_date DESC, e.id DESC
+             LIMIT 100',
+            ['posted' => 'posted', 'aid' => $coaId, 'cid' => $companyId]
+        );
+        $statementLines = $this->listBankStatementLines($companyId, $bankAccountId);
+        $statementBalance = $this->bankStatementBalance($companyId, $bankAccountId);
+        return [
+            'bank' => $bank,
+            'book_balance' => $bookBalance,
+            'statement_balance' => $statementBalance,
+            'difference' => $bookBalance - $statementBalance,
+            'book_lines' => $bookLines,
+            'statement_lines' => $statementLines,
+        ];
+    }
+
+    /** @return array{imported:int, batch:string} */
+    public function importBankStatementCsv(?int $companyId, int $bankAccountId, string $csv): array
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null) {
+            return ['imported' => 0, 'batch' => ''];
+        }
+        $bank = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_bank_accounts WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $bankAccountId, 'cid' => $companyId]
+        );
+        if (!$bank) {
+            return ['imported' => 0, 'batch' => ''];
+        }
+        $batch = 'IMP-' . date('Ymd-His');
+        $pdo = Database::connection();
+        $stmt = $pdo->prepare(
+            'INSERT INTO rateb_bank_statement_lines
+             (company_id, bank_account_id, line_date, description, amount, reference_no, import_batch)
+             VALUES (:cid, :bid, :dt, :desc, :amt, :ref, :batch)'
+        );
+        $imported = 0;
+        foreach (preg_split('/\R/', $csv) ?: [] as $i => $line) {
+            $line = trim($line);
+            if ($line === '' || ($i === 0 && stripos($line, 'date') !== false)) {
+                continue;
+            }
+            $parts = str_getcsv($line);
+            if (count($parts) < 3) {
+                continue;
+            }
+            $date = trim((string) $parts[0]);
+            $desc = trim((string) ($parts[1] ?? ''));
+            $amount = (float) str_replace(',', '', (string) ($parts[2] ?? '0'));
+            $ref = trim((string) ($parts[3] ?? ''));
+            if ($date === '' || $amount == 0.0) {
+                continue;
+            }
+            $stmt->execute([
+                'cid' => $companyId,
+                'bid' => $bankAccountId,
+                'dt' => $date,
+                'desc' => $desc !== '' ? $desc : '—',
+                'amt' => $amount,
+                'ref' => $ref !== '' ? $ref : null,
+                'batch' => $batch,
+            ]);
+            $imported++;
+        }
+        return ['imported' => $imported, 'batch' => $batch];
+    }
+
+    public function markStatementLineReconciled(int $lineId, ?int $companyId, ?int $journalEntryId = null): bool
+    {
+        $row = (new JournalEntry())->queryOne(
+            'SELECT id FROM rateb_bank_statement_lines WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $lineId, 'cid' => $companyId]
+        );
+        if (!$row) {
+            return false;
+        }
+        (new JournalEntry())->query(
+            'UPDATE rateb_bank_statement_lines SET is_reconciled = 1, journal_entry_id = :jid WHERE id = :id',
+            ['jid' => $journalEntryId, 'id' => $lineId]
+        );
+        return true;
+    }
+
+    /** @param array<string, mixed> $data */
+    public function postSupplierPayment(?int $companyId, array $data, ?int $userId): ?int
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null) {
+            return null;
+        }
+        $this->ensureDefaultAccounts($companyId);
+        $amount = (float) ($data['amount'] ?? 0);
+        $poId = (int) ($data['purchase_order_id'] ?? 0);
+        $paymentDate = (string) ($data['payment_date'] ?? date('Y-m-d'));
+        if ($amount <= 0 || !$this->isPeriodOpen($companyId, $paymentDate)) {
+            return null;
+        }
+        $ap = $this->accountIdByCode($companyId, '2100');
+        if (!$ap) {
+            return null;
+        }
+        $creditAccountId = $ap;
+        $bankAccountId = (int) ($data['bank_account_id'] ?? 0);
+        if ($bankAccountId > 0) {
+            $bank = (new JournalEntry())->queryOne(
+                'SELECT chart_account_id FROM rateb_bank_accounts WHERE id = :id AND company_id = :cid LIMIT 1',
+                ['id' => $bankAccountId, 'cid' => $companyId]
+            );
+            if ($bank) {
+                $creditAccountId = (int) $bank['chart_account_id'];
+            }
+        } else {
+            $cashId = $this->accountIdByCode($companyId, '1100');
+            if ($cashId) {
+                $creditAccountId = $cashId;
+            }
+        }
+        $pdo = Database::connection();
+        $paymentNo = $this->nextSupplierPaymentNo($companyId);
+        $supplierId = (int) ($data['supplier_id'] ?? 0) ?: null;
+        $entryId = $this->createPostedEntry(
+            $companyId,
+            'supplier_payment',
+            null,
+            [
+                ['account_id' => $ap, 'debit' => $amount, 'credit' => 0, 'memo' => 'Supplier payment'],
+                ['account_id' => $creditAccountId, 'debit' => 0, 'credit' => $amount, 'memo' => 'Payment'],
+            ],
+            'Supplier payment ' . $paymentNo,
+            'سداد مورد ' . $paymentNo,
+            $paymentDate
+        );
+        if ($entryId === null) {
+            return null;
+        }
+        $stmt = $pdo->prepare(
+            'INSERT INTO rateb_supplier_payments
+             (company_id, supplier_id, purchase_order_id, payment_no, payment_date, amount, bank_account_id,
+              payment_method, reference_no, journal_entry_id, status, notes, created_by, posted_at)
+             VALUES (:cid, :sid, :poid, :no, :dt, :amt, :bid, :meth, :ref, :jid, :st, :notes, :uid, NOW())'
+        );
+        $stmt->execute([
+            'cid' => $companyId,
+            'sid' => $supplierId,
+            'poid' => $poId > 0 ? $poId : null,
+            'no' => $paymentNo,
+            'dt' => $paymentDate,
+            'amt' => $amount,
+            'bid' => $bankAccountId > 0 ? $bankAccountId : null,
+            'meth' => (string) ($data['payment_method'] ?? 'bank'),
+            'ref' => trim((string) ($data['reference_no'] ?? '')) ?: null,
+            'jid' => $entryId,
+            'st' => 'posted',
+            'notes' => trim((string) ($data['notes'] ?? '')) ?: null,
+            'uid' => $userId,
+        ]);
+        $paymentId = (int) $pdo->lastInsertId();
+        (new JournalEntry())->update($entryId, ['source_id' => $paymentId]);
+        return $paymentId;
+    }
+
+    public function createYearEndClosingEntry(?int $companyId, string $startDate, string $endDate): ?int
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null || $startDate === '' || $endDate === '') {
+            return null;
+        }
+        $this->ensureDefaultAccounts($companyId);
+        $retainedId = $this->accountIdByCode($companyId, '3100');
+        if (!$retainedId) {
+            return null;
+        }
+        $pl = $this->profitAndLoss($companyId, $startDate, $endDate);
+        $lines = [];
+        $revenueClose = 0.0;
+        $expenseClose = 0.0;
+        foreach ($pl['lines'] as $line) {
+            $accountId = (int) ($line['id'] ?? 0);
+            $dr = (float) ($line['total_debit'] ?? 0);
+            $cr = (float) ($line['total_credit'] ?? 0);
+            if (($line['account_type'] ?? '') === 'revenue') {
+                $bal = $cr - $dr;
+                if ($bal > 0.01) {
+                    $lines[] = ['account_id' => $accountId, 'debit' => $bal, 'credit' => 0, 'memo' => 'Close revenue'];
+                    $revenueClose += $bal;
+                }
+            } elseif (($line['account_type'] ?? '') === 'expense') {
+                $bal = $dr - $cr;
+                if ($bal > 0.01) {
+                    $lines[] = ['account_id' => $accountId, 'debit' => 0, 'credit' => $bal, 'memo' => 'Close expense'];
+                    $expenseClose += $bal;
+                }
+            }
+        }
+        if ($revenueClose > 0.01) {
+            $lines[] = ['account_id' => $retainedId, 'debit' => 0, 'credit' => $revenueClose, 'memo' => 'Revenue close'];
+        }
+        if ($expenseClose > 0.01) {
+            $lines[] = ['account_id' => $retainedId, 'debit' => $expenseClose, 'credit' => 0, 'memo' => 'Expense close'];
+        }
+        if ($lines === []) {
+            return null;
+        }
+        return $this->createPostedEntry(
+            $companyId,
+            'year_end_close',
+            null,
+            $lines,
+            'Year-end closing ' . substr($endDate, 0, 4),
+            'قيد إقفال سنة ' . substr($endDate, 0, 4),
+            $endDate
+        );
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listBankStatementLines(?int $companyId, int $bankAccountId): array
+    {
+        if ($companyId === null || $companyId < 1) {
+            return [];
+        }
+        return (new JournalEntry())->query(
+            'SELECT * FROM rateb_bank_statement_lines
+             WHERE company_id = :cid AND bank_account_id = :bid
+             ORDER BY line_date DESC, id DESC LIMIT 200',
+            ['cid' => $companyId, 'bid' => $bankAccountId]
+        );
+    }
+
+    private function bankStatementBalance(?int $companyId, int $bankAccountId): float
+    {
+        if ($companyId === null || $companyId < 1) {
+            return 0.0;
+        }
+        $bank = (new JournalEntry())->queryOne(
+            'SELECT opening_balance FROM rateb_bank_accounts WHERE id = :id AND company_id = :cid',
+            ['id' => $bankAccountId, 'cid' => $companyId]
+        );
+        $row = (new JournalEntry())->queryOne(
+            'SELECT COALESCE(SUM(amount), 0) AS t FROM rateb_bank_statement_lines WHERE bank_account_id = :bid AND company_id = :cid',
+            ['bid' => $bankAccountId, 'cid' => $companyId]
+        );
+        return (float) ($bank['opening_balance'] ?? 0) + (float) ($row['t'] ?? 0);
+    }
+
+    private function countUnreconciledStatementLines(?int $companyId, int $bankAccountId): int
+    {
+        if ($companyId === null || $companyId < 1) {
+            return 0;
+        }
+        $row = (new JournalEntry())->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_bank_statement_lines
+             WHERE company_id = :cid AND bank_account_id = :bid AND is_reconciled = 0',
+            ['cid' => $companyId, 'bid' => $bankAccountId]
+        );
+        return (int) ($row['c'] ?? 0);
+    }
+
+    private function nextSupplierPaymentNo(?int $companyId): string
+    {
+        $row = (new JournalEntry())->queryOne(
+            'SELECT COUNT(*) AS c FROM rateb_supplier_payments WHERE company_id = :cid',
+            ['cid' => $companyId]
+        );
+        $n = (int) ($row['c'] ?? 0) + 1;
+        return 'SP-' . ($companyId ?? '0') . '-' . str_pad((string) $n, 5, '0', STR_PAD_LEFT);
     }
 
     /** @param array<int, array{account_id:int,amount:float}> $lines */

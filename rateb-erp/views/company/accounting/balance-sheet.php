@@ -1,6 +1,8 @@
 <?php
 $report = $report ?? ['assets' => 0, 'liabilities' => 0, 'equity' => 0, 'lines' => []];
 Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']);
+$exportQs = http_build_query(array_filter(['as_of' => $asOf ?? '']));
+Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => rateb_app_url('accounting/export/balance-sheet') . ($exportQs ? '?' . $exportQs : '')]);
 ?>
 <form method="get" class="rateb-card mb-3">
     <div class="rateb-card-body">

@@ -59,6 +59,7 @@ final class AccountingDashboardController extends Controller
             'totalOpen' => $data['total_open'],
             'totalPosted' => $data['total_posted'],
             'csrf' => Csrf::token(),
+            'canPay' => rateb_can_post_entity('accounting'),
         ], 'main');
     }
 
@@ -312,6 +313,195 @@ final class AccountingDashboardController extends Controller
             ['name' => 'credit', 'label' => __('credit')],
             ['name' => 'memo', 'label' => __('memo')],
         ], $rows, __('journal_entries'), 'accounting');
+    }
+
+    public function supplierPaymentForm(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1) {
+            SessionManager::flash('error', __('select_company_ops'));
+            Response::redirect(rateb_app_url('accounting/accounts-payable'));
+        }
+        $poId = (int) ($_GET['purchase_order_id'] ?? 0);
+        $po = null;
+        if ($poId > 0) {
+            $po = (new JournalEntry())->queryOne(
+                'SELECT po.*, s.name AS supplier_name FROM rateb_purchase_orders po
+                 LEFT JOIN rateb_suppliers s ON s.id = po.supplier_id
+                 WHERE po.id = :id AND po.company_id = :cid',
+                ['id' => $poId, 'cid' => $companyId]
+            );
+        }
+        $service = new AccountingService();
+        $paid = 0.0;
+        if ($po) {
+            $paidRow = (new JournalEntry())->queryOne(
+                'SELECT COALESCE(SUM(amount), 0) AS paid FROM rateb_supplier_payments
+                 WHERE purchase_order_id = :poid AND status = :st',
+                ['poid' => $poId, 'st' => 'posted']
+            );
+            $paid = (float) ($paidRow['paid'] ?? 0);
+        }
+        $this->view('company/accounting/supplier-payment-form', [
+            'title' => __('supplier_payment'),
+            'po' => $po,
+            'paidAmount' => $paid,
+            'banks' => $service->listBankAccounts($companyId),
+            'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('accounting'),
+        ], 'main');
+    }
+
+    public function storeSupplierPayment(): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/accounts-payable'));
+        }
+        $companyId = rateb_require_ops_company();
+        $service = new AccountingService();
+        $id = $service->postSupplierPayment($companyId, [
+            'purchase_order_id' => (int) ($_POST['purchase_order_id'] ?? 0),
+            'supplier_id' => (int) ($_POST['supplier_id'] ?? 0),
+            'amount' => (float) ($_POST['amount'] ?? 0),
+            'payment_date' => trim((string) ($_POST['payment_date'] ?? date('Y-m-d'))),
+            'bank_account_id' => (int) ($_POST['bank_account_id'] ?? 0),
+            'reference_no' => trim((string) ($_POST['reference_no'] ?? '')),
+            'notes' => trim((string) ($_POST['notes'] ?? '')),
+        ], (int) SessionManager::get('rateb_user_id', 0) ?: null);
+        if ($id) {
+            (new AuditService())->log('create', 'supplier_payment', $id, []);
+            SessionManager::flash('success', __('supplier_payment_posted'));
+        } else {
+            SessionManager::flash('error', __('supplier_payment_failed'));
+        }
+        Response::redirect(rateb_app_url('accounting/accounts-payable'));
+    }
+
+    public function bankReconciliationDetail(array $params): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $bankId = (int) ($params['id'] ?? 0);
+        $data = $companyId > 0 ? (new AccountingService())->bankAccountReconciliation($companyId, $bankId) : null;
+        if (!$data) {
+            SessionManager::flash('error', __('no_records'));
+            Response::redirect(rateb_app_url('accounting/bank-reconciliation'));
+        }
+        $this->view('company/accounting/bank-reconciliation-detail', [
+            'title' => __('bank_reconciliation'),
+            'data' => $data,
+            'bankId' => $bankId,
+            'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('accounting'),
+        ], 'main');
+    }
+
+    public function importBankStatement(array $params): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_manage_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/bank-reconciliation'));
+        }
+        $companyId = rateb_require_ops_company();
+        $bankId = (int) ($params['id'] ?? 0);
+        $csv = (string) ($_POST['statement_csv'] ?? '');
+        $result = (new AccountingService())->importBankStatementCsv($companyId, $bankId, $csv);
+        SessionManager::flash('success', __('bank_statement_imported') . ' (' . (int) $result['imported'] . ')');
+        Response::redirect(rateb_app_url('accounting/bank-reconciliation/' . $bankId));
+    }
+
+    public function reconcileStatementLine(array $params): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_manage_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/bank-reconciliation'));
+        }
+        $companyId = rateb_require_ops_company();
+        $lineId = (int) ($params['line_id'] ?? 0);
+        $bankId = (int) ($_POST['bank_account_id'] ?? 0);
+        $journalId = (int) ($_POST['journal_entry_id'] ?? 0) ?: null;
+        if ((new AccountingService())->markStatementLineReconciled($lineId, $companyId, $journalId)) {
+            SessionManager::flash('success', __('bank_line_reconciled'));
+        }
+        Response::redirect(rateb_app_url('accounting/bank-reconciliation/' . $bankId));
+    }
+
+    public function exportProfitLoss(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1) {
+            Response::redirect(rateb_app_url('accounting/profit-loss'));
+        }
+        $from = trim((string) ($_GET['from'] ?? ''));
+        $to = trim((string) ($_GET['to'] ?? ''));
+        $report = (new AccountingService())->profitAndLoss($companyId, $from !== '' ? $from : null, $to !== '' ? $to : null);
+        $rows = [];
+        foreach ($report['lines'] as $line) {
+            $rows[] = [
+                'code' => $line['code'],
+                'name' => $line['name'],
+                'account_type' => $line['account_type'],
+                'debit' => $line['total_debit'],
+                'credit' => $line['total_credit'],
+            ];
+        }
+        \Rateb\App\Controllers\Shared\ExportController::send('profit_loss', [
+            ['name' => 'code', 'label' => __('code')],
+            ['name' => 'name', 'label' => __('name')],
+            ['name' => 'account_type', 'label' => __('account_type')],
+            ['name' => 'debit', 'label' => __('debit')],
+            ['name' => 'credit', 'label' => __('credit')],
+        ], $rows, __('profit_loss'), 'accounting');
+    }
+
+    public function exportBalanceSheet(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1) {
+            Response::redirect(rateb_app_url('accounting/balance-sheet'));
+        }
+        $asOf = trim((string) ($_GET['as_of'] ?? ''));
+        $report = (new AccountingService())->balanceSheet($companyId, $asOf !== '' ? $asOf : null);
+        $rows = [];
+        foreach ($report['lines'] as $line) {
+            $rows[] = [
+                'code' => $line['code'],
+                'name' => $line['name'],
+                'account_type' => $line['account_type'],
+                'balance' => (float) ($line['total_debit'] ?? 0) - (float) ($line['total_credit'] ?? 0),
+            ];
+        }
+        \Rateb\App\Controllers\Shared\ExportController::send('balance_sheet', [
+            ['name' => 'code', 'label' => __('code')],
+            ['name' => 'name', 'label' => __('name')],
+            ['name' => 'account_type', 'label' => __('account_type')],
+            ['name' => 'balance', 'label' => __('balance')],
+        ], $rows, __('balance_sheet'), 'accounting');
+    }
+
+    public function exportVatReport(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1) {
+            Response::redirect(rateb_app_url('accounting/vat-report'));
+        }
+        $from = trim((string) ($_GET['from'] ?? ''));
+        $to = trim((string) ($_GET['to'] ?? ''));
+        $report = (new AccountingService())->vatReport($companyId, $from !== '' ? $from : null, $to !== '' ? $to : null);
+        $rows = [[
+            'output_vat' => $report['output_vat'],
+            'input_vat' => $report['input_vat'],
+            'net_vat' => $report['net_vat'],
+            'invoice_tax' => $report['invoice_tax'],
+            'po_tax' => $report['po_tax'],
+        ]];
+        \Rateb\App\Controllers\Shared\ExportController::send('vat_report', [
+            ['name' => 'output_vat', 'label' => __('output_vat')],
+            ['name' => 'input_vat', 'label' => __('input_vat')],
+            ['name' => 'net_vat', 'label' => __('net_vat')],
+            ['name' => 'invoice_tax', 'label' => __('invoice_tax_total')],
+            ['name' => 'po_tax', 'label' => __('po_tax_total')],
+        ], $rows, __('vat_report'), 'accounting');
     }
 }
 
@@ -846,7 +1036,12 @@ final class FiscalPeriodsController extends Controller
         }
         $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
-        if ((new AccountingService())->closeFiscalPeriod($id, $companyId, (int) SessionManager::get('rateb_user_id', 0) ?: null)) {
+        if ((new AccountingService())->closeFiscalPeriod(
+            $id,
+            $companyId,
+            (int) SessionManager::get('rateb_user_id', 0) ?: null,
+            !empty($_POST['with_closing_entry'])
+        )) {
             (new AuditService())->log('close', 'fiscal_period', $id, []);
             SessionManager::flash('success', __('fiscal_period_closed'));
         } else {
