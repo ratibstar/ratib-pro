@@ -456,6 +456,8 @@ return [
     'closed' => 'Closed',
     'select_company_ops' => 'Select a company to work on its data (procurement, inventory, assets, accounting…).',
     'ops_company_select_help' => 'As platform admin, pick a company from the list above, then continue. Your choice is remembered for this session.',
+    'active_company' => 'Active company',
+    'no_companies_for_ops' => 'No companies registered yet. Create one first from',
     'cost_centers' => 'Cost centers',
     'cost_center' => 'Cost center',
     'cost_center_report' => 'Cost center report',

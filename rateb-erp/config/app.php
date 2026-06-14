@@ -76,6 +76,9 @@ if (!function_exists('rateb_current_public_path')) {
         $prefix = $base . '/';
         $pos = strpos($uri, $prefix);
         if ($pos === false) {
+            if (preg_match('#/rateb-erp/public/(.+?)(?:\?|$)#', $uri, $m)) {
+                return ltrim((string) strtok($m[1], '?'), '/');
+            }
             return $fallback;
         }
         $rest = substr($uri, $pos + strlen($prefix));
@@ -85,6 +88,30 @@ if (!function_exists('rateb_current_public_path')) {
             return $fallback;
         }
         return $path;
+    }
+}
+
+/** Active ERP route (control-panel ?route= or /public/admin/... path). */
+if (!function_exists('rateb_current_erp_route')) {
+    function rateb_current_erp_route(string $fallback = ''): string
+    {
+        if (defined('RATEB_CP_ROUTE') && (string) RATEB_CP_ROUTE !== '') {
+            return ltrim((string) RATEB_CP_ROUTE, '/');
+        }
+        $route = trim((string) ($_GET['route'] ?? ''), '/');
+        if ($route !== '') {
+            return $route;
+        }
+        $path = rateb_current_public_path($fallback);
+        return $path === $fallback ? '' : $path;
+    }
+}
+
+if (!function_exists('rateb_is_ops_route')) {
+    function rateb_is_ops_route(?string $route = null): bool
+    {
+        $route = $route ?? rateb_current_erp_route();
+        return $route === 'admin/ops' || strpos($route, 'admin/ops/') === 0;
     }
 }
 

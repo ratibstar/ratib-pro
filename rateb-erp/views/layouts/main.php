@@ -2,7 +2,7 @@
 $locale = rateb_locale();
 $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
-$erpRoute = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : '';
+$erpRoute = rateb_current_erp_route();
 $accountingActive = $erpRoute !== '' && preg_match('#(accounting|chart-of-accounts|coa-tree|journal-entries|entry-approval|voucher-approval|cash-vouchers|fiscal-periods|bank-accounts|cost-centers|cost-of-sales|trial-balance|journal-register|invoices|payments|subscriptions)#', $erpRoute);
 $navActive = static function (string $route) use ($erpRoute, $currentPath): bool {
     if ($erpRoute !== '') {
@@ -148,7 +148,7 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
         </header>
         <main class="rateb-content">
             <?php Rateb\App\Core\View::partial('flash'); ?>
-            <?php if (rateb_is_super_admin() && $erpRoute !== '' && strpos($erpRoute, 'admin/ops/') === 0) {
+            <?php if (rateb_is_super_admin() && rateb_is_ops_route($erpRoute)) {
                 Rateb\App\Core\View::partial('ops-company-select');
             } ?>
             <?php echo $pageContent; ?>
