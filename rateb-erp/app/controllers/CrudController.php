@@ -48,13 +48,65 @@ abstract class CrudController extends Controller
             'limit' => $limit,
             'search' => $search,
             'routePrefix' => $this->routePrefix,
-            'fields' => $this->indexFields !== [] ? $this->indexFields : $this->fields,
+            'fields' => $this->resolveIndexFields(),
             'csrf' => Csrf::token(),
             'bulkEnabled' => $this->bulkEnabled,
             'createEnabled' => $this->createEnabled,
             'actionsEnabled' => $this->actionsEnabled,
             'documentEntityType' => $this->filesEnabled ? $this->resolveDocumentEntityType() : '',
         ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    protected function resolveIndexFields(): array
+    {
+        if ($this->indexFields !== []) {
+            return $this->indexFields;
+        }
+
+        $skipTypes = ['textarea', 'wysiwyg'];
+        $skipPrefixes = [
+            'content_', 'body_', 'excerpt_', 'meta_description', 'description_',
+            'quote_', 'answer_', 'bio_', 'summary_', 'message_', 'links_lines',
+            'address_', 'subtitle_', 'html_body', 'body_html',
+        ];
+        $out = [];
+
+        foreach ($this->fields as $field) {
+            $name = (string) ($field['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+            $type = (string) ($field['type'] ?? 'text');
+            if (in_array($type, $skipTypes, true)) {
+                continue;
+            }
+            $skip = false;
+            foreach ($skipPrefixes as $prefix) {
+                if (strpos($name, $prefix) === 0) {
+                    $skip = true;
+                    break;
+                }
+            }
+            if ($skip) {
+                continue;
+            }
+
+            $colType = 'clip';
+            if ($type === 'slug' || $name === 'slug') {
+                $colType = 'slug';
+            } elseif (in_array($type, ['bidi_text', 'html_preview', 'barcode'], true)) {
+                $colType = $type;
+            }
+
+            $out[] = [
+                'name' => $name,
+                'label' => $field['label'] ?? $name,
+                'type' => $colType,
+            ];
+        }
+
+        return $out;
     }
 
     /** @param array<string, mixed> $data */

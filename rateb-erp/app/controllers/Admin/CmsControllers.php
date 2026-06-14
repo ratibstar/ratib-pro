@@ -165,6 +165,13 @@ final class CmsBlogArticlesController extends \Rateb\App\Controllers\CrudControl
             ['name' => 'meta_title_en', 'label' => 'meta_title_en'],
             ['name' => 'meta_description_en', 'label' => 'meta_description_en', 'type' => 'textarea'],
         ];
+        $this->indexFields = [
+            ['name' => 'slug', 'label' => 'slug', 'type' => 'slug'],
+            ['name' => 'title_ar', 'label' => 'title_ar', 'type' => 'clip'],
+            ['name' => 'title_en', 'label' => 'title_en', 'type' => 'clip'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'clip'],
+            ['name' => 'published_at', 'label' => 'published_at', 'type' => 'clip'],
+        ];
     }
 
     public function create(): void

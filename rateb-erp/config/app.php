@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260614-table-actions-row');
+define('RATEB_ASSET_BUILD', '20260614-table-fixed-columns');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -177,6 +177,24 @@ if (!function_exists('rateb_email_template_slug_label')) {
         }
         $translated = __($slug);
         return $translated !== $slug ? $translated : $slug;
+    }
+}
+
+if (!function_exists('rateb_table_cell_display')) {
+    function rateb_table_cell_display($value, int $max = 80): string
+    {
+        $text = trim((string) $value);
+        if ($text === '') {
+            return '';
+        }
+        if (strpos($text, '<') !== false) {
+            $text = function_exists('rateb_html_preview') ? rateb_html_preview($text, $max) : strip_tags($text);
+        }
+        $text = preg_replace('/\s+/u', ' ', $text) ?? $text;
+        if (mb_strlen($text) > $max) {
+            return mb_substr($text, 0, $max) . '…';
+        }
+        return $text;
     }
 }
 

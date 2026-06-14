@@ -1,6 +1,7 @@
 .rateb-table {
     width: 100%;
     margin-bottom: 0;
+    table-layout: fixed;
 }
 
 .rateb-table th {
@@ -21,6 +22,27 @@
 .rateb-table th {
     padding: 0.75rem 1rem;
     vertical-align: middle;
+}
+
+.rateb-table-wrap {
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.rateb-table .rateb-cell-clip,
+.rateb-table td.rateb-ar-text:not(.rateb-actions):not(.rateb-bulk-th) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 0;
+}
+
+.rateb-table .rateb-bulk-th,
+.rateb-table th:last-child,
+.rateb-table td.rateb-actions {
+    width: 7.5rem;
+    max-width: none;
+    white-space: nowrap;
 }
 
 .rateb-table tbody tr:hover {

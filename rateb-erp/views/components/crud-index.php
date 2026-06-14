@@ -64,7 +64,7 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
             'search' => $search ?? '',
             'routePrefix' => $routePrefix ?? '',
         ]); ?>
-        <div class="table-responsive">
+        <div class="rateb-table-wrap">
             <table class="table rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
                 <thead>
                 <tr>
@@ -111,14 +111,20 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                         <span class="text-muted">—</span>
                         <?php } ?>
                     </td>
-                        <?php } elseif ($colType === 'slug' || $colName === 'slug') { ?>
-                    <td dir="ltr" class="font-monospace small text-muted"><?php echo Rateb\App\Core\View::escape($val); ?></td>
+                        <?php } elseif ($colType === 'slug' || $colName === 'slug') {
+                            $display = function_exists('rateb_table_cell_display') ? rateb_table_cell_display($val, 48) : (string) $val;
+                            ?>
+                    <td dir="ltr" class="font-monospace small text-muted rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape((string) $val); ?>"><?php echo Rateb\App\Core\View::escape($display); ?></td>
                         <?php } elseif ($colType === 'html_preview') { ?>
-                    <td class="rateb-ar-text rateb-bidi-mixed text-muted small"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_html_preview') ? rateb_html_preview((string) $val) : $val); ?></td>
+                    <td class="rateb-ar-text rateb-bidi-mixed text-muted small rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape(function_exists('rateb_html_preview') ? rateb_html_preview((string) $val, 200) : (string) $val); ?>"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_html_preview') ? rateb_html_preview((string) $val) : $val); ?></td>
                         <?php } elseif ($colType === 'bidi_text') { ?>
-                    <td class="rateb-ar-text rateb-bidi-mixed"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_bidi_cell_text') ? rateb_bidi_cell_text((string) $val) : $val); ?></td>
+                    <td class="rateb-ar-text rateb-bidi-mixed rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape((string) $val); ?>"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_bidi_cell_text') ? rateb_bidi_cell_text((string) $val) : $val); ?></td>
+                        <?php } elseif ($colType === 'clip' || $colType === 'text' || $colType === '') {
+                            $display = function_exists('rateb_table_cell_display') ? rateb_table_cell_display($val) : (string) $val;
+                            ?>
+                    <td class="rateb-ar-text rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape((string) $val); ?>"><?php echo Rateb\App\Core\View::escape($display); ?></td>
                         <?php } else { ?>
-                    <td class="rateb-ar-text"><?php echo Rateb\App\Core\View::escape($val); ?></td>
+                    <td class="rateb-ar-text rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape((string) $val); ?>"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_table_cell_display') ? rateb_table_cell_display($val) : $val); ?></td>
                         <?php } ?>
                     <?php } ?>
                     <?php if ($actionsEnabled) { ?>
