@@ -234,6 +234,47 @@ abstract class Model
         return array_intersect_key($data, array_flip($this->fillable));
     }
 
+    /**
+     * Next document number for this tenant: PREFIX-00001 style.
+     * Uses MAX(suffix)+1 so gaps/deletes do not reuse existing numbers.
+     */
+    protected function nextSequentialNo(string $prefix, string $numberColumn, int $padLength = 5): string
+    {
+        if (!preg_match('/^[a-z_]+$/', $numberColumn)) {
+            throw new \InvalidArgumentException('Invalid number column');
+        }
+        $companyId = (int) (TenantContext::companyId() ?? 0);
+        $startPos = strlen($prefix) + 1;
+        $sql = sprintf(
+            'SELECT MAX(CAST(SUBSTRING(%s, %d) AS UNSIGNED)) AS m FROM %s WHERE %s = :cid AND %s LIKE :like',
+            $numberColumn,
+            $startPos,
+            $this->table,
+            $this->tenantColumn,
+            $numberColumn
+        );
+        $row = $this->queryOne($sql, ['cid' => $companyId, 'like' => $prefix . '%']);
+        $next = (int) ($row['m'] ?? 0) + 1;
+
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $candidate = $prefix . str_pad((string) ($next + $attempt), $padLength, '0', STR_PAD_LEFT);
+            $exists = $this->queryOne(
+                sprintf(
+                    'SELECT id FROM %s WHERE %s = :cid AND %s = :no LIMIT 1',
+                    $this->table,
+                    $this->tenantColumn,
+                    $numberColumn
+                ),
+                ['cid' => $companyId, 'no' => $candidate]
+            );
+            if ($exists === null) {
+                return $candidate;
+            }
+        }
+
+        return $prefix . str_pad((string) ($next + 10), $padLength, '0', STR_PAD_LEFT);
+    }
+
     public function query(string $sql, array $params = []): array
     {
         $stmt = $this->db->prepare($sql);
