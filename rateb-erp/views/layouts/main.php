@@ -148,6 +148,9 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
         </header>
         <main class="rateb-content">
             <?php Rateb\App\Core\View::partial('flash'); ?>
+            <?php if (rateb_is_super_admin() && $erpRoute !== '' && strpos($erpRoute, 'admin/ops/') === 0) {
+                Rateb\App\Core\View::partial('ops-company-select');
+            } ?>
             <?php echo $pageContent; ?>
         </main>
     </div>
