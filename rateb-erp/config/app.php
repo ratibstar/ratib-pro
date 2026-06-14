@@ -124,8 +124,25 @@ if (!function_exists('rateb_can')) {
 if (!function_exists('rateb_permission_label')) {
     function rateb_permission_label(array $row): string
     {
-        if (rateb_locale() === 'ar' && !empty($row['name_ar'])) {
-            return (string) $row['name_ar'];
+        $slug = (string) ($row['slug'] ?? '');
+        $nameAr = (string) ($row['name_ar'] ?? '');
+        $corrupted = $nameAr === '' || strpos($nameAr, '?') !== false || preg_match('/^\?+$/', $nameAr) === 1;
+
+        if (rateb_locale() === 'ar') {
+            if (!$corrupted && $nameAr !== '') {
+                return $nameAr;
+            }
+            static $labels = null;
+            if ($labels === null) {
+                $file = (defined('RATEB_ROOT') ? RATEB_ROOT : '') . '/config/permission-labels-ar.php';
+                $labels = is_file($file) ? require $file : [];
+                if (!is_array($labels)) {
+                    $labels = [];
+                }
+            }
+            if ($slug !== '' && isset($labels[$slug][0])) {
+                return (string) $labels[$slug][0];
+            }
         }
         return (string) ($row['name'] ?? '');
     }

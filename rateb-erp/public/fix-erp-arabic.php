@@ -2,7 +2,8 @@
 declare(strict_types=1);
 
 /**
- * One-time ERP Arabic repair (permissions + demo data). Same token as run-migrations.php.
+ * ERP Arabic repair — permissions, COA, demo data.
+ * Auth: X-Rateb-Migrate-Token header OR logged-in super admin in browser.
  */
 header('Content-Type: text/plain; charset=UTF-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -11,11 +12,6 @@ $ratebRoot = realpath(__DIR__ . '/..');
 define('RATEB_ROOT', str_replace('\\', '/', $ratebRoot !== false ? $ratebRoot : dirname(__DIR__)));
 
 $provided = trim((string) ($_SERVER['HTTP_X_RATEB_MIGRATE_TOKEN'] ?? ''));
-if ($provided === '') {
-    http_response_code(403);
-    exit("Forbidden — send header X-Rateb-Migrate-Token\n");
-}
-
 $expected = '';
 $tokenFile = RATEB_ROOT . '/storage/deploy-migrate-token';
 if (!is_file($tokenFile)) {
@@ -24,13 +20,22 @@ if (!is_file($tokenFile)) {
 if (is_file($tokenFile)) {
     $expected = trim((string) file_get_contents($tokenFile));
 }
-if ($expected === '' || !hash_equals($expected, $provided)) {
-    http_response_code(403);
-    exit("Forbidden — invalid token\n");
-}
+
+$tokenOk = $expected !== '' && $provided !== '' && hash_equals($expected, $provided);
 
 require_once RATEB_ROOT . '/app/Core/Bootstrap.php';
 Rateb\App\Core\Bootstrap::init(RATEB_ROOT);
+
+$sessionOk = \Rateb\App\Core\Auth::check()
+    && !empty($_SESSION['rateb_is_super_admin']);
+
+if (!$tokenOk && !$sessionOk) {
+    http_response_code(403);
+    if ($provided === '') {
+        exit("Forbidden — log in as super admin, or send header X-Rateb-Migrate-Token\n");
+    }
+    exit("Forbidden — invalid token\n");
+}
 
 $result = (new Rateb\App\Services\ErpArabicRepairService())->repair();
 echo "ERP Arabic repair complete. Rows touched: {$result['updated']}\n";
