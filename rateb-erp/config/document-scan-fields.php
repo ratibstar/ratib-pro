@@ -11,6 +11,7 @@ return [
         ['key' => 'sku', 'label' => 'sku'],
         ['key' => 'quantity', 'label' => 'quantity'],
         ['key' => 'warehouse_name', 'label' => 'warehouses'],
+        ['key' => 'production_date', 'label' => 'production_date'],
         ['key' => 'expiry_date', 'label' => 'expiry_date'],
         ['key' => 'status', 'label' => 'status'],
     ],

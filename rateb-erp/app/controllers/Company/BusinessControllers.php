@@ -23,18 +23,33 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
         $this->routePrefix = rateb_app_route('inventory-batches');
         $this->entityName = 'inventory_batches';
         $this->indexFields = [
-            ['name' => 'batch_no', 'label' => 'batch_no'],
+            ['name' => 'batch_no', 'label' => 'batch_id'],
             ['name' => 'item_name', 'label' => 'item_name'],
             ['name' => 'quantity', 'label' => 'quantity'],
+            ['name' => 'production_date', 'label' => 'production_date'],
             ['name' => 'expiry_date', 'label' => 'expiry_date'],
             ['name' => 'warehouse_name', 'label' => 'warehouses'],
         ];
         $this->fields = [
             ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses', 'required' => true, 'col' => 'col-md-4'],
             ['name' => 'inventory_id', 'label' => 'inventory', 'type' => 'fk', 'lookup' => 'inventory', 'required' => true, 'col' => 'col-md-4'],
-            ['name' => 'batch_no', 'label' => 'batch_no', 'type' => 'hybrid', 'lookup' => 'batch_numbers', 'required' => true, 'col' => 'col-md-4'],
-            ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number', 'step' => '0.001', 'min' => '0'],
-            ['name' => 'expiry_date', 'label' => 'expiry_date', 'type' => 'date'],
+            [
+                'name' => 'batch_no',
+                'label' => 'batch_id',
+                'type' => 'text',
+                'col' => 'col-md-4',
+                'attrs' => [
+                    'pattern' => '[A-Za-z]{2}[0-9]{4}',
+                    'placeholder' => 'IB0001',
+                    'maxlength' => '6',
+                    'title' => 'batch_id_format',
+                    'class' => 'form-control rateb-form-control rateb-ltr-num text-uppercase',
+                ],
+                'hint' => 'batch_id_format_auto',
+            ],
+            ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number', 'step' => '0.001', 'min' => '0', 'col' => 'col-md-4'],
+            ['name' => 'production_date', 'label' => 'production_date', 'type' => 'date', 'col' => 'col-md-4'],
+            ['name' => 'expiry_date', 'label' => 'expiry_date', 'type' => 'date', 'col' => 'col-md-4'],
         ];
     }
 
@@ -91,9 +106,10 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
     public function export(): void
     {
         ExportController::send('inventory_batches', [
-            ['name' => 'batch_no', 'label' => __('batch_no')],
+            ['name' => 'batch_no', 'label' => __('batch_id')],
             ['name' => 'item_name', 'label' => __('item_name')],
             ['name' => 'quantity', 'label' => __('quantity')],
+            ['name' => 'production_date', 'label' => __('production_date')],
             ['name' => 'expiry_date', 'label' => __('expiry_date')],
         ], (new InventoryWorkflowService())->listBatches(500), __('inventory_batches'), 'inventory-batches');
     }

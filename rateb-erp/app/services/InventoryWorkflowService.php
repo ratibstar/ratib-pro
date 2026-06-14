@@ -80,11 +80,21 @@ final class InventoryWorkflowService
         }
         $data['company_id'] = $companyId;
         $batchModel = new InventoryBatch();
-        if (trim((string) ($data['batch_no'] ?? '')) === '') {
-            $data['batch_no'] = $batchModel->generateDocumentCode(
+        $batchNo = strtoupper(trim((string) ($data['batch_no'] ?? '')));
+        if ($batchNo === '') {
+            $batchNo = strtoupper($batchModel->generateDocumentCode(
                 DocumentCodeService::PREFIX_BATCH,
                 'batch_no'
-            );
+            ));
+        }
+        if (!preg_match('/^[A-Z]{2}\d{4}$/', $batchNo)) {
+            throw new \RuntimeException(__('batch_id_format'));
+        }
+        $data['batch_no'] = $batchNo;
+        $productionDate = trim((string) ($data['production_date'] ?? ''));
+        $expiryDate = trim((string) ($data['expiry_date'] ?? ''));
+        if ($productionDate !== '' && $expiryDate !== '' && $productionDate > $expiryDate) {
+            throw new \RuntimeException(__('production_after_expiry'));
         }
         $batchId = $batchModel->create($data);
         $invId = (int) ($data['inventory_id'] ?? 0);

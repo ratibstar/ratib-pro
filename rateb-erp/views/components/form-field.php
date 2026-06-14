@@ -12,9 +12,17 @@ $allowManual = !empty($field['allow_manual']) || $type === 'hybrid';
 $lookups = $lookups ?? [];
 $label = rateb_label((string) ($field['label'] ?? $name));
 $isHybrid = $allowManual && $lookup !== '';
+$inputClass = 'form-control rateb-form-control';
 $fieldAttrs = '';
 foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
-    $fieldAttrs .= ' ' . Rateb\App\Core\View::escape((string) $attrKey) . '="' . Rateb\App\Core\View::escape((string) $attrVal) . '"';
+    if ((string) $attrKey === 'class') {
+        $inputClass = (string) $attrVal;
+        continue;
+    }
+    $attrDisplay = ((string) $attrKey === 'title' && preg_match('/^[a-z0-9_]+$/', (string) $attrVal))
+        ? __((string) $attrVal)
+        : (string) $attrVal;
+    $fieldAttrs .= ' ' . Rateb\App\Core\View::escape((string) $attrKey) . '="' . Rateb\App\Core\View::escape($attrDisplay) . '"';
 }
 ?>
 <div class="<?php echo Rateb\App\Core\View::escape($col); ?>">
@@ -125,13 +133,16 @@ foreach (($field['attrs'] ?? []) as $attrKey => $attrVal) {
     <input type="hidden" name="<?php echo Rateb\App\Core\View::escape($name); ?>" value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>">
     <?php } ?>
     <?php } else { ?>
-    <input class="form-control rateb-form-control" type="<?php echo Rateb\App\Core\View::escape($type); ?>"
+    <input class="<?php echo Rateb\App\Core\View::escape($inputClass); ?>" type="<?php echo Rateb\App\Core\View::escape($type); ?>"
            id="f_<?php echo Rateb\App\Core\View::escape($name); ?>"
            name="<?php echo Rateb\App\Core\View::escape($name); ?>"
            value="<?php echo Rateb\App\Core\View::escape((string) $value); ?>"
            <?php echo $required ? ' required' : ''; ?><?php echo $readonly ? ' readonly' : ''; ?>
+           <?php echo $fieldAttrs; ?>
            <?php if (!empty($field['step'])) { ?>step="<?php echo Rateb\App\Core\View::escape((string) $field['step']); ?>"<?php } ?>
            <?php if (isset($field['min'])) { ?>min="<?php echo Rateb\App\Core\View::escape((string) $field['min']); ?>"<?php } ?>
            <?php if (isset($field['max'])) { ?>max="<?php echo Rateb\App\Core\View::escape((string) $field['max']); ?>"<?php } ?>>
+    <?php if (!empty($field['hint'])) { ?>
+    <small class="text-muted d-block mt-1"><?php echo __((string) $field['hint']); ?></small>
     <?php } ?>
-</div>
+    <?php } ?></div>

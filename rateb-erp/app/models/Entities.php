@@ -273,7 +273,7 @@ final class InventoryBatch extends Model
 {
     protected string $table = 'rateb_inventory_batches';
     protected bool $tenantScoped = true;
-    protected array $fillable = ['inventory_id', 'batch_no', 'quantity', 'expiry_date', 'warehouse_id'];
+    protected array $fillable = ['inventory_id', 'batch_no', 'quantity', 'production_date', 'expiry_date', 'warehouse_id'];
 }
 
 final class InventoryAudit extends Model

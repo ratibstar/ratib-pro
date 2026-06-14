@@ -745,6 +745,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             ['name' => 'sku', 'label' => 'sku'],
             ['name' => 'barcode', 'label' => 'document_barcode', 'type' => 'barcode'],
             ['name' => 'quantity', 'label' => 'quantity'],
+            ['name' => 'production_date', 'label' => 'production_date'],
             ['name' => 'expiry_date', 'label' => 'expiry_date'],
             ['name' => 'status', 'label' => 'status'],
         ];
@@ -758,6 +759,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             ['name' => 'unit_cost', 'label' => 'Unit Cost', 'type' => 'number', 'step' => '0.01', 'min' => '0'],
             ['name' => 'reorder_level', 'label' => 'reorder_level', 'type' => 'number', 'step' => '0.001', 'min' => '0'],
             ['name' => 'max_stock', 'label' => 'max_stock', 'type' => 'number', 'step' => '0.001', 'min' => '0'],
+            ['name' => 'production_date', 'label' => 'production_date', 'type' => 'date'],
             ['name' => 'expiry_date', 'label' => 'expiry_date', 'type' => 'date'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'lookup' => 'inventory_statuses'],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 3],
