@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260614-ops-company-select');
+define('RATEB_ASSET_BUILD', '20260614-form-lookups');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -140,10 +140,57 @@ if (!function_exists('rateb_current_erp_route')) {
 }
 
 if (!function_exists('rateb_is_ops_route')) {
+    /** Company operational paths (tenant data) — includes /admin/ops/* and legacy /admin/{module}. */
+    function rateb_ops_route_roots(): array
+    {
+        static $roots = [
+            'purchase-requests', 'purchase-orders', 'rfq', 'quotations',
+            'inventory', 'inventory-batches', 'inventory-audits', 'inventory-forecast', 'inventory-codes',
+            'warehouses', 'warehouse-transfers', 'stock-movements', 'product-categories',
+            'suppliers', 'supplier-comms', 'supplier-evaluations', 'supplier-classifications', 'supplier-kpi',
+            'contracts', 'contract-renewals', 'tenders', 'assets',
+            'asset-maintenance', 'asset-assignments', 'asset-depreciation',
+            'medical-devices', 'device-maintenance', 'device-spare-parts', 'device-warranty',
+            'accounting', 'chart-of-accounts', 'journal-entries', 'cash-vouchers', 'fiscal-periods',
+            'cost-centers', 'bank-accounts', 'documents', 'workflows', 'notifications', 'profile', 'reports',
+        ];
+        return $roots;
+    }
+
     function rateb_is_ops_route(?string $route = null): bool
     {
         $route = rateb_normalize_erp_route($route ?? rateb_current_erp_route());
-        return $route === 'admin/ops' || strpos($route, 'admin/ops/') === 0;
+        if ($route === 'admin/ops' || strpos($route, 'admin/ops/') === 0) {
+            return true;
+        }
+        if (strpos($route, 'admin/') !== 0) {
+            return false;
+        }
+        $sub = substr($route, strlen('admin/'));
+        $root = explode('/', $sub)[0];
+        return in_array($root, rateb_ops_route_roots(), true);
+    }
+}
+
+if (!function_exists('rateb_bootstrap_ops_tenant')) {
+    /** Ensure TenantContext has company for ops lookups and CRUD (super admin ?company_id=). */
+    function rateb_bootstrap_ops_tenant(): void
+    {
+        $cid = \Rateb\App\Core\TenantContext::companyId();
+        if ($cid !== null && $cid > 0) {
+            return;
+        }
+        $sessionCid = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+        if ($sessionCid > 0 && !rateb_is_super_admin()) {
+            \Rateb\App\Core\TenantContext::setCompanyId($sessionCid);
+            return;
+        }
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $id = rateb_resolve_ops_company_id();
+            if ($id > 0) {
+                \Rateb\App\Core\TenantContext::setCompanyId($id);
+            }
+        }
     }
 }
 
@@ -412,7 +459,13 @@ if (!function_exists('rateb_app_route')) {
             'supplier-evaluations', 'workflows', 'medical-devices', 'reports',
             'notifications', 'accounting', 'chart-of-accounts', 'journal-entries',
             'cost-centers', 'cash-vouchers', 'fiscal-periods', 'bank-accounts',
-            'rfq', 'quotations',
+            'rfq', 'quotations', 'purchase-requests', 'purchase-orders',
+            'warehouses', 'warehouse-transfers', 'product-categories',
+            'inventory-batches', 'inventory-audits', 'inventory-forecast',
+            'supplier-comms', 'supplier-classifications', 'supplier-kpi',
+            'contract-renewals', 'tenders', 'asset-maintenance', 'asset-assignments',
+            'asset-depreciation', 'device-maintenance', 'device-spare-parts', 'device-warranty',
+            'documents', 'profile',
         ];
         $root = explode('/', $path)[0];
         if (in_array($root, $conflictRoots, true)) {

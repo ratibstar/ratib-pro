@@ -34,9 +34,9 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         $this->fields = [
             ['name' => 'title', 'label' => 'title', 'type' => 'text'],
             ['name' => 'department', 'label' => 'department', 'type' => 'fk', 'lookup' => 'departments'],
-            ['name' => 'priority', 'label' => 'priority', 'type' => 'select', 'options' => ['low', 'medium', 'high', 'urgent']],
+            ['name' => 'priority', 'label' => 'priority', 'type' => 'select', 'lookup' => 'priority_levels'],
             ['name' => 'expected_date', 'label' => 'expected_date', 'type' => 'date'],
-            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'submitted', 'approved', 'rejected', 'cancelled']],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'pr_statuses'],
             ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'lookup' => 'currencies'],
             ['name' => 'total_estimated', 'label' => 'estimated_total', 'type' => 'number', 'readonly' => true],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea'],
@@ -279,7 +279,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'lookup' => 'currencies'],
             ['name' => 'order_date', 'label' => 'order_date', 'type' => 'date'],
             ['name' => 'expected_date', 'label' => 'expected_date', 'type' => 'date'],
-            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled']],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'lookup' => 'po_statuses'],
             ['name' => 'discount_amount', 'label' => 'discount', 'type' => 'number'],
             ['name' => 'shipping_amount', 'label' => 'shipping', 'type' => 'number'],
             ['name' => 'total_amount', 'label' => 'total', 'type' => 'number'],
@@ -611,7 +611,7 @@ final class RfqController extends \Rateb\App\Controllers\CrudController
         ];
         $this->fields = [
             ['name' => 'title', 'label' => 'Title', 'type' => 'text'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'published', 'closed', 'awarded', 'cancelled']],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'lookup' => 'rfq_statuses'],
             ['name' => 'deadline', 'label' => 'Deadline', 'type' => 'date'],
             ['name' => 'description', 'label' => 'Description', 'type' => 'textarea'],
         ];
@@ -675,7 +675,7 @@ final class QuotationsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'rfq_id', 'label' => 'rfq', 'type' => 'fk', 'lookup' => 'rfq'],
             ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
             ['name' => 'amount', 'label' => 'Amount', 'type' => 'number'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['submitted', 'under_review', 'accepted', 'rejected']],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'lookup' => 'quotation_statuses'],
         ];
     }
 
@@ -713,7 +713,7 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
             ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
             ['name' => 'phone', 'label' => 'Phone', 'type' => 'text'],
             ['name' => 'classification_id', 'label' => 'supplier_classifications', 'type' => 'fk', 'lookup' => 'supplier_classifications'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'inactive', 'blacklisted']],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'lookup' => 'supplier_statuses'],
         ];
     }
 
@@ -759,7 +759,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             ['name' => 'reorder_level', 'label' => 'reorder_level', 'type' => 'number', 'step' => '0.001', 'min' => '0'],
             ['name' => 'max_stock', 'label' => 'max_stock', 'type' => 'number', 'step' => '0.001', 'min' => '0'],
             ['name' => 'expiry_date', 'label' => 'expiry_date', 'type' => 'date'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'inactive', 'expired']],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'lookup' => 'inventory_statuses'],
             ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 3],
         ];
     }
@@ -1110,7 +1110,7 @@ final class AssetsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'purchase_date', 'label' => 'purchase_date', 'type' => 'date'],
             ['name' => 'purchase_cost', 'label' => 'purchase_cost', 'type' => 'number'],
             ['name' => 'current_value', 'label' => 'Value', 'type' => 'number'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'maintenance', 'retired', 'disposed']],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'lookup' => 'asset_statuses'],
         ];
     }
 
@@ -1143,7 +1143,7 @@ final class MedicalDevicesController extends \Rateb\App\Controllers\CrudControll
             ['name' => 'serial_no', 'label' => 'Serial', 'type' => 'text'],
             ['name' => 'calibration_due', 'label' => 'Calibration Due', 'type' => 'date'],
             ['name' => 'regulatory_status', 'label' => 'regulatory_status', 'type' => 'select', 'lookup' => 'regulatory_statuses'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['operational', 'maintenance', 'out_of_service']],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'lookup' => 'medical_device_statuses'],
         ];
     }
 
@@ -1179,7 +1179,7 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'end_date', 'label' => 'End', 'type' => 'date'],
             ['name' => 'renewal_date', 'label' => 'renewal_date', 'type' => 'date'],
             ['name' => 'value', 'label' => 'Value', 'type' => 'number'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'active', 'expired', 'terminated']],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'lookup' => 'contract_statuses'],
         ];
     }
 
@@ -1323,7 +1323,7 @@ final class TendersController extends \Rateb\App\Controllers\CrudController
             ['name' => 'publish_date', 'label' => 'Publish', 'type' => 'date'],
             ['name' => 'closing_date', 'label' => 'Closing', 'type' => 'date'],
             ['name' => 'estimated_value', 'label' => 'Value', 'type' => 'number'],
-            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'open', 'closed', 'awarded', 'cancelled']],
+            ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'lookup' => 'tender_statuses'],
         ];
     }
 

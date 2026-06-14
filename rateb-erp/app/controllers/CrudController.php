@@ -145,6 +145,9 @@ abstract class CrudController extends Controller
     /** @return array<string, mixed> */
     protected function formViewData(array $extra = []): array
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $fields = $extra['fields'] ?? $this->fields;
         return array_merge([
             'routePrefix' => $this->routePrefix,

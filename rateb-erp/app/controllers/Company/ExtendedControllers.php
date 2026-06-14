@@ -17,12 +17,11 @@ final class StockMovementsController extends Controller
 {
     public function index(): void
     {
+        rateb_bootstrap_ops_tenant();
         $service = new StockMovementService();
         $this->view('company/stock-movements/index', [
             'title' => __('stock_movements'),
             'items' => $service->listRecent(100),
-            'inventory' => (new \Rateb\App\Models\Inventory())->all(200, 0),
-            'warehouses' => (new \Rateb\App\Models\Warehouse())->all(100, 0),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('stock-movements'),
             'exportEnabled' => rateb_can_export_entity('stock-movements'),

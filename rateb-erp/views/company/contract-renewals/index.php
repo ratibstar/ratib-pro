@@ -1,44 +1,19 @@
+<?php
+use Rateb\App\Services\FormLookupService;
+
+$formFields = FormLookupService::contractRenewalFormFields();
+$lookups = (new FormLookupService())->forFields($formFields);
+?>
 <div class="rateb-card mb-4">
     <div class="rateb-card-header"><?php echo __('contract_renewals'); ?></div>
     <div class="rateb-card-body">
         <?php if ($canManage ?? rateb_can_manage_entity('contract-renewals')) { ?>
-        <form method="post" action="<?php echo rateb_app_url('contract-renewals'); ?>" class="row g-3 mb-4">
-            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-            <div class="col-md-4">
-                <label class="form-label"><?php echo __('contracts'); ?></label>
-                <select class="form-select" name="contract_id" required>
-                    <option value=""><?php echo __('select'); ?></option>
-                    <?php foreach ($contracts ?? [] as $c) { ?>
-                    <option value="<?php echo (int) $c['id']; ?>"><?php echo Rateb\App\Core\View::escape(($c['contract_no'] ?? '') . ' — ' . ($c['title'] ?? '')); ?></option>
-                    <?php } ?>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label"><?php echo __('renewal_date'); ?></label>
-                <input class="form-control" type="date" name="renewal_date" value="<?php echo date('Y-m-d'); ?>">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label"><?php echo __('new_end_date'); ?></label>
-                <input class="form-control" type="date" name="new_end_date">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label"><?php echo __('new_value'); ?></label>
-                <input class="form-control" type="number" step="0.01" name="new_value">
-            </div>
-            <div class="col-md-2">
-                <label class="form-label"><?php echo __('status'); ?></label>
-                <select class="form-select" name="status">
-                    <option value="planned">planned</option>
-                    <option value="approved">approved</option>
-                    <option value="completed">completed</option>
-                </select>
-            </div>
-            <div class="col-12">
-                <label class="form-label"><?php echo __('notes'); ?></label>
-                <textarea class="form-control" name="notes" rows="2"></textarea>
-            </div>
-            <div class="col-12"><button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button></div>
-        </form>
+        <?php Rateb\App\Core\View::partial('workflow-form', [
+            'formFields' => $formFields,
+            'formAction' => rateb_app_url('contract-renewals'),
+            'csrf' => $csrf,
+            'lookups' => $lookups,
+        ]); ?>
         <?php } ?>
         <?php Rateb\App\Core\View::partial('workflow-list', [
             'items' => $renewals ?? [],

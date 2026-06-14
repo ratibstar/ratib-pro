@@ -30,10 +30,10 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
             ['name' => 'warehouse_name', 'label' => 'warehouses'],
         ];
         $this->fields = [
-            ['name' => 'inventory_id', 'label' => 'inventory', 'type' => 'number'],
+            ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses', 'required' => true],
+            ['name' => 'inventory_id', 'label' => 'inventory', 'type' => 'fk', 'lookup' => 'inventory', 'required' => true],
             ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number'],
             ['name' => 'expiry_date', 'label' => 'expiry_date', 'type' => 'date'],
-            ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'number'],
         ];
     }
 
@@ -273,13 +273,15 @@ final class ContractRenewalsController extends Controller
 {
     public function index(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id');
-        TenantContext::setCompanyId($companyId);
+        rateb_bootstrap_ops_tenant();
+        $companyId = (int) (TenantContext::companyId() ?? 0);
+        if ($companyId > 0) {
+            TenantContext::setCompanyId($companyId);
+        }
         $this->view('company/contract-renewals/index', [
             'title' => __('contract_renewals'),
             'renewals' => (new ContractWorkflowService())->listRenewals(100),
             'expiring' => (new ContractWorkflowService())->expiringContracts(60),
-            'contracts' => (new \Rateb\App\Models\Contract())->all(100, 0),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('contract-renewals'),
         ], 'main');
@@ -313,10 +315,10 @@ final class AssetMaintenanceController extends Controller
 
     public function index(): void
     {
+        rateb_bootstrap_ops_tenant();
         $this->view('company/asset-maintenance/index', [
             'title' => __('asset_maintenance'),
             'items' => $this->svc->listAssetMaintenance(),
-            'assets' => (new \Rateb\App\Models\Asset())->all(200, 0),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('asset-maintenance'),
         ], 'main');
@@ -346,11 +348,11 @@ final class AssetAssignmentsController extends Controller
 {
     public function index(): void
     {
+        rateb_bootstrap_ops_tenant();
         $svc = new AssetDeviceWorkflowService();
         $this->view('company/asset-assignments/index', [
             'title' => __('asset_assignments'),
             'items' => $svc->listAssignments(),
-            'assets' => (new \Rateb\App\Models\Asset())->all(200, 0),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('asset-assignments'),
         ], 'main');
@@ -362,9 +364,16 @@ final class AssetAssignmentsController extends Controller
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('asset-assignments'));
         }
+        $assignedTo = trim((string) $this->input('assigned_to', ''));
+        if ($assignedTo !== '' && ctype_digit($assignedTo)) {
+            $user = (new \Rateb\App\Models\User())->find((int) $assignedTo);
+            if ($user) {
+                $assignedTo = trim((string) ($user['name'] ?? '')) ?: $assignedTo;
+            }
+        }
         $id = (new AssetDeviceWorkflowService())->createAssignment([
             'asset_id' => (int) $this->input('asset_id', 0),
-            'assigned_to' => trim((string) $this->input('assigned_to', '')),
+            'assigned_to' => $assignedTo,
             'department' => trim((string) $this->input('department', '')),
             'assigned_at' => (string) $this->input('assigned_at', date('Y-m-d')),
             'notes' => trim((string) $this->input('notes', '')),
@@ -379,10 +388,10 @@ final class AssetDepreciationController extends Controller
 {
     public function index(): void
     {
+        rateb_bootstrap_ops_tenant();
         $this->view('company/asset-depreciation/index', [
             'title' => __('asset_depreciation'),
             'items' => (new AssetDeviceWorkflowService())->listDepreciation(),
-            'assets' => (new \Rateb\App\Models\Asset())->all(200, 0),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('asset-depreciation'),
         ], 'main');
@@ -410,10 +419,10 @@ final class DeviceMaintenanceController extends Controller
 {
     public function index(): void
     {
+        rateb_bootstrap_ops_tenant();
         $this->view('company/device-maintenance/index', [
             'title' => __('device_maintenance'),
             'items' => (new AssetDeviceWorkflowService())->listDeviceService(),
-            'devices' => (new \Rateb\App\Models\MedicalDevice())->all(200, 0),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('device-maintenance'),
         ], 'main');
@@ -442,10 +451,10 @@ final class DeviceSparePartsController extends Controller
 {
     public function index(): void
     {
+        rateb_bootstrap_ops_tenant();
         $this->view('company/device-spare-parts/index', [
             'title' => __('device_spare_parts'),
             'items' => (new AssetDeviceWorkflowService())->listSpareParts(),
-            'devices' => (new \Rateb\App\Models\MedicalDevice())->all(200, 0),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('device-spare-parts'),
         ], 'main');
@@ -473,6 +482,7 @@ final class DeviceWarrantyController extends Controller
 {
     public function index(): void
     {
+        rateb_bootstrap_ops_tenant();
         $this->view('company/device-warranty/index', [
             'title' => __('device_warranty'),
             'devices' => (new \Rateb\App\Models\MedicalDevice())->all(200, 0),
@@ -723,7 +733,7 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         ];
         $this->fields = [
             ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers'],
-            ['name' => 'channel', 'label' => 'comm_channel', 'type' => 'select', 'options' => ['email', 'phone', 'meeting', 'note']],
+            ['name' => 'channel', 'label' => 'comm_channel', 'type' => 'select', 'lookup' => 'communication_types'],
             ['name' => 'subject', 'label' => 'subject', 'type' => 'text'],
             ['name' => 'body', 'label' => 'notes', 'type' => 'textarea'],
         ];
