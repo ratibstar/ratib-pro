@@ -1,1 +1,2 @@
-Deny from all
+# Block direct web access to ERP storage (files served via /documents/download).
+Require all denied

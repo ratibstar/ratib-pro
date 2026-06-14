@@ -772,7 +772,7 @@ return [
     'upload_save_failed' => 'تعذّر حفظ الملف على الخادم. تحقق من صلاحيات مجلد storage/uploads.',
     'file_too_large' => 'الملف كبير جداً (الحد الأقصى 10 ميجابايت).',
     'file_type_not_allowed' => 'نوع الملف غير مسموح.',
-    'storage_dir_not_writable' => 'مجلد التخزين غير قابل للكتابة. راجع صلاحيات rateb-erp/storage/uploads.',
+    'storage_dir_not_writable' => 'مجلد التخزين غير قابل للكتابة. من cPanel → File Manager → rateb-erp/storage → Change Permissions → 775 (أو 777) لمجلد uploads وجميع المجلدات الفرعية.',
     'save_ok_attachment_failed' => 'تم حفظ السجل، لكن فشل رفع المرفق. تحقق من صلاحيات التخزين أو نوع الملف.',
     'deadline' => 'آخر موعد',
     'remember_me' => 'تذكرني',

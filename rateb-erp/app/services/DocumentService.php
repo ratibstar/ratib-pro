@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Rateb\App\Services;
 
 use Rateb\App\Core\SessionManager;
-use Rateb\App\Core\TenantContext;
+use Rateb\App\Helpers\StorageHelper;
 
 final class DocumentService
 {
@@ -63,7 +63,7 @@ final class DocumentService
         $safeName = bin2hex(random_bytes(8)) . ($ext !== '' ? '.' . preg_replace('/[^a-zA-Z0-9]/', '', $ext) : '');
         $subdir = 'company_' . $companyId . '/' . preg_replace('/[^a-z0-9_\-]/i', '_', $entityType);
         $destDir = RATEB_STORAGE_PATH . '/uploads/' . $subdir;
-        $dirError = $this->ensureWritableDir($destDir);
+        $dirError = StorageHelper::ensureWritableDir($destDir);
         if ($dirError !== null) {
             return ['success' => false, 'error' => $dirError];
         }
@@ -178,27 +178,5 @@ final class DocumentService
     {
         $name = preg_replace('/[^\w\.\-]+/u', '_', $name) ?? 'file';
         return $name !== '' ? $name : 'file';
-    }
-
-    private function ensureWritableDir(string $destDir): ?string
-    {
-        $uploadsRoot = RATEB_STORAGE_PATH . '/uploads';
-        if (!is_dir($uploadsRoot)) {
-            if (!@mkdir($uploadsRoot, 0775, true) && !is_dir($uploadsRoot)) {
-                return __('storage_dir_not_writable');
-            }
-        }
-        if (!is_dir($destDir)) {
-            if (!@mkdir($destDir, 0775, true) && !is_dir($destDir)) {
-                return __('storage_dir_not_writable');
-            }
-        }
-        if (!is_writable($destDir)) {
-            @chmod($destDir, 0775);
-            if (!is_writable($destDir)) {
-                return __('storage_dir_not_writable');
-            }
-        }
-        return null;
     }
 }

@@ -772,7 +772,7 @@ return [
     'upload_save_failed' => 'Could not save file on the server. Check storage/uploads permissions.',
     'file_too_large' => 'File is too large (max 10MB).',
     'file_type_not_allowed' => 'File type is not allowed.',
-    'storage_dir_not_writable' => 'Storage folder is not writable. Check rateb-erp/storage/uploads permissions.',
+    'storage_dir_not_writable' => 'Storage folder is not writable. In cPanel → File Manager → rateb-erp/storage → set Permissions to 775 (or 777) for uploads and subfolders.',
     'save_ok_attachment_failed' => 'Record saved, but the attachment could not be uploaded. Check storage permissions or file type.',
     'deadline' => 'Deadline',
     'remember_me' => 'Remember me',

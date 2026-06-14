@@ -1,6 +1,15 @@
 *
 !.gitignore
+!.htaccess
 !.deploy-migrate-token.example
+!uploads/
+!uploads/**
+!logs/
+!logs/**
+!backups/
+!backups/**
+!rate-limit/
+!rate-limit/**
 
 .deploy-migrate-token
 deploy-migrate-token

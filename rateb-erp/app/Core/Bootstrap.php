@@ -215,14 +215,6 @@ final class Bootstrap
 
     private static function ensureStorage(string $basePath): void
     {
-        foreach (['storage/logs', 'storage/uploads', 'storage/backups', 'storage/rate-limit'] as $dir) {
-            $full = $basePath . '/' . $dir;
-            if (!is_dir($full)) {
-                @mkdir($full, 0775, true);
-            }
-            if (is_dir($full) && !is_writable($full)) {
-                @chmod($full, 0775);
-            }
-        }
+        \Rateb\App\Helpers\StorageHelper::ensureStorageTree($basePath);
     }
 }
