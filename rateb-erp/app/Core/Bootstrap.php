@@ -218,7 +218,10 @@ final class Bootstrap
         foreach (['storage/logs', 'storage/uploads', 'storage/backups', 'storage/rate-limit'] as $dir) {
             $full = $basePath . '/' . $dir;
             if (!is_dir($full)) {
-                @mkdir($full, 0755, true);
+                @mkdir($full, 0775, true);
+            }
+            if (is_dir($full) && !is_writable($full)) {
+                @chmod($full, 0775);
             }
         }
     }

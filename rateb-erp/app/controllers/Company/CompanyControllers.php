@@ -821,9 +821,13 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         }
         $id = $this->model->create($data);
         (new \Rateb\App\Services\DocumentBarcodeService())->ensure('inventory', $id);
-        $this->saveInventoryAttachment($id);
+        $attachmentOk = $this->saveInventoryAttachment($id);
         (new AuditService())->log('create', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
+        if ($attachmentOk) {
+            SessionManager::flash('success', __('save') . ' OK');
+        } else {
+            SessionManager::flash('error', __('save_ok_attachment_failed'));
+        }
         $this->redirect(rateb_url($this->routePrefix));
     }
 
@@ -844,9 +848,13 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
         $this->model->update($id, $data);
-        $this->saveInventoryAttachment($id);
+        $attachmentOk = $this->saveInventoryAttachment($id);
         (new AuditService())->log('update', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
+        if ($attachmentOk) {
+            SessionManager::flash('success', __('save') . ' OK');
+        } else {
+            SessionManager::flash('error', __('save_ok_attachment_failed'));
+        }
         $this->redirect(rateb_url($this->routePrefix));
     }
 
@@ -874,7 +882,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         ];
     }
 
-    private function saveInventoryAttachment(int $id): void
+    private function saveInventoryAttachment(int $id): bool
     {
         $companyId = (int) TenantContext::companyId();
         $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
@@ -885,10 +893,12 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             __('inventory_attachment')
         );
         if (!($upload['success'] ?? false)) {
-            SessionManager::flash('error', (string) ($upload['error'] ?? __('upload_failed')));
-        } elseif (!empty($upload['path'])) {
+            return false;
+        }
+        if (!empty($upload['path'])) {
             $this->model->update($id, ['document_path' => $upload['path']]);
         }
+        return true;
     }
 }
 

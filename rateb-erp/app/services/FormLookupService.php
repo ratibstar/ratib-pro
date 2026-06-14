@@ -57,52 +57,139 @@ final class FormLookupService
         if (isset($this->cache[$lookup])) {
             return $this->cache[$lookup];
         }
-        $options = match ($lookup) {
-            'companies' => $this->mapRows((new BillingService())->companyOptions(), 'id', 'name'),
-            'suppliers' => $this->mapRows((new Supplier())->all(500, 0), 'id', 'name'),
-            'warehouses' => $this->warehouseOptions(),
-            'cost_centers' => $this->costCenterOptions(),
-            'inventory' => $this->inventoryOptions(),
-            'product_categories' => $this->mapRows((new ProductCategory())->all(300, 0), 'id', 'name'),
-            'supplier_classifications' => $this->mapRows((new SupplierClassification())->all(200, 0), 'id', 'name'),
-            'rfq' => $this->rfqOptions(),
-            'contracts' => $this->contractOptions(),
-            'assets' => $this->assetOptions(),
-            'chart_of_accounts' => $this->coaOptions(),
-            'bank_accounts' => $this->mapRows((new BankAccount())->all(200, 0), 'id', 'name'),
-            'fiscal_periods' => $this->mapRows((new FiscalPeriod())->all(100, 0), 'id', 'name'),
-            'departments' => $this->departmentOptions(),
-            'permission_modules' => $this->moduleOptions(),
-            'asset_categories' => $this->assetCategoryOptions(),
-            'units' => $this->unitOptions(),
-            'currencies' => $this->staticOptions(['SAR', 'USD', 'EUR']),
-            'locales' => $this->staticOptions(['ar', 'en'], true),
-            'page_templates' => $this->staticOptions(['default', 'landing', 'blog', 'contact'], true),
-            'contract_types' => $this->staticOptions(['supply', 'service', 'lease', 'maintenance', 'other'], true),
-            'approval_statuses' => $this->staticOptions(['pending', 'approved', 'rejected'], true),
-            'maintenance_types' => $this->staticOptions(['preventive', 'corrective', 'calibration', 'inspection'], true),
-            'regulatory_statuses' => $this->staticOptions(['compliant', 'pending', 'non_compliant'], true),
-            'payment_methods' => $this->staticOptions(['bank_transfer', 'card', 'cash', 'cheque', 'online'], true),
-            'redirect_status_codes' => $this->staticOptions(['301', '302', '307', '308']),
-            'cms_pages' => $this->cmsPageOptions(),
-            'cms_sections' => $this->mapRows((new CmsSection())->all(500, 0), 'id', 'section_key'),
-            'cms_menus' => $this->mapRows((new CmsMenu())->all(100, 0), 'id', 'name_en'),
-            'cms_faq_categories' => $this->mapRows((new CmsFaqCategory())->all(200, 0), 'id', 'name_en'),
-            'cms_blog_categories' => $this->mapRows((new CmsBlogCategory())->all(200, 0), 'id', 'name_en'),
-            'cms_blog_authors' => $this->mapRows((new CmsBlogAuthor())->all(200, 0), 'id', 'name_en'),
-            'cms_service_categories' => $this->mapRows((new CmsServiceCategory())->all(200, 0), 'id', 'name_en'),
-            'kb_categories' => $this->distinctCategoryOptions('rateb_cms_kb_articles', 'category'),
-            'help_categories' => $this->distinctCategoryOptions('rateb_cms_help_articles', 'category'),
-            'career_departments' => $this->distinctCategoryOptions('rateb_cms_careers', 'department_en'),
-            'newsletter_segments' => $this->distinctCategoryOptions('rateb_cms_newsletter_segments', 'name_en'),
-            'setting_groups' => $this->staticOptions(['general', 'billing', 'email', 'sms', 'security', 'cms'], true),
-            'pr_statuses' => $this->staticOptions(['draft', 'submitted', 'approved', 'rejected', 'cancelled'], true),
-            'po_statuses' => $this->staticOptions(['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled'], true),
-            'rfq_statuses' => $this->staticOptions(['draft', 'published', 'closed', 'awarded', 'cancelled'], true),
-            'inventory_statuses' => $this->staticOptions(['active', 'inactive', 'expired'], true),
-            'evaluation_statuses' => $this->staticOptions(['draft', 'published', 'archived'], true),
-            default => [],
-        };
+        switch ($lookup) {
+            case 'companies':
+                $options = $this->mapRows((new BillingService())->companyOptions(), 'id', 'name');
+                break;
+            case 'suppliers':
+                $options = $this->mapRows((new Supplier())->all(500, 0), 'id', 'name');
+                break;
+            case 'warehouses':
+                $options = $this->warehouseOptions();
+                break;
+            case 'cost_centers':
+                $options = $this->costCenterOptions();
+                break;
+            case 'inventory':
+                $options = $this->inventoryOptions();
+                break;
+            case 'product_categories':
+                $options = $this->mapRows((new ProductCategory())->all(300, 0), 'id', 'name');
+                break;
+            case 'supplier_classifications':
+                $options = $this->mapRows((new SupplierClassification())->all(200, 0), 'id', 'name');
+                break;
+            case 'rfq':
+                $options = $this->rfqOptions();
+                break;
+            case 'contracts':
+                $options = $this->contractOptions();
+                break;
+            case 'assets':
+                $options = $this->assetOptions();
+                break;
+            case 'chart_of_accounts':
+                $options = $this->coaOptions();
+                break;
+            case 'bank_accounts':
+                $options = $this->mapRows((new BankAccount())->all(200, 0), 'id', 'name');
+                break;
+            case 'fiscal_periods':
+                $options = $this->mapRows((new FiscalPeriod())->all(100, 0), 'id', 'name');
+                break;
+            case 'departments':
+                $options = $this->departmentOptions();
+                break;
+            case 'permission_modules':
+                $options = $this->moduleOptions();
+                break;
+            case 'asset_categories':
+                $options = $this->assetCategoryOptions();
+                break;
+            case 'units':
+                $options = $this->unitOptions();
+                break;
+            case 'currencies':
+                $options = $this->staticOptions(['SAR', 'USD', 'EUR']);
+                break;
+            case 'locales':
+                $options = $this->staticOptions(['ar', 'en'], true);
+                break;
+            case 'page_templates':
+                $options = $this->staticOptions(['default', 'landing', 'blog', 'contact'], true);
+                break;
+            case 'contract_types':
+                $options = $this->staticOptions(['supply', 'service', 'lease', 'maintenance', 'other'], true);
+                break;
+            case 'approval_statuses':
+                $options = $this->staticOptions(['pending', 'approved', 'rejected'], true);
+                break;
+            case 'maintenance_types':
+                $options = $this->staticOptions(['preventive', 'corrective', 'calibration', 'inspection'], true);
+                break;
+            case 'regulatory_statuses':
+                $options = $this->staticOptions(['compliant', 'pending', 'non_compliant'], true);
+                break;
+            case 'payment_methods':
+                $options = $this->staticOptions(['bank_transfer', 'card', 'cash', 'cheque', 'online'], true);
+                break;
+            case 'redirect_status_codes':
+                $options = $this->staticOptions(['301', '302', '307', '308']);
+                break;
+            case 'cms_pages':
+                $options = $this->cmsPageOptions();
+                break;
+            case 'cms_sections':
+                $options = $this->mapRows((new CmsSection())->all(500, 0), 'id', 'section_key');
+                break;
+            case 'cms_menus':
+                $options = $this->mapRows((new CmsMenu())->all(100, 0), 'id', 'name_en');
+                break;
+            case 'cms_faq_categories':
+                $options = $this->mapRows((new CmsFaqCategory())->all(200, 0), 'id', 'name_en');
+                break;
+            case 'cms_blog_categories':
+                $options = $this->mapRows((new CmsBlogCategory())->all(200, 0), 'id', 'name_en');
+                break;
+            case 'cms_blog_authors':
+                $options = $this->mapRows((new CmsBlogAuthor())->all(200, 0), 'id', 'name_en');
+                break;
+            case 'cms_service_categories':
+                $options = $this->mapRows((new CmsServiceCategory())->all(200, 0), 'id', 'name_en');
+                break;
+            case 'kb_categories':
+                $options = $this->distinctCategoryOptions('rateb_cms_kb_articles', 'category');
+                break;
+            case 'help_categories':
+                $options = $this->distinctCategoryOptions('rateb_cms_help_articles', 'category');
+                break;
+            case 'career_departments':
+                $options = $this->distinctCategoryOptions('rateb_cms_careers', 'department_en');
+                break;
+            case 'newsletter_segments':
+                $options = $this->distinctCategoryOptions('rateb_cms_newsletter_segments', 'name_en');
+                break;
+            case 'setting_groups':
+                $options = $this->staticOptions(['general', 'billing', 'email', 'sms', 'security', 'cms'], true);
+                break;
+            case 'pr_statuses':
+                $options = $this->staticOptions(['draft', 'submitted', 'approved', 'rejected', 'cancelled'], true);
+                break;
+            case 'po_statuses':
+                $options = $this->staticOptions(['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled'], true);
+                break;
+            case 'rfq_statuses':
+                $options = $this->staticOptions(['draft', 'published', 'closed', 'awarded', 'cancelled'], true);
+                break;
+            case 'inventory_statuses':
+                $options = $this->staticOptions(['active', 'inactive', 'expired'], true);
+                break;
+            case 'evaluation_statuses':
+                $options = $this->staticOptions(['draft', 'published', 'archived'], true);
+                break;
+            default:
+                $options = [];
+        }
         $this->cache[$lookup] = $options;
         return $options;
     }

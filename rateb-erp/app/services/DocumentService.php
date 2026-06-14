@@ -21,44 +21,57 @@ final class DocumentService
     /** @return array{success:bool,path?:string,error?:string} */
     public function storeUpload(array $file, string $entityType, int $entityId, string $title = ''): array
     {
-        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-            return ['success' => false, 'error' => 'Upload failed'];
+        $uploadError = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($uploadError === UPLOAD_ERR_NO_FILE) {
+            return ['success' => true];
+        }
+        if ($uploadError !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'error' => __('upload_failed')];
         }
 
         $size = (int) ($file['size'] ?? 0);
-        if ($size < 1 || $size > 10 * 1024 * 1024) {
-            return ['success' => false, 'error' => 'File too large (max 10MB)'];
+        if ($size < 1) {
+            return ['success' => true];
+        }
+        if ($size > 10 * 1024 * 1024) {
+            return ['success' => false, 'error' => __('file_too_large')];
         }
 
         $companyId = TenantContext::companyId();
         if ($companyId === null && !TenantContext::isSuperAdmin()) {
-            return ['success' => false, 'error' => 'Company context required'];
+            return ['success' => false, 'error' => __('billing_company_required')];
         }
         if ($companyId !== null && !(new PlanLimitService())->canUploadBytes((int) $companyId, $size)) {
             return ['success' => false, 'error' => __('storage_limit_exceeded')];
         }
         if ($companyId === null) {
-            return ['success' => false, 'error' => 'Company context required'];
+            return ['success' => false, 'error' => __('billing_company_required')];
+        }
+
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            return ['success' => false, 'error' => __('upload_failed')];
         }
 
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mime = $finfo->file((string) ($file['tmp_name'] ?? '')) ?: '';
+        $mime = $finfo->file($tmpName) ?: '';
         if (!in_array($mime, self::ALLOWED_MIMES, true)) {
-            return ['success' => false, 'error' => 'File type not allowed'];
+            return ['success' => false, 'error' => __('file_type_not_allowed')];
         }
 
         $ext = pathinfo((string) ($file['name'] ?? 'file'), PATHINFO_EXTENSION);
         $safeName = bin2hex(random_bytes(8)) . ($ext !== '' ? '.' . preg_replace('/[^a-zA-Z0-9]/', '', $ext) : '');
         $subdir = 'company_' . $companyId . '/' . preg_replace('/[^a-z0-9_\-]/i', '_', $entityType);
         $destDir = RATEB_STORAGE_PATH . '/uploads/' . $subdir;
-        if (!is_dir($destDir)) {
-            @mkdir($destDir, 0755, true);
+        $dirError = $this->ensureWritableDir($destDir);
+        if ($dirError !== null) {
+            return ['success' => false, 'error' => $dirError];
         }
 
         $relative = 'uploads/' . $subdir . '/' . $safeName;
         $full = RATEB_STORAGE_PATH . '/' . $relative;
-        if (!move_uploaded_file((string) $file['tmp_name'], $full)) {
-            return ['success' => false, 'error' => 'Could not save file'];
+        if (!move_uploaded_file($tmpName, $full)) {
+            return ['success' => false, 'error' => __('upload_save_failed')];
         }
 
         $db = \Rateb\App\Core\Database::connection();
@@ -165,5 +178,27 @@ final class DocumentService
     {
         $name = preg_replace('/[^\w\.\-]+/u', '_', $name) ?? 'file';
         return $name !== '' ? $name : 'file';
+    }
+
+    private function ensureWritableDir(string $destDir): ?string
+    {
+        $uploadsRoot = RATEB_STORAGE_PATH . '/uploads';
+        if (!is_dir($uploadsRoot)) {
+            if (!@mkdir($uploadsRoot, 0775, true) && !is_dir($uploadsRoot)) {
+                return __('storage_dir_not_writable');
+            }
+        }
+        if (!is_dir($destDir)) {
+            if (!@mkdir($destDir, 0775, true) && !is_dir($destDir)) {
+                return __('storage_dir_not_writable');
+            }
+        }
+        if (!is_writable($destDir)) {
+            @chmod($destDir, 0775);
+            if (!is_writable($destDir)) {
+                return __('storage_dir_not_writable');
+            }
+        }
+        return null;
     }
 }

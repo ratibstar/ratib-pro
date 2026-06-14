@@ -19,6 +19,9 @@ final class EntityAttachment
         if (!isset($_FILES[$inputName]) || ($_FILES[$inputName]['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
             return ['success' => true];
         }
+        if ((int) ($_FILES[$inputName]['size'] ?? 0) < 1) {
+            return ['success' => true];
+        }
         if ($companyId < 1) {
             return ['success' => false, 'error' => __('billing_company_required')];
         }
