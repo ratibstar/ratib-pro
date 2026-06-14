@@ -23,3 +23,10 @@ html[dir="rtl"] .rateb-topbar h1 {
     text-transform: none !important;
     letter-spacing: normal !important;
 }
+
+html[dir="rtl"] input[type="date"],
+html[dir="rtl"] input[type="datetime-local"] {
+    direction: ltr;
+    text-align: left;
+    unicode-bidi: isolate;
+}

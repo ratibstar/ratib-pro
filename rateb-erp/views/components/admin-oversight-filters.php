@@ -40,11 +40,11 @@ $formAction = $formAction ?? '';
                 <?php } ?>
                 <div class="col-md-2">
                     <label class="form-label rateb-form-label"><?php echo __('date_from'); ?></label>
-                    <input class="form-control" type="date" name="date_from" dir="ltr" value="<?php echo Rateb\App\Core\View::escape($filters['date_from']); ?>">
+                    <input class="form-control" type="date" name="date_from" dir="ltr" lang="en" autocomplete="off" value="<?php echo Rateb\App\Core\View::escape($filters['date_from']); ?>">
                 </div>
                 <div class="col-md-2">
                     <label class="form-label rateb-form-label"><?php echo __('date_to'); ?></label>
-                    <input class="form-control" type="date" name="date_to" dir="ltr" value="<?php echo Rateb\App\Core\View::escape($filters['date_to']); ?>">
+                    <input class="form-control" type="date" name="date_to" dir="ltr" lang="en" autocomplete="off" value="<?php echo Rateb\App\Core\View::escape($filters['date_to']); ?>">
                 </div>
                 <div class="col-md-2 d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1"><?php echo __('filter'); ?></button>
