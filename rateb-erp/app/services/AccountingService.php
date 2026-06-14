@@ -11,22 +11,56 @@ use PDO;
 final class AccountingService
 {
     /** @var array<string, array{code:string,name:string,name_ar:string,type:string,parent?:string}> */
+    /** Standard COA tree — keeps existing posting codes (1100, 1200, 1210, …). */
     private const DEFAULT_ACCOUNTS = [
+        // ── 1xxx Assets ──
         'assets' => ['code' => '1000', 'name' => 'Assets', 'name_ar' => 'الأصول', 'type' => 'asset'],
-        'cash' => ['code' => '1100', 'name' => 'Cash', 'name_ar' => 'النقدية', 'type' => 'asset', 'parent' => '1000'],
+        'cash' => ['code' => '1100', 'name' => 'Cash on Hand', 'name_ar' => 'النقدية / الصندوق', 'type' => 'asset', 'parent' => '1000'],
+        'banks_grp' => ['code' => '1150', 'name' => 'Bank Accounts', 'name_ar' => 'الحسابات البنكية', 'type' => 'asset', 'parent' => '1000'],
         'ar' => ['code' => '1200', 'name' => 'Accounts Receivable', 'name_ar' => 'ذمم مدينة', 'type' => 'asset', 'parent' => '1000'],
         'vat_input' => ['code' => '1210', 'name' => 'VAT Recoverable', 'name_ar' => 'ضريبة قابلة للاسترداد', 'type' => 'asset', 'parent' => '1000'],
+        'adv_suppliers' => ['code' => '1220', 'name' => 'Advances to Suppliers', 'name_ar' => 'سلف موردين', 'type' => 'asset', 'parent' => '1000'],
         'inventory' => ['code' => '1300', 'name' => 'Inventory', 'name_ar' => 'المخزون', 'type' => 'asset', 'parent' => '1000'],
+        'prepaid' => ['code' => '1400', 'name' => 'Prepaid Expenses', 'name_ar' => 'مصروفات مقدمة', 'type' => 'asset', 'parent' => '1000'],
+        'fixed_assets' => ['code' => '1500', 'name' => 'Fixed Assets', 'name_ar' => 'الأصول الثابتة', 'type' => 'asset', 'parent' => '1000'],
+        'equipment' => ['code' => '1510', 'name' => 'Equipment', 'name_ar' => 'معدات', 'type' => 'asset', 'parent' => '1500'],
+        'vehicles' => ['code' => '1520', 'name' => 'Vehicles', 'name_ar' => 'مركبات', 'type' => 'asset', 'parent' => '1500'],
+        'buildings' => ['code' => '1530', 'name' => 'Buildings', 'name_ar' => 'مباني', 'type' => 'asset', 'parent' => '1500'],
+        'accum_depr' => ['code' => '1590', 'name' => 'Accumulated Depreciation', 'name_ar' => 'مجمع الإهلاك', 'type' => 'asset', 'parent' => '1500'],
+
+        // ── 2xxx Liabilities ──
         'liabilities' => ['code' => '2000', 'name' => 'Liabilities', 'name_ar' => 'الخصوم', 'type' => 'liability'],
         'ap' => ['code' => '2100', 'name' => 'Accounts Payable', 'name_ar' => 'ذمم دائنة', 'type' => 'liability', 'parent' => '2000'],
+        'cust_advances' => ['code' => '2110', 'name' => 'Customer Advances', 'name_ar' => 'دفعات مقدمة من العملاء', 'type' => 'liability', 'parent' => '2000'],
         'vat' => ['code' => '2200', 'name' => 'VAT Payable', 'name_ar' => 'ضريبة مستحقة', 'type' => 'liability', 'parent' => '2000'],
+        'accrued' => ['code' => '2300', 'name' => 'Accrued Expenses', 'name_ar' => 'مصروفات مستحقة', 'type' => 'liability', 'parent' => '2000'],
+        'salaries_payable' => ['code' => '2400', 'name' => 'Salaries Payable', 'name_ar' => 'رواتب مستحقة', 'type' => 'liability', 'parent' => '2000'],
+        'st_loans' => ['code' => '2500', 'name' => 'Short-term Loans', 'name_ar' => 'قروض قصيرة الأجل', 'type' => 'liability', 'parent' => '2000'],
+
+        // ── 3xxx Equity ──
         'equity' => ['code' => '3000', 'name' => 'Equity', 'name_ar' => 'حقوق الملكية', 'type' => 'equity'],
         'retained' => ['code' => '3100', 'name' => 'Retained Earnings', 'name_ar' => 'أرباح محتجزة', 'type' => 'equity', 'parent' => '3000'],
+        'capital' => ['code' => '3200', 'name' => 'Share Capital', 'name_ar' => 'رأس المال', 'type' => 'equity', 'parent' => '3000'],
+        'current_pl' => ['code' => '3300', 'name' => 'Current Year Profit/Loss', 'name_ar' => 'أرباح/خسائر العام الحالي', 'type' => 'equity', 'parent' => '3000'],
+
+        // ── 4xxx Revenue ──
         'revenue_grp' => ['code' => '4000', 'name' => 'Revenue', 'name_ar' => 'الإيرادات', 'type' => 'revenue'],
         'revenue' => ['code' => '4100', 'name' => 'Sales Revenue', 'name_ar' => 'إيرادات المبيعات', 'type' => 'revenue', 'parent' => '4000'],
+        'service_rev' => ['code' => '4200', 'name' => 'Service Revenue', 'name_ar' => 'إيرادات الخدمات', 'type' => 'revenue', 'parent' => '4000'],
+        'other_income' => ['code' => '4300', 'name' => 'Other Income', 'name_ar' => 'إيرادات أخرى', 'type' => 'revenue', 'parent' => '4000'],
+        'sales_returns' => ['code' => '4900', 'name' => 'Sales Returns & Allowances', 'name_ar' => 'مردودات ومسموحات المبيعات', 'type' => 'revenue', 'parent' => '4000'],
+
+        // ── 5xxx Expenses ──
         'expenses' => ['code' => '5000', 'name' => 'Expenses', 'name_ar' => 'المصروفات', 'type' => 'expense'],
         'procurement' => ['code' => '5100', 'name' => 'Procurement Expense', 'name_ar' => 'مصروفات المشتريات', 'type' => 'expense', 'parent' => '5000'],
         'cogs' => ['code' => '5200', 'name' => 'Cost of Goods Sold', 'name_ar' => 'تكلفة البضاعة المباعة', 'type' => 'expense', 'parent' => '5000'],
+        'payroll' => ['code' => '5300', 'name' => 'Salaries & Wages', 'name_ar' => 'الرواتب والأجور', 'type' => 'expense', 'parent' => '5000'],
+        'rent' => ['code' => '5400', 'name' => 'Rent Expense', 'name_ar' => 'مصروف الإيجار', 'type' => 'expense', 'parent' => '5000'],
+        'utilities' => ['code' => '5500', 'name' => 'Utilities', 'name_ar' => 'مرافق (كهرباء، ماء، …)', 'type' => 'expense', 'parent' => '5000'],
+        'depr_exp' => ['code' => '5600', 'name' => 'Depreciation Expense', 'name_ar' => 'مصروف الإهلاك', 'type' => 'expense', 'parent' => '5000'],
+        'bank_charges' => ['code' => '5700', 'name' => 'Bank & Finance Charges', 'name_ar' => 'عمولات بنكية ومالية', 'type' => 'expense', 'parent' => '5000'],
+        'ga_exp' => ['code' => '5800', 'name' => 'General & Administrative', 'name_ar' => 'مصروفات عمومية وإدارية', 'type' => 'expense', 'parent' => '5000'],
+        'marketing' => ['code' => '5900', 'name' => 'Marketing & Sales', 'name_ar' => 'مصروفات تسويق ومبيعات', 'type' => 'expense', 'parent' => '5000'],
     ];
 
     public function normalizeCompanyId($companyId): ?int
@@ -101,7 +135,12 @@ final class AccountingService
             if ((int) ($row['parent_id'] ?? 0) > 0) {
                 continue;
             }
-            $parentCode = $this->inferParentCode((string) $row['code']);
+            $code = (string) ($row['code'] ?? '');
+            if (preg_match('/^111\d$/', $code) && !empty($codeToId['1150'])) {
+                $coa->update($childId, ['parent_id' => $codeToId['1150']]);
+                continue;
+            }
+            $parentCode = $this->inferParentCode($code, $codeToId);
             if ($parentCode === null || empty($codeToId[$parentCode]) || $codeToId[$parentCode] === $childId) {
                 continue;
             }
@@ -109,12 +148,20 @@ final class AccountingService
         }
     }
 
-    private function inferParentCode(string $code): ?string
+    /** @param array<string, int> $codeToId */
+    private function inferParentCode(string $code, array $codeToId): ?string
     {
         if (!preg_match('/^\d{4}$/', $code) || substr($code, -3) === '000') {
             return null;
         }
-        return substr($code, 0, 1) . '000';
+        if (substr($code, -2) !== '00') {
+            $subGroup = substr($code, 0, 2) . '00';
+            if ($subGroup !== $code && isset($codeToId[$subGroup])) {
+                return $subGroup;
+            }
+        }
+        $root = substr($code, 0, 1) . '000';
+        return isset($codeToId[$root]) ? $root : null;
     }
 
     public function accountIdByCode(?int $companyId, string $code): ?int
@@ -795,10 +842,15 @@ final class AccountingService
         $roots = [];
         foreach ($byId as $id => $account) {
             $parentId = (int) ($account['parent_id'] ?? 0);
+            $code = (string) ($account['code'] ?? '');
             if ($parentId < 1) {
-                $parentCode = $this->inferParentCode((string) ($account['code'] ?? ''));
-                if ($parentCode !== null && isset($codeToId[$parentCode])) {
-                    $parentId = $codeToId[$parentCode];
+                if (preg_match('/^111\d$/', $code) && isset($codeToId['1150'])) {
+                    $parentId = $codeToId['1150'];
+                } else {
+                    $parentCode = $this->inferParentCode($code, $codeToId);
+                    if ($parentCode !== null && isset($codeToId[$parentCode])) {
+                        $parentId = $codeToId[$parentCode];
+                    }
                 }
             }
             if ($parentId > 0 && isset($byId[$parentId]) && $parentId !== $id) {
@@ -1006,12 +1058,14 @@ final class AccountingService
         $this->ensureDefaultAccounts($companyId);
         $code = $this->nextBankAccountCode($companyId);
         $coa = new ChartOfAccount();
+        $banksParent = $this->accountIdByCode($companyId, '1150');
         $coaId = $coa->create([
             'company_id' => $companyId,
             'code' => $code,
             'name' => (string) ($data['name'] ?? 'Bank'),
             'name_ar' => (string) ($data['name_ar'] ?? $data['name'] ?? 'بنك'),
             'account_type' => 'asset',
+            'parent_id' => $banksParent,
             'is_active' => 1,
         ]);
         $pdo = Database::connection();
