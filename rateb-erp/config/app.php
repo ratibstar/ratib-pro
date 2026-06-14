@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260614-acct2');
+define('RATEB_ASSET_BUILD', '20260614-acctfix1');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -144,6 +144,55 @@ if (!function_exists('rateb_is_super_admin')) {
     function rateb_is_super_admin(): bool
     {
         return !empty($_SESSION['rateb_is_super_admin']);
+    }
+}
+
+/** Resolve active company for ops routes (session, then ?company_id=, then ops session). */
+if (!function_exists('rateb_resolve_ops_company_id')) {
+    function rateb_resolve_ops_company_id(): int
+    {
+        $sessionCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_company_id', 0) ?? 0);
+        if ($sessionCompany > 0) {
+            \Rateb\App\Core\TenantContext::setCompanyId($sessionCompany);
+            return $sessionCompany;
+        }
+
+        $fromRequest = (int) ($_GET['company_id'] ?? $_POST['company_id'] ?? 0);
+        if ($fromRequest > 0) {
+            \Rateb\App\Core\SessionManager::set('rateb_ops_company_id', $fromRequest);
+            \Rateb\App\Core\TenantContext::setCompanyId($fromRequest);
+            return $fromRequest;
+        }
+
+        $opsCompany = (int) (\Rateb\App\Core\SessionManager::get('rateb_ops_company_id', 0) ?? 0);
+        if ($opsCompany > 0) {
+            \Rateb\App\Core\TenantContext::setCompanyId($opsCompany);
+            return $opsCompany;
+        }
+
+        $ctx = \Rateb\App\Core\TenantContext::companyId();
+        return $ctx !== null && $ctx > 0 ? (int) $ctx : 0;
+    }
+}
+
+if (!function_exists('rateb_require_ops_company')) {
+    function rateb_require_ops_company(): int
+    {
+        $id = rateb_resolve_ops_company_id();
+        if ($id < 1) {
+            \Rateb\App\Core\SessionManager::flash('error', __('select_company_ops'));
+            \Rateb\App\Core\Response::redirect(rateb_app_url('accounting'));
+            exit;
+        }
+        return $id;
+    }
+}
+
+/** @deprecated alias */
+if (!function_exists('rateb_resolve_company_id')) {
+    function rateb_resolve_company_id(): int
+    {
+        return rateb_resolve_ops_company_id();
     }
 }
 

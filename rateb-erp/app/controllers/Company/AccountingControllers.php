@@ -17,18 +17,22 @@ final class AccountingDashboardController extends Controller
 {
     public function index(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
-        TenantContext::setCompanyId($companyId);
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId > 0) {
+            TenantContext::setCompanyId($companyId);
+        }
         $service = new AccountingService();
-        $service->ensureDefaultAccounts($companyId);
+        $service->ensureDefaultAccounts($companyId > 0 ? $companyId : null);
 
         $this->view('company/accounting/dashboard', [
             'title' => __('accounting_module'),
-            'trial' => $service->trialBalance($companyId),
-            'summary' => $service->financialSummary($companyId),
+            'trial' => $companyId > 0 ? $service->trialBalance($companyId) : [],
+            'summary' => $companyId > 0 ? $service->financialSummary($companyId) : [],
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('accounting'),
             'canPost' => rateb_can_post_entity('accounting'),
+            'companies' => rateb_is_super_admin() ? (new \Rateb\App\Models\Company())->all(200, 0) : [],
+            'selectedCompanyId' => $companyId,
         ], 'main');
     }
 
@@ -38,7 +42,7 @@ final class AccountingDashboardController extends Controller
         if (!$this->validateCsrf()) {
             Response::redirect(rateb_app_url('accounting'));
         }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_require_ops_company();
         $count = (new AccountingService())->syncFromSources($companyId);
         (new AuditService())->log('accounting_sync', 'journal', null, ['count' => $count, 'company_id' => $companyId]);
         SessionManager::flash('success', __('accounting_sync_done') . ' (' . $count . ')');
@@ -47,7 +51,7 @@ final class AccountingDashboardController extends Controller
 
     public function accountsPayable(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         $data = (new AccountingService())->accountsPayable($companyId);
         $this->view('company/accounting/accounts-payable', [
             'title' => __('accounts_payable'),
@@ -60,7 +64,7 @@ final class AccountingDashboardController extends Controller
 
     public function accountsReceivable(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         $data = (new AccountingService())->accountsReceivable($companyId);
         $this->view('company/accounting/accounts-receivable', [
             'title' => __('accounts_receivable'),
@@ -73,7 +77,7 @@ final class AccountingDashboardController extends Controller
 
     public function profitLoss(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         $from = trim((string) ($_GET['from'] ?? ''));
         $to = trim((string) ($_GET['to'] ?? ''));
         $report = (new AccountingService())->profitAndLoss(
@@ -92,7 +96,7 @@ final class AccountingDashboardController extends Controller
 
     public function balanceSheet(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         $asOf = trim((string) ($_GET['as_of'] ?? ''));
         $report = (new AccountingService())->balanceSheet(
             $companyId,
@@ -108,7 +112,7 @@ final class AccountingDashboardController extends Controller
 
     public function vatReport(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         $from = trim((string) ($_GET['from'] ?? ''));
         $to = trim((string) ($_GET['to'] ?? ''));
         $report = (new AccountingService())->vatReport(
@@ -144,7 +148,7 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
 
     public function index(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         TenantContext::setCompanyId($companyId);
         (new AccountingService())->ensureDefaultAccounts($companyId);
         $items = $this->model->query(
@@ -169,7 +173,7 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
     protected function collectData(): array
     {
         $data = parent::collectData();
-        $data['company_id'] = (int) SessionManager::get('rateb_company_id', 0);
+        $data['company_id'] = rateb_resolve_ops_company_id();
         $data['is_active'] = 1;
         return $data;
     }
@@ -184,7 +188,7 @@ final class JournalEntriesController extends Controller
 {
     public function index(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         $items = (new JournalEntry())->query(
             'SELECT * FROM rateb_journal_entries WHERE company_id = :cid ORDER BY id DESC LIMIT 100',
             ['cid' => $companyId]
@@ -205,7 +209,7 @@ final class JournalEntriesController extends Controller
             SessionManager::flash('error', __('access_denied'));
             Response::redirect(rateb_app_url('journal-entries'));
         }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         (new AccountingService())->ensureDefaultAccounts($companyId);
         $accounts = (new ChartOfAccount())->query(
             'SELECT id, code, name, name_ar FROM rateb_chart_of_accounts WHERE company_id = :cid AND is_active = 1 ORDER BY code',
@@ -227,7 +231,7 @@ final class JournalEntriesController extends Controller
             SessionManager::flash('error', __('invalid_request'));
             Response::redirect(rateb_app_url('journal-entries'));
         }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_require_ops_company();
         $service = new AccountingService();
         try {
             $id = $service->createManualDraft(
@@ -253,7 +257,7 @@ final class JournalEntriesController extends Controller
             SessionManager::flash('error', __('access_denied'));
             Response::redirect(rateb_app_url('journal-entries'));
         }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         $id = (int) ($params['id'] ?? 0);
         $entry = (new JournalEntry())->queryOne(
             'SELECT * FROM rateb_journal_entries WHERE id = :id AND company_id = :cid',
@@ -287,7 +291,7 @@ final class JournalEntriesController extends Controller
             SessionManager::flash('error', __('invalid_request'));
             Response::redirect(rateb_app_url('journal-entries'));
         }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
         $service = new AccountingService();
         try {
@@ -318,7 +322,7 @@ final class JournalEntriesController extends Controller
             SessionManager::flash('error', __('access_denied'));
             Response::redirect(rateb_app_url('journal-entries'));
         }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
         if ((new AccountingService())->postDraftEntry($id, $companyId)) {
             (new AuditService())->log('post', 'journal_entry', $id, []);
@@ -336,7 +340,7 @@ final class JournalEntriesController extends Controller
             SessionManager::flash('error', __('access_denied'));
             Response::redirect(rateb_app_url('journal-entries'));
         }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
         if ((new AccountingService())->voidPostedEntry($id, $companyId)) {
             (new AuditService())->log('void', 'journal_entry', $id, []);
@@ -349,7 +353,7 @@ final class JournalEntriesController extends Controller
 
     public function show(array $params): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         $id = (int) ($params['id'] ?? 0);
         $entry = (new JournalEntry())->queryOne(
             'SELECT * FROM rateb_journal_entries WHERE id = :id AND company_id = :cid',
@@ -425,7 +429,7 @@ final class CashVouchersController extends Controller
 {
     public function index(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         $this->view('company/cash-vouchers/index', [
             'title' => __('cash_vouchers'),
             'items' => (new AccountingService())->listCashVouchers($companyId),
@@ -441,7 +445,7 @@ final class CashVouchersController extends Controller
             SessionManager::flash('error', __('access_denied'));
             Response::redirect(rateb_app_url('cash-vouchers'));
         }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         (new AccountingService())->ensureDefaultAccounts($companyId);
         $accounts = (new ChartOfAccount())->query(
             'SELECT id, code, name, name_ar FROM rateb_chart_of_accounts WHERE company_id = :cid AND is_active = 1 ORDER BY code',
@@ -461,7 +465,7 @@ final class CashVouchersController extends Controller
         if (!rateb_can_manage_entity('cash-vouchers') || !$this->validateCsrf()) {
             Response::redirect(rateb_app_url('cash-vouchers'));
         }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_require_ops_company();
         $type = (string) ($_POST['voucher_type'] ?? 'receipt');
         if (!in_array($type, ['receipt', 'payment'], true)) {
             $type = 'receipt';
@@ -488,7 +492,7 @@ final class CashVouchersController extends Controller
 
     public function show(array $params): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         $id = (int) ($params['id'] ?? 0);
         $voucher = (new JournalEntry())->queryOne(
             'SELECT v.*, a.code AS counter_code, a.name AS counter_name, a.name_ar AS counter_name_ar
@@ -516,7 +520,7 @@ final class CashVouchersController extends Controller
         if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
             Response::redirect(rateb_app_url('cash-vouchers'));
         }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
         if ((new AccountingService())->postCashVoucher($id, $companyId)) {
             (new AuditService())->log('post', 'cash_voucher', $id, []);
@@ -533,7 +537,7 @@ final class CashVouchersController extends Controller
         if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
             Response::redirect(rateb_app_url('cash-vouchers'));
         }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
         if ((new AccountingService())->voidCashVoucher($id, $companyId)) {
             (new AuditService())->log('void', 'cash_voucher', $id, []);
@@ -549,7 +553,7 @@ final class FiscalPeriodsController extends Controller
 {
     public function index(): void
     {
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_resolve_ops_company_id();
         $this->view('company/fiscal-periods/index', [
             'title' => __('fiscal_periods'),
             'items' => (new AccountingService())->listFiscalPeriods($companyId),
@@ -564,7 +568,7 @@ final class FiscalPeriodsController extends Controller
         if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
             Response::redirect(rateb_app_url('fiscal-periods'));
         }
-        $companyId = (int) SessionManager::get('rateb_company_id', 0);
+        $companyId = rateb_require_ops_company();
         $id = (int) ($params['id'] ?? 0);
         if ((new AccountingService())->closeFiscalPeriod($id, $companyId, (int) SessionManager::get('rateb_user_id', 0) ?: null)) {
             (new AuditService())->log('close', 'fiscal_period', $id, []);

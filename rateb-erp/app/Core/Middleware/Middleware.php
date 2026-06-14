@@ -259,6 +259,7 @@ final class CompanySaaSMiddleware implements MiddlewareInterface
     public function handle(): bool
     {
         if (SessionManager::get('rateb_is_super_admin')) {
+            rateb_resolve_ops_company_id();
             return true;
         }
 
@@ -276,6 +277,7 @@ final class CompanySaaSMiddleware implements MiddlewareInterface
             return false;
         }
 
+        \Rateb\App\Core\TenantContext::setCompanyId($companyId);
         return true;
     }
 }

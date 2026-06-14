@@ -73,7 +73,7 @@ final class StockMovement extends Model
     protected string $table = 'rateb_stock_movements';
     protected bool $tenantScoped = true;
     protected array $fillable = [
-        'inventory_id', 'warehouse_id', 'movement_type', 'quantity',
+        'company_id', 'inventory_id', 'warehouse_id', 'movement_type', 'quantity',
         'reference_type', 'reference_id', 'notes', 'created_by',
     ];
 }

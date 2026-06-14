@@ -341,6 +341,8 @@ return [
     'fiscal_period_close_confirm' => 'Close this fiscal period?',
     'open' => 'Open',
     'closed' => 'Closed',
+    'select_company_ops' => 'Select a company to view and manage accounting.',
+    'ops_company_select_help' => 'As platform admin, pick the company whose books you want to work on. Your choice is remembered for this session.',
     'debit' => 'Debit',
     'credit' => 'Credit',
     'code' => 'Code',

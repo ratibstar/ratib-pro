@@ -35,6 +35,9 @@ final class AccountingService
     public function ensureDefaultAccounts(?int $companyId): void
     {
         $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null || $companyId < 1) {
+            return;
+        }
         $coa = new ChartOfAccount();
         foreach (self::DEFAULT_ACCOUNTS as $def) {
             $exists = $coa->queryOne(
@@ -782,7 +785,7 @@ final class AccountingService
     /** @return array<int, array<string, mixed>> */
     public function listFiscalPeriods(?int $companyId): array
     {
-        if ($companyId === null) {
+        if ($companyId === null || $companyId < 1) {
             return [];
         }
         $this->ensureCurrentFiscalPeriod($companyId);

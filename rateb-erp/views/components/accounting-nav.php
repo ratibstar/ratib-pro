@@ -34,6 +34,12 @@ $isActive = static function (array $tab) use ($route): bool {
     return false;
 };
 ?>
+<?php if (rateb_is_super_admin()) {
+    Rateb\App\Core\View::partial('ops-company-select', [
+        'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
+        'selectedCompanyId' => rateb_resolve_ops_company_id(),
+    ]);
+} ?>
 <nav class="rateb-accounting-nav mb-4" aria-label="<?php echo __('accounting'); ?>">
     <div class="rateb-accounting-nav-brand">
         <i class="fas fa-calculator"></i>
