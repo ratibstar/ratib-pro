@@ -103,9 +103,10 @@
             if (shipEl) { shipping = parseNum(shipEl.value); }
         }
         grand = Math.round((grand - discount + shipping) * 100) / 100;
-        var subEl = table.querySelector('[data-procurement-subtotal]');
-        var taxEl = table.querySelector('[data-procurement-tax]');
-        var grandEl = table.querySelector('[data-procurement-grand-total]');
+        var scope = form || table;
+        var subEl = scope.querySelector('[data-procurement-subtotal]');
+        var taxEl = scope.querySelector('[data-procurement-tax]');
+        var grandEl = scope.querySelector('[data-procurement-grand-total]');
         if (subEl) { subEl.textContent = subtotal.toFixed(2); }
         if (taxEl) { taxEl.textContent = tax.toFixed(2); }
         if (grandEl) { grandEl.textContent = grand.toFixed(2); }

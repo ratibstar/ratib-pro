@@ -685,6 +685,8 @@ return [
     'unit_unit' => 'Unit',
     'taxes' => 'Taxes',
     'excluding_tax' => 'Excl. tax',
+    'excluding_tax_yes' => 'Excl. tax',
+    'excluding_tax_no' => 'Incl. tax',
     'line_total' => 'Line total',
     'line_subtotal' => 'Line subtotal',
     'unit_factor_hint' => '= :qty Each',

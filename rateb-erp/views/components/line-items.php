@@ -2,14 +2,15 @@
 /** @var array<int, array<string, mixed>> $lineItems */
 /** @var bool $showDeliveryCols */
 /** @var bool $defaultVat15 */
+/** @var bool $showTableTotals */
 $lineItems = $lineItems ?? [];
 $showDeliveryCols = !empty($showDeliveryCols);
 $inventoryItems = $inventoryItems ?? [];
 $defaultVat15 = !empty($defaultVat15);
+$showTableTotals = $showTableTotals ?? true;
 $unitOptions = \Rateb\App\Helpers\LineItems::unitOptions();
 $unitFactors = \Rateb\App\Helpers\LineItems::unitFactors();
 $taxPresets = \Rateb\App\Helpers\LineItems::taxPresets();
-$colSpan = 7;
 if ($lineItems === []) {
     $lineItems = [[
         'inventory_id' => '', 'item_name' => '', 'description' => '', 'sku' => '', 'quantity' => 1,
@@ -30,8 +31,20 @@ $req = static function (string $label): string {
             <button type="button" class="btn btn-sm btn-outline-primary" data-line-items-add><i class="fas fa-plus"></i> <?php echo __('add_line'); ?></button>
         </div>
         <div class="rateb-card-body p-0">
-            <div class="table-responsive">
-                <table class="table rateb-table mb-0" data-line-items-table<?php echo $defaultVat15 ? ' data-default-vat="15"' : ''; ?>>
+            <div class="table-responsive rateb-line-items-wrap">
+                <table class="table rateb-line-items-table mb-0" data-line-items-table<?php echo $defaultVat15 ? ' data-default-vat="15"' : ''; ?>>
+                    <colgroup>
+                        <col class="rateb-col-inv">
+                        <col class="rateb-col-name">
+                        <col class="rateb-col-sku">
+                        <col class="rateb-col-qty">
+                        <col class="rateb-col-unit">
+                        <col class="rateb-col-price">
+                        <col class="rateb-col-subtotal">
+                        <col class="rateb-col-tax">
+                        <col class="rateb-col-total">
+                        <col class="rateb-col-action">
+                    </colgroup>
                     <thead>
                     <tr>
                         <th><?php echo __('inventory'); ?></th>
@@ -42,9 +55,8 @@ $req = static function (string $label): string {
                         <th><?php echo $req(__('unit_price')); ?></th>
                         <th class="text-end"><?php echo __('line_subtotal'); ?></th>
                         <th><?php echo __('taxes'); ?></th>
-                        <th class="text-center"><?php echo __('excluding_tax'); ?></th>
                         <th class="text-end"><?php echo __('line_total'); ?></th>
-                        <th></th>
+                        <th class="rateb-line-actions"></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -60,7 +72,7 @@ $req = static function (string $label): string {
                         $qtyEach = \Rateb\App\Helpers\LineItems::qtyInEach($qty, $unit);
                         ?>
                     <tr data-line-items-row>
-                        <td>
+                        <td class="rateb-line-inv">
                             <select class="form-select form-select-sm" name="line_inventory_id[]" data-line-inventory>
                                 <option value="">—</option>
                                 <?php foreach ($inventoryItems as $inv) {
@@ -77,13 +89,16 @@ $req = static function (string $label): string {
                                 <?php } ?>
                             </select>
                         </td>
-                        <td><input class="form-control form-control-sm" name="line_item_name[]" value="<?php echo Rateb\App\Core\View::escape($line['item_name'] ?? ''); ?>" required data-line-calc></td>
-                        <td><input class="form-control form-control-sm" name="line_sku[]" value="<?php echo Rateb\App\Core\View::escape($line['sku'] ?? ''); ?>"></td>
-                        <td>
-                            <input class="form-control form-control-sm" type="number" step="0.001" min="0.001" name="line_quantity[]" value="<?php echo Rateb\App\Core\View::escape($line['quantity'] ?? 1); ?>" required data-line-calc>
-                            <small class="text-muted" data-unit-hint data-hint-template="<?php echo Rateb\App\Core\View::escape(__('unit_factor_hint', ['qty' => ':qty'])); ?>"><?php echo __('unit_factor_hint', ['qty' => number_format($qtyEach, 2)]); ?></small>
+                        <td class="rateb-line-name">
+                            <input class="form-control form-control-sm" name="line_item_name[]" value="<?php echo Rateb\App\Core\View::escape($line['item_name'] ?? ''); ?>" required data-line-calc>
                         </td>
-                        <td>
+                        <td class="rateb-line-sku">
+                            <input class="form-control form-control-sm rateb-ltr-num" name="line_sku[]" value="<?php echo Rateb\App\Core\View::escape($line['sku'] ?? ''); ?>">
+                        </td>
+                        <td class="rateb-line-qty">
+                            <input class="form-control form-control-sm rateb-ltr-num" type="number" step="0.001" min="0.001" name="line_quantity[]" value="<?php echo Rateb\App\Core\View::escape($line['quantity'] ?? 1); ?>" required data-line-calc>
+                        </td>
+                        <td class="rateb-line-unit">
                             <select class="form-select form-select-sm" name="line_unit[]" data-line-unit>
                                 <?php foreach ($unitOptions as $opt) {
                                     $factor = $unitFactors[$opt] ?? 1;
@@ -91,49 +106,59 @@ $req = static function (string $label): string {
                                 <option value="<?php echo Rateb\App\Core\View::escape($opt); ?>" data-factor="<?php echo (int) $factor; ?>"<?php echo $unit === $opt ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape(__('unit_' . $opt)); ?></option>
                                 <?php } ?>
                             </select>
+                            <small class="rateb-line-unit-hint rateb-ltr-num" data-unit-hint data-hint-template="<?php echo Rateb\App\Core\View::escape(__('unit_factor_hint', ['qty' => ':qty'])); ?>"><?php echo __('unit_factor_hint', ['qty' => number_format($qtyEach, 2)]); ?></small>
                         </td>
-                        <td><input class="form-control form-control-sm" type="number" step="0.01" min="0" name="line_unit_price[]" value="<?php echo Rateb\App\Core\View::escape($line['unit_price'] ?? 0); ?>" required data-line-calc></td>
-                        <td class="text-end"><span data-line-subtotal><?php echo number_format($totals['subtotal'], 2); ?></span></td>
-                        <td>
-                            <select class="form-select form-select-sm" name="line_tax_name[]" data-line-tax-preset>
-                                <?php foreach ($taxPresets as $preset) {
-                                    $presetRate = strpos($preset, '15%') !== false ? 15 : (strpos($preset, '5%') !== false ? 5 : 0);
-                                    ?>
-                                <option value="<?php echo Rateb\App\Core\View::escape($preset); ?>" data-tax-rate="<?php echo $presetRate; ?>"<?php echo $taxName === $preset ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($preset); ?></option>
-                                <?php } ?>
-                            </select>
+                        <td class="rateb-line-price">
+                            <input class="form-control form-control-sm rateb-ltr-num" type="number" step="0.01" min="0" name="line_unit_price[]" value="<?php echo Rateb\App\Core\View::escape($line['unit_price'] ?? 0); ?>" required data-line-calc>
+                        </td>
+                        <td class="text-end rateb-line-amount"><span data-line-subtotal><?php echo number_format($totals['subtotal'], 2); ?></span></td>
+                        <td class="rateb-line-tax-cell">
+                            <div class="rateb-line-tax-stack">
+                                <select class="form-select form-select-sm" name="line_tax_name[]" data-line-tax-preset>
+                                    <?php foreach ($taxPresets as $preset) {
+                                        $presetRate = strpos($preset, '15%') !== false ? 15 : (strpos($preset, '5%') !== false ? 5 : 0);
+                                        ?>
+                                    <option value="<?php echo Rateb\App\Core\View::escape($preset); ?>" data-tax-rate="<?php echo $presetRate; ?>"<?php echo $taxName === $preset ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($preset); ?></option>
+                                    <?php } ?>
+                                </select>
+                                <select class="form-select form-select-sm" name="line_excluding_tax[]" data-line-calc title="<?php echo __('excluding_tax'); ?>">
+                                    <option value="1"<?php echo $excluding ? ' selected' : ''; ?>><?php echo __('excluding_tax_yes'); ?></option>
+                                    <option value="0"<?php echo !$excluding ? ' selected' : ''; ?>><?php echo __('excluding_tax_no'); ?></option>
+                                </select>
+                            </div>
                             <input type="hidden" name="line_tax_rate[]" value="<?php echo Rateb\App\Core\View::escape($line['tax_rate'] ?? ($defaultVat15 ? 15 : 0)); ?>" data-line-tax-rate>
                         </td>
-                        <td class="text-center">
-                            <select class="form-select form-select-sm" name="line_excluding_tax[]" data-line-calc>
-                                <option value="1"<?php echo $excluding ? ' selected' : ''; ?>><?php echo __('yes'); ?></option>
-                                <option value="0"<?php echo !$excluding ? ' selected' : ''; ?>><?php echo __('no'); ?></option>
-                            </select>
+                        <td class="text-end rateb-line-amount"><span data-line-total><?php echo number_format($totals['total'], 2); ?></span></td>
+                        <td class="rateb-line-actions">
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-line-items-remove title="<?php echo __('delete'); ?>"><i class="fas fa-times"></i></button>
                         </td>
-                        <td class="text-end"><span data-line-total><?php echo number_format($totals['total'], 2); ?></span></td>
-                        <td><button type="button" class="btn btn-sm btn-outline-danger" data-line-items-remove><i class="fas fa-times"></i></button></td>
                     </tr>
                     <?php } ?>
                     </tbody>
-                    <tfoot>
-                    <tr>
-                        <td colspan="<?php echo $colSpan; ?>" class="text-end fw-semibold"><?php echo __('subtotal'); ?></td>
-                        <td class="text-end" data-procurement-subtotal>0.00</td>
-                        <td colspan="3"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="<?php echo $colSpan; ?>" class="text-end fw-semibold"><?php echo __('tax_amount'); ?> (<?php echo __('vat_15'); ?>)</td>
-                        <td class="text-end" data-procurement-tax>0.00</td>
-                        <td colspan="3"></td>
-                    </tr>
-                    <tr class="table-primary">
-                        <td colspan="<?php echo $colSpan; ?>" class="text-end fw-bold"><?php echo __('total'); ?></td>
-                        <td class="text-end fw-bold" data-procurement-grand-total>0.00</td>
-                        <td colspan="3"></td>
-                    </tr>
-                    </tfoot>
                 </table>
             </div>
+            <?php if ($showTableTotals) { ?>
+            <div class="rateb-line-items-totals px-3 py-3">
+                <div class="row g-2 justify-content-end text-end">
+                    <div class="col-sm-4 col-md-3">
+                        <span class="text-muted"><?php echo __('subtotal'); ?></span>
+                        <div class="fw-semibold rateb-ltr-num"><span data-procurement-subtotal>0.00</span></div>
+                    </div>
+                    <div class="col-sm-4 col-md-3">
+                        <span class="text-muted"><?php echo __('tax_amount'); ?> (<?php echo __('vat_15'); ?>)</span>
+                        <div class="fw-semibold rateb-ltr-num"><span data-procurement-tax>0.00</span></div>
+                    </div>
+                    <div class="col-sm-4 col-md-3">
+                        <span class="text-muted"><?php echo __('total'); ?></span>
+                        <div class="fw-bold text-primary rateb-ltr-num"><span data-procurement-grand-total>0.00</span></div>
+                    </div>
+                </div>
+            </div>
+            <?php } else { ?>
+            <span class="d-none" data-procurement-subtotal>0.00</span>
+            <span class="d-none" data-procurement-tax>0.00</span>
+            <span class="d-none" data-procurement-grand-total>0.00</span>
+            <?php } ?>
         </div>
     </div>
 </div>

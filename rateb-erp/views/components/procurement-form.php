@@ -76,6 +76,7 @@ $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($fields);
                     'inventoryItems' => $inventoryItems ?? [],
                     'defaultVat15' => $defaultVat15,
                     'lookups' => $lookups,
+                    'showTableTotals' => $entityType !== 'purchase_order',
                 ]); ?>
                 <?php if ($entityType === 'purchase_order') {
                     Rateb\App\Core\View::partial('procurement-summary', [
