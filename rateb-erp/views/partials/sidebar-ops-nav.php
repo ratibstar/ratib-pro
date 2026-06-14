@@ -31,6 +31,9 @@ $opsSection(__('suppliers'), [
     ['supplier-classifications', 'supplier_classifications', 'fa-tags', 'suppliers'],
     ['supplier-kpi', 'supplier_kpi', 'fa-chart-line', 'suppliers'],
 ], 'fa-truck-field');
+if (!rateb_is_super_admin()) {
+    $opsLink('accounting', 'accounting_module', 'fa-calculator', 'accounting');
+}
 $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['contracts', 'contracts', 'fa-file-contract', 'contracts'],
     ['contract-renewals', 'contract_renewals', 'fa-rotate', 'contracts'],
@@ -43,7 +46,6 @@ $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['device-maintenance', 'device_maintenance', 'fa-screwdriver-wrench', 'medical_devices'],
     ['device-spare-parts', 'device_spare_parts', 'fa-gears', 'medical_devices'],
     ['device-warranty', 'device_warranty', 'fa-shield-halved', 'medical_devices'],
-    ['accounting', 'accounting_module', 'fa-calculator', 'accounting'],
     ['reports', 'reports', 'fa-chart-pie', 'reports'],
     ['reports/procurement', 'procurement_analytics', 'fa-cart-shopping', 'procurement'],
     ['reports/kpi', 'company_kpi', 'fa-gauge-high', 'reports'],
