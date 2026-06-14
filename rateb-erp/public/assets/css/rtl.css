@@ -34,6 +34,14 @@
     text-align: right;
 }
 
+[dir="rtl"] .rateb-nav-group-toggle {
+    text-align: right;
+}
+
+[dir="rtl"] .rateb-nav-group-body .rateb-nav-link {
+    padding: 0.45rem 1.85rem 0.45rem 0.85rem;
+}
+
 [dir="rtl"] .rateb-nav-link {
     flex-direction: row;
     justify-content: flex-start;

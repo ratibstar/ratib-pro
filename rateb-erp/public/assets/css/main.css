@@ -59,6 +59,74 @@ body.rateb-app {
     color: var(--rateb-sidebar-text);
 }
 
+.rateb-nav-group {
+    margin: 0.12rem 0.4rem;
+}
+
+.rateb-nav-group-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--rateb-sidebar-text);
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-align: start;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.rateb-nav-group-toggle:hover,
+.rateb-nav-group.is-open > .rateb-nav-group-toggle {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+}
+
+.rateb-nav-group-icon {
+    width: 1rem;
+    flex-shrink: 0;
+    text-align: center;
+    opacity: 0.85;
+    font-size: 0.9rem;
+}
+
+.rateb-nav-group-label {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rateb-nav-group-chevron {
+    font-size: 0.7rem;
+    opacity: 0.65;
+    transition: transform 0.2s ease;
+}
+
+.rateb-nav-group.is-open .rateb-nav-group-chevron {
+    transform: rotate(180deg);
+}
+
+.rateb-nav-group-body {
+    display: none;
+    padding: 0.1rem 0 0.35rem;
+}
+
+.rateb-nav-group.is-open .rateb-nav-group-body {
+    display: block;
+}
+
+.rateb-nav-group-body .rateb-nav-link {
+    margin: 0.08rem 0.35rem;
+    padding: 0.45rem 0.85rem 0.45rem 1.85rem;
+    font-size: 0.86rem;
+}
+
 .rateb-nav-link {
     display: flex;
     align-items: center;

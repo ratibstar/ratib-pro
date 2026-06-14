@@ -13,7 +13,7 @@ $opsSection(__('procurement'), [
     ['rfq', 'rfq', 'fa-comments-dollar', 'procurement'],
     ['quotations', 'quotations', 'fa-file-signature', 'procurement'],
     ['workflows', 'workflows', 'fa-diagram-project', 'workflows'],
-]);
+], 'fa-cart-shopping');
 $opsSection(__('inventory'), [
     ['inventory', 'inventory', 'fa-boxes-stacked', 'inventory'],
     ['inventory-batches', 'inventory_batches', 'fa-layer-group', 'inventory'],
@@ -21,13 +21,13 @@ $opsSection(__('inventory'), [
     ['warehouses', 'warehouses', 'fa-warehouse', 'inventory'],
     ['stock-movements', 'stock_movements', 'fa-arrows-rotate', 'inventory'],
     ['product-categories', 'product_categories', 'fa-tags', 'inventory'],
-]);
+], 'fa-boxes-stacked');
 $opsSection(__('suppliers'), [
     ['suppliers', 'suppliers', 'fa-truck-field', 'suppliers'],
     ['supplier-evaluations', 'supplier_evaluations', 'fa-star-half-stroke', 'suppliers'],
     ['supplier-classifications', 'supplier_classifications', 'fa-tags', 'suppliers'],
     ['supplier-kpi', 'supplier_kpi', 'fa-chart-line', 'suppliers'],
-]);
+], 'fa-truck-field');
 $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['contracts', 'contracts', 'fa-file-contract', 'contracts'],
     ['contract-renewals', 'contract_renewals', 'fa-rotate', 'contracts'],
@@ -48,6 +48,6 @@ $opsSection(__('contracts') . ' / ' . __('assets'), [
     ['reports/supplier-performance', 'supplier_performance_report', 'fa-truck-field', 'reports'],
     ['reports/inventory-valuation', 'inventory_valuation_report', 'fa-boxes-stacked', 'inventory'],
     ['documents', 'documents', 'fa-folder-open', 'documents'],
-]);
+], 'fa-briefcase');
 $opsLink('notifications', 'notifications', 'fa-bell');
 $opsLink('profile', 'profile', 'fa-user-gear');

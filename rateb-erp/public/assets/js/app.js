@@ -125,6 +125,19 @@
         });
     }
 
+    function initSidebarNavGroups() {
+        document.querySelectorAll('[data-nav-group-toggle]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var group = btn.closest('[data-nav-group]');
+                if (!group) {
+                    return;
+                }
+                var open = group.classList.toggle('is-open');
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         var toggle = document.getElementById('rateb-sidebar-toggle');
         var sidebar = document.getElementById('rateb-sidebar');
@@ -163,5 +176,6 @@
 
         initBulkTables();
         initPermissionMatrix();
+        initSidebarNavGroups();
     });
 })();

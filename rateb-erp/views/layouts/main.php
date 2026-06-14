@@ -72,9 +72,8 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
                 <i class="fas fa-gauge-high"></i><span><?php echo __('executive_dashboard'); ?></span>
             </a>
             <?php } ?>
-            <div class="rateb-nav-section"><?php echo __('admin_oversight_section'); ?></div>
             <?php
-            $adminLinks = [
+            $adminSection(__('admin_oversight_section'), [
                 ['admin/companies', 'companies', 'fa-building', 'companies.view'],
                 ['admin/subscriptions', 'subscriptions', 'fa-credit-card', 'subscriptions.manage'],
                 ['admin/oversight/procurement', 'procurement_oversight', 'fa-chart-column', 'procurement.manage'],
@@ -83,59 +82,26 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
                 ['admin/oversight/workflows', 'workflow_definitions', 'fa-diagram-project', 'workflows.view'],
                 ['admin/reports', 'reports', 'fa-chart-pie', 'reports.view'],
                 ['admin/settings', 'settings', 'fa-gear', 'settings.manage'],
-            ];
-            foreach ($adminLinks as $link) {
-                if (!rateb_nav_can($link[3])) {
-                    continue;
-                }
-                $active = $navActive($link[0]) ? ' active' : '';
-                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
-                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
-            }
-            ?>
-            <div class="rateb-nav-section"><?php echo __('accounting_module'); ?></div>
-            <?php
-            $accountingLinks = [
+            ], 'fa-shield-halved');
+            $adminSection(__('accounting_module'), [
                 ['admin/accounting', 'accounting_overview', 'fa-gauge-high', 'accounting.view'],
                 ['admin/chart-of-accounts', 'chart_of_accounts', 'fa-list', 'accounting.view'],
                 ['admin/journal-entries', 'journal_entries', 'fa-book', 'accounting.view'],
                 ['admin/invoices', 'invoices', 'fa-file-invoice', 'accounting.view'],
                 ['admin/payments', 'payments', 'fa-money-bill-wave', 'accounting.view'],
-            ];
-            foreach ($accountingLinks as $link) {
-                if (!rateb_nav_can($link[3])) {
-                    continue;
-                }
-                $active = $navActive($link[0]) ? ' active' : '';
-                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
-                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
+            ], 'fa-calculator');
+            if (rateb_nav_can('cms.view')) {
+                $adminSection(__('cms_section'), [
+                    ['admin/cms', 'cms_dashboard', 'fa-globe', 'cms.view'],
+                    ['admin/cms/pages', 'cms_pages', 'fa-file-lines', 'cms.manage'],
+                    ['admin/cms/leads', 'cms_leads', 'fa-user-plus', 'cms.leads'],
+                    ['admin/cms/blog-articles', 'cms_blog', 'fa-newspaper', 'cms.manage'],
+                    ['admin/cms/media', 'cms_media', 'fa-images', 'cms.media'],
+                    ['admin/cms/seo', 'cms_seo', 'fa-magnifying-glass', 'cms.seo'],
+                    ['admin/cms/theme', 'cms_theme', 'fa-palette', 'cms.manage'],
+                ], 'fa-globe');
             }
-            ?>
-            <?php if (rateb_nav_can('cms.view')) { ?>
-            <div class="rateb-nav-section"><?php echo __('cms_section'); ?></div>
-            <?php
-            $cmsLinks = [
-                ['admin/cms', 'cms_dashboard', 'fa-globe', 'cms.view'],
-                ['admin/cms/pages', 'cms_pages', 'fa-file-lines', 'cms.manage'],
-                ['admin/cms/leads', 'cms_leads', 'fa-user-plus', 'cms.leads'],
-                ['admin/cms/blog-articles', 'cms_blog', 'fa-newspaper', 'cms.manage'],
-                ['admin/cms/media', 'cms_media', 'fa-images', 'cms.media'],
-                ['admin/cms/seo', 'cms_seo', 'fa-magnifying-glass', 'cms.seo'],
-                ['admin/cms/theme', 'cms_theme', 'fa-palette', 'cms.manage'],
-            ];
-            foreach ($cmsLinks as $link) {
-                if (!rateb_nav_can($link[3])) {
-                    continue;
-                }
-                $active = $navActive($link[0]) ? ' active' : '';
-                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
-                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
-            }
-            ?>
-            <?php } ?>
-            <div class="rateb-nav-section"><?php echo __('access_control'); ?></div>
-            <?php
-            $accessLinks = [
+            $adminSection(__('access_control'), [
                 ['admin/access-control', 'access_control', 'fa-shield-halved', 'access.manage'],
                 ['admin/access-control/matrix', 'permission_matrix', 'fa-table-cells', 'access.manage'],
                 ['admin/users', 'users', 'fa-users', 'access.manage'],
@@ -146,15 +112,7 @@ $navActive = static function (string $route) use ($erpRoute, $currentPath): bool
                 ['admin/support-tickets', 'support_tickets', 'fa-life-ring', 'settings.manage'],
                 ['admin/email-templates', 'email_templates', 'fa-envelope', 'settings.manage'],
                 ['admin/sms-templates', 'sms_templates', 'fa-sms', 'settings.manage'],
-            ];
-            foreach ($accessLinks as $link) {
-                if (!rateb_nav_can($link[3])) {
-                    continue;
-                }
-                $active = $navActive($link[0]) ? ' active' : '';
-                echo '<a href="' . rateb_url($link[0]) . '" class="rateb-nav-link' . $active . '">';
-                echo '<i class="fas ' . $link[2] . '"></i><span>' . __($link[1]) . '</span></a>';
-            }
+            ], 'fa-key');
             ?>
             <?php } ?>
         </nav>
