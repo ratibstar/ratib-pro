@@ -38,6 +38,20 @@ return [
     'company_full_access_role' => 'company-full-access',
 
     /**
+     * Accounting permission tiers (company matrix):
+     * - accounting.view — read reports, lists, and entry details
+     * - accounting.manage — create/edit draft journals, vouchers, chart of accounts
+     * - accounting.approve — approve (post) manual journals and cash vouchers; void them
+     * - accounting.post — system sync, fiscal period close/reopen, automatic posting
+     */
+    'accounting_permission_slugs' => [
+        'accounting.view',
+        'accounting.manage',
+        'accounting.approve',
+        'accounting.post',
+    ],
+
+    /**
      * Permission slugs that must never be assigned to company-full-access
      * (even when module is shared, e.g. reports.executive).
      */

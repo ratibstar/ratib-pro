@@ -11,7 +11,7 @@ define('RATEB_STORAGE_PATH', RATEB_ROOT . '/storage');
 
 define('RATEB_APP_NAME', 'RTAB');
 define('RATEB_APP_VERSION', '1.0.0');
-define('RATEB_ASSET_BUILD', '20260614-acctfix3');
+define('RATEB_ASSET_BUILD', '20260614-acctapprove1');
 
 if (defined('RATEB_CP_ENTRY') && defined('RATEB_CP_APP_URL')) {
     define('RATEB_CP_MODE', true);
@@ -356,6 +356,35 @@ if (!function_exists('rateb_can_post_entity')) {
             return rateb_can($post);
         }
         return rateb_can_manage_entity($resource);
+    }
+}
+
+if (!function_exists('rateb_can_approve_entity')) {
+    function rateb_can_approve_entity(string $resource): bool
+    {
+        if (rateb_is_super_admin()) {
+            return true;
+        }
+        $approve = rateb_entity_perms($resource)['approve'];
+        if ($approve !== '' && rateb_can($approve)) {
+            return true;
+        }
+        $post = rateb_entity_perms($resource)['post'];
+        if ($post !== '' && rateb_can($post)) {
+            return true;
+        }
+        return false;
+    }
+}
+
+if (!function_exists('rateb_require_approve')) {
+    function rateb_require_approve(string $resource): void
+    {
+        if (rateb_can_approve_entity($resource)) {
+            return;
+        }
+        \Rateb\App\Core\SessionManager::flash('error', __('access_denied_approve'));
+        \Rateb\App\Core\Response::redirect(rateb_app_url($resource));
     }
 }
 

@@ -384,7 +384,7 @@ final class JournalEntriesController extends Controller
             'items' => $items,
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('journal-entries'),
-            'canPost' => rateb_can_post_entity('accounting'),
+            'canApprove' => rateb_can_approve_entity('journal-entries'),
         ], 'main');
     }
 
@@ -504,8 +504,8 @@ final class JournalEntriesController extends Controller
 
     public function postEntry(array $params): void
     {
-        rateb_require_post('accounting');
-        if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
+        rateb_require_approve('journal-entries');
+        if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('access_denied'));
             Response::redirect(rateb_app_url('journal-entries'));
         }
@@ -522,7 +522,7 @@ final class JournalEntriesController extends Controller
         }
         if ($entry && $service->postDraftEntry($id, $companyId)) {
             (new AuditService())->log('post', 'journal_entry', $id, []);
-            SessionManager::flash('success', __('journal_posted'));
+            SessionManager::flash('success', __('journal_approved'));
         } else {
             SessionManager::flash('error', __('journal_post_failed'));
         }
@@ -531,8 +531,8 @@ final class JournalEntriesController extends Controller
 
     public function voidEntry(array $params): void
     {
-        rateb_require_post('accounting');
-        if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
+        rateb_require_approve('journal-entries');
+        if (!$this->validateCsrf()) {
             SessionManager::flash('error', __('access_denied'));
             Response::redirect(rateb_app_url('journal-entries'));
         }
@@ -576,7 +576,7 @@ final class JournalEntriesController extends Controller
             'lines' => $lines,
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('journal-entries'),
-            'canPost' => rateb_can_post_entity('accounting'),
+            'canApprove' => rateb_can_approve_entity('journal-entries'),
         ], 'main');
     }
 
@@ -648,7 +648,7 @@ final class CashVouchersController extends Controller
             'items' => (new AccountingService())->listCashVouchers($companyId),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('cash-vouchers'),
-            'canPost' => rateb_can_post_entity('accounting'),
+            'canApprove' => rateb_can_approve_entity('cash-vouchers'),
         ], 'main');
     }
 
@@ -725,14 +725,14 @@ final class CashVouchersController extends Controller
             'title' => __('cash_vouchers'),
             'voucher' => $voucher,
             'csrf' => Csrf::token(),
-            'canPost' => rateb_can_post_entity('accounting'),
+            'canApprove' => rateb_can_approve_entity('cash-vouchers'),
         ], 'main');
     }
 
     public function postVoucher(array $params): void
     {
-        rateb_require_post('accounting');
-        if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
+        rateb_require_approve('cash-vouchers');
+        if (!$this->validateCsrf()) {
             Response::redirect(rateb_app_url('cash-vouchers'));
         }
         $companyId = rateb_require_ops_company();
@@ -748,7 +748,7 @@ final class CashVouchersController extends Controller
         }
         if ($voucher && $service->postCashVoucher($id, $companyId)) {
             (new AuditService())->log('post', 'cash_voucher', $id, []);
-            SessionManager::flash('success', __('voucher_posted'));
+            SessionManager::flash('success', __('voucher_approved'));
         } else {
             SessionManager::flash('error', __('voucher_post_failed'));
         }
@@ -757,8 +757,8 @@ final class CashVouchersController extends Controller
 
     public function voidVoucher(array $params): void
     {
-        rateb_require_post('accounting');
-        if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
+        rateb_require_approve('cash-vouchers');
+        if (!$this->validateCsrf()) {
             Response::redirect(rateb_app_url('cash-vouchers'));
         }
         $companyId = rateb_require_ops_company();
@@ -782,13 +782,13 @@ final class FiscalPeriodsController extends Controller
             'title' => __('fiscal_periods'),
             'items' => (new AccountingService())->listFiscalPeriods($companyId),
             'csrf' => Csrf::token(),
-            'canPost' => rateb_can_post_entity('accounting'),
+            'canPost' => rateb_can_post_entity('fiscal-periods'),
         ], 'main');
     }
 
     public function close(array $params): void
     {
-        rateb_require_post('accounting');
+        rateb_require_post('fiscal-periods');
         if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
             Response::redirect(rateb_app_url('fiscal-periods'));
         }
@@ -805,7 +805,7 @@ final class FiscalPeriodsController extends Controller
 
     public function reopen(array $params): void
     {
-        rateb_require_post('accounting');
+        rateb_require_post('fiscal-periods');
         if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
             Response::redirect(rateb_app_url('fiscal-periods'));
         }

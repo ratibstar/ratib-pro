@@ -340,9 +340,18 @@ final class EntityPermissionMiddleware implements MiddlewareInterface
 
         $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
         $isMutation = in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true);
-        $allowed = $isMutation
-            ? rateb_can_manage_entity($this->resource)
-            : rateb_can_view_entity($this->resource);
+        if ($isMutation) {
+            $allowed = rateb_can_manage_entity($this->resource);
+            if (!$allowed && $this->isAccountingApproveAction()) {
+                $allowed = function_exists('rateb_can_approve_entity')
+                    && rateb_can_approve_entity($this->resource);
+            }
+            if (!$allowed && $this->isAccountingPostAction()) {
+                $allowed = rateb_can_post_entity($this->resource);
+            }
+        } else {
+            $allowed = rateb_can_view_entity($this->resource);
+        }
 
         if ($allowed) {
             return true;
@@ -351,5 +360,18 @@ final class EntityPermissionMiddleware implements MiddlewareInterface
         SessionManager::flash('error', __('access_denied'));
         Response::redirect(function_exists('rateb_url') ? rateb_url('admin') : (RATEB_BASE_URL . '/admin'));
         return false;
+    }
+
+    private function isAccountingApproveAction(): bool
+    {
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? '');
+        return preg_match('#/(post|void)(/|$)#', $path) === 1;
+    }
+
+    private function isAccountingPostAction(): bool
+    {
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? '');
+        return preg_match('#/(close|reopen)(/|$)#', $path) === 1
+            || preg_match('#/accounting/sync$#', $path) === 1;
     }
 }

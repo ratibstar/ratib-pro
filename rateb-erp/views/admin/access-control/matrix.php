@@ -40,6 +40,9 @@
                         <td colspan="<?php echo count($roles) + 1; ?>">
                             <strong><?php echo Rateb\App\Core\View::escape(__($module)); ?></strong>
                             <button type="button" class="btn btn-link btn-sm p-0 ms-2" data-matrix-module="<?php echo Rateb\App\Core\View::escape($module); ?>"><?php echo __('toggle_module'); ?></button>
+                            <?php if ($module === 'accounting') { ?>
+                            <div class="text-muted small fw-normal mt-1"><?php echo __('accounting_permissions_matrix_note'); ?></div>
+                            <?php } ?>
                         </td>
                     </tr>
                     <?php foreach ($perms as $perm) {

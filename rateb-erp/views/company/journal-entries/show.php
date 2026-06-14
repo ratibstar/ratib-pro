@@ -55,13 +55,13 @@ $status = (string) ($entry['status'] ?? '');
         <i class="fas fa-edit"></i> <?php echo __('edit'); ?>
     </a>
     <?php } ?>
-    <?php if (($canPost ?? false) && $status === 'draft') { ?>
+    <?php if (($canApprove ?? false) && $status === 'draft') { ?>
     <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/post'); ?>" class="d-inline">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-        <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> <?php echo __('post_entry'); ?></button>
+        <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> <?php echo __('approve_entry'); ?></button>
     </form>
     <?php } ?>
-    <?php if (($canPost ?? false) && $status === 'posted' && ($entry['source_type'] ?? '') === 'manual') { ?>
+    <?php if (($canApprove ?? false) && $status === 'posted' && ($entry['source_type'] ?? '') === 'manual') { ?>
     <form method="post" action="<?php echo rateb_app_url('journal-entries/' . (int) $entry['id'] . '/void'); ?>" class="d-inline"
           onsubmit="return confirm('<?php echo __('journal_void_confirm'); ?>');">
         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">

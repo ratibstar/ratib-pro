@@ -166,6 +166,7 @@ return [
         'module' => 'accounting',
         'view' => 'accounting.view',
         'manage' => 'accounting.manage',
+        'approve' => 'accounting.approve',
         'post' => 'accounting.post',
     ],
     'accounts-payable' => [
@@ -197,6 +198,7 @@ return [
         'module' => 'accounting',
         'view' => 'accounting.view',
         'manage' => 'accounting.manage',
+        'approve' => 'accounting.approve',
         'post' => 'accounting.post',
     ],
     'fiscal-periods' => [

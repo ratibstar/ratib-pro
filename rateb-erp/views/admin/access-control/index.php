@@ -53,6 +53,7 @@
         <div>
             <h3 class="h6 mb-1"><i class="fas fa-table-cells me-2"></i><?php echo __('permission_matrix'); ?></h3>
             <p class="text-muted small mb-0"><?php echo __('permission_matrix_help'); ?></p>
+            <p class="text-muted small mb-0 mt-2"><i class="fas fa-circle-info me-1"></i><?php echo __('accounting_permissions_matrix_note'); ?></p>
         </div>
         <a href="<?php echo rateb_url('admin/access-control/matrix'); ?>" class="btn btn-primary">
             <i class="fas fa-sliders"></i> <?php echo __('open_matrix'); ?>
