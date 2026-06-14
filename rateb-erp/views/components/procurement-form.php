@@ -10,7 +10,8 @@ $isEdit = !empty($item);
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int)$item['id']) : rateb_url($routePrefix);
 $entityType = (string) ($entityType ?? 'purchase_request');
 $totalField = (string) ($totalField ?? 'total_estimated');
-$showDeliveryCols = $entityType === 'purchase_order';
+$defaultVat15 = !empty($defaultVat15);
+$workflow = $workflow ?? null;
 $companyId = (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0);
 $suppliers = $suppliers ?? [];
 $costCenters = $costCenters ?? [];
@@ -25,6 +26,9 @@ $currencies = ['SAR', 'USD', 'EUR'];
         <form method="post" action="<?php echo $action; ?>" enctype="multipart/form-data" data-procurement-form>
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <div class="row g-3">
+                <?php if ($entityType === 'purchase_order') {
+                    Rateb\App\Core\View::partial('procurement-workflow-banner', ['workflow' => $workflow]);
+                } ?>
                 <?php foreach ($fields as $field) {
                     $name = $field['name'];
                     $type = $field['type'] ?? 'text';
@@ -130,9 +134,16 @@ $currencies = ['SAR', 'USD', 'EUR'];
                 <?php } ?>
                 <?php Rateb\App\Core\View::partial('line-items', [
                     'lineItems' => $lineItems ?? [],
-                    'showDeliveryCols' => $showDeliveryCols,
                     'inventoryItems' => $inventoryItems,
+                    'defaultVat15' => $defaultVat15,
                 ]); ?>
+                <?php if ($entityType === 'purchase_order') {
+                    Rateb\App\Core\View::partial('procurement-summary', [
+                        'currency' => (string) ($item['currency'] ?? 'SAR'),
+                        'discount' => (float) ($item['discount_amount'] ?? 0),
+                        'shipping' => (float) ($item['shipping_amount'] ?? 0),
+                    ]);
+                } ?>
             </div>
             <div class="mt-4 d-flex flex-wrap gap-2">
                 <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>

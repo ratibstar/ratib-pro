@@ -113,4 +113,21 @@ final class WorkflowSubmissionService
         }
         $this->submitEntity('purchase_order', $entityId, $cid);
     }
+
+    /** @return array<string, mixed>|null */
+    public function instanceForEntity(string $entityType, int $entityId, int $companyId): ?array
+    {
+        if ($entityId < 1 || $companyId < 1) {
+            return null;
+        }
+        $db = Database::connection();
+        $stmt = $db->prepare(
+            'SELECT status, current_step FROM rateb_approval_instances
+             WHERE company_id = :cid AND entity_type = :et AND entity_id = :eid
+             ORDER BY id DESC LIMIT 1'
+        );
+        $stmt->execute(['cid' => $companyId, 'et' => $entityType, 'eid' => $entityId]);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
 }

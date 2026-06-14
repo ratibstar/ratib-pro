@@ -24,16 +24,63 @@
                 total = base;
             }
         }
-        return { subtotal: excluding ? base : (base - tax), tax: tax, total: total };
+        return { subtotal: excluding ? base : (base - tax), tax: tax, total: total, base: base };
+    }
+
+    function updateUnitHint(row) {
+        var hint = row.querySelector('[data-unit-hint]');
+        var qtyEl = row.querySelector('[name="line_quantity[]"]');
+        var unitEl = row.querySelector('[data-line-unit]');
+        if (!hint || !qtyEl || !unitEl) {
+            return;
+        }
+        var qty = parseNum(qtyEl.value);
+        var opt = unitEl.options[unitEl.selectedIndex];
+        var factor = parseNum(opt ? opt.getAttribute('data-factor') : '1') || 1;
+        var eachQty = Math.round(qty * factor * 100) / 100;
+        var template = hint.getAttribute('data-hint-template') || hint.textContent || '';
+        if (!hint.getAttribute('data-hint-template')) {
+            hint.setAttribute('data-hint-template', template.replace(/[\d.]+/, ':qty'));
+        }
+        template = hint.getAttribute('data-hint-template') || '= :qty Each';
+        hint.textContent = template.replace(':qty', eachQty.toFixed(2));
     }
 
     function updateRowTotal(row) {
         var totals = lineTotals(row);
-        var el = row.querySelector('[data-line-total]');
-        if (el) {
-            el.textContent = totals.total.toFixed(2);
+        var subEl = row.querySelector('[data-line-subtotal]');
+        var totalEl = row.querySelector('[data-line-total]');
+        if (subEl) {
+            subEl.textContent = totals.base.toFixed(2);
         }
+        if (totalEl) {
+            totalEl.textContent = totals.total.toFixed(2);
+        }
+        updateUnitHint(row);
         return totals;
+    }
+
+    function syncSummaryCard(form, subtotal, tax, grand) {
+        var card = form ? form.querySelector('[data-summary-subtotal]') : null;
+        if (!card) {
+            return;
+        }
+        var discEl = form.querySelector('[name="discount_amount"]');
+        var currencyEl = form.querySelector('[name="currency"]');
+        var discount = discEl ? parseNum(discEl.value) : 0;
+        var currency = currencyEl ? currencyEl.value : 'SAR';
+        var set = function (sel, val) {
+            var el = form.querySelector(sel);
+            if (el) { el.textContent = val; }
+        };
+        set('[data-summary-subtotal]', subtotal.toFixed(2));
+        set('[data-summary-tax]', tax.toFixed(2));
+        set('[data-summary-discount]', discount.toFixed(2));
+        set('[data-summary-grand]', grand.toFixed(2));
+        set('[data-summary-currency]', currency);
+        form.querySelectorAll('[data-summary-currency-suffix], [data-summary-currency-suffix2], [data-summary-currency-suffix3], [data-summary-currency-suffix4]').forEach(function (el) {
+            el.textContent = currency;
+        });
     }
 
     function updateTableTotals(table) {
@@ -67,6 +114,7 @@
             if (totalField) {
                 totalField.value = grand.toFixed(2);
             }
+            syncSummaryCard(form, subtotal, tax, grand);
         }
     }
 
@@ -83,6 +131,10 @@
         }
     }
 
+    function defaultVatPreset(table) {
+        return table.getAttribute('data-default-vat') === '15';
+    }
+
     function cloneRow(table) {
         var tbody = table.querySelector('tbody');
         var template = tbody.querySelector('[data-line-items-row]');
@@ -90,11 +142,12 @@
             return;
         }
         var clone = template.cloneNode(true);
+        var useVat = defaultVatPreset(table);
         clone.querySelectorAll('input').forEach(function (input) {
             if (input.type === 'number') {
                 input.value = input.name.indexOf('quantity') >= 0 ? '1' : '0';
             } else if (input.type === 'hidden' && input.hasAttribute('data-line-tax-rate')) {
-                input.value = '0';
+                input.value = useVat ? '15' : '0';
             } else if (input.type !== 'hidden') {
                 input.value = '';
             }
@@ -105,16 +158,25 @@
             } else if (sel.name === 'line_inventory_id[]') {
                 sel.selectedIndex = 0;
             } else if (sel.name === 'line_tax_name[]') {
-                sel.selectedIndex = 0;
+                if (useVat) {
+                    for (var i = 0; i < sel.options.length; i++) {
+                        if (sel.options[i].getAttribute('data-tax-rate') === '15') {
+                            sel.selectedIndex = i;
+                            break;
+                        }
+                    }
+                } else {
+                    sel.selectedIndex = 0;
+                }
                 syncTaxRate(sel);
             } else if (sel.name === 'line_excluding_tax[]') {
                 sel.value = '1';
             }
         });
+        var subEl = clone.querySelector('[data-line-subtotal]');
         var totalEl = clone.querySelector('[data-line-total]');
-        if (totalEl) {
-            totalEl.textContent = '0.00';
-        }
+        if (subEl) { subEl.textContent = '0.00'; }
+        if (totalEl) { totalEl.textContent = '0.00'; }
         tbody.appendChild(clone);
         updateTableTotals(table);
     }
@@ -149,7 +211,7 @@
                 syncTaxRate(e.target);
                 updateTableTotals(table);
             }
-            if (e.target.matches('[data-line-calc]')) {
+            if (e.target.matches('[data-line-calc], [data-line-unit]')) {
                 updateTableTotals(table);
             }
         });
@@ -214,7 +276,7 @@
             if (e.target.matches('[data-line-inventory]')) {
                 fillFromInventory(e.target);
             }
-            if (e.target.matches('[data-procurement-adjust]')) {
+            if (e.target.matches('[data-procurement-adjust], [name="currency"]')) {
                 var table = document.querySelector('[data-line-items-table]');
                 if (table) { updateTableTotals(table); }
             }

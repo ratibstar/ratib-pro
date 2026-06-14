@@ -8,7 +8,28 @@ final class LineItems
     /** @return list<string> */
     public static function unitOptions(): array
     {
-        return ['each', 'box', 'kg', 'liter', 'meter', 'pack', 'unit'];
+        return ['each', 'unit', 'box', 'carton', 'pack', 'kg', 'liter', 'meter'];
+    }
+
+    /** @return array<string, int> */
+    public static function unitFactors(): array
+    {
+        return [
+            'each' => 1,
+            'unit' => 1,
+            'box' => 12,
+            'carton' => 48,
+            'pack' => 6,
+            'kg' => 1,
+            'liter' => 1,
+            'meter' => 1,
+        ];
+    }
+
+    public static function qtyInEach(float $qty, string $unit): float
+    {
+        $factor = self::unitFactors()[$unit] ?? 1;
+        return round($qty * $factor, 3);
     }
 
     /** @return list<string> */

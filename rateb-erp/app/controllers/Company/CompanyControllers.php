@@ -251,12 +251,12 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->tenantForeignKeys = ['supplier_id'];
         $this->fields = [
             ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'number'],
-            ['name' => 'cost_center_id', 'label' => 'cost_center', 'type' => 'number'],
             ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'number'],
-            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled']],
+            ['name' => 'cost_center_id', 'label' => 'cost_center', 'type' => 'number'],
+            ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'options' => ['SAR', 'USD', 'EUR']],
             ['name' => 'order_date', 'label' => 'order_date', 'type' => 'date'],
             ['name' => 'expected_date', 'label' => 'expected_date', 'type' => 'date'],
-            ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'options' => ['SAR', 'USD', 'EUR']],
+            ['name' => 'status', 'label' => 'status', 'type' => 'select', 'options' => ['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled']],
             ['name' => 'discount_amount', 'label' => 'discount', 'type' => 'number'],
             ['name' => 'shipping_amount', 'label' => 'shipping', 'type' => 'number'],
             ['name' => 'total_amount', 'label' => 'total', 'type' => 'number'],
@@ -306,6 +306,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
+            'defaultVat15' => true,
         ]), $this->layout());
     }
 
@@ -327,6 +328,12 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'csrf' => Csrf::token(),
+            'defaultVat15' => true,
+            'workflow' => (new \Rateb\App\Services\WorkflowSubmissionService())->instanceForEntity(
+                'purchase_order',
+                $id,
+                (int) (\Rateb\App\Core\TenantContext::companyId() ?? 0)
+            ),
         ]), $this->layout());
     }
 
