@@ -287,7 +287,7 @@ return [
     'purchase_orders' => 'أوامر الشراء',
     'chart_of_accounts' => 'دليل الحسابات',
     'coa_tree' => 'شجرة المحاسبة',
-    'coa_full_tree' => 'شجرة كاملة',
+    'coa_full_tree' => 'شجرة الحسابات',
     'expand_all' => 'توسيع الكل',
     'collapse_all' => 'طي الكل',
     'main_account' => 'رئيسي',

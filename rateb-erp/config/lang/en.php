@@ -288,7 +288,7 @@ return [
     'purchase_orders' => 'Purchase orders',
     'chart_of_accounts' => 'Chart of Accounts',
     'coa_tree' => 'Accounting Tree',
-    'coa_full_tree' => 'Full tree',
+    'coa_full_tree' => 'Accounts tree',
     'expand_all' => 'Expand all',
     'collapse_all' => 'Collapse all',
     'main_account' => 'Main',
