@@ -55,6 +55,42 @@
     margin-inline-end: 0.25rem;
 }
 
+/* Action columns — buttons side by side in all tables */
+.rateb-actions,
+.rateb-approval-actions,
+.rateb-table td.text-nowrap {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+
+.rateb-actions > *,
+.rateb-approval-actions > *,
+.rateb-table td.text-nowrap > a,
+.rateb-table td.text-nowrap > form,
+.rateb-table td.text-nowrap > button,
+.rateb-table td.text-nowrap > .btn {
+    flex: 0 0 auto;
+}
+
+.rateb-actions form,
+.rateb-approval-actions form,
+.rateb-table td.text-nowrap form {
+    display: inline-flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0;
+}
+
+.rateb-actions .btn,
+.rateb-approval-actions .btn,
+.rateb-table td.text-nowrap .btn {
+    margin: 0;
+}
+
 .rateb-flash {
     border-radius: var(--rateb-radius);
     margin-bottom: 1rem;
@@ -196,7 +232,7 @@
 }
 
 .rateb-approval-actions .btn {
-    margin-inline-start: 0.15rem;
+    margin: 0;
 }
 
 html[data-theme="dark"] .rateb-coa-tree .rateb-coa-group td {

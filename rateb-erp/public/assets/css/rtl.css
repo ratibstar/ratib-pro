@@ -108,9 +108,11 @@
     flex-direction: row-reverse;
 }
 
-[dir="rtl"] .rateb-actions .btn {
+[dir="rtl"] .rateb-actions .btn,
+[dir="rtl"] .rateb-approval-actions .btn,
+[dir="rtl"] .rateb-table td.text-nowrap .btn {
     margin-inline-end: 0;
-    margin-inline-start: 0.25rem;
+    margin-inline-start: 0;
 }
 
 [dir="rtl"] .form-label,
