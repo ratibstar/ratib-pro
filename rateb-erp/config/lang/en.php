@@ -266,6 +266,8 @@ return [
     'active' => 'Active',
     'purchase_orders' => 'Purchase orders',
     'chart_of_accounts' => 'Chart of Accounts',
+    'coa_tree' => 'Accounting Tree',
+    'parent_account' => 'Parent account',
     'journal_entries' => 'Journal Entries',
     'trial_balance' => 'Trial Balance',
     'accounting_sync' => 'Sync from Invoices & Payments',

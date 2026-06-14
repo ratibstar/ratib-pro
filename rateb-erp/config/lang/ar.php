@@ -265,6 +265,8 @@ return [
     'active' => 'نشط',
     'purchase_orders' => 'أوامر الشراء',
     'chart_of_accounts' => 'دليل الحسابات',
+    'coa_tree' => 'شجرة المحاسبة',
+    'parent_account' => 'الحساب الأب',
     'journal_entries' => 'القيود اليومية',
     'trial_balance' => 'ميزان المراجعة',
     'accounting_sync' => 'مزامنة من الفواتير والمدفوعات',

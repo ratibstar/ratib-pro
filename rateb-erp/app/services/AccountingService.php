@@ -10,17 +10,23 @@ use PDO;
 
 final class AccountingService
 {
-    /** @var array<string, array{code:string,name:string,name_ar:string,type:string}> */
+    /** @var array<string, array{code:string,name:string,name_ar:string,type:string,parent?:string}> */
     private const DEFAULT_ACCOUNTS = [
-        'cash' => ['code' => '1100', 'name' => 'Cash', 'name_ar' => 'النقدية', 'type' => 'asset'],
-        'ar' => ['code' => '1200', 'name' => 'Accounts Receivable', 'name_ar' => 'ذمم مدينة', 'type' => 'asset'],
-        'ap' => ['code' => '2100', 'name' => 'Accounts Payable', 'name_ar' => 'ذمم دائنة', 'type' => 'liability'],
-        'vat' => ['code' => '2200', 'name' => 'VAT Payable', 'name_ar' => 'ضريبة مستحقة', 'type' => 'liability'],
-        'revenue' => ['code' => '4100', 'name' => 'Revenue', 'name_ar' => 'الإيرادات', 'type' => 'revenue'],
-        'procurement' => ['code' => '5100', 'name' => 'Procurement Expense', 'name_ar' => 'مصروفات المشتريات', 'type' => 'expense'],
-        'inventory' => ['code' => '1300', 'name' => 'Inventory', 'name_ar' => 'المخزون', 'type' => 'asset'],
-        'vat_input' => ['code' => '1210', 'name' => 'VAT Recoverable', 'name_ar' => 'ضريبة قابلة للاسترداد', 'type' => 'asset'],
-        'cogs' => ['code' => '5200', 'name' => 'Cost of Goods Sold', 'name_ar' => 'تكلفة البضاعة المباعة', 'type' => 'expense'],
+        'assets' => ['code' => '1000', 'name' => 'Assets', 'name_ar' => 'الأصول', 'type' => 'asset'],
+        'cash' => ['code' => '1100', 'name' => 'Cash', 'name_ar' => 'النقدية', 'type' => 'asset', 'parent' => '1000'],
+        'ar' => ['code' => '1200', 'name' => 'Accounts Receivable', 'name_ar' => 'ذمم مدينة', 'type' => 'asset', 'parent' => '1000'],
+        'vat_input' => ['code' => '1210', 'name' => 'VAT Recoverable', 'name_ar' => 'ضريبة قابلة للاسترداد', 'type' => 'asset', 'parent' => '1000'],
+        'inventory' => ['code' => '1300', 'name' => 'Inventory', 'name_ar' => 'المخزون', 'type' => 'asset', 'parent' => '1000'],
+        'liabilities' => ['code' => '2000', 'name' => 'Liabilities', 'name_ar' => 'الخصوم', 'type' => 'liability'],
+        'ap' => ['code' => '2100', 'name' => 'Accounts Payable', 'name_ar' => 'ذمم دائنة', 'type' => 'liability', 'parent' => '2000'],
+        'vat' => ['code' => '2200', 'name' => 'VAT Payable', 'name_ar' => 'ضريبة مستحقة', 'type' => 'liability', 'parent' => '2000'],
+        'equity' => ['code' => '3000', 'name' => 'Equity', 'name_ar' => 'حقوق الملكية', 'type' => 'equity'],
+        'retained' => ['code' => '3100', 'name' => 'Retained Earnings', 'name_ar' => 'أرباح محتجزة', 'type' => 'equity', 'parent' => '3000'],
+        'revenue_grp' => ['code' => '4000', 'name' => 'Revenue', 'name_ar' => 'الإيرادات', 'type' => 'revenue'],
+        'revenue' => ['code' => '4100', 'name' => 'Sales Revenue', 'name_ar' => 'إيرادات المبيعات', 'type' => 'revenue', 'parent' => '4000'],
+        'expenses' => ['code' => '5000', 'name' => 'Expenses', 'name_ar' => 'المصروفات', 'type' => 'expense'],
+        'procurement' => ['code' => '5100', 'name' => 'Procurement Expense', 'name_ar' => 'مصروفات المشتريات', 'type' => 'expense', 'parent' => '5000'],
+        'cogs' => ['code' => '5200', 'name' => 'Cost of Goods Sold', 'name_ar' => 'تكلفة البضاعة المباعة', 'type' => 'expense', 'parent' => '5000'],
     ];
 
     public function normalizeCompanyId($companyId): ?int
@@ -39,22 +45,66 @@ final class AccountingService
             return;
         }
         $coa = new ChartOfAccount();
+        $codeToId = [];
         foreach (self::DEFAULT_ACCOUNTS as $def) {
             $exists = $coa->queryOne(
                 'SELECT id FROM rateb_chart_of_accounts WHERE company_id <=> :cid AND code = :code LIMIT 1',
                 ['cid' => $companyId, 'code' => $def['code']]
             );
             if ($exists) {
+                $codeToId[$def['code']] = (int) $exists['id'];
                 continue;
             }
-            $coa->create([
+            $parentId = null;
+            if (!empty($def['parent']) && isset($codeToId[$def['parent']])) {
+                $parentId = $codeToId[$def['parent']];
+            }
+            $id = $coa->create([
                 'company_id' => $companyId,
                 'code' => $def['code'],
                 'name' => $def['name'],
                 'name_ar' => $def['name_ar'],
                 'account_type' => $def['type'],
+                'parent_id' => $parentId,
                 'is_active' => 1,
             ]);
+            $codeToId[$def['code']] = $id;
+        }
+        $this->linkCoaParents($companyId, $coa);
+    }
+
+    /** Backfill parent_id for existing company COA rows. */
+    private function linkCoaParents(?int $companyId, ?ChartOfAccount $coa = null): void
+    {
+        if ($companyId === null || $companyId < 1) {
+            return;
+        }
+        $coa = $coa ?? new ChartOfAccount();
+        $rows = $coa->query(
+            'SELECT id, code, parent_id FROM rateb_chart_of_accounts WHERE company_id = :cid',
+            ['cid' => $companyId]
+        );
+        $codeToId = [];
+        foreach ($rows as $row) {
+            $codeToId[(string) $row['code']] = (int) $row['id'];
+        }
+        foreach (self::DEFAULT_ACCOUNTS as $def) {
+            if (empty($def['parent']) || empty($codeToId[$def['code']]) || empty($codeToId[$def['parent']])) {
+                continue;
+            }
+            $childId = $codeToId[$def['code']];
+            $parentId = $codeToId[$def['parent']];
+            $currentParent = 0;
+            foreach ($rows as $row) {
+                if ((int) $row['id'] === $childId) {
+                    $currentParent = (int) ($row['parent_id'] ?? 0);
+                    break;
+                }
+            }
+            if ($currentParent > 0) {
+                continue;
+            }
+            $coa->update($childId, ['parent_id' => $parentId]);
         }
     }
 
@@ -124,15 +174,15 @@ final class AccountingService
             return false;
         }
 
-        $cash = $this->accountIdByCode($companyId, '1100');
+        $ar = $this->accountIdByCode($companyId, '1200');
         $revenue = $this->accountIdByCode($companyId, '4100');
         $vat = $this->accountIdByCode($companyId, '2200');
-        if (!$cash || !$revenue) {
+        if (!$ar || !$revenue) {
             return false;
         }
 
         $lines = [
-            ['account_id' => $cash, 'debit' => $total, 'credit' => 0, 'memo' => 'Invoice ' . ($invoice['invoice_no'] ?? '')],
+            ['account_id' => $ar, 'debit' => $total, 'credit' => 0, 'memo' => 'Invoice ' . ($invoice['invoice_no'] ?? '')],
             ['account_id' => $revenue, 'debit' => 0, 'credit' => $net, 'memo' => 'Revenue'],
         ];
         if ($tax > 0 && $vat) {
@@ -161,14 +211,14 @@ final class AccountingService
         }
 
         $cash = $this->accountIdByCode($companyId, '1100');
-        $revenue = $this->accountIdByCode($companyId, '4100');
-        if (!$cash || !$revenue) {
+        $ar = $this->accountIdByCode($companyId, '1200');
+        if (!$cash || !$ar) {
             return false;
         }
 
         return $this->createPostedEntry($companyId, 'payment', (int) $payment['id'], [
             ['account_id' => $cash, 'debit' => $amount, 'credit' => 0, 'memo' => 'Payment'],
-            ['account_id' => $revenue, 'debit' => 0, 'credit' => $amount, 'memo' => 'Payment revenue'],
+            ['account_id' => $ar, 'debit' => 0, 'credit' => $amount, 'memo' => 'AR collection'],
         ], 'Payment ' . ($payment['reference_no'] ?? $payment['id']),
             'دفعة ' . ($payment['reference_no'] ?? $payment['id']),
             date('Y-m-d', strtotime((string) ($payment['paid_at'] ?? $payment['created_at'] ?? 'now')))
@@ -433,13 +483,14 @@ final class AccountingService
         return true;
     }
 
-    public function voidPostedEntry(int $entryId, ?int $companyId): bool
+    public function voidPostedEntry(int $entryId, ?int $companyId, ?array $allowedSourceTypes = null): bool
     {
         $entry = $this->findEntryForCompany($entryId, $companyId);
         if (!$entry || ($entry['status'] ?? '') !== 'posted') {
             return false;
         }
-        if (($entry['source_type'] ?? '') !== 'manual') {
+        $allowed = $allowedSourceTypes ?? ['manual'];
+        if (!in_array((string) ($entry['source_type'] ?? ''), $allowed, true)) {
             return false;
         }
         (new JournalEntry())->update($entryId, ['status' => 'void']);
@@ -678,6 +729,71 @@ final class AccountingService
             WHERE a.company_id <=> :cid AND a.is_active = 1
             GROUP BY a.id ORDER BY a.code';
         return (new ChartOfAccount())->query($sql, ['cid' => $companyId, 'posted' => 'posted']);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function coaTreeWithBalances(?int $companyId): array
+    {
+        $this->ensureDefaultAccounts($companyId);
+        $accounts = (new ChartOfAccount())->query(
+            'SELECT * FROM rateb_chart_of_accounts WHERE company_id <=> :cid AND is_active = 1 ORDER BY code',
+            ['cid' => $companyId]
+        );
+        $balanceMap = [];
+        foreach ($this->trialBalance($companyId) as $row) {
+            $balanceMap[(int) $row['id']] = $row;
+        }
+        foreach ($accounts as &$account) {
+            $id = (int) $account['id'];
+            $bal = $balanceMap[$id] ?? [];
+            $account['total_debit'] = (float) ($bal['total_debit'] ?? 0);
+            $account['total_credit'] = (float) ($bal['total_credit'] ?? 0);
+            $account['balance'] = $account['total_debit'] - $account['total_credit'];
+            $account['children'] = [];
+        }
+        unset($account);
+        $tree = $this->buildAccountTree($accounts);
+        $this->rollupTreeBalances($tree);
+        return $tree;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $accounts
+     * @return array<int, array<string, mixed>>
+     */
+    public function buildAccountTree(array $accounts): array
+    {
+        $byId = [];
+        foreach ($accounts as $account) {
+            $account['children'] = $account['children'] ?? [];
+            $byId[(int) $account['id']] = $account;
+        }
+        $roots = [];
+        foreach ($byId as $id => $account) {
+            $parentId = (int) ($account['parent_id'] ?? 0);
+            if ($parentId > 0 && isset($byId[$parentId])) {
+                $byId[$parentId]['children'][] = &$byId[$id];
+            } else {
+                $roots[] = &$byId[$id];
+            }
+        }
+        return array_values($roots);
+    }
+
+    /** @param array<int, array<string, mixed>> $nodes */
+    private function rollupTreeBalances(array &$nodes): void
+    {
+        foreach ($nodes as &$node) {
+            if (empty($node['children'])) {
+                continue;
+            }
+            $this->rollupTreeBalances($node['children']);
+            foreach ($node['children'] as $child) {
+                $node['total_debit'] = (float) ($node['total_debit'] ?? 0) + (float) ($child['total_debit'] ?? 0);
+                $node['total_credit'] = (float) ($node['total_credit'] ?? 0) + (float) ($child['total_credit'] ?? 0);
+                $node['balance'] = (float) ($node['balance'] ?? 0) + (float) ($child['balance'] ?? 0);
+            }
+        }
     }
 
     private function entryExists(string $sourceType, int $sourceId): bool
@@ -1180,7 +1296,7 @@ final class AccountingService
         }
         $jid = (int) ($v['journal_entry_id'] ?? 0);
         if ($jid > 0) {
-            $this->voidPostedEntry($jid, $companyId);
+            $this->voidPostedEntry($jid, $companyId, ['manual', 'cash_voucher']);
         }
         Database::connection()->prepare(
             'UPDATE rateb_cash_vouchers SET status = :st WHERE id = :id'

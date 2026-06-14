@@ -95,31 +95,74 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
             ['name' => 'name_ar', 'label' => 'name_ar', 'type' => 'text'],
             ['name' => 'account_type', 'label' => 'account_type', 'type' => 'select', 'options' => ['asset', 'liability', 'equity', 'revenue', 'expense']],
+            ['name' => 'parent_id', 'label' => 'parent_account', 'type' => 'parent_select'],
             ['name' => 'is_active', 'label' => 'active', 'type' => 'select', 'options' => ['1', '0']],
         ];
     }
 
     public function index(): void
     {
-        (new AccountingService())->ensureDefaultAccounts(null);
-        $page = max(1, (int) $this->input('page', 1));
-        $limit = 50;
-        $offset = ($page - 1) * $limit;
-        $items = $this->model->query(
-            'SELECT * FROM rateb_chart_of_accounts WHERE company_id IS NULL ORDER BY code LIMIT ' . (int) $limit . ' OFFSET ' . (int) $offset
-        );
+        $tree = (new AccountingService())->coaTreeWithBalances(null);
         $this->view($this->viewPrefix . '/index', [
-            'title' => __($this->entityName),
-            'items' => $items,
-            'total' => count($items),
-            'page' => $page,
-            'limit' => $limit,
+            'title' => __('chart_of_accounts'),
+            'tree' => $tree,
             'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
             'csrf' => Csrf::token(),
             'createEnabled' => rateb_can('accounting.manage'),
             'actionsEnabled' => rateb_can('accounting.manage'),
         ], $this->layout());
+    }
+
+    public function create(): void
+    {
+        $this->guardManage();
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('create') . ' ' . __('chart_of_accounts'),
+            'item' => null,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'parentOptions' => $this->parentOptions(),
+            'csrf' => Csrf::token(),
+        ], $this->layout());
+    }
+
+    public function edit(array $params): void
+    {
+        $this->guardManage();
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->queryOne(
+            'SELECT * FROM rateb_chart_of_accounts WHERE id = :id AND company_id IS NULL',
+            ['id' => $id]
+        );
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/form', [
+            'title' => __('edit') . ' ' . __('chart_of_accounts'),
+            'item' => $item,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->fields,
+            'parentOptions' => $this->parentOptions($id),
+            'csrf' => Csrf::token(),
+        ], $this->layout());
+    }
+
+    /** @return array<int|string, string> */
+    private function parentOptions(int $excludeId = 0): array
+    {
+        $rows = $this->model->query(
+            'SELECT id, code, name, name_ar FROM rateb_chart_of_accounts
+             WHERE company_id IS NULL AND is_active = 1 AND id != :ex ORDER BY code',
+            ['ex' => $excludeId]
+        );
+        $options = ['' => '—'];
+        foreach ($rows as $row) {
+            $label = $row['code'] . ' — ' . (rateb_locale() === 'ar' && !empty($row['name_ar']) ? $row['name_ar'] : $row['name']);
+            $options[(int) $row['id']] = $label;
+        }
+        return $options;
     }
 
     protected function collectData(): array
@@ -127,6 +170,8 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
         $data = parent::collectData();
         $data['company_id'] = null;
         $data['is_active'] = (int) ($data['is_active'] ?? 1);
+        $parentId = (int) ($data['parent_id'] ?? 0);
+        $data['parent_id'] = $parentId > 0 ? $parentId : null;
         return $data;
     }
 }
