@@ -22,13 +22,6 @@ $backLabel = (string) ($backLabel ?? __($entityName ?? 'record'));
         </a>
     </div>
     <div class="rateb-card-body">
-        <?php if (!empty($item['document_path'])) { ?>
-        <div class="alert alert-info py-2 small mb-3">
-            <i class="fas fa-file"></i>
-            <?php echo __('legacy_document_path'); ?>:
-            <code><?php echo Rateb\App\Core\View::escape((string) $item['document_path']); ?></code>
-        </div>
-        <?php } ?>
         <?php if ($canManage ?? false) { ?>
         <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $entityId . '/documents'); ?>" enctype="multipart/form-data" class="row g-3 mb-4">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">

@@ -265,9 +265,6 @@ abstract class CrudController extends Controller
         );
         if (!($upload['success'] ?? false)) {
             SessionManager::flash('error', (string) ($upload['error'] ?? __('upload_failed')));
-        } elseif (!empty($upload['path']) && array_key_exists('document_path', $item)) {
-            $this->model->update($id, ['document_path' => (string) $upload['path']]);
-            SessionManager::flash('success', __('file_uploaded'));
         } else {
             SessionManager::flash('success', __('file_uploaded'));
         }
