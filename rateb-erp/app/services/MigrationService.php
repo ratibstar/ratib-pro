@@ -133,6 +133,7 @@ final class MigrationService
 
     private function execSqlFile(PDO $pdo, string $sql): void
     {
+        $sql = preg_replace('/^\xEF\xBB\xBF/', '', $sql) ?? $sql;
         $sql = preg_replace('/^\s*USE\s+`[^`]+`\s*;\s*/mi', '', $sql) ?? $sql;
         foreach ($this->splitStatements($sql) as $statement) {
             if ($statement === '') {
@@ -174,7 +175,7 @@ final class MigrationService
         $buffer = '';
         foreach (preg_split('/\R/', $sql) ?: [] as $line) {
             $trimmed = trim($line);
-            if ($trimmed === '' || strpos($trimmed, '--') === 0) {
+            if ($trimmed === '' || preg_match('/^\s*--/', $trimmed) === 1) {
                 continue;
             }
             $buffer .= $line . "\n";

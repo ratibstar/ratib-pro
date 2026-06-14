@@ -266,7 +266,8 @@ abstract class Model
         $stmt->execute();
     }
 
-    private function pdoParamType(mixed $value): int
+    /** @param mixed $value */
+    private function pdoParamType($value): int
     {
         if (is_int($value)) {
             return PDO::PARAM_INT;
