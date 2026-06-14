@@ -138,8 +138,18 @@ final class CashVoucher extends Model
     protected bool $tenantScoped = true;
     protected array $fillable = [
         'company_id', 'voucher_no', 'voucher_type', 'voucher_date', 'amount', 'party_name',
-        'description', 'description_ar', 'counter_account_id', 'status', 'journal_entry_id',
+        'description', 'description_ar', 'counter_account_id', 'bank_account_id', 'status', 'journal_entry_id',
         'created_by', 'posted_at',
+    ];
+}
+
+final class BankAccount extends Model
+{
+    protected string $table = 'rateb_bank_accounts';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'company_id', 'name', 'bank_name', 'account_number', 'chart_account_id',
+        'opening_balance', 'is_default', 'is_active',
     ];
 }
 

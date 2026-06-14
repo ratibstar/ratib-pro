@@ -220,6 +220,26 @@ return [
         'view' => 'accounting.view',
         'manage' => 'accounting.manage',
     ],
+    'bank-accounts' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+    ],
+    'bank-reconciliation' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
+    'budget-report' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.manage',
+    ],
+    'cfo-dashboard' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
     'reports' => [
         'module' => 'reports',
         'view' => 'reports.view',

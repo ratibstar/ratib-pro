@@ -215,11 +215,12 @@ final class AccountingService
         }
 
         $debitMemo = $status === 'received' ? 'Inventory' : 'Procurement expense';
+        $ccId = isset($po['cost_center_id']) && (int) $po['cost_center_id'] > 0 ? (int) $po['cost_center_id'] : null;
         $lines = [
-            ['account_id' => $debitAccount, 'debit' => $net > 0 ? $net : $total, 'credit' => 0, 'memo' => $debitMemo . ' PO ' . ($po['order_no'] ?? '')],
+            ['account_id' => $debitAccount, 'debit' => $net > 0 ? $net : $total, 'credit' => 0, 'memo' => $debitMemo . ' PO ' . ($po['order_no'] ?? ''), 'cost_center_id' => $ccId],
         ];
         if ($tax > 0 && $vatInput) {
-            $lines[] = ['account_id' => $vatInput, 'debit' => $tax, 'credit' => 0, 'memo' => 'Input VAT'];
+            $lines[] = ['account_id' => $vatInput, 'debit' => $tax, 'credit' => 0, 'memo' => 'Input VAT', 'cost_center_id' => $ccId];
         }
         $lines[] = ['account_id' => $ap, 'debit' => 0, 'credit' => $total, 'memo' => 'AP'];
 
@@ -821,7 +822,278 @@ final class AccountingService
         return true;
     }
 
+    public function reopenFiscalPeriod(int $periodId, ?int $companyId): bool
+    {
+        $row = (new JournalEntry())->queryOne(
+            'SELECT * FROM rateb_fiscal_periods WHERE id = :id AND company_id = :cid LIMIT 1',
+            ['id' => $periodId, 'cid' => $companyId]
+        );
+        if (!$row || ($row['status'] ?? '') !== 'closed') {
+            return false;
+        }
+        (new JournalEntry())->query(
+            'UPDATE rateb_fiscal_periods SET status = :st, closed_at = NULL, closed_by = NULL WHERE id = :id',
+            ['st' => 'open', 'id' => $periodId]
+        );
+        return true;
+    }
+
     /** @param array<string, mixed> $data */
+    public function createBankAccount(?int $companyId, array $data): int
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null) {
+            throw new \InvalidArgumentException('Company required');
+        }
+        $this->ensureDefaultAccounts($companyId);
+        $code = $this->nextBankAccountCode($companyId);
+        $coa = new ChartOfAccount();
+        $coaId = $coa->create([
+            'company_id' => $companyId,
+            'code' => $code,
+            'name' => (string) ($data['name'] ?? 'Bank'),
+            'name_ar' => (string) ($data['name_ar'] ?? $data['name'] ?? 'بنك'),
+            'account_type' => 'asset',
+            'is_active' => 1,
+        ]);
+        $pdo = Database::connection();
+        if (!empty($data['is_default'])) {
+            $pdo->prepare('UPDATE rateb_bank_accounts SET is_default = 0 WHERE company_id = :cid')->execute(['cid' => $companyId]);
+        }
+        $stmt = $pdo->prepare(
+            'INSERT INTO rateb_bank_accounts
+             (company_id, name, bank_name, account_number, chart_account_id, opening_balance, is_default, is_active)
+             VALUES (:cid, :name, :bank, :acct_no, :coa, :ob, :def, 1)'
+        );
+        $stmt->execute([
+            'cid' => $companyId,
+            'name' => trim((string) ($data['name'] ?? '')),
+            'bank' => trim((string) ($data['bank_name'] ?? '')),
+            'acct_no' => trim((string) ($data['account_number'] ?? '')),
+            'coa' => $coaId,
+            'ob' => (float) ($data['opening_balance'] ?? 0),
+            'def' => !empty($data['is_default']) ? 1 : 0,
+        ]);
+        return (int) $pdo->lastInsertId();
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function listBankAccounts(?int $companyId): array
+    {
+        if ($companyId === null || $companyId < 1) {
+            return [];
+        }
+        $rows = (new JournalEntry())->query(
+            'SELECT b.*, a.code AS account_code
+             FROM rateb_bank_accounts b
+             JOIN rateb_chart_of_accounts a ON a.id = b.chart_account_id
+             WHERE b.company_id = :cid AND b.is_active = 1
+             ORDER BY b.is_default DESC, b.name',
+            ['cid' => $companyId]
+        );
+        foreach ($rows as &$row) {
+            $row['book_balance'] = $this->chartAccountBalance($companyId, (int) $row['chart_account_id'], (float) ($row['opening_balance'] ?? 0));
+        }
+        unset($row);
+        return $rows;
+    }
+
+    /** @return array{accounts: array<int, array<string, mixed>>, total_cash: float} */
+    public function bankReconciliation(?int $companyId): array
+    {
+        $accounts = $this->listBankAccounts($companyId);
+        $total = 0.0;
+        foreach ($accounts as $acc) {
+            $total += (float) ($acc['book_balance'] ?? 0);
+        }
+        $petty = $this->chartAccountBalance($companyId, $this->accountIdByCode($companyId, '1100') ?? 0, 0.0);
+        return ['accounts' => $accounts, 'total_cash' => $total + $petty, 'petty_cash' => $petty];
+    }
+
+    /** @param array<int, array{account_id:int,amount:float}> $lines */
+    public function saveBudgetLines(?int $companyId, int $fiscalYear, array $lines): void
+    {
+        $companyId = $this->normalizeCompanyId($companyId);
+        if ($companyId === null || $fiscalYear < 2000) {
+            return;
+        }
+        $pdo = Database::connection();
+        $pdo->prepare('DELETE FROM rateb_budget_lines WHERE company_id = :cid AND fiscal_year = :yr')
+            ->execute(['cid' => $companyId, 'yr' => $fiscalYear]);
+        $stmt = $pdo->prepare(
+            'INSERT INTO rateb_budget_lines (company_id, fiscal_year, account_id, amount) VALUES (:cid, :yr, :aid, :amt)'
+        );
+        foreach ($lines as $line) {
+            $aid = (int) ($line['account_id'] ?? 0);
+            $amt = (float) ($line['amount'] ?? 0);
+            if ($aid < 1 || $amt <= 0) {
+                continue;
+            }
+            $stmt->execute(['cid' => $companyId, 'yr' => $fiscalYear, 'aid' => $aid, 'amt' => $amt]);
+        }
+    }
+
+    /** @return array{year:int, lines: array<int, array<string, mixed>>, totals: array{budget:float,actual:float,variance:float}} */
+    public function budgetVsActual(?int $companyId, int $fiscalYear): array
+    {
+        if ($companyId === null || $companyId < 1) {
+            return ['year' => $fiscalYear, 'lines' => [], 'totals' => ['budget' => 0, 'actual' => 0, 'variance' => 0]];
+        }
+        $from = $fiscalYear . '-01-01';
+        $to = $fiscalYear . '-12-31';
+        $sql = 'SELECT a.id, a.code, a.name, a.name_ar, a.account_type,
+                       COALESCE(b.amount, 0) AS budget_amount,
+                       COALESCE(SUM(l.debit), 0) AS total_debit,
+                       COALESCE(SUM(l.credit), 0) AS total_credit
+                FROM rateb_chart_of_accounts a
+                LEFT JOIN rateb_budget_lines b ON b.account_id = a.id AND b.company_id = :cid AND b.fiscal_year = :yr
+                LEFT JOIN rateb_journal_lines l ON l.account_id = a.id
+                LEFT JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted
+                    AND e.entry_date >= :from AND e.entry_date <= :to
+                WHERE a.company_id = :cid AND a.is_active = 1
+                  AND a.account_type IN (\'revenue\', \'expense\')
+                  AND (b.amount IS NOT NULL OR l.id IS NOT NULL)
+                GROUP BY a.id, b.amount
+                HAVING budget_amount > 0 OR total_debit > 0 OR total_credit > 0
+                ORDER BY a.code';
+        $rows = (new ChartOfAccount())->query($sql, [
+            'cid' => $companyId, 'yr' => $fiscalYear, 'posted' => 'posted', 'from' => $from, 'to' => $to,
+        ]);
+        $budgetTotal = 0.0;
+        $actualTotal = 0.0;
+        foreach ($rows as &$row) {
+            $dr = (float) ($row['total_debit'] ?? 0);
+            $cr = (float) ($row['total_credit'] ?? 0);
+            $budget = (float) ($row['budget_amount'] ?? 0);
+            if (($row['account_type'] ?? '') === 'revenue') {
+                $actual = $cr - $dr;
+            } else {
+                $actual = $dr - $cr;
+            }
+            $row['actual_amount'] = $actual;
+            $row['variance'] = $budget - $actual;
+            $budgetTotal += $budget;
+            $actualTotal += $actual;
+        }
+        unset($row);
+        return [
+            'year' => $fiscalYear,
+            'lines' => $rows,
+            'totals' => [
+                'budget' => $budgetTotal,
+                'actual' => $actualTotal,
+                'variance' => $budgetTotal - $actualTotal,
+            ],
+        ];
+    }
+
+    /** @return array<string, float|int> */
+    public function cfoMetrics(?int $companyId): array
+    {
+        if ($companyId === null || $companyId < 1) {
+            return [];
+        }
+        $year = (int) date('Y');
+        $pl = $this->profitAndLoss($companyId, $year . '-01-01', date('Y-m-d'));
+        $arId = $this->accountIdByCode($companyId, '1200');
+        $apId = $this->accountIdByCode($companyId, '2100');
+        $arBal = $arId ? $this->chartAccountBalance($companyId, $arId, 0.0) : 0.0;
+        $apBal = $apId ? abs($this->chartAccountBalance($companyId, $apId, 0.0)) : 0.0;
+        $bank = $this->bankReconciliation($companyId);
+        $arData = $this->accountsReceivable($companyId);
+        $apData = $this->accountsPayable($companyId);
+        $revenue = max(0.01, (float) ($pl['revenue'] ?? 0));
+        $procurement = max(0.01, (float) ($this->financialSummary($companyId)['procurement_received'] ?? 0));
+        $dso = ((float) ($arData['total_open'] ?? 0)) / ($revenue / 365);
+        $dpo = ((float) ($apData['total_open'] ?? 0)) / ($procurement / 365);
+        return [
+            'cash_position' => (float) ($bank['total_cash'] ?? 0),
+            'ar_balance' => $arBal,
+            'ap_balance' => $apBal,
+            'ar_open' => (float) ($arData['total_open'] ?? 0),
+            'ap_open' => (float) ($apData['total_open'] ?? 0),
+            'revenue_ytd' => (float) ($pl['revenue'] ?? 0),
+            'expenses_ytd' => (float) ($pl['expenses'] ?? 0),
+            'net_margin' => (float) ($pl['net'] ?? 0),
+            'dso_days' => round($dso, 1),
+            'dpo_days' => round($dpo, 1),
+            'procurement_ytd' => (float) ($this->financialSummary($companyId)['procurement_received'] ?? 0),
+        ];
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    public function exportJournalEntries(?int $companyId, ?string $fromDate = null, ?string $toDate = null): array
+    {
+        if ($companyId === null || $companyId < 1) {
+            return [];
+        }
+        $sql = 'SELECT e.entry_no, e.entry_date, e.description, e.description_ar, e.status, e.source_type,
+                       a.code, a.name, a.name_ar, l.debit, l.credit, l.memo
+                FROM rateb_journal_entries e
+                JOIN rateb_journal_lines l ON l.journal_entry_id = e.id
+                JOIN rateb_chart_of_accounts a ON a.id = l.account_id
+                WHERE e.company_id = :cid';
+        $params = ['cid' => $companyId];
+        if ($fromDate) {
+            $sql .= ' AND e.entry_date >= :from';
+            $params['from'] = $fromDate;
+        }
+        if ($toDate) {
+            $sql .= ' AND e.entry_date <= :to';
+            $params['to'] = $toDate;
+        }
+        $sql .= ' ORDER BY e.entry_date, e.id, l.id';
+        return (new JournalEntry())->query($sql, $params);
+    }
+
+    private function resolveCashAccountId(?int $companyId, array $voucher): ?int
+    {
+        $bankId = (int) ($voucher['bank_account_id'] ?? 0);
+        if ($bankId > 0) {
+            $ba = (new JournalEntry())->queryOne(
+                'SELECT chart_account_id FROM rateb_bank_accounts WHERE id = :id AND company_id = :cid AND is_active = 1',
+                ['id' => $bankId, 'cid' => $companyId]
+            );
+            if ($ba) {
+                return (int) $ba['chart_account_id'];
+            }
+        }
+        return $this->accountIdByCode($companyId, '1100');
+    }
+
+    private function chartAccountBalance(?int $companyId, int $accountId, float $opening): float
+    {
+        if ($accountId < 1) {
+            return $opening;
+        }
+        $row = (new JournalEntry())->queryOne(
+            'SELECT COALESCE(SUM(l.debit), 0) AS dr, COALESCE(SUM(l.credit), 0) AS cr
+             FROM rateb_journal_lines l
+             JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = :posted
+             WHERE l.account_id = :aid AND e.company_id <=> :cid',
+            ['posted' => 'posted', 'aid' => $accountId, 'cid' => $companyId]
+        );
+        $dr = (float) ($row['dr'] ?? 0);
+        $cr = (float) ($row['cr'] ?? 0);
+        return $opening + $dr - $cr;
+    }
+
+    private function nextBankAccountCode(?int $companyId): string
+    {
+        $row = (new ChartOfAccount())->queryOne(
+            'SELECT code FROM rateb_chart_of_accounts
+             WHERE company_id = :cid AND code LIKE :pfx
+             ORDER BY code DESC LIMIT 1',
+            ['cid' => $companyId, 'pfx' => '111%']
+        );
+        if (!$row) {
+            return '1110';
+        }
+        $num = (int) preg_replace('/\D/', '', (string) $row['code']);
+        return (string) ($num + 1);
+    }
+
+    /** @param array<string, mixed> $voucher */
     public function createCashVoucherDraft(?int $companyId, array $data, ?int $createdBy): int
     {
         $this->ensureDefaultAccounts($companyId);
@@ -829,8 +1101,8 @@ final class AccountingService
         $no = $this->nextVoucherNo($companyId, (string) ($data['voucher_type'] ?? 'receipt'));
         $stmt = $pdo->prepare(
             'INSERT INTO rateb_cash_vouchers
-             (company_id, voucher_no, voucher_type, voucher_date, amount, party_name, description, description_ar, counter_account_id, status, created_by)
-             VALUES (:cid, :no, :type, :dt, :amt, :party, :desc, :desc_ar, :acct, :st, :uid)'
+             (company_id, voucher_no, voucher_type, voucher_date, amount, party_name, description, description_ar, counter_account_id, bank_account_id, status, created_by)
+             VALUES (:cid, :no, :type, :dt, :amt, :party, :desc, :desc_ar, :acct, :bank, :st, :uid)'
         );
         $stmt->execute([
             'cid' => $companyId,
@@ -842,6 +1114,7 @@ final class AccountingService
             'desc' => $data['description'],
             'desc_ar' => $data['description_ar'] ?? null,
             'acct' => $data['counter_account_id'],
+            'bank' => isset($data['bank_account_id']) && (int) $data['bank_account_id'] > 0 ? (int) $data['bank_account_id'] : null,
             'st' => 'draft',
             'uid' => $createdBy,
         ]);
@@ -861,7 +1134,7 @@ final class AccountingService
         if ($amount <= 0) {
             return false;
         }
-        $cash = $this->accountIdByCode($companyId, '1100');
+        $cash = $this->resolveCashAccountId($companyId, $v);
         $counter = (int) ($v['counter_account_id'] ?? 0);
         if (!$cash || $counter < 1) {
             return false;

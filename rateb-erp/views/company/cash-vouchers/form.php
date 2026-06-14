@@ -35,6 +35,17 @@
                 </select>
             </div>
             <div class="col-md-6">
+                <label class="form-label"><?php echo __('bank_account'); ?></label>
+                <select name="bank_account_id" class="form-select">
+                    <option value=""><?php echo __('petty_cash_default'); ?></option>
+                    <?php foreach ($bankAccounts ?? [] as $ba) { ?>
+                    <option value="<?php echo (int) $ba['id']; ?>">
+                        <?php echo Rateb\App\Core\View::escape($ba['name'] . ' (' . ($ba['account_code'] ?? '') . ')'); ?>
+                    </option>
+                    <?php } ?>
+                </select>
+            </div>
+            <div class="col-md-6">
                 <label class="form-label"><?php echo __('description'); ?> (EN)</label>
                 <input type="text" name="description" class="form-control" maxlength="500">
             </div>

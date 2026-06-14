@@ -11,7 +11,7 @@ final class PurchaseOrder extends Model
     protected string $table = 'rateb_purchase_orders';
     protected bool $tenantScoped = true;
     protected array $fillable = [
-        'order_no', 'supplier_id', 'purchase_request_id', 'status', 'order_date',
+        'order_no', 'supplier_id', 'cost_center_id', 'purchase_request_id', 'status', 'order_date',
         'expected_date', 'subtotal', 'tax_amount', 'total_amount', 'notes',
     ];
 

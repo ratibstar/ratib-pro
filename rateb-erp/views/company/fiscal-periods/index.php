@@ -31,6 +31,12 @@
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <button type="submit" class="btn btn-sm btn-outline-warning"><?php echo __('close_period'); ?></button>
                     </form>
+                    <?php } elseif (($canPost ?? false) && $st === 'closed') { ?>
+                    <form method="post" action="<?php echo rateb_app_url('fiscal-periods/' . (int) $row['id'] . '/reopen'); ?>" class="d-inline"
+                          onsubmit="return confirm('<?php echo __('fiscal_period_reopen_confirm'); ?>');">
+                        <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                        <button type="submit" class="btn btn-sm btn-outline-success"><?php echo __('reopen_period'); ?></button>
+                    </form>
                     <?php } ?>
                 </td>
             </tr>

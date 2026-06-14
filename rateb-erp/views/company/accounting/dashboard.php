@@ -30,6 +30,14 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
         <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-sync"></i> <?php echo __('accounting_sync'); ?></button>
     </form>
     <?php } ?>
+    <?php if (rateb_can_export_entity('accounting')) { ?>
+    <a href="<?php echo rateb_url_with_ops_company('accounting/export/trial-balance'); ?>" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-download"></i> <?php echo __('export_trial_balance'); ?>
+    </a>
+    <a href="<?php echo rateb_url_with_ops_company('accounting/export/journals'); ?>" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-download"></i> <?php echo __('export_journals'); ?>
+    </a>
+    <?php } ?>
 </div>
 <p class="text-muted small mb-3"><?php echo __('accounting_auto_post_help'); ?></p>
 <div class="rateb-card">

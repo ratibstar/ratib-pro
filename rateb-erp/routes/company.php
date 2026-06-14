@@ -26,6 +26,7 @@ use Rateb\App\Controllers\Company\JournalEntriesController as CompanyJournalEntr
 use Rateb\App\Controllers\Company\CashVouchersController as CompanyCashVouchersController;
 use Rateb\App\Controllers\Company\FiscalPeriodsController as CompanyFiscalPeriodsController;
 use Rateb\App\Controllers\Company\CostCentersController as CompanyCostCentersController;
+use Rateb\App\Controllers\Company\BankAccountsController as CompanyBankAccountsController;
 use Rateb\App\Controllers\Company\InventoryBatchesController;
 use Rateb\App\Controllers\Company\InventoryAuditsController;
 use Rateb\App\Controllers\Company\InventoryCodesController;
@@ -101,6 +102,12 @@ $router->get($app('accounting/cost-center-report'), [CompanyAccountingDashboardC
 $router->get($app('accounting/zatca-settings'), [CompanyAccountingDashboardController::class, 'zatcaSettings'], rateb_erp_mw('accounting', '', 'zatca-settings'));
 $router->post($app('accounting/zatca-settings'), [CompanyAccountingDashboardController::class, 'saveZatcaSettings'], rateb_erp_mw('accounting', 'accounting.manage', 'zatca-settings'));
 $router->post($app('accounting/zatca-qr/{id}'), [CompanyAccountingDashboardController::class, 'generateZatcaQr'], rateb_erp_mw('accounting', 'accounting.manage', 'zatca-settings'));
+$router->get($app('accounting/budget-report'), [CompanyAccountingDashboardController::class, 'budgetReport'], rateb_erp_mw('accounting', '', 'budget-report'));
+$router->post($app('accounting/budget-report'), [CompanyAccountingDashboardController::class, 'saveBudget'], rateb_erp_mw('accounting', 'accounting.manage', 'budget-report'));
+$router->get($app('accounting/cfo-dashboard'), [CompanyAccountingDashboardController::class, 'cfoDashboard'], rateb_erp_mw('accounting', '', 'cfo-dashboard'));
+$router->get($app('accounting/bank-reconciliation'), [CompanyAccountingDashboardController::class, 'bankReconciliation'], rateb_erp_mw('accounting', '', 'bank-reconciliation'));
+$router->get($app('accounting/export/trial-balance'), [CompanyAccountingDashboardController::class, 'exportTrialBalance'], rateb_erp_mw('accounting', 'reports.export', 'accounting'));
+$router->get($app('accounting/export/journals'), [CompanyAccountingDashboardController::class, 'exportJournals'], rateb_erp_mw('accounting', 'reports.export', 'accounting'));
 $router->get($app('chart-of-accounts'), [CompanyChartOfAccountsController::class, 'index'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->get($app('chart-of-accounts/create'), [CompanyChartOfAccountsController::class, 'create'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
 $router->post($app('chart-of-accounts'), [CompanyChartOfAccountsController::class, 'store'], rateb_erp_mw('accounting', '', 'chart-of-accounts'));
@@ -126,6 +133,11 @@ $router->post($app('cash-vouchers/{id}/void'), [CompanyCashVouchersController::c
 
 $router->get($app('fiscal-periods'), [CompanyFiscalPeriodsController::class, 'index'], rateb_erp_mw('accounting', '', 'fiscal-periods'));
 $router->post($app('fiscal-periods/{id}/close'), [CompanyFiscalPeriodsController::class, 'close'], rateb_erp_mw('accounting', 'accounting.post', 'fiscal-periods'));
+$router->post($app('fiscal-periods/{id}/reopen'), [CompanyFiscalPeriodsController::class, 'reopen'], rateb_erp_mw('accounting', 'accounting.post', 'fiscal-periods'));
+
+$router->get($app('bank-accounts'), [CompanyBankAccountsController::class, 'index'], rateb_erp_mw('accounting', '', 'bank-accounts'));
+$router->get($app('bank-accounts/create'), [CompanyBankAccountsController::class, 'create'], rateb_erp_mw('accounting', 'accounting.manage', 'bank-accounts'));
+$router->post($app('bank-accounts'), [CompanyBankAccountsController::class, 'store'], rateb_erp_mw('accounting', 'accounting.manage', 'bank-accounts'));
 
 $router->get($app('cost-centers'), [CompanyCostCentersController::class, 'index'], rateb_erp_mw('accounting', '', 'cost-centers'));
 $router->get($app('cost-centers/create'), [CompanyCostCentersController::class, 'create'], rateb_erp_mw('accounting', 'accounting.manage', 'cost-centers'));

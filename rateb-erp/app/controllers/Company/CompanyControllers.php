@@ -149,6 +149,7 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->tenantForeignKeys = ['supplier_id'];
         $this->fields = [
             ['name' => 'supplier_id', 'label' => 'Supplier ID', 'type' => 'number'],
+            ['name' => 'cost_center_id', 'label' => 'cost_center', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled']],
             ['name' => 'order_date', 'label' => 'Order Date', 'type' => 'date'],
             ['name' => 'expected_date', 'label' => 'Expected Date', 'type' => 'date'],

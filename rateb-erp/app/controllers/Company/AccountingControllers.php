@@ -194,6 +194,125 @@ final class AccountingDashboardController extends Controller
         }
         Response::redirect(rateb_app_url('accounting/zatca-settings'));
     }
+
+    public function budgetReport(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $year = (int) ($_GET['year'] ?? date('Y'));
+        if ($year < 2000) {
+            $year = (int) date('Y');
+        }
+        $service = new AccountingService();
+        $service->ensureDefaultAccounts($companyId > 0 ? $companyId : null);
+        $accounts = $companyId > 0
+            ? (new ChartOfAccount())->query(
+                'SELECT id, code, name, name_ar, account_type FROM rateb_chart_of_accounts
+                 WHERE company_id = :cid AND is_active = 1 AND account_type IN (\'revenue\',\'expense\')
+                 ORDER BY code',
+                ['cid' => $companyId]
+            )
+            : [];
+        $this->view('company/accounting/budget-report', [
+            'title' => __('budget_report'),
+            'report' => $companyId > 0 ? $service->budgetVsActual($companyId, $year) : ['year' => $year, 'lines' => [], 'totals' => ['budget' => 0, 'actual' => 0, 'variance' => 0]],
+            'accounts' => $accounts,
+            'year' => $year,
+            'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('accounting'),
+        ], 'main');
+    }
+
+    public function saveBudget(): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_manage_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('accounting/budget-report'));
+        }
+        $companyId = rateb_require_ops_company();
+        $year = (int) ($_POST['fiscal_year'] ?? date('Y'));
+        $accountIds = $_POST['budget_account_id'] ?? [];
+        $amounts = $_POST['budget_amount'] ?? [];
+        $lines = [];
+        foreach ($accountIds as $i => $aid) {
+            $lines[] = ['account_id' => (int) $aid, 'amount' => (float) ($amounts[$i] ?? 0)];
+        }
+        (new AccountingService())->saveBudgetLines($companyId, $year, $lines);
+        (new AuditService())->log('update', 'budget', $companyId, ['year' => $year]);
+        SessionManager::flash('success', __('budget_saved'));
+        Response::redirect(rateb_app_url('accounting/budget-report') . '?year=' . $year);
+    }
+
+    public function cfoDashboard(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $this->view('company/accounting/cfo-dashboard', [
+            'title' => __('cfo_dashboard'),
+            'metrics' => $companyId > 0 ? (new AccountingService())->cfoMetrics($companyId) : [],
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function bankReconciliation(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $this->view('company/accounting/bank-reconciliation', [
+            'title' => __('bank_reconciliation'),
+            'data' => $companyId > 0 ? (new AccountingService())->bankReconciliation($companyId) : ['accounts' => [], 'total_cash' => 0, 'petty_cash' => 0],
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function exportTrialBalance(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1) {
+            Response::redirect(rateb_app_url('accounting'));
+        }
+        $rows = (new AccountingService())->trialBalance($companyId);
+        $exportRows = [];
+        foreach ($rows as $r) {
+            $exportRows[] = [
+                'code' => $r['code'],
+                'name' => $r['name'],
+                'account_type' => $r['account_type'],
+                'debit' => $r['total_debit'],
+                'credit' => $r['total_credit'],
+            ];
+        }
+        \Rateb\App\Controllers\Shared\ExportController::send('trial_balance', [
+            ['name' => 'code', 'label' => __('code')],
+            ['name' => 'name', 'label' => __('name')],
+            ['name' => 'account_type', 'label' => __('account_type')],
+            ['name' => 'debit', 'label' => __('debit')],
+            ['name' => 'credit', 'label' => __('credit')],
+        ], $exportRows, __('trial_balance'), 'accounting');
+    }
+
+    public function exportJournals(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1) {
+            Response::redirect(rateb_app_url('accounting'));
+        }
+        $from = trim((string) ($_GET['from'] ?? ''));
+        $to = trim((string) ($_GET['to'] ?? ''));
+        $rows = (new AccountingService())->exportJournalEntries(
+            $companyId,
+            $from !== '' ? $from : null,
+            $to !== '' ? $to : null
+        );
+        \Rateb\App\Controllers\Shared\ExportController::send('journal_entries', [
+            ['name' => 'entry_no', 'label' => __('entry_no')],
+            ['name' => 'entry_date', 'label' => __('evaluation_date')],
+            ['name' => 'description', 'label' => __('description')],
+            ['name' => 'status', 'label' => __('status')],
+            ['name' => 'code', 'label' => __('code')],
+            ['name' => 'name', 'label' => __('name')],
+            ['name' => 'debit', 'label' => __('debit')],
+            ['name' => 'credit', 'label' => __('credit')],
+            ['name' => 'memo', 'label' => __('memo')],
+        ], $rows, __('journal_entries'), 'accounting');
+    }
 }
 
 final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudController
@@ -549,6 +668,7 @@ final class CashVouchersController extends Controller
             'title' => __('new_cash_voucher'),
             'voucher' => null,
             'accounts' => $accounts,
+            'bankAccounts' => (new AccountingService())->listBankAccounts($companyId),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -578,6 +698,7 @@ final class CashVouchersController extends Controller
             'description' => trim((string) ($_POST['description'] ?? '')) ?: ($type === 'receipt' ? 'Cash receipt' : 'Cash payment'),
             'description_ar' => trim((string) ($_POST['description_ar'] ?? '')),
             'counter_account_id' => $counter,
+            'bank_account_id' => (int) ($_POST['bank_account_id'] ?? 0) ?: null,
         ], (int) SessionManager::get('rateb_user_id', 0) ?: null);
         (new AuditService())->log('create', 'cash_voucher', $id, ['status' => 'draft']);
         SessionManager::flash('success', __('voucher_saved'));
@@ -680,6 +801,75 @@ final class FiscalPeriodsController extends Controller
             SessionManager::flash('error', __('fiscal_period_close_failed'));
         }
         Response::redirect(rateb_app_url('fiscal-periods'));
+    }
+
+    public function reopen(array $params): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_post_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('fiscal-periods'));
+        }
+        $companyId = rateb_require_ops_company();
+        $id = (int) ($params['id'] ?? 0);
+        if ((new AccountingService())->reopenFiscalPeriod($id, $companyId)) {
+            (new AuditService())->log('reopen', 'fiscal_period', $id, []);
+            SessionManager::flash('success', __('fiscal_period_reopened'));
+        } else {
+            SessionManager::flash('error', __('fiscal_period_reopen_failed'));
+        }
+        Response::redirect(rateb_app_url('fiscal-periods'));
+    }
+}
+
+final class BankAccountsController extends Controller
+{
+    public function index(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $this->view('company/bank-accounts/index', [
+            'title' => __('bank_accounts'),
+            'items' => (new AccountingService())->listBankAccounts($companyId > 0 ? $companyId : null),
+            'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('accounting'),
+            'createEnabled' => $companyId > 0 && rateb_can_manage_entity('accounting'),
+        ], 'main');
+    }
+
+    public function create(): void
+    {
+        if (!rateb_can_manage_entity('accounting')) {
+            SessionManager::flash('error', __('access_denied'));
+            Response::redirect(rateb_app_url('bank-accounts'));
+        }
+        $this->view('company/bank-accounts/form', [
+            'title' => __('new_bank_account'),
+            'item' => null,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function store(): void
+    {
+        rateb_require_post('accounting');
+        if (!rateb_can_manage_entity('accounting') || !$this->validateCsrf()) {
+            Response::redirect(rateb_app_url('bank-accounts'));
+        }
+        $companyId = rateb_require_ops_company();
+        $name = trim((string) ($_POST['name'] ?? ''));
+        if ($name === '') {
+            SessionManager::flash('error', __('invalid_request'));
+            Response::redirect(rateb_app_url('bank-accounts/create'));
+        }
+        $id = (new AccountingService())->createBankAccount($companyId, [
+            'name' => $name,
+            'bank_name' => trim((string) ($_POST['bank_name'] ?? '')),
+            'account_number' => trim((string) ($_POST['account_number'] ?? '')),
+            'opening_balance' => (float) ($_POST['opening_balance'] ?? 0),
+            'is_default' => !empty($_POST['is_default']),
+        ]);
+        (new AuditService())->log('create', 'bank_account', $id, []);
+        SessionManager::flash('success', __('bank_account_saved'));
+        Response::redirect(rateb_app_url('bank-accounts'));
     }
 }
 
