@@ -32,9 +32,10 @@ $render = static function (array $nodes, int $depth = 0) use (&$render, $editUrl
         $type = (string) ($node['account_type'] ?? '');
         $balance = (float) ($node['balance'] ?? 0);
         $isGroup = !empty($node['children']);
+        $isHeader = substr((string) ($node['code'] ?? ''), -3) === '000';
         $nodeId = (int) ($node['id'] ?? 0);
         ?>
-        <tr class="<?php echo $isGroup ? 'rateb-coa-group' : ''; ?>" data-depth="<?php echo $depth; ?>">
+        <tr class="<?php echo $isGroup ? 'rateb-coa-group' : ''; ?><?php echo $isHeader ? ' rateb-coa-header' : ''; ?>" data-depth="<?php echo $depth; ?>">
             <?php if ($bulkEnabled) { ?>
             <td class="rateb-bulk-td">
                 <?php if (!$isGroup) { ?>
@@ -42,10 +43,12 @@ $render = static function (array $nodes, int $depth = 0) use (&$render, $editUrl
                 <?php } ?>
             </td>
             <?php } ?>
-            <td class="rateb-coa-name" style="padding-inline-start: <?php echo (12 + $depth * 20); ?>px">
-                <?php if ($isGroup) { ?><i class="fas fa-folder-open text-warning me-1"></i><?php } else { ?><i class="fas fa-file-invoice text-muted me-1"></i><?php } ?>
+            <td class="rateb-coa-name" style="padding-inline-start: <?php echo (12 + $depth * 24); ?>px">
+                <?php if ($depth > 0) { ?><span class="rateb-coa-branch text-muted me-1">└</span><?php } ?>
+                <?php if ($isGroup || $isHeader) { ?><i class="fas fa-folder-open text-warning me-1"></i><?php } else { ?><i class="fas fa-file-invoice text-muted me-1"></i><?php } ?>
                 <span class="fw-semibold"><?php echo Rateb\App\Core\View::escape($node['code'] ?? ''); ?></span>
                 <span class="ms-1"><?php echo Rateb\App\Core\View::escape($name); ?></span>
+                <?php if ($isGroup || $isHeader) { ?><span class="badge bg-warning-subtle text-warning ms-1 small"><?php echo __('main_account'); ?></span><?php } ?>
             </td>
             <td><span class="badge bg-secondary-subtle text-secondary"><?php echo __($type); ?></span></td>
             <td class="text-end"><?php echo number_format((float) ($node['total_debit'] ?? 0), 2); ?></td>

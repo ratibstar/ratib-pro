@@ -40,19 +40,18 @@ final class AccountingService
 
     public function ensureDefaultAccounts(?int $companyId): void
     {
-        $companyId = $this->normalizeCompanyId($companyId);
-        if ($companyId === null || $companyId < 1) {
-            return;
-        }
         $coa = new ChartOfAccount();
+        $normalized = $this->normalizeCompanyId($companyId);
         $codeToId = [];
         foreach (self::DEFAULT_ACCOUNTS as $def) {
             $exists = $coa->queryOne(
                 'SELECT id FROM rateb_chart_of_accounts WHERE company_id <=> :cid AND code = :code LIMIT 1',
-                ['cid' => $companyId, 'code' => $def['code']]
+                ['cid' => $normalized, 'code' => $def['code']]
             );
             if ($exists) {
-                $codeToId[$def['code']] = (int) $exists['id'];
+                $id = (int) $exists['id'];
+                $codeToId[$def['code']] = $id;
+                $coa->update($id, ['is_active' => 1]);
                 continue;
             }
             $parentId = null;
@@ -60,7 +59,7 @@ final class AccountingService
                 $parentId = $codeToId[$def['parent']];
             }
             $id = $coa->create([
-                'company_id' => $companyId,
+                'company_id' => $normalized,
                 'code' => $def['code'],
                 'name' => $def['name'],
                 'name_ar' => $def['name_ar'],
@@ -70,20 +69,23 @@ final class AccountingService
             ]);
             $codeToId[$def['code']] = $id;
         }
-        $this->linkCoaParents($companyId, $coa);
+        $this->linkCoaParents($normalized, $coa);
     }
 
-    /** Backfill parent_id for existing company COA rows. */
+    /** Backfill parent_id for existing COA rows (company or platform template). */
     private function linkCoaParents(?int $companyId, ?ChartOfAccount $coa = null): void
     {
-        if ($companyId === null || $companyId < 1) {
-            return;
-        }
         $coa = $coa ?? new ChartOfAccount();
-        $rows = $coa->query(
-            'SELECT id, code, parent_id FROM rateb_chart_of_accounts WHERE company_id = :cid',
-            ['cid' => $companyId]
-        );
+        if ($companyId !== null && $companyId > 0) {
+            $rows = $coa->query(
+                'SELECT id, code, parent_id FROM rateb_chart_of_accounts WHERE company_id = :cid',
+                ['cid' => $companyId]
+            );
+        } else {
+            $rows = $coa->query(
+                'SELECT id, code, parent_id FROM rateb_chart_of_accounts WHERE company_id IS NULL'
+            );
+        }
         $codeToId = [];
         foreach ($rows as $row) {
             $codeToId[(string) $row['code']] = (int) $row['id'];
@@ -92,20 +94,27 @@ final class AccountingService
             if (empty($def['parent']) || empty($codeToId[$def['code']]) || empty($codeToId[$def['parent']])) {
                 continue;
             }
-            $childId = $codeToId[$def['code']];
-            $parentId = $codeToId[$def['parent']];
-            $currentParent = 0;
-            foreach ($rows as $row) {
-                if ((int) $row['id'] === $childId) {
-                    $currentParent = (int) ($row['parent_id'] ?? 0);
-                    break;
-                }
-            }
-            if ($currentParent > 0) {
+            $coa->update($codeToId[$def['code']], ['parent_id' => $codeToId[$def['parent']]]);
+        }
+        foreach ($rows as $row) {
+            $childId = (int) $row['id'];
+            if ((int) ($row['parent_id'] ?? 0) > 0) {
                 continue;
             }
-            $coa->update($childId, ['parent_id' => $parentId]);
+            $parentCode = $this->inferParentCode((string) $row['code']);
+            if ($parentCode === null || empty($codeToId[$parentCode]) || $codeToId[$parentCode] === $childId) {
+                continue;
+            }
+            $coa->update($childId, ['parent_id' => $codeToId[$parentCode]]);
         }
+    }
+
+    private function inferParentCode(string $code): ?string
+    {
+        if (!preg_match('/^\d{4}$/', $code) || substr($code, -3) === '000') {
+            return null;
+        }
+        return substr($code, 0, 1) . '000';
     }
 
     public function accountIdByCode(?int $companyId, string $code): ?int
@@ -777,19 +786,28 @@ final class AccountingService
     public function buildAccountTree(array $accounts): array
     {
         $byId = [];
+        $codeToId = [];
         foreach ($accounts as $account) {
             $account['children'] = $account['children'] ?? [];
             $byId[(int) $account['id']] = $account;
+            $codeToId[(string) ($account['code'] ?? '')] = (int) $account['id'];
         }
         $roots = [];
         foreach ($byId as $id => $account) {
             $parentId = (int) ($account['parent_id'] ?? 0);
-            if ($parentId > 0 && isset($byId[$parentId])) {
+            if ($parentId < 1) {
+                $parentCode = $this->inferParentCode((string) ($account['code'] ?? ''));
+                if ($parentCode !== null && isset($codeToId[$parentCode])) {
+                    $parentId = $codeToId[$parentCode];
+                }
+            }
+            if ($parentId > 0 && isset($byId[$parentId]) && $parentId !== $id) {
                 $byId[$parentId]['children'][] = &$byId[$id];
             } else {
                 $roots[] = &$byId[$id];
             }
         }
+        usort($roots, static fn (array $a, array $b): int => strcmp((string) ($a['code'] ?? ''), (string) ($b['code'] ?? '')));
         return array_values($roots);
     }
 

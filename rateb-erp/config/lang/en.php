@@ -288,6 +288,7 @@ return [
     'purchase_orders' => 'Purchase orders',
     'chart_of_accounts' => 'Chart of Accounts',
     'coa_tree' => 'Accounting Tree',
+    'main_account' => 'Main',
     'parent_account' => 'Parent account',
     'journal_entries' => 'Journal Entries',
     'trial_balance' => 'Trial Balance',

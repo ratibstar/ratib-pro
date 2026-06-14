@@ -162,16 +162,23 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
     /** @return array<int|string, string> */
     private function parentOptions(int $excludeId = 0): array
     {
-        $rows = $this->model->query(
-            'SELECT id, code, name, name_ar FROM rateb_chart_of_accounts
-             WHERE company_id IS NULL AND is_active = 1 AND id != :ex ORDER BY code',
-            ['ex' => $excludeId]
-        );
+        $tree = (new AccountingService())->coaTreeWithBalances(null);
         $options = ['' => '—'];
-        foreach ($rows as $row) {
-            $label = $row['code'] . ' — ' . (rateb_locale() === 'ar' && !empty($row['name_ar']) ? $row['name_ar'] : $row['name']);
-            $options[(int) $row['id']] = $label;
-        }
+        $walk = static function (array $nodes, int $depth) use (&$walk, &$options, $excludeId): void {
+            foreach ($nodes as $node) {
+                $id = (int) ($node['id'] ?? 0);
+                if ($id < 1 || $id === $excludeId) {
+                    continue;
+                }
+                $name = rateb_locale() === 'ar' && !empty($node['name_ar']) ? $node['name_ar'] : ($node['name'] ?? '');
+                $prefix = $depth > 0 ? str_repeat('　', $depth) . '└ ' : '';
+                $options[$id] = $prefix . ($node['code'] ?? '') . ' — ' . $name;
+                if (!empty($node['children'])) {
+                    $walk($node['children'], $depth + 1);
+                }
+            }
+        };
+        $walk($tree, 0);
         return $options;
     }
 

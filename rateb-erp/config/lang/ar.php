@@ -287,6 +287,7 @@ return [
     'purchase_orders' => 'أوامر الشراء',
     'chart_of_accounts' => 'دليل الحسابات',
     'coa_tree' => 'شجرة المحاسبة',
+    'main_account' => 'رئيسي',
     'parent_account' => 'الحساب الأب',
     'journal_entries' => 'القيود اليومية',
     'trial_balance' => 'ميزان المراجعة',

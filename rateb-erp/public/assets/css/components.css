@@ -109,6 +109,16 @@
     background: var(--rateb-surface-alt, rgba(0, 0, 0, 0.03));
 }
 
+.rateb-coa-tree .rateb-coa-header td {
+    font-weight: 600;
+    border-top: 1px solid var(--rateb-border);
+}
+
+.rateb-coa-tree .rateb-coa-branch {
+    font-family: monospace;
+    opacity: 0.6;
+}
+
 .rateb-coa-tree .rateb-coa-name {
     white-space: nowrap;
 }
