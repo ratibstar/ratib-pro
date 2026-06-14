@@ -170,7 +170,10 @@ final class CmsBlogArticlesController extends \Rateb\App\Controllers\CrudControl
     public function create(): void
     {
         $this->guardManage();
-        $this->view($this->viewPrefix . '/form', $this->formViewData(null), $this->layout());
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
+            'title' => __('create') . ' ' . __('cms_blog'),
+            'item' => null,
+        ]), $this->layout());
     }
 
     public function edit(array $params): void
@@ -183,7 +186,10 @@ final class CmsBlogArticlesController extends \Rateb\App\Controllers\CrudControl
             $this->view('errors/404', ['title' => '404']);
             return;
         }
-        $this->view($this->viewPrefix . '/form', $this->formViewData($item), $this->layout());
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
+            'title' => __('edit') . ' ' . __('cms_blog'),
+            'item' => $item,
+        ]), $this->layout());
     }
 
     public function store(): void
@@ -218,22 +224,18 @@ final class CmsBlogArticlesController extends \Rateb\App\Controllers\CrudControl
     }
 
     /** @return array<string, mixed> */
-    private function formViewData(?array $item): array
+    protected function formViewData(array $extra = []): array
     {
+        $item = $extra['item'] ?? null;
         $selectedTags = [];
-        if ($item) {
+        if (is_array($item)) {
             $selectedTags = (new CmsArticleTagService())->tagIdsForArticle((int) $item['id']);
         }
-        return [
-            'title' => ($item ? __('edit') : __('create')) . ' ' . __('cms_blog'),
-            'item' => $item,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'csrf' => Csrf::token(),
+        return array_merge(parent::formViewData($extra), [
             'allTags' => (new CmsBlogTag())->all(200, 0),
             'selectedTags' => $selectedTags,
             'cmsWysiwyg' => true,
-        ];
+        ]);
     }
 
     /** @return array<int, int> */

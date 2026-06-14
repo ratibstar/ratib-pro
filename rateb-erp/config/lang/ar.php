@@ -1003,4 +1003,9 @@ return [
     'regulatory_status' => 'الحالة التنظيمية',
     'approval_status' => 'حالة الاعتماد',
     'parent' => 'الأب',
+    'all_statuses' => 'كل الحالات',
+    'date_from' => 'من تاريخ',
+    'date_to' => 'إلى تاريخ',
+    'filter' => 'تصفية',
+    'reset' => 'إعادة تعيين',
 ];

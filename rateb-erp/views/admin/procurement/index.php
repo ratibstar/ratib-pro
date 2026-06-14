@@ -1,19 +1,11 @@
 <?php Rateb\App\Core\View::partial('admin-company-portal-banner'); ?>
 <div class="row g-3">
-    <?php if (!empty($companies)) { ?>
-    <div class="col-12">
-        <form method="get" class="row g-2">
-            <div class="col-md-4">
-                <select class="form-select" name="company_id" onchange="this.form.submit()">
-                    <option value=""><?php echo __('all_companies'); ?></option>
-                    <?php foreach ($companies as $c) { ?>
-                    <option value="<?php echo (int) $c['id']; ?>"<?php echo (int)($_GET['company_id'] ?? 0) === (int)$c['id'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($c['name'] ?? ''); ?></option>
-                    <?php } ?>
-                </select>
-            </div>
-        </form>
-    </div>
-    <?php } ?>
+    <?php Rateb\App\Core\View::partial('admin-oversight-filters', [
+        'companies' => $companies ?? [],
+        'filters' => $filters ?? [],
+        'statusOptions' => $statusOptions ?? [],
+        'formAction' => $formAction ?? rateb_url('admin/procurement'),
+    ]); ?>
     <div class="col-md-6">
         <div class="rateb-card">
             <div class="rateb-card-header"><?php echo __('purchase_requests'); ?> — <?php echo __('status'); ?></div>
@@ -21,7 +13,7 @@
                 <?php if (empty($pr_stats)) { ?>
                 <span class="text-muted"><?php echo __('no_records'); ?></span>
                 <?php } else { foreach ($pr_stats as $st => $cnt) { ?>
-                <span class="badge bg-secondary"><?php echo Rateb\App\Core\View::escape($st); ?>: <?php echo (int) $cnt; ?></span>
+                <span class="badge bg-secondary"><?php echo __( (string) $st); ?>: <?php echo (int) $cnt; ?></span>
                 <?php } } ?>
             </div>
         </div>
@@ -33,7 +25,7 @@
                 <?php if (empty($po_stats)) { ?>
                 <span class="text-muted"><?php echo __('no_records'); ?></span>
                 <?php } else { foreach ($po_stats as $st => $cnt) { ?>
-                <span class="badge bg-secondary"><?php echo Rateb\App\Core\View::escape($st); ?>: <?php echo (int) $cnt; ?></span>
+                <span class="badge bg-secondary"><?php echo __( (string) $st); ?>: <?php echo (int) $cnt; ?></span>
                 <?php } } ?>
             </div>
         </div>

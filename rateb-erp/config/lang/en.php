@@ -1003,4 +1003,9 @@ return [
     'regulatory_status' => 'Regulatory status',
     'approval_status' => 'Approval status',
     'parent' => 'Parent',
+    'all_statuses' => 'All statuses',
+    'date_from' => 'From date',
+    'date_to' => 'To date',
+    'filter' => 'Filter',
+    'reset' => 'Reset',
 ];

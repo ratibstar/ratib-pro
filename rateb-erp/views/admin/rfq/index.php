@@ -1,19 +1,11 @@
 <?php Rateb\App\Core\View::partial('admin-company-portal-banner'); ?>
 <div class="row g-3">
-    <?php if (!empty($companies)) { ?>
-    <div class="col-12">
-        <form method="get" class="row g-2">
-            <div class="col-md-4">
-                <select class="form-select" name="company_id" onchange="this.form.submit()">
-                    <option value=""><?php echo __('all_companies'); ?></option>
-                    <?php foreach ($companies as $c) { ?>
-                    <option value="<?php echo (int) $c['id']; ?>"<?php echo (int)($_GET['company_id'] ?? 0) === (int)$c['id'] ? ' selected' : ''; ?>><?php echo Rateb\App\Core\View::escape($c['name'] ?? ''); ?></option>
-                    <?php } ?>
-                </select>
-            </div>
-        </form>
-    </div>
-    <?php } ?>
+    <?php Rateb\App\Core\View::partial('admin-oversight-filters', [
+        'companies' => $companies ?? [],
+        'filters' => $filters ?? [],
+        'statusOptions' => $statusOptions ?? [],
+        'formAction' => $formAction ?? rateb_url('admin/rfq'),
+    ]); ?>
     <div class="col-12">
         <div class="rateb-card">
             <div class="rateb-card-header"><?php echo __('rfq'); ?> / <?php echo __('quotations'); ?></div>
@@ -38,7 +30,7 @@
                                 <td><?php echo Rateb\App\Core\View::escape($row['company_name'] ?? ''); ?></td>
                                 <td><?php echo Rateb\App\Core\View::escape($row['rfq_no'] ?? ''); ?></td>
                                 <td><?php echo Rateb\App\Core\View::escape($row['title'] ?? ''); ?></td>
-                                <td><?php echo Rateb\App\Core\View::escape($row['status'] ?? ''); ?></td>
+                                <td><?php echo __( (string) ($row['status'] ?? '')); ?></td>
                                 <td><?php echo Rateb\App\Core\View::escape($row['deadline'] ?? ''); ?></td>
                                 <td><?php echo (int) ($row['quote_count'] ?? 0); ?></td>
                             </tr>

@@ -383,7 +383,10 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
 
     public function create(): void
     {
-        $this->view($this->viewPrefix . '/form', $this->formViewData(null), $this->layout());
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
+            'title' => __('create') . ' ' . __('plans'),
+            'item' => null,
+        ]), $this->layout());
     }
 
     public function edit(array $params): void
@@ -395,14 +398,18 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
             $this->view('errors/404', ['title' => '404']);
             return;
         }
-        $this->view($this->viewPrefix . '/form', $this->formViewData($item), $this->layout());
+        $this->view($this->viewPrefix . '/form', $this->formViewData([
+            'title' => __('edit') . ' ' . __('plans'),
+            'item' => $item,
+        ]), $this->layout());
     }
 
     /** @return array<string, mixed> */
-    private function formViewData(?array $item): array
+    protected function formViewData(array $extra = []): array
     {
+        $item = $extra['item'] ?? null;
         $selectedModules = [];
-        if ($item && !empty($item['modules'])) {
+        if (is_array($item) && !empty($item['modules'])) {
             $decoded = json_decode((string) $item['modules'], true);
             $selectedModules = is_array($decoded) ? $decoded : [];
         }
@@ -410,15 +417,10 @@ final class PlansController extends \Rateb\App\Controllers\CrudController
             $selectedModules = \Rateb\App\Services\PlanLimitService::defaultModules();
         }
 
-        return [
-            'title' => ($item ? __('edit') : __('create')) . ' ' . __('plans'),
-            'item' => $item,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'csrf' => Csrf::token(),
+        return array_merge(parent::formViewData($extra), [
             'moduleCatalog' => \Rateb\App\Services\PlanLimitService::moduleCatalog(),
             'selectedModules' => $selectedModules,
-        ];
+        ]);
     }
 
     protected function collectData(): array
@@ -1364,31 +1366,55 @@ final class ProcurementController extends Controller
     {
         $pr = new \Rateb\App\Models\PurchaseRequest();
         $po = new \Rateb\App\Models\PurchaseOrder();
-        $companyFilter = (int) ($_GET['company_id'] ?? 0);
+        $ofs = new \Rateb\App\Services\OversightFilterService();
+        $filters = $ofs->parse();
+        $lookup = new \Rateb\App\Services\FormLookupService();
+
+        $prSql = 'SELECT * FROM rateb_purchase_requests WHERE 1=1';
+        $prParams = [];
+        $ofs->applyCompany($prSql, $prParams, 'company_id', $filters);
+        $ofs->applyStatus($prSql, $prParams, 'status', $filters);
+        $ofs->applyDateRange($prSql, $prParams, 'expected_date', $filters);
+        $prSql .= ' ORDER BY id DESC LIMIT 50';
+
+        $poSql = 'SELECT * FROM rateb_purchase_orders WHERE 1=1';
+        $poParams = [];
+        $ofs->applyCompany($poSql, $poParams, 'company_id', $filters);
+        $ofs->applyStatus($poSql, $poParams, 'status', $filters);
+        $ofs->applyDateRange($poSql, $poParams, 'order_date', $filters);
+        $poSql .= ' ORDER BY id DESC LIMIT 50';
+
         $this->view('admin/procurement/index', [
             'title' => __('procurement'),
-            'purchase_requests' => $pr->all(50, 0),
-            'purchase_orders' => $po->all(50, 0),
-            'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
-            'pr_stats' => $this->statusCounts('rateb_purchase_requests', $companyFilter),
-            'po_stats' => $this->statusCounts('rateb_purchase_orders', $companyFilter),
+            'purchase_requests' => $pr->query($prSql, $prParams),
+            'purchase_orders' => $po->query($poSql, $poParams),
+            'companies' => $ofs->companies(),
+            'filters' => $filters,
+            'statusOptions' => $lookup->get('pr_statuses'),
+            'formAction' => rateb_url('admin/procurement'),
+            'pr_stats' => $this->statusCounts('rateb_purchase_requests', $filters),
+            'po_stats' => $this->statusCounts('rateb_purchase_orders', $filters),
             'csrf' => Csrf::token(),
         ], 'main');
     }
 
-    /** @return array<string, int> */
-    private function statusCounts(string $table, int $companyId): array
+    /**
+     * @param array{company_id: int, status: string, date_from: string, date_to: string} $filters
+     * @return array<string, int>
+     */
+    private function statusCounts(string $table, array $filters): array
     {
         $allowed = ['rateb_purchase_requests', 'rateb_purchase_orders'];
         if (!in_array($table, $allowed, true)) {
             return [];
         }
+        $dateCol = $table === 'rateb_purchase_requests' ? 'expected_date' : 'order_date';
         $sql = 'SELECT status, COUNT(*) AS c FROM ' . $table . ' WHERE 1=1';
         $params = [];
-        if ($companyId > 0) {
-            $sql .= ' AND company_id = :cid';
-            $params['cid'] = $companyId;
-        }
+        $ofs = new \Rateb\App\Services\OversightFilterService();
+        $ofs->applyCompany($sql, $params, 'company_id', $filters);
+        $ofs->applyStatus($sql, $params, 'status', $filters);
+        $ofs->applyDateRange($sql, $params, $dateCol, $filters);
         $sql .= ' GROUP BY status';
         $rows = (new \Rateb\App\Models\Company())->query($sql, $params);
         $out = [];
@@ -1403,22 +1429,26 @@ final class RfqOversightController extends Controller
 {
     public function index(): void
     {
-        $companyFilter = (int) ($_GET['company_id'] ?? 0);
+        $ofs = new \Rateb\App\Services\OversightFilterService();
+        $filters = $ofs->parse();
+        $lookup = new \Rateb\App\Services\FormLookupService();
         $sql = 'SELECT r.*, c.name AS company_name,
             (SELECT COUNT(*) FROM rateb_supplier_quotations q WHERE q.rfq_id = r.id) AS quote_count
             FROM rateb_rfq r
             LEFT JOIN rateb_companies c ON c.id = r.company_id WHERE 1=1';
         $params = [];
-        if ($companyFilter > 0) {
-            $sql .= ' AND r.company_id = :cid';
-            $params['cid'] = $companyFilter;
-        }
+        $ofs->applyCompany($sql, $params, 'r.company_id', $filters);
+        $ofs->applyStatus($sql, $params, 'r.status', $filters);
+        $ofs->applyDateRange($sql, $params, 'r.deadline', $filters);
         $sql .= ' ORDER BY r.id DESC LIMIT 100';
         $items = (new \Rateb\App\Models\Rfq())->query($sql, $params);
         $this->view('admin/rfq/index', [
             'title' => __('rfq'),
             'items' => $items,
-            'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
+            'companies' => $ofs->companies(),
+            'filters' => $filters,
+            'statusOptions' => $lookup->get('rfq_statuses'),
+            'formAction' => rateb_url('admin/rfq'),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -1430,6 +1460,23 @@ final class InventoryController extends Controller
     {
         $inv = new \Rateb\App\Models\Inventory();
         $wh = new \Rateb\App\Models\Warehouse();
+        $ofs = new \Rateb\App\Services\OversightFilterService();
+        $filters = $ofs->parse();
+        $lookup = new \Rateb\App\Services\FormLookupService();
+
+        $invSql = 'SELECT * FROM rateb_inventory WHERE 1=1';
+        $invParams = [];
+        $ofs->applyCompany($invSql, $invParams, 'company_id', $filters);
+        $ofs->applyStatus($invSql, $invParams, 'status', $filters);
+        $ofs->applyDateRange($invSql, $invParams, 'expiry_date', $filters);
+        $invSql .= ' ORDER BY id DESC LIMIT 50';
+
+        $whSql = 'SELECT * FROM rateb_warehouses WHERE 1=1';
+        $whParams = [];
+        $ofs->applyCompany($whSql, $whParams, 'company_id', $filters);
+        $ofs->applyStatus($whSql, $whParams, 'status', $filters);
+        $whSql .= ' ORDER BY id DESC LIMIT 50';
+
         $itemFields = [
             ['name' => 'item_name', 'label' => 'item_name'],
             ['name' => 'sku', 'label' => 'sku'],
@@ -1447,12 +1494,15 @@ final class InventoryController extends Controller
         ];
         $this->view('admin/inventory/index', [
             'title' => __('inventory'),
-            'items' => $inv->all(50, 0),
-            'warehouses' => $wh->all(50, 0),
+            'items' => $inv->query($invSql, $invParams),
+            'warehouses' => $wh->query($whSql, $whParams),
             'itemFields' => $itemFields,
             'warehouseFields' => $warehouseFields,
-            'total_value' => $inv->totalValue(),
-            'companies' => (new \Rateb\App\Models\Company())->all(200, 0),
+            'total_value' => $inv->totalValue($filters['company_id'] > 0 ? $filters['company_id'] : null),
+            'companies' => $ofs->companies(),
+            'filters' => $filters,
+            'statusOptions' => $lookup->get('inventory_statuses'),
+            'formAction' => rateb_url('admin/inventory'),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -1636,18 +1686,27 @@ final class SupplierEvaluationsController extends Controller
 {
     public function index(): void
     {
-        $model = new \Rateb\App\Models\SupplierEvaluation();
-        $items = $model->query(
-            'SELECT e.*, s.name AS supplier_name, c.name AS company_name
+        $ofs = new \Rateb\App\Services\OversightFilterService();
+        $filters = $ofs->parse();
+        $lookup = new \Rateb\App\Services\FormLookupService();
+        $sql = 'SELECT e.*, s.name AS supplier_name, c.name AS company_name
              FROM rateb_supplier_evaluations e
              LEFT JOIN rateb_suppliers s ON s.id = e.supplier_id
              LEFT JOIN rateb_companies c ON c.id = e.company_id
-             ORDER BY e.id DESC LIMIT 100'
-        );
+             WHERE 1=1';
+        $params = [];
+        $ofs->applyCompany($sql, $params, 'e.company_id', $filters);
+        $ofs->applyStatus($sql, $params, 'e.status', $filters);
+        $ofs->applyDateRange($sql, $params, 'e.evaluation_date', $filters);
+        $sql .= ' ORDER BY e.id DESC LIMIT 100';
 
         $this->view('admin/supplier-evaluations/index', [
             'title' => __('supplier_evaluations'),
-            'items' => $items,
+            'items' => (new \Rateb\App\Models\SupplierEvaluation())->query($sql, $params),
+            'companies' => $ofs->companies(),
+            'filters' => $filters,
+            'statusOptions' => $lookup->get('evaluation_statuses'),
+            'formAction' => rateb_url('admin/supplier-evaluations'),
             'csrf' => Csrf::token(),
         ], 'main');
     }

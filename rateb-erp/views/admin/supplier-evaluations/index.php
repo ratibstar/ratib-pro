@@ -1,3 +1,9 @@
+<?php Rateb\App\Core\View::partial('admin-oversight-filters', [
+    'companies' => $companies ?? [],
+    'filters' => $filters ?? [],
+    'statusOptions' => $statusOptions ?? [],
+    'formAction' => $formAction ?? rateb_url('admin/supplier-evaluations'),
+]); ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? __('supplier_evaluations')); ?></div>
     <div class="rateb-card-body p-0">

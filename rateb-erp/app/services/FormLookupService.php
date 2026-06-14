@@ -96,6 +96,11 @@ final class FormLookupService
             'career_departments' => $this->distinctCategoryOptions('rateb_cms_careers', 'department_en'),
             'newsletter_segments' => $this->distinctCategoryOptions('rateb_cms_newsletter_segments', 'name_en'),
             'setting_groups' => $this->staticOptions(['general', 'billing', 'email', 'sms', 'security', 'cms'], true),
+            'pr_statuses' => $this->staticOptions(['draft', 'submitted', 'approved', 'rejected', 'cancelled'], true),
+            'po_statuses' => $this->staticOptions(['draft', 'sent', 'confirmed', 'partial', 'received', 'cancelled'], true),
+            'rfq_statuses' => $this->staticOptions(['draft', 'published', 'closed', 'awarded', 'cancelled'], true),
+            'inventory_statuses' => $this->staticOptions(['active', 'inactive', 'expired'], true),
+            'evaluation_statuses' => $this->staticOptions(['draft', 'published', 'archived'], true),
             default => [],
         };
         $this->cache[$lookup] = $options;
