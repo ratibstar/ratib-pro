@@ -10,6 +10,7 @@ use Rateb\App\Models\Inventory;
 use Rateb\App\Models\InventoryAudit;
 use Rateb\App\Models\InventoryBatch;
 use Rateb\App\Models\StockMovement;
+use Rateb\App\Services\DocumentCodeService;
 use Rateb\App\Services\TenantFkValidator;
 
 final class InventoryWorkflowService
@@ -77,7 +78,14 @@ final class InventoryWorkflowService
             TenantFkValidator::validate($data, ['inventory_id', 'warehouse_id']);
         }
         $data['company_id'] = $companyId;
-        $batchId = (new InventoryBatch())->create($data);
+        $batchModel = new InventoryBatch();
+        if (trim((string) ($data['batch_no'] ?? '')) === '') {
+            $data['batch_no'] = $batchModel->generateDocumentCode(
+                DocumentCodeService::PREFIX_BATCH,
+                'batch_no'
+            );
+        }
+        $batchId = $batchModel->create($data);
         $invId = (int) ($data['inventory_id'] ?? 0);
         $qty = (float) ($data['quantity'] ?? 0);
         if ($invId > 0 && $qty > 0) {
@@ -248,12 +256,10 @@ final class InventoryWorkflowService
 
     public function nextAuditNo(): string
     {
-        $companyId = TenantContext::companyId() ?? 0;
-        $count = (int) ((new InventoryAudit())->queryOne(
-            'SELECT COUNT(*) AS c FROM rateb_inventory_audits WHERE company_id = :cid',
-            ['cid' => $companyId]
-        )['c'] ?? 0);
-        return 'AUD-' . str_pad((string) ($count + 1), 5, '0', STR_PAD_LEFT);
+        return (new InventoryAudit())->generateDocumentCode(
+            DocumentCodeService::PREFIX_AUDIT,
+            'audit_no'
+        );
     }
 
     public function processLowStockAlerts(int $companyId): int

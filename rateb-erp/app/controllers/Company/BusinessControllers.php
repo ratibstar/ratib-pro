@@ -24,7 +24,6 @@ final class InventoryBatchesController extends \Rateb\App\Controllers\CrudContro
         $this->entityName = 'inventory_batches';
         $this->fields = [
             ['name' => 'inventory_id', 'label' => 'inventory', 'type' => 'number'],
-            ['name' => 'batch_no', 'label' => 'batch_no', 'type' => 'text'],
             ['name' => 'quantity', 'label' => 'quantity', 'type' => 'number'],
             ['name' => 'expiry_date', 'label' => 'expiry_date', 'type' => 'date'],
             ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'number'],

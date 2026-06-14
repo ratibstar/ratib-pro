@@ -52,6 +52,7 @@
             'title' => '',
             'items' => $items ?? [],
             'fields' => [
+                ['name' => 'movement_no', 'label' => 'movement_no'],
                 ['name' => 'movement_type', 'label' => 'movement_type'],
                 ['name' => 'item_name', 'label' => 'item_name'],
                 ['name' => 'quantity', 'label' => 'quantity'],

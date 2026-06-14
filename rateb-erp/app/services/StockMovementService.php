@@ -8,6 +8,7 @@ use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Models\Inventory;
 use Rateb\App\Models\StockMovement;
+use Rateb\App\Services\DocumentCodeService;
 
 final class StockMovementService
 {
@@ -36,7 +37,16 @@ final class StockMovementService
         $db = Database::connection();
         $db->beginTransaction();
         try {
-            $movementId = (new StockMovement())->create([
+            $movementModel = new StockMovement();
+            $movementNo = trim((string) ($data['movement_no'] ?? ''));
+            if ($movementNo === '') {
+                $movementNo = $movementModel->generateDocumentCode(
+                    DocumentCodeService::PREFIX_MOVEMENT,
+                    'movement_no'
+                );
+            }
+            $movementId = $movementModel->create([
+                'movement_no' => $movementNo,
                 'inventory_id' => $inventoryId,
                 'warehouse_id' => $warehouseId,
                 'movement_type' => $movementType,

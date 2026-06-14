@@ -227,6 +227,12 @@ abstract class CrudController extends Controller
         return $data;
     }
 
+    /** @param array<string, mixed> $data */
+    protected function assignDocumentCode(array &$data, string $prefix, string $column): void
+    {
+        (new \Rateb\App\Services\DocumentCodeService())->assignIfEmpty($data, $this->model, $prefix, $column);
+    }
+
     protected function layout(): string
     {
         return 'main';

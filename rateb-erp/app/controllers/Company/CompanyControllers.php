@@ -21,6 +21,16 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
         $this->viewPrefix = 'company/purchase-requests';
         $this->routePrefix = rateb_app_route('purchase-requests');
         $this->entityName = 'purchase_requests';
+        $this->indexFields = [
+            ['name' => 'request_no', 'label' => 'request_no'],
+            ['name' => 'title', 'label' => 'title'],
+            ['name' => 'department', 'label' => 'department'],
+            ['name' => 'priority', 'label' => 'priority'],
+            ['name' => 'expected_date', 'label' => 'expected_date'],
+            ['name' => 'status', 'label' => 'status'],
+            ['name' => 'currency', 'label' => 'currency'],
+            ['name' => 'total_estimated', 'label' => 'estimated_total'],
+        ];
         $this->fields = [
             ['name' => 'title', 'label' => 'title', 'type' => 'text'],
             ['name' => 'department', 'label' => 'department', 'type' => 'fk', 'lookup' => 'departments'],
@@ -42,7 +52,10 @@ final class PurchaseRequestsController extends \Rateb\App\Controllers\CrudContro
     {
         $data = parent::collectData();
         if (empty($data['request_no'])) {
-            $data['request_no'] = $this->model->generateRequestNo();
+            $data['request_no'] = $this->model->generateDocumentCode(
+                \Rateb\App\Services\DocumentCodeService::PREFIX_PURCHASE_REQUEST,
+                'request_no'
+            );
         }
         (new \Rateb\App\Services\ProcurementService())->stampRequestedBy($data);
         if (($data['currency'] ?? '') === '') {
@@ -249,6 +262,16 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
         $this->routePrefix = rateb_app_route('purchase-orders');
         $this->entityName = 'purchase_orders';
         $this->tenantForeignKeys = ['supplier_id'];
+        $this->indexFields = [
+            ['name' => 'order_no', 'label' => 'order_no'],
+            ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
+            ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses'],
+            ['name' => 'order_date', 'label' => 'order_date'],
+            ['name' => 'expected_date', 'label' => 'expected_date'],
+            ['name' => 'status', 'label' => 'status'],
+            ['name' => 'currency', 'label' => 'currency'],
+            ['name' => 'total_amount', 'label' => 'total'],
+        ];
         $this->fields = [
             ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
             ['name' => 'warehouse_id', 'label' => 'warehouses', 'type' => 'fk', 'lookup' => 'warehouses'],
@@ -273,7 +296,10 @@ final class PurchaseOrdersController extends \Rateb\App\Controllers\CrudControll
     {
         $data = parent::collectData();
         if (empty($data['order_no'])) {
-            $data['order_no'] = $this->model->generateOrderNo();
+            $data['order_no'] = $this->model->generateDocumentCode(
+                \Rateb\App\Services\DocumentCodeService::PREFIX_PURCHASE_ORDER,
+                'order_no'
+            );
         }
         if (empty($data['order_date'])) {
             $data['order_date'] = date('Y-m-d');
@@ -577,13 +603,25 @@ final class RfqController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'company/rfq';
         $this->routePrefix = rateb_app_route('rfq');
         $this->entityName = 'rfq';
+        $this->indexFields = [
+            ['name' => 'rfq_no', 'label' => 'rfq_no'],
+            ['name' => 'title', 'label' => 'title'],
+            ['name' => 'status', 'label' => 'status'],
+            ['name' => 'deadline', 'label' => 'deadline'],
+        ];
         $this->fields = [
-            ['name' => 'rfq_no', 'label' => 'RFQ No', 'type' => 'text'],
             ['name' => 'title', 'label' => 'Title', 'type' => 'text'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'published', 'closed', 'awarded', 'cancelled']],
             ['name' => 'deadline', 'label' => 'Deadline', 'type' => 'date'],
             ['name' => 'description', 'label' => 'Description', 'type' => 'textarea'],
         ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_RFQ, 'rfq_no');
+        return $data;
     }
 
     public function compare(array $params): void
@@ -611,26 +649,6 @@ final class RfqController extends \Rateb\App\Controllers\CrudController
         ], 'main');
     }
 
-    public function index(): void
-    {
-        $page = max(1, (int) $this->input('page', 1));
-        $limit = 20;
-        $offset = ($page - 1) * $limit;
-        $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
-            'title' => __($this->entityName),
-            'items' => $this->model->all($limit, $offset),
-            'total' => $this->model->count(),
-            'page' => $page,
-            'limit' => $limit,
-            'routePrefix' => $this->routePrefix,
-            'fields' => $this->fields,
-            'csrf' => Csrf::token(),
-            'bulkEnabled' => $this->bulkEnabled,
-            'createEnabled' => $this->createEnabled,
-            'actionsEnabled' => $this->actionsEnabled,
-        ]), $this->layout());
-    }
-
     protected function layout(): string
     {
         return 'main';
@@ -646,13 +664,26 @@ final class QuotationsController extends \Rateb\App\Controllers\CrudController
         $this->routePrefix = rateb_app_route('quotations');
         $this->entityName = 'quotations';
         $this->tenantForeignKeys = ['rfq_id', 'supplier_id'];
+        $this->indexFields = [
+            ['name' => 'quotation_no', 'label' => 'quotation_no'],
+            ['name' => 'rfq_id', 'label' => 'rfq', 'type' => 'fk', 'lookup' => 'rfq'],
+            ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
+            ['name' => 'amount', 'label' => 'amount'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
         $this->fields = [
             ['name' => 'rfq_id', 'label' => 'rfq', 'type' => 'fk', 'lookup' => 'rfq'],
             ['name' => 'supplier_id', 'label' => 'supplier', 'type' => 'fk', 'lookup' => 'suppliers'],
-            ['name' => 'quotation_no', 'label' => 'Quotation No', 'type' => 'text'],
             ['name' => 'amount', 'label' => 'Amount', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['submitted', 'under_review', 'accepted', 'rejected']],
         ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_QUOTATION, 'quotation_no');
+        return $data;
     }
 
     protected function layout(): string
@@ -669,14 +700,28 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'company/suppliers';
         $this->routePrefix = rateb_app_route('suppliers');
         $this->entityName = 'suppliers';
+        $this->indexFields = [
+            ['name' => 'code', 'label' => 'code'],
+            ['name' => 'name', 'label' => 'name'],
+            ['name' => 'email', 'label' => 'email'],
+            ['name' => 'phone', 'label' => 'phone'],
+            ['name' => 'classification_id', 'label' => 'supplier_classifications', 'type' => 'fk', 'lookup' => 'supplier_classifications'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
-            ['name' => 'code', 'label' => 'Code', 'type' => 'text'],
             ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
             ['name' => 'phone', 'label' => 'Phone', 'type' => 'text'],
             ['name' => 'classification_id', 'label' => 'supplier_classifications', 'type' => 'fk', 'lookup' => 'supplier_classifications'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'inactive', 'blacklisted']],
         ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_SUPPLIER, 'code');
+        return $data;
     }
 
     protected function layout(): string
@@ -695,6 +740,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         $this->entityName = 'inventory';
         $this->tenantForeignKeys = ['warehouse_id'];
         $this->indexFields = [
+            ['name' => 'item_code', 'label' => 'item_code'],
             ['name' => 'item_name', 'label' => 'item_name'],
             ['name' => 'sku', 'label' => 'sku'],
             ['name' => 'barcode', 'label' => 'document_barcode', 'type' => 'barcode'],
@@ -719,6 +765,13 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     protected function layout(): string
     {
         return 'main';
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_INVENTORY, 'item_code');
+        return $data;
     }
 
     public function create(): void
@@ -847,12 +900,24 @@ final class WarehousesController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'company/warehouses';
         $this->routePrefix = rateb_app_route('warehouses');
         $this->entityName = 'warehouses';
+        $this->indexFields = [
+            ['name' => 'code', 'label' => 'code'],
+            ['name' => 'name', 'label' => 'name'],
+            ['name' => 'location', 'label' => 'location'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
         $this->fields = [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
-            ['name' => 'code', 'label' => 'Code', 'type' => 'text'],
             ['name' => 'location', 'label' => 'Location', 'type' => 'text'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'inactive']],
         ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_WAREHOUSE, 'code');
+        return $data;
     }
 
     protected function layout(): string
@@ -869,8 +934,14 @@ final class AssetsController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'company/assets';
         $this->routePrefix = rateb_app_route('assets');
         $this->entityName = 'assets';
+        $this->indexFields = [
+            ['name' => 'asset_tag', 'label' => 'asset_tag'],
+            ['name' => 'name', 'label' => 'name'],
+            ['name' => 'category', 'label' => 'category', 'type' => 'fk', 'lookup' => 'asset_categories'],
+            ['name' => 'location', 'label' => 'location'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
         $this->fields = [
-            ['name' => 'asset_tag', 'label' => 'Tag', 'type' => 'text'],
             ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
             ['name' => 'category', 'label' => 'Category', 'type' => 'fk', 'lookup' => 'asset_categories'],
             ['name' => 'location', 'label' => 'location', 'type' => 'text'],
@@ -879,6 +950,13 @@ final class AssetsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'current_value', 'label' => 'Value', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'maintenance', 'retired', 'disposed']],
         ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_ASSET, 'asset_tag');
+        return $data;
     }
 
     protected function layout(): string
@@ -931,7 +1009,6 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
             ['name' => 'status', 'label' => 'status'],
         ];
         $this->fields = [
-            ['name' => 'contract_no', 'label' => 'Contract No', 'type' => 'text'],
             ['name' => 'title', 'label' => 'Title', 'type' => 'text', 'required' => true],
             ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers'],
             ['name' => 'contract_type', 'label' => 'contract_type', 'type' => 'select', 'lookup' => 'contract_types'],
@@ -970,6 +1047,13 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
             'multipart' => true,
             'attachment' => $this->attachmentFieldData($item),
         ]);
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_CONTRACT, 'contract_no');
+        return $data;
     }
 
     /** @param array<string, mixed>|null $item */
@@ -1064,14 +1148,28 @@ final class TendersController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'company/tenders';
         $this->routePrefix = rateb_app_route('tenders');
         $this->entityName = 'tenders';
+        $this->indexFields = [
+            ['name' => 'tender_no', 'label' => 'tender_no'],
+            ['name' => 'title', 'label' => 'title'],
+            ['name' => 'publish_date', 'label' => 'publish_date'],
+            ['name' => 'closing_date', 'label' => 'closing_date'],
+            ['name' => 'estimated_value', 'label' => 'estimated_value'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
         $this->fields = [
-            ['name' => 'tender_no', 'label' => 'Tender No', 'type' => 'text'],
             ['name' => 'title', 'label' => 'Title', 'type' => 'text'],
             ['name' => 'publish_date', 'label' => 'Publish', 'type' => 'date'],
             ['name' => 'closing_date', 'label' => 'Closing', 'type' => 'date'],
             ['name' => 'estimated_value', 'label' => 'Value', 'type' => 'number'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['draft', 'open', 'closed', 'awarded', 'cancelled']],
         ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_TENDER, 'tender_no');
+        return $data;
     }
 
     protected function layout(): string
@@ -1180,6 +1278,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             'limit' => 100,
             'routePrefix' => $this->routePrefix,
             'fields' => [
+                ['name' => 'evaluation_no', 'label' => 'evaluation_no'],
                 ['name' => 'supplier_name', 'label' => 'suppliers'],
                 ['name' => 'evaluation_date', 'label' => 'evaluation_date'],
                 ['name' => 'overall_score', 'label' => 'overall_score'],
@@ -1276,6 +1375,7 @@ final class SupplierEvaluationsController extends \Rateb\App\Controllers\CrudCon
             (int) ($data['service_score'] ?? 0),
         ]);
         $data['evaluated_by'] = SessionManager::get('rateb_user_id');
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_EVALUATION, 'evaluation_no');
         return $data;
     }
 

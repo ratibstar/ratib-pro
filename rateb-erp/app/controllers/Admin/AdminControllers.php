@@ -1478,6 +1478,7 @@ final class InventoryController extends Controller
         $whSql .= ' ORDER BY id DESC LIMIT 50';
 
         $itemFields = [
+            ['name' => 'item_code', 'label' => 'item_code'],
             ['name' => 'item_name', 'label' => 'item_name'],
             ['name' => 'sku', 'label' => 'sku'],
             ['name' => 'barcode', 'label' => 'document_barcode', 'type' => 'barcode'],
@@ -1516,6 +1517,13 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'admin/suppliers';
         $this->routePrefix = 'admin/suppliers';
         $this->entityName = 'suppliers';
+        $this->indexFields = [
+            ['name' => 'code', 'label' => 'code'],
+            ['name' => 'name', 'label' => 'name'],
+            ['name' => 'email', 'label' => 'email'],
+            ['name' => 'phone', 'label' => 'phone'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
         $this->fields = [
             ['name' => 'company_id', 'label' => 'company_id', 'type' => 'fk', 'lookup' => 'companies', 'required' => true],
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
@@ -1523,6 +1531,16 @@ final class SuppliersController extends \Rateb\App\Controllers\CrudController
             ['name' => 'phone', 'label' => 'Phone', 'type' => 'text'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'inactive', 'blacklisted']],
         ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        if (!empty($data['company_id'])) {
+            TenantContext::setCompanyId((int) $data['company_id']);
+        }
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_SUPPLIER, 'code');
+        return $data;
     }
 }
 
@@ -1534,13 +1552,28 @@ final class AssetsController extends \Rateb\App\Controllers\CrudController
         $this->viewPrefix = 'admin/assets';
         $this->routePrefix = 'admin/assets';
         $this->entityName = 'assets';
+        $this->indexFields = [
+            ['name' => 'asset_tag', 'label' => 'asset_tag'],
+            ['name' => 'name', 'label' => 'name'],
+            ['name' => 'category', 'label' => 'category', 'type' => 'fk', 'lookup' => 'asset_categories'],
+            ['name' => 'status', 'label' => 'status'],
+        ];
         $this->fields = [
             ['name' => 'company_id', 'label' => 'company_id', 'type' => 'fk', 'lookup' => 'companies', 'required' => true],
-            ['name' => 'asset_tag', 'label' => 'Tag', 'type' => 'text'],
             ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
             ['name' => 'category', 'label' => 'Category', 'type' => 'fk', 'lookup' => 'asset_categories'],
             ['name' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => ['active', 'maintenance', 'retired', 'disposed']],
         ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        if (!empty($data['company_id'])) {
+            TenantContext::setCompanyId((int) $data['company_id']);
+        }
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_ASSET, 'asset_tag');
+        return $data;
     }
 }
 
@@ -1562,7 +1595,6 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
         ];
         $this->fields = [
             ['name' => 'company_id', 'label' => 'company_id', 'type' => 'fk', 'lookup' => 'companies', 'required' => true],
-            ['name' => 'contract_no', 'label' => 'Contract No', 'type' => 'text'],
             ['name' => 'title', 'label' => 'Title', 'type' => 'text'],
             ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers'],
             ['name' => 'contract_type', 'label' => 'contract_type', 'type' => 'select', 'lookup' => 'contract_types'],
@@ -1633,6 +1665,16 @@ final class ContractsController extends \Rateb\App\Controllers\CrudController
             'inputName' => 'contract_file',
             'label' => __('contract_attachment'),
         ];
+    }
+
+    protected function collectData(): array
+    {
+        $data = parent::collectData();
+        if (!empty($data['company_id'])) {
+            TenantContext::setCompanyId((int) $data['company_id']);
+        }
+        $this->assignDocumentCode($data, \Rateb\App\Services\DocumentCodeService::PREFIX_CONTRACT, 'contract_no');
+        return $data;
     }
 
     public function store(): void

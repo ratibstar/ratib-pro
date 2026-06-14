@@ -73,7 +73,7 @@ final class StockMovement extends Model
     protected string $table = 'rateb_stock_movements';
     protected bool $tenantScoped = true;
     protected array $fillable = [
-        'company_id', 'inventory_id', 'warehouse_id', 'movement_type', 'quantity',
+        'company_id', 'movement_no', 'inventory_id', 'warehouse_id', 'movement_type', 'quantity',
         'reference_type', 'reference_id', 'notes', 'created_by',
     ];
 }
@@ -158,7 +158,7 @@ final class SupplierEvaluation extends Model
     protected string $table = 'rateb_supplier_evaluations';
     protected bool $tenantScoped = true;
     protected array $fillable = [
-        'company_id', 'supplier_id', 'evaluated_by', 'evaluation_date',
+        'company_id', 'evaluation_no', 'supplier_id', 'evaluated_by', 'evaluation_date',
         'quality_score', 'delivery_score', 'price_score', 'service_score',
         'overall_score', 'comments', 'status',
     ];

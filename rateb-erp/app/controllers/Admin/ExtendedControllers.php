@@ -29,6 +29,7 @@ final class AdminStockMovementsController extends Controller
     {
         $items = (new StockMovementService())->listRecent(500);
         ExportController::send('admin_stock_movements', [
+            ['name' => 'movement_no', 'label' => __('movement_no')],
             ['name' => 'movement_type', 'label' => __('movement_type')],
             ['name' => 'item_name', 'label' => __('item_name')],
             ['name' => 'quantity', 'label' => __('quantity')],

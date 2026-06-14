@@ -238,7 +238,7 @@ abstract class Model
      * Next document number for this tenant: PREFIX-00001 style.
      * Uses MAX(suffix)+1 so gaps/deletes do not reuse existing numbers.
      */
-    protected function nextSequentialNo(string $prefix, string $numberColumn, int $padLength = 5): string
+    protected function nextSequentialNo(string $prefix, string $numberColumn, int $padLength = 4): string
     {
         if (!preg_match('/^[a-z_]+$/', $numberColumn)) {
             throw new \InvalidArgumentException('Invalid number column');
@@ -273,6 +273,11 @@ abstract class Model
         }
 
         return $prefix . str_pad((string) ($next + 10), $padLength, '0', STR_PAD_LEFT);
+    }
+
+    public function generateDocumentCode(string $prefix, string $numberColumn, int $padLength = 4): string
+    {
+        return $this->nextSequentialNo($prefix, $numberColumn, $padLength);
     }
 
     public function query(string $sql, array $params = []): array
