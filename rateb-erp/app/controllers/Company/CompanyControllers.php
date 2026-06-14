@@ -795,7 +795,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
                 ['lookup' => 'inventory_movement_types'],
             ])),
             'warehouseItemsUrl' => rateb_url($this->routePrefix . '/warehouse-items'),
-            'assetJs' => rateb_asset_url('js/inventory-form.js'),
+            'assetJs' => rateb_asset('js/inventory-form.js'),
         ]));
     }
 
