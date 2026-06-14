@@ -207,6 +207,11 @@ return [
         'view' => 'accounting.view',
         'manage' => 'accounting.view',
     ],
+    'cost-of-sales' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
     'balance-sheet' => [
         'module' => 'accounting',
         'view' => 'accounting.view',

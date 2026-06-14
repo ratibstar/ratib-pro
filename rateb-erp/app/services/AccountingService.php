@@ -665,6 +665,62 @@ final class AccountingService
         return ['revenue' => $revenue, 'expenses' => $expenses, 'net' => $revenue - $expenses, 'lines' => $lines];
     }
 
+    /** @return array{total: float, accounts: array<int, array<string, mixed>>, entries: array<int, array<string, mixed>>} */
+    public function costOfSalesReport(?int $companyId, ?string $fromDate = null, ?string $toDate = null): array
+    {
+        if ($companyId === null || $companyId < 1) {
+            return ['total' => 0.0, 'accounts' => [], 'entries' => []];
+        }
+
+        $accountSql = "SELECT a.id, a.code, a.name, a.name_ar,
+                              COALESCE(SUM(l.debit), 0) AS total_debit,
+                              COALESCE(SUM(l.credit), 0) AS total_credit
+                       FROM rateb_chart_of_accounts a
+                       INNER JOIN rateb_journal_lines l ON l.account_id = a.id
+                       INNER JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = 'posted'
+                       WHERE a.company_id = :cid AND a.is_active = 1
+                         AND a.account_type = 'expense'
+                         AND (a.code = '5200' OR a.code LIKE '520%')";
+        $params = ['cid' => $companyId];
+        if ($fromDate) {
+            $accountSql .= ' AND e.entry_date >= :from';
+            $params['from'] = $fromDate;
+        }
+        if ($toDate) {
+            $accountSql .= ' AND e.entry_date <= :to';
+            $params['to'] = $toDate;
+        }
+        $accountSql .= ' GROUP BY a.id ORDER BY a.code';
+        $accounts = (new ChartOfAccount())->query($accountSql, $params);
+
+        $total = 0.0;
+        foreach ($accounts as $row) {
+            $total += (float) ($row['total_debit'] ?? 0) - (float) ($row['total_credit'] ?? 0);
+        }
+
+        $entrySql = "SELECT e.entry_no, e.entry_date, e.description, e.description_ar,
+                            a.code, a.name, a.name_ar, l.debit, l.credit, l.memo
+                     FROM rateb_journal_lines l
+                     INNER JOIN rateb_journal_entries e ON e.id = l.journal_entry_id AND e.status = 'posted'
+                     INNER JOIN rateb_chart_of_accounts a ON a.id = l.account_id
+                     WHERE a.company_id = :cid AND a.is_active = 1
+                       AND a.account_type = 'expense'
+                       AND (a.code = '5200' OR a.code LIKE '520%')";
+        $entryParams = ['cid' => $companyId];
+        if ($fromDate) {
+            $entrySql .= ' AND e.entry_date >= :from';
+            $entryParams['from'] = $fromDate;
+        }
+        if ($toDate) {
+            $entrySql .= ' AND e.entry_date <= :to';
+            $entryParams['to'] = $toDate;
+        }
+        $entrySql .= ' ORDER BY e.entry_date DESC, e.id DESC, l.id ASC';
+        $entries = (new JournalEntry())->query($entrySql, $entryParams);
+
+        return ['total' => $total, 'accounts' => $accounts, 'entries' => $entries];
+    }
+
     /** @return array{assets: float, liabilities: float, equity: float, lines: array<int, array<string, mixed>>} */
     public function balanceSheet(?int $companyId, ?string $asOfDate = null): array
     {

@@ -12,6 +12,7 @@ $tabs = [
     ['path' => rateb_app_route('accounting/supplier-payments'), 'label' => __('supplier_payments'), 'match' => [rateb_app_route('accounting/supplier-payments')]],
     ['path' => rateb_app_route('accounting/accounts-receivable'), 'label' => __('accounts_receivable'), 'match' => [rateb_app_route('accounting/accounts-receivable')]],
     ['path' => rateb_app_route('accounting/profit-loss'), 'label' => __('profit_loss'), 'match' => [rateb_app_route('accounting/profit-loss')]],
+    ['path' => rateb_app_route('accounting/cost-of-sales'), 'label' => __('cost_of_sales'), 'match' => [rateb_app_route('accounting/cost-of-sales')]],
     ['path' => rateb_app_route('accounting/balance-sheet'), 'label' => __('balance_sheet'), 'match' => [rateb_app_route('accounting/balance-sheet')]],
     ['path' => rateb_app_route('accounting/vat-report'), 'label' => __('vat_report'), 'match' => [rateb_app_route('accounting/vat-report')]],
     ['path' => rateb_app_route('cash-vouchers'), 'label' => __('cash_vouchers'), 'match' => [rateb_app_route('cash-vouchers')]],

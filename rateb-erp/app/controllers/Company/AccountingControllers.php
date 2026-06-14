@@ -95,6 +95,25 @@ final class AccountingDashboardController extends Controller
         ], 'main');
     }
 
+    public function costOfSales(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $from = trim((string) ($_GET['from'] ?? ''));
+        $to = trim((string) ($_GET['to'] ?? ''));
+        $report = (new AccountingService())->costOfSalesReport(
+            $companyId,
+            $from !== '' ? $from : null,
+            $to !== '' ? $to : null
+        );
+        $this->view('company/accounting/cost-of-sales', [
+            'title' => __('cost_of_sales'),
+            'report' => $report,
+            'from' => $from,
+            'to' => $to,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
     public function balanceSheet(): void
     {
         $companyId = rateb_resolve_ops_company_id();

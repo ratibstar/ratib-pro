@@ -3,7 +3,7 @@ $locale = rateb_locale();
 $dir = rateb_is_rtl() ? 'rtl' : 'ltr';
 $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
 $erpRoute = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : '';
-$accountingActive = $erpRoute !== '' && preg_match('#(accounting|chart-of-accounts|coa-tree|journal-entries|entry-approval|voucher-approval|cash-vouchers|fiscal-periods|bank-accounts|cost-centers|invoices|payments|subscriptions)#', $erpRoute);
+$accountingActive = $erpRoute !== '' && preg_match('#(accounting|chart-of-accounts|coa-tree|journal-entries|entry-approval|voucher-approval|cash-vouchers|fiscal-periods|bank-accounts|cost-centers|cost-of-sales|invoices|payments|subscriptions)#', $erpRoute);
 $navActive = static function (string $route) use ($erpRoute, $currentPath): bool {
     if ($erpRoute !== '') {
         if ($route === 'admin') {

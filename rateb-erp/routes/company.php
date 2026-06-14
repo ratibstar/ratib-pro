@@ -109,6 +109,7 @@ $router->post($app('accounting/sync'), [CompanyAccountingDashboardController::cl
 $router->get($app('accounting/accounts-payable'), [CompanyAccountingDashboardController::class, 'accountsPayable'], rateb_erp_mw('accounting', '', 'accounts-payable'));
 $router->get($app('accounting/accounts-receivable'), [CompanyAccountingDashboardController::class, 'accountsReceivable'], rateb_erp_mw('accounting', '', 'accounts-receivable'));
 $router->get($app('accounting/profit-loss'), [CompanyAccountingDashboardController::class, 'profitLoss'], rateb_erp_mw('accounting', '', 'profit-loss'));
+$router->get($app('accounting/cost-of-sales'), [CompanyAccountingDashboardController::class, 'costOfSales'], rateb_erp_mw('accounting', '', 'cost-of-sales'));
 $router->get($app('accounting/balance-sheet'), [CompanyAccountingDashboardController::class, 'balanceSheet'], rateb_erp_mw('accounting', '', 'balance-sheet'));
 $router->get($app('accounting/vat-report'), [CompanyAccountingDashboardController::class, 'vatReport'], rateb_erp_mw('accounting', '', 'vat-report'));
 $router->get($app('accounting/cost-center-report'), [CompanyAccountingDashboardController::class, 'costCenterReport'], rateb_erp_mw('accounting', '', 'cost-center-report'));
