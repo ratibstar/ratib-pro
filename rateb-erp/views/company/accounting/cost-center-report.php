@@ -1,6 +1,7 @@
 <?php
 $report = $report ?? ['lines' => []];
 Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']);
+Rateb\App\Core\View::partial('accounting-reports-back');
 ?>
 <form method="get" class="rateb-card mb-3">
     <div class="rateb-card-body">

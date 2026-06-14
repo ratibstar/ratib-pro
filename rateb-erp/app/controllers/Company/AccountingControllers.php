@@ -114,6 +114,48 @@ final class AccountingDashboardController extends Controller
         ], 'main');
     }
 
+    public function reportsHub(): void
+    {
+        $svc = new \Rateb\App\Services\AccountingReportsService();
+        $this->view('company/accounting/reports-hub', [
+            'title' => __('accounting_reports'),
+            'catalog' => $svc->catalogForUser(),
+            'reportCount' => $svc->reportCountForUser(),
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function trialBalanceReport(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $this->view('company/accounting/trial-balance', [
+            'title' => __('trial_balance'),
+            'trial' => $companyId > 0 ? (new AccountingService())->trialBalance($companyId) : [],
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
+    public function journalRegister(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        $from = trim((string) ($_GET['from'] ?? ''));
+        $to = trim((string) ($_GET['to'] ?? ''));
+        $rows = $companyId > 0
+            ? (new AccountingService())->exportJournalEntries(
+                $companyId,
+                $from !== '' ? $from : null,
+                $to !== '' ? $to : null
+            )
+            : [];
+        $this->view('company/accounting/journal-register', [
+            'title' => __('journal_register'),
+            'rows' => $rows,
+            'from' => $from,
+            'to' => $to,
+            'csrf' => Csrf::token(),
+        ], 'main');
+    }
+
     public function balanceSheet(): void
     {
         $companyId = rateb_resolve_ops_company_id();

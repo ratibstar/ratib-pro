@@ -1,4 +1,5 @@
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
+<?php Rateb\App\Core\View::partial('accounting-reports-back'); ?>
 <div class="row g-3 mb-4">
     <div class="col-md-6">
         <div class="rateb-stat-card">

@@ -1,6 +1,7 @@
 <?php
 $m = $metrics ?? [];
 Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']);
+Rateb\App\Core\View::partial('accounting-reports-back');
 ?>
 <div class="row g-3 mb-4">
     <div class="col-md-4">

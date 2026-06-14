@@ -1,4 +1,5 @@
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
+<?php Rateb\App\Core\View::partial('accounting-reports-back'); ?>
 <?php if (!($canPay ?? false)) { ?>
 <p class="text-muted small mb-2"><i class="fas fa-lock me-1"></i><?php echo __('accounting_perm_post_supplier_hint'); ?></p>
 <?php } ?>

@@ -1,6 +1,7 @@
 <?php
 $report = $report ?? [];
 Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']);
+Rateb\App\Core\View::partial('accounting-reports-back');
 $exportQs = http_build_query(array_filter(['from' => $from ?? '', 'to' => $to ?? '']));
 Rateb\App\Core\View::partial('export-toolbar', ['exportRoute' => rateb_app_url('accounting/export/vat-report') . ($exportQs ? '?' . $exportQs : '')]);
 ?>

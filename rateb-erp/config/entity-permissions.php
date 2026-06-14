@@ -168,6 +168,21 @@ return [
         'manage' => 'accounting.manage',
         'post' => 'accounting.post',
     ],
+    'accounting-reports' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
+    'trial-balance' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
+    'journal-register' => [
+        'module' => 'accounting',
+        'view' => 'accounting.view',
+        'manage' => 'accounting.view',
+    ],
     'chart-of-accounts' => [
         'module' => 'accounting',
         'view' => 'accounting.view',

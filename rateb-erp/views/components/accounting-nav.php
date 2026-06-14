@@ -4,27 +4,19 @@ $accountingActive = $accountingActive ?? 'admin';
 
 $tabs = [
     ['path' => rateb_app_route('accounting'), 'label' => __('accounting_overview'), 'match' => [rateb_app_route('accounting')]],
+    ['path' => rateb_app_route('accounting/reports'), 'label' => __('accounting_reports'), 'match' => [rateb_app_route('accounting/reports'), rateb_app_route('accounting/trial-balance'), rateb_app_route('accounting/journal-register'), rateb_app_route('accounting/profit-loss'), rateb_app_route('accounting/cost-of-sales'), rateb_app_route('accounting/balance-sheet'), rateb_app_route('accounting/vat-report'), rateb_app_route('accounting/cost-center-report'), rateb_app_route('accounting/budget-report'), rateb_app_route('accounting/cfo-dashboard'), rateb_app_route('accounting/accounts-payable'), rateb_app_route('accounting/accounts-receivable')]],
     ['path' => rateb_app_route('chart-of-accounts'), 'label' => __('chart_of_accounts'), 'match' => [rateb_app_route('chart-of-accounts')]],
     ['path' => rateb_app_route('accounting/coa-tree'), 'label' => __('coa_full_tree'), 'match' => [rateb_app_route('accounting/coa-tree')]],
     ['path' => rateb_app_route('journal-entries'), 'label' => __('journal_entries'), 'match' => [rateb_app_route('journal-entries')]],
     ['path' => rateb_app_route('accounting/entry-approval'), 'label' => __('entry_approval'), 'match' => [rateb_app_route('accounting/entry-approval')]],
-    ['path' => rateb_app_route('accounting/accounts-payable'), 'label' => __('accounts_payable'), 'match' => [rateb_app_route('accounting/accounts-payable')]],
     ['path' => rateb_app_route('accounting/supplier-payments'), 'label' => __('supplier_payments'), 'match' => [rateb_app_route('accounting/supplier-payments')]],
-    ['path' => rateb_app_route('accounting/accounts-receivable'), 'label' => __('accounts_receivable'), 'match' => [rateb_app_route('accounting/accounts-receivable')]],
-    ['path' => rateb_app_route('accounting/profit-loss'), 'label' => __('profit_loss'), 'match' => [rateb_app_route('accounting/profit-loss')]],
-    ['path' => rateb_app_route('accounting/cost-of-sales'), 'label' => __('cost_of_sales'), 'match' => [rateb_app_route('accounting/cost-of-sales')]],
-    ['path' => rateb_app_route('accounting/balance-sheet'), 'label' => __('balance_sheet'), 'match' => [rateb_app_route('accounting/balance-sheet')]],
-    ['path' => rateb_app_route('accounting/vat-report'), 'label' => __('vat_report'), 'match' => [rateb_app_route('accounting/vat-report')]],
     ['path' => rateb_app_route('cash-vouchers'), 'label' => __('cash_vouchers'), 'match' => [rateb_app_route('cash-vouchers')]],
     ['path' => rateb_app_route('accounting/voucher-approval'), 'label' => __('voucher_approval'), 'match' => [rateb_app_route('accounting/voucher-approval')]],
     ['path' => rateb_app_route('fiscal-periods'), 'label' => __('fiscal_periods'), 'match' => [rateb_app_route('fiscal-periods')]],
     ['path' => rateb_app_route('cost-centers'), 'label' => __('cost_centers'), 'match' => [rateb_app_route('cost-centers')]],
-    ['path' => rateb_app_route('accounting/cost-center-report'), 'label' => __('cost_center_report'), 'match' => [rateb_app_route('accounting/cost-center-report')]],
     ['path' => rateb_app_route('accounting/zatca-settings'), 'label' => __('zatca_settings'), 'match' => [rateb_app_route('accounting/zatca-settings')]],
     ['path' => rateb_app_route('bank-accounts'), 'label' => __('bank_accounts'), 'match' => [rateb_app_route('bank-accounts')]],
     ['path' => rateb_app_route('accounting/bank-reconciliation'), 'label' => __('bank_reconciliation'), 'match' => [rateb_app_route('accounting/bank-reconciliation')]],
-    ['path' => rateb_app_route('accounting/budget-report'), 'label' => __('budget_report'), 'match' => [rateb_app_route('accounting/budget-report')]],
-    ['path' => rateb_app_route('accounting/cfo-dashboard'), 'label' => __('cfo_dashboard'), 'match' => [rateb_app_route('accounting/cfo-dashboard')]],
 ];
 if ($accountingActive === 'admin' || rateb_is_super_admin()) {
     $tabs[] = ['path' => 'admin/invoices', 'label' => __('invoices'), 'match' => ['admin/invoices']];
@@ -61,6 +53,9 @@ $isActive = static function (array $tab) use ($route): bool {
                 $pathKey = preg_replace('#^admin/#', '', $pathKey);
                 if (strpos($pathKey, 'accounting/') === 0) {
                     $pathKey = substr($pathKey, strlen('accounting/'));
+                }
+                if ($pathKey === 'accounting/reports' || $pathKey === 'reports') {
+                    $pathKey = 'accounting-reports';
                 }
                 if (!rateb_can_view_entity($pathKey)) {
                     continue;

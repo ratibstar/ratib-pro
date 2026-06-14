@@ -105,6 +105,9 @@ $router->post($app('purchase-orders/{id}/submit'), [PurchaseOrdersController::cl
 $router->post($app('quotations/{id}/create-po'), [PurchaseOrdersController::class, 'createFromQuotation'], rateb_erp_mw('procurement', '', 'purchase-orders'));
 $router->get($app('rfq/{id}/compare'), [RfqController::class, 'compare'], rateb_erp_mw('procurement', '', 'rfq'));
 $router->get($app('accounting'), [CompanyAccountingDashboardController::class, 'index'], rateb_erp_mw('accounting', '', 'accounting'));
+$router->get($app('accounting/reports'), [CompanyAccountingDashboardController::class, 'reportsHub'], rateb_erp_mw('accounting', '', 'accounting-reports'));
+$router->get($app('accounting/trial-balance'), [CompanyAccountingDashboardController::class, 'trialBalanceReport'], rateb_erp_mw('accounting', '', 'trial-balance'));
+$router->get($app('accounting/journal-register'), [CompanyAccountingDashboardController::class, 'journalRegister'], rateb_erp_mw('accounting', '', 'journal-register'));
 $router->post($app('accounting/sync'), [CompanyAccountingDashboardController::class, 'sync'], rateb_erp_mw('accounting', 'accounting.post'));
 $router->get($app('accounting/accounts-payable'), [CompanyAccountingDashboardController::class, 'accountsPayable'], rateb_erp_mw('accounting', '', 'accounts-payable'));
 $router->get($app('accounting/accounts-receivable'), [CompanyAccountingDashboardController::class, 'accountsReceivable'], rateb_erp_mw('accounting', '', 'accounts-receivable'));
