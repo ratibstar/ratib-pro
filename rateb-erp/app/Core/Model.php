@@ -22,6 +22,11 @@ abstract class Model
         $this->db = Database::connection();
     }
 
+    public function isTenantScoped(): bool
+    {
+        return $this->tenantScoped;
+    }
+
     /** Super Admin on admin portal sees all tenants; company users stay scoped. */
     protected function appliesTenantScope(): bool
     {
@@ -32,6 +37,19 @@ abstract class Model
             return false;
         }
         return TenantContext::companyId() !== null;
+    }
+
+    /** Treat 0 / empty string as missing tenant id (common from unresolved ops company). */
+    protected function normalizeTenantInput(array $data): array
+    {
+        if (!$this->tenantScoped || !array_key_exists($this->tenantColumn, $data)) {
+            return $data;
+        }
+        $value = $data[$this->tenantColumn];
+        if ($value === '' || $value === 0 || $value === '0') {
+            unset($data[$this->tenantColumn]);
+        }
+        return $data;
     }
 
     /** @return array{0:string,1:array<string,mixed>} */
@@ -184,6 +202,7 @@ abstract class Model
         $tenantValue = null;
         $tenantExplicitNull = false;
         if ($this->tenantScoped) {
+            $data = $this->normalizeTenantInput($data);
             if (array_key_exists($this->tenantColumn, $data)
                 && ($data[$this->tenantColumn] === null || $data[$this->tenantColumn] === '')) {
                 if (!TenantContext::isSuperAdmin()) {

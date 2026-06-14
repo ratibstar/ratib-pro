@@ -10,6 +10,7 @@ use Rateb\App\Models\Inventory;
 use Rateb\App\Models\InventoryAudit;
 use Rateb\App\Models\InventoryBatch;
 use Rateb\App\Models\StockMovement;
+use Rateb\App\Models\Warehouse;
 use Rateb\App\Services\DocumentCodeService;
 use Rateb\App\Services\TenantFkValidator;
 
@@ -101,6 +102,19 @@ final class InventoryWorkflowService
 
     public function createAudit(string $auditNo, ?int $warehouseId, string $notes = ''): int
     {
+        $companyId = (int) (TenantContext::companyId() ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
+        if ($companyId < 1 && $warehouseId !== null && $warehouseId > 0) {
+            $warehouse = (new Warehouse())->find($warehouseId);
+            $companyId = (int) ($warehouse['company_id'] ?? 0);
+        }
+        if ($companyId < 1) {
+            throw new \RuntimeException(function_exists('__') ? __('select_company_ops') : 'Company context required for tenant-scoped create.');
+        }
+        TenantContext::setCompanyId($companyId);
+
         return (new InventoryAudit())->create([
             'audit_no' => $auditNo,
             'warehouse_id' => $warehouseId,

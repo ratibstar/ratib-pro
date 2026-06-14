@@ -784,7 +784,10 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
     protected function collectData(): array
     {
         $data = parent::collectData();
-        $data['company_id'] = rateb_resolve_ops_company_id();
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId > 0) {
+            $data['company_id'] = $companyId;
+        }
         $uid = (int) SessionManager::get('rateb_user_id', 0);
         if ($uid > 0) {
             $data['created_by'] = $uid;

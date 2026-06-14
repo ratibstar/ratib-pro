@@ -804,7 +804,10 @@ final class ChartOfAccountsController extends \Rateb\App\Controllers\CrudControl
     protected function collectData(): array
     {
         $data = parent::collectData();
-        $data['company_id'] = rateb_resolve_ops_company_id();
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId > 0) {
+            $data['company_id'] = $companyId;
+        }
         $data['is_active'] = 1;
         $parentId = (int) ($data['parent_id'] ?? 0);
         $data['parent_id'] = $parentId > 0 ? $parentId : null;

@@ -7,6 +7,7 @@ use Rateb\App\Core\Controller;
 use Rateb\App\Core\Csrf;
 use Rateb\App\Core\Model;
 use Rateb\App\Core\SessionManager;
+use Rateb\App\Core\TenantContext;
 use Rateb\App\Services\AuditService;
 use Rateb\App\Services\TenantFkValidator;
 
@@ -171,6 +172,7 @@ abstract class CrudController extends Controller
         }
 
         $data = $this->collectData();
+        $this->ensureTenantCompanyForWrite($data);
         try {
             TenantFkValidator::validate($data, $this->tenantForeignKeys);
         } catch (\RuntimeException $e) {
@@ -437,6 +439,34 @@ abstract class CrudController extends Controller
             $data[$name] = trim((string) $this->input($name, ''));
         }
         return $data;
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function ensureTenantCompanyForWrite(array &$data): void
+    {
+        if (!$this->model->isTenantScoped()) {
+            return;
+        }
+
+        // Platform template rows (e.g. global chart of accounts) use explicit NULL for super admin.
+        if (array_key_exists('company_id', $data) && $data['company_id'] === null && rateb_is_super_admin()) {
+            return;
+        }
+
+        $companyId = (int) ($data['company_id'] ?? 0);
+        if ($companyId < 1) {
+            $companyId = (int) (TenantContext::companyId() ?? 0);
+        }
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
+        if ($companyId < 1) {
+            SessionManager::flash('error', __('select_company_ops'));
+            $this->redirect(rateb_url($this->routePrefix . '/create'));
+        }
+
+        $data['company_id'] = $companyId;
+        TenantContext::setCompanyId($companyId);
     }
 
     /** @param array<string, mixed> $data */
