@@ -91,9 +91,12 @@ $costCenters = $costCenters ?? [];
         </div>
         <p class="text-muted small mb-0"><?php echo __('journal_balance_hint'); ?></p>
     </div>
-    <div class="rateb-card-footer d-flex gap-2">
+    <div class="rateb-card-footer d-flex flex-wrap gap-2 align-items-center">
         <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
-        <a href="<?php echo rateb_app_url('journal-entries'); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
+        <a href="<?php echo rateb_app_url($isEdit ? 'journal-entries/' . (int) $entry['id'] : 'journal-entries'); ?>" class="btn btn-outline-secondary"><?php echo __('cancel'); ?></a>
+        <?php if (!$isEdit) { ?>
+        <span class="text-muted small ms-1"><i class="fas fa-info-circle me-1"></i><?php echo __('accounting_form_draft_hint'); ?></span>
+        <?php } ?>
     </div>
 </form>
 <script>

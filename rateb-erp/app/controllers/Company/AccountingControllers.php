@@ -814,7 +814,7 @@ final class JournalEntriesController extends Controller
                 (int) SessionManager::get('rateb_user_id', 0) ?: null
             );
             (new AuditService())->log('create', 'journal_entry', $id, ['status' => 'draft']);
-            SessionManager::flash('success', __('journal_draft_saved'));
+            SessionManager::flash('success', __('journal_review_saved'));
             Response::redirect(rateb_app_url('journal-entries/' . $id));
         } catch (\InvalidArgumentException $e) {
             SessionManager::flash('error', __('journal_not_balanced'));
@@ -1190,7 +1190,7 @@ final class CashVouchersController extends Controller
             'bank_account_id' => (int) ($_POST['bank_account_id'] ?? 0) ?: null,
         ], (int) SessionManager::get('rateb_user_id', 0) ?: null);
         (new AuditService())->log('create', 'cash_voucher', $id, ['status' => 'draft']);
-        SessionManager::flash('success', __('voucher_saved'));
+        SessionManager::flash('success', __('voucher_review_saved'));
         Response::redirect(rateb_app_url('cash-vouchers/' . $id));
     }
 
@@ -1248,7 +1248,7 @@ final class CashVouchersController extends Controller
             'bank_account_id' => (int) ($_POST['bank_account_id'] ?? 0) ?: null,
         ])) {
             (new AuditService())->log('update', 'cash_voucher', $id, ['status' => 'draft']);
-            SessionManager::flash('success', __('voucher_saved'));
+            SessionManager::flash('success', __('voucher_review_saved'));
             Response::redirect(rateb_app_url('cash-vouchers/' . $id));
         }
         SessionManager::flash('error', __('voucher_edit_denied'));
