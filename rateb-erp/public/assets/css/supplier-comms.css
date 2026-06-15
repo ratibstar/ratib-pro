@@ -1,0 +1,95 @@
+.rateb-sc-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.rateb-sc-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.rateb-sc-breadcrumb {
+    font-size: 0.8125rem;
+    color: var(--rateb-text-muted);
+    margin-bottom: 0.35rem;
+}
+
+.rateb-sc-breadcrumb a {
+    color: var(--rateb-text-muted);
+    text-decoration: none;
+}
+
+.rateb-sc-breadcrumb a:hover {
+    color: var(--rateb-primary);
+}
+
+.rateb-sc-card {
+    background: var(--rateb-surface);
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius);
+    box-shadow: var(--rateb-shadow);
+}
+
+.rateb-sc-card-header {
+    padding: 0.85rem 1.15rem;
+    border-bottom: 1px solid var(--rateb-border);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.rateb-sc-card-body {
+    padding: 1.15rem 1.25rem 1.25rem;
+}
+
+.rateb-sc-form-grid .form-label {
+    font-size: 0.8125rem;
+    margin-bottom: 0.3rem;
+}
+
+.rateb-sc-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--rateb-border);
+}
+
+.rateb-sc-filter-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.rateb-sc-filter-toggle .fa-chevron-down {
+    transition: transform 0.2s ease;
+}
+
+.rateb-sc-filter-toggle[aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+.rateb-sc-table-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+}
+
+.rateb-sc-channel-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8125rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: var(--rateb-surface-2);
+    border: 1px solid var(--rateb-border);
+}

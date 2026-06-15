@@ -189,7 +189,14 @@ final class FormLookupService
                 $options = $this->staticOptions(['active', 'inactive', 'blacklisted'], true);
                 break;
             case 'communication_types':
-                $options = $this->staticOptions(['email', 'phone', 'meeting', 'visit', 'note'], true);
+                $options = [
+                    ['value' => 'email', 'label' => __('comm_channel_email')],
+                    ['value' => 'sms', 'label' => __('comm_channel_sms')],
+                    ['value' => 'whatsapp', 'label' => __('comm_channel_whatsapp')],
+                    ['value' => 'phone', 'label' => __('comm_channel_phone')],
+                    ['value' => 'meeting', 'label' => __('comm_channel_meeting')],
+                    ['value' => 'note', 'label' => __('comm_channel_note')],
+                ];
                 break;
             case 'priority_levels':
                 $options = $this->staticOptions(['low', 'normal', 'high', 'urgent'], true);

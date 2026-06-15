@@ -1121,9 +1121,9 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
         $this->filesEnabled = false;
         $this->indexFields = [
             ['name' => 'supplier_name', 'label' => 'suppliers'],
-            ['name' => 'channel', 'label' => 'comm_channel'],
+            ['name' => 'channel', 'label' => 'comm_channel', 'type' => 'channel'],
             ['name' => 'subject', 'label' => 'subject'],
-            ['name' => 'created_at', 'label' => 'created_at'],
+            ['name' => 'created_at', 'label' => 'sent_at', 'type' => 'datetime'],
         ];
         $this->fields = [
             ['name' => 'supplier_id', 'label' => 'suppliers', 'type' => 'fk', 'lookup' => 'suppliers'],
@@ -1141,32 +1141,71 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
 
     public function index(): void
     {
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         $page = max(1, (int) $this->input('page', 1));
         $limit = 20;
         $offset = ($page - 1) * $limit;
         $search = trim((string) $this->input('q', ''));
+        $filters = [
+            'supplier_id' => max(0, (int) $this->input('supplier_id', 0)),
+            'channel' => trim((string) $this->input('channel', '')),
+            'date_from' => trim((string) $this->input('date_from', '')),
+            'date_to' => trim((string) $this->input('date_to', '')),
+            'q' => $search,
+        ];
         $companyId = rateb_resolve_ops_company_id();
         TenantContext::setCompanyId($companyId);
+
+        $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($this->fields);
+        $supplierOptions = $lookups['supplier_id'] ?? [];
+        $channelOptions = $lookups['channel'] ?? [];
 
         $sql = 'SELECT c.*, s.name AS supplier_name
                 FROM rateb_supplier_communications c
                 LEFT JOIN rateb_suppliers s ON s.id = c.supplier_id
                 WHERE c.company_id = :cid';
         $params = ['cid' => $companyId];
-        if ($search !== '') {
-            $sql .= ' AND (s.name LIKE :q OR c.subject LIKE :q OR c.body LIKE :q OR c.channel LIKE :q)';
-            $params['q'] = '%' . $search . '%';
-        }
         $countSql = 'SELECT COUNT(*) AS c FROM rateb_supplier_communications c
                      LEFT JOIN rateb_suppliers s ON s.id = c.supplier_id
                      WHERE c.company_id = :cid';
         $countParams = ['cid' => $companyId];
+
         if ($search !== '') {
+            $sql .= ' AND (s.name LIKE :q OR c.subject LIKE :q OR c.body LIKE :q OR c.channel LIKE :q)';
             $countSql .= ' AND (s.name LIKE :q OR c.subject LIKE :q OR c.body LIKE :q OR c.channel LIKE :q)';
+            $params['q'] = '%' . $search . '%';
             $countParams['q'] = '%' . $search . '%';
         }
+        if ($filters['supplier_id'] > 0) {
+            $sql .= ' AND c.supplier_id = :sid';
+            $countSql .= ' AND c.supplier_id = :sid';
+            $params['sid'] = $filters['supplier_id'];
+            $countParams['sid'] = $filters['supplier_id'];
+        }
+        if ($filters['channel'] !== '') {
+            $sql .= ' AND c.channel = :ch';
+            $countSql .= ' AND c.channel = :ch';
+            $params['ch'] = $filters['channel'];
+            $countParams['ch'] = $filters['channel'];
+        }
+        if ($filters['date_from'] !== '') {
+            $sql .= ' AND DATE(c.created_at) >= :df';
+            $countSql .= ' AND DATE(c.created_at) >= :df';
+            $params['df'] = $filters['date_from'];
+            $countParams['df'] = $filters['date_from'];
+        }
+        if ($filters['date_to'] !== '') {
+            $sql .= ' AND DATE(c.created_at) <= :dt';
+            $countSql .= ' AND DATE(c.created_at) <= :dt';
+            $params['dt'] = $filters['date_to'];
+            $countParams['dt'] = $filters['date_to'];
+        }
+
         $total = (int) (($this->model->queryOne($countSql, $countParams)['c'] ?? 0));
-        $sql .= ' ORDER BY c.id DESC LIMIT ' . $limit . ' OFFSET ' . $offset;
+        $orderSql = function_exists('rateb_list_order_sql') ? rateb_list_order_sql('c') : 'c.id DESC';
+        $sql .= ' ORDER BY ' . $orderSql . ' LIMIT ' . $limit . ' OFFSET ' . $offset;
         $items = $this->model->query($sql, $params);
 
         $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
@@ -1176,12 +1215,16 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
             'page' => $page,
             'limit' => $limit,
             'search' => $search,
+            'filters' => $filters,
+            'supplierOptions' => $supplierOptions,
+            'channelOptions' => $channelOptions,
+            'columns' => $this->indexFields,
             'routePrefix' => $this->routePrefix,
-            'fields' => $this->indexFields,
             'csrf' => Csrf::token(),
             'bulkEnabled' => $this->bulkEnabled,
             'createEnabled' => $this->createEnabled,
             'actionsEnabled' => $this->actionsEnabled,
+            'moduleCss' => rateb_asset('css/supplier-comms.css'),
         ]), $this->layout());
     }
 
@@ -1202,10 +1245,14 @@ final class SupplierCommsController extends \Rateb\App\Controllers\CrudControlle
     public function create(): void
     {
         $this->guardManage();
-        $this->view($this->viewPrefix . '/form', $this->formViewData([
-            'title' => __('create') . ' ' . __('supplier_comms'),
-            'item' => null,
-        ]), $this->layout());
+        $this->redirect(rateb_url($this->routePrefix) . '#rateb-sc-form');
+    }
+
+    protected function formViewData(array $extra = []): array
+    {
+        return array_merge(parent::formViewData($extra), [
+            'moduleCss' => rateb_asset('css/supplier-comms.css'),
+        ]);
     }
 
     public function edit(array $params): void
