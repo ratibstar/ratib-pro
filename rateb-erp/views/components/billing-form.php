@@ -6,11 +6,13 @@
 /** @var array<int, array<string, mixed>>|null $companies */
 /** @var array<int, array<string, mixed>>|null $plans */
 /** @var array<int, array<string, mixed>>|null $subscriptions */
+/** @var array<int, array<string, mixed>>|null $invoices */
 $isEdit = is_array($item) && (int) ($item['id'] ?? 0) > 0;
 $action = $isEdit ? rateb_url($routePrefix . '/' . (int) $item['id']) : rateb_url($routePrefix);
 $companies = $companies ?? [];
 $plans = $plans ?? [];
 $subscriptions = $subscriptions ?? [];
+$invoices = $invoices ?? [];
 ?>
 <div class="rateb-card">
     <div class="rateb-card-header"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></div>
@@ -54,6 +56,15 @@ $subscriptions = $subscriptions ?? [];
                         <?php foreach ($subscriptions as $sub) { ?>
                         <option value="<?php echo (int) $sub['id']; ?>"<?php echo (string) $value === (string) $sub['id'] ? ' selected' : ''; ?>>
                             <?php echo Rateb\App\Core\View::escape($sub['label'] ?? ('#' . $sub['id'])); ?>
+                        </option>
+                        <?php } ?>
+                    </select>
+                    <?php } elseif ($type === 'invoice_select') { ?>
+                    <select class="form-select rateb-form-control" id="f_<?php echo Rateb\App\Core\View::escape($name); ?>" name="<?php echo Rateb\App\Core\View::escape($name); ?>">
+                        <option value=""><?php echo __('select_invoice'); ?></option>
+                        <?php foreach ($invoices as $inv) { ?>
+                        <option value="<?php echo (int) $inv['id']; ?>"<?php echo (string) $value === (string) $inv['id'] ? ' selected' : ''; ?>>
+                            <?php echo Rateb\App\Core\View::escape($inv['label'] ?? ('#' . $inv['id'])); ?>
                         </option>
                         <?php } ?>
                     </select>

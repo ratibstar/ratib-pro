@@ -26,6 +26,8 @@ $discountComputed = $discountType === 'percent'
     : min($amount, (float) $discountAmount);
 $subtotalBeforeTax = max(0, $amount - $discountComputed);
 $documents = [];
+$lineItems = $lineItems ?? [];
+$maxAttachments = 5;
 if ($isEdit && $invoiceId > 0) {
     $companyId = (int) ($item['company_id'] ?? 0);
     if ($companyId > 0) {
@@ -57,9 +59,12 @@ $subJson = json_encode(array_map(static function (array $sub): array {
               data-subscriptions="<?php echo Rateb\App\Core\View::escape($subJson ?: '[]'); ?>"
               data-subscription-lookup="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix . '/subscription-lookup')); ?>"
               data-preview-url="<?php echo $isEdit ? Rateb\App\Core\View::escape(rateb_url($routePrefix . '/' . $invoiceId . '/preview')) : ''; ?>"
+              data-preview-draft-url="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix . '/preview-draft')); ?>"
+              data-max-attachments="<?php echo $maxAttachments; ?>"
               data-preview-title="<?php echo Rateb\App\Core\View::escape(__('invoice_preview')); ?>"
               data-optional-label="<?php echo Rateb\App\Core\View::escape(__('optional')); ?>"
               data-after-days-label="<?php echo Rateb\App\Core\View::escape(__('due_after_days', ['days' => ':days'])); ?>"
+              data-attachment-count-label="<?php echo Rateb\App\Core\View::escape(__('attachments_count', ['count' => ':count', 'max' => ':max'])); ?>"
               data-currency-label="<?php echo Rateb\App\Core\View::escape($currencyLabel); ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
             <input type="hidden" name="submit_action" value="draft" data-submit-action>
@@ -172,6 +177,11 @@ $subJson = json_encode(array_map(static function (array $sub): array {
                 </div>
             </section>
 
+            <?php Rateb\App\Core\View::partial('invoice-lines', [
+                'lineItems' => $lineItems,
+                'defaultVat15' => true,
+            ]); ?>
+
             <section class="rateb-invoice-section mb-4">
                 <h6 class="rateb-invoice-section-title"><i class="fas fa-calculator"></i> <?php echo __('amount_details_section'); ?></h6>
                 <div class="row g-3 align-items-end">
@@ -232,19 +242,34 @@ $subJson = json_encode(array_map(static function (array $sub): array {
             <section class="rateb-invoice-section mb-4">
                 <h6 class="rateb-invoice-section-title"><i class="fas fa-paperclip"></i> <?php echo __('attachments'); ?></h6>
                 <?php if ($documents !== []) { ?>
-                <div class="rateb-invoice-attached-list mb-3">
-                    <?php foreach ($documents as $doc) { ?>
-                    <div class="rateb-invoice-attached-item">
-                        <span><i class="fas fa-file-pdf text-danger"></i> <?php echo Rateb\App\Core\View::escape($doc['file_name'] ?? ''); ?></span>
-                        <a href="<?php echo rateb_url('documents/download/' . (int) ($doc['id'] ?? 0)); ?>" class="btn btn-sm btn-outline-primary"><?php echo __('download_file'); ?></a>
+                <div class="rateb-invoice-attached-list mb-3" data-attached-list>
+                    <?php foreach ($documents as $doc) {
+                        $docId = (int) ($doc['id'] ?? 0);
+                    ?>
+                    <div class="rateb-invoice-attached-item" data-attached-item>
+                        <span><i class="fas fa-file"></i> <?php echo Rateb\App\Core\View::escape($doc['file_name'] ?? ''); ?></span>
+                        <div class="d-flex gap-1">
+                            <a href="<?php echo rateb_url('documents/download/' . $docId); ?>" class="btn btn-sm btn-outline-primary"><?php echo __('download_file'); ?></a>
+                            <?php if ($isEdit) { ?>
+                            <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $invoiceId . '/documents/' . $docId . '/delete'); ?>" class="d-inline" onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_delete_file')); ?>');">
+                                <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><?php echo __('delete_file'); ?></button>
+                            </form>
+                            <?php } ?>
+                        </div>
                     </div>
                     <?php } ?>
                 </div>
                 <?php } ?>
-                <div class="rateb-invoice-dropzone">
+                <div class="rateb-invoice-dropzone" data-invoice-dropzone>
                     <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
                     <p class="mb-2"><?php echo __('invoice_drop_hint'); ?></p>
-                    <input class="form-control rateb-form-control" type="file" name="entity_attachment" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp">
+                    <input class="form-control rateb-form-control d-none" type="file" name="entity_attachment[]" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" data-invoice-file-input>
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-invoice-pick-files><?php echo __('choose_files'); ?></button>
+                    <div class="small text-muted mt-2" data-attachment-meta>
+                        <?php echo __('attachments_count', ['count' => (string) count($documents), 'max' => (string) $maxAttachments]); ?>
+                    </div>
+                    <div class="rateb-invoice-pending-files mt-2" data-pending-files></div>
                     <small class="text-muted d-block mt-2"><?php echo __('attachment_hint'); ?></small>
                 </div>
             </section>

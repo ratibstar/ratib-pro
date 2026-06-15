@@ -154,6 +154,35 @@ final class BillingService
         return $candidate;
     }
 
+    /** @return array<int, array{id:int,label:string,company_id:int}> */
+    public function invoiceOptions(?int $companyId = null, ?int $includeId = null): array
+    {
+        $sql = 'SELECT id, company_id, invoice_no, total_amount, currency, payment_status
+                FROM rateb_invoices WHERE 1=1';
+        $params = [];
+        if ($companyId !== null && $companyId > 0) {
+            $sql .= ' AND company_id = :cid';
+            $params['cid'] = $companyId;
+        }
+        if ($includeId !== null && $includeId > 0) {
+            $sql .= ' AND (payment_status <> \'paid\' OR id = :inc)';
+            $params['inc'] = $includeId;
+        } else {
+            $sql .= ' AND payment_status <> \'paid\'';
+        }
+        $sql .= ' ORDER BY due_date ASC, id DESC LIMIT 200';
+        $rows = (new \Rateb\App\Models\Invoice())->query($sql, $params);
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'id' => (int) $row['id'],
+                'company_id' => (int) $row['company_id'],
+                'label' => ($row['invoice_no'] ?? '') . ' — ' . number_format((float) ($row['total_amount'] ?? 0), 2) . ' ' . ($row['currency'] ?? 'SAR'),
+            ];
+        }
+        return $out;
+    }
+
     public function ensureBillingReady(): void
     {
         (new AccountingService())->ensureDefaultAccounts(null);

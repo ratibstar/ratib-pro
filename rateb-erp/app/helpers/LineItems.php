@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Rateb\App\Helpers;
 
+use Rateb\App\Models\InvoiceLine;
+
 final class LineItems
 {
     /** @return list<string> */

@@ -72,7 +72,10 @@ INSERT INTO rateb_system_settings (setting_key, setting_value, setting_group) VA
 
 INSERT INTO rateb_email_templates (slug, subject, body_html, body_text, is_active) VALUES
 ('welcome', 'Welcome to RATEB ERP', '<p>Welcome to RATEB ERP platform.</p>', 'Welcome to RATEB ERP platform.', 1),
-('password_reset', 'Password Reset', '<p>Your password reset link.</p>', 'Your password reset link.', 1);
+('password_reset', 'Password Reset', '<p>Your password reset link.</p>', 'Your password reset link.', 1),
+('invoice_sent', 'Invoice {invoice_no} — {company}', '<p>Hello {company},</p><p>Invoice <strong>{invoice_no}</strong> has been issued for <strong>{total} {currency}</strong>.</p><p>Due date: {due_date}</p><p><a href="{preview_url}">View invoice</a></p>', 'Invoice {invoice_no} — {total} {currency} — due {due_date}', 1),
+('invoice_due_reminder', 'Reminder: invoice {invoice_no} due soon', '<p>Reminder for invoice <strong>{invoice_no}</strong> — <strong>{total} {currency}</strong>.</p><p>Due date: {due_date}</p>', 'Invoice reminder {invoice_no} — {due_date}', 1),
+('invoice_overdue_notice', 'Overdue invoice: {invoice_no}', '<p>Invoice <strong>{invoice_no}</strong> is overdue (due {due_date}).</p><p>Amount due: <strong>{total} {currency}</strong></p>', 'Overdue invoice {invoice_no}', 1);
 
 INSERT INTO rateb_sms_templates (slug, body, is_active) VALUES
 ('otp', 'Your RATEB verification code is: {code}', 1),

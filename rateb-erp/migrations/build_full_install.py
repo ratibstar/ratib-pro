@@ -58,6 +58,7 @@ drops = [
     "rateb_purchase_requests",
     "rateb_subscriptions",
     "rateb_payments",
+    "rateb_invoice_lines",
     "rateb_invoices",
     "rateb_inventory",
     "rateb_warehouses",

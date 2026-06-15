@@ -841,6 +841,7 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
         $this->fields = [
             ['name' => 'company_id', 'label' => 'company_id', 'type' => 'company_select'],
             ['name' => 'subscription_id', 'label' => 'subscriptions', 'type' => 'subscription_select'],
+            ['name' => 'invoice_id', 'label' => 'link_invoice', 'type' => 'invoice_select'],
             ['name' => 'amount', 'label' => 'amount', 'type' => 'number'],
             ['name' => 'currency', 'label' => 'currency', 'type' => 'select', 'lookup' => 'currencies'],
             ['name' => 'method', 'label' => 'payment_method', 'type' => 'select', 'lookup' => 'payment_methods'],
@@ -891,6 +892,7 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
             'fields' => $this->fields,
             'companies' => $this->billing->companyOptions(),
             'subscriptions' => $this->billing->subscriptionOptions(),
+            'invoices' => $this->billing->invoiceOptions(),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -913,6 +915,7 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
         $row = $this->model->find($id);
         if ($row && ($row['status'] ?? '') === 'completed') {
             (new \Rateb\App\Services\AccountingService())->postPayment($row);
+            $this->syncPaymentsToInvoices($row);
         }
         (new AuditService())->log('create', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
@@ -938,6 +941,7 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
             'fields' => $this->fields,
             'companies' => $this->billing->companyOptions(),
             'subscriptions' => $this->billing->subscriptionOptions((int) ($item['company_id'] ?? 0)),
+            'invoices' => $this->billing->invoiceOptions((int) ($item['company_id'] ?? 0), (int) ($item['invoice_id'] ?? 0)),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -957,6 +961,7 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
         $row = $this->model->find($id);
         if ($row && ($row['status'] ?? '') === 'completed') {
             (new \Rateb\App\Services\AccountingService())->postPayment($row);
+            $this->syncPaymentsToInvoices($row);
         }
         (new AuditService())->log('update', $this->entityName, $id, $data);
         SessionManager::flash('success', __('save') . ' OK');
@@ -999,7 +1004,34 @@ final class PaymentsController extends \Rateb\App\Controllers\CrudController
         if (($data['status'] ?? '') === 'completed' && $data['paid_at'] === null) {
             $data['paid_at'] = date('Y-m-d H:i:s');
         }
+        if (($data['invoice_id'] ?? '') === '') {
+            $data['invoice_id'] = null;
+        } else {
+            $data['invoice_id'] = (int) $data['invoice_id'];
+        }
         return $data;
+    }
+
+    /** @param array<string, mixed> $row */
+    private function syncPaymentsToInvoices(array $row): void
+    {
+        $automation = new \Rateb\App\Services\BillingAutomationService();
+        $invoiceId = (int) ($row['invoice_id'] ?? 0);
+        if ($invoiceId > 0) {
+            $automation->recalculatePaymentStatus($invoiceId);
+            return;
+        }
+        $companyId = (int) ($row['company_id'] ?? 0);
+        if ($companyId < 1) {
+            return;
+        }
+        $invoices = (new \Rateb\App\Models\Invoice())->query(
+            "SELECT id FROM rateb_invoices WHERE company_id = :cid AND payment_status <> 'paid' ORDER BY due_date ASC",
+            ['cid' => $companyId]
+        );
+        foreach ($invoices as $inv) {
+            $automation->recalculatePaymentStatus((int) ($inv['id'] ?? 0));
+        }
     }
 }
 
@@ -1087,16 +1119,8 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             'fields' => $this->fields,
             'companies' => $this->billing->companyOptions(),
             'subscriptions' => $this->billing->subscriptionOptions(),
+            'lineItems' => [],
             'csrf' => Csrf::token(),
-            'multipart' => true,
-            'attachment' => [
-                'entityType' => 'invoice',
-                'entityId' => 0,
-                'companyId' => 0,
-                'documentPath' => '',
-                'inputName' => 'entity_attachment',
-                'label' => __('invoice_attachment'),
-            ],
         ], 'main');
     }
 
@@ -1115,14 +1139,9 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix . '/create'));
         }
         $id = $this->model->create($data);
-        (new \Rateb\App\Services\DocumentBarcodeService())->ensure('invoice', $id);
-        $this->saveInvoiceAttachment($id, $data);
-        $row = $this->model->find($id);
-        if ($row && ($row['status'] ?? '') === 'paid') {
-            (new \Rateb\App\Services\AccountingService())->postInvoice($row);
-        }
+        $this->finalizeInvoiceSave($id, $data);
         (new AuditService())->log('create', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
+        SessionManager::flash('success', $this->invoiceFlashMessage($data));
         $this->redirect(rateb_url($this->routePrefix));
     }
 
@@ -1142,16 +1161,8 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             'fields' => $this->fields,
             'companies' => $this->billing->companyOptions(),
             'subscriptions' => $this->billing->subscriptionOptions((int) ($item['company_id'] ?? 0), (int) ($item['subscription_id'] ?? 0)),
+            'lineItems' => \Rateb\App\Helpers\LineItems::loadInvoiceLines($id),
             'csrf' => Csrf::token(),
-            'multipart' => true,
-            'attachment' => [
-                'entityType' => 'invoice',
-                'entityId' => $id,
-                'companyId' => (int) ($item['company_id'] ?? 0),
-                'documentPath' => (string) ($item['document_path'] ?? ''),
-                'inputName' => 'entity_attachment',
-                'label' => __('invoice_attachment'),
-            ],
         ], 'main');
     }
 
@@ -1167,14 +1178,29 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
         $this->model->update($id, $data);
-        $this->saveInvoiceAttachment($id, $data);
-        $row = $this->model->find($id);
-        if ($row && ($row['status'] ?? '') === 'paid') {
-            (new \Rateb\App\Services\AccountingService())->postInvoice($row);
-        }
+        $this->finalizeInvoiceSave($id, $data);
         (new AuditService())->log('update', $this->entityName, $id, $data);
-        SessionManager::flash('success', __('save') . ' OK');
+        SessionManager::flash('success', $this->invoiceFlashMessage($data));
         $this->redirect(rateb_url($this->routePrefix));
+    }
+
+    public function previewDraft(): void
+    {
+        if (!rateb_can('billing.manage') || !$this->validateCsrf()) {
+            http_response_code(403);
+            echo __('access_denied');
+            return;
+        }
+        $data = $this->collectInvoiceData();
+        $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
+        $company = (new \Rateb\App\Models\Company())->find((int) ($data['company_id'] ?? 0));
+        $this->view('admin/invoices/print', [
+            'title' => __('invoice_preview'),
+            'item' => $data,
+            'company' => $company,
+            'lines' => $lines,
+            'draft' => true,
+        ], 'print');
     }
 
     public function subscriptionLookup(): void
@@ -1201,10 +1227,12 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             return;
         }
         $company = (new \Rateb\App\Models\Company())->find((int) ($item['company_id'] ?? 0));
+        $lines = \Rateb\App\Helpers\LineItems::loadInvoiceLines($id);
         $this->view('admin/invoices/print', [
             'title' => __('invoice_preview') . ' — ' . ($item['invoice_no'] ?? ''),
             'item' => $item,
             'company' => $company,
+            'lines' => $lines,
         ], 'print');
     }
 
@@ -1287,8 +1315,14 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
         foreach ($names as $name) {
             $data[$name] = trim((string) $this->input($name, ''));
         }
+        $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
+        $lineAgg = $lines !== [] ? \Rateb\App\Helpers\LineItems::aggregateTotals($lines) : null;
+        $data['_lines'] = $lines;
         $data['company_id'] = (int) ($data['company_id'] ?? 0);
         $amount = max(0, (float) ($data['amount'] ?? 0));
+        if ($lineAgg !== null) {
+            $amount = (float) $lineAgg['subtotal'];
+        }
         $taxRate = max(0, (float) ($data['tax_rate'] ?? 15));
         $discountAmount = max(0, (float) ($data['discount_amount'] ?? 0));
         $discountType = in_array((string) ($data['discount_type'] ?? 'value'), ['value', 'percent'], true)
@@ -1298,7 +1332,12 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             ? min($amount, round($amount * ($discountAmount / 100), 2))
             : min($amount, $discountAmount);
         $subtotal = max(0, round($amount - $discount, 2));
-        $taxAmount = round($subtotal * ($taxRate / 100), 2);
+        if ($lineAgg !== null) {
+            $lineTax = (float) $lineAgg['tax'];
+            $taxAmount = $amount > 0 ? round($lineTax * ($subtotal / $amount), 2) : 0.0;
+        } else {
+            $taxAmount = round($subtotal * ($taxRate / 100), 2);
+        }
         $totalAmount = round($subtotal + $taxAmount, 2);
 
         $data['amount'] = $amount;
@@ -1339,26 +1378,60 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
         $submitAction = trim((string) $this->input('submit_action', 'draft'));
         if ($submitAction === 'send' && ($data['status'] ?? 'draft') === 'draft') {
             $data['status'] = 'sent';
+            $data['sent_at'] = date('Y-m-d H:i:s');
+        }
+        if (($data['status'] ?? '') === 'paid') {
+            $data['payment_status'] = 'paid';
         }
 
         return $data;
     }
 
     /** @param array<string, mixed> $data */
-    private function saveInvoiceAttachment(int $id, array $data): void
+    private function finalizeInvoiceSave(int $id, array $data): void
+    {
+        (new \Rateb\App\Services\DocumentBarcodeService())->ensure('invoice', $id);
+        $lines = is_array($data['_lines'] ?? null) ? $data['_lines'] : [];
+        if ($lines !== []) {
+            \Rateb\App\Helpers\LineItems::syncInvoiceLines($id, $lines);
+        }
+        $this->saveInvoiceAttachments($id, $data);
+        (new \Rateb\App\Services\BillingAutomationService())->recalculatePaymentStatus($id);
+        $row = $this->model->find($id);
+        if (!$row) {
+            return;
+        }
+        if (($row['status'] ?? '') === 'paid') {
+            (new \Rateb\App\Services\AccountingService())->postInvoice($row);
+        }
+        if (($row['status'] ?? '') === 'sent' && !empty($data['sent_at'])) {
+            (new \Rateb\App\Services\BillingAutomationService())->sendInvoiceToCustomer($row);
+        }
+    }
+
+    /** @param array<string, mixed> $data */
+    private function invoiceFlashMessage(array $data): string
+    {
+        if (($data['status'] ?? '') === 'sent' && !empty($data['sent_at'])) {
+            return __('invoice_sent_ok');
+        }
+        return __('save') . ' OK';
+    }
+
+    /** @param array<string, mixed> $data */
+    private function saveInvoiceAttachments(int $id, array $data): void
     {
         $companyId = (int) ($data['company_id'] ?? 0);
-        $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
+        $upload = \Rateb\App\Helpers\EntityAttachment::handleMultipleFiles(
             'entity_attachment',
             $companyId,
             'invoice',
             $id,
+            5,
             __('invoice_attachment')
         );
         if (!($upload['success'] ?? false)) {
             SessionManager::flash('error', (string) ($upload['error'] ?? __('upload_failed')));
-        } elseif (!empty($upload['path'])) {
-            $this->model->update($id, ['document_path' => $upload['path']]);
         }
     }
 }

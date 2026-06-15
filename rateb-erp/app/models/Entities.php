@@ -187,7 +187,7 @@ final class Payment extends Model
     protected string $table = 'rateb_payments';
     protected bool $tenantScoped = false;
     protected array $fillable = [
-        'company_id', 'subscription_id', 'amount', 'currency', 'method',
+        'company_id', 'subscription_id', 'invoice_id', 'amount', 'currency', 'method',
         'reference_no', 'status', 'paid_at',
     ];
 
@@ -226,6 +226,16 @@ final class Invoice extends Model
              ORDER BY i.id DESC LIMIT {$limit} OFFSET {$offset}"
         );
     }
+}
+
+final class InvoiceLine extends Model
+{
+    protected string $table = 'rateb_invoice_lines';
+    protected bool $tenantScoped = false;
+    protected array $fillable = [
+        'invoice_id', 'line_no', 'item_name', 'description', 'quantity', 'unit',
+        'unit_price', 'tax_rate', 'excluding_tax', 'line_subtotal', 'tax_amount', 'line_total',
+    ];
 }
 
 final class Notification extends Model

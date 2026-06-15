@@ -87,6 +87,11 @@
     flex-wrap: nowrap;
 }
 
-.rateb-due-alert {
-    border-inline-start: 4px solid var(--rateb-warning, #ffc107);
+.rateb-invoice-dropzone.rateb-invoice-dropzone-active {
+    border-color: var(--rateb-primary, #0d6efd);
+    background: rgba(13, 110, 253, 0.08);
+}
+
+.rateb-invoice-print .rateb-invoice-print-header h2 {
+    font-size: 1.35rem;
 }

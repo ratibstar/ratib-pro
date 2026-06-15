@@ -168,29 +168,117 @@
         if (issuedEl) issuedEl.addEventListener('change', updateDueDate);
         if (termsEl) termsEl.addEventListener('input', updateDueDate);
 
-        var previewBtn = form.querySelector('[data-invoice-preview]');
-        if (previewBtn) {
-            previewBtn.addEventListener('click', function () {
-                var previewUrl = form.getAttribute('data-preview-url');
-                var id = form.getAttribute('data-invoice-id');
-                if (previewUrl && id && parseInt(id, 10) > 0) {
-                    window.open(previewUrl, '_blank', 'noopener');
-                    return;
-                }
-                var box = form.querySelector('[data-invoice-print-area]');
-                if (!box) return;
-                var w = window.open('', '_blank', 'noopener');
-                if (!w) return;
-                w.document.write('<html dir="' + (document.documentElement.getAttribute('dir') || 'rtl') + '"><head><title>' +
-                    (form.getAttribute('data-preview-title') || 'Invoice') + '</title>' +
-                    '<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"></head><body class="p-4">' +
-                    box.innerHTML + '</body></html>');
-                w.document.close();
-                w.focus();
-                setTimeout(function () { w.print(); }, 400);
+        function syncFromLines() {
+            var table = form.querySelector('[data-invoice-lines-table]');
+            if (!table || !amountEl) return;
+            var subtotal = 0;
+            table.querySelectorAll('[data-line-items-row]').forEach(function (row) {
+                var qty = parseNum(row.querySelector('[name="line_quantity[]"]') && row.querySelector('[name="line_quantity[]"]').value);
+                var price = parseNum(row.querySelector('[name="line_unit_price[]"]') && row.querySelector('[name="line_unit_price[]"]').value);
+                subtotal += qty * price;
             });
+            if (subtotal > 0) {
+                amountEl.value = fmt(subtotal);
+            }
+            recalc();
         }
 
+        function initAttachments() {
+            var dropzone = form.querySelector('[data-invoice-dropzone]');
+            var fileInput = form.querySelector('[data-invoice-file-input]');
+            var pickBtn = form.querySelector('[data-invoice-pick-files]');
+            var pending = form.querySelector('[data-pending-files]');
+            var meta = form.querySelector('[data-attachment-meta]');
+            var maxFiles = parseInt(form.getAttribute('data-max-attachments') || '5', 10);
+            var existing = form.querySelectorAll('[data-attached-item]').length;
+
+            function updateMeta(count) {
+                if (!meta) return;
+                var total = existing + count;
+                meta.textContent = (form.getAttribute('data-attachment-count-label') || '')
+                    .replace(':count', String(total))
+                    .replace(':max', String(maxFiles));
+            }
+
+            function renderPending() {
+                if (!pending || !fileInput) return;
+                pending.innerHTML = '';
+                Array.prototype.forEach.call(fileInput.files || [], function (file) {
+                    var div = document.createElement('div');
+                    div.className = 'small text-start py-1';
+                    div.textContent = file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
+                    pending.appendChild(div);
+                });
+                updateMeta((fileInput.files && fileInput.files.length) || 0);
+            }
+
+            if (pickBtn && fileInput) {
+                pickBtn.addEventListener('click', function () { fileInput.click(); });
+                fileInput.addEventListener('change', renderPending);
+            }
+            if (dropzone && fileInput) {
+                ['dragenter', 'dragover'].forEach(function (ev) {
+                    dropzone.addEventListener(ev, function (e) {
+                        e.preventDefault();
+                        dropzone.classList.add('rateb-invoice-dropzone-active');
+                    });
+                });
+                ['dragleave', 'drop'].forEach(function (ev) {
+                    dropzone.addEventListener(ev, function (e) {
+                        e.preventDefault();
+                        dropzone.classList.remove('rateb-invoice-dropzone-active');
+                    });
+                });
+                dropzone.addEventListener('drop', function (e) {
+                    if (!e.dataTransfer || !e.dataTransfer.files) return;
+                    fileInput.files = e.dataTransfer.files;
+                    renderPending();
+                });
+            }
+            updateMeta(0);
+        }
+
+        function openPreview() {
+            var previewUrl = form.getAttribute('data-preview-url');
+            var id = form.getAttribute('data-invoice-id');
+            if (previewUrl && id && parseInt(id, 10) > 0) {
+                window.open(previewUrl, '_blank', 'noopener');
+                return;
+            }
+            var draftUrl = form.getAttribute('data-preview-draft-url');
+            if (!draftUrl) return;
+            var fd = new FormData(form);
+            fetch(draftUrl, { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function (r) { return r.text(); })
+                .then(function (html) {
+                    var w = window.open('', '_blank', 'noopener');
+                    if (!w) return;
+                    w.document.open();
+                    w.document.write(html);
+                    w.document.close();
+                    w.focus();
+                    setTimeout(function () { w.print(); }, 500);
+                })
+                .catch(function () {});
+        }
+
+        form.addEventListener('input', function (e) {
+            if (e.target && e.target.closest && e.target.closest('[data-invoice-lines-table]')) {
+                syncFromLines();
+            }
+        });
+        form.addEventListener('click', function (e) {
+            if (e.target && e.target.closest && (e.target.closest('[data-line-items-add]') || e.target.closest('[data-line-items-remove]'))) {
+                setTimeout(syncFromLines, 50);
+            }
+        });
+
+        var previewBtn = form.querySelector('[data-invoice-preview]');
+        if (previewBtn) {
+            previewBtn.addEventListener('click', openPreview);
+        }
+
+        initAttachments();
         setDiscountMode((discountTypeEl && discountTypeEl.value) || 'value');
         if (companyEl && companyEl.value) filterSubscriptions(companyEl.value);
         updateDueDate();

@@ -106,6 +106,16 @@ final class DocumentService
         return $stmt->fetchAll();
     }
 
+    public function countForEntity(string $entityType, int $entityId, int $companyId): int
+    {
+        $db = \Rateb\App\Core\Database::connection();
+        $stmt = $db->prepare(
+            'SELECT COUNT(*) AS c FROM rateb_documents WHERE company_id = :cid AND entity_type = :et AND entity_id = :eid'
+        );
+        $stmt->execute(['cid' => $companyId, 'et' => $entityType, 'eid' => $entityId]);
+        return (int) ($stmt->fetch()['c'] ?? 0);
+    }
+
     /** @return array<string, mixed>|null */
     public function findById(int $id): ?array
     {
@@ -347,6 +357,8 @@ final class DocumentService
             'rfq' => 'rfq',
             'quotation' => 'quotations',
             'tender' => 'tenders',
+            'invoice' => 'invoices',
+            'payment' => 'payments',
         ];
         if (isset($map[$entityType])) {
             return $map[$entityType];
