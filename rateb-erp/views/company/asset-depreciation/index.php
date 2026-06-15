@@ -254,8 +254,11 @@ $formatCell = static function ($val, array $col): string {
                                 <?php
                                 continue;
                             }
+                            $titleAttr = $display !== '' && $display !== '—'
+                                ? ' title="' . Rateb\App\Core\View::escape((string) $display) . '"'
+                                : '';
                             ?>
-                        <td class="<?php echo trim($class); ?>"><?php echo Rateb\App\Core\View::escape($display); ?></td>
+                        <td class="rateb-cell-clip<?php echo $class; ?>"<?php echo $titleAttr; ?>><?php echo Rateb\App\Core\View::escape($display); ?></td>
                         <?php } ?>
                         <td class="rateb-actions-cell text-nowrap">
                             <div class="rateb-actions">

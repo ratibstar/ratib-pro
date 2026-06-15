@@ -87,7 +87,7 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                 <?php } else { foreach ($items as $row) { ?>
                 <tr>
                     <?php if ($bulkEnabled) { ?>
-                    <td>
+                    <td class="rateb-bulk-td">
                         <input type="checkbox" class="form-check-input rateb-row-check" value="<?php echo (int) $row['id']; ?>" data-rateb-row-check>
                     </td>
                     <?php } ?>
