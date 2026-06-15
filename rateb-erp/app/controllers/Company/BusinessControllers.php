@@ -564,6 +564,25 @@ final class AssetDepreciationController extends Controller
         ];
     }
 
+    private function saveDepreciationAttachment(int $companyId, int $depreciationId): bool
+    {
+        if ($companyId < 1 || $depreciationId < 1) {
+            return true;
+        }
+        $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
+            'entity_attachment',
+            $companyId,
+            'asset_depreciation',
+            $depreciationId,
+            __('attach_document')
+        );
+        if (!($upload['success'] ?? false)) {
+            SessionManager::flash('error', (string) ($upload['error'] ?? __('upload_failed')));
+            return false;
+        }
+        return true;
+    }
+
     public function index(): void
     {
         $this->ensureOpsCompany();
@@ -629,12 +648,14 @@ final class AssetDepreciationController extends Controller
         }
         $lookup = new FormLookupService();
         $svc = new AssetDeviceWorkflowService();
+        $companyId = $this->ensureOpsCompany();
         $this->view('company/asset-depreciation/form', [
             'title' => __('edit') . ' ' . __('asset_depreciation'),
             'item' => $item,
             'formFields' => FormLookupService::assetDepreciationFormFields(true),
             'lookups' => $lookup->forFields(FormLookupService::assetDepreciationFormFields(true)),
             'assetBookValues' => $svc->assetBookValueMap(),
+            'companyId' => $companyId,
             'assetJs' => rateb_asset('js/asset-depreciation.js'),
             'csrf' => Csrf::token(),
         ], 'main');
@@ -643,7 +664,7 @@ final class AssetDepreciationController extends Controller
     public function store(): void
     {
         rateb_require_manage('asset-depreciation');
-        $this->requireOpsCompanyForWrite();
+        $companyId = $this->requireOpsCompanyForWrite();
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('asset-depreciation'));
         }
@@ -653,6 +674,9 @@ final class AssetDepreciationController extends Controller
             $this->redirect(rateb_app_url('asset-depreciation'));
         }
         $id = (new AssetDeviceWorkflowService())->recordDepreciation($this->depreciationInput());
+        if (!$this->saveDepreciationAttachment($companyId, $id)) {
+            $this->redirect(rateb_app_url('asset-depreciation/' . $id . '/edit'));
+        }
         (new AuditService())->log('create', 'asset_depreciation', $id);
         SessionManager::flash('success', __('depreciation_saved_draft'));
         $this->redirect(rateb_app_url('asset-depreciation'));
@@ -661,7 +685,7 @@ final class AssetDepreciationController extends Controller
     public function update(array $params): void
     {
         rateb_require_manage('asset-depreciation');
-        $this->requireOpsCompanyForWrite();
+        $companyId = $this->requireOpsCompanyForWrite();
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('asset-depreciation'));
         }
@@ -675,6 +699,9 @@ final class AssetDepreciationController extends Controller
         if (!$ok) {
             SessionManager::flash('error', __('depreciation_edit_denied'));
             $this->redirect(rateb_app_url('asset-depreciation'));
+        }
+        if (!$this->saveDepreciationAttachment($companyId, $id)) {
+            $this->redirect(rateb_app_url('asset-depreciation/' . $id . '/edit'));
         }
         (new AuditService())->log('update', 'asset_depreciation', $id);
         SessionManager::flash('success', __('save') . ' OK');

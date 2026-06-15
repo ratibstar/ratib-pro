@@ -56,7 +56,7 @@ $formatCell = static function ($val, array $col): string {
         </div>
         <?php if (!empty($exportEnabled)) { ?>
         <div class="d-flex flex-wrap gap-2">
-            <a href="<?php echo Rateb\App\Core\View::escape($exportLink('pdf')); ?>" class="btn btn-sm btn-outline-secondary" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+            <a href="<?php echo Rateb\App\Core\View::escape($exportLink('pdf')); ?>" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i> PDF</a>
             <a href="<?php echo Rateb\App\Core\View::escape($exportLink('excel')); ?>" class="btn btn-sm btn-outline-success"><i class="fas fa-file-excel"></i> Excel</a>
             <a href="<?php echo Rateb\App\Core\View::escape($exportLink('csv')); ?>" class="btn btn-sm btn-outline-success"><i class="fas fa-file-csv"></i> CSV</a>
         </div>
@@ -73,6 +73,7 @@ $formatCell = static function ($val, array $col): string {
             <div class="alert alert-warning mb-0"><?php echo __('depreciation_no_assets_hint'); ?></div>
             <?php } else { ?>
             <form method="post" action="<?php echo rateb_app_url('asset-depreciation'); ?>"
+                  enctype="multipart/form-data"
                   class="rateb-dep-form-grid" data-asset-depreciation-form="1"
                   data-asset-book-values="<?php echo Rateb\App\Core\View::escape($bookJson ?: '{}'); ?>"
                   data-asset-accumulated="<?php echo Rateb\App\Core\View::escape($accJson ?: '{}'); ?>">
@@ -101,9 +102,12 @@ $formatCell = static function ($val, array $col): string {
                             <option value="<?php echo Rateb\App\Core\View::escape((string) $opt['value']); ?>"><?php echo Rateb\App\Core\View::escape($opt['label']); ?></option>
                             <?php } ?>
                         </select>
-                        <label class="form-label rateb-form-label mt-3"><?php echo __('attach_document'); ?></label>
-                        <input class="form-control rateb-form-control" type="file" disabled title="<?php echo __('coming_soon'); ?>">
-                        <div class="form-text text-muted small"><?php echo __('coming_soon'); ?></div>
+                        <label class="form-label rateb-form-label mt-3" for="dep_entity_attachment">
+                            <i class="fas fa-paperclip"></i> <?php echo __('attach_document'); ?>
+                        </label>
+                        <input class="form-control rateb-form-control" type="file" id="dep_entity_attachment"
+                               name="entity_attachment" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp">
+                        <div class="form-text text-muted small"><?php echo __('attachment_hint'); ?></div>
                     </div>
                     <div class="col-lg-4">
                         <label class="form-label rateb-form-label"><?php echo __('depreciation_date'); ?></label>

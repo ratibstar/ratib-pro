@@ -12,6 +12,7 @@ $bookJson = json_encode($assetBookValues ?? [], JSON_UNESCAPED_UNICODE);
     </div>
     <div class="rateb-card-body">
         <form method="post" action="<?php echo rateb_app_url('asset-depreciation/' . $id); ?>"
+              enctype="multipart/form-data"
               class="row g-3" data-asset-depreciation-form="1"
               data-asset-book-values="<?php echo Rateb\App\Core\View::escape($bookJson ?: '{}'); ?>">
             <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
@@ -34,6 +35,12 @@ $bookJson = json_encode($assetBookValues ?? [], JSON_UNESCAPED_UNICODE);
                 <input class="form-control rateb-form-control rateb-ltr-num" type="text" readonly data-dep-after
                        value="<?php echo Rateb\App\Core\View::escape(number_format((float) ($item['book_value'] ?? 0), 2, '.', '')); ?>">
             </div>
+            <?php Rateb\App\Core\View::partial('entity-attachment-field', [
+                'entityType' => 'asset_depreciation',
+                'entityId' => $id,
+                'companyId' => (int) ($companyId ?? 0),
+                'label' => __('attach_document'),
+            ]); ?>
             <div class="col-12">
                 <button type="submit" class="btn btn-primary"><?php echo __('save'); ?></button>
             </div>
