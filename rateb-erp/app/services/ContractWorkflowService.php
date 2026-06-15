@@ -19,7 +19,7 @@ final class ContractWorkflowService
             $sql .= ' AND r.company_id = :cid';
             $params['cid'] = $companyId;
         }
-        $sql .= ' ORDER BY r.id DESC LIMIT ' . max(1, min(500, $limit));
+        $sql .= ' ORDER BY ' . rateb_list_order_sql('r') . ' LIMIT ' . max(1, min(500, $limit));
         return (new Contract())->query($sql, $params);
     }
 

@@ -194,6 +194,18 @@ if (!function_exists('rateb_bootstrap_ops_tenant')) {
     }
 }
 
+if (!function_exists('rateb_list_order_sql')) {
+    /** Standard list sort for operational tables: newest record first. */
+    function rateb_list_order_sql(string $alias = '', bool $withCreatedAt = true): string
+    {
+        $prefix = $alias !== '' ? preg_replace('/[^a-z_]/', '', $alias) . '.' : '';
+        if ($withCreatedAt) {
+            return "{$prefix}created_at DESC, {$prefix}id DESC";
+        }
+        return "{$prefix}id DESC";
+    }
+}
+
 if (!function_exists('rateb_locale')) {
     function rateb_locale(): string
     {

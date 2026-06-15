@@ -984,7 +984,7 @@ final class WarehouseTransfersController extends Controller
              JOIN rateb_inventory i ON i.id = t.inventory_id
              JOIN rateb_warehouses sw ON sw.id = t.source_warehouse_id
              JOIN rateb_warehouses dw ON dw.id = t.destination_warehouse_id
-             WHERE t.company_id = :cid ORDER BY t.id DESC LIMIT 100'
+             WHERE t.company_id = :cid ORDER BY ' . rateb_list_order_sql('t') . ' LIMIT 100'
         );
         $stmt->execute(['cid' => $cid]);
         $this->view('company/warehouse-transfers/index', [
@@ -1061,7 +1061,7 @@ final class WarehouseTransfersController extends Controller
              JOIN rateb_inventory i ON i.id = t.inventory_id
              JOIN rateb_warehouses sw ON sw.id = t.source_warehouse_id
              JOIN rateb_warehouses dw ON dw.id = t.destination_warehouse_id
-             WHERE t.company_id = :cid ORDER BY t.id DESC LIMIT 500'
+             WHERE t.company_id = :cid ORDER BY ' . rateb_list_order_sql('t') . ' LIMIT 500'
         );
         $stmt->execute(['cid' => $cid]);
         ExportController::send('warehouse_transfers', [

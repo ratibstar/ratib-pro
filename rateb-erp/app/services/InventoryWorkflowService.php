@@ -52,7 +52,7 @@ final class InventoryWorkflowService
             $sql .= ' AND b.company_id = :cid';
             $params['cid'] = (int) $_GET['company_id'];
         }
-        $sql .= ' ORDER BY b.id DESC LIMIT ' . max(1, min(500, $limit));
+        $sql .= ' ORDER BY ' . rateb_list_order_sql('b') . ' LIMIT ' . max(1, min(500, $limit));
         return (new InventoryBatch())->query($sql, $params);
     }
 

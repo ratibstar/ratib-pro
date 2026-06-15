@@ -119,7 +119,7 @@ abstract class Model
 
         $sql .= $this->buildSearchClause($search, $params);
 
-        $sql .= " ORDER BY {$this->primaryKey} DESC LIMIT :limit OFFSET :offset";
+        $sql .= ' ORDER BY ' . $this->listOrderSql() . ' LIMIT :limit OFFSET :offset';
         $stmt = $this->db->prepare($sql);
         foreach ($params as $k => $v) {
             $stmt->bindValue(':' . $k, $v);
@@ -312,6 +312,31 @@ abstract class Model
             return $data;
         }
         return array_intersect_key($data, array_flip($this->fillable));
+    }
+
+    /** Newest records first — used by all list queries. */
+    protected function listOrderSql(string $alias = ''): string
+    {
+        if (function_exists('rateb_list_order_sql')) {
+            return rateb_list_order_sql($alias, $this->tableHasCreatedAt());
+        }
+        $prefix = $alias !== '' ? preg_replace('/[^a-z_]/', '', $alias) . '.' : '';
+        $pk = $prefix . $this->primaryKey;
+        if ($this->tableHasCreatedAt()) {
+            return "{$prefix}created_at DESC, {$pk} DESC";
+        }
+        return "{$pk} DESC";
+    }
+
+    protected function tableHasCreatedAt(): bool
+    {
+        static $cache = [];
+        $table = $this->table;
+        if (!array_key_exists($table, $cache)) {
+            $stmt = $this->db->query("SHOW COLUMNS FROM `{$table}` LIKE 'created_at'");
+            $cache[$table] = (bool) $stmt->fetch();
+        }
+        return $cache[$table];
     }
 
     /**

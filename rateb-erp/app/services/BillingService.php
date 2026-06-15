@@ -170,7 +170,7 @@ final class BillingService
         } else {
             $sql .= ' AND payment_status <> \'paid\'';
         }
-        $sql .= ' ORDER BY due_date ASC, id DESC LIMIT 200';
+        $sql .= ' ORDER BY id DESC LIMIT 200';
         $rows = (new \Rateb\App\Models\Invoice())->query($sql, $params);
         $out = [];
         foreach ($rows as $row) {

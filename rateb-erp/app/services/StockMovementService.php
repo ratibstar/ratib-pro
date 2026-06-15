@@ -111,7 +111,7 @@ final class StockMovementService
             $sql .= ' AND m.company_id = :cid';
             $params['cid'] = (int) $_GET['company_id'];
         }
-        $sql .= ' ORDER BY m.id DESC LIMIT ' . max(1, min(500, $limit));
+        $sql .= ' ORDER BY ' . rateb_list_order_sql('m') . ' LIMIT ' . max(1, min(500, $limit));
         return (new StockMovement())->query($sql, $params);
     }
 

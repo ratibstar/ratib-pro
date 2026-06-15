@@ -233,7 +233,7 @@ final class AssetDeviceWorkflowService
             $sql .= ' AND m.period_date <= :dt';
             $params['dt'] = $to;
         }
-        $sql .= ' ORDER BY m.period_date DESC, m.id DESC';
+        $sql .= ' ORDER BY ' . rateb_list_order_sql('m');
         $stmt = \Rateb\App\Core\Database::connection()->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll() ?: [];
@@ -318,25 +318,25 @@ final class AssetDeviceWorkflowService
     /** @return array<int, array<string, mixed>> */
     public function listAssetMaintenance(): array
     {
-        return $this->tenantList('rateb_asset_maintenance m LEFT JOIN rateb_assets a ON a.id = m.asset_id', 'm.*, a.name AS asset_name', 'm.id DESC');
+        return $this->tenantList('rateb_asset_maintenance m LEFT JOIN rateb_assets a ON a.id = m.asset_id', 'm.*, a.name AS asset_name');
     }
 
     /** @return array<int, array<string, mixed>> */
     public function listAssignments(): array
     {
-        return $this->tenantList('rateb_asset_assignments m LEFT JOIN rateb_assets a ON a.id = m.asset_id', 'm.*, a.name AS asset_name', 'm.id DESC');
+        return $this->tenantList('rateb_asset_assignments m LEFT JOIN rateb_assets a ON a.id = m.asset_id', 'm.*, a.name AS asset_name');
     }
 
     /** @return array<int, array<string, mixed>> */
     public function listDeviceService(): array
     {
-        return $this->tenantList('rateb_device_service_history m LEFT JOIN rateb_medical_devices d ON d.id = m.device_id', 'm.*, d.device_name', 'm.service_date DESC');
+        return $this->tenantList('rateb_device_service_history m LEFT JOIN rateb_medical_devices d ON d.id = m.device_id', 'm.*, d.device_name');
     }
 
     /** @return array<int, array<string, mixed>> */
     public function listSpareParts(): array
     {
-        return $this->tenantList('rateb_device_spare_parts m LEFT JOIN rateb_medical_devices d ON d.id = m.device_id', 'm.*, d.device_name', 'm.id DESC');
+        return $this->tenantList('rateb_device_spare_parts m LEFT JOIN rateb_medical_devices d ON d.id = m.device_id', 'm.*, d.device_name');
     }
 
     /** @return array<int, array<string, mixed>> */
@@ -357,7 +357,7 @@ final class AssetDeviceWorkflowService
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function tenantList(string $from, string $select, string $order): array
+    private function tenantList(string $from, string $select, ?string $order = null): array
     {
         $cid = TenantContext::companyId();
         $sql = "SELECT {$select} FROM {$from} WHERE 1=1";
@@ -366,7 +366,7 @@ final class AssetDeviceWorkflowService
             $sql .= ' AND m.company_id = :cid';
             $params['cid'] = $cid;
         }
-        $sql .= ' ORDER BY ' . $order . ' LIMIT 200';
+        $sql .= ' ORDER BY ' . ($order ?? rateb_list_order_sql('m')) . ' LIMIT 200';
         $db = \Rateb\App\Core\Database::connection();
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
