@@ -77,7 +77,7 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                     <th><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
                     <?php } ?>
                     <?php if ($actionsEnabled) { ?>
-                    <th><?php echo __('actions'); ?></th>
+                    <th class="rateb-th-actions"><?php echo __('actions'); ?></th>
                     <?php } ?>
                 </tr>
                 </thead>
@@ -112,23 +112,22 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                         <?php } ?>
                     </td>
                         <?php } elseif ($colType === 'slug' || $colName === 'slug') {
-                            $display = function_exists('rateb_table_cell_display') ? rateb_table_cell_display($val, 48) : (string) $val;
-                            ?>
-                    <td dir="ltr" class="font-monospace small text-muted rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape((string) $val); ?>"><?php echo Rateb\App\Core\View::escape($display); ?></td>
-                        <?php } elseif ($colType === 'html_preview') { ?>
-                    <td class="rateb-ar-text rateb-bidi-mixed text-muted small rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape(function_exists('rateb_html_preview') ? rateb_html_preview((string) $val, 200) : (string) $val); ?>"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_html_preview') ? rateb_html_preview((string) $val) : $val); ?></td>
-                        <?php } elseif ($colType === 'bidi_text') { ?>
-                    <td class="rateb-ar-text rateb-bidi-mixed rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape((string) $val); ?>"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_bidi_cell_text') ? rateb_bidi_cell_text((string) $val) : $val); ?></td>
-                        <?php } elseif ($colType === 'clip' || $colType === 'text' || $colType === '') {
-                            $display = function_exists('rateb_table_cell_display') ? rateb_table_cell_display($val) : (string) $val;
-                            ?>
-                    <td class="rateb-ar-text rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape((string) $val); ?>"><?php echo Rateb\App\Core\View::escape($display); ?></td>
-                        <?php } else { ?>
-                    <td class="rateb-ar-text rateb-cell-clip" title="<?php echo Rateb\App\Core\View::escape((string) $val); ?>"><?php echo Rateb\App\Core\View::escape(function_exists('rateb_table_cell_display') ? rateb_table_cell_display($val) : $val); ?></td>
-                        <?php } ?>
+                            Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => array_merge($col, ['type' => 'id', 'name' => 'slug'])]);
+                        } elseif ($colType === 'html_preview') {
+                            Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
+                        } elseif ($colType === 'bidi_text') {
+                            Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
+                        } elseif (in_array($colType, ['money', 'number', 'id', 'status'], true)) {
+                            Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
+                        } elseif ($colType === 'clip' || $colType === 'text' || $colType === '') {
+                            Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
+                        } else {
+                            Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
+                        } ?>
                     <?php } ?>
                     <?php if ($actionsEnabled) { ?>
-                    <td class="rateb-actions">
+                    <td class="rateb-actions-cell text-nowrap">
+                        <div class="rateb-actions">
                         <?php if ($documentEntityType !== '') { ?>
                         <a href="<?php echo rateb_url($routePrefix . '/' . (int) $row['id'] . '/documents'); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('view_files'); ?>">
                             <i class="fas fa-paperclip"></i>
@@ -149,6 +148,7 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                             <button type="submit" class="btn btn-sm btn-outline-success"><i class="fas fa-play"></i></button>
                         </form>
                         <?php } ?>
+                        </div>
                     </td>
                     <?php } ?>
                 </tr>

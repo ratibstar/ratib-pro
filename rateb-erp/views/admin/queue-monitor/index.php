@@ -13,7 +13,8 @@
     <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
     <button type="submit" class="btn btn-sm btn-warning"><?php echo __('retry_failed'); ?></button>
 </form>
-<table class="table table-sm">
+<div class="rateb-table-wrap">
+<table class="table table-sm rateb-table mb-0">
     <thead><tr><th>ID</th><th>Channel</th><th>To</th><th>Status</th><th>Attempts</th></tr></thead>
     <tbody>
     <?php foreach ($items as $row) { ?>
@@ -27,3 +28,4 @@
     <?php } ?>
     </tbody>
 </table>
+</div>

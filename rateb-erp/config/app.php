@@ -316,6 +316,117 @@ if (!function_exists('rateb_table_cell_display')) {
     }
 }
 
+if (!function_exists('rateb_table_cell_meta')) {
+    /**
+     * @param mixed $value
+     * @param array<string, mixed> $col
+     * @return array{display:string,title:string,class:string,dir:string,mode:string,badge:string}
+     */
+    function rateb_table_cell_meta($value, array $col = []): array
+    {
+        $type = (string) ($col['type'] ?? '');
+        $name = (string) ($col['name'] ?? '');
+        $classes = ['rateb-cell-clip'];
+        $dir = '';
+        $mode = 'text';
+        $badge = '';
+
+        if ($type === 'status') {
+            $statusKey = (string) $value;
+            $label = $statusKey;
+            if (function_exists('__')) {
+                foreach (['depreciation_status_', 'status_', ''] as $prefix) {
+                    $key = $prefix . $statusKey;
+                    $t = __($key);
+                    if ($t !== $key) {
+                        $label = $t;
+                        break;
+                    }
+                }
+            }
+            $badge = in_array($statusKey, ['draft', 'pending', 'cancelled', 'inactive'], true) ? 'info' : 'success';
+            if (in_array($statusKey, ['failed', 'rejected', 'overdue'], true)) {
+                $badge = 'danger';
+            }
+            if (in_array($statusKey, ['warning', 'partial'], true)) {
+                $badge = 'warning';
+            }
+            return [
+                'display' => $label,
+                'title' => $label,
+                'class' => '',
+                'dir' => '',
+                'mode' => 'badge',
+                'badge' => $badge,
+            ];
+        }
+
+        if ($type === 'money' || $type === 'number') {
+            $display = number_format((float) $value, 2);
+            return [
+                'display' => $display,
+                'title' => $display,
+                'class' => 'rateb-cell-clip rateb-ltr-num rateb-td-money',
+                'dir' => 'ltr',
+                'mode' => 'text',
+                'badge' => '',
+            ];
+        }
+
+        if ($type === 'id' || $name === 'slug') {
+            $display = function_exists('rateb_table_cell_display')
+                ? rateb_table_cell_display($value, $type === 'id' ? 32 : 48)
+                : (string) $value;
+            return [
+                'display' => $display,
+                'title' => trim((string) $value),
+                'class' => 'rateb-cell-clip rateb-ltr-num' . ($name === 'slug' ? ' font-monospace small text-muted' : ''),
+                'dir' => 'ltr',
+                'mode' => 'text',
+                'badge' => '',
+            ];
+        }
+
+        if ($type === 'html_preview') {
+            $display = function_exists('rateb_html_preview') ? rateb_html_preview((string) $value) : (string) $value;
+            $title = function_exists('rateb_html_preview') ? rateb_html_preview((string) $value, 200) : (string) $value;
+            return [
+                'display' => $display,
+                'title' => $title,
+                'class' => 'rateb-cell-clip rateb-ar-text rateb-bidi-mixed text-muted small',
+                'dir' => '',
+                'mode' => 'text',
+                'badge' => '',
+            ];
+        }
+
+        if ($type === 'bidi_text') {
+            $display = function_exists('rateb_bidi_cell_text') ? rateb_bidi_cell_text((string) $value) : (string) $value;
+            return [
+                'display' => $display,
+                'title' => trim((string) $value),
+                'class' => 'rateb-cell-clip rateb-ar-text rateb-bidi-mixed',
+                'dir' => '',
+                'mode' => 'text',
+                'badge' => '',
+            ];
+        }
+
+        $display = function_exists('rateb_table_cell_display') ? rateb_table_cell_display($value) : (string) $value;
+        if ($display === '' || $display === null) {
+            $display = '—';
+        }
+        return [
+            'display' => (string) $display,
+            'title' => trim((string) $value),
+            'class' => 'rateb-cell-clip rateb-ar-text',
+            'dir' => '',
+            'mode' => 'text',
+            'badge' => '',
+        ];
+    }
+}
+
 if (!function_exists('rateb_permission_label')) {
     function rateb_permission_label(array $row): string
     {
@@ -413,15 +524,22 @@ if (!function_exists('rateb_list_query_except')) {
     }
 }
 
-if (!function_exists('rateb_list_url')) {
-    function rateb_list_url(string $path, array $query = []): string
+if (!function_exists('rateb_url_query')) {
+    /** Append query string to a URL that may already contain ?company_id=… */
+    function rateb_url_query(string $url, array $query = []): string
     {
-        $url = rateb_url($path);
         if ($query === []) {
             return $url;
         }
         $sep = strpos($url, '?') !== false ? '&' : '?';
         return $url . $sep . http_build_query($query);
+    }
+}
+
+if (!function_exists('rateb_list_url')) {
+    function rateb_list_url(string $path, array $query = []): string
+    {
+        return rateb_url_query(rateb_url($path), $query);
     }
 }
 

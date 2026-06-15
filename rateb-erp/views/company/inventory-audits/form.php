@@ -23,8 +23,8 @@ $lookups = (new FormLookupService())->forFields($formFields);
                 } ?>
             </div>
             <h6 class="mb-3"><?php echo __('cycle_count_lines'); ?></h6>
-            <div class="table-responsive">
-                <table class="table table-sm">
+            <div class="rateb-table-wrap">
+                <table class="table table-sm rateb-table mb-0">
                     <thead><tr><th><?php echo __('item_name'); ?></th><th><?php echo __('counted_qty'); ?></th></tr></thead>
                     <tbody>
                         <?php foreach ($inventory ?? [] as $i => $inv) { ?>

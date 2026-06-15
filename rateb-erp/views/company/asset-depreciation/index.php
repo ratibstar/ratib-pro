@@ -18,25 +18,12 @@ $exportQuery = array_filter([
     'date_to' => (string) ($filters['date_to'] ?? ''),
 ], static fn ($v) => $v !== null && $v !== '');
 $exportLink = static function (string $format) use ($exportBase, $exportQuery): string {
-    return $exportBase . '?' . http_build_query(array_merge($exportQuery, ['format' => $format]));
+    return rateb_url_query($exportBase, array_merge($exportQuery, ['format' => $format]));
 };
 $canManage = $canManage ?? rateb_can_manage_entity('asset-depreciation');
 $bookJson = json_encode($assetBookValues ?? [], JSON_UNESCAPED_UNICODE);
 $accJson = json_encode($assetAccumulated ?? [], JSON_UNESCAPED_UNICODE);
 $summary = $summary ?? ['total_asset_value' => 0, 'total_accumulated' => 0, 'net_asset_value' => 0];
-$formatCell = static function ($val, array $col): string {
-    $type = (string) ($col['type'] ?? '');
-    if ($type === 'money') {
-        return number_format((float) $val, 2);
-    }
-    if ($type === 'status') {
-        return function_exists('__') ? __('depreciation_status_' . (string) $val) : (string) $val;
-    }
-    if ($val === null || $val === '') {
-        return '—';
-    }
-    return (string) $val;
-};
 ?>
 <?php if (!empty($assetCss)) { ?>
 <link href="<?php echo Rateb\App\Core\View::escape($assetCss); ?>" rel="stylesheet">
@@ -244,26 +231,11 @@ $formatCell = static function ($val, array $col): string {
                             ?>
                     <tr>
                         <?php foreach ($columns as $col) {
-                            $type = (string) ($col['type'] ?? '');
-                            $val = $row[$col['name']] ?? '';
-                            $display = $formatCell($val, $col);
-                            $class = in_array($type, ['money', 'id'], true) ? ' rateb-ltr-num' : '';
-                            if ($type === 'money') {
-                                $class .= ' rateb-td-money';
-                            }
-                            if ($type === 'status') {
-                                $badge = $isDraft ? 'info' : 'success';
-                                ?>
-                        <td><span class="badge bg-<?php echo $badge; ?>"><?php echo Rateb\App\Core\View::escape($display); ?></span></td>
-                                <?php
-                                continue;
-                            }
-                            $titleAttr = $display !== '' && $display !== '—'
-                                ? ' title="' . Rateb\App\Core\View::escape((string) $display) . '"'
-                                : '';
-                            ?>
-                        <td class="rateb-cell-clip<?php echo $class; ?>"<?php echo $titleAttr; ?>><?php echo Rateb\App\Core\View::escape($display); ?></td>
-                        <?php } ?>
+                            Rateb\App\Core\View::partial('table-cell', [
+                                'value' => $row[$col['name']] ?? '',
+                                'col' => $col,
+                            ]);
+                        } ?>
                         <td class="rateb-actions-cell text-nowrap">
                             <div class="rateb-actions">
                             <a href="<?php echo rateb_app_url('asset-depreciation/' . $id); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>

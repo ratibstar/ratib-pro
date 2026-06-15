@@ -9,7 +9,8 @@
     <a href="<?php echo rateb_url('admin/login-activity'); ?>" class="btn btn-sm btn-outline-secondary"><?php echo __('all'); ?></a>
     <a href="<?php echo rateb_url('admin/login-activity?failed=1'); ?>" class="btn btn-sm btn-outline-danger"><?php echo __('failed_logins'); ?></a>
 </p>
-<table class="table table-sm table-striped">
+<div class="rateb-table-wrap">
+<table class="table table-sm table-striped rateb-table mb-0">
     <thead><tr><th>ID</th><th><?php echo __('users'); ?></th><th>Email</th><th>IP</th><th>OK</th><th>Time</th></tr></thead>
     <tbody>
     <?php foreach ($items as $row) { ?>
@@ -24,3 +25,4 @@
     <?php } ?>
     </tbody>
 </table>
+</div>

@@ -10,7 +10,7 @@ $canManage = $canManage ?? rateb_can_manage_entity('supplier-comms');
 $bulkEnabled = $bulkEnabled ?? false;
 $actionsEnabled = $actionsEnabled ?? true;
 $columns = $columns ?? [];
-$colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0) + 1;
+$colspan = count($columns) + ($bulkEnabled ? 1 : 0) + ($actionsEnabled ? 1 : 0);
 
 $channelLabel = static function (string $ch): string {
     $key = 'comm_channel_' . $ch;
@@ -179,11 +179,10 @@ $formatCell = static function ($val, array $col) use ($channelLabel, $channelIco
                 'routePrefix' => $routePrefix,
             ]); ?>
 
-            <div class="table-responsive" data-rateb-table-search-host="1">
+            <div class="rateb-table-wrap" data-rateb-table-search-host="1">
                 <table class="table table-hover rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
                     <thead>
                     <tr>
-                        <th class="rateb-th-id">#</th>
                         <?php foreach ($columns as $col) { ?>
                         <th><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
                         <?php } ?>
@@ -196,26 +195,29 @@ $formatCell = static function ($val, array $col) use ($channelLabel, $channelIco
                     <?php if (empty($items)) { ?>
                     <tr><td colspan="<?php echo $colspan; ?>" class="text-muted text-center py-4"><?php echo __('no_records'); ?></td></tr>
                     <?php } else {
-                        $rowNum = ($page - 1) * ($limit ?? 20);
                         foreach ($items as $row) {
-                            $rowNum++;
                             $id = (int) ($row['id'] ?? 0);
                             ?>
                     <tr>
-                        <td class="text-muted"><?php echo $rowNum; ?></td>
                         <?php foreach ($columns as $col) {
                             $type = (string) ($col['type'] ?? '');
                             $val = $row[$col['name']] ?? '';
                             if ($type === 'channel') {
-                                echo '<td>' . $formatCell($val, $col) . '</td>';
-                            } else {
-                                $display = $formatCell($val, $col);
-                                echo '<td class="rateb-ar-text">' . $display . '</td>';
+                                $ch = (string) $val;
+                                $label = $channelLabel($ch);
+                                $icon = $channelIcon($ch);
+                                $title = Rateb\App\Core\View::escape($label);
+                                echo '<td class="rateb-cell-clip" title="' . $title . '"><span class="rateb-sc-channel-badge"><i class="fas ' . Rateb\App\Core\View::escape($icon) . '"></i> ' . $title . '</span></td>';
+                                continue;
                             }
+                            if ($type === 'datetime') {
+                                $col['type'] = 'clip';
+                            }
+                            Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
                         } ?>
                         <?php if ($actionsEnabled) { ?>
-                        <td class="rateb-actions">
-                            <div class="rateb-actions-cell">
+                        <td class="rateb-actions-cell text-nowrap">
+                            <div class="rateb-actions">
                                 <?php if ($canManage) { ?>
                                 <a href="<?php echo rateb_url($routePrefix . '/' . $id . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
                                 <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $id . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">

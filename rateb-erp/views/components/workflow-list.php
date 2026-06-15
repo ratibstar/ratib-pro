@@ -17,27 +17,6 @@ foreach ($columns as $c) {
         break;
     }
 }
-$formatCell = static function ($val, array $col): string {
-    $type = (string) ($col['type'] ?? '');
-    if ($type === 'status') {
-        $key = 'depreciation_status_' . (string) $val;
-        return function_exists('__') ? __($key) : (string) $val;
-    }
-    if ($type === 'notes') {
-        $text = trim((string) $val);
-        if ($text === '') {
-            return '—';
-        }
-        return mb_strlen($text) > 48 ? mb_substr($text, 0, 48) . '…' : $text;
-    }
-    if ($type === 'money') {
-        return number_format((float) $val, 2);
-    }
-    if ($val === null || $val === '') {
-        return '—';
-    }
-    return (string) $val;
-};
 ?>
 <?php if ($bulkEnabled && $routePrefix !== '') { ?>
 <div class="rateb-bulk-bar d-none" data-rateb-bulk-bar>
@@ -49,7 +28,7 @@ $formatCell = static function ($val, array $col): string {
 </div>
 <?php } ?>
 <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
-<div class="table-responsive" data-rateb-table-search-host="1">
+<div class="rateb-table-wrap" data-rateb-table-search-host="1">
     <table class="table table-hover rateb-table mb-0" data-rateb-bulk-table="<?php echo $bulkEnabled ? '1' : '0'; ?>">
         <thead>
             <tr>
@@ -62,7 +41,7 @@ $formatCell = static function ($val, array $col): string {
                 <th><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
                 <?php } ?>
                 <?php if ($actionsEnabled && $routePrefix !== '' && !$hasActionLink) { ?>
-                <th><?php echo __('actions'); ?></th>
+                <th class="rateb-th-actions"><?php echo __('actions'); ?></th>
                 <?php } ?>
             </tr>
         </thead>
@@ -73,7 +52,7 @@ $formatCell = static function ($val, array $col): string {
                 foreach ($items as $row) { ?>
             <tr>
                 <?php if ($bulkEnabled) { ?>
-                <td class="rateb-bulk-th">
+                <td class="rateb-bulk-td">
                     <input type="checkbox" class="form-check-input" name="ids[]" value="<?php echo (int) ($row['id'] ?? 0); ?>" data-rateb-row-check>
                 </td>
                 <?php } ?>
@@ -84,26 +63,30 @@ $formatCell = static function ($val, array $col): string {
                         $href = str_starts_with($path, 'http') ? $path : rateb_url($path);
                         $text = rateb_label((string) ($col['text'] ?? 'view'));
                         ?>
-                <td class="rateb-actions text-nowrap">
+                <td class="rateb-actions-cell text-nowrap">
+                    <div class="rateb-actions">
                     <a href="<?php echo Rateb\App\Core\View::escape($href); ?>" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-eye"></i> <?php echo Rateb\App\Core\View::escape($text); ?>
                     </a>
+                    </div>
                 </td>
                         <?php
                         continue;
                     }
                     $val = $row[$col['name']] ?? '';
-                    $display = $formatCell($val, $col);
-                    $class = in_array($type, ['money', 'id'], true) ? ' rateb-ltr-num' : '';
-                    ?>
-                <td class="<?php echo trim($class); ?>"><?php echo Rateb\App\Core\View::escape($display); ?></td>
-                <?php } ?>
+                    if ($type === 'notes') {
+                        $col = array_merge($col, ['type' => 'clip']);
+                    }
+                    Rateb\App\Core\View::partial('table-cell', ['value' => $val, 'col' => $col]);
+                } ?>
                 <?php if ($actionsEnabled && $routePrefix !== '' && !$hasActionLink) { ?>
-                <td class="rateb-actions text-nowrap">
+                <td class="rateb-actions-cell text-nowrap">
+                    <div class="rateb-actions">
                     <form method="post" action="<?php echo rateb_url($routePrefix . '/' . (int) ($row['id'] ?? 0) . '/delete'); ?>" class="d-inline" data-confirm-delete="<?php echo Rateb\App\Core\View::escape(__('confirm_delete')); ?>">
                         <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
                         <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('delete'); ?>"><i class="fas fa-trash"></i></button>
                     </form>
+                    </div>
                 </td>
                 <?php } ?>
             </tr>

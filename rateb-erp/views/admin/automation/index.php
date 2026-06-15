@@ -68,7 +68,8 @@ $warnings = $health['cron_warnings'] ?? [];
 <?php if (($health['cron'] ?? []) === []) { ?>
 <p class="text-warning"><?php echo __('cron_warning_missing_erp_cron'); ?></p>
 <?php } ?>
-<table class="table table-sm">
+<div class="rateb-table-wrap">
+<table class="table table-sm rateb-table mb-0">
     <thead><tr><th>Job</th><th>Last run</th><th>Next expected</th><th>Status</th></tr></thead>
     <tbody>
     <?php foreach (($health['cron'] ?? []) as $job) { ?>
@@ -81,6 +82,7 @@ $warnings = $health['cron_warnings'] ?? [];
     <?php } ?>
     </tbody>
 </table>
+</div>
 <p><?php echo __('email_health'); ?>: <?php echo Rateb\App\Core\View::escape((string) ($health['email_health'] ?? '')); ?>
  | SMS: <?php echo Rateb\App\Core\View::escape((string) ($health['sms_health'] ?? '')); ?>
  | <?php echo __('failed_logins_24h'); ?>: <?php echo (int) ($health['failed_logins_24h'] ?? 0); ?></p>

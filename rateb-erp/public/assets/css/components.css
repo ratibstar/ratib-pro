@@ -29,6 +29,7 @@
 
 /* Scroll wide tables instead of overlapping adjacent columns */
 .rateb-table-wrap,
+.rateb-main .table-responsive,
 .rateb-content .table-responsive,
 .rateb-card .table-responsive,
 .rateb-depreciation-table-wrap {
@@ -74,6 +75,13 @@
     text-align: center;
 }
 
+.rateb-table td:has(input, select, textarea, .form-control),
+.rateb-content table.table td:has(input, select, textarea, .form-control) {
+    max-width: none !important;
+    overflow: visible;
+    white-space: normal;
+}
+
 .rateb-table .rateb-bulk-th,
 .rateb-table td.rateb-bulk-td {
     width: 2.75rem;
@@ -98,10 +106,18 @@
     max-width: none;
 }
 
+.rateb-main table.table:not(.rateb-line-items-table):not(.rateb-po-print-table):not(.rateb-matrix-table),
 .rateb-content table.table:not(.rateb-line-items-table):not(.rateb-po-print-table):not(.rateb-matrix-table) {
     table-layout: fixed;
     width: 100%;
     max-width: 100%;
+}
+
+.rateb-main table.table th:not(.rateb-bulk-th):not(.rateb-th-actions),
+.rateb-content table.table th:not(.rateb-bulk-th):not(.rateb-th-actions) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .rateb-depreciation-table-wrap {
