@@ -202,7 +202,6 @@ $formatCell = static function ($val, array $col): string {
                 <table class="table table-hover rateb-table rateb-depreciation-table mb-0">
                     <thead>
                     <tr>
-                        <th class="rateb-th-id">#</th>
                         <?php foreach ($columns as $col) {
                             $type = (string) ($col['type'] ?? 'text');
                             $thClass = 'rateb-th-' . $type;
@@ -222,16 +221,13 @@ $formatCell = static function ($val, array $col): string {
                     </thead>
                     <tbody>
                     <?php if (empty($items)) { ?>
-                    <tr><td colspan="<?php echo count($columns) + 2; ?>" class="text-muted text-center py-4"><?php echo __('no_records'); ?></td></tr>
+                    <tr><td colspan="<?php echo count($columns) + 1; ?>" class="text-muted text-center py-4"><?php echo __('no_records'); ?></td></tr>
                     <?php } else {
-                        $rowNum = 0;
                         foreach ($items as $row) {
-                            $rowNum++;
                             $id = (int) ($row['id'] ?? 0);
                             $isDraft = (string) ($row['status'] ?? '') === 'draft';
                             ?>
                     <tr>
-                        <td class="text-muted"><?php echo $rowNum; ?></td>
                         <?php foreach ($columns as $col) {
                             $type = (string) ($col['type'] ?? '');
                             $val = $row[$col['name']] ?? '';
