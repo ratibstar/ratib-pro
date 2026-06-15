@@ -529,12 +529,14 @@ final class AssetDepreciationController extends Controller
     {
         rateb_bootstrap_ops_tenant();
         $filters = $this->depreciationFilters();
-        $lookup = new \Rateb\App\Services\FormLookupService();
+        $lookup = new FormLookupService();
+        $svc = new AssetDeviceWorkflowService();
         $this->view('company/asset-depreciation/index', [
             'title' => __('asset_depreciation'),
-            'items' => (new AssetDeviceWorkflowService())->listDepreciation($filters),
+            'items' => $svc->listDepreciation($filters),
             'filters' => $filters,
             'assetOptions' => $lookup->forFields([['lookup' => 'assets']])['assets'] ?? [],
+            'assetBookValues' => $svc->assetBookValueMap(),
             'statusOptions' => [
                 ['value' => 'draft', 'label' => __('depreciation_status_draft')],
                 ['value' => 'approved', 'label' => __('depreciation_status_approved')],
@@ -544,6 +546,7 @@ final class AssetDepreciationController extends Controller
             'canManage' => rateb_can_manage_entity('asset-depreciation'),
             'exportRoute' => rateb_app_url('asset-depreciation/export'),
             'exportEnabled' => rateb_can_export_entity('asset-depreciation'),
+            'assetJs' => rateb_asset('js/asset-depreciation.js'),
         ], 'main');
     }
 
@@ -575,12 +578,15 @@ final class AssetDepreciationController extends Controller
             SessionManager::flash('error', __('depreciation_edit_denied'));
             $this->redirect(rateb_app_url('asset-depreciation'));
         }
-        $lookup = new \Rateb\App\Services\FormLookupService();
+        $lookup = new FormLookupService();
+        $svc = new AssetDeviceWorkflowService();
         $this->view('company/asset-depreciation/form', [
             'title' => __('edit') . ' ' . __('asset_depreciation'),
             'item' => $item,
             'formFields' => FormLookupService::assetDepreciationFormFields(true),
             'lookups' => $lookup->forFields(FormLookupService::assetDepreciationFormFields(true)),
+            'assetBookValues' => $svc->assetBookValueMap(),
+            'assetJs' => rateb_asset('js/asset-depreciation.js'),
             'csrf' => Csrf::token(),
         ], 'main');
     }

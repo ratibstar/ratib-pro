@@ -239,6 +239,32 @@ final class AssetDeviceWorkflowService
         return $stmt->fetchAll() ?: [];
     }
 
+    /** @return array<int, float> */
+    public function assetBookValueMap(?int $companyId = null): array
+    {
+        $cid = $companyId ?? TenantContext::companyId();
+        if ($cid === null || $cid < 1) {
+            $cid = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
+        }
+        if ($cid < 1) {
+            return [];
+        }
+        $rows = (new \Rateb\App\Models\Asset())->query(
+            'SELECT id, current_value, purchase_cost FROM rateb_assets WHERE company_id = :cid ORDER BY name ASC',
+            ['cid' => $cid]
+        );
+        $map = [];
+        foreach ($rows as $row) {
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $current = (float) ($row['current_value'] ?? 0);
+            $map[$id] = $current > 0 ? $current : (float) ($row['purchase_cost'] ?? 0);
+        }
+        return $map;
+    }
+
     private function assetBookValue(int $assetId, int $companyId): float
     {
         $db = \Rateb\App\Core\Database::connection();

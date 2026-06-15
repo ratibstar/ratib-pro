@@ -88,15 +88,54 @@ $formatCell = static function (mixed $val, array $col): string {
         </form>
 
         <?php if ($canManage) {
-            Rateb\App\Core\View::partial('workflow-form', [
-                'formFields' => \Rateb\App\Services\FormLookupService::assetDepreciationFormFields(),
-                'formAction' => rateb_app_url('asset-depreciation'),
-                'csrf' => $csrf,
-                'lookups' => (new \Rateb\App\Services\FormLookupService())->forFields(\Rateb\App\Services\FormLookupService::assetDepreciationFormFields()),
-            ]);
+            $formFields = \Rateb\App\Services\FormLookupService::assetDepreciationFormFields();
+            $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($formFields);
+            $bookJson = json_encode($assetBookValues ?? [], JSON_UNESCAPED_UNICODE);
+            ?>
+        <div class="rateb-card mb-3 border-secondary-subtle">
+            <div class="rateb-card-header py-2"><i class="fas fa-plus-circle"></i> <?php echo __('create'); ?> <?php echo __('asset_depreciation'); ?></div>
+            <div class="rateb-card-body">
+                <?php if (empty($assetOptions)) { ?>
+                <div class="alert alert-warning mb-0"><?php echo __('depreciation_no_assets_hint'); ?></div>
+                <?php } else { ?>
+                <form method="post" action="<?php echo rateb_app_url('asset-depreciation'); ?>"
+                      class="row g-3" data-asset-depreciation-form="1"
+                      data-asset-book-values="<?php echo Rateb\App\Core\View::escape($bookJson ?: '{}'); ?>">
+                    <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                    <?php foreach ($formFields as $field) {
+                        $value = (string) ($field['default'] ?? '');
+                        Rateb\App\Core\View::partial('form-field', [
+                            'field' => $field,
+                            'value' => $value,
+                            'lookups' => $lookups,
+                        ]);
+                    } ?>
+                    <div class="col-md-4">
+                        <label class="form-label rateb-form-label"><?php echo __('book_value_before'); ?></label>
+                        <input class="form-control rateb-form-control rateb-ltr-num" type="text" readonly data-dep-before value="0.00">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label rateb-form-label"><?php echo __('book_value_after'); ?></label>
+                        <input class="form-control rateb-form-control rateb-ltr-num" type="text" readonly data-dep-after value="0.00">
+                    </div>
+                    <div class="col-12">
+                        <div class="rateb-dep-preview alert alert-info py-2 mb-0 d-none" data-dep-preview>
+                            <i class="fas fa-calculator"></i> <?php echo __('depreciation_preview_note'); ?>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> <?php echo __('save'); ?></button>
+                    </div>
+                </form>
+                <?php } ?>
+            </div>
+        </div>
+        <?php if (!empty($assetJs)) { ?>
+        <script src="<?php echo Rateb\App\Core\View::escape($assetJs); ?>"></script>
+        <?php }
         } ?>
 
-        <p class="text-muted small mb-2"><?php echo __('depreciation_auto_values_hint'); ?></p>
+        <h6 class="mb-2 mt-1"><i class="fas fa-table"></i> <?php echo __('depreciation_records'); ?></h6>
 
         <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
         <div class="table-responsive" data-rateb-table-search-host="1">
