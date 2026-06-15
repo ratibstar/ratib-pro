@@ -140,6 +140,16 @@ $formatCell = static function ($val, array $col): string {
         <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
         <div class="table-responsive rateb-depreciation-table-wrap" data-rateb-table-search-host="1">
             <table class="table table-hover rateb-table rateb-depreciation-table mb-0">
+                <colgroup>
+                    <col class="rateb-col-dep-no">
+                    <col class="rateb-col-dep-asset">
+                    <col class="rateb-col-dep-date">
+                    <col class="rateb-col-dep-amount">
+                    <col class="rateb-col-dep-book">
+                    <col class="rateb-col-dep-book">
+                    <col class="rateb-col-dep-status">
+                    <col class="rateb-col-dep-actions">
+                </colgroup>
                 <thead>
                 <tr>
                     <?php foreach ($columns as $col) {
@@ -148,8 +158,13 @@ $formatCell = static function ($val, array $col): string {
                         if (in_array($col['name'] ?? '', ['book_value_before', 'book_value'], true)) {
                             $thClass .= ' rateb-th-book-value';
                         }
+                        $headerKey = (string) ($col['header_label'] ?? $col['label'] ?? $col['name']);
+                        $fullKey = (string) ($col['label'] ?? $col['name']);
+                        $headerText = rateb_label($headerKey);
+                        $fullText = rateb_label($fullKey);
+                        $titleAttr = $fullText !== $headerText ? ' title="' . Rateb\App\Core\View::escape($fullText) . '"' : '';
                         ?>
-                    <th class="<?php echo Rateb\App\Core\View::escape(trim($thClass)); ?>"><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
+                    <th class="<?php echo Rateb\App\Core\View::escape(trim($thClass)); ?>"<?php echo $titleAttr; ?>><?php echo Rateb\App\Core\View::escape($headerText); ?></th>
                     <?php } ?>
                     <th class="rateb-th-actions"><?php echo __('actions'); ?></th>
                 </tr>
@@ -181,7 +196,8 @@ $formatCell = static function ($val, array $col): string {
                         ?>
                     <td class="<?php echo trim($class); ?>"><?php echo Rateb\App\Core\View::escape($display); ?></td>
                     <?php } ?>
-                    <td class="rateb-actions text-nowrap">
+                    <td class="rateb-actions-cell text-nowrap">
+                        <div class="rateb-actions">
                         <a href="<?php echo rateb_app_url('asset-depreciation/' . $id); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
                         <?php if ($canManage && $isDraft) { ?>
                         <a href="<?php echo rateb_app_url('asset-depreciation/' . $id . '/edit'); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('edit'); ?>"><i class="fas fa-edit"></i></a>
@@ -199,6 +215,7 @@ $formatCell = static function ($val, array $col): string {
                             <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('delete'); ?>"><i class="fas fa-trash"></i></button>
                         </form>
                         <?php } ?>
+                        </div>
                     </td>
                 </tr>
                 <?php }

@@ -809,6 +809,8 @@ return [
     'depreciation_date' => 'Depreciation Date',
     'book_value_before' => 'Book Value Before',
     'book_value_after' => 'Book Value After',
+    'depreciation_book_before' => 'Before Depr.',
+    'depreciation_book_after' => 'After Depr.',
     'depreciation_status_draft' => 'Draft',
     'depreciation_status_approved' => 'Approved',
     'depreciation_auto_values_hint' => 'Book values before and after depreciation are calculated automatically on save and approval.',

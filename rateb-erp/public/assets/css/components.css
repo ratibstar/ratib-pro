@@ -38,61 +38,77 @@
 }
 
 .rateb-table .rateb-bulk-th,
-.rateb-table th:last-child,
-.rateb-table td.rateb-actions {
+.rateb-table th:last-child:not(.rateb-th-actions),
+.rateb-table td.rateb-actions:not(.rateb-actions-cell) {
     width: 7.5rem;
     max-width: none;
     white-space: nowrap;
 }
 
+.rateb-table td.rateb-actions-cell {
+    max-width: none;
+}
+
 .rateb-depreciation-table-wrap {
     margin-top: 0.25rem;
+    overflow-x: auto;
 }
 
-.rateb-depreciation-table {
-    table-layout: auto;
+.rateb-table.rateb-depreciation-table {
+    table-layout: fixed;
     width: 100%;
-    min-width: 68rem;
+    min-width: 70rem;
 }
 
-.rateb-depreciation-table th {
-    white-space: normal;
-    line-height: 1.4;
-    padding: 0.65rem 0.9rem;
+.rateb-table.rateb-depreciation-table th {
+    white-space: normal !important;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.45;
+    padding: 0.7rem 1rem;
     vertical-align: bottom;
+    word-break: keep-all;
 }
 
-.rateb-depreciation-table th.rateb-th-id {
-    min-width: 5.5rem;
+.rateb-table.rateb-depreciation-table .rateb-col-dep-no { width: 8%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-asset { width: 16%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-date { width: 10%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-amount { width: 10%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-book { width: 11%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-status { width: 8%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-actions { width: 14%; }
+
+.rateb-table.rateb-depreciation-table th.rateb-th-book-value {
+    min-width: 7.5rem;
 }
 
-.rateb-depreciation-table th.rateb-th-text {
-    min-width: 6.5rem;
+.rateb-table.rateb-depreciation-table th.rateb-th-actions,
+.rateb-table.rateb-depreciation-table td.rateb-actions-cell {
+    width: 14% !important;
+    min-width: 10rem !important;
+    max-width: none !important;
+    padding-inline-start: 1.35rem !important;
+    padding-inline-end: 0.85rem !important;
 }
 
-.rateb-depreciation-table th.rateb-th-money,
-.rateb-depreciation-table th.rateb-th-book-value {
-    min-width: 9.5rem;
-}
-
-.rateb-depreciation-table th.rateb-th-status {
-    min-width: 5.5rem;
-}
-
-.rateb-depreciation-table th.rateb-th-actions,
-.rateb-depreciation-table td.rateb-actions {
-    width: auto;
-    min-width: 10.5rem;
-    padding-inline-start: 1.15rem;
-    padding-inline-end: 0.75rem;
-}
-
-.rateb-depreciation-table td.rateb-ltr-num {
+.rateb-table.rateb-depreciation-table td.rateb-ltr-num {
     white-space: nowrap;
 }
 
-.rateb-depreciation-table td.rateb-td-money {
-    padding-inline: 0.9rem;
+.rateb-table.rateb-depreciation-table td.rateb-td-money {
+    padding-inline: 1rem;
+}
+
+.rateb-table.rateb-depreciation-table td.rateb-actions-cell {
+    display: table-cell !important;
+    vertical-align: middle;
+}
+
+.rateb-table.rateb-depreciation-table td.rateb-actions-cell > .rateb-actions {
+    display: inline-flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 0.35rem;
 }
 
 .rateb-table tbody tr:hover {
@@ -128,10 +144,25 @@
 }
 
 /* Action columns — buttons side by side in all tables */
-.rateb-actions,
-.rateb-approval-actions,
-.rateb-table td.text-nowrap {
+.rateb-actions:not(td):not(th),
+.rateb-approval-actions:not(td):not(th),
+.rateb-table td.text-nowrap:not(.rateb-actions):not(.rateb-actions-cell) {
     display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+
+.rateb-table td.rateb-actions,
+.rateb-table td.rateb-actions-cell {
+    display: table-cell !important;
+    vertical-align: middle;
+}
+
+.rateb-table td.rateb-actions > .rateb-actions,
+.rateb-table td.rateb-actions-cell > .rateb-actions {
+    display: inline-flex;
     flex-flow: row nowrap;
     align-items: center;
     gap: 0.35rem;

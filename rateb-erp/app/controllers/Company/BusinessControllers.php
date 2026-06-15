@@ -511,7 +511,7 @@ final class AssetDepreciationController extends Controller
         ];
     }
 
-    /** @return array<int, array{name:string,label:string,type?:string}> */
+    /** @return array<int, array{name:string,label:string,type?:string,header_label?:string}> */
     private function depreciationColumns(): array
     {
         return [
@@ -519,8 +519,8 @@ final class AssetDepreciationController extends Controller
             ['name' => 'asset_name', 'label' => 'assets'],
             ['name' => 'period_date', 'label' => 'depreciation_date'],
             ['name' => 'amount', 'label' => 'depreciation_amount', 'type' => 'money'],
-            ['name' => 'book_value_before', 'label' => 'book_value_before', 'type' => 'money'],
-            ['name' => 'book_value', 'label' => 'book_value_after', 'type' => 'money'],
+            ['name' => 'book_value_before', 'label' => 'book_value_before', 'header_label' => 'depreciation_book_before', 'type' => 'money'],
+            ['name' => 'book_value', 'label' => 'book_value_after', 'header_label' => 'depreciation_book_after', 'type' => 'money'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
         ];
     }

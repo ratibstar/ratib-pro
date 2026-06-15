@@ -809,6 +809,8 @@ return [
     'depreciation_date' => 'تاريخ الإهلاك',
     'book_value_before' => 'القيمة الدفترية قبل الإهلاك',
     'book_value_after' => 'القيمة الدفترية بعد الإهلاك',
+    'depreciation_book_before' => 'قبل الإهلاك',
+    'depreciation_book_after' => 'بعد الإهلاك',
     'depreciation_status_draft' => 'مسودة',
     'depreciation_status_approved' => 'معتمد',
     'depreciation_auto_values_hint' => 'تُحسب القيمة الدفترية قبل وبعد الإهلاك تلقائياً عند الحفظ والاعتماد.',
