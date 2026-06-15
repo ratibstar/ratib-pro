@@ -87,6 +87,36 @@ final class EmailAlertService
         ]);
     }
 
+    /** @param array<string, string> $vars */
+    public function sendInvoiceSent(int $companyId, array $vars): bool
+    {
+        return $this->sendInvoiceTemplate($companyId, 'invoice_sent', $vars);
+    }
+
+    /** @param array<string, string> $vars */
+    public function sendInvoiceDueReminder(int $companyId, array $vars): bool
+    {
+        return $this->sendInvoiceTemplate($companyId, 'invoice_due_reminder', $vars);
+    }
+
+    /** @param array<string, string> $vars */
+    public function sendInvoiceOverdue(int $companyId, array $vars): bool
+    {
+        return $this->sendInvoiceTemplate($companyId, 'invoice_overdue_notice', $vars);
+    }
+
+    /** @param array<string, string> $vars */
+    private function sendInvoiceTemplate(int $companyId, string $slug, array $vars): bool
+    {
+        $company = (new \Rateb\App\Models\Company())->find($companyId);
+        $email = trim((string) ($company['email'] ?? ''));
+        if ($email === '') {
+            return false;
+        }
+        TenantContext::setCompanyId($companyId);
+        return (new MailService())->sendTemplateAsync($email, $slug, $vars);
+    }
+
     /** @param array<string,string> $vars */
     private function broadcastToCompany(int $companyId, string $template, array $vars): void
     {

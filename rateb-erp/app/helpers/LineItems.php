@@ -119,6 +119,50 @@ final class LineItems
         ];
     }
 
+    /** @return array<int, array<string, mixed>> */
+    public static function loadInvoiceLines(int $invoiceId): array
+    {
+        if ($invoiceId < 1) {
+            return [];
+        }
+        return (new InvoiceLine())->query(
+            'SELECT * FROM rateb_invoice_lines WHERE invoice_id = :id ORDER BY line_no ASC, id ASC',
+            ['id' => $invoiceId]
+        );
+    }
+
+    /** @param array<int, array<string, mixed>> $lines */
+    public static function syncInvoiceLines(int $invoiceId, array $lines): array
+    {
+        $db = \Rateb\App\Core\Database::connection();
+        $db->prepare('DELETE FROM rateb_invoice_lines WHERE invoice_id = :id')->execute(['id' => $invoiceId]);
+        $model = new InvoiceLine();
+        $lineNo = 0;
+        foreach ($lines as $line) {
+            $lineNo++;
+            $qty = max(0.001, (float) ($line['quantity'] ?? 1));
+            $price = (float) ($line['unit_price'] ?? 0);
+            $taxRate = (float) ($line['tax_rate'] ?? 0);
+            $excluding = !isset($line['excluding_tax']) || (int) $line['excluding_tax'] === 1;
+            $totals = self::lineTotals($qty, $price, $taxRate, $excluding);
+            $model->create([
+                'invoice_id' => $invoiceId,
+                'line_no' => $lineNo,
+                'item_name' => (string) ($line['item_name'] ?? ''),
+                'description' => (string) ($line['description'] ?? ''),
+                'quantity' => $qty,
+                'unit' => (string) ($line['unit'] ?? 'unit'),
+                'unit_price' => $price,
+                'tax_rate' => $taxRate,
+                'excluding_tax' => $excluding ? 1 : 0,
+                'line_subtotal' => $totals['subtotal'],
+                'tax_amount' => $totals['tax'],
+                'line_total' => $totals['total'],
+            ]);
+        }
+        return self::aggregateTotals($lines);
+    }
+
     /** @param array<int, array<string, mixed>> $lines */
     public static function syncPurchaseOrderItems(int $orderId, array $lines): float
     {

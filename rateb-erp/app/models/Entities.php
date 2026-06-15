@@ -212,7 +212,7 @@ final class Invoice extends Model
         'company_id', 'subscription_id', 'invoice_no', 'invoice_type', 'po_number',
         'amount', 'tax_amount', 'total_amount', 'currency', 'discount_amount', 'discount_type',
         'tax_rate', 'payment_terms_days', 'payment_method', 'status', 'payment_status', 'notes',
-        'due_date', 'issued_at', 'barcode', 'qr_code', 'document_path',
+        'due_date', 'issued_at', 'sent_at', 'barcode', 'qr_code', 'document_path',
     ];
 
     public function withRelations(int $limit = 50, int $offset = 0): array

@@ -34,6 +34,8 @@ final class CronService
             'warranty_alerts' => (new AssetDeviceAutomationService())->processWarrantyExpiryAlerts(),
             'spare_part_alerts' => (new AssetDeviceAutomationService())->processSparePartsLowStock(),
             'batch_expiry_alerts' => 0,
+            'invoice_overdue_marked' => (new BillingAutomationService())->markOverdueInvoices(),
+            'invoice_due_reminders' => (new BillingAutomationService())->processDueReminders(),
             'cms_pages_published' => 0,
             'cms_articles_published' => 0,
         ];
