@@ -1,7 +1,7 @@
 <?php
 /**
  * Disk vs live HTML diagnostic — delete after fix.
- * https://out.ratib.sa/pages/ratib-live-chrome-check.php
+ * https://rateb.sa/pages/ratib-live-chrome-check.php
  */
 header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -42,7 +42,7 @@ if (function_exists('opcache_invalidate')) {
 }
 
 echo "=== Live fetch home.php (first 8KB around brand-profile) ===\n";
-$live = @file_get_contents('https://out.ratib.sa/pages/home.php', false, stream_context_create([
+$live = @file_get_contents('https://rateb.sa/pages/home.php', false, stream_context_create([
     'http' => ['timeout' => 20, 'header' => "Cache-Control: no-cache\r\n"],
 ]));
 if ($live === false) {

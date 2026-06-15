@@ -381,7 +381,7 @@
         },
         {
             keywords: ['contact us', 'company phone', 'your email', 'call you', 'whatsapp number', 'support phone', 'reach ratib'],
-            answer: "Contact us:\n• Phone: +966 59 986 3868\n• WhatsApp: Chat via the green button or 'Live via WhatsApp' in the header\n• Email: info@out.ratib.sa\n\nYou can also use the registration form to request a callback.",
+            answer: "Contact us:\n• Phone: +966 59 986 3868\n• WhatsApp: Chat via the green button or 'Live via WhatsApp' in the header\n• Email: info@rateb.sa\n\nYou can also use the registration form to request a callback.",
             category: 'contact'
         },
         {

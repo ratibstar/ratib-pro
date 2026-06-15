@@ -17,7 +17,7 @@ if (!function_exists('ratib_ent_h')) {
 if (!function_exists('ratib_enterprise_mailto')) {
     function ratib_enterprise_mailto(string $subject): string
     {
-        return 'mailto:info@out.ratib.sa?subject=' . rawurlencode($subject);
+        return 'mailto:info@rateb.sa?subject=' . rawurlencode($subject);
     }
 }
 

@@ -1,7 +1,7 @@
 # RATEB Mobile — Full QA Verification Report
 
 **Date:** 25 May 2026  
-**Scope:** `rateb_mobile/` + `api/mobile/` vs production `https://out.ratib.sa/api`  
+**Scope:** `rateb_mobile/` + `api/mobile/` vs production `https://rateb.sa/api`  
 **Method:** Live HTTP probes, static code review, `flutter pub get`, `flutter build web`  
 **Analyst:** Automated QA pass (Cursor agent)
 
@@ -60,7 +60,7 @@
 ### Flutter
 
 - `flutter pub get` — **PASS**
-- `flutter build web --dart-define=RATEB_API_BASE_URL=https://out.ratib.sa/api` — **PASS** (post-fix)
+- `flutter build web --dart-define=RATEB_API_BASE_URL=https://rateb.sa/api` — **PASS** (post-fix)
 - App architecture: Provider + go_router + Dio + `StatefulShellRoute.indexedStack`
 - Password login, logout, session storage (SharedPreferences + memory)
 - QR login flow (native scanner + web paste)
@@ -208,16 +208,16 @@ Live screenshot (8090): Company dashboard renders with **0** counts → API retu
 
 ```powershell
 # Backend health
-Invoke-WebRequest https://out.ratib.sa/api/mobile/health.php
+Invoke-WebRequest https://rateb.sa/api/mobile/health.php
 
 # Invalid login (expect 401)
-Invoke-WebRequest -Method POST -Uri https://out.ratib.sa/api/mobile/login.php `
+Invoke-WebRequest -Method POST -Uri https://rateb.sa/api/mobile/login.php `
   -ContentType "application/json" -Body '{"email":"bad","password":"bad"}'
 
 # Flutter build
 cd rateb_mobile
 flutter pub get
-flutter build web --dart-define=RATEB_API_BASE_URL=https://out.ratib.sa/api
+flutter build web --dart-define=RATEB_API_BASE_URL=https://rateb.sa/api
 ```
 
 ---

@@ -22,7 +22,7 @@ if (!defined('DB_HOST')) {
     define('DB_NAME', ($envName !== false) ? (string)$envName : '');
 }
 if (!defined('SITE_URL')) {
-    define('SITE_URL', 'https://bangladesh.out.ratib.sa');
+    define('SITE_URL', 'https://bangladesh.rateb.sa');
 }
 if (!defined('APP_NAME')) {
     define('APP_NAME', 'RATEB');

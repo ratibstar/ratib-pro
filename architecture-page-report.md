@@ -87,7 +87,7 @@ Hero anchor: `#top`. Briefing block at page end (no anchor in jump nav).
 ## Cross-links
 
 - Banner → `/security-compliance/` and marketing home  
-- Briefing CTA → `mailto:info@out.ratib.sa` (architecture review) + security center  
+- Briefing CTA → `mailto:info@rateb.sa` (architecture review) + security center  
 - Footer + mega nav → `/architecture/`
 
 ---

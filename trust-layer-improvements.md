@@ -45,10 +45,10 @@ Maps user requirements to implementation status.
 
 | CTA | Channel |
 |-----|---------|
-| Request Enterprise Demo | `mailto:info@out.ratib.sa` |
+| Request Enterprise Demo | `mailto:info@rateb.sa` |
 | Review Architecture | `/architecture/` |
-| Contact Solutions Team | `mailto:info@out.ratib.sa` |
-| Request Security Brief | `mailto:info@out.ratib.sa` |
+| Contact Solutions Team | `mailto:info@rateb.sa` |
+| Request Security Brief | `mailto:info@rateb.sa` |
 
 Replaced primary hero/final marketing register CTAs; registration remains in nav/footer.
 

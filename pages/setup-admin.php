@@ -7,7 +7,7 @@
  * Setup or reset admin user - run once.
  * DELETE THIS FILE after use for security!
  *
- * URL: https://out.ratib.sa/pages/setup-admin.php?run=1
+ * URL: https://rateb.sa/pages/setup-admin.php?run=1
  */
 $cli = (php_sapi_name() === 'cli');
 

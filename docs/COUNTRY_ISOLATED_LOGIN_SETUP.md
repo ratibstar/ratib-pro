@@ -7,8 +7,8 @@
 ## How It Works
 
 1. **Each country = unique URL**  
-   - Bangladesh: `https://bangladesh.out.ratib.sa/pages/login.php`  
-   - Main (Saudi): `https://out.ratib.sa/pages/login.php`
+   - Bangladesh: `https://bangladesh.rateb.sa/pages/login.php`  
+   - Main (Saudi): `https://rateb.sa/pages/login.php`
 
 2. **URL determines country**  
    `SITE_URL` is matched against `control_agencies.site_url` to get `control_countries.id`.
@@ -44,8 +44,8 @@ Each agency must have a unique `site_url` that matches the host:
 
 | Country   | site_url                      | Host                    |
 |-----------|-------------------------------|-------------------------|
-| Bangladesh| https://bangladesh.out.ratib.sa | bangladesh.out.ratib.sa |
-| Main      | https://out.ratib.sa          | out.ratib.sa            |
+| Bangladesh| https://bangladesh.rateb.sa | bangladesh.rateb.sa |
+| Main      | https://rateb.sa          | rateb.sa            |
 
 ### 3. Assign users to countries
 
@@ -55,8 +55,8 @@ Each agency must have a unique `site_url` that matches the host:
 
 ### 4. DNS / env files
 
-- `bangladesh.out.ratib.sa` → env file `config/env/bangladesh_out_ratib_sa.php` or `agency_resolver`
-- `out.ratib.sa` → env file or `agency_resolver` from `control_agencies`
+- `bangladesh.rateb.sa` → env file `config/env/bangladesh_rateb_sa.php` or `agency_resolver`
+- `rateb.sa` → env file or `agency_resolver` from `control_agencies`
 
 ---
 
@@ -69,7 +69,7 @@ Ensure each agency in `control_agencies` has its own `db_name` and `site_url`.
 
 ## Option: Subdomain multi-tenant (single shared DB)
 
-For `sa.out.ratib.sa`, `bd.out.ratib.sa`, etc. with one shared DB:
+For `sa.rateb.sa`, `bd.rateb.sa`, etc. with one shared DB:
 
 1. Set `MULTI_TENANT_SUBDOMAIN_ENABLED = true` in config
 2. Run `enterprise_multi_tenant_001_schema.sql` (creates `countries` table)

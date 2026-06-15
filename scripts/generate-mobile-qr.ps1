@@ -4,7 +4,7 @@ param(
     [int]$TtlSeconds = 600
 )
 
-$base = 'https://out.ratib.sa/api/mobile'
+$base = 'https://rateb.sa/api/mobile'
 $secure = Read-Host "Password for $Email" -AsSecureString
 $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
 try {
@@ -66,7 +66,7 @@ PHONE (camera scan — no paste):
   3. Point phone at the QR on your PC screen
 
 OR use main RATEB badge (RATIBLOGIN QR):
-  Log in at https://out.ratib.sa → open employee login badge for a user
+  Log in at https://rateb.sa → open employee login badge for a user
   (pages/user-login-barcode.php) → scan with mobile app
 
 WEB: paste only (no camera). Use clipboard steps below if needed.

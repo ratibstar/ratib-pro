@@ -178,10 +178,10 @@ add_target() {
 }
 
 for UD in \
-  "/var/cpanel/userdata/${USER}/out.ratib.sa" \
-  "/var/cpanel/userdata/${USER}/out.ratib.sa_SSL" \
-  "/var/cpanel/userdata/outratib/out.ratib.sa" \
-  "/var/cpanel/userdata/outratib/out.ratib.sa_SSL"
+  "/var/cpanel/userdata/${USER}/rateb.sa" \
+  "/var/cpanel/userdata/${USER}/rateb.sa_SSL" \
+  "/var/cpanel/userdata/outratib/rateb.sa" \
+  "/var/cpanel/userdata/outratib/rateb.sa_SSL"
 do
   if [ -f "$UD" ]; then
     DR="$(grep -E '^documentroot:' "$UD" 2>/dev/null | head -1 | sed 's/^documentroot:[[:space:]]*//' | tr -d '\r')"

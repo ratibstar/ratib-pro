@@ -124,9 +124,9 @@ if (!function_exists('ratib_about_render_sections')) {
                 <div class="ratib-about-cta__actions">
                     <a href="<?php echo ratib_about_h($contactWa); ?>" target="_blank" rel="noopener noreferrer" class="ratib-about-btn ratib-about-btn--primary ratib-about-btn--xl">Request Enterprise Demo</a>
                     <a href="<?php echo ratib_about_h($homeRegister); ?>" class="ratib-about-btn ratib-about-btn--outline ratib-about-btn--xl">Deploy Agency Workspace</a>
-                    <a href="mailto:info@out.ratib.sa" class="ratib-about-btn ratib-about-btn--ghost">Talk to Solutions Team</a>
+                    <a href="mailto:info@rateb.sa" class="ratib-about-btn ratib-about-btn--ghost">Talk to Solutions Team</a>
                 </div>
-                <p class="ratib-about-cta__legal ratib-mono"><?php echo ratib_about_h((function_exists('ratib_brand_name') ? ratib_brand_name() : 'RATEB') . ' · Riyadh, Saudi Arabia · out.ratib.sa'); ?></p>
+                <p class="ratib-about-cta__legal ratib-mono"><?php echo ratib_about_h((function_exists('ratib_brand_name') ? ratib_brand_name() : 'RATEB') . ' · Riyadh, Saudi Arabia · rateb.sa'); ?></p>
             </div>
         </section>
             <?php
@@ -487,9 +487,9 @@ if (!function_exists('ratib_about_render_sections')) {
                 <div class="ratib-about-cta__actions">
                     <a href="<?php echo ratib_about_h($contactWa); ?>" target="_blank" rel="noopener noreferrer" class="ratib-about-btn ratib-about-btn--primary ratib-about-btn--xl">Request Enterprise Demo</a>
                     <a href="<?php echo ratib_about_h($homeRegister); ?>" class="ratib-about-btn ratib-about-btn--outline ratib-about-btn--xl">Deploy Agency Workspace</a>
-                    <a href="mailto:info@out.ratib.sa" class="ratib-about-btn ratib-about-btn--ghost">Talk to Solutions Team</a>
+                    <a href="mailto:info@rateb.sa" class="ratib-about-btn ratib-about-btn--ghost">Talk to Solutions Team</a>
                 </div>
-                <p class="ratib-about-cta__legal ratib-mono"><?php echo ratib_about_h((function_exists('ratib_brand_name') ? ratib_brand_name() : 'RATEB') . ' · Riyadh, Saudi Arabia · out.ratib.sa'); ?></p>
+                <p class="ratib-about-cta__legal ratib-mono"><?php echo ratib_about_h((function_exists('ratib_brand_name') ? ratib_brand_name() : 'RATEB') . ' · Riyadh, Saudi Arabia · rateb.sa'); ?></p>
             </div>
         </section>
         <?php

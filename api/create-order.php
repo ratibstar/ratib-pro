@@ -822,7 +822,7 @@ if ($apiKey === '' || $outletId === '') {
         'defined_secret' => $diag['defined_secret'],
     ]);
     jsonOut(503, [
-        'message' => 'Payment is not configured. Add NGENIUS_OUTLET_ID and NGENIUS_API_KEY to .env (same folder as api/), or config/ngenius.secrets.php, or define() in config/env/out_ratib_sa.php. NGENIUS_API_SECRET is optional if the portal gives a single key. See logs/payment.log.',
+        'message' => 'Payment is not configured. Add NGENIUS_OUTLET_ID and NGENIUS_API_KEY to .env (same folder as api/), or config/ngenius.secrets.php, or define() in config/env/rateb_sa.php. NGENIUS_API_SECRET is optional if the portal gives a single key. See logs/payment.log.',
         'config_diagnostics' => $diag,
     ]);
 }

@@ -4,7 +4,7 @@
 
 When **Single URL Mode** is enabled, all countries use the same login URL:
 
-**https://out.ratib.sa/pages/login.php**
+**https://rateb.sa/pages/login.php**
 
 Users select their country from the dropdown, enter credentials, and the system connects to that country’s database. After login, all requests use the selected country’s DB.
 
@@ -16,7 +16,7 @@ Users select their country from the dropdown, enter credentials, and the system 
 
 ## Configuration
 
-- **`config/env/out_ratib_sa.php`** – Sets `SINGLE_URL_MODE = true` and `SITE_URL = https://out.ratib.sa`.
+- **`config/env/rateb_sa.php`** – Sets `SINGLE_URL_MODE = true` and `SITE_URL = https://rateb.sa`.
 - **`includes/config.php`** – Session-based DB switching when `country_id` and `logged_in` are in session.
 - **`pages/login.php`** – Connects to the selected country’s DB before validating credentials.
 
@@ -37,8 +37,8 @@ The control panel (e.g. `?control=1`) uses `outratib_out` and can manage users a
 
 ## Subdomains vs Single URL
 
-- **Subdomains** (e.g. `bangladesh.out.ratib.sa`) – Still work via `agency_resolver`; each subdomain uses its own DB.
-- **Single URL** (`out.ratib.sa`) – Uses country dropdown and session-based DB switching.
+- **Subdomains** (e.g. `bangladesh.rateb.sa`) – Still work via `agency_resolver`; each subdomain uses its own DB.
+- **Single URL** (`rateb.sa`) – Uses country dropdown and session-based DB switching.
 
 ## For developers – different country DBs
 

@@ -1,7 +1,7 @@
 # ✅ Production Deployment - COMPLETE
 
 ## 🎯 Deployment Information
-- **Live URL**: https://out.ratib.sa/
+- **Live URL**: https://rateb.sa/
 - **Database**: outratib_out
 - **Database User**: outratib_out
 - **Status**: ✅ **READY FOR PRODUCTION**
@@ -127,7 +127,7 @@ DB_HOST: localhost
 DB_NAME: outratib_out
 DB_USER: outratib_out
 DB_PASS: 9s%BpMr1]dfb
-SITE_URL: https://out.ratib.sa
+SITE_URL: https://rateb.sa
 BASE_URL: '' (empty for root deployment)
 ```
 
@@ -151,7 +151,7 @@ BASE_URL: '' (empty for root deployment)
 ## ✅ Status: READY FOR PRODUCTION
 
 All files have been updated and tested. The application is ready for deployment to:
-**https://out.ratib.sa/**
+**https://rateb.sa/**
 
 ---
 

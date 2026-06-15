@@ -1,7 +1,7 @@
 <?php
 /**
  * Chrome / cache diagnostic (reachable under /pages/ when root file is missing).
- * https://out.ratib.sa/pages/ratib-chrome-bust.php
+ * https://rateb.sa/pages/ratib-chrome-bust.php
  */
 declare(strict_types=1);
 

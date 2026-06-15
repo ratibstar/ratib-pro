@@ -12,7 +12,7 @@ if (!function_exists('ratib_architecture_config')) {
      */
     function ratib_architecture_config(string $baseUrl): array
     {
-        $enterpriseMail = 'info@out.ratib.sa';
+        $enterpriseMail = 'info@rateb.sa';
         $securityUrl = rtrim($baseUrl, '/') . '/security-compliance/';
 
         return [

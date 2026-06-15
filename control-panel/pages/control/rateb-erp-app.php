@@ -1,6 +1,6 @@
 <?php
 /**
- * RATEB ERP — runs inside Control Panel (out.ratib.sa).
+ * RATEB ERP — runs inside Control Panel (rateb.sa).
  * URL: /control-panel/pages/control/rateb-erp-app.php?control=1&route=admin/login
  */
 if (!defined('IS_CONTROL_PANEL')) {

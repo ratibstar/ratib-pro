@@ -1,7 +1,7 @@
 # ✅ Production Deployment Checklist - Ratib Program
 
 ## 🎯 Deployment Target
-- **URL**: https://out.ratib.sa/
+- **URL**: https://rateb.sa/
 - **Database**: outratib_out
 - **Status**: ✅ READY FOR PRODUCTION
 
@@ -84,7 +84,7 @@ DB_HOST: localhost
 DB_NAME: outratib_out
 DB_USER: outratib_out
 DB_PASS: 9s%BpMr1]dfb
-SITE_URL: https://out.ratib.sa
+SITE_URL: https://rateb.sa
 BASE_URL: '' (root deployment)
 ```
 
@@ -158,7 +158,7 @@ find . -type d -exec chmod 755 {} \;
 ### BASE_URL Configuration
 - **Current**: `''` (empty) - for root domain deployment
 - **If deploying to subdirectory**: Change `BASE_URL` to `/subdirectory-name`
-- **Example**: If deploying to `https://out.ratib.sa/app/`, set `BASE_URL = '/app'`
+- **Example**: If deploying to `https://rateb.sa/app/`, set `BASE_URL = '/app'`
 
 ### JavaScript Paths
 - JavaScript files use `window.APP_CONFIG.baseUrl` for dynamic paths
@@ -218,6 +218,6 @@ Run these checks before going live:
 ## 🎉 Ready for Production!
 
 All files have been updated and configured for production deployment at:
-**https://out.ratib.sa/**
+**https://rateb.sa/**
 
 Last Updated: $(date)

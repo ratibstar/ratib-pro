@@ -5,7 +5,7 @@
  */
 /**
  * Debug script to check what query is actually being executed
- * Run this: https://out.ratib.sa/api/hr/debug-query.php
+ * Run this: https://rateb.sa/api/hr/debug-query.php
  */
 
 header('Content-Type: application/json');

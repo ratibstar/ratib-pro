@@ -68,7 +68,7 @@ Sticky jump nav in `<main>` links to all anchors.
 
 ## Procurement CTAs
 
-All CTAs use `mailto:info@out.ratib.sa` with distinct subjects:
+All CTAs use `mailto:info@rateb.sa` with distinct subjects:
 
 - **Request Security Brief** — `RATIB — Request Security Brief`
 - **Request Architecture Review** — `RATIB — Request Architecture Review`
@@ -136,4 +136,4 @@ On the trust page, `$ratibHomeNavHrefPrefix` points to `home.php` so hash links 
 
 ## Contact Reference
 
-Public enterprise contact on page: **info@out.ratib.sa**
+Public enterprise contact on page: **info@rateb.sa**

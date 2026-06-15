@@ -1,7 +1,7 @@
 # RATEB Mobile — Final Live Production Verification
 
 **Date:** 25 May 2026 (live probes)  
-**API base:** `https://out.ratib.sa/api/mobile`  
+**API base:** `https://rateb.sa/api/mobile`  
 **Method:** Live HTTP probes + code audit + `flutter build web --release`  
 **Scope:** Verification only — no features, no refactors
 
@@ -80,29 +80,29 @@ Hardening **is deployed** (503 on JWT validate). Secret deployment **is not effe
 # A) Secret loaded? (MUST be 401, not 503)
 curl -sS -w "\nHTTP %{http_code}\n" \
   -H "Authorization: Bearer aaa.bbb.ccc" \
-  https://out.ratib.sa/api/mobile/profile.php
+  https://rateb.sa/api/mobile/profile.php
 
 # B) Invalid login
 curl -sS -w "\nHTTP %{http_code}\n" -X POST \
   -H "Content-Type: application/json" \
   -d '{"email":"wrong","password":"wrong"}' \
-  https://out.ratib.sa/api/mobile/login.php
+  https://rateb.sa/api/mobile/login.php
 
 # C) Valid login (replace credentials)
 curl -sS -w "\nHTTP %{http_code}\n" -X POST \
   -H "Content-Type: application/json" \
   -d '{"email":"PILOT_USER","password":"PILOT_PASS"}' \
-  https://out.ratib.sa/api/mobile/login.php
+  https://rateb.sa/api/mobile/login.php
 
 # D) Profile with token
 curl -sS -w "\nHTTP %{http_code}\n" \
   -H "Authorization: Bearer TOKEN_HERE" \
-  https://out.ratib.sa/api/mobile/profile.php
+  https://rateb.sa/api/mobile/profile.php
 
 # E) Logout (optional server-side)
 curl -sS -X POST \
   -H "Authorization: Bearer TOKEN_HERE" \
-  https://out.ratib.sa/api/mobile/logout.php
+  https://rateb.sa/api/mobile/logout.php
 ```
 
 ### Expected after secret fix
@@ -138,18 +138,18 @@ curl -sS -X POST \
 # 1) Login to get token
 TOKEN=$(curl -sS -X POST -H "Content-Type: application/json" \
   -d '{"email":"USER","password":"PASS"}' \
-  https://out.ratib.sa/api/mobile/login.php | jq -r .token)
+  https://rateb.sa/api/mobile/login.php | jq -r .token)
 
 # 2) Generate QR
 curl -sS -X POST -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{}' \
-  https://out.ratib.sa/api/mobile/qr-generate.php
+  https://rateb.sa/api/mobile/qr-generate.php
 
 # 3) QR login (single use)
 curl -sS -X POST -H "Content-Type: application/json" \
   -d '{"qr_payload":"RATEBMOBQR:..."}' \
-  https://out.ratib.sa/api/mobile/qr-login.php
+  https://rateb.sa/api/mobile/qr-login.php
 
 # 4) Replay same payload — expect nonce_reused
 ```
@@ -291,12 +291,12 @@ Pilot cannot start until Phase 1 probe returns **401** (not 503) on invalid Bear
 # MUST PASS before any pilot user:
 curl -sS -o /dev/null -w "%{http_code}\n" \
   -H "Authorization: Bearer test.token.here" \
-  https://out.ratib.sa/api/mobile/profile.php
+  https://rateb.sa/api/mobile/profile.php
 # Expected: 401
 
 curl -sS -X POST -H "Content-Type: application/json" \
   -d '{"email":"REAL_USER","password":"REAL_PASS"}' \
-  https://out.ratib.sa/api/mobile/login.php
+  https://rateb.sa/api/mobile/login.php
 # Expected: 200 with token field
 ```
 

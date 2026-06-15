@@ -5,7 +5,7 @@
  */
 /**
  * Run add_12_countries migration and show control_countries contents.
- * Access: https://out.ratib.sa/config/migrations/run_add_12_countries.php
+ * Access: https://rateb.sa/config/migrations/run_add_12_countries.php
  * Must be logged in to Control Panel (session required).
  */
 session_start();

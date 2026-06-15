@@ -7,8 +7,8 @@
  * Login diagnostic - helps debug login issues.
  * DELETE THIS FILE after fixing login!
  *
- * URL: https://out.ratib.sa/pages/check-login.php?run=1
- * Reset: https://out.ratib.sa/pages/check-login.php?run=1&reset=1
+ * URL: https://rateb.sa/pages/check-login.php?run=1
+ * Reset: https://rateb.sa/pages/check-login.php?run=1&reset=1
  */
 require_once __DIR__ . '/../includes/config.php';
 
@@ -91,7 +91,7 @@ echo "Password test ('admin123'): " . ($ok ? "OK - password matches!" : "FAIL - 
 
 if (!$ok) {
     $resetParams = 'run=1&reset=1';
-    $resetUrl = 'https://' . ($_SERVER['HTTP_HOST'] ?? 'out.ratib.sa') . '/pages/check-login.php?' . $resetParams;
+    $resetUrl = 'https://' . ($_SERVER['HTTP_HOST'] ?? 'rateb.sa') . '/pages/check-login.php?' . $resetParams;
     echo ">>> RESET PASSWORD (click this link):\n";
     echo "    <a href=\"check-login.php?" . htmlspecialchars($resetParams) . "\" style=\"color:blue;font-weight:bold;font-size:16px;\">" . htmlspecialchars($resetUrl) . "</a>\n\n";
     echo "    Or copy this URL into your browser: " . htmlspecialchars($resetUrl) . "\n\n";
@@ -101,7 +101,7 @@ $statusOk = (strtolower(trim($user['status'] ?? '')) === 'active');
 echo "Status check (active): " . ($statusOk ? "OK" : "FAIL - account may be inactive") . "\n\n";
 
 echo "---\n";
-echo "Login: https://" . ($_SERVER['HTTP_HOST'] ?? 'out.ratib.sa') . "/pages/login.php\n";
+echo "Login: https://" . ($_SERVER['HTTP_HOST'] ?? 'rateb.sa') . "/pages/login.php\n";
 echo "Credentials: admin / admin123\n";
 echo "\nDELETE this file (check-login.php) after use!\n";
 echo '</pre>';

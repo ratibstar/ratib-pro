@@ -139,7 +139,7 @@ $ratibGlyph = function (string $symbolId): string {
                         <a href="<?php echo htmlspecialchars($ratibFooterNav('register'), ENT_QUOTES, 'UTF-8'); ?>" class="ratib-nav__link ratib-footer-enterprise__nav-link"><?php echo $ratibGlyph('ratib-ng-programs'); ?><span class="ratib-nav__label"><?php echo htmlspecialchars($ratibHome['home.footer.link.service_registration'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span></a>
                     </li>
                     <li>
-                        <a href="mailto:info@out.ratib.sa" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--mailto"><?php echo $ratibGlyph('ratib-ng-contact'); ?><span class="ratib-nav__label">info@out.ratib.sa</span></a>
+                        <a href="mailto:info@rateb.sa" class="ratib-nav__link ratib-footer-enterprise__nav-link ratib-footer-link--mailto"><?php echo $ratibGlyph('ratib-ng-contact'); ?><span class="ratib-nav__label">info@rateb.sa</span></a>
                     </li>
                 </ul>
             </div>
@@ -148,7 +148,7 @@ $ratibGlyph = function (string $symbolId): string {
                 <p class="ratib-footer-enterprise__infra-copy"><?php echo htmlspecialchars($ratibHome['home.footer.infra.copy'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
                 <div class="ratib-footer-social">
                     <a href="https://wa.me/<?php echo htmlspecialchars($ratibPhoneDigits, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                    <a href="mailto:info@out.ratib.sa" aria-label="Email"><i class="fas fa-envelope"></i></a>
+                    <a href="mailto:info@rateb.sa" aria-label="Email"><i class="fas fa-envelope"></i></a>
                 </div>
                 <div class="footer-subscribe ratib-footer-newsletter">
                     <label class="ratib-footer-newsletter__label" for="footerEmail"><?php echo htmlspecialchars($ratibHome['home.footer.newsletter.label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></label>

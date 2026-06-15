@@ -1,7 +1,7 @@
 # RATEB Mobile — REAL production test (API + optional QR)
 # Run: powershell -ExecutionPolicy Bypass -File scripts\run-real-test.ps1
 $ErrorActionPreference = 'Continue'
-$base = 'https://out.ratib.sa/api/mobile'
+$base = 'https://rateb.sa/api/mobile'
 $pass = 0
 $fail = 0
 

@@ -5,7 +5,7 @@
  */
 /**
  * Complete fix script for HR ID prefixes
- * Run this: https://out.ratib.sa/api/hr/fix-all-prefixes.php
+ * Run this: https://rateb.sa/api/hr/fix-all-prefixes.php
  */
 
 header('Content-Type: application/json');

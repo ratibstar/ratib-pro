@@ -38,9 +38,9 @@ if (!function_exists('ratib_site_content_defaults_public_pages')) {
     {
         return [
             'public.contact.phone' => '+966 599 863 868',
-            'public.contact.email' => 'info@out.ratib.sa',
+            'public.contact.email' => 'info@rateb.sa',
             'public.contact.whatsapp' => 'https://wa.me/966599863868',
-            'public.contact.website' => 'https://out.ratib.sa',
+            'public.contact.website' => 'https://rateb.sa',
 
             'profile.meta.title' => 'RATEB — Recruitment Automation & Telemetry Enterprise Base',
             'profile.meta.description' => 'RATEB — enterprise workforce program infrastructure. Platform scope, corridors, and operational capabilities for cross-border recruitment programs.',

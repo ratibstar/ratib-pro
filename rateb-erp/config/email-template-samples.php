@@ -11,6 +11,6 @@ return [
     'qty' => '5',
     'no' => 'CON-001',
     'device' => 'جهاز التعقيم A-12',
-    'reset_url' => 'https://out.ratib.sa/rateb-erp/public/password/reset/example',
-    'link' => 'https://out.ratib.sa/rateb-erp/public/password/reset/example',
+    'reset_url' => 'https://rateb.sa/rateb-erp/public/password/reset/example',
+    'link' => 'https://rateb.sa/rateb-erp/public/password/reset/example',
 ];

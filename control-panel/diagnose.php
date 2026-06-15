@@ -4,7 +4,7 @@
  * AR: يدير سلوك وحدة لوحة التحكم وعمليات إدارة الدول في `control-panel/diagnose.php`.
  */
 /**
- * Run once: https://out.ratib.sa/control-panel/diagnose.php
+ * Run once: https://rateb.sa/control-panel/diagnose.php
  * Shows why the control panel might still fail. DELETE this file after.
  */
 ob_start();

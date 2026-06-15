@@ -8,7 +8,7 @@
 
 ## Summary
 
-A procurement-facing page provides verifiable company identity, engagement process, cross-links to security and architecture documentation, tenant separation summary, legal scope notes, procurement CTAs, and official escalation contact at **info@out.ratib.sa**. Wording avoids fabricated licenses, certifications, or government partnerships.
+A procurement-facing page provides verifiable company identity, engagement process, cross-links to security and architecture documentation, tenant separation summary, legal scope notes, procurement CTAs, and official escalation contact at **info@rateb.sa**. Wording avoids fabricated licenses, certifications, or government partnerships.
 
 ---
 
@@ -60,7 +60,7 @@ A procurement-facing page provides verifiable company identity, engagement proce
 
 ---
 
-## Procurement CTAs (mailto:info@out.ratib.sa)
+## Procurement CTAs (mailto:info@rateb.sa)
 
 - Request Company Deck  
 - Request Enterprise Demo  

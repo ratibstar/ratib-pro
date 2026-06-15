@@ -20,7 +20,7 @@ php 03_migrate_data.php
 ```
 
 Or via browser (must be logged in to Control Panel):
-`https://out.ratib.sa/config/migrations/separate_control_panel_db/03_migrate_data.php`
+`https://rateb.sa/config/migrations/separate_control_panel_db/03_migrate_data.php`
 
 ### 3. Update configuration
 

@@ -44,9 +44,9 @@ class TenantLoader
             self::failTenant('Invalid host');
         }
 
-        // out.ratib.sa (main site) and localhost: use first active country
+        // rateb.sa (main site) and localhost: use first active country
         $hostLower = strtolower($host);
-        $useFallback = in_array($hostLower, ['localhost', '127.0.0.1', 'out.ratib.sa'], true)
+        $useFallback = in_array($hostLower, ['localhost', '127.0.0.1', 'rateb.sa'], true)
             || strpos($hostLower, '.local') !== false;
         if ($useFallback) {
             $country = self::resolveCountryFallback();

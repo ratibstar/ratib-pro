@@ -462,9 +462,9 @@ Browser → /control-panel/... → control-panel/includes/config.php → control
 |-----------|---------------|
 | Per-request agency DB | `includes/config.php` comments 43–50; `$GLOBALS['conn']` |
 | Agency resolver from URL | `config/env/agency_resolver.php` — reads `control_agencies` columns `db_host`, `db_user`, `db_pass`, `db_name` |
-| Control DB name | `CONTROL_PANEL_DB_NAME` default `outratib_control_panel_db` in `config/env/out_ratib_sa.php` line 24 |
+| Control DB name | `CONTROL_PANEL_DB_NAME` default `outratib_control_panel_db` in `config/env/rateb_sa.php` line 24 |
 | PDO tenant manager | `api/core/TenantDatabaseManager.php` — reads tenant creds from control DB table `tenants`; throws if tenant switch mid-request |
-| Single URL mode | `define('SINGLE_URL_MODE', true)` in `config/env/out_ratib_sa.php` line 27 |
+| Single URL mode | `define('SINGLE_URL_MODE', true)` in `config/env/rateb_sa.php` line 27 |
 | Country slug routing | `.htaccess` line 84: `/{country}/` → `pages/dashboard.php?country_slug=$1` |
 | Tenant self-test | `api/tenants/self-test.php`, `control-panel/api/control/tenant-isolation-self-test.php` |
 
@@ -488,13 +488,13 @@ Both layers share `includes/config.php` and MySQL; no evidence of full migration
 
 | File | Observed content |
 |------|------------------|
-| `config/env/out_ratib_sa.php` line 22 | `define('DB_PASS', ... ?: '9s%BpMr1]dfb');` |
+| `config/env/rateb_sa.php` line 22 | `define('DB_PASS', ... ?: '9s%BpMr1]dfb');` |
 | `config/env/default.php` line 16 | `define('DB_PASS', '9s%BpMr1]dfb');` |
-| `config/env/bangladesh_out_ratib_sa.php` line 15 | `define('DB_PASS', '9s%BpMr1]dfb');` |
-| `config/env/out_ratib_sa.php` lines 21–23 | Default `DB_USER` `outratib_out`, `DB_NAME` `outratib_out` |
+| `config/env/bangladesh_rateb_sa.php` line 15 | `define('DB_PASS', '9s%BpMr1]dfb');` |
+| `config/env/rateb_sa.php` lines 21–23 | Default `DB_USER` `outratib_out`, `DB_NAME` `outratib_out` |
 | `config/env/ngenius.secrets.php` | Keys present with empty string values (`NGENIUS_API_KEY`, `NGENIUS_API_SECRET`) |
 
-Env override path exists via `getenv('DB_PASS')` in `out_ratib_sa.php` before fallback.
+Env override path exists via `getenv('DB_PASS')` in `rateb_sa.php` before fallback.
 
 ### 5.2 Auth checks (where enforced)
 
@@ -522,7 +522,7 @@ Env override path exists via `getenv('DB_PASS')` in `out_ratib_sa.php` before fa
 | `api/accounting/test-apis.php` | Filename indicates test surface |
 | `api/support-chat-test.php` | Root API file |
 | `api/admin/clear_all_data.php` | Destructive; gated by admin session |
-| `admin/debug-dashboard.php` | Exists; `OBSERVABILITY_DASHBOARD_ENABLED` true in `out_ratib_sa.php` |
+| `admin/debug-dashboard.php` | Exists; `OBSERVABILITY_DASHBOARD_ENABLED` true in `rateb_sa.php` |
 | `admin/dev/event-load-test.php`, `validate-observability.php` | Under `admin/dev/` |
 | `pages/ratib-sync-from-github.php` | Gated by `?run=1&key=ratib-deploy-sync-2026` (lines 11–16) |
 | `pages/ratib-purge-cache.php` | Gated by same key string (lines 8–13) |
@@ -545,7 +545,7 @@ Env override path exists via `getenv('DB_PASS')` in `out_ratib_sa.php` before fa
 | File | Role |
 |------|------|
 | `config/env/load.php` | Loads host-specific env; lists env vars `DB_HOST`, `DB_PASS`, `CONTROL_DB_PASS`, etc. |
-| `config/env/out_ratib_sa.php` | Defines `DB_*`, `CONTROL_PANEL_DB_NAME`, `SINGLE_URL_MODE` |
+| `config/env/rateb_sa.php` | Defines `DB_*`, `CONTROL_PANEL_DB_NAME`, `SINGLE_URL_MODE` |
 | `config/database.php` | Sets `$GLOBALS['conn'] = new mysqli(...)` |
 | `includes/config.php` | Main bootstrap; documents `$GLOBALS['conn']` as tenant connection |
 | `api/core/Database.php` | PDO singleton used by some APIs |
@@ -670,12 +670,12 @@ No test files found under paths for:
 
 | Risk | Evidence |
 |------|----------|
-| DB password in git-tracked env fallbacks | `config/env/out_ratib_sa.php:22`, `default.php:16`, `bangladesh_out_ratib_sa.php:15` |
+| DB password in git-tracked env fallbacks | `config/env/rateb_sa.php:22`, `default.php:16`, `bangladesh_rateb_sa.php:15` |
 | Shared static ops key | `ratib-deploy-sync-2026` in `pages/ratib-sync-from-github.php:11`, `pages/ratib-purge-cache.php:9` |
 | Diagnostic page exposes config | `pages/test-config.php` prints `DB_HOST`, enables `display_errors` |
 | HR debug API may leak employee rows | `api/hr/debug-query.php` returns employee records as JSON; no auth in first 50 lines |
 | Destructive admin API exists | `api/admin/clear_all_data.php` — deletes business data when `confirm=1` and admin session |
-| Observability dashboard enabled on prod host config | `config/env/out_ratib_sa.php:33` `OBSERVABILITY_DASHBOARD_ENABLED=true` + `admin/debug-dashboard.php` |
+| Observability dashboard enabled on prod host config | `config/env/rateb_sa.php:33` `OBSERVABILITY_DASHBOARD_ENABLED=true` + `admin/debug-dashboard.php` |
 | Empty placeholder API dirs | `api/hr_advances/`, `api/roles/` etc. have 0 files — may confuse routing expectations |
 | Dual workflow implementations | Seven distinct workflow-related files listed in §3.10 — no single owner file |
 | SQL migrations not in deploy auto-path | Deploy script comments (workspace rules) list `sql/` outside fast-upload prefixes — schema drift risk if ops miss manual run |
@@ -700,7 +700,7 @@ A **PHP/MySQL monorepo** containing:
 9. **Separate Designed storefront** — `Designed/` tree with own MVC layout  
 10. **Payment integrations** — N-Genius in main includes; `tap-payments/` and `paypal-checkout/` as standalone folders  
 
-Primary production host configuration file observed: `config/env/out_ratib_sa.php` (`SITE_URL` `https://out.ratib.sa`).
+Primary production host configuration file observed: `config/env/rateb_sa.php` (`SITE_URL` `https://rateb.sa`).
 
 ### 10.2 Production-ready vs partial (file-based)
 

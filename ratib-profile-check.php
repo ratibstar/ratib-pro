@@ -2,9 +2,9 @@
 /**
  * ONE file: check + deploy Profile to public_html (PHP 7.4, curl only).
  *
- * Check:  https://out.ratib.sa/ratib-profile-check.php
- * Deploy: https://out.ratib.sa/ratib-profile-check.php?deploy=1&key=ratib-deploy-sync-2026
- * Infra (23): https://out.ratib.sa/ratib-profile-check.php?infra23=1&key=ratib-deploy-sync-2026
+ * Check:  https://rateb.sa/ratib-profile-check.php
+ * Deploy: https://rateb.sa/ratib-profile-check.php?deploy=1&key=ratib-deploy-sync-2026
+ * Infra (23): https://rateb.sa/ratib-profile-check.php?infra23=1&key=ratib-deploy-sync-2026
  */
 header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: no-store');
@@ -16,7 +16,7 @@ if (is_file($compat)) {
 
 $root = __DIR__;
 $doc = rtrim((string) ($_SERVER['DOCUMENT_ROOT'] ?? ''), '/');
-$host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : 'out.ratib.sa';
+$host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : 'rateb.sa';
 
 function ratib_has($haystack, $needle)
 {

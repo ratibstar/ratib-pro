@@ -5,12 +5,12 @@
  */
 /**
  * Drop all tables in outratib_bangladesh, then you can import fresh.
- * Run: https://out.ratib.sa/config/drop_and_prepare_bangladesh.php
+ * Run: https://rateb.sa/config/drop_and_prepare_bangladesh.php
  */
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-$_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? 'out.ratib.sa';
+$_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? 'rateb.sa';
 require_once __DIR__ . '/env/load.php';
 
 if (!defined('DB_HOST') || !defined('DB_NAME')) {

@@ -69,7 +69,7 @@ Pricing/register flows unchanged (`#register` still available in nav and footer)
 - Procurement & Legal → `/procurement-legal/`
 - Operations & SLA → `#operational` on marketing home
 
-Legal column retains service registration and `info@out.ratib.sa`.
+Legal column retains service registration and `info@rateb.sa`.
 
 ---
 

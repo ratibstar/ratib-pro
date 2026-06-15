@@ -1,7 +1,7 @@
 <?php
 /**
  * One-time: fix .htaccess + web-readable permissions after a bad deploy (PHP 7.4).
- * https://out.ratib.sa/pages/ratib-fix-perms.php?run=1&key=ratib-deploy-sync-2026
+ * https://rateb.sa/pages/ratib-fix-perms.php?run=1&key=ratib-deploy-sync-2026
  * DELETE this file after use.
  */
 header('Content-Type: text/plain; charset=utf-8');
@@ -60,6 +60,6 @@ foreach ($iterator as $item) {
 }
 
 echo "\nSummary: htaccess={$fixedHt} dirs={$fixedDir} files={$fixedFile}\n";
-echo "Test: https://" . ($_SERVER['HTTP_HOST'] ?? 'out.ratib.sa') . "/pages/home.php\n";
+echo "Test: https://" . ($_SERVER['HTTP_HOST'] ?? 'rateb.sa') . "/pages/home.php\n";
 echo "Then: /pages/ratib-profile-deploy.php?deploy=1&key=ratib-deploy-sync-2026\n";
 echo "DELETE pages/ratib-fix-perms.php when done.\n";

@@ -5,7 +5,7 @@
  */
 /**
  * Reset admin password to admin123 (no login required - for recovery when locked out)
- * Run from browser: https://out.ratib.sa/config/migrations/reset_admin_password.php
+ * Run from browser: https://rateb.sa/config/migrations/reset_admin_password.php
  * Or CLI: php config/migrations/reset_admin_password.php
  * DELETE this file after use for security.
  */

@@ -5,8 +5,8 @@
  */
 /**
  * Diagnostic script - upload to server and visit:
- * https://out.ratib.sa/pages/test-error.php
- * or https://out.ratib.sa/pages/test-error.php
+ * https://rateb.sa/pages/test-error.php
+ * or https://rateb.sa/pages/test-error.php
  * 
  * Delete this file after debugging.
  */

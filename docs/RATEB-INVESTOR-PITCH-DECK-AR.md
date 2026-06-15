@@ -16,7 +16,7 @@ Recruitment Automation & Telemetry Enterprise Base
 بنية تشغيلية لبرامج القوى العاملة عبر الحدود
 
 **تذييل:**  
-الرياض · المملكة العربية السعودية · out.ratib.sa  
+الرياض · المملكة العربية السعودية · rateb.sa  
 [التاريخ] · [اسم المقدّم]
 
 **ملاحظة للمصمم:** خلفية داكنة، شعار RATEB، بدون ازدحام.
@@ -72,7 +72,7 @@ Enterprise Workforce Program Infrastructure
 **نقاط تحت المخطط:**
 - Multi-tenant: كل وكالة/برنامج ببيئة منفصلة
 - 11+ سوق إرسال مدعوم (فلبين، بنغلاديش، إندونيسيا، كينيا، …)
-- تشغيل فعلي على out.ratib.sa
+- تشغيل فعلي على rateb.sa
 
 ---
 
@@ -150,7 +150,7 @@ PH · BD · ID · KE · UG · ET · NG · RW · LK · NP · TH + KSA (HQ)
 **العنوان:** ليس prototype — منصة تعمل
 
 **أدلة (قابلة للعرض):**
-- ✅ Production: out.ratib.sa
+- ✅ Production: rateb.sa
 - ✅ Automated deploy (GitHub → production)
 - ✅ Control panel للمشغّلين + agency workspace
 - ✅ Mobile worker tracking (PWA + Android/iOS shell)
@@ -228,7 +228,7 @@ PH · BD · ID · KE · UG · ET · NG · RW · LK · NP · TH + KSA (HQ)
 | **Runway** | ___ months |
 | **Milestone tied** | ___ agencies · ___ ARR |
 
-**Contact:** info@out.ratib.sa · +966 599 863 868
+**Contact:** info@rateb.sa · +966 599 863 868
 
 ---
 

@@ -1,7 +1,7 @@
 <?php
 /**
  * Visual check: are you on marketing home or company profile?
- * https://out.ratib.sa/pages/ratib-which-page.php
+ * https://rateb.sa/pages/ratib-which-page.php
  */
 declare(strict_types=1);
 
@@ -10,7 +10,7 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, private')
 header('Pragma: no-cache');
 header('X-LiteSpeed-Cache-Control: no-cache');
 
-$host = $_SERVER['HTTP_HOST'] ?? 'out.ratib.sa';
+$host = $_SERVER['HTTP_HOST'] ?? 'rateb.sa';
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $base = $scheme . '://' . $host;
 $buildPath = dirname(__DIR__) . '/public/ratib-build.txt';

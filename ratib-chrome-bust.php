@@ -1,7 +1,7 @@
 <?php
 /**
  * Chrome / cache diagnostic (root — always reachable).
- * https://out.ratib.sa/ratib-chrome-bust.php
+ * https://rateb.sa/ratib-chrome-bust.php
  */
 header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -38,7 +38,7 @@ if (function_exists('opcache_invalidate')) {
     echo "opcache_invalidate=done\n\n";
 }
 
-$host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : 'out.ratib.sa';
+$host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : 'rateb.sa';
 $liveUrl = 'https://' . $host . '/pages/home.php';
 $live = function_exists('curl_init') ? null : @file_get_contents($liveUrl);
 if (function_exists('curl_init')) {

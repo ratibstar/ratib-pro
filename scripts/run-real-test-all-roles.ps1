@@ -1,7 +1,7 @@
 # RATEB Mobile — one REAL test per portal role (company, worker, agency)
 # Run: powershell -ExecutionPolicy Bypass -File scripts\run-real-test-all-roles.ps1
 $ErrorActionPreference = 'Continue'
-$base = 'https://out.ratib.sa/api/mobile'
+$base = 'https://rateb.sa/api/mobile'
 
 function Step($name, $ok, $detail = '') {
     if ($ok) {
@@ -145,6 +145,6 @@ FLUTTER APP (http://127.0.0.1:8090) — repeat each role in the UI:
   1. Sign out if logged in
   2. Sign in with the same email/password
   3. Confirm portal title: Company / Worker / Agency Portal
-  4. Optional QR: out.ratib.sa -> System Settings -> user -> Workforce QR -> scan on phone
+  4. Optional QR: rateb.sa -> System Settings -> user -> Workforce QR -> scan on phone
 
 "@ -ForegroundColor White

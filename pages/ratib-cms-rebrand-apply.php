@@ -2,8 +2,8 @@
 /**
  * One-shot: persist RATEB rebrand over stale ratib_site_content rows + purge snapshot cache.
  *
- * https://out.ratib.sa/pages/ratib-cms-rebrand-apply.php?key=ratib-deploy-sync-2026
- * https://out.ratib.sa/pages/ratib-cms-rebrand-apply.php?key=ratib-deploy-sync-2026&dry=1
+ * https://rateb.sa/pages/ratib-cms-rebrand-apply.php?key=ratib-deploy-sync-2026
+ * https://rateb.sa/pages/ratib-cms-rebrand-apply.php?key=ratib-deploy-sync-2026&dry=1
  */
 declare(strict_types=1);
 

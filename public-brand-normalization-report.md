@@ -28,7 +28,7 @@
 
 ## Normalization Outcomes
 
-- Canonical public contact email standardized to `info@out.ratib.sa`.
+- Canonical public contact email standardized to `info@rateb.sa`.
 - Legal identity copy aligned to `Rateb Software Foundation for Information Technology` where legal/company context is shown.
 - Public short-form brand usage aligned to `RATIB` in navigation/chrome contexts.
 - Weak terminology replaced with enterprise infrastructure language in core marketing copy.

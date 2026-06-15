@@ -2,7 +2,7 @@
 
 ## 🎉 Status: **100% READY FOR LIVE DEPLOYMENT**
 
-**Target**: https://out.ratib.sa/  
+**Target**: https://rateb.sa/  
 **Database**: outratib_out  
 **Date**: $(date)
 
@@ -100,7 +100,7 @@ Password: 9s%BpMr1]dfb
 
 **includes/config.php**:
 - ✅ Database credentials
-- ✅ SITE_URL: https://out.ratib.sa
+- ✅ SITE_URL: https://rateb.sa
 - ✅ BASE_URL: '' (root deployment)
 - ✅ Production mode flags
 - ✅ Error logging configured
@@ -262,7 +262,7 @@ ratibprogram/
 
 ### Configuration ✅
 - [x] Database: outratib_out
-- [x] Site URL: https://out.ratib.sa
+- [x] Site URL: https://rateb.sa
 - [x] BASE_URL: '' (root)
 - [x] Production mode: ON
 - [x] Debug mode: OFF

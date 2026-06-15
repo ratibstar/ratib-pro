@@ -11,7 +11,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', '1');
 
 if (php_sapi_name() === 'cli') {
-    $_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? 'out.ratib.sa';
+    $_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? 'rateb.sa';
 }
 
 require_once dirname(__DIR__) . '/config/env/load.php';
@@ -125,8 +125,8 @@ while ($row = $res->fetch_assoc()) {
         ratib_qr_login_ensure_schema($tenantConn);
         ratib_qr_workforce_ensure_schema($tenantConn);
         $loginUrl = $countrySlug !== ''
-            ? 'https://' . ($_SERVER['HTTP_HOST'] ?? 'out.ratib.sa') . '/' . rawurlencode($countrySlug) . '/login'
-            : 'https://' . ($_SERVER['HTTP_HOST'] ?? 'out.ratib.sa') . '/pages/login.php?agency_id=' . $agencyId;
+            ? 'https://' . ($_SERVER['HTTP_HOST'] ?? 'rateb.sa') . '/' . rawurlencode($countrySlug) . '/login'
+            : 'https://' . ($_SERVER['HTTP_HOST'] ?? 'rateb.sa') . '/pages/login.php?agency_id=' . $agencyId;
         echo "[OK] $label ($dbName)\n";
         echo "     Login: $loginUrl\n";
         $ok++;

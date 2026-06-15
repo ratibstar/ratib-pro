@@ -35,7 +35,7 @@ class QrBadgePreviewScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Live badges are issued from RATEB System Settings on out.ratib.sa.',
+                'Live badges are issued from RATEB System Settings on rateb.sa.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.darkMuted,
                     ),

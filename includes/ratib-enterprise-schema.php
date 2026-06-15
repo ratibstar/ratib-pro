@@ -22,7 +22,7 @@ if (!function_exists('ratib_enterprise_schema_organization')) {
             'alternateName' => 'Recruitment Automation & Telemetry Enterprise Base',
             'url' => $url,
             'description' => ratib_enterprise_brand_meta_description(),
-            'email' => 'info@out.ratib.sa',
+            'email' => 'info@rateb.sa',
             'areaServed' => 'Worldwide',
             'knowsAbout' => [
                 'Enterprise Workforce Program Infrastructure',

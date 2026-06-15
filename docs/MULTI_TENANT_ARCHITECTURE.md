@@ -36,7 +36,7 @@ Run `config/migrations/multi_tenant_001_countries.sql` in phpMyAdmin.
 |-------------------|--------------|
 | sa.ratib.sa       | sa           |
 | ae.ratib.sa       | ae           |
-| bangladesh.out.ratib.sa | bd   |
+| bangladesh.rateb.sa | bd   |
 
 **TenantLoader.php** extracts subdomain from `$_SERVER['HTTP_HOST']` and:
 1. Matches `domain` column, or

@@ -26,17 +26,17 @@ mysql -u user -p outratib_out < config/migrations/enterprise_multi_tenant_002_ex
 ## Step 2: DNS / Subdomains
 
 Create A or CNAME records for:
-- sa.out.ratib.sa
-- ae.out.ratib.sa
-- eg.out.ratib.sa
-- bd.out.ratib.sa
+- sa.rateb.sa
+- ae.rateb.sa
+- eg.rateb.sa
+- bd.rateb.sa
 - (etc. for all 12 countries)
 
 - [ ] Verify each subdomain resolves to server IP
 
 ## Step 3: cPanel / Server
 
-- [ ] Add subdomains in cPanel (or wildcard *.out.ratib.sa)
+- [ ] Add subdomains in cPanel (or wildcard *.rateb.sa)
 - [ ] Ensure Document Root points to same folder as main site
 - [ ] SSL: Enable for each subdomain or use wildcard cert
 
@@ -47,7 +47,7 @@ Add to `.env` or set in cPanel / server:
 ```
 MULTI_TENANT_SUBDOMAIN_ENABLED=0
 TENANT_ALLOW_ROOT_DOMAIN=1
-TENANT_BASE_DOMAIN=out.ratib.sa
+TENANT_BASE_DOMAIN=rateb.sa
 ```
 
 - Start with `MULTI_TENANT_SUBDOMAIN_ENABLED=0` to test without breaking current system
@@ -69,7 +69,7 @@ In `includes/config.php`:
 define('MULTI_TENANT_SUBDOMAIN_ENABLED', true);
 ```
 
-- [ ] Test sa.out.ratib.sa login
+- [ ] Test sa.rateb.sa login
 - [ ] Test super_admin at /admin/
 - [ ] Test country_admin restricted to own tenant
 

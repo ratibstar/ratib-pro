@@ -5,8 +5,8 @@ require_once __DIR__ . '/includes/ratib-php74-compat.php';
  * Site diagnostic + one-click copy Profile files from git repo → public_html.
  *
  * Upload to document root (same folder as .htaccess).
- *   Check:  https://out.ratib.sa/designed-status.php
- *   Deploy: https://out.ratib.sa/designed-status.php?copy=1&key=ratib-deploy-sync-2026
+ *   Check:  https://rateb.sa/designed-status.php
+ *   Deploy: https://rateb.sa/designed-status.php?copy=1&key=ratib-deploy-sync-2026
  *   (Uses local git repo if present, else GitHub raw via curl — works on PHP 7.4)
  */
 header('Content-Type: text/plain; charset=UTF-8');

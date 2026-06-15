@@ -29,7 +29,7 @@ startControlLayout('نظام رتب ERP', ['css/system-settings.css', 'css/contr
 
 <p class="control-settings-intro mb-3">
     <strong><i class="fas fa-hospital me-2"></i>نظام رتب ERP</strong>
-    — Medical Procurement &amp; Healthcare ERP. Everything opens here on <strong>out.ratib.sa</strong> inside your Control Panel (not rateb.sa).
+    — Medical Procurement &amp; Healthcare ERP. Everything opens here on <strong>rateb.sa</strong> inside your Control Panel (not rateb.sa).
 </p>
 
 <div class="rateb-erp-status mb-4" role="status">

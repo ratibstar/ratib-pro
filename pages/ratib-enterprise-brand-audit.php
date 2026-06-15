@@ -1,7 +1,7 @@
 <?php
 /**
  * Web wrapper — enterprise brand audit output.
- * https://out.ratib.sa/pages/ratib-enterprise-brand-audit.php?key=ratib-deploy-sync-2026
+ * https://rateb.sa/pages/ratib-enterprise-brand-audit.php?key=ratib-deploy-sync-2026
  */
 declare(strict_types=1);
 

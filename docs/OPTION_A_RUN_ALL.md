@@ -16,7 +16,7 @@ Everything is set up. Follow these steps:
 ### Option 1: From browser
 
 1. Upload the project to your server (if not already).
-2. Open: **https://out.ratib.sa/config/run_option_a_setup.php**
+2. Open: **https://rateb.sa/config/run_option_a_setup.php**
 
    (If `config` is not web-accessible, use Option 2.)
 

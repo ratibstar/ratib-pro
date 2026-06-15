@@ -38,7 +38,7 @@ Scanning the **computer** QR with the **in-app camera** on the scan page shows a
 | Format | Example | Use |
 |--------|---------|-----|
 | **Secure (preferred)** | `RATIBLOGIN:` + 64 hex chars | Stored hashed in `users.qr_login_token`; issued via API |
-| **Badge URL (QR encoding)** | `https://out.ratib.sa/login/badge?d=RATIBLOGIN%3A…` | What badge QRs encode (iOS Camera friendly) |
+| **Badge URL (QR encoding)** | `https://rateb.sa/login/badge?d=RATIBLOGIN%3A…` | What badge QRs encode (iOS Camera friendly) |
 | **Legacy reference** | `R000013USR` | Display / 1D barcode only — **not** for scanning (old bug fixed) |
 | **Pairing session** | 32-char hex `token` query on scan URL | Links phone to desktop poll |
 
@@ -210,8 +210,8 @@ After pushing to `main`, fast deploy uploads changed files under `pages/`, `js/`
 
 Verify on production:
 
-- [ ] `https://out.ratib.sa/login/scan` loads (styled, dark UI)
-- [ ] `https://out.ratib.sa/login/badge` loads
+- [ ] `https://rateb.sa/login/scan` loads (styled, dark UI)
+- [ ] `https://rateb.sa/login/badge` loads
 - [ ] Desktop login → Barcode → pairing QR
 - [ ] Phone scan page → badge scan → PC redirects
 - [ ] Users → Barcode → QR is a link (tap-hold copy URL shows `/login/badge?d=`)

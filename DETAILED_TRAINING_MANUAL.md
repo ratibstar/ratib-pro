@@ -28,7 +28,7 @@
 **Step 1:** Open your web browser (Chrome, Firefox, or Edge recommended)
 
 **Step 2:** In the address bar at the top of your browser, type the URL provided by your administrator
-- Example: `https://out.ratib.sa` or `http://localhost/ratibprogram`
+- Example: `https://rateb.sa` or `http://localhost/ratibprogram`
 - Press **Enter** on your keyboard
 
 **Step 3:** Wait for the login page to load completely

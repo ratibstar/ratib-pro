@@ -77,7 +77,7 @@ Single paragraphs containing orchestration + telemetry + governance + finance-gr
 - Event-driven workflows, webhooks, idempotency
 - Governance, RBAC, labor oversight modules
 - Dedicated `/security-compliance/`, `/architecture/`, `/procurement-legal/`
-- Enterprise CTAs and `info@out.ratib.sa`
+- Enterprise CTAs and `info@rateb.sa`
 
 ---
 

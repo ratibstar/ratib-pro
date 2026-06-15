@@ -65,7 +65,7 @@ Run after deploy + migrations on **control panel database**.
 
 ## 10. Public marketing smoke test
 
-- [ ] `https://out.ratib.sa/pages/home.php?density=full#domains` — search returns results when Namecheap active
+- [ ] `https://rateb.sa/pages/home.php?density=full#domains` — search returns results when Namecheap active
 - [ ] Help nav goes to contact section (not Ratib Pro login)
 
 ## Sign-off

@@ -12,7 +12,7 @@ if (!function_exists('ratib_procurement_legal_config')) {
      */
     function ratib_procurement_legal_config(string $baseUrl): array
     {
-        $enterpriseMail = 'info@out.ratib.sa';
+        $enterpriseMail = 'info@rateb.sa';
         $mailto = static function (string $subject) use ($enterpriseMail): string {
             return 'mailto:' . $enterpriseMail . '?subject=' . rawurlencode($subject);
         };
@@ -40,9 +40,9 @@ if (!function_exists('ratib_procurement_legal_config')) {
                     ['label' => 'Headquarters', 'value' => ratib_public_cms('proc.identity.hq', ratib_public_cms('profile.company.hq', 'Riyadh, Kingdom of Saudi Arabia')), 'icon' => 'fa-location-dot'],
                     ['label' => 'Commercial registration', 'value' => ratib_public_cms('proc.identity.cr', ratib_public_cms('profile.company.cr_value', 'On file — available to enterprise procurement under NDA upon request')), 'icon' => 'fa-file-contract'],
                     ['label' => 'VAT', 'value' => ratib_public_cms('proc.identity.vat', ratib_public_cms('profile.company.vat_value', 'Available on invoice or upon formal request during procurement')), 'icon' => 'fa-receipt'],
-                    ['label' => 'Official email', 'value' => ratib_public_cms('public.contact.email', 'info@out.ratib.sa'), 'icon' => 'fa-envelope', 'href' => 'mailto:' . ratib_public_cms('public.contact.email', 'info@out.ratib.sa')],
+                    ['label' => 'Official email', 'value' => ratib_public_cms('public.contact.email', 'info@rateb.sa'), 'icon' => 'fa-envelope', 'href' => 'mailto:' . ratib_public_cms('public.contact.email', 'info@rateb.sa')],
                     ['label' => 'Business phone', 'value' => ratib_public_cms('public.contact.phone', '+966 599 863 868'), 'icon' => 'fa-phone', 'href' => 'tel:+966599863868'],
-                    ['label' => 'Public website', 'value' => 'out.ratib.sa', 'icon' => 'fa-globe', 'href' => 'https://out.ratib.sa'],
+                    ['label' => 'Public website', 'value' => 'rateb.sa', 'icon' => 'fa-globe', 'href' => 'https://rateb.sa'],
                 ],
             ],
             'engagement' => [
@@ -144,7 +144,7 @@ if (!function_exists('ratib_procurement_legal_config')) {
                     ],
                     [
                         'title' => 'Contact Enterprise Team',
-                        'body' => 'Procurement, legal, and program inquiries — info@out.ratib.sa',
+                        'body' => 'Procurement, legal, and program inquiries — info@rateb.sa',
                         'href' => $mailto('RATEB — Enterprise Team Inquiry'),
                         'icon' => 'fa-envelope',
                         'variant' => 'ghost',

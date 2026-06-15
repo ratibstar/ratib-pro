@@ -32,7 +32,7 @@
 
 Work across this initiative transformed the **public RATIB site** from a marketing-heavy presentation into a **procurement-ready enterprise surface** with:
 
-- Normalized **legal identity** and **public contact** (`info@out.ratib.sa`)
+- Normalized **legal identity** and **public contact** (`info@rateb.sa`)
 - Three dedicated **trust / technical** pages at clean URLs
 - A new **infrastructure posture** block on the marketing home
 - **Enterprise CTAs** and a structured **footer trust cluster**
@@ -54,7 +54,7 @@ All work was **incremental PHP + CSS + includes** — same chrome (`home-public.
 
 ### 2.1 Goals
 
-- Replace public-facing emails with **`info@out.ratib.sa`**
+- Replace public-facing emails with **`info@rateb.sa`**
 - Normalize brand: **Rateb Software Foundation for Information Technology** (legal), **RATIB** (short)
 - Position as **enterprise workforce program infrastructure**
 - Avoid weak CRM/recruitment-SaaS tone on public copy
@@ -62,7 +62,7 @@ All work was **incremental PHP + CSS + includes** — same chrome (`home-public.
 
 ### 2.2 Public email replacements
 
-**Canonical:** `info@out.ratib.sa`
+**Canonical:** `info@rateb.sa`
 
 | File | Change |
 |------|--------|
@@ -113,7 +113,7 @@ All work was **incremental PHP + CSS + includes** — same chrome (`home-public.
 
 **Topics covered:** TLS 1.3, tenant isolation, RBAC, audit trails, replay-safe workflows, webhook HMAC, session controls, country-scoped ops, immutable stage commits, control-plane vs tenant DBs, WebAuthn/MFA-ready language, SLA/objectives (non-fabricated), managed cloud, edge protection.
 
-**Procurement CTAs (mailto `info@out.ratib.sa`):**
+**Procurement CTAs (mailto `info@rateb.sa`):**
 
 - Request Security Brief  
 - Request Architecture Review  
@@ -202,7 +202,7 @@ All work was **incremental PHP + CSS + includes** — same chrome (`home-public.
 | 6 | Procurement Requests | `#procurement-requests` |
 | 7 | Contact & Escalation | `#contact-escalation` |
 
-**Company identity:** Legal name, Riyadh HQ, CR available under NDA, VAT on invoice/request, `info@out.ratib.sa`, phone, website.
+**Company identity:** Legal name, Riyadh HQ, CR available under NDA, VAT on invoice/request, `info@rateb.sa`, phone, website.
 
 **Procurement CTAs:**
 
@@ -360,7 +360,7 @@ Each trust page also sends **no-store** PHP headers on response.
 | Procurement & Legal | `/procurement-legal/` |
 | Operations & SLA | `#operational` (home hash) |
 
-**Legal column (simplified):** Service registration, `info@out.ratib.sa`
+**Legal column (simplified):** Service registration, `info@rateb.sa`
 
 **System strip (unchanged pattern):** uptime / requests / events mono tags with operational copy.
 
@@ -411,7 +411,7 @@ Each dedicated page banner links to sibling trust pages + marketing home where a
 
 ### 10.1 Official contact
 
-**Email:** `info@out.ratib.sa`  
+**Email:** `info@rateb.sa`  
 **Phone (public):** +966 599 863 868  
 **HQ:** Riyadh, Kingdom of Saudi Arabia  
 

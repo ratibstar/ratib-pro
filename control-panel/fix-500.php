@@ -3,7 +3,7 @@
  * Emergency fix for control panel HTTP 500 on PHP 7.4.
  *
  * 1) Upload this file to: public_html/control-panel/fix-500.php (cPanel File Manager)
- * 2) Open: https://out.ratib.sa/control-panel/fix-500.php?run=1&key=ratib-deploy-sync-2026
+ * 2) Open: https://rateb.sa/control-panel/fix-500.php?run=1&key=ratib-deploy-sync-2026
  * 3) DELETE this file after success.
  */
 header('Content-Type: text/plain; charset=utf-8');
@@ -13,7 +13,7 @@ $key = (string) ($_GET['key'] ?? '');
 if (((string) ($_GET['run'] ?? '')) !== '1' || !hash_equals('ratib-deploy-sync-2026', $key)) {
     http_response_code(403);
     echo "Forbidden. Open:\n";
-    echo "https://out.ratib.sa/control-panel/fix-500.php?run=1&key=ratib-deploy-sync-2026\n";
+    echo "https://rateb.sa/control-panel/fix-500.php?run=1&key=ratib-deploy-sync-2026\n";
     exit;
 }
 
@@ -130,7 +130,7 @@ try {
 }
 
 echo "\nDone. Test login:\n";
-echo "https://out.ratib.sa/control-panel/pages/login.php\n";
+echo "https://rateb.sa/control-panel/pages/login.php\n";
 echo "Then agencies:\n";
-echo "https://out.ratib.sa/control-panel/pages/control/agencies.php?control=1\n";
+echo "https://rateb.sa/control-panel/pages/control/agencies.php?control=1\n";
 echo "\nDELETE fix-500.php from the server now.\n";

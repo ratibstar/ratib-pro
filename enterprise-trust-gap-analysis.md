@@ -24,7 +24,7 @@ RATIB now exposes a **four-page enterprise trust cluster** aimed at different re
 |------------|--------|-----------------------------|
 | Legal entity name | Profile only | Dedicated identity registry |
 | CR / VAT posture | Profile, scattered | Explicit NDA / invoice wording |
-| Official contact | Footer, chat | Prominent **info@out.ratib.sa** escalation block |
+| Official contact | Footer, chat | Prominent **info@rateb.sa** escalation block |
 | Engagement process | Implicit in sales | Five-step enterprise engagement |
 | Security for RFP | Home bullets | Summary + link to trust center |
 | Architecture for RFP | Home / profile | Summary + link to architecture page |
@@ -72,7 +72,7 @@ Priority ordered by procurement impact:
 | Field | Source of truth | Status |
 |-------|-----------------|--------|
 | Legal name | `ratib-about-profile-data.php` / procurement data | Aligned |
-| Email | `info@out.ratib.sa` | Aligned across public surfaces |
+| Email | `info@rateb.sa` | Aligned across public surfaces |
 | Phone | +966 599 863 868 | Aligned |
 | CR | NDA on request | Consistent, not over-claimed |
 | VAT | Invoice / request | Consistent, not over-claimed |

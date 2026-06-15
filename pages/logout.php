@@ -97,7 +97,7 @@ if ($countryId > 0) {
     }
     if ($slug !== null && $slug !== '') {
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'out.ratib.sa';
+        $host = $_SERVER['HTTP_HOST'] ?? 'rateb.sa';
         $base = rtrim((defined('BASE_URL') ? BASE_URL : ''), '/');
         $redirectUrl = $scheme . '://' . $host . ($base ? $base . '/' : '/') . $slug . '/login?message=logged_out';
         if ($agencyId > 0) {

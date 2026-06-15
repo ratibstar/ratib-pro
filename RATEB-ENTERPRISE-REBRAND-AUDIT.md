@@ -19,7 +19,7 @@ The first rebrand pass established CMS defaults, live sanitization, and public m
 | **Visual maturity** | **78/100** | Enterprise dark glass system present; some sections still read template/SaaS (manual review) |
 
 **Runnable audit:** `php scripts/rateb-enterprise-brand-audit.php`  
-**Production:** `https://out.ratib.sa/pages/ratib-enterprise-brand-audit.php?key=ratib-deploy-sync-2026`
+**Production:** `https://rateb.sa/pages/ratib-enterprise-brand-audit.php?key=ratib-deploy-sync-2026`
 
 ---
 
@@ -178,10 +178,10 @@ The first rebrand pass established CMS defaults, live sanitization, and public m
 
 Open in browser (hard refresh):
 
-- [ ] `https://out.ratib.sa/pages/home.php` — hero shows **RATEB** + **Telemetry Enterprise Base**
-- [ ] `https://out.ratib.sa/profile/` — no Software Foundation; trade name **RATEB**
-- [ ] `https://out.ratib.sa/pages/ratib-rebrand-status.php` — `stale_hits=0`
-- [ ] `https://out.ratib.sa/pages/ratib-enterprise-brand-audit.php?key=ratib-deploy-sync-2026`
+- [ ] `https://rateb.sa/pages/home.php` — hero shows **RATEB** + **Telemetry Enterprise Base**
+- [ ] `https://rateb.sa/profile/` — no Software Foundation; trade name **RATEB**
+- [ ] `https://rateb.sa/pages/ratib-rebrand-status.php` — `stale_hits=0`
+- [ ] `https://rateb.sa/pages/ratib-enterprise-brand-audit.php?key=ratib-deploy-sync-2026`
 - [ ] Logged-in nav — Operations Control Plane, Executive Telemetry, Operational Signaling
 
 ---

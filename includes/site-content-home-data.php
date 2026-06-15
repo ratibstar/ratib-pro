@@ -549,7 +549,7 @@ if (!function_exists('ratib_site_content_home_flat')) {
 
         // Optional env (see .env.example): RATIB_SITE_CONTENT_PUBLIC_SOURCE=db_only
         // Skips disk/DB-blob JSON fallbacks so a stale snapshot cannot mask CMS rows — only live SELECT + per-key reads.
-        // Uses ratib_site_content_public_source_resolved() so config/env/out_ratib_sa.php constant works when putenv is stripped.
+        // Uses ratib_site_content_public_source_resolved() so config/env/rateb_sa.php constant works when putenv is stripped.
         $srcEffective = function_exists('ratib_site_content_public_source_resolved')
             ? ratib_site_content_public_source_resolved()
             : '';

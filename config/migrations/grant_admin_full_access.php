@@ -5,7 +5,7 @@
  */
 /**
  * Grant admin full access to see all countries/agencies (no login required)
- * Run: https://out.ratib.sa/config/migrations/grant_admin_full_access.php
+ * Run: https://rateb.sa/config/migrations/grant_admin_full_access.php
  * Or CLI: php config/migrations/grant_admin_full_access.php
  * DELETE this file after use for security.
  */

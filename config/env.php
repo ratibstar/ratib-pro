@@ -38,8 +38,8 @@ $APP_ENV_DEFAULTS = array(
     'NGENIUS_ORDER_BASE' => 'https://api-gateway.ksa.ngenius-payments.com',
     'NGENIUS_API_BASE' => 'https://api-gateway.ksa.ngenius-payments.com',
     'NGENIUS_TOKEN_URL' => 'https://api-gateway.ksa.ngenius-payments.com/identity/auth/access-token',
-    'NGENIUS_REDIRECT_URL' => 'https://out.ratib.sa/api/verify.php',
-    'NGENIUS_CANCEL_URL' => 'https://out.ratib.sa/api/verify.php',
+    'NGENIUS_REDIRECT_URL' => 'https://rateb.sa/api/verify.php',
+    'NGENIUS_CANCEL_URL' => 'https://rateb.sa/api/verify.php',
     'NGENIUS_CHECKOUT_CURRENCY' => 'SAR',
     'NGENIUS_USD_TO_SAR' => '3.75',
 );
@@ -137,7 +137,7 @@ foreach ($ratibNgeniusSecretPaths as $ratibNgeniusSecretsPath) {
     }
 }
 
-/* Host file (e.g. config/env/out_ratib_sa.php) is loaded before this file - merge define('NGENIUS_*') here. */
+/* Host file (e.g. config/env/rateb_sa.php) is loaded before this file - merge define('NGENIUS_*') here. */
 foreach ($ratibNgeniusEnvKeys as $ratibNgeniusKey) {
     if (!defined($ratibNgeniusKey)) {
         continue;
@@ -276,7 +276,7 @@ if (!function_exists('ratib_env')) {
 if (!function_exists('ratib_ngenius_env')) {
     /**
      * N-Genius settings: use merged app config ($APP_ENV_DEFAULTS from env.php, secrets, host defines)
-     * before getenv()/$_SERVER. Prevents cPanel "Environment Variables" from overriding out_ratib_sa.php
+     * before getenv()/$_SERVER. Prevents cPanel "Environment Variables" from overriding rateb_sa.php
      * with old global sandbox URLs (common cause of HTTP 400 badTokenRequest).
      */
     function ratib_ngenius_env(string $key, $default = null)

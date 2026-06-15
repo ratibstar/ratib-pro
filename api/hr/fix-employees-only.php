@@ -5,7 +5,7 @@
  */
 /**
  * Fix Employees ID ordering only
- * Run this: https://out.ratib.sa/api/hr/fix-employees-only.php
+ * Run this: https://rateb.sa/api/hr/fix-employees-only.php
  */
 
 header('Content-Type: application/json');

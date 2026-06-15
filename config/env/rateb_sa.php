@@ -1,10 +1,10 @@
 <?php
 /**
- * EN: Handles configuration/runtime setup behavior in `config/env/out_ratib_sa.php`.
- * AR: يدير سلوك إعدادات النظام وتهيئة التشغيل في `config/env/out_ratib_sa.php`.
+ * EN: Handles configuration/runtime setup behavior in `config/env/rateb_sa.php`.
+ * AR: يدير سلوك إعدادات النظام وتهيئة التشغيل في `config/env/rateb_sa.php`.
  */
 /**
- * Main out.ratib.sa — no Bangla, English only.
+ * Main rateb.sa — no Bangla, English only.
  * Uses outratib_out DB for Ratib Pro. Control Panel uses control_panel_db (separate).
  */
 if (defined('DB_NAME')) {
@@ -27,7 +27,7 @@ if (!defined('RATEB_ERP_DB_NAME')) {
     define('RATEB_ERP_DB_NAME', ($_erpDb !== false && $_erpDb !== '') ? (string) $_erpDb : 'outratib_rateb-erp');
 }
 
-define('SITE_URL', 'https://out.ratib.sa');
+define('SITE_URL', 'https://rateb.sa');
 define('SINGLE_URL_MODE', true);  // All countries use same URL; DB switches by country selection
 define('APP_NAME', 'RATEB');
 define('APP_VERSION', '1.0.0');
@@ -37,7 +37,7 @@ define('NO_BANGLA', true);
 /*
  * Mobile portal JWT/QR signing — REQUIRED on production (api/mobile/).
  * Set in project-root .env: MOBILE_AUTH_SECRET=<long-random-string>
- * Never commit the secret. Without it, mobile login returns 503 config_error on out.ratib.sa.
+ * Never commit the secret. Without it, mobile login returns 503 config_error on rateb.sa.
  */
 if (!defined('MOBILE_AUTH_SECRET')) {
     $_mobSecret = getenv('MOBILE_AUTH_SECRET');

@@ -1,6 +1,6 @@
 # RATEB Mobile — Production Unblock Guide
 
-**Production API:** `https://out.ratib.sa/api/mobile`  
+**Production API:** `https://rateb.sa/api/mobile`  
 **Current blocker:** `503 config_error` on JWT paths — `MOBILE_AUTH_SECRET` not available to PHP  
 **Stack detected:** **nginx** in front (typical **cPanel** + PHP-FPM / LiteSpeed backend)
 
@@ -33,7 +33,7 @@
 | Dev-only fallback | `rateb-mobile-dev-only-not-for-production` — **only when NOT `*.ratib.sa`** |
 | Production fail-closed | `rateb_mobile_config_error()` → **503**, logs CRITICAL, **never exposes secret** |
 | Invalid password login | **401** without calling `issue_token` (misleading health signal) |
-| Any Bearer / JWT operation on `out.ratib.sa` without secret | **503 `config_error`** (expected today) |
+| Any Bearer / JWT operation on `rateb.sa` without secret | **503 `config_error`** (expected today) |
 
 ### Root cause (ops + code)
 
@@ -44,7 +44,7 @@
 Secret resolution order (after `includes/config.php` loads):
 
 1. `getenv('MOBILE_AUTH_SECRET')` — from `.env` bridge or cPanel PHP env  
-2. `define('MOBILE_AUTH_SECRET')` — from `config/env/out_ratib_sa.php`  
+2. `define('MOBILE_AUTH_SECRET')` — from `config/env/rateb_sa.php`  
 3. Dev fallback (localhost only)  
 4. Production → **503**
 
@@ -107,44 +107,44 @@ MOBILE_AUTH_SECRET=K7xP2mN9vQ4wR8tY6uI0oL3sD5fG1hJ2kZ8xC7vB4nM9pQ6wE3rT0yU5iO2a
 
 ```bash
 # 1) Health — always 200 (no secret)
-curl -sS https://out.ratib.sa/api/mobile/health.php
+curl -sS https://rateb.sa/api/mobile/health.php
 
 # 2) BEFORE secret — expect 503 on JWT validate path
 curl -sS -o /dev/null -w "%{http_code}\n" \
   -H "Authorization: Bearer aaa.bbb.ccc" \
-  https://out.ratib.sa/api/mobile/profile.php
+  https://rateb.sa/api/mobile/profile.php
 # Expected NOW: 503
 
 # 3) AFTER secret — expect 401 (not 503)
 curl -sS -w "\nHTTP %{http_code}\n" \
   -H "Authorization: Bearer aaa.bbb.ccc" \
-  https://out.ratib.sa/api/mobile/profile.php
+  https://rateb.sa/api/mobile/profile.php
 # Expected AFTER FIX: {"success":false,"message":"Unauthorized"} + HTTP 401
 
 # 4) Invalid login — always 401 (does NOT prove secret works)
 curl -sS -w "\nHTTP %{http_code}\n" -X POST \
   -H "Content-Type: application/json" \
   -d '{"email":"probe","password":"wrong"}' \
-  https://out.ratib.sa/api/mobile/login.php
+  https://rateb.sa/api/mobile/login.php
 
 # 5) Valid login — proves secret + auth end-to-end
 curl -sS -w "\nHTTP %{http_code}\n" -X POST \
   -H "Content-Type: application/json" \
   -d '{"email":"YOUR_USER","password":"YOUR_PASS"}' \
-  https://out.ratib.sa/api/mobile/login.php
+  https://rateb.sa/api/mobile/login.php
 # Expected: HTTP 200, "success":true, "token":"eyJ..."
 
 # 6) Authenticated profile
 TOKEN="<paste token from step 5>"
 curl -sS -w "\nHTTP %{http_code}\n" \
   -H "Authorization: Bearer $TOKEN" \
-  https://out.ratib.sa/api/mobile/profile.php
+  https://rateb.sa/api/mobile/profile.php
 # Expected: HTTP 200, "success":true, "data":{...}
 
 # 7) Company workers (company role token)
 curl -sS -w "\nHTTP %{http_code}\n" \
   -H "Authorization: Bearer $TOKEN" \
-  https://out.ratib.sa/api/mobile/company-workers.php
+  https://rateb.sa/api/mobile/company-workers.php
 # Expected: HTTP 200 JSON (may be empty roster)
 ```
 
@@ -156,18 +156,18 @@ curl -sS -w "\nHTTP %{http_code}\n" \
 
 | Component | Evidence |
 |-----------|----------|
-| **Edge** | `Server: nginx` on `out.ratib.sa` |
+| **Edge** | `Server: nginx` on `rateb.sa` |
 | **Hosting** | cPanel deploy scripts in repo (`scripts/github-cpanel-fileman-deploy-core.py`, `cpanel-deploy-sync.sh`) |
 | **PHP** | PHP 8.x compatible; PHP-FPM or LiteSpeed common on cPanel |
 | **Env loading** | `config/env/load.php` → `ratib_env_load_bridge_dotenv()` reads project-root `.env` |
-| **Host profile** | `config/env/out_ratib_sa.php` for `out.ratib.sa` |
+| **Host profile** | `config/env/rateb_sa.php` for `rateb.sa` |
 
 ### Load order for mobile login
 
 ```
 cors.php → bootstrap.php (functions) → includes/config.php
   → config/env/load.php (.env bridge)
-  → config/env/out_ratib_sa.php (define MOBILE_AUTH_SECRET if getenv set)
+  → config/env/rateb_sa.php (define MOBILE_AUTH_SECRET if getenv set)
 → Auth::login → rateb_mobile_issue_token() → rateb_mobile_token_secret()
 ```
 

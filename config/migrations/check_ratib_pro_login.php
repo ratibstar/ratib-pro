@@ -5,7 +5,7 @@
  */
 /**
  * Diagnostic: Check why Ratib Pro login might fail.
- * Run from browser: https://out.ratib.sa/config/migrations/check_ratib_pro_login.php
+ * Run from browser: https://rateb.sa/config/migrations/check_ratib_pro_login.php
  */
 require_once __DIR__ . '/../../config/env/load.php';
 header('Content-Type: text/plain; charset=utf-8');

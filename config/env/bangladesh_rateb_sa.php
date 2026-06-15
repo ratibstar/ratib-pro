@@ -1,10 +1,10 @@
 <?php
 /**
- * EN: Handles configuration/runtime setup behavior in `config/env/bangladesh_out_ratib_sa.php`.
- * AR: يدير سلوك إعدادات النظام وتهيئة التشغيل في `config/env/bangladesh_out_ratib_sa.php`.
+ * EN: Handles configuration/runtime setup behavior in `config/env/bangladesh_rateb_sa.php`.
+ * AR: يدير سلوك إعدادات النظام وتهيئة التشغيل في `config/env/bangladesh_rateb_sa.php`.
  */
 /**
- * Bangladesh link — separate data for bangladesh.out.ratib.sa
+ * Bangladesh link — separate data for bangladesh.rateb.sa
  */
 if (defined('DB_NAME')) {
     return;
@@ -16,7 +16,7 @@ define('DB_PASS', '9s%BpMr1]dfb');
 define('DB_NAME', 'outratib_out');
 define('CONTROL_PANEL_DB_NAME', getenv('CONTROL_PANEL_DB_NAME') ?: 'outratib_control_panel_db');
 
-define('SITE_URL', 'https://bangladesh.out.ratib.sa');
+define('SITE_URL', 'https://bangladesh.rateb.sa');
 define('APP_NAME', 'RATEB');
 define('APP_VERSION', '1.0.0');
 define('BASE_URL', '');

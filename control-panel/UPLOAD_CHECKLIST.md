@@ -30,7 +30,7 @@
    Stub pages `pages/dashboard-hr.php` and `pages/dashboard-accounting.php` are included; they show a message and link to Ratib Pro. For full HR/Accounting UI, copy the real pages from Ratib Pro.
 
 3. **RATIB_PRO_URL**  
-   In `config/env.php`, define `RATIB_PRO_URL` (e.g. `https://out.ratib.sa`) so “My Own Pro” and “Open Ratib Pro” links work.
+   In `config/env.php`, define `RATIB_PRO_URL` (e.g. `https://rateb.sa`) so “My Own Pro” and “Open Ratib Pro” links work.
 
 4. **Database**  
    Use the same control DB as Ratib Pro (e.g. run `config/migrations/separate_control_panel_db/` from Ratib Pro if needed).

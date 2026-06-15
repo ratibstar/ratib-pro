@@ -31,7 +31,8 @@ def http_migrate(site: str, token: str, path: str) -> tuple[int, str]:
 
 
 def main() -> int:
-    site = os.environ.get("CPANEL_SITE_URL", "https://out.ratib.sa").rstrip("/")
+    site = os.environ.get("DEPLOY_SITE_URL") or os.environ.get("CPANEL_SITE_URL", "https://rateb.sa")
+    site = site.rstrip("/")
     token = os.environ.get("RATEB_ERP_MIGRATE_TOKEN") or os.environ.get("CPANEL_API_TOKEN") or ""
     if not token:
         print("::warning::RATEB ERP migrations skipped — no token", flush=True)

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * Provision RATIB_INFRA_SECRET_KEY on server (config/ or storage/).
- * HTTP: GET https://out.ratib.sa/modules/infrastructure-marketplace/Cli/infra-ensure-secret-key.php
+ * HTTP: GET https://rateb.sa/modules/infrastructure-marketplace/Cli/infra-ensure-secret-key.php
  */
 require_once dirname(__DIR__) . '/bootstrap.php';
 

@@ -116,7 +116,7 @@ $metaDesc = (string) ($about['meta']['description'] ?? '');
             '@type' => 'ContactPoint',
             'telephone' => '+966-599-863-868',
             'contactType' => 'sales',
-            'email' => 'info@out.ratib.sa',
+            'email' => 'info@rateb.sa',
             'availableLanguage' => ['English', 'Arabic'],
         ],
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?></script>

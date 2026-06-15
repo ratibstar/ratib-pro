@@ -49,7 +49,7 @@ Add your DB user to **all** of these:
 
 After adding the user to all databases:
 
-1. Open: **https://out.ratib.sa/config/check_country_db_access.php?control=1**
+1. Open: **https://rateb.sa/config/check_country_db_access.php?control=1**
 2. All 11 databases should show ✓ OK
 3. Reload the Country Users page — the "Access denied" error should be gone
 

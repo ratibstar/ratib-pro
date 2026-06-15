@@ -1,5 +1,5 @@
 # ✅ LAST DEEP CHECK - COMPLETE
-## Ratib Program - https://out.ratib.sa/
+## Ratib Program - https://rateb.sa/
 ## Final Verification - All Issues Fixed
 
 ---
@@ -83,7 +83,7 @@
 
 The application has passed **ALL** final checks and is **100% ready** for production deployment to:
 
-**https://out.ratib.sa/**
+**https://rateb.sa/**
 
 ---
 

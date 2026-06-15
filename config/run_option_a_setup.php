@@ -6,7 +6,7 @@
 /**
  * OPTION A - Automated setup: DELETE + UPDATE for all country databases
  *
- * Run from browser: https://out.ratib.sa/config/run_option_a_setup.php
+ * Run from browser: https://rateb.sa/config/run_option_a_setup.php
  * Or from CLI: php config/run_option_a_setup.php
  *
  * BEFORE: Ensure outratib_out user has privileges on ALL country databases (cPanel).
@@ -16,7 +16,7 @@ ini_set('display_errors', 1);
 
 // Load config (use your main domain)
 if (php_sapi_name() === 'cli') {
-    $_SERVER['HTTP_HOST'] = 'out.ratib.sa';
+    $_SERVER['HTTP_HOST'] = 'rateb.sa';
 }
 require_once __DIR__ . '/env/load.php';
 

@@ -78,7 +78,7 @@ RATEB now presents as **Workforce Program Infrastructure** with a procurement-gr
 | `Help Center` (strings in long builtin JS tutorials) | Historical article bodies | Gradual content migration; UI title → **Operational Knowledge Base** |
 | `Client login` | Top bar (customer portal) | Rename to *Program workspace login* when portal UX is scoped |
 | `Demo` | Footer / CTA | Enterprise buyers expect *brief* / *walkthrough* — consider copy pass |
-| `ratib_*` PHP constants / `out.ratib.sa` | Backward compatibility | Intentional — not user-facing brand |
+| `ratib_*` PHP constants / `rateb.sa` | Backward compatibility | Intentional — not user-facing brand |
 | Hosting / domain mega-nav items | Marketplace module cross-sell | Separate product line; not core workforce positioning |
 
 **Score: 88/100** — Public chrome and help UI aligned; deep builtin tutorial HTML still contains legacy phrases in places.
@@ -159,10 +159,10 @@ CMS sanitizer forces fresh defaults for `home.topbar.ops_line`, analytics sample
 2. Hard refresh home with `?v=rateb-enterprise-hardening-final-20260521`
 3. Optional DB sync: `/pages/ratib-cms-rebrand-apply.php`
 4. Confirm URLs:
-   - https://out.ratib.sa/enterprise-trust/
-   - https://out.ratib.sa/government-workforce-operations/
-   - https://out.ratib.sa/enterprise-pack/
-   - https://out.ratib.sa/sitemap.xml
+   - https://rateb.sa/enterprise-trust/
+   - https://rateb.sa/government-workforce-operations/
+   - https://rateb.sa/enterprise-pack/
+   - https://rateb.sa/sitemap.xml
 5. GitHub Actions deploy should upload changed paths + FAST_FILES baseline.
 
 ---

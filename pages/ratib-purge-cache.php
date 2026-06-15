@@ -1,7 +1,7 @@
 <?php
 /**
  * Purge LiteSpeed cache for this vhost, then redirect to profile.
- * https://out.ratib.sa/pages/ratib-purge-cache.php?key=ratib-deploy-sync-2026
+ * https://rateb.sa/pages/ratib-purge-cache.php?key=ratib-deploy-sync-2026
  */
 declare(strict_types=1);
 
@@ -19,7 +19,7 @@ if (!headers_sent()) {
     header('Cache-Control: no-store, no-cache, must-revalidate');
 }
 
-$host = $_SERVER['HTTP_HOST'] ?? 'out.ratib.sa';
+$host = $_SERVER['HTTP_HOST'] ?? 'rateb.sa';
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 require_once __DIR__ . '/../includes/ratib-public-base-url.php';
 $dest = ratib_public_marketing_home_url($scheme . '://' . $host, ['ratib_purged' => '1']);

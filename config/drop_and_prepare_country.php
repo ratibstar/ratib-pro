@@ -5,7 +5,7 @@
  */
 /**
  * Drop all tables in a country database, then you can import fresh.
- * Run: https://out.ratib.sa/config/drop_and_prepare_country.php?country=ethiopia
+ * Run: https://rateb.sa/config/drop_and_prepare_country.php?country=ethiopia
  *
  * Supported: bangladesh, ethiopia, indonesia, kenya, nepal, nigeria,
  *            philippines, rwanda, sri_lanka, thailand, uganda
@@ -13,7 +13,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-$_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? 'out.ratib.sa';
+$_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? 'rateb.sa';
 require_once __DIR__ . '/env/load.php';
 
 if (!defined('DB_HOST') || !defined('DB_NAME')) {

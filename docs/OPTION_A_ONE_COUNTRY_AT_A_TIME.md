@@ -63,7 +63,7 @@ UPDATE control_agencies SET db_name = 'outratib_bangladish', db_user = 'outratib
 
 ### Step 6: Test
 
-1. Open: `https://bangladesh.out.ratib.sa/pages/login.php`
+1. Open: `https://bangladesh.rateb.sa/pages/login.php`
 2. Log in with a Bangladesh user
 3. Check that the dashboard and data load correctly
 

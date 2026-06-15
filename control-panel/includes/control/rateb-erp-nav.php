@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * RATEB ERP — Control Panel URLs (out.ratib.sa only).
+ * RATEB ERP — Control Panel URLs (rateb.sa only).
  */
 require_once __DIR__ . '/rateb-erp-bridge.php';
 

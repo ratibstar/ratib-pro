@@ -5,7 +5,7 @@
  */
 /**
  * One-time: create default control panel admin. Run once then DELETE this file.
- * URL: https://out.ratib.sa/control-panel/create_admin.php
+ * URL: https://rateb.sa/control-panel/create_admin.php
  */
 ob_start();
 error_reporting(E_ALL);

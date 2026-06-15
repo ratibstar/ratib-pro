@@ -1,6 +1,6 @@
 # RATEB Mobile production verify — run after MOBILE_AUTH_SECRET is in server .env + PHP restart
 $ErrorActionPreference = 'Continue'
-$base = 'https://out.ratib.sa/api/mobile'
+$base = 'https://rateb.sa/api/mobile'
 
 Write-Host "`n=== RATEB Mobile production verify ===`n" -ForegroundColor Cyan
 

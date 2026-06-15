@@ -1,9 +1,9 @@
 <?php
 /**
- * Check (and optionally fix) permissions for out.ratib.sa on cPanel.
+ * Check (and optionally fix) permissions for rateb.sa on cPanel.
  *
- * Check:  https://out.ratib.sa/pages/ratib-perms-check.php
- * Fix:    https://out.ratib.sa/pages/ratib-perms-check.php?fix=1&key=ratib-deploy-sync-2026
+ * Check:  https://rateb.sa/pages/ratib-perms-check.php
+ * Fix:    https://rateb.sa/pages/ratib-perms-check.php?fix=1&key=ratib-deploy-sync-2026
  *
  * Expected:
  *   /home/USER     → 0711 or 0750+ (owner can enter)

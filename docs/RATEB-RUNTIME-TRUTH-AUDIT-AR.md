@@ -134,7 +134,7 @@
 ```
 includes/config.php
 ├── config/env/load.php          → getenv / host profile
-├── config/env/out_ratib_sa.php  → DB_*, SINGLE_URL_MODE, CONTROL_PANEL_DB_NAME
+├── config/env/rateb_sa.php  → DB_*, SINGLE_URL_MODE, CONTROL_PANEL_DB_NAME
 ├── admin/core/EventBus.php      (optional)
 ├── $GLOBALS['conn'] = mysqli    → tenant/agency DB (:1199–1207, :1383, :1407)
 └── session + agency switching     → comments :43–50
@@ -419,9 +419,9 @@ Cached in SW: mobile-app/sw.js:35 (/api/worker-tracking/)
 
 | ملف | سطر | المحتوى |
 |-----|-----|---------|
-| `config/env/out_ratib_sa.php` | 22 | fallback `DB_PASS` literal |
+| `config/env/rateb_sa.php` | 22 | fallback `DB_PASS` literal |
 | `config/env/default.php` | 16 | `define('DB_PASS', '…')` |
-| `config/env/bangladesh_out_ratib_sa.php` | 15 | same pattern |
+| `config/env/bangladesh_rateb_sa.php` | 15 | same pattern |
 
 ### 5.4 Session handling (ملفات)
 

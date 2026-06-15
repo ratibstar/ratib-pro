@@ -1,5 +1,5 @@
 # ✅ FINAL COMPREHENSIVE DEEP CHECK - COMPLETE
-## Ratib Program - https://out.ratib.sa/
+## Ratib Program - https://rateb.sa/
 ## Ultimate Production Verification - 100% Complete
 
 ---
@@ -16,7 +16,7 @@
   DB_NAME: outratib_out
   DB_USER: outratib_out
   DB_PASS: 9s%BpMr1]dfb
-  SITE_URL: https://out.ratib.sa
+  SITE_URL: https://rateb.sa
   BASE_URL: '' (root deployment)
   PRODUCTION_MODE: true
   DEBUG_MODE: false
@@ -270,7 +270,7 @@ $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb
 ## 🚀 DEPLOYMENT READY
 
 The application is **100% ready** for production deployment to:
-- **URL**: https://out.ratib.sa/
+- **URL**: https://rateb.sa/
 - **Database**: outratib_out
 - **Database User**: outratib_out
 - **Status**: ✅ **PRODUCTION READY**
@@ -330,7 +330,7 @@ The application is **100% ready** for production deployment to:
 - **Database Host**: localhost
 - **Database Name**: outratib_out
 - **Database User**: outratib_out
-- **Site URL**: https://out.ratib.sa
+- **Site URL**: https://rateb.sa
 - **Base URL**: '' (root deployment)
 - **Production Mode**: Enabled
 - **Debug Mode**: Disabled

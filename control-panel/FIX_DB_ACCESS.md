@@ -40,6 +40,6 @@ If you still get **Access denied for user 'outratib_out'@'localhost' to database
 
 ## Step 4: Run create_admin.php again
 
-Open: **https://out.ratib.sa/control-panel/create_admin.php**
+Open: **https://rateb.sa/control-panel/create_admin.php**
 
 Then log in with username **admin**, password **password**, and delete the helper files (create_admin.php, check_db.php, this FIX_DB_ACCESS.md) from the server.

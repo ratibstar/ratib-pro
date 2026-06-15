@@ -11,7 +11,7 @@
 |---|------|--------|
 | 1 | **JWT/QR secret** | `bootstrap.php` — production hosts (`*.ratib.sa`) **fail closed** with HTTP 503 `config_error` if `MOBILE_AUTH_SECRET` missing; dev localhost keeps non-production fallback only |
 | 2 | **Secret logging** | `error_log('CRITICAL: MOBILE_AUTH_SECRET is not configured…')` — secret value never logged or returned |
-| 3 | **Env wiring** | `config/env/out_ratib_sa.php` — loads `MOBILE_AUTH_SECRET` from `.env` into `define()` when set |
+| 3 | **Env wiring** | `config/env/rateb_sa.php` — loads `MOBILE_AUTH_SECRET` from `.env` into `define()` when set |
 | 4 | **Tenant isolation** | New `api/mobile/tenant.inc.php` — country/agency scope from JWT claims only |
 | 5 | **Company workers** | `company-workers.php` — tenant-scoped via `workers.country_id` or `agents.tenant_id` / `agents.country_id` |
 | 6 | **Company requests** | `company-requests.php` — cases scoped by `cases.country_id`, `cases.tenant_id`, or worker/agent tenant join |
@@ -60,7 +60,7 @@
 - [x] Launcher icons: default Flutter mipmap placeholders (replace before public marketing)
 - [x] Splash: `launch_background.xml` (default Flutter)
 - [x] Release Gradle config + `key.properties.example`
-- [x] API URL: `--dart-define=RATEB_API_BASE_URL=https://out.ratib.sa/api`
+- [x] API URL: `--dart-define=RATEB_API_BASE_URL=https://rateb.sa/api`
 
 ### Before Play Console upload
 
@@ -73,7 +73,7 @@
 - [ ] Build AAB:
   ```powershell
   cd rateb_mobile
-  flutter build appbundle --dart-define=RATEB_API_BASE_URL=https://out.ratib.sa/api
+  flutter build appbundle --dart-define=RATEB_API_BASE_URL=https://rateb.sa/api
   ```
 - [ ] Output: `build/app/outputs/bundle/release/app-release.aab`
 
@@ -120,7 +120,7 @@ api/mobile/company-workers.php
 api/mobile/company-requests.php
 api/mobile/agency-pipeline.php
 api/mobile/agency-assignments.php
-config/env/out_ratib_sa.php
+config/env/rateb_sa.php
 ```
 
 Flutter: rebuild and distribute AAB/APK after pull.
@@ -139,10 +139,10 @@ Verify after deploy:
 
 ```bash
 # Should still work (no secret needed)
-curl https://out.ratib.sa/api/mobile/health.php
+curl https://rateb.sa/api/mobile/health.php
 
 # Should return 503 config_error if secret missing (after bootstrap deploy)
-curl -X POST https://out.ratib.sa/api/mobile/login.php \
+curl -X POST https://rateb.sa/api/mobile/login.php \
   -H "Content-Type: application/json" \
   -d '{"email":"test","password":"test"}'
 ```

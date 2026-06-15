@@ -5,7 +5,7 @@
  */
 /**
  * Control panel DB check – run once in browser then DELETE this file.
- * URL: https://out.ratib.sa/control-panel/check_db.php
+ * URL: https://rateb.sa/control-panel/check_db.php
  */
 header('Content-Type: text/plain; charset=utf-8');
 require_once __DIR__ . '/config/env.php';

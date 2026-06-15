@@ -4,7 +4,7 @@
 
 SHELL=/bin/bash
 PATH=/usr/local/bin:/usr/bin:/bin
-MAILTO=ops@out.ratib.sa
+MAILTO=ops@rateb.sa
 
 # --- Provider health (every 5 minutes) ---
 */5 * * * * cd /home/outratib/public_html && /usr/local/bin/php modules/infrastructure-marketplace/Cli/provider-health-monitor.php >> /home/outratib/logs/infra-health-monitor.log 2>&1

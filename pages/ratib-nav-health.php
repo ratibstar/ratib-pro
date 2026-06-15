@@ -1,7 +1,7 @@
 <?php
 /**
  * Public nav / bootstrap health probe (no HTML chrome).
- * https://out.ratib.sa/pages/ratib-nav-health.php
+ * https://rateb.sa/pages/ratib-nav-health.php
  */
 declare(strict_types=1);
 

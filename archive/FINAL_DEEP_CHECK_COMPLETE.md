@@ -1,5 +1,5 @@
 # ✅ FINAL DEEP CHECK - COMPLETE VERIFICATION
-## Ratib Program - https://out.ratib.sa/
+## Ratib Program - https://rateb.sa/
 ## Last Comprehensive Check - 100% Verified
 
 ---
@@ -33,7 +33,7 @@
 
 #### Application Configuration:
 ```php
-✅ SITE_URL: https://out.ratib.sa
+✅ SITE_URL: https://rateb.sa
 ✅ BASE_URL: '' (root deployment)
 ✅ APP_NAME: Ratib Program
 ✅ APP_VERSION: 1.0.0
@@ -300,7 +300,7 @@
 
 ## 🎯 DEPLOYMENT TARGET
 
-- **URL**: https://out.ratib.sa/
+- **URL**: https://rateb.sa/
 - **Database**: outratib_out
 - **Database User**: outratib_out
 - **Status**: ✅ **100% READY FOR PRODUCTION**
@@ -318,7 +318,7 @@ DB_PASS: 9s%BpMr1]dfb
 DB_PORT: 3306
 
 // Application
-SITE_URL: https://out.ratib.sa
+SITE_URL: https://rateb.sa
 BASE_URL: '' (root deployment)
 APP_NAME: Ratib Program
 APP_VERSION: 1.0.0
@@ -364,7 +364,7 @@ Timezone: Asia/Riyadh
 
 The application has passed **ALL** deep verification checks and is **100% ready** for production deployment to:
 
-**https://out.ratib.sa/**
+**https://rateb.sa/**
 
 ---
 

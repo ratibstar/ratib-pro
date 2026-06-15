@@ -1,7 +1,7 @@
 # RATEB Mobile — Pilot Readiness Checklist
 
 **Version:** 1.0.0+1  
-**API target:** `https://out.ratib.sa/api`  
+**API target:** `https://rateb.sa/api`  
 **Last updated:** 2026-05-25  
 **Scope:** Internal pilot (company/agency/worker portals + workforce QR login)
 
@@ -40,7 +40,7 @@
 - [ ] Grant in Settings → scanner resumes after return
 
 ### QR scanner
-- [ ] Open **System Settings → user → Workforce QR / Show barcode** on `out.ratib.sa`
+- [ ] Open **System Settings → user → Workforce QR / Show barcode** on `rateb.sa`
 - [ ] Scan badge QR with rear camera
 - [ ] Success animation → lands on correct portal (worker / company / agency)
 - [ ] Invalid/expired QR shows friendly error, scanner reopens

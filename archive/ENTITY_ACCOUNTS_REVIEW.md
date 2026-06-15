@@ -42,7 +42,7 @@
    If `financial_accounts` does not have `entity_type` and `entity_id`, the ensure logic does not run.  
    **Fix:** Run the GAAP migration once (the one that updates `financial_accounts`).  
    Example URL (adjust to your app):  
-   `https://out.ratib.sa/api/accounting/transactions/run-gaap-migration-safe.php`  
+   `https://rateb.sa/api/accounting/transactions/run-gaap-migration-safe.php`  
    (Must be logged in.)
 
 2. **ENUM mismatch (fixed in code)**  

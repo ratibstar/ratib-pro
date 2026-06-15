@@ -1,8 +1,8 @@
-# Control panel – server setup (out.ratib.sa)
+# Control panel – server setup (rateb.sa)
 
 ## 1. control.php not found
 
-**Problem:** `https://out.ratib.sa/control.php` shows "File not found".
+**Problem:** `https://rateb.sa/control.php` shows "File not found".
 
 **Fix:** Upload the file **`control.php`** to the **site root** on the server (the same folder where `index.php` is, usually `public_html` or `httpdocs`).
 
@@ -63,6 +63,6 @@ If the **main Ratib Pro database** already has the control panel tables (`contro
 
 ## 3. After setup
 
-- Open **https://out.ratib.sa/control.php** – it should redirect to the control panel.
-- Or open **https://out.ratib.sa/control-panel/**.
+- Open **https://rateb.sa/control.php** – it should redirect to the control panel.
+- Or open **https://rateb.sa/control-panel/**.
 - Log in with a user from the `control_admins` table (e.g. the admin you created in step 4 above).

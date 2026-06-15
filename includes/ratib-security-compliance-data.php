@@ -12,7 +12,7 @@ if (!function_exists('ratib_security_compliance_config')) {
      */
     function ratib_security_compliance_config(string $baseUrl): array
     {
-        $enterpriseMail = 'info@out.ratib.sa';
+        $enterpriseMail = 'info@rateb.sa';
         $mailto = static function (string $subject) use ($enterpriseMail): string {
             return 'mailto:' . $enterpriseMail . '?subject=' . rawurlencode($subject);
         };
@@ -140,7 +140,7 @@ if (!function_exists('ratib_security_compliance_config')) {
                     ],
                     [
                         'title' => 'Contact Enterprise Team',
-                        'body' => 'Riyadh HQ · info@out.ratib.sa · enterprise program and corridor deployments.',
+                        'body' => 'Riyadh HQ · info@rateb.sa · enterprise program and corridor deployments.',
                         'href' => $mailto('RATEB — Enterprise Team Inquiry'),
                         'icon' => 'fa-envelope',
                         'variant' => 'ghost',

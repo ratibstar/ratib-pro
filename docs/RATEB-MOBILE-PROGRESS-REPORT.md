@@ -2,7 +2,7 @@
 
 **Date:** 25 May 2026  
 **Project:** `rateb_mobile/` (Flutter) + `api/mobile/` (PHP JSON APIs)  
-**Production API base:** `https://out.ratib.sa/api`  
+**Production API base:** `https://rateb.sa/api`  
 **Local dev URL:** `http://127.0.0.1:8090`
 
 ---
@@ -66,7 +66,7 @@ lib/
 ### 3. Features delivered
 
 #### Authentication
-- Password login against `/mobile/login.php` (same accounts as `https://out.ratib.sa/pages/login.php`)
+- Password login against `/mobile/login.php` (same accounts as `https://rateb.sa/pages/login.php`)
 - JWT bearer token stored via `TokenStorage` (SharedPreferences on all platforms including web)
 - 401 → automatic logout + “Session expired” on login screen
 - Removed `flutter_secure_storage` (caused web `OperationError`)
@@ -103,7 +103,7 @@ lib/
 | Issue | Cause | Fix |
 |-------|-------|-----|
 | Blank white screen | Stale web session + secure storage web crash | Removed secure storage; fresh dev run |
-| Login “Unable to reach server” | Wrong/stale API URL or network | `--dart-define=RATEB_API_BASE_URL=https://out.ratib.sa/api` |
+| Login “Unable to reach server” | Wrong/stale API URL or network | `--dart-define=RATEB_API_BASE_URL=https://rateb.sa/api` |
 | Requests tab crash | `Size.fromHeight(48)` infinite width in Row | Theme `Size(0, 48)` + full-width wrapper on login button |
 | Tabs not clickable | Offline banner Column+Expanded + dashboard rebuild on each tap | Stack overlay banner + `StatefulShellRoute` shell |
 | Old mock UI on 8088 | Stale Flutter dev server | Restart on **8090** |
@@ -126,7 +126,7 @@ Your latest screenshot shows:
 cd C:\Users\انا\Desktop\ratibprogram\rateb_mobile
 flutter pub get
 flutter run -d web-server --web-port=8090 --web-hostname=127.0.0.1 `
-  --dart-define=RATEB_API_BASE_URL=https://out.ratib.sa/api
+  --dart-define=RATEB_API_BASE_URL=https://rateb.sa/api
 ```
 
 Open **http://127.0.0.1:8090** (not 8088).
@@ -136,7 +136,7 @@ Open **http://127.0.0.1:8090** (not 8088).
 **Build for production web:**
 
 ```powershell
-flutter build web --dart-define=RATEB_API_BASE_URL=https://out.ratib.sa/api
+flutter build web --dart-define=RATEB_API_BASE_URL=https://rateb.sa/api
 ```
 
 ---
@@ -145,9 +145,9 @@ flutter build web --dart-define=RATEB_API_BASE_URL=https://out.ratib.sa/api
 
 1. **Push** changes to `main` — GitHub Actions fast-deploy uploads changed files under `api/mobile/` automatically.
 2. **Verify** endpoints live:
-   - `GET https://out.ratib.sa/api/mobile/health.php`
-   - `POST https://out.ratib.sa/api/mobile/login.php`
-   - `GET https://out.ratib.sa/api/mobile/company-workers.php` (with Bearer token)
+   - `GET https://rateb.sa/api/mobile/health.php`
+   - `POST https://rateb.sa/api/mobile/login.php`
+   - `GET https://rateb.sa/api/mobile/company-workers.php` (with Bearer token)
 3. **Confirm** Actions deploy job is green after push.
 4. **Test** all three roles on web, then native (`flutter run -d android` / iOS).
 

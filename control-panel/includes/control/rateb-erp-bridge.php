@@ -80,7 +80,7 @@ function control_rateb_erp_public_url(string $route = 'admin'): string
     $site = rtrim(defined('SITE_URL') ? (string) SITE_URL : '', '/');
     if ($site === '') {
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $site = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'out.ratib.sa');
+        $site = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'rateb.sa');
     }
     return $site . '/rateb-erp/public/' . $route;
 }

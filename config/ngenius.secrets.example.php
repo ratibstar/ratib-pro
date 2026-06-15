@@ -18,7 +18,7 @@ declare(strict_types=1);
  * If NI gives one API key string for Basic (often base64), put it in NGENIUS_API_KEY only — leave NGENIUS_API_SECRET empty.
  * Do not fill API_SECRET if API_KEY is already the full blob; that produces badTokenRequest.
  * If you paste plaintext "id:secret" as one line, same — leave NGENIUS_API_SECRET empty.
- * KSA live merchants: keys must call https://api-gateway.ksa.ngenius-payments.com (see config/env/out_ratib_sa.php).
+ * KSA live merchants: keys must call https://api-gateway.ksa.ngenius-payments.com (see config/env/rateb_sa.php).
  * Live realm: networkinternational.
  *
  * Optional (same keys as .env / config/env.php): site list prices are USD; KSA outlets usually charge SAR.

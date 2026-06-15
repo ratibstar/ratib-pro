@@ -36,7 +36,7 @@ function rateb_mobile_json(array $payload, int $status = 200): void
 }
 
 /**
- * True when serving production host (out.ratib.sa) — not local/dev.
+ * True when serving production host (rateb.sa) — not local/dev.
  */
 function rateb_mobile_is_production(): bool
 {
@@ -56,7 +56,7 @@ function rateb_mobile_is_production(): bool
         return false;
     }
 
-    return str_contains($host, 'ratib.sa');
+    return str_contains($host, 'rateb.sa') || str_contains($host, 'ratib.sa');
 }
 
 /**

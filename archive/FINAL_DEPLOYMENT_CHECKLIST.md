@@ -1,5 +1,5 @@
 # ✅ Final Production Deployment Checklist
-## Ratib Program - https://out.ratib.sa/
+## Ratib Program - https://rateb.sa/
 
 ---
 
@@ -96,7 +96,7 @@ DB_USER: outratib_out
 DB_PASS: 9s%BpMr1]dfb
 
 // Application
-SITE_URL: https://out.ratib.sa
+SITE_URL: https://rateb.sa
 BASE_URL: '' (empty for root deployment)
 PRODUCTION_MODE: true
 DEBUG_MODE: false
@@ -235,7 +235,7 @@ session.cookie_secure: 1
 
 ## 📞 Support Information
 
-- **Live URL**: https://out.ratib.sa/
+- **Live URL**: https://rateb.sa/
 - **Database**: outratib_out
 - **Error Log**: `logs/php-errors.log`
 - **Documentation**: See `PRODUCTION_READY.md` and `FINAL_PRODUCTION_READY.md`

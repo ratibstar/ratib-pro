@@ -1,4 +1,4 @@
-# Terminal upload: 23 infrastructure files to out.ratib.sa.
+# Terminal upload: 23 infrastructure files to rateb.sa.
 # Preferred: cPanel Fileman API (set CPANEL_HOST, CPANEL_USER, CPANEL_API_TOKEN).
 # Fallback: git push main → GitHub Actions fast deploy (FAST_FILES infra bundle).
 
@@ -34,8 +34,8 @@ if ($hasCpanel.Count -eq 3) {
 }
 
 Write-Host "`nLive build marker:"
-curl.exe -sS 'https://out.ratib.sa/public/ratib-build.txt'
+curl.exe -sS 'https://rateb.sa/public/ratib-build.txt'
 Write-Host ''
 Write-Host 'Production verify:'
-curl.exe -sS 'https://out.ratib.sa/modules/infrastructure-marketplace/Cli/production-verify.php'
+curl.exe -sS 'https://rateb.sa/modules/infrastructure-marketplace/Cli/production-verify.php'
 Write-Host ''

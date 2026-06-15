@@ -33,7 +33,7 @@ if (!function_exists('rateb_site_origin')) {
             return rtrim((string) SITE_URL, '/');
         }
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'out.ratib.sa';
+        $host = $_SERVER['HTTP_HOST'] ?? 'rateb.sa';
         return $scheme . '://' . $host;
     }
 }

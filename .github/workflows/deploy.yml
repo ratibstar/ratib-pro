@@ -1,4 +1,4 @@
-name: Deploy PHP App to cPanel
+name: Deploy PHP App (DirectAdmin rsync / cPanel)
 
 on:
   push:
@@ -39,32 +39,46 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Upload to public_html (Fileman + progress %)
-        id: fileman
+      - name: Deploy to public_html
+        id: deploy
         env:
+          DEPLOY_BACKEND: ${{ secrets.DEPLOY_BACKEND || 'rsync' }}
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST || secrets.SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER || secrets.SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY || secrets.SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT || secrets.SSH_PORT || '22' }}
+          DEPLOY_REMOTE_BASE: ${{ secrets.DEPLOY_REMOTE_BASE || secrets.CPANEL_SFTP_REMOTE_DIR || '/home/admin/domains/rateb.sa/public_html' }}
+          DEPLOY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.infra_only == 'true' && 'list' || (github.event_name == 'workflow_dispatch' && inputs.full_sync == 'true' && 'critical' || 'fast') }}
           CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
           CPANEL_USER: ${{ secrets.CPANEL_USER }}
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
           CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
           CPANEL_REMOTE_BASE: ${{ secrets.CPANEL_SFTP_REMOTE_DIR || '/home/outratib/public_html' }}
           CPANEL_DEPLOY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.infra_only == 'true' && 'list' || (github.event_name == 'workflow_dispatch' && inputs.full_sync == 'true' && 'critical' || 'fast') }}
-        run: bash scripts/github-cpanel-fileman-deploy.sh
+          RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
+        run: |
+          MODE="${DEPLOY_MODE}"
+          export DEPLOY_MODE="${MODE}" CPANEL_DEPLOY_MODE="${MODE}"
+          if [ "${DEPLOY_BACKEND}" = "cpanel" ] && [ -n "${CPANEL_API_TOKEN:-}" ]; then
+            echo "backend=cpanel (Fileman API)"
+            bash scripts/github-cpanel-fileman-deploy.sh
+          else
+            echo "backend=rsync (DirectAdmin / SSH)"
+            bash scripts/github-rsync-deploy.sh
+          fi
 
       - name: Run RATEB ERP migrations
-        if: steps.fileman.outcome == 'success'
+        if: steps.deploy.outcome == 'success'
         env:
-          CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
-          CPANEL_USER: ${{ secrets.CPANEL_USER }}
+          CPANEL_SITE_URL: ${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}
+          RATEB_ERP_MIGRATE_TOKEN: ${{ secrets.RATEB_ERP_MIGRATE_TOKEN || secrets.CPANEL_API_TOKEN }}
           CPANEL_API_TOKEN: ${{ secrets.CPANEL_API_TOKEN }}
-          CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
-          CPANEL_REMOTE_BASE: ${{ secrets.CPANEL_SFTP_REMOTE_DIR || '/home/outratib/public_html' }}
-          CPANEL_SITE_URL: ${{ secrets.CPANEL_SITE_URL || 'https://out.ratib.sa' }}
         run: bash scripts/run-rateb-erp-migrations.sh
 
       - name: Verify live site (~20s)
-        if: steps.fileman.outcome == 'success'
+        if: steps.deploy.outcome == 'success'
         run: |
-          SITE="${{ secrets.CPANEL_SITE_URL || 'https://out.ratib.sa' }}"
+          SITE="${{ secrets.DEPLOY_SITE_URL || secrets.CPANEL_SITE_URL || 'https://rateb.sa' }}"
           # home.php 302-redirects to /home — must follow redirects (-L). /home must NOT hit country_slug=home.
           code() {
             local out code_try=1
@@ -187,7 +201,7 @@ jobs:
           exit 1
 
       - name: Deploy failed
-        if: steps.fileman.outcome != 'success'
+        if: steps.deploy.outcome != 'success'
         run: |
-          echo "::error::Fileman upload failed — see [N/TOTAL] % lines above"
+          echo "::error::Deploy failed — see rsync / Fileman logs above"
           exit 1

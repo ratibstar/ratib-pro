@@ -2,7 +2,7 @@
 
 ## 🎯 Deployment Status: **READY FOR PRODUCTION**
 
-**Target URL**: https://out.ratib.sa/  
+**Target URL**: https://rateb.sa/  
 **Database**: outratib_out  
 **Last Updated**: $(date)
 

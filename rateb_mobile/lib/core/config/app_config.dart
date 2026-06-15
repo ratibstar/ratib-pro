@@ -4,7 +4,7 @@ class AppConfig {
 
   static const String apiBaseUrl = String.fromEnvironment(
     'RATEB_API_BASE_URL',
-    defaultValue: 'https://out.ratib.sa/api',
+    defaultValue: 'https://rateb.sa/api',
   );
 
   static const Duration connectTimeout = Duration(seconds: 20);

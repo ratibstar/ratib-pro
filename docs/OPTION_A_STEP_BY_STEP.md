@@ -74,7 +74,7 @@ WHERE country_id = 1 AND slug = 'bangladesh';
 
 ## Step 5: Test Bangladesh
 
-1. Open: `https://bangladesh.out.ratib.sa/pages/login.php`
+1. Open: `https://bangladesh.rateb.sa/pages/login.php`
 2. Log in with a Bangladesh user.
 3. Check that:
    - Login works
@@ -100,7 +100,7 @@ SET db_name = 'outratib_main',
 WHERE country_id = 2 AND slug = 'main';
 ```
 
-5. Test at `https://out.ratib.sa/pages/login.php`.
+5. Test at `https://rateb.sa/pages/login.php`.
 
 ---
 

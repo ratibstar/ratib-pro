@@ -5,10 +5,10 @@
  */
 /**
  * Resolve agency config from control_agencies by HTTP_HOST.
- * When a new agency visits their site_url (e.g. https://newagency.out.ratib.sa),
+ * When a new agency visits their site_url (e.g. https://newagency.rateb.sa),
  * we look up their DB credentials and use them - no manual env file needed.
  *
- * @param string $host HTTP_HOST (e.g. newagency.out.ratib.sa)
+ * @param string $host HTTP_HOST (e.g. newagency.rateb.sa)
  * @return bool true if agency found and DB_* defined, false otherwise
  */
 function resolve_agency_by_host($host) {

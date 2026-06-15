@@ -8,7 +8,7 @@
  *   php config/setup-admin.php
  *
  * Or from browser (DELETE THIS FILE after use for security):
- *   https://out.ratib.sa/config/setup-admin.php?run=1
+ *   https://rateb.sa/config/setup-admin.php?run=1
  */
 $cli = (php_sapi_name() === 'cli');
 
@@ -20,12 +20,12 @@ if (!$cli) {
 }
 
 // Load config without full app
-$_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? 'out.ratib.sa';
+$_SERVER['HTTP_HOST'] = $_SERVER['HTTP_HOST'] ?? 'rateb.sa';
 require_once __DIR__ . '/env/load.php';
 
-// Override to use out.ratib.sa env when run from CLI (no HTTP_HOST)
+// Override to use rateb.sa env when run from CLI (no HTTP_HOST)
 if ($cli && !defined('DB_NAME')) {
-    require __DIR__ . '/env/out_ratib_sa.php';
+    require __DIR__ . '/env/rateb_sa.php';
 }
 
 if (!defined('DB_NAME')) {
@@ -115,7 +115,7 @@ echo "  Password: {$password}\n";
 echo "========================================\n";
 echo "\n";
 echo "Login URLs:\n";
-echo "  Normal (agency):  https://out.ratib.sa/pages/login.php\n";
+echo "  Normal (agency):  https://rateb.sa/pages/login.php\n";
 echo "\n";
 echo "IMPORTANT: Change the password after first login!\n";
 if (!$cli) {

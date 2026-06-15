@@ -1,5 +1,5 @@
 # 🚀 Production Deployment Guide
-## Ratib Program - https://out.ratib.sa/
+## Ratib Program - https://rateb.sa/
 
 ---
 
@@ -51,7 +51,7 @@
 ### 3. Configuration:
 - [ ] Verify `includes/config.php` has production credentials
 - [ ] Verify `BASE_URL` is set to `''` (empty for root)
-- [ ] Verify `SITE_URL` is set to `https://out.ratib.sa`
+- [ ] Verify `SITE_URL` is set to `https://rateb.sa`
 - [ ] Verify `PRODUCTION_MODE` is `true`
 
 ### 4. Security:

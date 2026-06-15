@@ -58,7 +58,7 @@ Create these keys:
 Optional:
 
 - `CPANEL_PORT` — default `2083`
-- `CPANEL_SITE_URL` — default `https://out.ratib.sa`
+- `CPANEL_SITE_URL` — default `https://rateb.sa`
 - `RATIB_DEPLOY_SYNC_KEY` — only if PHP curl deploy is enabled on server (usually fails; use SFTP instead)
 
 ## 4) How deployment works
@@ -76,8 +76,8 @@ Then verify in GitHub -> `Actions` (deploy step must be green; verify step check
 Flow:
 
 1. GitHub Actions calls cPanel **VersionControl/update** + **VersionControlDeployment/create** (git pull + `.cpanel.yml`).
-2. `.cpanel.yml` runs `scripts/cpanel-deploy-sync.sh`, which **must** sync the git checkout to **`/home/outratib/public_html`** (live docroot for `out.ratib.sa`).
-3. If secret `RATIB_DEPLOY_SYNC_KEY` is set, Actions also calls `https://out.ratib.sa/ratib-profile-check.php?deploy=1&key=...` as a fallback.
+2. `.cpanel.yml` runs `scripts/cpanel-deploy-sync.sh`, which **must** sync the git checkout to **`/home/outratib/public_html`** (live docroot for `rateb.sa`).
+3. If secret `RATIB_DEPLOY_SYNC_KEY` is set, Actions also calls `https://rateb.sa/ratib-profile-check.php?deploy=1&key=...` as a fallback.
 4. Verify step reads `ratib-profile-check.php` on the live site for `brand-profile` / `company-profile.php`.
 
 **Important:** The workflow now **fails** unless the live site shows the same `public/ratib-build.txt` marker as GitHub. Green only means `public_html` was actually updated.
@@ -90,7 +90,7 @@ In cPanel → **Git Version Control**:
 
 - Repository path = same as GitHub secret `CPANEL_REPO_ROOT`
 - Click **Update from Remote**, then **Deploy HEAD Commit**
-- Open `https://out.ratib.sa/pages/ratib-deploy-status.txt` — should show a recent timestamp after deploy
+- Open `https://rateb.sa/pages/ratib-deploy-status.txt` — should show a recent timestamp after deploy
 
 Live docroot (confirmed): `/home/outratib/public_html`
 

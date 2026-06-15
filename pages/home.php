@@ -393,7 +393,7 @@ if (is_file($ratibEntTrustInclude)) {
 if (!function_exists('ratib_enterprise_mailto')) {
     function ratib_enterprise_mailto(string $subject): string
     {
-        return 'mailto:info@out.ratib.sa?subject=' . rawurlencode($subject);
+        return 'mailto:info@rateb.sa?subject=' . rawurlencode($subject);
     }
 }
 
@@ -1128,7 +1128,7 @@ include __DIR__ . '/../includes/ratib-home-public-chrome-top.php';
                 <div class="mb-3 is-hidden" id="otherCountryWrap"><label class="form-label">Specify country</label><input type="text" class="form-control" name="country_other" id="countryOther" maxlength="255" placeholder="Enter country name"></div>
                 <div class="mb-3"><label class="form-label">Contact Email *</label><input type="email" class="form-control" name="contact_email" required maxlength="255" placeholder="you@example.com"></div>
                 <div class="mb-3"><label class="form-label">Contact Phone *</label><input type="text" class="form-control" name="contact_phone" required maxlength="64" placeholder="+1234567890"></div>
-                <div class="mb-3"><label class="form-label">Desired Site URL (optional)</label><input type="url" class="form-control" name="desired_site_url" maxlength="512" placeholder="https://your-agency.out.ratib.sa"></div>
+                <div class="mb-3"><label class="form-label">Desired Site URL (optional)</label><input type="url" class="form-control" name="desired_site_url" maxlength="512" placeholder="https://your-agency.rateb.sa"></div>
                 <div class="mb-4"><label class="form-label">Notes</label><textarea class="form-control" name="notes" rows="3" maxlength="2000" placeholder="Tell us about your agency or requirements..."></textarea></div>
                 
                 <!-- When Pro selected: hint to choose Gold/Platinum for pricing summary -->

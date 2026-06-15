@@ -6,7 +6,7 @@
 /**
  * Clear all users from each country database - start fresh.
  *
- * Run from browser: https://out.ratib.sa/config/clear_all_country_users.php?confirm=1
+ * Run from browser: https://rateb.sa/config/clear_all_country_users.php?confirm=1
  * Or from CLI: php config/clear_all_country_users.php
  *
  * WARNING: This DELETES all users in each country DB. Use only when you want to start from zero.
@@ -15,7 +15,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 if (php_sapi_name() === 'cli') {
-    $_SERVER['HTTP_HOST'] = 'out.ratib.sa';
+    $_SERVER['HTTP_HOST'] = 'rateb.sa';
 }
 require_once __DIR__ . '/env/load.php';
 

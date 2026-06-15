@@ -5,7 +5,7 @@
  */
 /**
  * Find which database has control_agencies and control_admins.
- * Run: https://out.ratib.sa/config/verify-db.php
+ * Run: https://rateb.sa/config/verify-db.php
  * DELETE after fixing.
  */
 error_reporting(E_ALL);

@@ -33,7 +33,7 @@ $platformDashboardUrl = $platformRoot !== '' ? ($platformRoot . '/pages/dashboar
         <?php if ($platformDashboardUrl !== '#'): ?>
         <p class="mt-2 mb-0"><a href="<?php echo htmlspecialchars($platformDashboardUrl); ?>?control=1&agency_id=<?php echo (int)($_SESSION['control_agency_id'] ?? 0); ?>" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Open Main Platform <i class="fas fa-external-link-alt ms-1"></i></a></p>
         <?php else: ?>
-        <p class="mt-2 mb-0 text-muted small">Set <code>SITE_URL</code> in <code>config/env.php</code> (e.g. <code>https://out.ratib.sa</code>) to enable the link.</p>
+        <p class="mt-2 mb-0 text-muted small">Set <code>SITE_URL</code> in <code>config/env.php</code> (e.g. <code>https://rateb.sa</code>) to enable the link.</p>
         <?php endif; ?>
     </div>
     <p class="text-muted small">To configure the control panel itself (admins, countries, agencies), use <a href="<?php echo pageUrl('control/panel-settings.php'); ?>">Control Panel Settings</a>.</p>

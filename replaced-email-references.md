@@ -2,23 +2,23 @@
 
 Target canonical email:
 
-- `info@out.ratib.sa`
+- `info@rateb.sa`
 
 ## Replacements Applied
 
 - `includes/ratib-home-public-footer.php`
-  - `mailto:ratibstar@gmail.com` -> `mailto:info@out.ratib.sa`
-  - Visible footer email text updated to `info@out.ratib.sa`
+  - `mailto:ratibstar@gmail.com` -> `mailto:info@rateb.sa`
+  - Visible footer email text updated to `info@rateb.sa`
 - `includes/ratib-about-profile-data.php`
-  - Company profile contact email updated to `info@out.ratib.sa`
+  - Company profile contact email updated to `info@rateb.sa`
 - `includes/ratib-about-sections.php`
-  - "Talk to Solutions Team" mailto updated to `info@out.ratib.sa`
+  - "Talk to Solutions Team" mailto updated to `info@rateb.sa`
 - `pages/about.php`
-  - Schema.org `Organization` `contactPoint.email` updated to `info@out.ratib.sa`
+  - Schema.org `Organization` `contactPoint.email` updated to `info@rateb.sa`
 - `pages/customer-portal.php`
-  - Help/contact email link and visible value updated to `info@out.ratib.sa`
+  - Help/contact email link and visible value updated to `info@rateb.sa`
 - `js/chat-widget.js`
-  - Public support contact answer email updated from misspelled Gmail to `info@out.ratib.sa`
+  - Public support contact answer email updated from misspelled Gmail to `info@rateb.sa`
 
 ## Validation
 

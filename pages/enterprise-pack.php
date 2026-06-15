@@ -73,7 +73,7 @@ $p = $packs[$pack];
     <h1><?php echo htmlspecialchars($p['title'], ENT_QUOTES, 'UTF-8'); ?></h1>
     <h2><?php echo htmlspecialchars($p['subtitle'], ENT_QUOTES, 'UTF-8'); ?></h2>
     <p><?php echo htmlspecialchars($p['body'], ENT_QUOTES, 'UTF-8'); ?></p>
-    <p><strong>Contact:</strong> info@out.ratib.sa · out.ratib.sa</p>
+    <p><strong>Contact:</strong> info@rateb.sa · rateb.sa</p>
     <a class="btn no-print" href="#" onclick="window.print();return false;">Print / Save PDF</a>
     <a class="btn no-print" href="?">All packs</a>
 </body>

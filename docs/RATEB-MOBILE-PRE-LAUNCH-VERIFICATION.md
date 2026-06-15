@@ -1,7 +1,7 @@
 # RATEB Mobile — Final Pre-Launch Verification
 
 **Date:** 25 May 2026  
-**Production API:** `https://out.ratib.sa/api/mobile`  
+**Production API:** `https://rateb.sa/api/mobile`  
 **Method:** Live HTTP probes, static code audit, release build checks  
 **Scope:** Launch-readiness only — no new features
 
@@ -31,9 +31,9 @@
 | Dev-only fallback | `rateb-mobile-dev-only-not-for-production` — **localhost only** |
 | Production fail-closed | `rateb_mobile_is_production()` + `rateb_mobile_config_error()` → 503 |
 | Secret in API responses | **Never exposed** |
-| `config/env/out_ratib_sa.php` | Loads `MOBILE_AUTH_SECRET` from `.env` when present |
+| `config/env/rateb_sa.php` | Loads `MOBILE_AUTH_SECRET` from `.env` when present |
 
-### Live production (`out.ratib.sa`) — FAIL
+### Live production (`rateb.sa`) — FAIL
 
 | Endpoint | Test | HTTP | Body |
 |----------|------|------|------|
@@ -60,7 +60,7 @@ Verify after deploy:
 ```bash
 # Should return 401 Unauthorized (not 503)
 curl -H "Authorization: Bearer aaa.bbb.ccc" \
-  https://out.ratib.sa/api/mobile/profile.php
+  https://rateb.sa/api/mobile/profile.php
 ```
 
 Then test real login from the app.
@@ -156,7 +156,7 @@ Per `docs/COUNTRY_DATA_ISOLATION_GUIDE.md`, full isolation may be **separate DB 
 
 ### Phase 1 — Web internal pilot (Days 1–3)
 
-- **Channel:** `flutter build web` hosted on `out.ratib.sa` subdomain or internal URL.
+- **Channel:** `flutter build web` hosted on `rateb.sa` subdomain or internal URL.
 - **Users:** 5 internal staff (see below).
 - **Goal:** Auth, tabs, live data, QR paste login, session refresh.
 - **Rollback:** Disable mobile URL; secret rotation if compromise suspected.

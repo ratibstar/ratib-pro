@@ -2,7 +2,7 @@
 
 **Scope:** Full `ratibprogram` repository (~1,876 files) · **Read-only** · May 2026  
 **Brand:** RATEB — Recruitment Automation & Telemetry Enterprise Base  
-**Live:** https://out.ratib.sa
+**Live:** https://rateb.sa
 
 ---
 

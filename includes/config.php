@@ -88,7 +88,7 @@ if (!defined('DB_HOST')) {
     define('DB_NAME', ($envName !== false) ? (string)$envName : '');
 }
 if (!defined('SITE_URL')) {
-    define('SITE_URL', 'https://bangladesh.out.ratib.sa');
+    define('SITE_URL', 'https://bangladesh.rateb.sa');
 }
 if (!defined('APP_NAME')) {
     define('APP_NAME', 'RATEB');
@@ -100,7 +100,7 @@ if (!defined('BASE_URL')) {
     define('BASE_URL', '');
 }
 
-// Multi-tenant subdomain mode (set true when sa.out.ratib.sa etc. deployed)
+// Multi-tenant subdomain mode (set true when sa.rateb.sa etc. deployed)
 if (!defined('MULTI_TENANT_SUBDOMAIN_ENABLED')) {
     define('MULTI_TENANT_SUBDOMAIN_ENABLED', false);  // true = enabled
 }
@@ -299,7 +299,7 @@ ini_set('error_log', __DIR__ . '/../logs/php-errors.log');
 $isApiRequest = !empty($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '/api/') !== false;
 if (!empty($_SERVER['HTTP_HOST']) && !$isApiRequest) {
     $h = $_SERVER['HTTP_HOST'];
-    if (strpos($h, 'bangladesh.out.ratib.sa') !== false || strpos($h, 'out.ratib.sa') !== false) {
+    if (strpos($h, 'bangladesh.rateb.sa') !== false || strpos($h, 'rateb.sa') !== false) {
         ini_set('display_errors', 1);
     }
 }
@@ -626,7 +626,7 @@ if (!function_exists('ratib_post_logout_login_url')) {
 
         if ($slug !== '') {
             $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-            $host = $_SERVER['HTTP_HOST'] ?? 'out.ratib.sa';
+            $host = $_SERVER['HTTP_HOST'] ?? 'rateb.sa';
             $base = rtrim((defined('BASE_URL') ? BASE_URL : ''), '/');
             $url = $scheme . '://' . $host . ($base ? $base . '/' : '/') . $slug . '/login?message=logged_out';
             if ($agencyId > 0) {
@@ -843,7 +843,7 @@ if (!function_exists('ratib_control_panel_try_program_sso')) {
 if (!function_exists('ratib_url_matches_agency_site')) {
     /**
      * Ensure current request is under configured agency Site URL.
-     * Example: site https://out.ratib.sa/indonesia must match /indonesia/login...
+     * Example: site https://rateb.sa/indonesia must match /indonesia/login...
      */
     function ratib_url_matches_agency_site($siteUrl)
     {

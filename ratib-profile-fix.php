@@ -1,7 +1,7 @@
 <?php
 /**
  * One-page status + what to upload (open in browser after any deploy attempt).
- * https://out.ratib.sa/ratib-profile-fix.php
+ * https://rateb.sa/ratib-profile-fix.php
  */
 declare(strict_types=1);
 
@@ -9,7 +9,7 @@ header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate');
 
 $root = __DIR__;
-$host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : 'out.ratib.sa';
+$host = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : 'rateb.sa';
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $base = $scheme . '://' . $host;
 

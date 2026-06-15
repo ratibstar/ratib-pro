@@ -8,7 +8,7 @@
  * Run once after 01_create_database.sql and 02_create_tables.sql.
  *
  * Usage: php 03_migrate_data.php
- *    or: https://out.ratib.sa/config/migrations/separate_control_panel_db/03_migrate_data.php (requires control login)
+ *    or: https://rateb.sa/config/migrations/separate_control_panel_db/03_migrate_data.php (requires control login)
  *
  * Set env vars or edit below:
  *   RATIB_DB_NAME (source) = outratib_out

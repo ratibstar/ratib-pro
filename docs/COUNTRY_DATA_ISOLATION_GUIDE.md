@@ -12,8 +12,8 @@ Each country has its own database. Different DB = different data. No code change
 
 | Country   | Database     | URL                    |
 |-----------|--------------|-------------------------|
-| Bangladesh| outratib_bd  | bangladesh.out.ratib.sa |
-| Main      | outratib_out | out.ratib.sa            |
+| Bangladesh| outratib_bd  | bangladesh.rateb.sa |
+| Main      | outratib_out | rateb.sa            |
 
 **Steps:**
 
@@ -32,7 +32,7 @@ Each country has its own database. Different DB = different data. No code change
 
 4. **Create DB user** in cPanel for `outratib_bd` and use those credentials in the UPDATE above.
 
-5. **Result:** When users visit `bangladesh.out.ratib.sa`, they use `outratib_bd`. When they visit `out.ratib.sa`, they use `outratib_out`. Complete isolation.
+5. **Result:** When users visit `bangladesh.rateb.sa`, they use `outratib_bd`. When they visit `rateb.sa`, they use `outratib_out`. Complete isolation.
 
 ---
 
@@ -95,6 +95,6 @@ WHERE country_id = 1;
 
 ### 4. Test
 
-- Visit `bangladesh.out.ratib.sa` → should use Bangladesh DB
-- Visit `out.ratib.sa` → should use Main DB
+- Visit `bangladesh.rateb.sa` → should use Bangladesh DB
+- Visit `rateb.sa` → should use Main DB
 - Data is isolated per country

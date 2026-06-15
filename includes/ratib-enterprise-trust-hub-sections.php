@@ -68,7 +68,7 @@ if (!function_exists('ratib_enterprise_trust_hub_render')) {
                         <?php } else {
                             $subj = (string) ($cta['subject'] ?? 'RATEB — Enterprise inquiry');
                             ?>
-                    <a class="ratib-btn ratib-btn--primary" href="mailto:info@out.ratib.sa?subject=<?php echo rawurlencode($subj); ?>"><?php echo ratib_eth_h((string) ($cta['label'] ?? '')); ?></a>
+                    <a class="ratib-btn ratib-btn--primary" href="mailto:info@rateb.sa?subject=<?php echo rawurlencode($subj); ?>"><?php echo ratib_eth_h((string) ($cta['label'] ?? '')); ?></a>
                         <?php }
                     } ?>
                 </div>

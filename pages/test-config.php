@@ -5,7 +5,7 @@
  */
 /**
  * Diagnostic: Find the 500 error source
- * Visit: https://out.ratib.sa/pages/test-config.php
+ * Visit: https://rateb.sa/pages/test-config.php
  * DELETE this file after fixing.
  */
 error_reporting(E_ALL);

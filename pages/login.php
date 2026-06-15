@@ -1378,7 +1378,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
     } catch (Throwable $e) {
         error_log("Normal login error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
         $debugHost = $_SERVER['HTTP_HOST'] ?? '';
-        $showDebug = (strpos($debugHost, 'out.ratib.sa') !== false || strpos($debugHost, 'bangladesh.out.ratib.sa') !== false);
+        $showDebug = (strpos($debugHost, 'rateb.sa') !== false || strpos($debugHost, 'bangladesh.rateb.sa') !== false);
         $error = 'Login error. Please try again or contact administrator.';
         if ($showDebug) {
             $error .= ' [Debug: ' . htmlspecialchars($e->getMessage()) . ']';

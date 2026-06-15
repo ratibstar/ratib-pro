@@ -3,7 +3,7 @@
 
 **Version:** 1.0.0  
 **Last Updated:** February 2026  
-**Production URL:** https://out.ratib.sa
+**Production URL:** https://rateb.sa
 
 ---
 
@@ -891,7 +891,7 @@ if (!userPermissions.includes('view_workers')) {
 
 ### Production URL
 
-Current production: https://out.ratib.sa
+Current production: https://rateb.sa
 
 ---
 

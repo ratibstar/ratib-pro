@@ -14,7 +14,7 @@
 | No SOC2/ISO unless contracted | Explicit disclaimer | Security hero + procurement notice |
 | Labor oversight modules | Product modules described functionally | Profile governance, security governance |
 | Field location support | Operational feature set | Telemetry → field operations wording |
-| Enterprise contact | `info@out.ratib.sa` | All procurement CTAs |
+| Enterprise contact | `info@rateb.sa` | All procurement CTAs |
 
 ---
 
@@ -70,7 +70,7 @@
 1. **What does RATIB sell?** Multi-agency workforce program software (workflows, records, field support, finance, governance).
 2. **How is data separated?** Platform configuration vs per-agency program databases.
 3. **What is not claimed?** Government partnership, SOC2/ISO, live production metrics on marketing pages.
-4. **How to engage?** `info@out.ratib.sa`, architecture/security review paths.
+4. **How to engage?** `info@rateb.sa`, architecture/security review paths.
 
 ---
 

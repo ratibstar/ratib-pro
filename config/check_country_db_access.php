@@ -6,7 +6,7 @@
 /**
  * Check Country Database Access
  *
- * Run from browser: https://out.ratib.sa/config/check_country_db_access.php?control=1
+ * Run from browser: https://rateb.sa/config/check_country_db_access.php?control=1
  * Or from CLI: php config/check_country_db_access.php
  *
  * Tests connection to each country DB. Use this to verify grants before/after cPanel setup.
@@ -15,7 +15,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 if (php_sapi_name() === 'cli') {
-    $_SERVER['HTTP_HOST'] = 'out.ratib.sa';
+    $_SERVER['HTTP_HOST'] = 'rateb.sa';
     $_GET['control'] = '1';
 }
 require_once __DIR__ . '/env/load.php';

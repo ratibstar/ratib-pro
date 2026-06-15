@@ -1,7 +1,7 @@
 <?php
 /**
  * Quick live check: is RATEB rebrand active on this server?
- * https://out.ratib.sa/pages/ratib-rebrand-status.php
+ * https://rateb.sa/pages/ratib-rebrand-status.php
  */
 declare(strict_types=1);
 

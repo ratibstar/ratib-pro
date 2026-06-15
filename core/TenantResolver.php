@@ -7,7 +7,7 @@
  * TenantResolver - Subdomain-based tenant detection
  *
  * Load BEFORE any DB interaction.
- * Extracts subdomain (e.g. sa from sa.out.ratib.sa), validates against countries table.
+ * Extracts subdomain (e.g. sa from sa.rateb.sa), validates against countries table.
  *
  * Usage: require_once __DIR__ . '/core/TenantResolver.php';
  */
@@ -21,23 +21,23 @@ if (!defined('DB_HOST') || !defined('DB_NAME')) {
 }
 
 /**
- * Allow root domain during migration (out.ratib.sa without subdomain)
+ * Allow root domain during migration (rateb.sa without subdomain)
  * Set to false when subdomains are deployed.
  */
 define('TENANT_ALLOW_ROOT_DOMAIN', getenv('TENANT_ALLOW_ROOT_DOMAIN') === '1' || getenv('TENANT_ALLOW_ROOT_DOMAIN') === 'true');
 
 /**
- * Base domain for tenant subdomains (e.g. out.ratib.sa)
- * Subdomains: sa.out.ratib.sa, ae.out.ratib.sa
+ * Base domain for tenant subdomains (e.g. rateb.sa)
+ * Subdomains: sa.rateb.sa, ae.rateb.sa
  */
-define('TENANT_BASE_DOMAIN', getenv('TENANT_BASE_DOMAIN') ?: 'out.ratib.sa');
+define('TENANT_BASE_DOMAIN', getenv('TENANT_BASE_DOMAIN') ?: 'rateb.sa');
 
 // EN: Read and normalize requested host before any tenant lookup.
 // AR: قراءة وتوحيد اسم النطاق المطلوب قبل أي بحث عن المستأجر.
 $host = $_SERVER['HTTP_HOST'] ?? '';
 $host = strtolower(trim($host));
 
-// Extract subdomain: sa.out.ratib.sa -> sa
+// Extract subdomain: sa.rateb.sa -> sa
 $baseDomain = TENANT_BASE_DOMAIN;
 $isBaseDomain = ($host === $baseDomain || $host === 'www.' . $baseDomain);
 

@@ -275,7 +275,7 @@ if (!function_exists('ratib_proc_render_contact')) {
             return;
         }
         $id = (string) ($contact['id'] ?? 'contact-escalation');
-        $email = (string) ($contact['email'] ?? 'info@out.ratib.sa');
+        $email = (string) ($contact['email'] ?? 'info@rateb.sa');
         ?>
         <section class="ratib-about-section ratib-proc-section ratib-proc-section--contact" id="<?php echo ratib_proc_h($id); ?>" aria-labelledby="proc-contact-title">
             <div class="ratib-about-container">

@@ -5,7 +5,7 @@
  */
 /**
  * DIAGNOSTIC: Test Control Panel DB connection.
- * Run: https://out.ratib.sa/config/test-control-db.php
+ * Run: https://rateb.sa/config/test-control-db.php
  * DELETE THIS FILE after fixing.
  */
 error_reporting(E_ALL);

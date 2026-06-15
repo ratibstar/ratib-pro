@@ -5,7 +5,7 @@
  */
 /**
  * Clear all control panel users and keep only admin (password: admin123)
- * Run from browser: https://out.ratib.sa/config/migrations/clear_control_admins_keep_admin.php
+ * Run from browser: https://rateb.sa/config/migrations/clear_control_admins_keep_admin.php
  * Or via CLI: php config/migrations/clear_control_admins_keep_admin.php
  */
 define('IS_CONTROL_PANEL', true);

@@ -29,7 +29,7 @@ return [
     ],
     
     // Webhook URL for receiving replies
-    'webhook_url' => 'https://bangladesh.out.ratib.sa/api/chat/webhook.php',
+    'webhook_url' => 'https://bangladesh.rateb.sa/api/chat/webhook.php',
     
     // Message format template
     'message_template' => "📱 *New Chat Message from Website*\n\n*From:* {user_name}\n*Email:* {user_email}\n*Phone:* {user_phone}\n*Time:* {timestamp}\n\n*Message:*\n{message}",

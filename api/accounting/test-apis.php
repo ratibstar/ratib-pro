@@ -5,7 +5,7 @@
  */
 /**
  * Accounting API Diagnostic - Helps find 500 error causes
- * Access: https://out.ratib.sa/api/accounting/test-apis.php (while logged in)
+ * Access: https://rateb.sa/api/accounting/test-apis.php (while logged in)
  * DELETE this file after debugging for security
  */
 error_reporting(E_ALL);

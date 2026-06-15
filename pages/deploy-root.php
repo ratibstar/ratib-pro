@@ -2,8 +2,8 @@
 require_once __DIR__ . '/../includes/ratib-php74-compat.php';
 
 /**
- * Public deploy probe — confirms which docroot serves out.ratib.sa and whether About files landed.
- * URL: https://out.ratib.sa/pages/deploy-root.php
+ * Public deploy probe — confirms which docroot serves rateb.sa and whether About files landed.
+ * URL: https://rateb.sa/pages/deploy-root.php
  * Bundle: about-enterprise-20260516-v9
  */
 header('Content-Type: text/plain; charset=utf-8');

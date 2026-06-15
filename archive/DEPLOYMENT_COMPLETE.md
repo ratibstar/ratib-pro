@@ -1,7 +1,7 @@
 # ✅ PRODUCTION DEPLOYMENT - COMPLETE & VERIFIED
 
 ## 🎯 Deployment Target
-- **URL**: https://out.ratib.sa/
+- **URL**: https://rateb.sa/
 - **Database**: outratib_out
 - **Status**: ✅ **100% READY FOR PRODUCTION**
 
@@ -81,7 +81,7 @@ DB_USER: outratib_out
 DB_PASS: 9s%BpMr1]dfb
 
 // Application
-SITE_URL: https://out.ratib.sa
+SITE_URL: https://rateb.sa
 BASE_URL: '' (root deployment)
 PRODUCTION_MODE: true
 DEBUG_MODE: false
@@ -125,7 +125,7 @@ session.cookie_secure: 1
 ## 🚀 READY TO DEPLOY
 
 The application is **100% ready** for production deployment to:
-**https://out.ratib.sa/**
+**https://rateb.sa/**
 
 All configurations are correct, all paths are dynamic, security is enabled, and the codebase is clean.
 

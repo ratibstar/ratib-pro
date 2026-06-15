@@ -29,7 +29,7 @@ flutter pub get
 ## Run
 
 ```bash
-# Default backend: https://out.ratib.sa/api
+# Default backend: https://rateb.sa/api
 flutter run
 
 # Custom backend (local/staging)

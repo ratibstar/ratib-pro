@@ -5,7 +5,7 @@
  */
 /**
  * Default fallback — used when no host-specific env file exists.
- * Same as Bangladesh. Add config/env/{host}.php for each new link (e.g. saudi_out_ratib_sa.php).
+ * Same as Bangladesh. Add config/env/{host}.php for each new link (e.g. saudi_rateb_sa.php).
  */
 if (defined('DB_NAME')) {
     return;
@@ -17,7 +17,7 @@ define('DB_PASS', '9s%BpMr1]dfb');
 define('DB_NAME', 'outratib_out');
 define('CONTROL_PANEL_DB_NAME', getenv('CONTROL_PANEL_DB_NAME') ?: 'outratib_control_panel_db');
 
-define('SITE_URL', 'https://bangladesh.out.ratib.sa');
+define('SITE_URL', 'https://bangladesh.rateb.sa');
 define('APP_NAME', 'RATEB');
 define('APP_VERSION', '1.0.0');
 define('BASE_URL', '');

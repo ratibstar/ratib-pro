@@ -143,7 +143,7 @@ if (!function_exists('ratib_public_chat_kb_entries')) {
                 'answer' => "**Contact RATEB:**\n"
                     . "• Phone: {$phone}\n"
                     . "• WhatsApp: green button / **Live via WhatsApp** in the header\n"
-                    . "• Email: info@out.ratib.sa\n"
+                    . "• Email: info@rateb.sa\n"
                     . "• Live agent: type **Talk to support** in this chat (connects to our control panel team)",
                 'category' => 'public_contact',
             ],
