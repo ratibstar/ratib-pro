@@ -343,7 +343,11 @@ $router->get($app('asset-assignments/export'), [AssetAssignmentsController::clas
 $adMw = rateb_erp_mw('assets', '', 'asset-depreciation');
 $adWriteMw = rateb_erp_mw('assets', 'asset_depreciation.manage', 'asset-depreciation');
 $router->get($app('asset-depreciation'), [AssetDepreciationController::class, 'index'], $adMw);
+$router->get($app('asset-depreciation/{id}'), [AssetDepreciationController::class, 'show'], $adMw);
+$router->get($app('asset-depreciation/{id}/edit'), [AssetDepreciationController::class, 'edit'], $adWriteMw);
 $router->post($app('asset-depreciation'), [AssetDepreciationController::class, 'store'], $adWriteMw);
+$router->post($app('asset-depreciation/{id}'), [AssetDepreciationController::class, 'update'], $adWriteMw);
+$router->post($app('asset-depreciation/{id}/approve'), [AssetDepreciationController::class, 'approve'], $adWriteMw);
 $router->post($app('asset-depreciation/{id}/delete'), [AssetDepreciationController::class, 'destroy'], $adWriteMw);
 $router->post($app('asset-depreciation/bulk-delete'), [AssetDepreciationController::class, 'bulkDestroy'], $adWriteMw);
 $router->get($app('asset-depreciation/export'), [AssetDepreciationController::class, 'export'], rateb_erp_mw('assets', 'reports.export', 'asset-depreciation'));

@@ -370,13 +370,12 @@ final class FormLookupService
     }
 
     /** @return array<int, array<string, mixed>> */
-    public static function assetDepreciationFormFields(): array
+    public static function assetDepreciationFormFields(bool $isEdit = false): array
     {
         return [
-            ['name' => 'asset_id', 'label' => 'assets', 'type' => 'fk', 'lookup' => 'assets', 'required' => true, 'col' => 'col-md-3'],
-            ['name' => 'period_date', 'label' => 'period_date', 'type' => 'date', 'col' => 'col-md-3', 'default' => date('Y-m-d')],
-            ['name' => 'amount', 'label' => 'depreciation_amount', 'type' => 'number', 'step' => '0.01', 'required' => true, 'col' => 'col-md-3'],
-            ['name' => 'book_value', 'label' => 'book_value', 'type' => 'number', 'step' => '0.01', 'required' => true, 'col' => 'col-md-3'],
+            ['name' => 'asset_id', 'label' => 'assets', 'type' => 'fk', 'lookup' => 'assets', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'period_date', 'label' => 'depreciation_date', 'type' => 'date', 'col' => 'col-md-4', 'default' => date('Y-m-d')],
+            ['name' => 'amount', 'label' => 'depreciation_amount', 'type' => 'number', 'step' => '0.01', 'min' => '0', 'required' => true, 'col' => 'col-md-4'],
         ];
     }
 

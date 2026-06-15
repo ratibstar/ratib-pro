@@ -9,6 +9,7 @@ use Rateb\App\Core\SessionManager;
 use Rateb\App\Core\TenantContext;
 use Rateb\App\Services\AssetDeviceWorkflowService;
 use Rateb\App\Services\AuditService;
+use Rateb\App\Services\FormLookupService;
 use Rateb\App\Services\ContractWorkflowService;
 use Rateb\App\Services\ErpAnalyticsService;
 use Rateb\App\Services\InventoryWorkflowService;
@@ -498,16 +499,89 @@ final class AssetDepreciationController extends Controller
     protected function workflowSlug(): string { return 'asset-depreciation'; }
     protected function workflowRedirect(): void { $this->redirect(rateb_app_url('asset-depreciation')); }
 
+    /** @return array<string, mixed> */
+    private function depreciationFilters(): array
+    {
+        return [
+            'asset_id' => (int) $this->input('asset_id', 0),
+            'status' => trim((string) $this->input('status', '')),
+            'date_from' => trim((string) $this->input('date_from', '')),
+            'date_to' => trim((string) $this->input('date_to', '')),
+            'company_id' => (int) $this->input('company_id', 0),
+        ];
+    }
+
+    /** @return array<int, array{name:string,label:string,type?:string}> */
+    private function depreciationColumns(): array
+    {
+        return [
+            ['name' => 'depreciation_no', 'label' => 'depreciation_no', 'type' => 'id'],
+            ['name' => 'asset_name', 'label' => 'assets'],
+            ['name' => 'period_date', 'label' => 'depreciation_date'],
+            ['name' => 'amount', 'label' => 'depreciation_amount', 'type' => 'money'],
+            ['name' => 'book_value_before', 'label' => 'book_value_before', 'type' => 'money'],
+            ['name' => 'book_value', 'label' => 'book_value_after', 'type' => 'money'],
+            ['name' => 'status', 'label' => 'status', 'type' => 'status'],
+        ];
+    }
+
     public function index(): void
     {
         rateb_bootstrap_ops_tenant();
+        $filters = $this->depreciationFilters();
+        $lookup = new \Rateb\App\Services\FormLookupService();
         $this->view('company/asset-depreciation/index', [
             'title' => __('asset_depreciation'),
-            'items' => (new AssetDeviceWorkflowService())->listDepreciation(),
+            'items' => (new AssetDeviceWorkflowService())->listDepreciation($filters),
+            'filters' => $filters,
+            'assetOptions' => $lookup->forFields([['lookup' => 'assets']])['assets'] ?? [],
+            'statusOptions' => [
+                ['value' => 'draft', 'label' => __('depreciation_status_draft')],
+                ['value' => 'approved', 'label' => __('depreciation_status_approved')],
+            ],
+            'columns' => $this->depreciationColumns(),
             'csrf' => Csrf::token(),
             'canManage' => rateb_can_manage_entity('asset-depreciation'),
             'exportRoute' => rateb_app_url('asset-depreciation/export'),
             'exportEnabled' => rateb_can_export_entity('asset-depreciation'),
+        ], 'main');
+    }
+
+    public function show(array $params): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $id = (int) ($params['id'] ?? 0);
+        $item = (new AssetDeviceWorkflowService())->findDepreciation($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], 'main');
+            return;
+        }
+        $this->view('company/asset-depreciation/show', [
+            'title' => __('asset_depreciation') . ' — ' . ($item['depreciation_no'] ?? ''),
+            'item' => $item,
+            'csrf' => Csrf::token(),
+            'canManage' => rateb_can_manage_entity('asset-depreciation'),
+        ], 'main');
+    }
+
+    public function edit(array $params): void
+    {
+        rateb_require_manage('asset-depreciation');
+        rateb_bootstrap_ops_tenant();
+        $id = (int) ($params['id'] ?? 0);
+        $item = (new AssetDeviceWorkflowService())->findDepreciation($id);
+        if (!$item || (string) ($item['status'] ?? '') !== 'draft') {
+            SessionManager::flash('error', __('depreciation_edit_denied'));
+            $this->redirect(rateb_app_url('asset-depreciation'));
+        }
+        $lookup = new \Rateb\App\Services\FormLookupService();
+        $this->view('company/asset-depreciation/form', [
+            'title' => __('edit') . ' ' . __('asset_depreciation'),
+            'item' => $item,
+            'formFields' => FormLookupService::assetDepreciationFormFields(true),
+            'lookups' => $lookup->forFields(FormLookupService::assetDepreciationFormFields(true)),
+            'csrf' => Csrf::token(),
         ], 'main');
     }
 
@@ -517,27 +591,82 @@ final class AssetDepreciationController extends Controller
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('asset-depreciation'));
         }
+        $amount = (float) $this->input('amount', 0);
+        if ($amount <= 0) {
+            SessionManager::flash('error', __('depreciation_amount_required'));
+            $this->redirect(rateb_app_url('asset-depreciation'));
+        }
         $id = (new AssetDeviceWorkflowService())->recordDepreciation([
             'asset_id' => (int) $this->input('asset_id', 0),
             'period_date' => (string) $this->input('period_date', date('Y-m-d')),
-            'amount' => (float) $this->input('amount', 0),
-            'book_value' => (float) $this->input('book_value', 0),
+            'amount' => $amount,
         ]);
         (new AuditService())->log('create', 'asset_depreciation', $id);
+        SessionManager::flash('success', __('depreciation_saved_draft'));
+        $this->redirect(rateb_app_url('asset-depreciation'));
+    }
+
+    public function update(array $params): void
+    {
+        rateb_require_manage('asset-depreciation');
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_app_url('asset-depreciation'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $amount = (float) $this->input('amount', 0);
+        if ($amount <= 0) {
+            SessionManager::flash('error', __('depreciation_amount_required'));
+            $this->redirect(rateb_app_url('asset-depreciation/' . $id . '/edit'));
+        }
+        $ok = (new AssetDeviceWorkflowService())->updateDepreciation($id, [
+            'asset_id' => (int) $this->input('asset_id', 0),
+            'period_date' => (string) $this->input('period_date', date('Y-m-d')),
+            'amount' => $amount,
+        ]);
+        if (!$ok) {
+            SessionManager::flash('error', __('depreciation_edit_denied'));
+            $this->redirect(rateb_app_url('asset-depreciation'));
+        }
+        (new AuditService())->log('update', 'asset_depreciation', $id);
         SessionManager::flash('success', __('save') . ' OK');
+        $this->redirect(rateb_app_url('asset-depreciation'));
+    }
+
+    public function approve(array $params): void
+    {
+        rateb_require_manage('asset-depreciation');
+        if (!$this->validateCsrf()) {
+            $this->redirect(rateb_app_url('asset-depreciation'));
+        }
+        $id = (int) ($params['id'] ?? 0);
+        if (!(new AssetDeviceWorkflowService())->approveDepreciation($id)) {
+            SessionManager::flash('error', __('depreciation_approve_denied'));
+            $this->redirect(rateb_app_url('asset-depreciation'));
+        }
+        (new AuditService())->log('approve', 'asset_depreciation', $id);
+        SessionManager::flash('success', __('depreciation_approved_ok'));
         $this->redirect(rateb_app_url('asset-depreciation'));
     }
 
     public function export(): void
     {
         rateb_bootstrap_ops_tenant();
+        $filters = $this->depreciationFilters();
+        $rows = (new AssetDeviceWorkflowService())->listDepreciation($filters);
+        foreach ($rows as &$row) {
+            $row['book_value_after'] = $row['book_value'] ?? 0;
+            $row['status'] = __((string) ($row['status'] ?? 'draft'));
+        }
+        unset($row);
         ExportController::send('asset_depreciation', [
-            ['name' => 'depreciation_no', 'label' => __('record_id')],
+            ['name' => 'depreciation_no', 'label' => __('depreciation_no')],
             ['name' => 'asset_name', 'label' => __('assets')],
-            ['name' => 'period_date', 'label' => __('period_date')],
+            ['name' => 'period_date', 'label' => __('depreciation_date')],
             ['name' => 'amount', 'label' => __('depreciation_amount')],
-            ['name' => 'book_value', 'label' => __('book_value')],
-        ], (new AssetDeviceWorkflowService())->listDepreciation(), __('asset_depreciation'), 'asset-depreciation');
+            ['name' => 'book_value_before', 'label' => __('book_value_before')],
+            ['name' => 'book_value_after', 'label' => __('book_value_after')],
+            ['name' => 'status', 'label' => __('status')],
+        ], $rows, __('asset_depreciation'), 'asset-depreciation');
     }
 }
 

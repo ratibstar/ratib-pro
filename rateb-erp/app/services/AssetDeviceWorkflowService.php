@@ -93,26 +93,166 @@ final class AssetDeviceWorkflowService
         $cid = TenantGuard::requireCompanyId();
         $assetId = (int) ($data['asset_id'] ?? 0);
         TenantGuard::assertAsset($assetId, $cid);
-        $amount = (float) ($data['amount'] ?? 0);
-        $book = (float) ($data['book_value'] ?? 0);
+        $amount = max(0, (float) ($data['amount'] ?? 0));
+        $before = $this->assetBookValue($assetId, $cid);
+        $after = max(0, round($before - $amount, 2));
         $db = \Rateb\App\Core\Database::connection();
         $no = (new WorkflowTableService())->generateRecordNo('asset-depreciation');
         $db->prepare(
-            'INSERT INTO rateb_asset_depreciation (company_id, depreciation_no, asset_id, period_date, amount, book_value)
-             VALUES (:cid, :no, :aid, :pd, :amt, :bv)'
+            'INSERT INTO rateb_asset_depreciation (company_id, depreciation_no, asset_id, period_date, amount, book_value_before, book_value, status)
+             VALUES (:cid, :no, :aid, :pd, :amt, :before, :after, :st)'
         )->execute([
             'cid' => $cid,
             'no' => $no,
             'aid' => $assetId,
             'pd' => $data['period_date'] ?? date('Y-m-d'),
             'amt' => $amount,
-            'bv' => $book,
+            'before' => $before,
+            'after' => $after,
+            'st' => 'draft',
         ]);
-        if ($assetId > 0 && $book >= 0) {
-            $db->prepare('UPDATE rateb_assets SET current_value = :v WHERE id = :id AND company_id = :cid')
-                ->execute(['v' => $book, 'id' => $assetId, 'cid' => $cid]);
-        }
         return (int) $db->lastInsertId();
+    }
+
+    /** @param array<string, mixed> $data */
+    public function updateDepreciation(int $id, array $data): bool
+    {
+        $cid = TenantGuard::requireCompanyId();
+        $row = $this->findDepreciation($id);
+        if (!$row || (string) ($row['status'] ?? '') !== 'draft') {
+            return false;
+        }
+        $assetId = (int) ($data['asset_id'] ?? $row['asset_id'] ?? 0);
+        TenantGuard::assertAsset($assetId, $cid);
+        $amount = max(0, (float) ($data['amount'] ?? $row['amount'] ?? 0));
+        $before = $this->assetBookValue($assetId, $cid);
+        $after = max(0, round($before - $amount, 2));
+        $db = \Rateb\App\Core\Database::connection();
+        return $db->prepare(
+            'UPDATE rateb_asset_depreciation
+             SET asset_id = :aid, period_date = :pd, amount = :amt, book_value_before = :before, book_value = :after
+             WHERE id = :id AND company_id = :cid AND status = \'draft\''
+        )->execute([
+            'aid' => $assetId,
+            'pd' => $data['period_date'] ?? $row['period_date'],
+            'amt' => $amount,
+            'before' => $before,
+            'after' => $after,
+            'id' => $id,
+            'cid' => $cid,
+        ]);
+    }
+
+    public function approveDepreciation(int $id): bool
+    {
+        $cid = TenantGuard::requireCompanyId();
+        $row = $this->findDepreciation($id);
+        if (!$row || (string) ($row['status'] ?? '') !== 'draft') {
+            return false;
+        }
+        $assetId = (int) ($row['asset_id'] ?? 0);
+        $after = (float) ($row['book_value'] ?? 0);
+        $db = \Rateb\App\Core\Database::connection();
+        $db->beginTransaction();
+        try {
+            $ok = $db->prepare(
+                'UPDATE rateb_asset_depreciation SET status = \'approved\' WHERE id = :id AND company_id = :cid AND status = \'draft\''
+            )->execute(['id' => $id, 'cid' => $cid]);
+            if (!$ok) {
+                $db->rollBack();
+                return false;
+            }
+            if ($assetId > 0) {
+                $db->prepare('UPDATE rateb_assets SET current_value = :v WHERE id = :id AND company_id = :cid')
+                    ->execute(['v' => $after, 'id' => $assetId, 'cid' => $cid]);
+            }
+            $db->commit();
+            return true;
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            throw $e;
+        }
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findDepreciation(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $cid = TenantContext::companyId();
+        $sql = 'SELECT m.*, a.name AS asset_name
+                FROM rateb_asset_depreciation m
+                LEFT JOIN rateb_assets a ON a.id = m.asset_id
+                WHERE m.id = :id';
+        $params = ['id' => $id];
+        if ($cid !== null && $cid > 0 && !TenantContext::isSuperAdmin()) {
+            $sql .= ' AND m.company_id = :cid';
+            $params['cid'] = $cid;
+        }
+        $stmt = \Rateb\App\Core\Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch();
+        return $row ?: null;
+    }
+
+    /** @param array<string, mixed> $filters */
+    /** @return array<int, array<string, mixed>> */
+    public function listDepreciation(array $filters = []): array
+    {
+        $cid = TenantContext::companyId();
+        $sql = 'SELECT m.*, a.name AS asset_name
+                FROM rateb_asset_depreciation m
+                LEFT JOIN rateb_assets a ON a.id = m.asset_id
+                WHERE 1=1';
+        $params = [];
+        if ($cid !== null && $cid > 0 && !TenantContext::isSuperAdmin()) {
+            $sql .= ' AND m.company_id = :cid';
+            $params['cid'] = $cid;
+        } elseif (TenantContext::isSuperAdmin() && (int) ($filters['company_id'] ?? 0) > 0) {
+            $sql .= ' AND m.company_id = :cid';
+            $params['cid'] = (int) $filters['company_id'];
+        }
+        $assetId = (int) ($filters['asset_id'] ?? 0);
+        if ($assetId > 0) {
+            $sql .= ' AND m.asset_id = :aid';
+            $params['aid'] = $assetId;
+        }
+        $status = trim((string) ($filters['status'] ?? ''));
+        if ($status !== '' && in_array($status, ['draft', 'approved'], true)) {
+            $sql .= ' AND m.status = :st';
+            $params['st'] = $status;
+        }
+        $from = trim((string) ($filters['date_from'] ?? ''));
+        if ($from !== '') {
+            $sql .= ' AND m.period_date >= :df';
+            $params['df'] = $from;
+        }
+        $to = trim((string) ($filters['date_to'] ?? ''));
+        if ($to !== '') {
+            $sql .= ' AND m.period_date <= :dt';
+            $params['dt'] = $to;
+        }
+        $sql .= ' ORDER BY m.period_date DESC, m.id DESC';
+        $stmt = \Rateb\App\Core\Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll() ?: [];
+    }
+
+    private function assetBookValue(int $assetId, int $companyId): float
+    {
+        $db = \Rateb\App\Core\Database::connection();
+        $stmt = $db->prepare('SELECT current_value, purchase_cost FROM rateb_assets WHERE id = :id AND company_id = :cid LIMIT 1');
+        $stmt->execute(['id' => $assetId, 'cid' => $companyId]);
+        $row = $stmt->fetch();
+        if (!$row) {
+            return 0.0;
+        }
+        $current = (float) ($row['current_value'] ?? 0);
+        if ($current > 0) {
+            return $current;
+        }
+        return (float) ($row['purchase_cost'] ?? 0);
     }
 
     /** @param array<string, mixed> $data */
@@ -159,12 +299,6 @@ final class AssetDeviceWorkflowService
     public function listAssignments(): array
     {
         return $this->tenantList('rateb_asset_assignments m LEFT JOIN rateb_assets a ON a.id = m.asset_id', 'm.*, a.name AS asset_name', 'm.id DESC');
-    }
-
-    /** @return array<int, array<string, mixed>> */
-    public function listDepreciation(): array
-    {
-        return $this->tenantList('rateb_asset_depreciation m LEFT JOIN rateb_assets a ON a.id = m.asset_id', 'm.*, a.name AS asset_name', 'm.period_date DESC');
     }
 
     /** @return array<int, array<string, mixed>> */
