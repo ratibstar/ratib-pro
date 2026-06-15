@@ -511,6 +511,28 @@ final class AssetDepreciationController extends Controller
         ];
     }
 
+    private function ensureOpsCompany(): int
+    {
+        rateb_bootstrap_ops_tenant();
+        $id = function_exists('rateb_resolve_ops_company_id')
+            ? rateb_resolve_ops_company_id()
+            : (int) SessionManager::get('rateb_company_id', 0);
+        if ($id > 0) {
+            TenantContext::setCompanyId($id);
+        }
+        return $id;
+    }
+
+    private function requireOpsCompanyForWrite(): int
+    {
+        $id = $this->ensureOpsCompany();
+        if ($id < 1) {
+            SessionManager::flash('error', __('select_company_ops'));
+            $this->redirect(rateb_app_url('asset-depreciation'));
+        }
+        return $id;
+    }
+
     /** @return array<int, array{name:string,label:string,type?:string,header_label?:string}> */
     private function depreciationColumns(): array
     {
@@ -527,7 +549,7 @@ final class AssetDepreciationController extends Controller
 
     public function index(): void
     {
-        rateb_bootstrap_ops_tenant();
+        $this->ensureOpsCompany();
         $filters = $this->depreciationFilters();
         $lookup = new FormLookupService();
         $svc = new AssetDeviceWorkflowService();
@@ -552,7 +574,7 @@ final class AssetDepreciationController extends Controller
 
     public function show(array $params): void
     {
-        rateb_bootstrap_ops_tenant();
+        $this->ensureOpsCompany();
         $id = (int) ($params['id'] ?? 0);
         $item = (new AssetDeviceWorkflowService())->findDepreciation($id);
         if (!$item) {
@@ -571,7 +593,7 @@ final class AssetDepreciationController extends Controller
     public function edit(array $params): void
     {
         rateb_require_manage('asset-depreciation');
-        rateb_bootstrap_ops_tenant();
+        $this->ensureOpsCompany();
         $id = (int) ($params['id'] ?? 0);
         $item = (new AssetDeviceWorkflowService())->findDepreciation($id);
         if (!$item || (string) ($item['status'] ?? '') !== 'draft') {
@@ -594,6 +616,7 @@ final class AssetDepreciationController extends Controller
     public function store(): void
     {
         rateb_require_manage('asset-depreciation');
+        $this->requireOpsCompanyForWrite();
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('asset-depreciation'));
         }
@@ -615,6 +638,7 @@ final class AssetDepreciationController extends Controller
     public function update(array $params): void
     {
         rateb_require_manage('asset-depreciation');
+        $this->requireOpsCompanyForWrite();
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('asset-depreciation'));
         }
@@ -641,6 +665,7 @@ final class AssetDepreciationController extends Controller
     public function approve(array $params): void
     {
         rateb_require_manage('asset-depreciation');
+        $this->requireOpsCompanyForWrite();
         if (!$this->validateCsrf()) {
             $this->redirect(rateb_app_url('asset-depreciation'));
         }
@@ -656,7 +681,7 @@ final class AssetDepreciationController extends Controller
 
     public function export(): void
     {
-        rateb_bootstrap_ops_tenant();
+        $this->ensureOpsCompany();
         $filters = $this->depreciationFilters();
         $rows = (new AssetDeviceWorkflowService())->listDepreciation($filters);
         foreach ($rows as &$row) {

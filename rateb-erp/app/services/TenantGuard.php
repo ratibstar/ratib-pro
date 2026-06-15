@@ -22,11 +22,31 @@ final class TenantGuard
         'rateb_rfq',
     ];
 
+    public static function resolveCompanyId(): int
+    {
+        $cid = (int) (TenantContext::companyId() ?? 0);
+        if ($cid > 0) {
+            return $cid;
+        }
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+            $cid = (int) (TenantContext::companyId() ?? 0);
+            if ($cid > 0) {
+                return $cid;
+            }
+        }
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            return rateb_resolve_ops_company_id();
+        }
+        return 0;
+    }
+
     public static function requireCompanyId(): int
     {
-        $cid = TenantContext::companyId();
-        if ($cid === null || $cid < 1) {
-            throw new \RuntimeException('Company context required.');
+        $cid = self::resolveCompanyId();
+        if ($cid < 1) {
+            $msg = function_exists('__') ? __('select_company_ops') : 'Company context required.';
+            throw new \RuntimeException($msg);
         }
         return $cid;
     }
