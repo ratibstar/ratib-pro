@@ -137,6 +137,13 @@ final class FormLookupService
             case 'approval_statuses':
                 $options = $this->staticOptions(['pending', 'approved', 'rejected'], true);
                 break;
+            case 'depreciation_types':
+                $options = [
+                    ['value' => 'monthly', 'label' => __('depreciation_type_monthly')],
+                    ['value' => 'annual', 'label' => __('depreciation_type_annual')],
+                    ['value' => 'straight_line', 'label' => __('depreciation_type_straight_line')],
+                ];
+                break;
             case 'maintenance_types':
                 $options = $this->staticOptions([
                     'preventive', 'corrective', 'calibration', 'inspection', 'general',
@@ -374,8 +381,14 @@ final class FormLookupService
     {
         return [
             ['name' => 'asset_id', 'label' => 'assets', 'type' => 'fk', 'lookup' => 'assets', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'depreciation_type', 'label' => 'depreciation_type', 'type' => 'select', 'lookup' => 'depreciation_types', 'col' => 'col-md-4', 'default' => 'monthly'],
+            ['name' => 'depreciation_rate', 'label' => 'depreciation_rate', 'type' => 'number', 'step' => '0.01', 'col' => 'col-md-4'],
+            ['name' => 'cost_center_id', 'label' => 'cost_centers', 'type' => 'fk', 'lookup' => 'cost_centers', 'col' => 'col-md-4'],
             ['name' => 'period_date', 'label' => 'depreciation_date', 'type' => 'date', 'col' => 'col-md-4', 'default' => date('Y-m-d')],
+            ['name' => 'useful_life_months', 'label' => 'useful_life_months', 'type' => 'number', 'step' => '1', 'min' => '0', 'col' => 'col-md-4'],
+            ['name' => 'residual_value', 'label' => 'residual_value', 'type' => 'number', 'step' => '0.01', 'col' => 'col-md-4', 'default' => '0'],
             ['name' => 'amount', 'label' => 'depreciation_amount', 'type' => 'number', 'step' => '0.01', 'min' => '0', 'required' => true, 'col' => 'col-md-4'],
+            ['name' => 'notes', 'label' => 'notes', 'type' => 'textarea', 'col' => 'col-12', 'rows' => 2],
         ];
     }
 

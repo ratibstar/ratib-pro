@@ -543,7 +543,24 @@ final class AssetDepreciationController extends Controller
             ['name' => 'amount', 'label' => 'depreciation_amount', 'type' => 'money'],
             ['name' => 'book_value_before', 'label' => 'book_value_before', 'header_label' => 'depreciation_book_before', 'type' => 'money'],
             ['name' => 'book_value', 'label' => 'book_value_after', 'header_label' => 'depreciation_book_after', 'type' => 'money'],
+            ['name' => 'accumulated_total', 'label' => 'accumulated_depreciation', 'header_label' => 'accumulated_depreciation_short', 'type' => 'money'],
             ['name' => 'status', 'label' => 'status', 'type' => 'status'],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function depreciationInput(): array
+    {
+        return [
+            'asset_id' => (int) $this->input('asset_id', 0),
+            'period_date' => (string) $this->input('period_date', date('Y-m-d')),
+            'amount' => (float) $this->input('amount', 0),
+            'depreciation_type' => (string) $this->input('depreciation_type', 'monthly'),
+            'depreciation_rate' => $this->input('depreciation_rate', ''),
+            'useful_life_months' => (int) $this->input('useful_life_months', 0),
+            'residual_value' => (float) $this->input('residual_value', 0),
+            'cost_center_id' => (int) $this->input('cost_center_id', 0),
+            'notes' => trim((string) $this->input('notes', '')),
         ];
     }
 
@@ -553,15 +570,24 @@ final class AssetDepreciationController extends Controller
         $filters = $this->depreciationFilters();
         $lookup = new FormLookupService();
         $svc = new AssetDeviceWorkflowService();
+        $companyId = $this->ensureOpsCompany();
         $this->view('company/asset-depreciation/index', [
             'title' => __('asset_depreciation'),
             'items' => $svc->listDepreciation($filters),
             'filters' => $filters,
+            'summary' => $svc->depreciationSummary($companyId > 0 ? $companyId : null),
             'assetOptions' => $lookup->forFields([['lookup' => 'assets']])['assets'] ?? [],
+            'costCenterOptions' => $lookup->forFields([['lookup' => 'cost_centers']])['cost_centers'] ?? [],
             'assetBookValues' => $svc->assetBookValueMap(),
+            'assetAccumulated' => $svc->assetAccumulatedMap($companyId > 0 ? $companyId : null),
             'statusOptions' => [
                 ['value' => 'draft', 'label' => __('depreciation_status_draft')],
                 ['value' => 'approved', 'label' => __('depreciation_status_approved')],
+            ],
+            'depreciationTypes' => [
+                ['value' => 'monthly', 'label' => __('depreciation_type_monthly')],
+                ['value' => 'annual', 'label' => __('depreciation_type_annual')],
+                ['value' => 'straight_line', 'label' => __('depreciation_type_straight_line')],
             ],
             'columns' => $this->depreciationColumns(),
             'csrf' => Csrf::token(),
@@ -569,6 +595,7 @@ final class AssetDepreciationController extends Controller
             'exportRoute' => rateb_app_url('asset-depreciation/export'),
             'exportEnabled' => rateb_can_export_entity('asset-depreciation'),
             'assetJs' => rateb_asset('js/asset-depreciation.js'),
+            'assetCss' => rateb_asset('css/asset-depreciation.css'),
         ], 'main');
     }
 
@@ -625,11 +652,7 @@ final class AssetDepreciationController extends Controller
             SessionManager::flash('error', __('depreciation_amount_required'));
             $this->redirect(rateb_app_url('asset-depreciation'));
         }
-        $id = (new AssetDeviceWorkflowService())->recordDepreciation([
-            'asset_id' => (int) $this->input('asset_id', 0),
-            'period_date' => (string) $this->input('period_date', date('Y-m-d')),
-            'amount' => $amount,
-        ]);
+        $id = (new AssetDeviceWorkflowService())->recordDepreciation($this->depreciationInput());
         (new AuditService())->log('create', 'asset_depreciation', $id);
         SessionManager::flash('success', __('depreciation_saved_draft'));
         $this->redirect(rateb_app_url('asset-depreciation'));
@@ -648,11 +671,7 @@ final class AssetDepreciationController extends Controller
             SessionManager::flash('error', __('depreciation_amount_required'));
             $this->redirect(rateb_app_url('asset-depreciation/' . $id . '/edit'));
         }
-        $ok = (new AssetDeviceWorkflowService())->updateDepreciation($id, [
-            'asset_id' => (int) $this->input('asset_id', 0),
-            'period_date' => (string) $this->input('period_date', date('Y-m-d')),
-            'amount' => $amount,
-        ]);
+        $ok = (new AssetDeviceWorkflowService())->updateDepreciation($id, $this->depreciationInput());
         if (!$ok) {
             SessionManager::flash('error', __('depreciation_edit_denied'));
             $this->redirect(rateb_app_url('asset-depreciation'));
@@ -696,6 +715,7 @@ final class AssetDepreciationController extends Controller
             ['name' => 'amount', 'label' => __('depreciation_amount')],
             ['name' => 'book_value_before', 'label' => __('book_value_before')],
             ['name' => 'book_value_after', 'label' => __('book_value_after')],
+            ['name' => 'accumulated_total', 'label' => __('accumulated_depreciation')],
             ['name' => 'status', 'label' => __('status')],
         ], $rows, __('asset_depreciation'), 'asset-depreciation');
     }

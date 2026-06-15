@@ -1,0 +1,154 @@
+.rateb-dep-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.rateb-dep-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.rateb-dep-breadcrumb {
+    font-size: 0.8125rem;
+    color: var(--rateb-text-muted);
+    margin-bottom: 0.35rem;
+}
+
+.rateb-dep-breadcrumb a {
+    color: var(--rateb-text-muted);
+    text-decoration: none;
+}
+
+.rateb-dep-breadcrumb a:hover {
+    color: var(--rateb-primary);
+}
+
+.rateb-dep-card {
+    background: var(--rateb-surface);
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius);
+    box-shadow: var(--rateb-shadow);
+}
+
+.rateb-dep-card-header {
+    padding: 0.85rem 1.15rem;
+    border-bottom: 1px solid var(--rateb-border);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.rateb-dep-card-body {
+    padding: 1.15rem 1.25rem 1.25rem;
+}
+
+.rateb-dep-form-grid .form-label {
+    font-size: 0.8125rem;
+    margin-bottom: 0.3rem;
+}
+
+.rateb-dep-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--rateb-border);
+}
+
+.rateb-dep-readonly {
+    background: var(--rateb-surface-2) !important;
+    color: var(--rateb-text-muted);
+}
+
+.rateb-dep-summary-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+@media (max-width: 991.98px) {
+    .rateb-dep-summary-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.rateb-dep-summary-card {
+    background: var(--rateb-surface);
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius);
+    padding: 1rem 1.15rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-height: 5.5rem;
+}
+
+.rateb-dep-summary-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(37, 99, 235, 0.12);
+    color: var(--rateb-primary);
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+.rateb-dep-summary-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.rateb-dep-summary-label {
+    font-size: 0.8125rem;
+    color: var(--rateb-text-muted);
+}
+
+.rateb-dep-table-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+}
+
+.rateb-dep-filter-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.rateb-dep-filter-toggle .fa-chevron-down {
+    transition: transform 0.2s ease;
+}
+
+.rateb-dep-filter-toggle[aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+@media print {
+    .rateb-sidebar,
+    .rateb-topbar,
+    .rateb-accounting-nav,
+    .rateb-ops-company-select,
+    .rateb-dep-form-card,
+    .rateb-dep-filter-card,
+    .rateb-dep-table-toolbar,
+    .rateb-dep-summary-row,
+    .rateb-dep-page-header .d-flex {
+        display: none !important;
+    }
+    .rateb-dep-print-target {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}

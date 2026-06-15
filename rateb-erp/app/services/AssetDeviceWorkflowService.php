@@ -96,16 +96,29 @@ final class AssetDeviceWorkflowService
         $amount = max(0, (float) ($data['amount'] ?? 0));
         $before = $this->assetBookValue($assetId, $cid);
         $after = max(0, round($before - $amount, 2));
+        $extra = $this->normalizeDepreciationMeta($data);
         $db = \Rateb\App\Core\Database::connection();
         $no = (new WorkflowTableService())->generateRecordNo('asset-depreciation');
         $db->prepare(
-            'INSERT INTO rateb_asset_depreciation (company_id, depreciation_no, asset_id, period_date, amount, book_value_before, book_value, status)
-             VALUES (:cid, :no, :aid, :pd, :amt, :before, :after, :st)'
+            'INSERT INTO rateb_asset_depreciation (
+                company_id, depreciation_no, asset_id, period_date, depreciation_type, depreciation_rate,
+                useful_life_months, residual_value, cost_center_id, notes,
+                amount, book_value_before, book_value, status
+             ) VALUES (
+                :cid, :no, :aid, :pd, :dtype, :drate, :life, :residual, :cc, :notes,
+                :amt, :before, :after, :st
+             )'
         )->execute([
             'cid' => $cid,
             'no' => $no,
             'aid' => $assetId,
             'pd' => $data['period_date'] ?? date('Y-m-d'),
+            'dtype' => $extra['depreciation_type'],
+            'drate' => $extra['depreciation_rate'],
+            'life' => $extra['useful_life_months'],
+            'residual' => $extra['residual_value'],
+            'cc' => $extra['cost_center_id'],
+            'notes' => $extra['notes'],
             'amt' => $amount,
             'before' => $before,
             'after' => $after,
@@ -127,14 +140,23 @@ final class AssetDeviceWorkflowService
         $amount = max(0, (float) ($data['amount'] ?? $row['amount'] ?? 0));
         $before = $this->assetBookValue($assetId, $cid);
         $after = max(0, round($before - $amount, 2));
+        $extra = $this->normalizeDepreciationMeta($data);
         $db = \Rateb\App\Core\Database::connection();
         return $db->prepare(
             'UPDATE rateb_asset_depreciation
-             SET asset_id = :aid, period_date = :pd, amount = :amt, book_value_before = :before, book_value = :after
+             SET asset_id = :aid, period_date = :pd, depreciation_type = :dtype, depreciation_rate = :drate,
+                 useful_life_months = :life, residual_value = :residual, cost_center_id = :cc, notes = :notes,
+                 amount = :amt, book_value_before = :before, book_value = :after
              WHERE id = :id AND company_id = :cid AND status = \'draft\''
         )->execute([
             'aid' => $assetId,
             'pd' => $data['period_date'] ?? $row['period_date'],
+            'dtype' => $extra['depreciation_type'],
+            'drate' => $extra['depreciation_rate'],
+            'life' => $extra['useful_life_months'],
+            'residual' => $extra['residual_value'],
+            'cc' => $extra['cost_center_id'],
+            'notes' => $extra['notes'],
             'amt' => $amount,
             'before' => $before,
             'after' => $after,
@@ -201,7 +223,11 @@ final class AssetDeviceWorkflowService
     public function listDepreciation(array $filters = []): array
     {
         $cid = TenantContext::companyId();
-        $sql = 'SELECT m.*, a.name AS asset_name
+        $sql = 'SELECT m.*, a.name AS asset_name,
+                (SELECT COALESCE(SUM(d2.amount), 0)
+                 FROM rateb_asset_depreciation d2
+                 WHERE d2.asset_id = m.asset_id AND d2.company_id = m.company_id AND d2.status = \'approved\'
+                ) AS accumulated_total
                 FROM rateb_asset_depreciation m
                 LEFT JOIN rateb_assets a ON a.id = m.asset_id
                 WHERE 1=1';
@@ -263,6 +289,83 @@ final class AssetDeviceWorkflowService
             $map[$id] = $current > 0 ? $current : (float) ($row['purchase_cost'] ?? 0);
         }
         return $map;
+    }
+
+    /** @return array<int, float> */
+    public function assetAccumulatedMap(?int $companyId = null): array
+    {
+        $cid = $companyId ?? TenantContext::companyId();
+        if ($cid === null || $cid < 1) {
+            $cid = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
+        }
+        if ($cid < 1) {
+            return [];
+        }
+        $rows = (new \Rateb\App\Models\Asset())->query(
+            'SELECT asset_id, COALESCE(SUM(amount), 0) AS total
+             FROM rateb_asset_depreciation
+             WHERE company_id = :cid AND status = \'approved\'
+             GROUP BY asset_id',
+            ['cid' => $cid]
+        );
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int) ($row['asset_id'] ?? 0)] = (float) ($row['total'] ?? 0);
+        }
+        return $map;
+    }
+
+    /** @return array{total_asset_value: float, total_accumulated: float, net_asset_value: float} */
+    public function depreciationSummary(?int $companyId = null): array
+    {
+        $cid = $companyId ?? TenantContext::companyId();
+        if ($cid === null || $cid < 1) {
+            $cid = function_exists('rateb_resolve_ops_company_id') ? rateb_resolve_ops_company_id() : 0;
+        }
+        if ($cid < 1) {
+            return ['total_asset_value' => 0.0, 'total_accumulated' => 0.0, 'net_asset_value' => 0.0];
+        }
+        $assetRow = (new \Rateb\App\Models\Asset())->queryOne(
+            'SELECT COALESCE(SUM(CASE WHEN current_value > 0 THEN current_value ELSE purchase_cost END), 0) AS total
+             FROM rateb_assets WHERE company_id = :cid',
+            ['cid' => $cid]
+        );
+        $depRow = (new \Rateb\App\Models\Asset())->queryOne(
+            'SELECT COALESCE(SUM(amount), 0) AS total
+             FROM rateb_asset_depreciation WHERE company_id = :cid AND status = \'approved\'',
+            ['cid' => $cid]
+        );
+        $totalAssets = (float) ($assetRow['total'] ?? 0);
+        $accumulated = (float) ($depRow['total'] ?? 0);
+        return [
+            'total_asset_value' => $totalAssets,
+            'total_accumulated' => $accumulated,
+            'net_asset_value' => max(0, round($totalAssets - $accumulated, 2)),
+        ];
+    }
+
+    /** @param array<string, mixed> $data
+     * @return array{depreciation_type: string, depreciation_rate: ?float, useful_life_months: ?int, residual_value: float, cost_center_id: ?int, notes: ?string}
+     */
+    private function normalizeDepreciationMeta(array $data): array
+    {
+        $type = trim((string) ($data['depreciation_type'] ?? 'monthly'));
+        if (!in_array($type, ['monthly', 'annual', 'straight_line'], true)) {
+            $type = 'monthly';
+        }
+        $rate = isset($data['depreciation_rate']) && $data['depreciation_rate'] !== ''
+            ? (float) $data['depreciation_rate'] : null;
+        $life = (int) ($data['useful_life_months'] ?? 0);
+        $cc = (int) ($data['cost_center_id'] ?? 0);
+        $notes = trim((string) ($data['notes'] ?? ''));
+        return [
+            'depreciation_type' => $type,
+            'depreciation_rate' => $rate,
+            'useful_life_months' => $life > 0 ? $life : null,
+            'residual_value' => max(0, (float) ($data['residual_value'] ?? 0)),
+            'cost_center_id' => $cc > 0 ? $cc : null,
+            'notes' => $notes !== '' ? $notes : null,
+        ];
     }
 
     private function assetBookValue(int $assetId, int $companyId): float
