@@ -109,7 +109,7 @@ $req = static function (string $label): string {
                             <small class="rateb-line-unit-hint rateb-ltr-num" data-unit-hint data-hint-template="<?php echo Rateb\App\Core\View::escape(__('unit_factor_hint', ['qty' => ':qty'])); ?>"><?php echo __('unit_factor_hint', ['qty' => number_format($qtyEach, 2)]); ?></small>
                         </td>
                         <td class="rateb-line-price">
-                            <input class="form-control form-control-sm rateb-ltr-num" type="number" step="0.01" min="0" name="line_unit_price[]" value="<?php echo Rateb\App\Core\View::escape($line['unit_price'] ?? 0); ?>" required data-line-calc>
+                            <input class="form-control form-control-sm rateb-ltr-num" type="number" step="any" min="0" name="line_unit_price[]" value="<?php echo Rateb\App\Core\View::escape($line['unit_price'] ?? 0); ?>" required data-line-calc>
                         </td>
                         <td class="text-end rateb-line-amount"><span data-line-subtotal><?php echo number_format($totals['subtotal'], 2); ?></span></td>
                         <td class="rateb-line-tax-cell">

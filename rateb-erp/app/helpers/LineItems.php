@@ -10,7 +10,11 @@ final class LineItems
     /** @return list<string> */
     public static function unitOptions(): array
     {
-        return ['each', 'unit', 'box', 'carton', 'pack', 'kg', 'liter', 'meter'];
+        return [
+            'each', 'unit', 'piece', 'pair', 'set', 'dozen',
+            'box', 'carton', 'pack', 'bag', 'roll', 'pallet',
+            'kg', 'gram', 'ton', 'liter', 'ml', 'meter', 'cm', 'sqm',
+        ];
     }
 
     /** @return array<string, int> */
@@ -19,12 +23,24 @@ final class LineItems
         return [
             'each' => 1,
             'unit' => 1,
+            'piece' => 1,
+            'pair' => 2,
+            'set' => 1,
+            'dozen' => 12,
             'box' => 12,
             'carton' => 48,
             'pack' => 6,
+            'bag' => 1,
+            'roll' => 1,
+            'pallet' => 1,
             'kg' => 1,
+            'gram' => 0.001,
+            'ton' => 1000,
             'liter' => 1,
+            'ml' => 0.001,
             'meter' => 1,
+            'cm' => 0.01,
+            'sqm' => 1,
         ];
     }
 

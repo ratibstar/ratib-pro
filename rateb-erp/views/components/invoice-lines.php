@@ -53,7 +53,7 @@ if ($lineItems === []) {
                             <input type="hidden" name="line_unit[]" value="unit">
                         </td>
                         <td><input class="form-control form-control-sm" type="number" step="0.001" min="0.001" name="line_quantity[]" value="<?php echo Rateb\App\Core\View::escape((string) $qty); ?>" data-line-calc></td>
-                        <td><input class="form-control form-control-sm" type="number" step="0.01" min="0" name="line_unit_price[]" value="<?php echo Rateb\App\Core\View::escape((string) $price); ?>" data-line-calc></td>
+                        <td><input class="form-control form-control-sm rateb-ltr-num" type="number" step="any" min="0" name="line_unit_price[]" value="<?php echo Rateb\App\Core\View::escape((string) $price); ?>" data-line-calc></td>
                         <td>
                             <select class="form-select form-select-sm" name="line_tax_name[]" data-line-tax-preset>
                                 <?php foreach ($taxPresets as $preset) {

@@ -55,6 +55,7 @@ final class StockMovementService
                 );
             }
             $movementId = $movementModel->create([
+                'company_id' => $this->resolveCompanyId($item),
                 'movement_no' => $movementNo,
                 'inventory_id' => $inventoryId,
                 'warehouse_id' => $warehouseId,
@@ -112,5 +113,27 @@ final class StockMovementService
         }
         $sql .= ' ORDER BY m.id DESC LIMIT ' . max(1, min(500, $limit));
         return (new StockMovement())->query($sql, $params);
+    }
+
+    /** @param array<string, mixed> $item */
+    private function resolveCompanyId(array $item): int
+    {
+        $companyId = (int) ($item['company_id'] ?? 0);
+        if ($companyId > 0) {
+            TenantContext::setCompanyId($companyId);
+            return $companyId;
+        }
+        $ctx = TenantContext::companyId();
+        if ($ctx !== null && $ctx > 0) {
+            return (int) $ctx;
+        }
+        if (function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+            if ($companyId > 0) {
+                TenantContext::setCompanyId($companyId);
+                return $companyId;
+            }
+        }
+        throw new \RuntimeException(function_exists('__') ? __('select_company_ops') : 'Company context required for tenant-scoped create.');
     }
 }

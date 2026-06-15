@@ -756,7 +756,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
             ['name' => 'sku', 'label' => 'SKU', 'type' => 'text'],
             ['name' => 'quantity', 'label' => 'Quantity', 'type' => 'number', 'step' => '0.001', 'min' => '0'],
             ['name' => 'unit', 'label' => 'unit_of_measure', 'type' => 'select', 'lookup' => 'units', 'translate_options' => true],
-            ['name' => 'unit_cost', 'label' => 'Unit Cost', 'type' => 'number', 'step' => '0.01', 'min' => '0'],
+            ['name' => 'unit_cost', 'label' => 'unit_price', 'type' => 'number', 'step' => 'any', 'min' => '0', 'attrs' => ['class' => 'form-control rateb-form-control rateb-ltr-num']],
             ['name' => 'reorder_level', 'label' => 'reorder_level', 'type' => 'number', 'step' => '0.001', 'min' => '0'],
             ['name' => 'max_stock', 'label' => 'max_stock', 'type' => 'number', 'step' => '0.001', 'min' => '0'],
             ['name' => 'production_date', 'label' => 'production_date', 'type' => 'date'],
@@ -841,6 +841,9 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     public function store(): void
     {
         $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', 'Invalid CSRF token');
             $this->redirect(rateb_url($this->routePrefix));
@@ -866,6 +869,7 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
         $data['quantity'] = 0;
 
         try {
+            $this->ensureTenantCompanyForWrite($data);
             \Rateb\App\Services\TenantFkValidator::validate($data, $this->tenantForeignKeys);
             $targetQty = $movementQty;
             $this->validateMaxStock($targetQty, (float) ($data['max_stock'] ?? 0));
@@ -907,12 +911,25 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
     public function update(array $params): void
     {
         $this->guardManage();
+        if (function_exists('rateb_bootstrap_ops_tenant')) {
+            rateb_bootstrap_ops_tenant();
+        }
         if (!$this->validateCsrf()) {
             SessionManager::flash('error', 'Invalid CSRF token');
             $this->redirect(rateb_url($this->routePrefix));
         }
 
         $id = (int) ($params['id'] ?? 0);
+        $existing = $this->model->find($id);
+        if (!$existing) {
+            SessionManager::flash('error', __('no_records'));
+            $this->redirect(rateb_url($this->routePrefix));
+        }
+        $itemCompanyId = (int) ($existing['company_id'] ?? 0);
+        if ($itemCompanyId > 0) {
+            \Rateb\App\Core\TenantContext::setCompanyId($itemCompanyId);
+        }
+
         $movementType = trim((string) $this->input('movement_type', ''));
         $movementQty = (float) str_replace(',', '.', (string) $this->input('quantity', '0'));
         $notes = trim((string) $this->input('notes', ''));
@@ -1038,7 +1055,11 @@ final class InventoryController extends \Rateb\App\Controllers\CrudController
 
     private function saveInventoryAttachment(int $id): bool
     {
-        $companyId = (int) TenantContext::companyId();
+        $item = $this->model->find($id);
+        $companyId = (int) ($item['company_id'] ?? \Rateb\App\Core\TenantContext::companyId() ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = rateb_resolve_ops_company_id();
+        }
         $upload = \Rateb\App\Helpers\EntityAttachment::handleOptionalFile(
             'entity_attachment',
             $companyId,
