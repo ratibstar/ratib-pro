@@ -115,6 +115,9 @@ foreach ($moduleRoutes as $path => [$class, $module]) {
 
 $router->get($app('inventory/warehouse-items'), [InventoryController::class, 'warehouseItemsJson'], rateb_erp_mw('inventory', '', 'inventory'));
 
+$router->get($app('purchase-requests/export'), [PurchaseRequestsController::class, 'export'], rateb_erp_mw('procurement', 'reports.export', 'purchase-requests'));
+$router->get($app('purchase-orders/export'), [PurchaseOrdersController::class, 'export'], rateb_erp_mw('procurement', 'reports.export', 'purchase-orders'));
+
 $router->get($app('purchase-requests/{id}'), [PurchaseRequestsController::class, 'show'], rateb_erp_mw('procurement', '', 'purchase-requests'));
 $router->post($app('purchase-requests/{id}/convert-to-po'), [PurchaseRequestsController::class, 'convertToPo'], rateb_erp_mw('procurement', '', 'purchase-requests'));
 $router->post($app('purchase-requests/{id}/submit'), [PurchaseRequestsController::class, 'submit'], rateb_erp_mw('procurement', '', 'purchase-requests'));
@@ -223,9 +226,6 @@ $router->post($app('cost-centers/bulk-delete'), [CompanyCostCentersController::c
 
 $router->get($app('reports'), [ReportsController::class, 'index'], rateb_erp_mw('reports', '', 'reports'));
 $router->get($app('reports/export'), [ReportsController::class, 'export'], rateb_erp_mw('reports', 'reports.export', 'reports'));
-$router->get($app('purchase-requests/export'), [PurchaseRequestsController::class, 'export'], rateb_erp_mw('procurement', 'reports.export', 'purchase-requests'));
-$router->get($app('purchase-orders/export'), [PurchaseOrdersController::class, 'export'], rateb_erp_mw('procurement', 'reports.export', 'purchase-orders'));
-
 $router->get($app('stock-movements'), [StockMovementsController::class, 'index'], rateb_erp_mw('inventory', '', 'stock-movements'));
 $router->post($app('stock-movements'), [StockMovementsController::class, 'store'], rateb_erp_mw('inventory', '', 'stock-movements'));
 $router->post($app('stock-movements/bulk-delete'), [StockMovementsController::class, 'bulkDestroy'], rateb_erp_mw('inventory', '', 'stock-movements'));
@@ -283,9 +283,9 @@ $invAuditMw = rateb_erp_mw('inventory', '', 'inventory-audits');
 $router->get($app('inventory-audits'), [InventoryAuditsController::class, 'index'], $invAuditMw);
 $router->get($app('inventory-audits/create'), [InventoryAuditsController::class, 'create'], $invAuditMw);
 $router->post($app('inventory-audits'), [InventoryAuditsController::class, 'store'], $invAuditMw);
+$router->get($app('inventory-audits/export'), [InventoryAuditsController::class, 'export'], rateb_erp_mw('inventory', 'reports.export', 'inventory-audits'));
 $router->get($app('inventory-audits/{id}'), [InventoryAuditsController::class, 'show'], $invAuditMw);
 $router->post($app('inventory-audits/{id}/reconcile'), [InventoryAuditsController::class, 'reconcile'], $invAuditMw);
-$router->get($app('inventory-audits/export'), [InventoryAuditsController::class, 'export'], rateb_erp_mw('inventory', 'reports.export', 'inventory-audits'));
 
 $invCodesMw = rateb_erp_mw('inventory', '', 'inventory-codes');
 $router->get($app('inventory/{id}/codes'), [InventoryCodesController::class, 'show'], $invCodesMw);
@@ -343,6 +343,7 @@ $router->get($app('asset-assignments/export'), [AssetAssignmentsController::clas
 $adMw = rateb_erp_mw('assets', '', 'asset-depreciation');
 $adWriteMw = rateb_erp_mw('assets', 'asset_depreciation.manage', 'asset-depreciation');
 $router->get($app('asset-depreciation'), [AssetDepreciationController::class, 'index'], $adMw);
+$router->get($app('asset-depreciation/export'), [AssetDepreciationController::class, 'export'], rateb_erp_mw('assets', 'reports.export', 'asset-depreciation'));
 $router->get($app('asset-depreciation/{id}'), [AssetDepreciationController::class, 'show'], $adMw);
 $router->get($app('asset-depreciation/{id}/edit'), [AssetDepreciationController::class, 'edit'], $adWriteMw);
 $router->post($app('asset-depreciation'), [AssetDepreciationController::class, 'store'], $adWriteMw);
@@ -350,7 +351,6 @@ $router->post($app('asset-depreciation/{id}'), [AssetDepreciationController::cla
 $router->post($app('asset-depreciation/{id}/approve'), [AssetDepreciationController::class, 'approve'], $adWriteMw);
 $router->post($app('asset-depreciation/{id}/delete'), [AssetDepreciationController::class, 'destroy'], $adWriteMw);
 $router->post($app('asset-depreciation/bulk-delete'), [AssetDepreciationController::class, 'bulkDestroy'], $adWriteMw);
-$router->get($app('asset-depreciation/export'), [AssetDepreciationController::class, 'export'], rateb_erp_mw('assets', 'reports.export', 'asset-depreciation'));
 
 $devMw = rateb_erp_mw('medical_devices', '', 'device-maintenance');
 $devWriteMw = rateb_erp_mw('medical_devices', 'device_service.manage', 'device-maintenance');
