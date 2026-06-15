@@ -266,6 +266,39 @@ html[data-theme="dark"] .rateb-coa-tree .rateb-coa-group td {
     border: 1px solid var(--rateb-border);
     border-radius: var(--rateb-radius);
     padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+    z-index: 2;
+    clear: both;
+}
+
+.rateb-accounting-nav + .rateb-card,
+.rateb-accounting-nav + .rateb-ops-company-wrap,
+.rateb-accounting-nav + div > .rateb-card {
+    margin-top: 0;
+    clear: both;
+}
+
+.rateb-filter-panel {
+    background: var(--rateb-surface-2);
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius);
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.rateb-section-heading {
+    margin: 1.5rem 0 0.75rem;
+    font-weight: 600;
+    clear: both;
+}
+
+.rateb-card-body > .rateb-card {
+    display: flow-root;
+}
+
+.rateb-card-body > .rateb-filter-panel + .rateb-card {
+    margin-top: 0;
 }
 
 .rateb-accounting-nav-brand {

@@ -19,7 +19,7 @@ $exportLink = static function (string $format) use ($exportBase, $exportQuery): 
     return $exportBase . '?' . http_build_query($q);
 };
 $canManage = $canManage ?? rateb_can_manage_entity('asset-depreciation');
-$formatCell = static function (mixed $val, array $col): string {
+$formatCell = static function ($val, array $col): string {
     $type = (string) ($col['type'] ?? '');
     if ($type === 'money') {
         return number_format((float) $val, 2);
@@ -46,8 +46,8 @@ $formatCell = static function (mixed $val, array $col): string {
         <?php } ?>
     </div>
     <div class="rateb-card-body">
-        <form method="get" action="<?php echo Rateb\App\Core\View::escape($listUrl); ?>" class="rateb-card mb-4">
-            <div class="rateb-card-body py-3">
+        <div class="rateb-filter-panel">
+            <form method="get" action="<?php echo Rateb\App\Core\View::escape($listUrl); ?>">
                 <div class="row g-2 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label rateb-form-label"><?php echo __('assets'); ?></label>
@@ -84,17 +84,17 @@ $formatCell = static function (mixed $val, array $col): string {
                         <a href="<?php echo Rateb\App\Core\View::escape($listUrl); ?>" class="btn btn-outline-secondary"><?php echo __('reset'); ?></a>
                     </div>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
 
         <?php if ($canManage) {
             $formFields = \Rateb\App\Services\FormLookupService::assetDepreciationFormFields();
             $lookups = (new \Rateb\App\Services\FormLookupService())->forFields($formFields);
             $bookJson = json_encode($assetBookValues ?? [], JSON_UNESCAPED_UNICODE);
             ?>
-        <div class="rateb-card mb-3 border-secondary-subtle">
+        <div class="rateb-card mb-4 border-secondary-subtle">
             <div class="rateb-card-header py-2"><i class="fas fa-plus-circle"></i> <?php echo __('create'); ?> <?php echo __('asset_depreciation'); ?></div>
-            <div class="rateb-card-body">
+            <div class="rateb-card-body pb-3">
                 <?php if (empty($assetOptions)) { ?>
                 <div class="alert alert-warning mb-0"><?php echo __('depreciation_no_assets_hint'); ?></div>
                 <?php } else { ?>
@@ -135,7 +135,7 @@ $formatCell = static function (mixed $val, array $col): string {
         <?php }
         } ?>
 
-        <h6 class="mb-2 mt-1"><i class="fas fa-table"></i> <?php echo __('depreciation_records'); ?></h6>
+        <h6 class="rateb-section-heading"><i class="fas fa-table"></i> <?php echo __('depreciation_records'); ?></h6>
 
         <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
         <div class="table-responsive" data-rateb-table-search-host="1">

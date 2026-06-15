@@ -29,6 +29,7 @@ if ($formFields !== null && $lookups === []) {
                 Rateb\App\Core\View::partial('export-toolbar', [
                     'exportRoute' => $exportRoute,
                     'exportEnabled' => true,
+                    'inline' => true,
                 ]);
             } ?>
             <?php if ($canManage && !empty($createUrl)) { ?>

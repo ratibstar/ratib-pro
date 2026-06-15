@@ -17,8 +17,12 @@ foreach ($columns as $c) {
         break;
     }
 }
-$formatCell = static function (mixed $val, array $col): string {
+$formatCell = static function ($val, array $col): string {
     $type = (string) ($col['type'] ?? '');
+    if ($type === 'status') {
+        $key = 'depreciation_status_' . (string) $val;
+        return function_exists('__') ? __($key) : (string) $val;
+    }
     if ($type === 'notes') {
         $text = trim((string) $val);
         if ($text === '') {
