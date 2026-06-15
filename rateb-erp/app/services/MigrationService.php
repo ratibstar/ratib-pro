@@ -191,7 +191,29 @@ final class MigrationService
         if ($tail !== '') {
             $statements[] = $tail;
         }
-        return $statements;
+        return $this->expandPrepareChains($statements);
+    }
+
+    /** @param array<int, string> $statements */
+    /** @return array<int, string> */
+    private function expandPrepareChains(array $statements): array
+    {
+        $out = [];
+        foreach ($statements as $statement) {
+            $trimmed = trim($statement);
+            if (preg_match(
+                '/^PREPARE\s+(\w+)\s+FROM\s+@sql\s*;\s*EXECUTE\s+(\w+)\s*;\s*DEALLOCATE\s+PREPARE\s+(\w+)\s*;?\s*$/is',
+                $trimmed,
+                $m
+            ) === 1) {
+                $out[] = 'PREPARE ' . $m[1] . ' FROM @sql';
+                $out[] = 'EXECUTE ' . $m[2];
+                $out[] = 'DEALLOCATE PREPARE ' . $m[3];
+                continue;
+            }
+            $out[] = $statement;
+        }
+        return $out;
     }
 
     private function isBenignMigrationError(string $message): bool

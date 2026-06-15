@@ -1,4 +1,5 @@
 -- RATEB ERP — Invoice lines, payment link, sent timestamp
+-- Idempotent: duplicate column/index errors are ignored by MigrationService.
 SET NAMES utf8mb4;
 
 CREATE TABLE IF NOT EXISTS rateb_invoice_lines (
@@ -20,16 +21,6 @@ CREATE TABLE IF NOT EXISTS rateb_invoice_lines (
     CONSTRAINT fk_invoice_lines_invoice FOREIGN KEY (invoice_id) REFERENCES rateb_invoices(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rateb_invoices' AND COLUMN_NAME = 'sent_at');
-SET @sql = IF(@col = 0,
-    'ALTER TABLE rateb_invoices ADD COLUMN sent_at DATETIME NULL AFTER payment_status',
-    'SELECT 1');
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @col = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rateb_payments' AND COLUMN_NAME = 'invoice_id');
-SET @sql = IF(@col = 0,
-    'ALTER TABLE rateb_payments ADD COLUMN invoice_id INT UNSIGNED NULL AFTER subscription_id, ADD INDEX idx_payments_invoice (invoice_id)',
-    'SELECT 1');
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+ALTER TABLE rateb_invoices ADD COLUMN sent_at DATETIME NULL AFTER payment_status;
+ALTER TABLE rateb_payments ADD COLUMN invoice_id INT UNSIGNED NULL AFTER subscription_id;
+ALTER TABLE rateb_payments ADD INDEX idx_payments_invoice (invoice_id);
