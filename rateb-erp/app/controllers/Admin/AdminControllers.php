@@ -1033,9 +1033,12 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
         $page = max(1, (int) $this->input('page', 1));
         $limit = 20;
         $offset = ($page - 1) * $limit;
+        $items = $this->model->withRelations($limit, $offset);
+        $dueAlerts = $this->buildDueAlerts($items);
         $this->view($this->viewPrefix . '/index', [
             'title' => __('invoices'),
-            'items' => $this->model->withRelations($limit, $offset),
+            'items' => $items,
+            'dueAlerts' => $dueAlerts,
             'total' => $this->model->count(),
             'page' => $page,
             'limit' => $limit,
@@ -1067,8 +1070,17 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             'item' => [
                 'invoice_no' => $this->billing->nextInvoiceNo(),
                 'status' => 'draft',
+                'payment_status' => 'unpaid',
                 'issued_at' => date('Y-m-d'),
+                'due_date' => date('Y-m-d', strtotime('+30 days')),
                 'tax_amount' => '0',
+                'total_amount' => '0',
+                'tax_rate' => '15',
+                'discount_amount' => '0',
+                'discount_type' => 'value',
+                'payment_terms_days' => 30,
+                'payment_method' => 'bank_transfer',
+                'invoice_type' => 'tax',
                 'currency' => 'SAR',
             ],
             'routePrefix' => $this->routePrefix,
@@ -1129,7 +1141,7 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             'routePrefix' => $this->routePrefix,
             'fields' => $this->fields,
             'companies' => $this->billing->companyOptions(),
-            'subscriptions' => $this->billing->subscriptionOptions((int) ($item['company_id'] ?? 0)),
+            'subscriptions' => $this->billing->subscriptionOptions((int) ($item['company_id'] ?? 0), (int) ($item['subscription_id'] ?? 0)),
             'csrf' => Csrf::token(),
             'multipart' => true,
             'attachment' => [
@@ -1150,8 +1162,8 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             $this->redirect(rateb_url($this->routePrefix));
         }
         $id = (int) ($params['id'] ?? 0);
-        $data = $this->collectInvoiceData();
-        if (!$this->validateInvoiceData($data)) {
+        $data = $this->collectInvoiceData($id);
+        if (!$this->validateInvoiceData($data, $id)) {
             $this->redirect(rateb_url($this->routePrefix . '/' . $id . '/edit'));
         }
         $this->model->update($id, $data);
@@ -1165,8 +1177,72 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
         $this->redirect(rateb_url($this->routePrefix));
     }
 
+    public function subscriptionLookup(): void
+    {
+        if (!rateb_can('billing.manage')) {
+            http_response_code(403);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['error' => 'forbidden'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        $companyId = (int) $this->input('company_id', 0);
+        $sub = $this->billing->activeSubscriptionForCompany($companyId);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['subscription' => $sub], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function preview(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $item = $this->model->find($id);
+        if (!$item) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404'], 'print');
+            return;
+        }
+        $company = (new \Rateb\App\Models\Company())->find((int) ($item['company_id'] ?? 0));
+        $this->view('admin/invoices/print', [
+            'title' => __('invoice_preview') . ' — ' . ($item['invoice_no'] ?? ''),
+            'item' => $item,
+            'company' => $company,
+        ], 'print');
+    }
+
+    /** @param array<int, array<string, mixed>> $items */
+    /** @return list<array<string, string>> */
+    private function buildDueAlerts(array $items): array
+    {
+        $alerts = [];
+        $today = date('Y-m-d');
+        foreach ($items as $row) {
+            $status = (string) ($row['status'] ?? '');
+            $due = (string) ($row['due_date'] ?? '');
+            if ($due === '' || in_array($status, ['paid', 'cancelled'], true)) {
+                continue;
+            }
+            if ($due < $today) {
+                $alerts[] = [
+                    'type' => 'danger',
+                    'message' => __('invoice_overdue_alert', [
+                        'no' => (string) ($row['invoice_no'] ?? ''),
+                        'date' => $due,
+                    ]),
+                ];
+            } elseif ($due <= date('Y-m-d', strtotime('+7 days'))) {
+                $alerts[] = [
+                    'type' => 'warning',
+                    'message' => __('invoice_due_soon_alert', [
+                        'no' => (string) ($row['invoice_no'] ?? ''),
+                        'date' => $due,
+                    ]),
+                ];
+            }
+        }
+        return $alerts;
+    }
+
     /** @param array<string, mixed> $data */
-    private function validateInvoiceData(array $data): bool
+    private function validateInvoiceData(array $data, ?int $excludeId = null): bool
     {
         $companyId = (int) ($data['company_id'] ?? 0);
         if (!$this->billing->companyExists($companyId)) {
@@ -1174,41 +1250,97 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             return false;
         }
         $subId = isset($data['subscription_id']) && $data['subscription_id'] !== '' ? (int) $data['subscription_id'] : null;
+        if ($subId === null || $subId < 1) {
+            SessionManager::flash('error', __('billing_subscription_required'));
+            return false;
+        }
         if (!$this->billing->subscriptionBelongsToCompany($subId, $companyId)) {
             SessionManager::flash('error', __('billing_subscription_invalid'));
+            return false;
+        }
+        if ((float) ($data['amount'] ?? 0) <= 0) {
+            SessionManager::flash('error', __('invoice_amount_required'));
+            return false;
+        }
+        if (($data['issued_at'] ?? '') === '' || ($data['due_date'] ?? '') === '') {
+            SessionManager::flash('error', __('invoice_dates_required'));
+            return false;
+        }
+        $invoiceNo = trim((string) ($data['invoice_no'] ?? ''));
+        if ($invoiceNo !== '' && $this->billing->invoiceNoExists($invoiceNo, $excludeId)) {
+            SessionManager::flash('error', __('invoice_no_duplicate'));
             return false;
         }
         return true;
     }
 
     /** @return array<string, mixed> */
-    private function collectInvoiceData(): array
+    private function collectInvoiceData(?int $excludeId = null): array
     {
-        $data = $this->collectData();
+        $data = [];
+        $names = [
+            'company_id', 'subscription_id', 'invoice_no', 'invoice_type', 'po_number',
+            'amount', 'tax_amount', 'total_amount', 'currency', 'discount_amount', 'discount_type',
+            'tax_rate', 'payment_terms_days', 'payment_method', 'status', 'payment_status', 'notes',
+            'due_date', 'issued_at',
+        ];
+        foreach ($names as $name) {
+            $data[$name] = trim((string) $this->input($name, ''));
+        }
         $data['company_id'] = (int) ($data['company_id'] ?? 0);
-        $data['amount'] = (float) ($data['amount'] ?? 0);
-        $data['tax_amount'] = (float) ($data['tax_amount'] ?? 0);
-        $data['total_amount'] = (float) ($data['total_amount'] ?? 0);
-        if ($data['total_amount'] <= 0 && $data['amount'] > 0) {
-            $data['total_amount'] = $data['amount'] + $data['tax_amount'];
-        }
-        if ($data['amount'] <= 0 && $data['total_amount'] > 0) {
-            $data['amount'] = max(0, $data['total_amount'] - $data['tax_amount']);
-        }
+        $amount = max(0, (float) ($data['amount'] ?? 0));
+        $taxRate = max(0, (float) ($data['tax_rate'] ?? 15));
+        $discountAmount = max(0, (float) ($data['discount_amount'] ?? 0));
+        $discountType = in_array((string) ($data['discount_type'] ?? 'value'), ['value', 'percent'], true)
+            ? (string) $data['discount_type']
+            : 'value';
+        $discount = $discountType === 'percent'
+            ? min($amount, round($amount * ($discountAmount / 100), 2))
+            : min($amount, $discountAmount);
+        $subtotal = max(0, round($amount - $discount, 2));
+        $taxAmount = round($subtotal * ($taxRate / 100), 2);
+        $totalAmount = round($subtotal + $taxAmount, 2);
+
+        $data['amount'] = $amount;
+        $data['discount_amount'] = $discountAmount;
+        $data['discount_type'] = $discountType;
+        $data['tax_rate'] = $taxRate;
+        $data['tax_amount'] = $taxAmount;
+        $data['total_amount'] = $totalAmount;
+        $data['currency'] = strtoupper(trim((string) ($data['currency'] ?? 'SAR'))) ?: 'SAR';
+        $data['payment_terms_days'] = max(0, (int) ($data['payment_terms_days'] ?? 30));
+        $data['payment_method'] = trim((string) ($data['payment_method'] ?? 'bank_transfer')) ?: 'bank_transfer';
+        $data['invoice_type'] = trim((string) ($data['invoice_type'] ?? 'tax')) ?: 'tax';
+        $data['po_number'] = trim((string) ($data['po_number'] ?? ''));
+        $data['notes'] = trim((string) ($data['notes'] ?? ''));
+        $data['payment_status'] = in_array((string) ($data['payment_status'] ?? 'unpaid'), ['unpaid', 'partial', 'paid'], true)
+            ? (string) $data['payment_status']
+            : 'unpaid';
+
         if (($data['invoice_no'] ?? '') === '') {
+            $data['invoice_no'] = $this->billing->nextInvoiceNo();
+        }
+        if ($this->billing->invoiceNoExists((string) $data['invoice_no'], $excludeId)) {
             $data['invoice_no'] = $this->billing->nextInvoiceNo();
         }
         if (($data['issued_at'] ?? '') === '') {
             $data['issued_at'] = date('Y-m-d');
         }
         if (($data['due_date'] ?? '') === '') {
-            $data['due_date'] = null;
+            $terms = (int) ($data['payment_terms_days'] ?? 30);
+            $data['due_date'] = date('Y-m-d', strtotime('+' . $terms . ' days', strtotime((string) $data['issued_at'])));
         }
         if (($data['subscription_id'] ?? '') === '') {
             $data['subscription_id'] = null;
         } else {
             $data['subscription_id'] = (int) $data['subscription_id'];
         }
+
+        $submitAction = trim((string) $this->input('submit_action', 'draft'));
+        if ($submitAction === 'send' && ($data['status'] ?? 'draft') === 'draft') {
+            $data['status'] = 'sent';
+        }
+
         return $data;
     }
 

@@ -279,6 +279,9 @@ abstract class CrudController extends Controller
         }
         $entityType = $this->resolveDocumentEntityType();
         $companyId = (int) ($item['company_id'] ?? \Rateb\App\Core\TenantContext::companyId() ?? 0);
+        if ($companyId < 1 && function_exists('rateb_resolve_ops_company_id')) {
+            $companyId = (int) rateb_resolve_ops_company_id();
+        }
         $canManage = function_exists('rateb_can_manage_entity')
             ? rateb_can_manage_entity($this->permissionResourceKey())
             : true;

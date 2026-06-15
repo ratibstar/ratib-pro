@@ -46,7 +46,7 @@ $backLabel = (string) ($backLabel ?? __($entityName ?? 'record'));
                     <th><?php echo __('file_name'); ?></th>
                     <th><?php echo __('file_size'); ?></th>
                     <th><?php echo __('created_at'); ?></th>
-                    <th><?php echo __('actions'); ?></th>
+                    <th class="rateb-doc-actions-th"><?php echo __('actions'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -60,30 +60,28 @@ $backLabel = (string) ($backLabel ?? __($entityName ?? 'record'));
                     <td><?php echo Rateb\App\Core\View::escape($doc['file_name'] ?? ''); ?></td>
                     <td><?php echo number_format((int) ($doc['file_size'] ?? 0) / 1024, 1); ?> KB</td>
                     <td><?php echo Rateb\App\Core\View::escape($doc['created_at'] ?? ''); ?></td>
-                    <td class="text-nowrap">
-                        <div class="btn-group btn-group-sm" role="group">
-                            <a href="<?php echo rateb_url('documents/view/' . $docId); ?>" class="btn btn-outline-secondary" target="_blank" rel="noopener" title="<?php echo __('view_file'); ?>">
-                                <i class="fas fa-eye"></i> <?php echo __('view_file'); ?>
-                            </a>
-                            <a href="<?php echo rateb_url('documents/download/' . $docId); ?>" class="btn btn-outline-primary" title="<?php echo __('download_file'); ?>">
-                                <i class="fas fa-download"></i> <?php echo __('download_file'); ?>
-                            </a>
-                            <?php if ($canManage ?? false) { ?>
-                            <button type="button" class="btn btn-outline-warning js-edit-doc"
-                                    data-doc-id="<?php echo $docId; ?>"
-                                    data-doc-title="<?php echo Rateb\App\Core\View::escape($doc['title'] ?? ''); ?>"
-                                    data-doc-file="<?php echo Rateb\App\Core\View::escape($doc['file_name'] ?? ''); ?>"
-                                    title="<?php echo __('edit_file'); ?>">
-                                <i class="fas fa-edit"></i> <?php echo __('edit_file'); ?>
+                    <td class="rateb-actions rateb-doc-actions">
+                        <a href="<?php echo rateb_url('documents/view/' . $docId); ?>" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener" title="<?php echo __('view_file'); ?>">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="<?php echo rateb_url('documents/download/' . $docId); ?>" class="btn btn-sm btn-outline-primary" title="<?php echo __('download_file'); ?>">
+                            <i class="fas fa-download"></i>
+                        </a>
+                        <?php if ($canManage ?? false) { ?>
+                        <button type="button" class="btn btn-sm btn-outline-warning js-edit-doc"
+                                data-doc-id="<?php echo $docId; ?>"
+                                data-doc-title="<?php echo Rateb\App\Core\View::escape($doc['title'] ?? ''); ?>"
+                                data-doc-file="<?php echo Rateb\App\Core\View::escape($doc['file_name'] ?? ''); ?>"
+                                title="<?php echo __('edit_file'); ?>">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $entityId . '/documents/' . $docId . '/delete'); ?>" class="d-inline" onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_delete_file')); ?>');">
+                            <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="<?php echo __('delete_file'); ?>">
+                                <i class="fas fa-trash"></i>
                             </button>
-                            <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $entityId . '/documents/' . $docId . '/delete'); ?>" class="d-inline" onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_delete_file')); ?>');">
-                                <input type="hidden" name="_csrf" value="<?php echo Rateb\App\Core\View::escape($csrf); ?>">
-                                <button type="submit" class="btn btn-outline-danger" title="<?php echo __('delete_file'); ?>">
-                                    <i class="fas fa-trash"></i> <?php echo __('delete_file'); ?>
-                                </button>
-                            </form>
-                            <?php } ?>
-                        </div>
+                        </form>
+                        <?php } ?>
                     </td>
                 </tr>
                 <?php } } ?>

@@ -140,6 +140,10 @@ foreach ($billingCrud as $path => $class) {
     $router->get('/admin/' . $path, [$class, 'index'], rateb_admin_mw('accounting.view'));
     $router->get('/admin/' . $path . '/create', [$class, 'create'], rateb_admin_mw('billing.manage'));
     $router->post('/admin/' . $path, [$class, 'store'], rateb_admin_mw('billing.manage'));
+    if ($path === 'invoices') {
+        $router->get('/admin/invoices/subscription-lookup', [$class, 'subscriptionLookup'], rateb_admin_mw('billing.manage'));
+        $router->get('/admin/invoices/{id}/preview', [$class, 'preview'], rateb_admin_mw('accounting.view'));
+    }
     $router->get('/admin/' . $path . '/{id}/edit', [$class, 'edit'], rateb_admin_mw('billing.manage'));
     $router->post('/admin/' . $path . '/{id}', [$class, 'update'], rateb_admin_mw('billing.manage'));
     $router->post('/admin/' . $path . '/{id}/delete', [$class, 'destroy'], rateb_admin_mw('billing.manage'));

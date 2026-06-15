@@ -209,8 +209,10 @@ final class Invoice extends Model
     protected string $table = 'rateb_invoices';
     protected bool $tenantScoped = false;
     protected array $fillable = [
-        'company_id', 'subscription_id', 'invoice_no', 'amount', 'tax_amount',
-        'total_amount', 'status', 'due_date', 'issued_at', 'barcode', 'qr_code', 'document_path',
+        'company_id', 'subscription_id', 'invoice_no', 'invoice_type', 'po_number',
+        'amount', 'tax_amount', 'total_amount', 'currency', 'discount_amount', 'discount_type',
+        'tax_rate', 'payment_terms_days', 'payment_method', 'status', 'payment_status', 'notes',
+        'due_date', 'issued_at', 'barcode', 'qr_code', 'document_path',
     ];
 
     public function withRelations(int $limit = 50, int $offset = 0): array
