@@ -45,6 +45,56 @@
     white-space: nowrap;
 }
 
+.rateb-depreciation-table-wrap {
+    margin-top: 0.25rem;
+}
+
+.rateb-depreciation-table {
+    table-layout: auto;
+    width: 100%;
+    min-width: 68rem;
+}
+
+.rateb-depreciation-table th {
+    white-space: normal;
+    line-height: 1.4;
+    padding: 0.65rem 0.9rem;
+    vertical-align: bottom;
+}
+
+.rateb-depreciation-table th.rateb-th-id {
+    min-width: 5.5rem;
+}
+
+.rateb-depreciation-table th.rateb-th-text {
+    min-width: 6.5rem;
+}
+
+.rateb-depreciation-table th.rateb-th-money,
+.rateb-depreciation-table th.rateb-th-book-value {
+    min-width: 9.5rem;
+}
+
+.rateb-depreciation-table th.rateb-th-status {
+    min-width: 5.5rem;
+}
+
+.rateb-depreciation-table th.rateb-th-actions,
+.rateb-depreciation-table td.rateb-actions {
+    width: auto;
+    min-width: 10.5rem;
+    padding-inline-start: 1.15rem;
+    padding-inline-end: 0.75rem;
+}
+
+.rateb-depreciation-table td.rateb-ltr-num {
+    white-space: nowrap;
+}
+
+.rateb-depreciation-table td.rateb-td-money {
+    padding-inline: 0.9rem;
+}
+
 .rateb-table tbody tr:hover {
     background: var(--rateb-table-hover);
 }

@@ -138,14 +138,20 @@ $formatCell = static function ($val, array $col): string {
         <h6 class="rateb-section-heading"><i class="fas fa-table"></i> <?php echo __('depreciation_records'); ?></h6>
 
         <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
-        <div class="table-responsive" data-rateb-table-search-host="1">
-            <table class="table table-hover rateb-table mb-0">
+        <div class="table-responsive rateb-depreciation-table-wrap" data-rateb-table-search-host="1">
+            <table class="table table-hover rateb-table rateb-depreciation-table mb-0">
                 <thead>
                 <tr>
-                    <?php foreach ($columns as $col) { ?>
-                    <th><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
+                    <?php foreach ($columns as $col) {
+                        $type = (string) ($col['type'] ?? 'text');
+                        $thClass = 'rateb-th-' . $type;
+                        if (in_array($col['name'] ?? '', ['book_value_before', 'book_value'], true)) {
+                            $thClass .= ' rateb-th-book-value';
+                        }
+                        ?>
+                    <th class="<?php echo Rateb\App\Core\View::escape(trim($thClass)); ?>"><?php echo Rateb\App\Core\View::escape(rateb_label((string) ($col['label'] ?? $col['name']))); ?></th>
                     <?php } ?>
-                    <th><?php echo __('actions'); ?></th>
+                    <th class="rateb-th-actions"><?php echo __('actions'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -162,6 +168,9 @@ $formatCell = static function ($val, array $col): string {
                         $val = $row[$col['name']] ?? '';
                         $display = $formatCell($val, $col);
                         $class = in_array($type, ['money', 'id'], true) ? ' rateb-ltr-num' : '';
+                        if ($type === 'money') {
+                            $class .= ' rateb-td-money';
+                        }
                         if ($type === 'status') {
                             $badge = $isDraft ? 'warning' : 'success';
                             ?>
