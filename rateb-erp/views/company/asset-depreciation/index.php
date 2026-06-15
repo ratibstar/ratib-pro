@@ -200,6 +200,17 @@ $formatCell = static function ($val, array $col): string {
             <?php Rateb\App\Core\View::partial('table-search', ['mode' => 'client']); ?>
             <div class="table-responsive rateb-depreciation-table-wrap" data-rateb-table-search-host="1">
                 <table class="table table-hover rateb-table rateb-depreciation-table mb-0">
+                    <colgroup>
+                        <col class="rateb-col-dep-no">
+                        <col class="rateb-col-dep-asset">
+                        <col class="rateb-col-dep-date">
+                        <col class="rateb-col-dep-amount">
+                        <col class="rateb-col-dep-book">
+                        <col class="rateb-col-dep-book">
+                        <col class="rateb-col-dep-book">
+                        <col class="rateb-col-dep-status">
+                        <col class="rateb-col-dep-actions">
+                    </colgroup>
                     <thead>
                     <tr>
                         <?php foreach ($columns as $col) {

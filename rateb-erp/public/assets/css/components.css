@@ -61,25 +61,24 @@
 }
 
 .rateb-table.rateb-depreciation-table th {
-    white-space: normal !important;
-    overflow: visible;
-    text-overflow: clip;
-    line-height: 1.45;
-    padding: 0.7rem 1rem;
-    vertical-align: bottom;
-    word-break: keep-all;
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+    padding: 0.65rem 0.75rem;
+    vertical-align: middle;
 }
 
-.rateb-table.rateb-depreciation-table .rateb-col-dep-no { width: 8%; }
-.rateb-table.rateb-depreciation-table .rateb-col-dep-asset { width: 16%; }
-.rateb-table.rateb-depreciation-table .rateb-col-dep-date { width: 10%; }
-.rateb-table.rateb-depreciation-table .rateb-col-dep-amount { width: 10%; }
-.rateb-table.rateb-depreciation-table .rateb-col-dep-book { width: 11%; }
-.rateb-table.rateb-depreciation-table .rateb-col-dep-status { width: 8%; }
-.rateb-table.rateb-depreciation-table .rateb-col-dep-actions { width: 14%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-no { width: 7%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-asset { width: 14%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-date { width: 9%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-amount { width: 9%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-book { width: 10%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-status { width: 7%; }
+.rateb-table.rateb-depreciation-table .rateb-col-dep-actions { width: 12%; }
 
 .rateb-table.rateb-depreciation-table th.rateb-th-book-value {
-    min-width: 7.5rem;
+    min-width: 6.75rem;
 }
 
 .rateb-table.rateb-depreciation-table th.rateb-th-actions,

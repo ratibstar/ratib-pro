@@ -845,7 +845,7 @@ return [
     'useful_life_months' => 'العمر الافتراضي (شهر)',
     'residual_value' => 'القيمة المتبقية',
     'accumulated_depreciation' => 'إجمالي الإهلاك المتراكم',
-    'accumulated_depreciation_short' => 'الإهلاك المتراكم',
+    'accumulated_depreciation_short' => 'إهلاك متراكم',
     'total_asset_value' => 'إجمالي قيمة الأصول',
     'net_asset_value' => 'صافي قيمة الأصول',
     'depreciation_no_auto' => 'سيتم توليده تلقائياً',
