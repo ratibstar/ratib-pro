@@ -25,8 +25,29 @@ if (!defined('DB_HOST') || !defined('DB_USER') || !defined('DB_PASS')) {
     die('Config not loaded. Check config/env.');
 }
 
-// DirectAdmin: admin_bangladesh, admin_ethiopia, … (legacy admin_* kept as fallback)
+// DirectAdmin: admin_bangladesh, admin_ethiopia, … + agencies from control panel
 $countryDbs = rateb_all_country_database_names();
+$countryDbs[] = 'admin_genia';
+try {
+    require_once __DIR__ . '/../includes/control_lookup_conn.php';
+    $ctrl = function_exists('get_control_lookup_conn') ? get_control_lookup_conn() : null;
+    if ($ctrl instanceof mysqli) {
+        $res = $ctrl->query(
+            "SELECT DISTINCT TRIM(db_name) AS db_name FROM control_agencies WHERE TRIM(COALESCE(db_name, '')) <> ''"
+        );
+        if ($res) {
+            while ($row = $res->fetch_assoc()) {
+                $n = (string) ($row['db_name'] ?? '');
+                if ($n !== '' && !in_array($n, $countryDbs, true)) {
+                    $countryDbs[] = $n;
+                }
+            }
+        }
+    }
+} catch (Throwable $e) {
+    // static list only
+}
+sort($countryDbs);
 
 $host = DB_HOST;
 $user = DB_USER;
@@ -73,7 +94,8 @@ if ($html) {
     echo "<div class='summary'>";
     echo "<strong>{$okCount}</strong> / " . count($countryDbs) . " databases accessible";
     if ($okCount < count($countryDbs)) {
-        echo " — <a href='migrations/GRANT_INSTRUCTIONS.md' style='color:#60a5fa'>See GRANT_INSTRUCTIONS.md</a>";
+        echo " — run <code>control-panel/GRANT_COUNTRY_DBS_ADMIN_RATEB.sql</code> or DirectAdmin MySQL Management";
+        echo " (<a href='migrations/GRANT_INSTRUCTIONS.md' style='color:#60a5fa'>GRANT_INSTRUCTIONS.md</a>)";
     }
     echo "</div>";
     echo "<table><tr><th>Database</th><th>Status</th></tr>";

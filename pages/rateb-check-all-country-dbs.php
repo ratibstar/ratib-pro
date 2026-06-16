@@ -135,6 +135,9 @@ foreach ($targets as $dbName => $meta) {
         $tenant = @new mysqli($host, $user, $pass, $dbName, $port);
         if ($tenant->connect_error) {
             $lines[] = '  connect: FAIL — ' . $tenant->connect_error;
+            if (stripos($tenant->connect_error, 'Access denied') !== false) {
+                $lines[] = '  FIX: run control-panel/GRANT_COUNTRY_DBS_ADMIN_RATEB.sql (DirectAdmin MySQL admin)';
+            }
             $fail++;
             continue;
         }
