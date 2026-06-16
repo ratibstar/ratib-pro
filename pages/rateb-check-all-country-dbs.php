@@ -138,6 +138,11 @@ foreach ($targets as $dbName => $meta) {
 
     try {
         $tenant = @new mysqli($host, $user, $pass, $dbName, $port);
+        if ($tenant->connect_error && $user === $userDefault && $pass !== $passDefault && $passDefault !== '') {
+            // control_agencies rows may have stale db_pass; retry with env/main password
+            $tenant = @new mysqli($host, $user, $passDefault, $dbName, $port);
+            $pass = $passDefault;
+        }
         if ($tenant->connect_error) {
             $lines[] = '  connect: FAIL — ' . $tenant->connect_error;
             if (stripos($tenant->connect_error, 'Access denied') !== false) {

@@ -7,6 +7,9 @@ require_once '../includes/config.php';
 if (!function_exists('rateb_control_agency_active_fragment')) {
     require_once __DIR__ . '/../includes/control_lookup_conn.php';
 }
+if (!function_exists('rateb_users_primary_key_column')) {
+    require_once __DIR__ . '/../includes/permissions.php';
+}
 if (!function_exists('rateb_control_agency_active_fragment')) {
     /** Fallback when deploy missed includes/control_lookup_conn.php (stale server copy). */
     function rateb_control_agency_active_fragment(?mysqli $conn, ?string $alias = null): string
@@ -717,7 +720,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
             $_SESSION['country_name'] = defined('TENANT_NAME') ? TENANT_NAME : null;
             // In multi-tenant mode, agency is effectively the tenant; set a friendly label if available
             $_SESSION['agency_name'] = defined('TENANT_NAME') ? TENANT_NAME : null;
-            require_once '../includes/permissions.php';
+            require_once __DIR__ . '/../includes/permissions.php';
             $_SESSION['user_permissions'] = getUserPermissions();
             try {
                 $loginPk = rateb_users_primary_key_column($conn);
@@ -1174,7 +1177,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                             error_log("Login - Failed to update last_login or log activity: " . $e->getMessage());
                         }
 
-                        require_once '../includes/permissions.php';
+                        require_once __DIR__ . '/../includes/permissions.php';
                         $_SESSION['user_permissions'] = getUserPermissions();
 
                         try {
@@ -1367,7 +1370,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && $conn !== null) {
                                 try {
                                     $loginConn->query("UPDATE users SET last_login = NOW() WHERE user_id = " . (int)$user['user_id']);
                                 } catch (Throwable $e) { /* ignore */ }
-                                require_once '../includes/permissions.php';
+                                require_once __DIR__ . '/../includes/permissions.php';
                                 $_SESSION['user_permissions'] = getUserPermissions();
                                 if (function_exists('rateb_set_login_context_cookies')) {
                                     rateb_set_login_context_cookies((int)($agencyCountryId ?? 0), (int)($agencyId ?? 0));

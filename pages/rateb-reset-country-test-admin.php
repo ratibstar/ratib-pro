@@ -183,6 +183,11 @@ foreach ($agencies as $ag) {
 
     try {
         $tenant = @new mysqli($host, $user, $pass, $dbName, $port);
+        if ($tenant->connect_error && $user === $userDefault && $pass !== $passDefault && $passDefault !== '') {
+            // control_agencies often stores stale db_pass; retry with env/main password
+            $tenant = @new mysqli($host, $user, $passDefault, $dbName, $port);
+            $pass = $passDefault;
+        }
         if ($tenant->connect_error) {
             $lines[] = '  FAIL connect: ' . $tenant->connect_error;
             continue;
