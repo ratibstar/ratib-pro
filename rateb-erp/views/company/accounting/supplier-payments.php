@@ -3,6 +3,7 @@ $bulkEnabled = $bulkEnabled ?? false;
 $canPost = $canPost ?? false;
 ?>
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
+<link href="<?php echo rateb_asset('css/supplier-payment.css'); ?>" rel="stylesheet">
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h5 class="mb-0"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></h5>
     <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -26,7 +27,7 @@ $canPost = $canPost ?? false;
 <?php if (!$canPost) {
     Rateb\App\Core\View::partial('accounting-permissions-note', ['permKey' => 'supplier_payment']);
 } ?>
-<div class="rateb-card">
+<div class="rateb-card rateb-sp-list-card">
     <?php if ($bulkEnabled && !empty($items)) { ?>
     <div class="rateb-bulk-bar d-none" data-rateb-bulk-bar>
         <span class="rateb-bulk-count" data-rateb-bulk-count data-label="<?php echo Rateb\App\Core\View::escape(__('bulk_selected')); ?>">0</span>

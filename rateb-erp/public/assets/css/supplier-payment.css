@@ -1,16 +1,96 @@
+/* Supplier payments — dark-first (matches rateb-dep / accounting surfaces) */
+
 .rateb-sp-form-card .rateb-sp-link-panel {
-    background: var(--rateb-surface-muted, #f4f8fc);
-    border: 1px solid var(--rateb-border, #d4e3f4);
-    border-radius: 10px;
+    background: var(--rateb-surface-elevated);
+    border: 1px solid var(--rateb-border);
+    border-radius: var(--rateb-radius, 12px);
     padding: 1rem 1.1rem;
+    color: var(--rateb-text);
 }
 
 .rateb-sp-form-card [data-sp-fields],
 .rateb-sp-form-card .rateb-sp-fields {
-    border-top: 1px solid var(--rateb-border, #d4e3f4);
+    border-top: 1px solid var(--rateb-border);
     padding-top: 1rem;
 }
 
-.rateb-sp-form-card [readonly] {
-    background: #eef4fb;
+.rateb-sp-form-card .form-control[readonly],
+.rateb-sp-form-card .form-select[readonly],
+.rateb-sp-form-card [readonly].form-control {
+    background: var(--rateb-input-bg) !important;
+    color: var(--rateb-text-muted);
+    border-color: var(--rateb-border);
+    opacity: 1;
+}
+
+.rateb-sp-form-card .rateb-form-label,
+.rateb-sp-form-card .form-label {
+    color: var(--rateb-text);
+}
+
+.rateb-sp-form-card .form-text {
+    color: var(--rateb-text-muted) !important;
+}
+
+.rateb-sp-form-card .text-warning {
+    color: var(--rateb-warning) !important;
+}
+
+/* Link type: PO / invoice toggle */
+.rateb-sp-form-card .btn-check + .btn-outline-primary {
+    color: var(--rateb-text-muted);
+    border-color: var(--rateb-border);
+    background: var(--rateb-input-bg);
+}
+
+.rateb-sp-form-card .btn-check + .btn-outline-primary:hover {
+    color: var(--rateb-text);
+    background: var(--rateb-surface-elevated);
+    border-color: var(--rateb-primary);
+}
+
+.rateb-sp-form-card .btn-check:checked + .btn-outline-primary,
+.rateb-sp-form-card .btn-check:active + .btn-outline-primary {
+    background: var(--rateb-primary);
+    border-color: var(--rateb-primary);
+    color: #fff;
+}
+
+.rateb-sp-form-card .alert-warning {
+    background: rgba(251, 191, 36, 0.1);
+    border-color: rgba(251, 191, 36, 0.35);
+    color: #fcd34d;
+}
+
+.rateb-sp-form-card .alert-warning a {
+    color: #fde68a;
+    text-decoration: underline;
+}
+
+.rateb-sp-list-card .table {
+    color: var(--rateb-text);
+}
+
+/* Light theme — softer panels (optional contrast) */
+html[data-theme="light"] .rateb-sp-form-card .rateb-sp-link-panel,
+html[data-bs-theme="light"] .rateb-sp-form-card .rateb-sp-link-panel {
+    background: var(--rateb-surface-elevated, #eef5fd);
+}
+
+html[data-theme="light"] .rateb-sp-form-card .form-control[readonly],
+html[data-bs-theme="light"] .rateb-sp-form-card [readonly].form-control {
+    background: var(--rateb-input-bg, #f3f8fe) !important;
+}
+
+html[data-theme="light"] .rateb-sp-form-card .btn-check + .btn-outline-primary {
+    background: #fff;
+}
+
+html[data-theme="light"] .rateb-sp-form-card .alert-warning {
+    background: rgba(251, 191, 36, 0.22);
+    color: #92400e;
+}
+
+html[data-theme="light"] .rateb-sp-form-card .alert-warning a {
+    color: #b45309;
 }
