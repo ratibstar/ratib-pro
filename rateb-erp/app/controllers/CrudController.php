@@ -442,7 +442,17 @@ abstract class CrudController extends Controller
         $data = [];
         foreach ($this->fields as $field) {
             $name = $field['name'];
-            $data[$name] = trim((string) $this->input($name, ''));
+            $type = (string) ($field['type'] ?? 'text');
+            $raw = trim((string) $this->input($name, ''));
+            if ($type === 'fk') {
+                $data[$name] = ($raw === '' || $raw === '0') ? null : (int) $raw;
+                continue;
+            }
+            if ($type === 'number') {
+                $data[$name] = $raw === '' ? null : $raw;
+                continue;
+            }
+            $data[$name] = $raw;
         }
         return $data;
     }
