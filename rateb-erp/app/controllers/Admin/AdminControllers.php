@@ -1120,6 +1120,8 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             'companies' => $this->billing->companyOptions(),
             'subscriptions' => $this->billing->subscriptionOptions(),
             'lineItems' => [],
+            'bankAccounts' => $this->billing->supplierBankAccountOptions(),
+            'chartAccounts' => [],
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -1162,6 +1164,8 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
             'companies' => $this->billing->companyOptions(),
             'subscriptions' => $this->billing->subscriptionOptions((int) ($item['company_id'] ?? 0), (int) ($item['subscription_id'] ?? 0)),
             'lineItems' => \Rateb\App\Helpers\LineItems::loadInvoiceLines($id),
+            'bankAccounts' => $this->billing->supplierBankAccountOptions(),
+            'chartAccounts' => $this->billing->chartAccountOptionsForCompany((int) ($item['company_id'] ?? 0)),
             'csrf' => Csrf::token(),
         ], 'main');
     }
@@ -1249,6 +1253,21 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
                 'address' => implode('، ', $addressParts),
                 'complete' => strlen((string) ($profile['vat_number'] ?? '')) >= 15,
             ],
+        ], JSON_UNESCAPED_UNICODE);
+    }
+
+    public function chartAccountsLookup(): void
+    {
+        if (!rateb_can('billing.manage')) {
+            http_response_code(403);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['error' => 'forbidden'], JSON_UNESCAPED_UNICODE);
+            return;
+        }
+        $companyId = (int) $this->input('company_id', 0);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'accounts' => $this->billing->chartAccountOptionsForCompany($companyId),
         ], JSON_UNESCAPED_UNICODE);
     }
 
@@ -1344,11 +1363,19 @@ final class InvoicesController extends \Rateb\App\Controllers\CrudController
         $names = [
             'company_id', 'subscription_id', 'invoice_no', 'invoice_type', 'po_number',
             'amount', 'tax_amount', 'total_amount', 'currency', 'discount_amount', 'discount_type',
-            'tax_rate', 'payment_terms_days', 'payment_method', 'status', 'payment_status', 'notes',
+            'tax_rate', 'payment_terms_days', 'payment_method', 'supplier_account_no', 'status', 'payment_status', 'notes',
             'due_date', 'issued_at',
         ];
         foreach ($names as $name) {
             $data[$name] = trim((string) $this->input($name, ''));
+        }
+        $bankId = (int) $this->input('supplier_bank_account_id', 0);
+        $data['supplier_bank_account_id'] = $bankId > 0 ? $bankId : null;
+        if ($bankId > 0 && ($data['supplier_account_no'] ?? '') === '') {
+            $bank = (new \Rateb\App\Models\BankAccount())->find($bankId);
+            if ($bank) {
+                $data['supplier_account_no'] = trim((string) ($bank['account_number'] ?? ''));
+            }
         }
         $lines = \Rateb\App\Helpers\LineItems::collectFromRequest();
         $lineAgg = $lines !== [] ? \Rateb\App\Helpers\LineItems::aggregateTotals($lines) : null;

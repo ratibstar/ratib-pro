@@ -199,4 +199,41 @@ final class BillingService
         );
         $stmt->execute(['pid' => $planId]);
     }
+
+    /** @return array<int, array<string, mixed>> */
+    public function supplierBankAccountOptions(): array
+    {
+        return (new Company())->query(
+            "SELECT b.id, b.bank_name, b.account_number, b.name, b.is_default,
+                    c.name AS company_name
+             FROM rateb_bank_accounts b
+             INNER JOIN rateb_companies c ON c.id = b.company_id
+             WHERE b.is_active = 1
+             ORDER BY b.is_default DESC, b.bank_name ASC, b.id ASC
+             LIMIT 100"
+        );
+    }
+
+    /** @return array<int, array{value:int,label:string}> */
+    public function chartAccountOptionsForCompany(int $companyId): array
+    {
+        if ($companyId < 1) {
+            return [];
+        }
+        $rows = (new Company())->query(
+            "SELECT id, code, name, name_ar FROM rateb_chart_of_accounts
+             WHERE company_id = :cid AND is_active = 1
+             ORDER BY code ASC LIMIT 300",
+            ['cid' => $companyId]
+        );
+        $out = [];
+        foreach ($rows as $row) {
+            $name = rateb_locale() === 'ar' && !empty($row['name_ar']) ? (string) $row['name_ar'] : (string) ($row['name'] ?? '');
+            $out[] = [
+                'value' => (int) ($row['id'] ?? 0),
+                'label' => trim((string) ($row['code'] ?? '') . ' — ' . $name),
+            ];
+        }
+        return $out;
+    }
 }

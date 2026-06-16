@@ -2,9 +2,13 @@
 /** @var array<int, array<string, mixed>> $lineItems */
 /** @var bool $defaultVat15 */
 /** @var string|null $sectionTitle */
+/** @var array<int, array{value:int,label:string}> $chartAccounts */
+/** @var bool $showAccountColumn */
 $lineItems = $lineItems ?? [];
 $defaultVat15 = !empty($defaultVat15);
 $sectionTitle = $sectionTitle ?? __('invoice_lines_section');
+$chartAccounts = $chartAccounts ?? [];
+$showAccountColumn = !empty($showAccountColumn);
 $taxPresets = \Rateb\App\Helpers\LineItems::taxPresets();
 if ($lineItems === []) {
     $lineItems = [[
@@ -34,6 +38,7 @@ if ($lineItems === []) {
                         <th><?php echo __('quantity'); ?></th>
                         <th><?php echo __('unit_price'); ?></th>
                         <th><?php echo __('taxes'); ?></th>
+                        <?php if ($showAccountColumn) { ?><th><?php echo __('account'); ?></th><?php } ?>
                         <th class="text-end"><?php echo __('line_total'); ?></th>
                         <th></th>
                     </tr>
@@ -46,6 +51,7 @@ if ($lineItems === []) {
                         $excluding = !isset($line['excluding_tax']) || (int) $line['excluding_tax'] === 1;
                         $totals = \Rateb\App\Helpers\LineItems::lineTotals($qty, $price, $taxRate, $excluding);
                         $taxName = (string) ($line['tax_name'] ?? ($defaultVat15 ? 'VAT 15%' : 'Local Sales 0%'));
+                        $accountId = (int) ($line['account_id'] ?? 0);
                         ?>
                     <tr data-line-items-row>
                         <td>
@@ -68,6 +74,18 @@ if ($lineItems === []) {
                             <input type="hidden" name="line_excluding_tax[]" value="1">
                             <input type="hidden" name="line_tax_rate[]" value="<?php echo Rateb\App\Core\View::escape((string) $taxRate); ?>" data-line-tax-rate>
                         </td>
+                        <?php if ($showAccountColumn) { ?>
+                        <td>
+                            <select class="form-select form-select-sm" name="line_account_id[]" data-line-account-select>
+                                <option value=""><?php echo __('select'); ?>…</option>
+                                <?php foreach ($chartAccounts as $opt) { ?>
+                                <option value="<?php echo (int) $opt['value']; ?>"<?php echo $accountId === (int) $opt['value'] ? ' selected' : ''; ?>>
+                                    <?php echo Rateb\App\Core\View::escape((string) $opt['label']); ?>
+                                </option>
+                                <?php } ?>
+                            </select>
+                        </td>
+                        <?php } ?>
                         <td class="text-end"><span data-line-total><?php echo number_format($totals['total'], 2); ?></span></td>
                         <td><button type="button" class="btn btn-sm btn-outline-danger" data-line-items-remove><i class="fas fa-times"></i></button></td>
                     </tr>

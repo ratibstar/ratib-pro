@@ -973,6 +973,8 @@ return [
     'tax_preset_vat_15' => 'VAT 15%',
     'tax_preset_vat_5' => 'VAT 5%',
     'tax_preset_exempt' => 'Exempt',
+    'supplier_account_no' => 'Supplier account number',
+    'invoice_supplier_bank_footer' => 'Bank transfer — supplier account number',
     'choose_files' => 'Choose files',
     'attachments_count' => ':count of :max attachments',
     'invoice_preview_draft_note' => 'Draft preview — amounts may change before saving.',

@@ -27,6 +27,10 @@ $discountComputed = $discountType === 'percent'
 $subtotalBeforeTax = max(0, $amount - $discountComputed);
 $documents = [];
 $lineItems = $lineItems ?? [];
+$bankAccounts = $bankAccounts ?? [];
+$chartAccounts = $chartAccounts ?? [];
+$selectedBankId = (int) ($item['supplier_bank_account_id'] ?? 0);
+$supplierAccountNo = (string) ($item['supplier_account_no'] ?? '');
 $maxAttachments = 5;
 if ($isEdit && $invoiceId > 0) {
     $companyId = (int) ($item['company_id'] ?? 0);
@@ -59,6 +63,7 @@ $subJson = json_encode(array_map(static function (array $sub): array {
               data-subscriptions="<?php echo Rateb\App\Core\View::escape($subJson ?: '[]'); ?>"
               data-subscription-lookup="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix . '/subscription-lookup')); ?>"
               data-tax-profile-lookup="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix . '/tax-profile-lookup')); ?>"
+              data-chart-accounts-lookup="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix . '/chart-accounts-lookup')); ?>"
               data-preview-url="<?php echo $isEdit ? Rateb\App\Core\View::escape(rateb_url($routePrefix . '/' . $invoiceId . '/preview')) : ''; ?>"
               data-preview-draft-url="<?php echo Rateb\App\Core\View::escape(rateb_url($routePrefix . '/preview-draft')); ?>"
               data-max-attachments="<?php echo $maxAttachments; ?>"
@@ -157,12 +162,26 @@ $subJson = json_encode(array_map(static function (array $sub): array {
                         <small class="text-muted" data-due-hint><?php echo $paymentTerms > 0 ? __('due_after_days', ['days' => (string) $paymentTerms]) : ''; ?></small>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label rateb-form-label" for="f_status"><?php echo __('status'); ?> <span class="text-danger">*</span></label>
-                        <select class="form-select rateb-form-control" id="f_status" name="status" required>
-                            <?php foreach (['draft', 'sent', 'paid', 'overdue', 'cancelled'] as $st) { ?>
-                            <option value="<?php echo $st; ?>"<?php echo (string) ($item['status'] ?? 'draft') === $st ? ' selected' : ''; ?>><?php echo __($st); ?></option>
+                        <label class="form-label rateb-form-label" for="f_supplier_bank_account"><?php echo __('supplier_account_no'); ?></label>
+                        <select class="form-select rateb-form-control" id="f_supplier_bank_account" name="supplier_bank_account_id" data-supplier-bank-select>
+                            <option value=""><?php echo __('select'); ?>…</option>
+                            <?php foreach ($bankAccounts as $bank) {
+                                $bid = (int) ($bank['id'] ?? 0);
+                                $label = trim((string) ($bank['bank_name'] ?? '') . ' — ' . (string) ($bank['account_number'] ?? ''));
+                                if ($label === '—') {
+                                    $label = (string) ($bank['name'] ?? ('#' . $bid));
+                                }
+                                ?>
+                            <option value="<?php echo $bid; ?>"
+                                    data-account-no="<?php echo Rateb\App\Core\View::escape((string) ($bank['account_number'] ?? '')); ?>"
+                                <?php echo $bid === $selectedBankId ? ' selected' : ''; ?>>
+                                <?php echo Rateb\App\Core\View::escape($label); ?>
+                            </option>
                             <?php } ?>
                         </select>
+                        <input class="form-control rateb-form-control rateb-ltr-num mt-1" type="text" id="f_supplier_account_no"
+                               name="supplier_account_no" value="<?php echo Rateb\App\Core\View::escape($supplierAccountNo); ?>"
+                               placeholder="<?php echo __('supplier_account_no'); ?>" data-supplier-account-no>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label rateb-form-label"><?php echo __('payment_status'); ?></label>
@@ -172,6 +191,14 @@ $subJson = json_encode(array_map(static function (array $sub): array {
                             </span>
                         </div>
                         <input type="hidden" name="payment_status" value="<?php echo Rateb\App\Core\View::escape($paymentStatus); ?>">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label rateb-form-label" for="f_status"><?php echo __('status'); ?> <span class="text-danger">*</span></label>
+                        <select class="form-select rateb-form-control" id="f_status" name="status" required>
+                            <?php foreach (['draft', 'sent', 'paid', 'overdue', 'cancelled'] as $st) { ?>
+                            <option value="<?php echo $st; ?>"<?php echo (string) ($item['status'] ?? 'draft') === $st ? ' selected' : ''; ?>><?php echo __($st); ?></option>
+                            <?php } ?>
+                        </select>
                     </div>
                     <div class="col-12">
                         <label class="form-label rateb-form-label" for="f_notes"><?php echo __('invoice_notes'); ?></label>
@@ -212,6 +239,8 @@ $subJson = json_encode(array_map(static function (array $sub): array {
                 'lineItems' => $lineItems,
                 'defaultVat15' => true,
                 'sectionTitle' => __('tax_invoice_lines_section'),
+                'chartAccounts' => $chartAccounts,
+                'showAccountColumn' => true,
             ]); ?>
             </section>
 

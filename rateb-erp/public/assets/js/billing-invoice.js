@@ -44,6 +44,9 @@
         var taxBuyerAddress = form.querySelector('[data-tax-buyer-address]');
         var taxBuyerWarning = form.querySelector('[data-tax-buyer-warning]');
         var linesSectionTitle = form.querySelector('.rateb-invoice-lines-wrap .rateb-invoice-section-title');
+        var supplierBankSelect = form.querySelector('[data-supplier-bank-select]');
+        var supplierAccountNoEl = form.querySelector('[data-supplier-account-no]');
+        var chartAccountsUrl = form.getAttribute('data-chart-accounts-lookup') || '';
         var allSubs = [];
         try {
             allSubs = JSON.parse(form.getAttribute('data-subscriptions') || '[]');
@@ -112,6 +115,53 @@
                 amountEl.value = opt.dataset.amount || amountEl.value;
             }
             recalc();
+        }
+
+        function syncSupplierBankAccount() {
+            if (!supplierBankSelect || !supplierAccountNoEl) {
+                return;
+            }
+            var opt = supplierBankSelect.selectedOptions[0];
+            if (opt && opt.value && opt.getAttribute('data-account-no')) {
+                supplierAccountNoEl.value = opt.getAttribute('data-account-no') || '';
+            }
+        }
+
+        function refreshLineAccountSelects(accounts) {
+            var selects = form.querySelectorAll('[data-line-account-select]');
+            if (!selects.length) {
+                return;
+            }
+            var placeholder = form.getAttribute('data-optional-label') || '';
+            selects.forEach(function (sel) {
+                var current = sel.value;
+                sel.innerHTML = '<option value="">' + placeholder + '</option>';
+                (accounts || []).forEach(function (acc) {
+                    var opt = document.createElement('option');
+                    opt.value = String(acc.value);
+                    opt.textContent = acc.label || '';
+                    if (String(acc.value) === String(current)) {
+                        opt.selected = true;
+                    }
+                    sel.appendChild(opt);
+                });
+            });
+        }
+
+        function loadChartAccounts(companyId) {
+            if (!chartAccountsUrl || !companyId) {
+                refreshLineAccountSelects([]);
+                return;
+            }
+            fetch(chartAccountsUrl + '?company_id=' + encodeURIComponent(companyId), {
+                headers: { 'Accept': 'application/json' },
+                credentials: 'same-origin'
+            })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) {
+                    refreshLineAccountSelects(data && data.accounts ? data.accounts : []);
+                })
+                .catch(function () {});
         }
 
         function syncInvoiceTypeUi() {
@@ -210,10 +260,14 @@
         if (companyEl) {
             companyEl.addEventListener('change', function () {
                 loadCompanySubscription(companyEl.value);
+                loadChartAccounts(companyEl.value);
                 if (invoiceTypeEl && invoiceTypeEl.value === 'tax') {
                     loadBuyerTaxProfile(companyEl.value);
                 }
             });
+        }
+        if (supplierBankSelect) {
+            supplierBankSelect.addEventListener('change', syncSupplierBankAccount);
         }
         if (invoiceTypeEl) {
             invoiceTypeEl.addEventListener('change', syncInvoiceTypeUi);
@@ -339,7 +393,11 @@
         initAttachments();
         setDiscountMode((discountTypeEl && discountTypeEl.value) || 'value');
         syncInvoiceTypeUi();
-        if (companyEl && companyEl.value) filterSubscriptions(companyEl.value);
+        syncSupplierBankAccount();
+        if (companyEl && companyEl.value) {
+            filterSubscriptions(companyEl.value);
+            loadChartAccounts(companyEl.value);
+        }
         updateDueDate();
         recalc();
     }

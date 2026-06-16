@@ -973,6 +973,8 @@ return [
     'tax_preset_vat_15' => 'ضريبة القيمة المضافة 15%',
     'tax_preset_vat_5' => 'ضريبة القيمة المضافة 5%',
     'tax_preset_exempt' => 'معفى',
+    'supplier_account_no' => 'رقم حساب المورد',
+    'invoice_supplier_bank_footer' => 'للتحويل البنكي — رقم حساب المورد',
     'choose_files' => 'اختر الملفات',
     'attachments_count' => ':count من :max مرفقات',
     'invoice_preview_draft_note' => 'معاينة مسودة — قد تتغير المبالغ قبل الحفظ.',

@@ -172,6 +172,8 @@
                 syncTaxRate(sel);
             } else if (sel.name === 'line_excluding_tax[]') {
                 sel.value = '1';
+            } else if (sel.name === 'line_account_id[]') {
+                sel.selectedIndex = 0;
             }
         });
         var subEl = clone.querySelector('[data-line-subtotal]');

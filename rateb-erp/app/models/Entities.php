@@ -211,7 +211,8 @@ final class Invoice extends Model
     protected array $fillable = [
         'company_id', 'subscription_id', 'invoice_no', 'invoice_type', 'po_number',
         'amount', 'tax_amount', 'total_amount', 'currency', 'discount_amount', 'discount_type',
-        'tax_rate', 'payment_terms_days', 'payment_method', 'status', 'payment_status', 'notes',
+        'tax_rate', 'payment_terms_days', 'payment_method', 'supplier_account_no', 'supplier_bank_account_id',
+        'status', 'payment_status', 'notes',
         'due_date', 'issued_at', 'sent_at', 'barcode', 'qr_code', 'document_path',
     ];
 
@@ -234,7 +235,7 @@ final class InvoiceLine extends Model
     protected bool $tenantScoped = false;
     protected array $fillable = [
         'invoice_id', 'line_no', 'item_name', 'description', 'quantity', 'unit',
-        'unit_price', 'tax_rate', 'excluding_tax', 'line_subtotal', 'tax_amount', 'line_total',
+        'unit_price', 'account_id', 'tax_rate', 'excluding_tax', 'line_subtotal', 'tax_amount', 'line_total',
     ];
 }
 
