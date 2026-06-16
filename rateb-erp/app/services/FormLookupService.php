@@ -877,7 +877,11 @@ final class FormLookupService
         }
         if ($companyId > 0) {
             $rows = (new BankAccount())->query(
-                'SELECT id, name, account_code FROM rateb_bank_accounts WHERE company_id = :cid AND is_active = 1 ORDER BY name',
+                'SELECT b.id, b.name, a.code AS account_code
+                 FROM rateb_bank_accounts b
+                 LEFT JOIN rateb_chart_of_accounts a ON a.id = b.chart_account_id
+                 WHERE b.company_id = :cid AND b.is_active = 1
+                 ORDER BY b.name',
                 ['cid' => $companyId]
             );
             foreach ($rows as $row) {

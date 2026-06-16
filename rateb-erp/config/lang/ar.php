@@ -567,6 +567,8 @@ return [
     'reference_bank_or_check' => 'رقم المرجع البنكي / رقم الشيك',
     'attach_transfer_voucher' => 'إرفاق سند التحويل أو المستندات الداعمة',
     'partial_payment_hint' => 'يمكن السداد الجزئي حتى المبلغ المستحق للمستند المختار.',
+    'supplier_payment_no_suppliers' => 'لا يوجد موردون لهذه الشركة — أضف مورداً من المشتريات أولاً.',
+    'supplier_payment_no_open_docs' => 'لا توجد أوامر شراء أو فاتور مورد مفتوحة للسداد. راجع الذمم الدائنة وترحيل أوامر الشراء:',
     'payment_method_cheque' => 'شيك',
     'supplier_payment_posted' => 'تم سداد المورد وترحيل القيد',
     'supplier_payment_failed' => 'تعذّر سداد المورد',

@@ -403,7 +403,7 @@ final class AccountingDashboardController extends Controller
         }
         $payableOrders = $service->listPayablePurchaseOrders($companyId, $supplierId > 0 ? $supplierId : null);
         $payableInvoices = $service->listPayableSupplierInvoices($companyId, $supplierId > 0 ? $supplierId : null);
-        $suppliers = (new Supplier())->all(500, 0);
+        $suppliers = (new Supplier())->all(500, 0, ['company_id' => $companyId]);
         $supplierBalances = [];
         foreach ($suppliers as $sup) {
             $sid = (int) ($sup['id'] ?? 0);

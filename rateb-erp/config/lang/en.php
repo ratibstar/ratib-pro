@@ -568,6 +568,8 @@ return [
     'reference_bank_or_check' => 'Bank reference / check number',
     'attach_transfer_voucher' => 'Attach transfer voucher or supporting documents',
     'partial_payment_hint' => 'Partial payment is allowed up to the linked document balance.',
+    'supplier_payment_no_suppliers' => 'No suppliers for this company — add a supplier under Procurement first.',
+    'supplier_payment_no_open_docs' => 'No open purchase orders or supplier invoices to pay. Check accounts payable and post PO journals:',
     'payment_method_cheque' => 'Check',
     'supplier_payment_posted' => 'Supplier payment posted',
     'supplier_payment_failed' => 'Could not post supplier payment',

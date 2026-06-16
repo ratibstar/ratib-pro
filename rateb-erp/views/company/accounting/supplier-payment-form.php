@@ -69,6 +69,9 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
                         </option>
                         <?php } ?>
                     </select>
+                    <?php if (empty($suppliers)) { ?>
+                    <p class="form-text text-warning small mb-0"><?php echo __('supplier_payment_no_suppliers'); ?></p>
+                    <?php } ?>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label rateb-form-label"><?php echo __('supplier_balance_due'); ?></label>
@@ -125,6 +128,12 @@ Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']
                     </select>
                 </div>
                 <p class="form-text text-muted mb-0 mt-2"><?php echo __('partial_payment_hint'); ?></p>
+                <?php if (empty($payableOrders) && empty($payableInvoices)) { ?>
+                <div class="alert alert-warning mt-3 mb-0 small">
+                    <?php echo __('supplier_payment_no_open_docs'); ?>
+                    <a href="<?php echo rateb_app_url('accounting/accounts-payable'); ?>"><?php echo __('accounts_payable'); ?></a>
+                </div>
+                <?php } ?>
             </div>
 
             <?php
