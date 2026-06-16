@@ -53,6 +53,7 @@ if (PHP_VERSION_ID < 80200) {
 // EN: Load environment profile first (host/country-specific overrides).
 // AR: تحميل ملف البيئة أولاً (تخصيصات حسب النطاق/الدولة).
 require_once __DIR__ . '/../config/env/load.php';
+require_once __DIR__ . '/rateb-users-schema.php';
 require_once __DIR__ . '/rateb-clean-url.php';
 
 // EN: Central event bus bootstrap (safe no-op if unavailable).
