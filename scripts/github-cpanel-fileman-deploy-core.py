@@ -180,6 +180,7 @@ FAST_FILES = [
     "includes/control_lookup_conn.php",
     "pages/login.php",
     "pages/dashboard.php",
+    "pages/rateb-check-all-country-dbs.php",
     "pages/home.php",
     "js/pages/rateb-profile-nav-guard.js",
     "includes/rateb-mega-nav-render.php",
