@@ -3,11 +3,25 @@ $bulkEnabled = $bulkEnabled ?? false;
 $canPost = $canPost ?? false;
 ?>
 <?php Rateb\App\Core\View::partial('accounting-nav', ['accountingActive' => 'company']); ?>
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h5 class="mb-0"><?php echo Rateb\App\Core\View::escape($title ?? ''); ?></h5>
-    <a href="<?php echo rateb_app_url('accounting/accounts-payable'); ?>" class="btn btn-outline-secondary btn-sm">
-        <i class="fas fa-arrow-left"></i> <?php echo __('accounts_payable'); ?>
-    </a>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        <?php if (!empty($exportRoute)) {
+            Rateb\App\Core\View::partial('export-toolbar', [
+                'exportRoute' => $exportRoute,
+                'exportEnabled' => $exportEnabled ?? true,
+                'inline' => true,
+            ]);
+        } ?>
+        <?php if ($canPost) { ?>
+        <a href="<?php echo rateb_app_url('accounting/accounts-payable'); ?>" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> <?php echo __('supplier_payment'); ?>
+        </a>
+        <?php } ?>
+        <a href="<?php echo rateb_app_url('accounting/accounts-payable'); ?>" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> <?php echo __('accounts_payable'); ?>
+        </a>
+    </div>
 </div>
 <?php if (!$canPost) {
     Rateb\App\Core\View::partial('accounting-permissions-note', ['permKey' => 'supplier_payment']);

@@ -155,6 +155,7 @@ $router->get($app('accounting/supplier-payments/create'), [CompanyAccountingDash
 $router->post($app('accounting/supplier-payments'), [CompanyAccountingDashboardController::class, 'storeSupplierPayment'], rateb_erp_mw('accounting', 'accounting.post', 'accounts-payable'));
 $router->get($app('accounting/entry-approval'), [CompanyJournalEntriesController::class, 'entryApproval'], rateb_erp_mw('accounting', '', 'entry-approval'));
 $router->get($app('accounting/supplier-payments'), [CompanyAccountingDashboardController::class, 'supplierPayments'], rateb_erp_mw('accounting', '', 'supplier-payments'));
+$router->get($app('accounting/supplier-payments/export'), [CompanyAccountingDashboardController::class, 'exportSupplierPayments'], rateb_erp_mw('accounting', 'reports.export', 'supplier-payments'));
 $router->post($app('accounting/supplier-payments/{id}/void'), [CompanyAccountingDashboardController::class, 'voidSupplierPayment'], rateb_erp_mw('accounting', 'accounting.post', 'supplier-payments'));
 $router->post($app('accounting/supplier-payments/bulk-void'), [CompanyAccountingDashboardController::class, 'bulkVoidSupplierPayments'], rateb_erp_mw('accounting', 'accounting.post', 'supplier-payments'));
 $router->get($app('accounting/bank-reconciliation/{id}'), [CompanyAccountingDashboardController::class, 'bankReconciliationDetail'], rateb_erp_mw('accounting', '', 'bank-reconciliation'));

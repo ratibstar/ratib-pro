@@ -249,6 +249,12 @@ $subJson = json_encode(array_map(static function (array $sub): array {
                     <div class="rateb-invoice-attached-item" data-attached-item>
                         <span><i class="fas fa-file"></i> <?php echo Rateb\App\Core\View::escape($doc['file_name'] ?? ''); ?></span>
                         <div class="d-flex gap-1">
+                            <?php
+                            $docMime = (string) ($doc['mime_type'] ?? '');
+                            $canInline = str_starts_with($docMime, 'image/') || $docMime === 'application/pdf';
+                            if ($canInline) { ?>
+                            <a href="<?php echo rateb_url('documents/view/' . $docId); ?>" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener"><?php echo __('view_file'); ?></a>
+                            <?php } ?>
                             <a href="<?php echo rateb_url('documents/download/' . $docId); ?>" class="btn btn-sm btn-outline-primary"><?php echo __('download_file'); ?></a>
                             <?php if ($isEdit) { ?>
                             <form method="post" action="<?php echo rateb_url($routePrefix . '/' . $invoiceId . '/documents/' . $docId . '/delete'); ?>" class="d-inline" onsubmit="return confirm('<?php echo Rateb\App\Core\View::escape(__('confirm_delete_file')); ?>');">

@@ -287,6 +287,7 @@ return [
         'view' => 'accounting.view',
         'manage' => 'accounting.view',
         'post' => 'accounting.post',
+        'export' => 'reports.export',
     ],
     'budget-report' => [
         'module' => 'accounting',

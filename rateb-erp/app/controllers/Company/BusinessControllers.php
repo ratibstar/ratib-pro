@@ -739,10 +739,10 @@ final class AssetDepreciationController extends Controller
             ['name' => 'depreciation_no', 'label' => __('depreciation_no')],
             ['name' => 'asset_name', 'label' => __('assets')],
             ['name' => 'period_date', 'label' => __('depreciation_date')],
-            ['name' => 'amount', 'label' => __('depreciation_amount')],
-            ['name' => 'book_value_before', 'label' => __('book_value_before')],
-            ['name' => 'book_value_after', 'label' => __('book_value_after')],
-            ['name' => 'accumulated_total', 'label' => __('accumulated_depreciation')],
+            ['name' => 'amount', 'label' => __('depreciation_amount'), 'type' => 'money'],
+            ['name' => 'book_value_before', 'label' => __('book_value_before'), 'type' => 'money'],
+            ['name' => 'book_value_after', 'label' => __('book_value_after'), 'type' => 'money'],
+            ['name' => 'accumulated_total', 'label' => __('accumulated_depreciation'), 'type' => 'money'],
             ['name' => 'status', 'label' => __('status')],
         ], $rows, __('asset_depreciation'), 'asset-depreciation');
     }

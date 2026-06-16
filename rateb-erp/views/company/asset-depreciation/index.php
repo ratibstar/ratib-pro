@@ -43,7 +43,7 @@ $summary = $summary ?? ['total_asset_value' => 0, 'total_accumulated' => 0, 'net
         </div>
         <?php if (!empty($exportEnabled)) { ?>
         <div class="d-flex flex-wrap gap-2">
-            <a href="<?php echo Rateb\App\Core\View::escape($exportLink('pdf')); ?>" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i> PDF</a>
+            <a href="<?php echo Rateb\App\Core\View::escape($exportLink('pdf')); ?>" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener noreferrer"><i class="fas fa-file-pdf"></i> <?php echo __('print_save_pdf'); ?></a>
             <a href="<?php echo Rateb\App\Core\View::escape($exportLink('excel')); ?>" class="btn btn-sm btn-outline-success"><i class="fas fa-file-excel"></i> Excel</a>
             <a href="<?php echo Rateb\App\Core\View::escape($exportLink('csv')); ?>" class="btn btn-sm btn-outline-success"><i class="fas fa-file-csv"></i> CSV</a>
         </div>

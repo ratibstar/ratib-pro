@@ -12,6 +12,7 @@ use Rateb\App\Models\ChartOfAccount;
 use Rateb\App\Models\JournalEntry;
 use Rateb\App\Services\AccountingService;
 use Rateb\App\Services\AuditService;
+use Rateb\App\Controllers\Shared\ExportController;
 
 final class AccountingDashboardController extends Controller
 {
@@ -499,7 +500,31 @@ final class AccountingDashboardController extends Controller
             'csrf' => Csrf::token(),
             'canPost' => rateb_can_post_entity('accounting'),
             'bulkEnabled' => rateb_can_post_entity('accounting'),
+            'exportRoute' => rateb_app_url('accounting/supplier-payments/export'),
+            'exportEnabled' => rateb_can_export_entity('supplier-payments'),
         ], 'main');
+    }
+
+    public function exportSupplierPayments(): void
+    {
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId < 1) {
+            Response::redirect(rateb_app_url('accounting/supplier-payments'));
+        }
+        $rows = (new AccountingService())->listSupplierPayments($companyId);
+        foreach ($rows as &$row) {
+            $row['status'] = __((string) ($row['status'] ?? ''));
+        }
+        unset($row);
+        ExportController::send('supplier_payments', [
+            ['name' => 'payment_no', 'label' => __('payment_no')],
+            ['name' => 'payment_date', 'label' => __('evaluation_date')],
+            ['name' => 'supplier_name', 'label' => __('supplier')],
+            ['name' => 'order_no', 'label' => __('purchase_order')],
+            ['name' => 'entry_no', 'label' => __('entry_no')],
+            ['name' => 'amount', 'label' => __('amount'), 'type' => 'money'],
+            ['name' => 'status', 'label' => __('status')],
+        ], $rows, __('supplier_payments'), 'supplier-payments');
     }
 
     public function voidSupplierPayment(array $params): void

@@ -301,9 +301,20 @@ final class DocumentService
         $mime = (string) ($doc['mime_type'] ?? 'application/octet-stream');
         $name = (string) ($doc['file_name'] ?? basename($full));
         header('Content-Type: ' . $mime);
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Transfer-Encoding: binary');
         $disposition = $inline ? 'inline' : 'attachment';
-        header('Content-Disposition: ' . $disposition . '; filename="' . $this->safeFilename($name) . '"');
+        $asciiName = $this->safeFilename($name);
+        $utfName = rawurlencode($name);
+        header(
+            'Content-Disposition: ' . $disposition
+            . '; filename="' . $asciiName . '"'
+            . "; filename*=UTF-8''" . $utfName
+        );
         header('Content-Length: ' . (string) filesize($full));
+        if (ob_get_level() > 0) {
+            ob_end_clean();
+        }
         readfile($full);
         exit;
     }
@@ -359,6 +370,8 @@ final class DocumentService
             'tender' => 'tenders',
             'invoice' => 'invoices',
             'payment' => 'payments',
+            'asset_depreciation' => 'asset-depreciation',
+            'supplier_payment' => 'supplier-payments',
         ];
         if (isset($map[$entityType])) {
             return $map[$entityType];
