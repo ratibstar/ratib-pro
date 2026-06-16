@@ -13,6 +13,7 @@ import secrets
 import shutil
 import subprocess
 import sys
+import glob
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -550,7 +551,27 @@ def git_changed_paths() -> set[str]:
         return set()
 
 
-def deployable_changed_paths() -> list[str]:
+def rateb_branded_asset_files() -> list[str]:
+    """Always sync renamed rateb-* assets so fast deploy cannot leave stale ratib-* on server."""
+    patterns = (
+        "includes/rateb-*.php",
+        "includes/rateb_*.php",
+        "js/pages/rateb-*.js",
+        "js/rateb-*.js",
+        "css/pages/rateb-*.css",
+        "css/rateb-*.css",
+        "pages/rateb-*.php",
+        "api/rateb-*.php",
+        "api/core/rateb_*.inc.php",
+        "api/diagnostics/rateb-*.php",
+    )
+    out: list[str] = []
+    for pattern in patterns:
+        for path in glob.glob(pattern):
+            if os.path.isfile(path):
+                out.append(path.replace("\\", "/"))
+    return sorted(set(out))
+
     """Changed paths we can upload, priority order (bootstrap before bulk api/)."""
     priority = (
         "config/env/",
@@ -660,6 +681,11 @@ def build_file_list(mode: str) -> tuple[list[str], int]:
         if os.path.isfile(rel):
             core.append(rel)
             seen.add(rel)
+    for rel in rateb_branded_asset_files():
+        if rel in seen or rel == marker:
+            continue
+        core.append(rel)
+        seen.add(rel)
     extras: list[str] = []
     deployable = deployable_changed_paths()
     large_commit = len(deployable) > FAST_DEPLOY_LARGE_COMMIT_THRESHOLD
