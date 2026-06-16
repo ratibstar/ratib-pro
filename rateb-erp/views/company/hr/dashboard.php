@@ -57,4 +57,7 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'overview']);
     <a href="<?php echo rateb_app_url('hr/payroll'); ?>" class="btn btn-outline-primary btn-sm">
         <i class="fas fa-money-check-dollar"></i> <?php echo __('hr_payroll'); ?>
     </a>
+    <a href="<?php echo rateb_app_url('hr/reports'); ?>" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-chart-column"></i> <?php echo __('hr_reports'); ?>
+    </a>
 </div>

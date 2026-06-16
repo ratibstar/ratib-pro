@@ -34,9 +34,12 @@ $opsSection(__('suppliers'), [
 $opsSection(__('human_resources'), [
     ['hr', 'hr_overview', 'fa-gauge-high', 'hr'],
     ['hr/employees', 'hr_employees', 'fa-id-badge', 'hr'],
+    ['hr/departments', 'hr_departments', 'fa-sitemap', 'hr'],
     ['hr/attendance', 'hr_attendance', 'fa-clock', 'hr'],
     ['hr/leaves', 'hr_leaves', 'fa-calendar-minus', 'hr'],
+    ['hr/leave-types', 'leave_types', 'fa-list', 'hr'],
     ['hr/payroll', 'hr_payroll', 'fa-money-check-dollar', 'hr'],
+    ['hr/reports', 'hr_reports', 'fa-chart-column', 'hr'],
 ], 'fa-users-gear');
 $opsSection(__('accounting_module'), [
     ['accounting', 'accounting_overview', 'fa-gauge-high', 'accounting'],

@@ -7,6 +7,7 @@ $bulkEnabled = $bulkEnabled ?? true;
 $createEnabled = $createEnabled ?? true;
 $actionsEnabled = $actionsEnabled ?? true;
 $exportEnabled = $exportEnabled ?? true;
+$viewEnabled = $viewEnabled ?? false;
 if (!empty($permissionResource) && function_exists('rateb_can_manage_entity')) {
     $canManage = rateb_can_manage_entity((string) $permissionResource);
     $createEnabled = $createEnabled && $canManage;
@@ -128,6 +129,9 @@ $isCompanies = ($routePrefix ?? '') === 'admin/companies';
                     <?php if ($actionsEnabled) { ?>
                     <td class="rateb-actions-cell text-nowrap">
                         <div class="rateb-actions">
+                        <?php if ($viewEnabled) { ?>
+                        <a href="<?php echo rateb_url($routePrefix . '/' . (int) $row['id']); ?>" class="btn btn-sm btn-outline-info" title="<?php echo __('view'); ?>"><i class="fas fa-eye"></i></a>
+                        <?php } ?>
                         <?php if ($documentEntityType !== '') { ?>
                         <a href="<?php echo rateb_url($routePrefix . '/' . (int) $row['id'] . '/documents'); ?>" class="btn btn-sm btn-outline-secondary" title="<?php echo __('view_files'); ?>">
                             <i class="fas fa-paperclip"></i>

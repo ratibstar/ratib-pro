@@ -24,6 +24,7 @@ use Rateb\App\Controllers\Company\HrAttendanceController;
 use Rateb\App\Controllers\Company\HrLeavesController;
 use Rateb\App\Controllers\Company\HrLeaveTypesController;
 use Rateb\App\Controllers\Company\HrPayrollController;
+use Rateb\App\Controllers\Company\HrReportsController;
 use Rateb\App\Controllers\Company\ChartOfAccountsController as CompanyChartOfAccountsController;
 use Rateb\App\Controllers\Company\ProductCategoriesController;
 use Rateb\App\Controllers\Company\StockMovementsController;
@@ -150,6 +151,10 @@ foreach ($hrCrudRoutes as $path => $cfg) {
     $router->get($app($path), [$class, 'index'], $mw);
     $router->get($app($path . '/create'), [$class, 'create'], $mw);
     $router->post($app($path), [$class, 'store'], $mw);
+    if ($path === 'hr/employees') {
+        $router->get($app('hr/employees/export'), [HrEmployeesController::class, 'export'], $mw);
+        $router->get($app('hr/employees/{id}'), [HrEmployeesController::class, 'show'], $mw);
+    }
     $router->get($app($path . '/{id}/edit'), [$class, 'edit'], $mw);
     $router->post($app($path . '/{id}'), [$class, 'update'], $mw);
     $router->post($app($path . '/{id}/delete'), [$class, 'destroy'], $mw);
@@ -175,6 +180,12 @@ $router->post($app('hr/payroll/{id}/delete'), [HrPayrollController::class, 'dest
 $router->post($app('hr/payroll/{id}/generate'), [HrPayrollController::class, 'generate'], $hrPayMw);
 $router->post($app('hr/payroll/{id}/approve'), [HrPayrollController::class, 'approve'], $hrPayMw);
 $router->post($app('hr/payroll/{id}/post'), [HrPayrollController::class, 'post'], $hrPayMw);
+$router->get($app('hr/payroll/{id}/export'), [HrPayrollController::class, 'export'], $hrPayMw);
+$router->get($app('hr/payroll/{id}/payslip/{lineId}'), [HrPayrollController::class, 'payslip'], $hrPayMw);
+
+$hrReportsMw = rateb_erp_mw('hr', '', 'hr');
+$router->get($app('hr/reports'), [HrReportsController::class, 'index'], $hrReportsMw);
+$router->get($app('hr/reports/export'), [HrReportsController::class, 'export'], rateb_erp_mw('hr', 'reports.export', 'hr'));
 $router->get($app('accounting'), [CompanyAccountingDashboardController::class, 'index'], rateb_erp_mw('accounting', '', 'accounting'));
 $router->get($app('accounting/reports'), [CompanyAccountingDashboardController::class, 'reportsHub'], rateb_erp_mw('accounting', '', 'accounting-reports'));
 $router->get($app('accounting/trial-balance'), [CompanyAccountingDashboardController::class, 'trialBalanceReport'], rateb_erp_mw('accounting', '', 'trial-balance'));

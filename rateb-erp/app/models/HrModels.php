@@ -64,3 +64,12 @@ final class PayrollLine extends Model
         'allowances', 'deductions', 'net_salary', 'notes',
     ];
 }
+
+final class LeaveBalance extends Model
+{
+    protected string $table = 'rateb_leave_balances';
+    protected bool $tenantScoped = true;
+    protected array $fillable = [
+        'company_id', 'employee_id', 'leave_type_id', 'balance_year', 'entitled_days', 'used_days',
+    ];
+}

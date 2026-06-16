@@ -7,6 +7,7 @@ $tabs = [
     ['path' => rateb_app_route('hr/attendance'), 'label' => __('hr_attendance'), 'match' => [rateb_app_route('hr/attendance')]],
     ['path' => rateb_app_route('hr/leaves'), 'label' => __('hr_leaves'), 'match' => [rateb_app_route('hr/leaves')]],
     ['path' => rateb_app_route('hr/payroll'), 'label' => __('hr_payroll'), 'match' => [rateb_app_route('hr/payroll')]],
+    ['path' => rateb_app_route('hr/reports'), 'label' => __('hr_reports'), 'match' => [rateb_app_route('hr/reports')]],
 ];
 $route = defined('RATEB_CP_ROUTE') ? (string) RATEB_CP_ROUTE : rateb_current_public_path('admin/ops/hr');
 $isActive = static function (array $tab) use ($route): bool {

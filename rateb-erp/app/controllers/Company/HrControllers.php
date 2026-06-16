@@ -66,6 +66,59 @@ final class HrEmployeesController extends \Rateb\App\Controllers\CrudController
         return $data;
     }
 
+    public function show(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $profile = (new HrService())->employeeProfile($id);
+        if ($profile === null) {
+            http_response_code(404);
+            $this->view('errors/404', ['title' => '404']);
+            return;
+        }
+        $this->view($this->viewPrefix . '/show', array_merge($profile, [
+            'title' => (string) ($profile['employee']['name'] ?? __('hr_employees')),
+            'routePrefix' => $this->routePrefix,
+            'csrf' => Csrf::token(),
+            'canManage' => function_exists('rateb_can_manage_entity') ? rateb_can_manage_entity('hr-employees') : true,
+        ]), $this->layout());
+    }
+
+    public function export(): void
+    {
+        rateb_bootstrap_ops_tenant();
+        $rows = (new \Rateb\App\Models\Employee())->all(5000, 0);
+        $lookups = (new \Rateb\App\Services\FormLookupService())->get('hr_departments');
+        $deptMap = [];
+        foreach ($lookups as $opt) {
+            $deptMap[(string) $opt['value']] = (string) $opt['label'];
+        }
+        $exportRows = [];
+        foreach ($rows as $row) {
+            $exportRows[] = [
+                'employee_code' => $row['employee_code'] ?? '',
+                'name' => $row['name'] ?? '',
+                'email' => $row['email'] ?? '',
+                'phone' => $row['phone'] ?? '',
+                'department' => $deptMap[(string) ($row['department_id'] ?? '')] ?? '',
+                'job_title' => $row['job_title'] ?? '',
+                'hire_date' => $row['hire_date'] ?? '',
+                'salary_base' => $row['salary_base'] ?? '',
+                'status' => __((string) ($row['status'] ?? 'active')),
+            ];
+        }
+        \Rateb\App\Controllers\Shared\ExportController::send('employees', [
+            ['name' => 'employee_code', 'label' => __('employee_code')],
+            ['name' => 'name', 'label' => __('name')],
+            ['name' => 'email', 'label' => __('email')],
+            ['name' => 'phone', 'label' => __('phone')],
+            ['name' => 'department', 'label' => __('department')],
+            ['name' => 'job_title', 'label' => __('job_title')],
+            ['name' => 'hire_date', 'label' => __('hire_date')],
+            ['name' => 'salary_base', 'label' => __('salary_base')],
+            ['name' => 'status', 'label' => __('status')],
+        ], $exportRows, __('hr_employees'), 'hr-employees');
+    }
+
     protected function layout(): string
     {
         return 'main';
@@ -164,7 +217,28 @@ final class HrLeavesController extends \Rateb\App\Controllers\CrudController
     public function index(): void
     {
         HrService::bootstrapTenant();
-        parent::index();
+        $page = max(1, (int) $this->input('page', 1));
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+        $search = trim((string) $this->input('q', ''));
+        $companyId = rateb_resolve_ops_company_id();
+        if ($companyId > 0) {
+            TenantContext::setCompanyId($companyId);
+        }
+        $year = (int) $this->input('year', (int) date('Y'));
+        $this->view($this->viewPrefix . '/index', $this->applyPermissionFlags([
+            'title' => __($this->entityName),
+            'items' => $this->model->all($limit, $offset, [], $search),
+            'total' => $this->model->count([], $search),
+            'page' => $page,
+            'limit' => $limit,
+            'search' => $search,
+            'routePrefix' => $this->routePrefix,
+            'fields' => $this->resolveIndexFields(),
+            'csrf' => Csrf::token(),
+            'leaveBalances' => (new HrService())->leaveBalancesSummary($companyId, $year),
+            'balanceYear' => $year,
+        ]), $this->layout());
     }
 
     public function create(): void
@@ -337,6 +411,68 @@ final class HrPayrollController extends \Rateb\App\Controllers\CrudController
         $this->redirect(rateb_url($this->routePrefix . '/' . $id));
     }
 
+    public function export(array $params): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $period = $this->model->find($id);
+        if (!$period) {
+            http_response_code(404);
+            echo '404';
+            return;
+        }
+        $lines = (new \Rateb\App\Models\PayrollLine())->query(
+            "SELECT pl.*, e.name AS employee_name, e.employee_code
+             FROM rateb_payroll_lines pl
+             JOIN rateb_employees e ON e.id = pl.employee_id
+             WHERE pl.period_id = :pid ORDER BY e.name ASC",
+            ['pid' => $id]
+        );
+        $exportRows = [];
+        foreach ($lines as $line) {
+            $exportRows[] = [
+                'employee_code' => $line['employee_code'] ?? '',
+                'employee_name' => $line['employee_name'] ?? '',
+                'basic_salary' => $line['basic_salary'] ?? 0,
+                'allowances' => $line['allowances'] ?? 0,
+                'deductions' => $line['deductions'] ?? 0,
+                'net_salary' => $line['net_salary'] ?? 0,
+            ];
+        }
+        $title = __('hr_payroll') . ' ' . ($period['period_year'] ?? '') . '/' . ($period['period_month'] ?? '');
+        \Rateb\App\Controllers\Shared\ExportController::send('payroll_' . $id, [
+            ['name' => 'employee_code', 'label' => __('employee_code')],
+            ['name' => 'employee_name', 'label' => __('name')],
+            ['name' => 'basic_salary', 'label' => __('basic_salary')],
+            ['name' => 'allowances', 'label' => __('allowances')],
+            ['name' => 'deductions', 'label' => __('deductions')],
+            ['name' => 'net_salary', 'label' => __('net_salary')],
+        ], $exportRows, $title, 'hr-payroll');
+    }
+
+    public function payslip(array $params): void
+    {
+        $periodId = (int) ($params['id'] ?? 0);
+        $lineId = (int) ($params['lineId'] ?? 0);
+        $period = $this->model->find($periodId);
+        $line = (new \Rateb\App\Models\PayrollLine())->queryOne(
+            "SELECT pl.*, e.name AS employee_name, e.employee_code, e.job_title, e.national_id
+             FROM rateb_payroll_lines pl
+             JOIN rateb_employees e ON e.id = pl.employee_id
+             WHERE pl.id = :lid AND pl.period_id = :pid LIMIT 1",
+            ['lid' => $lineId, 'pid' => $periodId]
+        );
+        if (!$period || !$line) {
+            http_response_code(404);
+            echo '404';
+            return;
+        }
+        $this->view($this->viewPrefix . '/payslip', [
+            'period' => $period,
+            'line' => $line,
+            'title' => __('payslip'),
+        ], 'print');
+    }
+
     public function approve(array $params): void
     {
         $this->guardManage();
@@ -409,5 +545,52 @@ final class HrLeaveTypesController extends \Rateb\App\Controllers\CrudController
     protected function layout(): string
     {
         return 'main';
+    }
+}
+
+final class HrReportsController extends Controller
+{
+    public function index(): void
+    {
+        $companyId = rateb_require_ops_company();
+        TenantContext::setCompanyId($companyId);
+        $year = max(2020, (int) $this->input('year', (int) date('Y')));
+        $month = max(1, min(12, (int) $this->input('month', (int) date('n'))));
+        $report = (new HrService())->monthlyReport($companyId, $year, $month);
+        $this->view('company/hr/reports', [
+            'title' => __('hr_reports'),
+            'year' => $year,
+            'month' => $month,
+            'attendance' => $report['attendance'],
+            'payroll' => $report['payroll'],
+            'exportRoute' => rateb_app_url('hr/reports/export') . '?year=' . $year . '&month=' . $month,
+            'exportEnabled' => function_exists('rateb_can_export_entity') ? rateb_can_export_entity('hr') : true,
+        ], 'main');
+    }
+
+    public function export(): void
+    {
+        $companyId = rateb_require_ops_company();
+        TenantContext::setCompanyId($companyId);
+        $year = max(2020, (int) $this->input('year', (int) date('Y')));
+        $month = max(1, min(12, (int) $this->input('month', (int) date('n'))));
+        $report = (new HrService())->monthlyReport($companyId, $year, $month);
+        $rows = [];
+        foreach ($report['attendance'] as $row) {
+            $rows[] = [
+                'employee_code' => $row['employee_code'] ?? '',
+                'name' => $row['name'] ?? '',
+                'present_days' => $row['present_days'] ?? 0,
+                'absent_days' => $row['absent_days'] ?? 0,
+                'leave_days' => $row['leave_days'] ?? 0,
+            ];
+        }
+        \Rateb\App\Controllers\Shared\ExportController::send('hr_report', [
+            ['name' => 'employee_code', 'label' => __('employee_code')],
+            ['name' => 'name', 'label' => __('name')],
+            ['name' => 'present_days', 'label' => __('present_days')],
+            ['name' => 'absent_days', 'label' => __('absent_days')],
+            ['name' => 'leave_days', 'label' => __('leave_days')],
+        ], $rows, __('hr_reports'), 'hr');
     }
 }

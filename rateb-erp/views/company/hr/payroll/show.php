@@ -32,6 +32,11 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'payroll']);
                 <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-lock"></i> <?php echo __('post_payroll'); ?></button>
             </form>
             <?php } ?>
+            <?php Rateb\App\Core\View::partial('export-toolbar', [
+                'exportRoute' => rateb_url($routePrefix . '/' . $periodId . '/export'),
+                'exportEnabled' => true,
+                'inline' => true,
+            ]); ?>
         </div>
     </div>
     <div class="rateb-card-body p-0">
@@ -45,11 +50,12 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'payroll']);
                     <th><?php echo __('allowances'); ?></th>
                     <th><?php echo __('deductions'); ?></th>
                     <th><?php echo __('net_salary'); ?></th>
+                    <th><?php echo __('actions'); ?></th>
                 </tr>
                 </thead>
                 <tbody>
                 <?php if ($lines === []) { ?>
-                <tr><td colspan="6" class="text-center text-muted py-4"><?php echo __('payroll_no_lines'); ?></td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-4"><?php echo __('payroll_no_lines'); ?></td></tr>
                 <?php } else {
                     $totalNet = 0.0;
                     foreach ($lines as $line) {
@@ -63,10 +69,15 @@ Rateb\App\Core\View::partial('hr-nav', ['hrActive' => 'payroll']);
                     <td class="rateb-ltr-num"><?php echo number_format((float) ($line['allowances'] ?? 0), 2); ?></td>
                     <td class="rateb-ltr-num"><?php echo number_format((float) ($line['deductions'] ?? 0), 2); ?></td>
                     <td class="rateb-ltr-num"><?php echo number_format($net, 2); ?></td>
+                    <td>
+                        <a href="<?php echo rateb_url($routePrefix . '/' . $periodId . '/payslip/' . (int) ($line['id'] ?? 0)); ?>" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">
+                            <i class="fas fa-print"></i> <?php echo __('payslip'); ?>
+                        </a>
+                    </td>
                 </tr>
                 <?php } ?>
                 <tr class="table-light fw-bold">
-                    <td colspan="5" class="text-end"><?php echo __('total'); ?></td>
+                    <td colspan="6" class="text-end"><?php echo __('total'); ?></td>
                     <td class="rateb-ltr-num"><?php echo number_format($totalNet, 2); ?></td>
                 </tr>
                 <?php } ?>
