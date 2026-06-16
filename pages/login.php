@@ -7,6 +7,29 @@ require_once '../includes/config.php';
 if (!function_exists('rateb_control_agency_active_fragment')) {
     require_once __DIR__ . '/../includes/control_lookup_conn.php';
 }
+if (!function_exists('rateb_control_agency_active_fragment')) {
+    /** Fallback when deploy missed includes/control_lookup_conn.php (stale server copy). */
+    function rateb_control_agency_active_fragment(?mysqli $conn, ?string $alias = null): string
+    {
+        if ($conn instanceof mysqli) {
+            try {
+                $t = @$conn->query("SHOW TABLES LIKE 'control_agencies'");
+                if (!$t || $t->num_rows === 0) {
+                    return '1=1';
+                }
+                $c = @$conn->query("SHOW COLUMNS FROM control_agencies LIKE 'is_suspended'");
+                if (!$c || $c->num_rows === 0) {
+                    return '1=1';
+                }
+            } catch (Throwable $e) {
+                return '1=1';
+            }
+        }
+        $p = ($alias !== null && $alias !== '') ? $alias . '.' : '';
+
+        return 'COALESCE(' . $p . 'is_suspended, 0) = 0';
+    }
+}
 $error = '';
 $success_message = '';
 

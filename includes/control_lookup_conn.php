@@ -91,3 +91,10 @@ if (!function_exists('rateb_control_agency_active_fragment')) {
         return 'COALESCE(' . $p . 'is_suspended, 0) = 0';
     }
 }
+
+if (!function_exists('ratib_control_agency_active_fragment') && function_exists('rateb_control_agency_active_fragment')) {
+    function ratib_control_agency_active_fragment(?mysqli $conn, ?string $alias = null): string
+    {
+        return rateb_control_agency_active_fragment($conn, $alias);
+    }
+}
