@@ -572,6 +572,8 @@ def rateb_branded_asset_files() -> list[str]:
                 out.append(path.replace("\\", "/"))
     return sorted(set(out))
 
+
+def deployable_changed_paths() -> list[str]:
     """Changed paths we can upload, priority order (bootstrap before bulk api/)."""
     priority = (
         "config/env/",
