@@ -4,33 +4,36 @@ declare(strict_types=1);
  * One-time: reset workforce login admin / 123456 in every country DB from control_agencies.
  * DELETE this file after use.
  *
- * Browser: https://rateb.sa/pages/rateb-reset-country-test-admin.php?run=1
- *   Header: X-Rateb-Migrate-Token: <same as deploy / RATEB_ERP_MIGRATE_TOKEN>
+ * Browser: https://rateb.sa/pages/rateb-reset-country-test-admin.php?run=1&token=YOUR_TOKEN
+ *   Or header: X-Rateb-Migrate-Token: <same as deploy / RATEB_ERP_MIGRATE_TOKEN>
  * CLI (on server): php pages/rateb-reset-country-test-admin.php
  */
-header('Content-Type: text/plain; charset=utf-8');
-header('Cache-Control: no-store');
+if (!defined('RATEB_RESET_FROM_FIX_STATUS') || !RATEB_RESET_FROM_FIX_STATUS) {
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Cache-Control: no-store');
+}
 
 $cli = (PHP_SAPI === 'cli');
+$fromFixStatus = defined('RATEB_RESET_FROM_FIX_STATUS') && RATEB_RESET_FROM_FIX_STATUS;
 if ($cli) {
     // In CLI there is no HTTP host, so force rateb.sa env resolution.
     $_SERVER['HTTP_HOST'] = 'rateb.sa';
     $_GET['control'] = '1';
 }
-if (!$cli && (!isset($_GET['run']) || (string) $_GET['run'] !== '1')) {
+if (!$cli && !$fromFixStatus && (!isset($_GET['run']) || (string) $_GET['run'] !== '1')) {
     http_response_code(403);
-    exit("Forbidden. Use ?run=1 with X-Rateb-Migrate-Token, or run via CLI on the server.\n");
+    exit("Forbidden. Use ?run=1&token=... or run via CLI on the server.\n");
 }
 
-if (!$cli) {
-    $provided = trim((string) ($_SERVER['HTTP_X_RATEB_MIGRATE_TOKEN'] ?? ''));
+if (!$cli && !$fromFixStatus) {
+    $provided = trim((string) ($_GET['token'] ?? $_SERVER['HTTP_X_RATEB_MIGRATE_TOKEN'] ?? ''));
     $expected = getenv('RATEB_ERP_MIGRATE_TOKEN') ?: '';
     if ($expected === '' && defined('RATEB_ERP_MIGRATE_TOKEN')) {
         $expected = (string) RATEB_ERP_MIGRATE_TOKEN;
     }
     if ($expected === '' || $provided === '' || !hash_equals($expected, $provided)) {
         http_response_code(403);
-        exit("Forbidden — set X-Rateb-Migrate-Token header (deploy token).\n");
+        exit("Forbidden — pass ?token= (same as RATEB_ERP_MIGRATE_TOKEN in .env) or X-Rateb-Migrate-Token header.\n");
     }
 }
 

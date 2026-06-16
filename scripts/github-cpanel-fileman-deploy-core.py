@@ -186,6 +186,7 @@ FAST_FILES = [
     "pages/rateb-reset-country-test-admin.php",
     "pages/rateb-mysql-probe.php",
     "pages/rateb-fix-status.php",
+    "includes/header.php",
     "pages/home.php",
     "js/pages/rateb-profile-nav-guard.js",
     "includes/rateb-mega-nav-render.php",

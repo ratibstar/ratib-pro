@@ -91,13 +91,30 @@ if (class_exists('\App\Services\CompanyProfileService') && method_exists('\App\S
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
     <!-- JavaScript Configuration - Passed via data attributes -->
-    <?php $ratebControlProBridge = rateb_control_pro_bridge(); ?>
+    <?php
+    if (!function_exists('rateb_control_pro_bridge')) {
+        function rateb_control_pro_bridge(): bool
+        {
+            return false;
+        }
+    }
+    try {
+        $ratebControlProBridge = rateb_control_pro_bridge();
+        $ratebSiteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
+        $ratebBasePath = function_exists('getBaseUrl') ? (string) getBaseUrl() : '';
+    } catch (Throwable $ratebHeaderCfgErr) {
+        error_log('header app-config: ' . $ratebHeaderCfgErr->getMessage());
+        $ratebControlProBridge = false;
+        $ratebSiteUrl = defined('SITE_URL') ? (string) SITE_URL : 'https://rateb.sa';
+        $ratebBasePath = '';
+    }
+    ?>
     <div id="app-config" 
-         data-base-path="<?php echo htmlspecialchars(getBaseUrl(), ENT_QUOTES, 'UTF-8'); ?>"
-         data-base-url="<?php echo htmlspecialchars(getBaseUrl(), ENT_QUOTES, 'UTF-8'); ?>"
-         data-api-base="<?php echo htmlspecialchars(getBaseUrl() . '/api', ENT_QUOTES, 'UTF-8'); ?>"
-         data-control-api-path="<?php echo htmlspecialchars(getBaseUrl() . '/api/control', ENT_QUOTES, 'UTF-8'); ?>"
-         data-site-url="<?php echo htmlspecialchars(SITE_URL, ENT_QUOTES, 'UTF-8'); ?>"
+         data-base-path="<?php echo htmlspecialchars($ratebBasePath, ENT_QUOTES, 'UTF-8'); ?>"
+         data-base-url="<?php echo htmlspecialchars($ratebBasePath, ENT_QUOTES, 'UTF-8'); ?>"
+         data-api-base="<?php echo htmlspecialchars(rtrim($ratebBasePath, '/') . '/api', ENT_QUOTES, 'UTF-8'); ?>"
+         data-control-api-path="<?php echo htmlspecialchars(rtrim($ratebBasePath, '/') . '/api/control', ENT_QUOTES, 'UTF-8'); ?>"
+         data-site-url="<?php echo htmlspecialchars($ratebSiteUrl, ENT_QUOTES, 'UTF-8'); ?>"
          data-company-name="<?php echo htmlspecialchars($companyName, ENT_QUOTES, 'UTF-8'); ?>"
          data-control-pro-bridge="<?php echo $ratebControlProBridge ? '1' : '0'; ?>"
          data-agency-id="<?php echo (int) ($_SESSION['agency_id'] ?? 0); ?>"

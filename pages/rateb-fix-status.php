@@ -82,6 +82,22 @@ foreach ($testDbs as $db) {
     ];
 }
 
+$allOk = true;
+foreach ($items as $it) {
+    if (empty($it['ok'])) {
+        $allOk = false;
+        break;
+    }
+}
+
+$resetOutput = '';
+if (isset($_GET['do_reset']) && (string) $_GET['do_reset'] === '1' && $allOk) {
+    define('RATEB_RESET_FROM_FIX_STATUS', true);
+    ob_start();
+    include __DIR__ . '/rateb-reset-country-test-admin.php';
+    $resetOutput = (string) ob_get_clean();
+}
+
 ?><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -109,6 +125,12 @@ foreach ($testDbs as $db) {
     </li>
 <?php endforeach; ?>
 </ul>
-<p class="hint">When all ✓ — test https://rateb.sa/philippines/login (admin / 123456)</p>
+<?php if ($allOk): ?>
+<p><a href="?control=1&amp;do_reset=1" style="color:#a78bfa">Reset all country admin passwords to 123456 (click here)</a></p>
+<?php endif; ?>
+<?php if ($resetOutput !== ''): ?>
+<pre style="background:#1e293b;padding:1rem;border-radius:8px;overflow:auto"><?= htmlspecialchars($resetOutput, ENT_QUOTES, 'UTF-8') ?></pre>
+<?php endif; ?>
+<p class="hint">When all ✓ — test <a href="https://rateb.sa/philippines/login" style="color:#60a5fa">philippines/login</a> (admin / 123456)</p>
 </body>
 </html>
